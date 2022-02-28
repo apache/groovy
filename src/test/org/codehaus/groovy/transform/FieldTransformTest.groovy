@@ -18,155 +18,156 @@
  */
 package org.codehaus.groovy.transform
 
-import gls.CompilableTestSupport
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Tests for the {@code @Field} transformation
+ * Tests for the {@code @Field} AST transform.
  */
-class FieldTransformTest extends CompilableTestSupport {
+final class FieldTransformTest {
 
+    @Test
     void testInstanceField() {
-        assertScript """
-            @groovy.transform.Field List awe = [1, 2, 3]
+        assertScript '''import groovy.transform.Field
+            @Field List awe = [1, 2, 3]
             def awesum() { awe.sum() }
             assert awesum() == 6
             assert this.awe instanceof List
             assert this.class.getDeclaredField('awe').type.name == 'java.util.List'
-        """
+        '''
     }
 
+    @Test
     void testStaticFieldFromScript() {
-        assertScript """
-            import groovy.transform.*
+        assertScript '''import groovy.transform.Field
             @Field static List awe = [1, 2, 3]
             def awesum() { awe.sum() + this.class.awe.sum() }
             assert awesum() == 12
             assert this.class.awe instanceof List
-        """
+        '''
     }
 
+    @Test
     void testStaticFieldFromMethod() {
-        assertScript """
-            import groovy.transform.*
+        assertScript '''import groovy.transform.Field
             @Field static String exer = 'exercise'
             static exersize() { exer.size() }
             assert exersize() == 8
-        """
+        '''
     }
 
+    @Test
     void testFieldInitialization() {
-        assertScript """
-            def scriptText = '''
-                import groovy.transform.*
-                @Field public pepsi = [1, 2, 3]
-            '''
-            def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
-            def klass = new GroovyShell().parseClass(gcs)
-            assert klass.newInstance().pepsi.max() == 3
-        """
+        def src = '''import groovy.transform.Field
+            @Field public pepsi = [1, 2, 3]
+        '''
+        def gcs = new GroovyCodeSource(src, 'foo', 'bar')
+        def cls = new GroovyShell().parseClass(gcs)
+
+        assert cls.getDeclaredConstructor().newInstance().pepsi.max() == 3
     }
 
+    @Test
     void testStaticFieldInitialization() {
-        assertScript """
-            def scriptText = '''
-                import groovy.transform.*
-                @Field public static ad = [1, 2, 3]
-                assert ad.min() == 1
-            '''
-            def gcs = new GroovyCodeSource(scriptText, 'foo', 'bar')
-            def klass = new GroovyShell().parseClass(gcs)
-            assert klass.ad.min() == 1
-        """
+        def src = '''import groovy.transform.Field
+            @Field public static ad = [1, 2, 3]
+            assert ad.min() == 1
+        '''
+        def gcs = new GroovyCodeSource(src, 'foo', 'bar')
+        def cls = new GroovyShell().parseClass(gcs)
+
+        assert cls.ad.min() == 1
     }
 
+    @Test
     void testFieldTypes() {
-        assertScript """
-            import groovy.transform.*
+        assertScript '''import groovy.transform.Field
             @Field int one
             @Field int two = 2
             @Field Integer three = 3
             this.one = 1
             assert this.one + this.two + this.three == 6
-        """
+        '''
     }
 
+    @Test
     void testNotAllowedInScriptMethods() {
-        shouldNotCompile """
-            import groovy.transform.*
+        shouldFail '''import groovy.transform.Field
             def method() {
                 @Field int one
             }
-        """
+        '''
     }
 
+    @Test
     void testNotAllowedForClassFields() {
-        shouldNotCompile """
-            import groovy.transform.*
+        shouldFail '''import groovy.transform.Field
             class Inner {
                 @Field int one
             }
-        """
+        '''
     }
 
+    @Test
     void testNotAllowedForScriptInnerClassFields() {
-        shouldNotCompile """
-            import groovy.transform.*
+        shouldFail '''import groovy.transform.Field
             class Inner {
                 @Field int one
             }
             println Inner.class.name
-        """
+        '''
     }
 
+    @Test
     void testNotAllowedInClassMethods() {
         // currently two error messages!
-        shouldNotCompile """
-            import groovy.transform.*
+        shouldFail '''import groovy.transform.Field
             class Inner {
                 def bar() {
                     @Field int one
                 }
             }
-        """
+        '''
     }
 
+    @Test
     void testNotAllowedInScriptInnerClassMethods() {
         // currently two error messages!
-        shouldNotCompile """
-            import groovy.transform.*
+        shouldFail '''import groovy.transform.Field
             class Inner {
                 def bar() {
                     @Field int one
                 }
             }
             println Inner.class.name
-        """
+        '''
     }
 
+    @Test
     void testFieldShouldBeAccessibleFromClosure() {
-        assertScript """
-            import groovy.transform.Field
+        assertScript '''import groovy.transform.Field
             @Field int x
             def closure = { x = 1; x }
             assert closure() == 1
-        """
+        '''
     }
 
+    @Test // GROOVY-4700
     void testFieldShouldBeAccessibleFromClosureWithoutAssignment() {
-        // GROOVY-4700
-        assertScript """import groovy.transform.Field
+        assertScript '''import groovy.transform.Field
             @Field xxx = 3
             foo = {
                 xxx + 1
             }
             assert foo() == 4
-        """
+        '''
     }
 
+    @Test // GROOVY-5207
     void testFieldShouldBeAccessibleFromClosureForExternalClosures() {
-        // GROOVY-5207
-        assertScript """
-            import groovy.transform.Field
+        assertScript '''import groovy.transform.Field
             @Field xxx = [:]
             @Field static yyy = [:]
             [1, 2, 3].each {
@@ -175,22 +176,22 @@ class FieldTransformTest extends CompilableTestSupport {
             }
             assert xxx == [(1):1, (2):2, (3):3]
             assert yyy == xxx
-        """
+        '''
     }
 
+    @Test
     void testStaticFieldShouldBeAccessibleFromClosure() {
-        assertScript """
-            import groovy.transform.Field
+        assertScript '''import groovy.transform.Field
             @Field static int x
             x = 10
             def closure = { x * 2 }
             assert closure() == 20
-        """
+        '''
     }
 
+    @Test
     void testAnnotationsOnFieldShouldBeSet() {
-        assertScript """
-            import groovy.transform.Field
+        assertScript '''import groovy.transform.Field
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
@@ -206,15 +207,12 @@ class FieldTransformTest extends CompilableTestSupport {
 
             assert Doh.getDeclaredField('test').getAnnotations().size() == 1
             assert this.class.getDeclaredField('test').getAnnotations().size() == 1
-
-        """
+        '''
     }
 
+    @Test // GROOVY-6112
     void testGroovyTransformsShouldTransferToFields() {
-        // GROOVY-6112
-        assertScript '''
-            import groovy.transform.Field
-
+        assertScript '''import groovy.transform.Field
             @Lazy @Field foo = 'foo'
             @Field @Lazy bar = 'bar'
             @Field baz = 'baz'
@@ -226,10 +224,10 @@ class FieldTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test // GROOVY-8112
     void testAnonymousInnerClassReferencesToField() {
-        // GROOVY-8112
-        assertScript '''
-            @groovy.transform.Field
+        assertScript '''import groovy.transform.Field
+            @Field
             StringBuilder logger = new StringBuilder()
             logger.append('a')
             ['b'].each {
@@ -260,10 +258,10 @@ class FieldTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test // GROOVY-9554
     void testClosureReferencesToField() {
-        // GROOVY-9554
-        assertScript '''
-            @groovy.transform.Field String abc
+        assertScript '''import groovy.transform.Field
+            @Field String abc
             binding.variables.clear()
             abc = 'abc'
             assert !binding.hasVariable('abc')
@@ -276,11 +274,9 @@ class FieldTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test // GROOVY-8430
     void testFieldTransformWithFinalField() {
-        // GROOVY-8430
-        assertScript '''
-            import groovy.transform.Field
-
+        assertScript '''import groovy.transform.Field
             @Field final foo = 14
             @Field final bar = foo * 2
             @Field baz = foo + bar
@@ -292,11 +288,18 @@ class FieldTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test // GROOVY-8430 in conjunction with @Option
     void testFieldTransformWithFinalFieldAndOption() {
-        // GROOVY-8430 in conjunction with @Option
-        shouldNotCompile '''
+        shouldFail '''
             import groovy.cli.OptionField
             @OptionField final String first
+        '''
+    }
+
+    @Test // GROOVY-10516
+    void testFieldTransformWithFullyQualifiedTypeName() {
+        assertScript '''import groovy.transform.Field
+            @Field java.util.List list
         '''
     }
 }
