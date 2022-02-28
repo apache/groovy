@@ -110,7 +110,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             VariableExpression ve = de.getVariableExpression();
             variableName = ve.getName();
             // set owner null here, it will be updated by addField
-            fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
+            fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType().getPlainNodeReference(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
             cNode.addField(fieldNode);
             // provide setter for CLI Builder purposes unless final
@@ -120,7 +120,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                 }
             } else {
                 String setterName = getSetterName(variableName);
-                cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
+                cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType().getPlainNodeReference(), variableName)), ClassNode.EMPTY_ARRAY, block(
                         stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
                 ));
             }
