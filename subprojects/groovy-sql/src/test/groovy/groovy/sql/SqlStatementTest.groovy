@@ -41,6 +41,7 @@ class SqlStatementTest extends GroovyTestCase {
                 password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         sql.execute("create table PERSON ( id INTEGER, firstname VARCHAR(10), lastname VARCHAR(10) )")
+        sql.execute("create table EMPTY ( id INTEGER )")
 
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")
@@ -55,5 +56,10 @@ class SqlStatementTest extends GroovyTestCase {
         assert sql.rows("SELECT * FROM PERSON").size() == 5
         sql.withStatement{ it.maxRows = 3 }
         assert sql.rows("SELECT * FROM PERSON").size() == 3
+    }
+
+    void testWithCleanupStatement() {
+        sql.withCleanupStatement{ stmt -> assert stmt.warnings?.message == 'no data' }
+        sql.execute 'DELETE from EMPTY'
     }
 }

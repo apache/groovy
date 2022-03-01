@@ -255,8 +255,11 @@ public class Sql implements AutoCloseable {
     // store last row update count for executeUpdate, executeInsert and execute
     private int updateCount = 0;
 
-    // allows a closure to be used to configure Statement objects before its use
+    // an optional closure to be used to configure Statements before use
     private Closure configureStatement;
+
+    // an optional closure providing a hook to examine Statements before closing
+    private Closure cleanupStatement;
 
     private boolean cacheConnection;
 
@@ -1015,6 +1018,7 @@ public class Sql implements AutoCloseable {
             statement = getStatement(connection, sql);
             results = statement.executeQuery(sql);
             closure.call(results);
+            cleanup(statement);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -1259,6 +1263,7 @@ public class Sql implements AutoCloseable {
             while ((maxRows <= 0 || i++ < maxRows) && groovyRS.next()) {
                 rowClosure.call(groovyRS);
             }
+            cleanup(statement);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -2364,6 +2369,7 @@ public class Sql implements AutoCloseable {
             statement = getStatement(connection, sql);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
+            cleanup(statement);
             return isResultSet;
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -2420,6 +2426,7 @@ public class Sql implements AutoCloseable {
                 isResultSet = statement.getMoreResults();
                 updateCount = statement.getUpdateCount();
             }
+            cleanup(statement);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -2655,6 +2662,7 @@ public class Sql implements AutoCloseable {
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = statement.getGeneratedKeys();
+            cleanup(statement);
             return calculateKeys(keys);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -2690,6 +2698,7 @@ public class Sql implements AutoCloseable {
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
             ResultSet keys = statement.getGeneratedKeys();
+            cleanup(statement);
             return calculateKeys(keys);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -2730,6 +2739,7 @@ public class Sql implements AutoCloseable {
             this.keyColumnNames = null;
             this.updateCount = statement.executeUpdate();
             ResultSet keys = statement.getGeneratedKeys();
+            cleanup(statement);
             return asList(sql, keys);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -2814,6 +2824,7 @@ public class Sql implements AutoCloseable {
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql, keyColumnNames);
             ResultSet keys = statement.getGeneratedKeys();
+            cleanup(statement);
             return asList(sql, keys);
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -2930,6 +2941,7 @@ public class Sql implements AutoCloseable {
         try {
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql);
+            cleanup(statement);
             return this.updateCount;
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -3097,7 +3109,9 @@ public class Sql implements AutoCloseable {
         CallableStatement statement = null;
         try {
             statement = getCallableStatement(connection, sql, params);
-            return statement.executeUpdate();
+            int i = statement.executeUpdate();
+            cleanup(statement);
+            return i;
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
@@ -3467,6 +3481,21 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * Allows a closure to be passed in which acts as a hook for JDBC statements before they are closed.
+     * It can be used to do things like check SQL warnings, e.g.:
+     * <pre>
+     * sql.withCleanupStatement{ stmt {@code ->} assert !stmt.warnings }
+     * def rows = sql.rows("select * from table")
+     * </pre>
+     *
+     * @param cleanupStatement the closure
+     * @since 4.0.1
+     */
+    public void withCleanupStatement(@ClosureParams(value=SimpleType.class, options="java.sql.Statement") Closure cleanupStatement) {
+        this.cleanupStatement = cleanupStatement;
+    }
+
+    /**
      * Enables statement caching.<br>
      * if <i>cacheStatements</i> is true, cache is created and all created prepared statements will be cached.
      * if <i>cacheStatements</i> is false, all cached statements will be properly closed.
@@ -3812,7 +3841,9 @@ public class Sql implements AutoCloseable {
             configure(statement);
             psWrapper = new BatchingPreparedStatementWrapper(statement, indexPropList, batchSize, LOG, this);
             closure.call(psWrapper);
-            return psWrapper.executeBatch();
+            int[] result = psWrapper.executeBatch();
+            cleanup(statement);
+            return result;
         } catch (SQLException e) {
             LOG.warning("Error during batch execution of '" + sql + "' with message: " + e.getMessage());
             throw e;
@@ -3919,6 +3950,7 @@ public class Sql implements AutoCloseable {
                     hasResultSet = statement.getMoreResults();
                 }
             }
+            cleanup(statement);
             return resultSets;
         } catch (SQLException e) {
             LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
@@ -4377,6 +4409,22 @@ public class Sql implements AutoCloseable {
         }
     }
 
+    /**
+     * Provides a hook for derived classes to be able to examine JDBC statements before cleanup/closing.
+     * Default behavior is to call a previously saved closure, if any, using the
+     * statement as a parameter.
+     *
+     * @param statement the statement to cleanup
+     * @since 4.0.1
+     */
+    protected void cleanup(Statement statement) {
+        // for thread safety, grab local copy
+        Closure cleanupStatement = this.cleanupStatement;
+        if (cleanupStatement != null) {
+            cleanupStatement.call(statement);
+        }
+    }
+
     // private implementation methods
     //-------------------------------------------------------------------------
 
@@ -4765,7 +4813,9 @@ public class Sql implements AutoCloseable {
         protected ResultSet runQuery(Connection connection) throws SQLException {
             statement = getStatement(connection, sql);
             if (getMaxRows() != 0) statement.setMaxRows(getMaxRows());
-            return statement.executeQuery(sql);
+            ResultSet resultSet = statement.executeQuery(sql);
+            cleanup(statement);
+            return resultSet;
         }
     }
 
