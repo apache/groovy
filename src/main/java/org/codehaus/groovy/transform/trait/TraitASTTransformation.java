@@ -500,7 +500,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         ClassNode.EMPTY_ARRAY,
                         returnS(initCode.getExpression())
                 );
-                ClassNodeUtils.addGeneratedMethod(helper, fieldInitializer);
+                helper.addMethod(fieldInitializer);
             } else {
                 BlockStatement code = (BlockStatement) selectedMethod.getCode();
                 MethodCallExpression mce;
