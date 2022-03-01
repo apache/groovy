@@ -345,6 +345,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10052
     void testClosureSharedVariable4() {
+        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             String x
             def f = { ->
@@ -357,6 +359,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10052
     void testClosureSharedVariable5() {
+        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             def x
             def f = { ->
@@ -369,6 +373,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10052
     void testNotClosureSharedVariable() {
+        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             String x = Optional.of('x').orElseThrow{ new Exception() }
             def f = { ->
