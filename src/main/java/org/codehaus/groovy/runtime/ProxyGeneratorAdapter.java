@@ -145,7 +145,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             final ClassLoader proxyLoader,
             final boolean emptyBody,
             final Class<?> delegateClass) {
-        super(CompilerConfiguration.ASM_API_VERSION, new ClassWriter(0));
+        super(CompilerConfiguration.ASM_API_VERSION, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS));
         this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
         this.visitedMethods = new LinkedHashSet<>();
         this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<>();
@@ -175,7 +175,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         this.classList = new LinkedHashSet<>();
         this.classList.add(superClass);
         if (generateDelegateField) {
-            classList.add(delegateClass);
+            this.classList.add(delegateClass);
             for (Class<?> i : delegateClass.getInterfaces()) {
                 if (!isSealed(i)) this.classList.add(i);
             }
@@ -187,9 +187,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         this.emptyBody = emptyBody;
 
         // generate bytecode
-        ClassWriter writer = (ClassWriter) cv;
-        this.visit(Opcodes.V1_5, ACC_PUBLIC, proxyName, null, null, null);
-        byte[] b = writer.toByteArray();
+        int bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(CompilerConfiguration.DEFAULT.getTargetBytecode());
+        this.visit(bytecodeVersion, ACC_PUBLIC, proxyName, null, null, null);
+        byte[] b = ((ClassWriter) cv).toByteArray();
 //        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err));
         cachedClass = loader.defineClass(proxyName.replace('/', '.'), b);
         // cache no-arg constructor
@@ -903,5 +903,4 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             return value;
         }
     }
-
 }

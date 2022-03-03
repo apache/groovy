@@ -27,8 +27,8 @@ matrix:
   include:
     - env: BC='legacy' FEATURE='17' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
-    - env: BC='legacy' FEATURE='16' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk11
+    - env: BC='legacy'
+      jdk: openjdk16
     - env: BC='legacy'
       jdk: openjdk15
     - env: BC='legacy'
@@ -38,8 +38,8 @@ matrix:
 
     - env: BC='indy' FEATURE='17' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
-    - env: BC='indy' FEATURE='16' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk11
+    - env: BC='indy'
+      jdk: openjdk16
     - env: BC='indy'
       jdk: openjdk15
     - env: BC='indy'

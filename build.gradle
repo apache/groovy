@@ -34,7 +34,6 @@ buildscript {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3'
-        //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath 'org.nosphere.apache:creadur-rat-gradle:0.7.1'
         classpath 'gradle.plugin.com.github.jk1:gradle-license-report:1.3'
     }
@@ -432,7 +431,7 @@ apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
 apply from: 'gradle/assemble.gradle'
-apply from: 'gradle/upload.gradle'
+//apply from: 'gradle/upload.gradle' -- TODO: migrate to Gradle 7
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
