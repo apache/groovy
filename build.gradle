@@ -137,7 +137,7 @@ ext {
     gparsVersion = '1.2.1'
     ivyVersion = '2.5.0'
     jansiVersion = '2.4.0'
-    jarjarVersion = '1.8.1'
+    jarjarVersion = '1.7.2'
     javaParserVersion = '3.24.0'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
@@ -197,7 +197,7 @@ dependencies {
     testImplementation "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testImplementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    tools "com.eed3si9n.jarjar:jarjar:$jarjarVersion"
+    tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
