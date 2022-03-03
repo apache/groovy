@@ -22,8 +22,6 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
-import groovy.lang.Tuple;
-import groovy.lang.Tuple2;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -63,6 +61,11 @@ import java.util.stream.Collectors;
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
+
+    @Override
+    public int getVersion() {
+        return 9;
+    }
 
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
@@ -165,11 +168,6 @@ public class Java9 extends Java8 {
         } catch (final InvocationTargetException e) {
             throw new GroovyRuntimeException(e);
         }
-    }
-
-    @Override
-    public int getVersion() {
-        return 9;
     }
 
     @Override
@@ -321,6 +319,16 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
+    private static List<Class<?>> findSuperclasses(Class<?> clazz) {
+        List<Class<?>> result = new LinkedList<>();
+
+        for (Class<?> c = clazz.getSuperclass(); null != c; c = c.getSuperclass()) {
+            result.add(c);
+        }
+
+        return result;
+    }
+
     private Optional<CachedMethod> getAccessibleMetaMethod(CachedMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc, boolean declared) {
         List<CachedMethod> metaMethodList = getMetaMethods(metaMethod, params, sc, declared);
         for (CachedMethod mm : metaMethodList) {
@@ -334,78 +342,38 @@ public class Java9 extends Java8 {
     private static List<CachedMethod> getMetaMethods(CachedMethod metaMethod, Class<?>[] params, Class<?> sc, boolean declared) {
         String metaMethodName = metaMethod.getName();
         List<Method> optionalMethodList = declared
-                                            ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
-                                            : ReflectionUtils.getMethods(sc, metaMethodName, params);
+                ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
+                : ReflectionUtils.getMethods(sc, metaMethodName, params);
         return optionalMethodList.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
     @Override
-    public boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
-        Module callerModule = callerClass.getModule();
+    public boolean checkAccessible(final Class<?> accessingClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
+        Module accessingModule = accessingClass.getModule();
         Module declaringModule = declaringClass.getModule();
-        String pn = declaringClass.getPackageName();
+        String packageName = declaringClass.getPackageName();
 
-        boolean unnamedModuleAccessNamedModule = !callerModule.isNamed() && declaringModule.isNamed();
-        boolean toCheckIllegalAccess = !allowIllegalAccess && unnamedModuleAccessNamedModule;
+        boolean exportedOrOpenIsSufficient = allowIllegalAccess || accessingModule.isNamed() || !declaringModule.isNamed();
 
-        // class is public and package is exported to callerClass
-        boolean isClassPublic = Modifier.isPublic(declaringClass.getModifiers());
-        if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
-            // member is public
-            if (Modifier.isPublic(memberModifiers)) {
-                return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
-            }
-
-            // member is protected-static
-            if (Modifier.isProtected(memberModifiers)
-                    && Modifier.isStatic(memberModifiers)
-                    && isSubclassOf(callerClass, declaringClass)) {
-                return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
+        if (Modifier.isPublic(declaringClass.getModifiers()) && declaringModule.isExported(packageName, accessingModule)) {
+            if (Modifier.isPublic(memberModifiers) || Modifier.isProtected(memberModifiers)
+                                                   && declaringClass.isAssignableFrom(accessingClass)) {
+                return exportedOrOpenIsSufficient || !concealedPackageList(declaringModule).contains(packageName);
             }
         }
 
-        // package is open to callerClass
-        if (declaringModule.isOpen(pn, callerModule)) {
-            return !(toCheckIllegalAccess && isOpenedForIllegalAccess(declaringModule, pn));
+        if (declaringModule.isOpen(packageName, accessingModule)) {
+            return exportedOrOpenIsSufficient || !(concealedPackageList(declaringModule).contains(packageName) || exportedPackageList(declaringModule).contains(packageName));
         }
 
         return false;
     }
 
-    private static boolean isExportedForIllegalAccess(Module declaringModule, String pn) {
-        return concealedPackageList(declaringModule).contains(pn);
-    }
-
-    private static boolean isOpenedForIllegalAccess(Module declaringModule, String pn) {
-        if (isExportedForIllegalAccess(declaringModule, pn)) return true;
-        return exportedPackageList(declaringModule).contains(pn);
-    }
-
-    private static boolean isSubclassOf(Class<?> queryClass, Class<?> ofClass) {
-        while (queryClass != null) {
-            if (queryClass == ofClass) {
-                return true;
-            }
-            queryClass = queryClass.getSuperclass();
-        }
-        return false;
-    }
-
-    private static List<Class<?>> findSuperclasses(Class<?> clazz) {
-        List<Class<?>> result = new LinkedList<>();
-
-        for (Class<?> c = clazz.getSuperclass(); null != c; c = c.getSuperclass()) {
-            result.add(c);
-        }
-
-        return result;
-    }
-
-    private static Set<String> concealedPackageList(Module module) {
+    private static Set<String> concealedPackageList(final Module module) {
         return CONCEALED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
     }
 
-    private static Set<String> exportedPackageList(Module module) {
+    private static Set<String> exportedPackageList(final Module module) {
         return EXPORTED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
     }
 
@@ -413,47 +381,38 @@ public class Java9 extends Java8 {
     private static final Map<String, Set<String>> EXPORTED_PACKAGES_TO_OPEN;
 
     static {
-        Tuple2<Map<String, Set<String>>, Map<String, Set<String>>> tuple2 = findConcealedAndExportedPackagesToOpen();
-        CONCEALED_PACKAGES_TO_OPEN = tuple2.getV1();
-        EXPORTED_PACKAGES_TO_OPEN = tuple2.getV2();
-    }
-
-    private static Tuple2<Map<String, Set<String>>, Map<String, Set<String>>> findConcealedAndExportedPackagesToOpen() {
         ModuleFinder finder = ModuleFinder.ofSystem();
-
         Map<String, ModuleDescriptor> map = new HashMap<>();
         finder.findAll().stream()
                 .map(ModuleReference::descriptor)
                 .forEach(md -> md.packages().forEach(pn -> map.putIfAbsent(pn, md)));
 
-        final Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>();
-        final Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>();
+        Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>();
+        Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>();
 
         Arrays.stream(JAVA8_PACKAGES())
                 .forEach(pn -> {
                     ModuleDescriptor descriptor = map.get(pn);
                     if (descriptor != null && !isOpen(descriptor, pn)) {
-                        String name = descriptor.name();
                         if (isExported(descriptor, pn)) {
-                            exportedPackagesToOpen.computeIfAbsent(name,
-                                    k -> new HashSet<>()).add(pn);
+                            exportedPackagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>()).add(pn);
                         } else {
-                            concealedPackagesToOpen.computeIfAbsent(name,
-                                    k -> new HashSet<>()).add(pn);
+                            concealedPackagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>()).add(pn);
                         }
                     }
                 });
 
-        return Tuple.tuple(concealedPackagesToOpen, exportedPackagesToOpen);
+        CONCEALED_PACKAGES_TO_OPEN = concealedPackagesToOpen;
+        EXPORTED_PACKAGES_TO_OPEN = exportedPackagesToOpen;
     }
 
-    private static boolean isExported(ModuleDescriptor descriptor, String pn) {
+    private static boolean isExported(final ModuleDescriptor descriptor, final String pn) {
         return descriptor.exports()
                 .stream()
                 .anyMatch(e -> e.source().equals(pn) && !e.isQualified());
     }
 
-    private static boolean isOpen(ModuleDescriptor descriptor, String pn) {
+    private static boolean isOpen(final ModuleDescriptor descriptor, final String pn) {
         return descriptor.opens()
                 .stream()
                 .anyMatch(e -> e.source().equals(pn) && !e.isQualified());
