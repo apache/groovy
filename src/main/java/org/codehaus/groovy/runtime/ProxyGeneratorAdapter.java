@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.codehaus.groovy.reflection.ReflectionUtils.isSealed;
+
 /**
  * A proxy generator responsible for mapping a map of closures to a class implementing a list of interfaces. For
  * example, the following code:
@@ -89,8 +91,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
 
-    private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
-    private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
+    private static final List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<>());
+    private static final List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<>());
 
     private static final AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHOD_NAMESS;
@@ -98,15 +100,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     static {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Method method : GroovyObject.class.getMethods()) {
             names.add(method.getName());
         }
-        GROOVYOBJECT_METHOD_NAMESS = new HashSet<String>(names);
+        GROOVYOBJECT_METHOD_NAMESS = new HashSet<>(names);
     }
 
-    private final Class superClass;
-    private final Class delegateClass;
+    private final Class<?> superClass;
+    private final Class<?> delegateClass;
     private final InnerLoader loader;
     private final String proxyName;
     private final LinkedHashSet<Class> classList;
@@ -122,7 +124,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     // cached class
     private final Class cachedClass;
-    private final Constructor cachedNoArgConstructor;
+    private final Constructor<?> cachedNoArgConstructor;
 
     /**
      * Construct a proxy generator. This generator is used when we need to create a proxy object for a class or an
@@ -138,15 +140,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
      */
     public ProxyGeneratorAdapter(
             final Map<Object, Object> closureMap,
-            final Class superClass,
+            final Class<?> superClass,
             final Class[] interfaces,
             final ClassLoader proxyLoader,
             final boolean emptyBody,
-            final Class delegateClass) {
+            final Class<?> delegateClass) {
         super(CompilerConfiguration.ASM_API_VERSION, new ClassWriter(0));
         this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
-        this.visitedMethods = new LinkedHashSet<Object>();
-        this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<String, Boolean>();
+        this.visitedMethods = new LinkedHashSet<>();
+        this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<>();
         boolean wildcard = false;
         for (Map.Entry<Object, Object> entry : closureMap.entrySet()) {
             String name = entry.getKey().toString();
@@ -157,7 +159,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         this.hasWildcard = wildcard;
 
-        Class fixedSuperClass = adjustSuperClass(superClass, interfaces);
+        Class<?> fixedSuperClass = adjustSuperClass(superClass, interfaces);
         // if we have to delegate to another object, generate the appropriate delegate field
         // and collect the name of the methods for which delegation is active
         this.generateDelegateField = delegateClass != null;
@@ -174,7 +176,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         this.classList.add(superClass);
         if (generateDelegateField) {
             classList.add(delegateClass);
-            Collections.addAll(this.classList, delegateClass.getInterfaces());
+            for (Class<?> i : delegateClass.getInterfaces()) {
+                if (!isSealed(i)) this.classList.add(i);
+            }
         }
         if (interfaces != null) {
             Collections.addAll(this.classList, interfaces);
@@ -190,7 +194,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         cachedClass = loader.defineClass(proxyName.replace('/', '.'), b);
         // cache no-arg constructor
         Class[] args = generateDelegateField ? new Class[]{Map.class, delegateClass} : new Class[]{Map.class};
-        Constructor constructor;
+        Constructor<?> constructor;
         try {
             constructor = cachedClass.getConstructor(args);
         } catch (NoSuchMethodException e) {
@@ -199,7 +203,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         cachedNoArgConstructor = constructor;
     }
 
-    private Class adjustSuperClass(final Class superClass, Class[] interfaces) {
+    private Class<?> adjustSuperClass(final Class<?> superClass, Class[] interfaces) {
         if (!superClass.isInterface()) {
             return superClass;
         }
@@ -232,7 +236,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     private static Set<ClassNode> collectTraits(final Class[] interfaces) {
         Set<ClassNode> traits = new LinkedHashSet<>();
-        for (Class face : interfaces) {
+        for (Class<?> face : interfaces) {
             for (ClassNode node : ClassHelper.make(face).getAllInterfaces()) {
                 if (Traits.isTrait(node)) {
                     traits.add(node.getPlainNodeReference());
@@ -254,19 +258,19 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
     }
 
-    private InnerLoader findClassLoader(Class clazz, Class[] interfaces) {
+    private InnerLoader findClassLoader(Class<?> clazz, Class[] interfaces) {
         ClassLoader cl = clazz.getClassLoader();
         if (cl == null) cl = this.getClass().getClassLoader();
         return createInnerLoader(cl, interfaces);
     }
 
-    private static Set<String> createDelegateMethodList(Class superClass, Class delegateClass, Class[] interfaces) {
-        Set<String> selectedMethods = new HashSet<String>();
-        List<Method> interfaceMethods = new ArrayList<Method>();
-        List<Method> superClassMethods = new ArrayList<Method>();
+    private static Set<String> createDelegateMethodList(Class<?> superClass, Class<?> delegateClass, Class[] interfaces) {
+        Set<String> selectedMethods = new HashSet<>();
+        List<Method> interfaceMethods = new ArrayList<>();
+        List<Method> superClassMethods = new ArrayList<>();
         Collections.addAll(superClassMethods, superClass.getDeclaredMethods());
         if (interfaces != null) {
-            for (Class thisInterface : interfaces) {
+            for (Class<?> thisInterface : interfaces) {
                 getInheritedMethods(thisInterface, interfaceMethods);
             }
             for (Method method : interfaceMethods) {
@@ -275,7 +279,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 }
             }
         }
-        List<Method> additionalMethods = getInheritedMethods(delegateClass, new ArrayList<Method>());
+        List<Method> additionalMethods = getInheritedMethods(delegateClass, new ArrayList<>());
         for (Method method : additionalMethods) {
             if (method.getName().indexOf('$') != -1)
                 continue;
@@ -288,9 +292,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return selectedMethods;
     }
 
-    private static List<Method> getInheritedMethods(Class baseClass, List<Method> methods) {
+    private static List<Method> getInheritedMethods(Class<?> baseClass, List<Method> methods) {
         Collections.addAll(methods, baseClass.getMethods());
-        Class currentClass = baseClass;
+        Class<?> currentClass = baseClass;
         while (currentClass != null) {
             Method[] protectedMethods = currentClass.getDeclaredMethods();
             for (Method method : protectedMethods) {
@@ -308,7 +312,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         for (Method method : publicAndProtectedMethods) {
             if (candidate.getName().equals(method.getName()) &&
                     candidate.getReturnType().equals(method.getReturnType()) &&
-                    hasMatchingParameterTypes(candidate, method)) {
+                    hasMatchingParameterTypes(method, candidate)) {
                 return true;
             }
         }
@@ -327,9 +331,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     @Override
     public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces) {
-        Set<String> interfacesSet = new LinkedHashSet<String>();
+        Set<String> interfacesSet = new LinkedHashSet<>();
         if (interfaces != null) Collections.addAll(interfacesSet, interfaces);
-        for (Class extraInterface : classList) {
+        for (Class<?> extraInterface : classList) {
             if (extraInterface.isInterface()) interfacesSet.add(BytecodeHelper.getClassInternalName(extraInterface));
         }
         final boolean addGroovyObjectSupport = !GroovyObject.class.isAssignableFrom(superClass);
@@ -344,7 +348,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         if (addGroovyObjectSupport) {
             createGroovyObjectSupport();
         }
-        for (Class clazz : classList) {
+        for (Class<?> clazz : classList) {
             visitClass(clazz);
         }
     }
@@ -355,7 +359,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
      *
      * @param clazz an class for which to generate bytecode
      */
-    private void visitClass(final Class clazz) {
+    private void visitClass(final Class<?> clazz) {
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             Class<?>[] exceptionTypes = method.getExceptionTypes();
@@ -371,7 +375,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                     exceptions);
         }
         Constructor[] constructors = clazz.getDeclaredConstructors();
-        for (Constructor method : constructors) {
+        for (Constructor<?> method : constructors) {
             Class<?>[] exceptionTypes = method.getExceptionTypes();
             String[] exceptions = new String[exceptionTypes.length];
             for (int i = 0; i < exceptions.length; i++) {
@@ -385,10 +389,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                     exceptions);
         }
 
-        for (Class intf : clazz.getInterfaces()) {
+        for (Class<?> intf : clazz.getInterfaces()) {
             visitClass(intf);
         }
-        Class superclass = clazz.getSuperclass();
+        Class<?> superclass = clazz.getSuperclass();
         if (superclass != null) visitClass(superclass);
 
         // Ultimately, methods can be available in the closure map which are not defined by the superclass
@@ -477,7 +481,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         return name.substring(index + 1) + pxyCounter.incrementAndGet() + "_groovyProxy";
     }
 
-    private static boolean isImplemented(Class clazz, String name, String desc) {
+    private static boolean isImplemented(Class<?> clazz, String name, String desc) {
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             if (method.getName().equals(name)) {
@@ -486,7 +490,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
                 }
             }
         }
-        Class parent = clazz.getSuperclass();
+        Class<?> parent = clazz.getSuperclass();
         return parent != null && isImplemented(parent, name, desc);
     }
 
@@ -826,10 +830,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         protected InnerLoader(final ClassLoader parent, final Class[] interfaces) {
             super(parent);
             if (interfaces != null) {
-                for (Class c : interfaces) {
+                for (Class<?> c : interfaces) {
                     if (c.getClassLoader() != parent) {
                         if (internalClassLoaders == null)
-                            internalClassLoaders = new ArrayList<ClassLoader>(interfaces.length);
+                            internalClassLoaders = new ArrayList<>(interfaces.length);
                         if (!internalClassLoaders.contains(c.getClassLoader())) {
                             internalClassLoaders.add(c.getClassLoader());
                         }
@@ -842,9 +846,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             return super.defineClass(name, data, 0, data.length);
         }
 
-        public Class<?> loadClass(String name) throws ClassNotFoundException {
+        public Class loadClass(String name) throws ClassNotFoundException {
             // First check whether it's already been loaded, if so use it
-            Class loadedClass = findLoadedClass(name);
+            Class<?> loadedClass = findLoadedClass(name);
 
             if (loadedClass != null) return loadedClass;
 

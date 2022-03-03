@@ -44,6 +44,8 @@ import java.util.function.Function;
  */
 @SuppressWarnings("rawtypes")
 public class ReflectionUtils {
+    private ReflectionUtils() {}
+
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     /** The packages in the call stack that are only part of the Groovy MOP. */
@@ -223,6 +225,14 @@ public class ReflectionUtils {
             }
             return ret.toArray((AccessibleObject[]) Array.newInstance(aoa.getClass().getComponentType(), 0));
         }
+    }
+
+    public static boolean isSealed(Class<?> c) {
+        try {
+            return Boolean.TRUE.equals(Class.class.getMethod("isSealed").invoke(c));
+        } catch (ReflectiveOperationException | SecurityException ignore) {
+        }
+        return false;
     }
 
     private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
