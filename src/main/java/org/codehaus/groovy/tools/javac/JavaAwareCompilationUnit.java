@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -80,7 +79,6 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             if (!javaSources.isEmpty()) {
-                new VariableScopeVisitor(source).visitClass(classNode);
                 new JavaAwareResolveVisitor(this).startResolving(classNode, source);
                 new AnnotationConstantsVisitor().visitClass(classNode, source);
             }
