@@ -339,7 +339,7 @@ public class SourceUnit extends ProcessingUnit {
         );
     }
 
-    public void addErrorAndContinue(SyntaxException se) throws CompilationFailedException {
+    public void addErrorAndContinue(SyntaxException se) {
         getErrorCollector().addErrorAndContinue(se, this);
     }
 

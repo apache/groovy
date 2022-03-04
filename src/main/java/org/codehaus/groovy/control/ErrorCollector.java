@@ -80,7 +80,11 @@ public class ErrorCollector implements Serializable {
         }
     }
 
-    public void addErrorAndContinue(final SyntaxException error, final SourceUnit source) throws CompilationFailedException {
+    public void addErrorAndContinue(final String error, final ASTNode node, final SourceUnit source) {
+        addErrorAndContinue(Message.create(new SyntaxException(error, node), source));
+    }
+
+    public void addErrorAndContinue(final SyntaxException error, final SourceUnit source) {
         addErrorAndContinue(Message.create(error, source));
     }
 
@@ -93,13 +97,6 @@ public class ErrorCollector implements Serializable {
             errors = new LinkedList<>();
         }
         errors.add(message);
-    }
-
-    public void addErrorAndContinue(final String error, final ASTNode node, final SourceUnit source) {
-        addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException(error, node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                source)
-        );
     }
 
     /**
