@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.Tuple2;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -115,8 +117,10 @@ public class ClassFinder {
         final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : prefix.split(sepPatten).length;
 
         Map<String, Set<String>> result = new LinkedHashMap<>();
-        try (FileSystem fs = newFileSystem(uri)) {
-            Files.walkFileTree(fs.getPath(prefix + "/" + packageName), new SimpleFileVisitor<Path>() {
+        Tuple2<FileSystem, Boolean> fsMaybeNew = null;
+        try {
+            fsMaybeNew = maybeNewFileSystem(uri);
+            Files.walkFileTree(fsMaybeNew.getV1().getPath(prefix + "/" + packageName), new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) {
                     return FileVisitResult.CONTINUE;
@@ -151,16 +155,28 @@ public class ClassFinder {
                     String.format("Failed to find classes via uri: %s, prefix: %s, packageName: %s, recursive: %s",
                             uri, prefix, packageName, recursive
                     ), e);
+        } finally {
+            // we only close file systems we opened
+            if (fsMaybeNew != null && fsMaybeNew.getV2()) {
+                closeQuietly(fsMaybeNew.getV1());
+            }
         }
 
         return result;
     }
 
-    private static FileSystem newFileSystem(URI uri) throws IOException {
+    private static void closeQuietly(FileSystem fs) {
         try {
-            return FileSystems.newFileSystem(uri, Collections.emptyMap());
+            fs.close();
+        } catch (IOException ignore) {
+        }
+    }
+
+    private static Tuple2<FileSystem, Boolean> maybeNewFileSystem(URI uri) throws IOException {
+        try {
+            return new Tuple2(FileSystems.newFileSystem(uri, Collections.emptyMap()), true);
         } catch (FileSystemAlreadyExistsException e) {
-            return FileSystems.getFileSystem(uri);
+            return new Tuple2(FileSystems.getFileSystem(uri), false);
         }
     }
 
