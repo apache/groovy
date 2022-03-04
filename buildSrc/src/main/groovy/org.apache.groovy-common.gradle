@@ -66,6 +66,7 @@ tasks.named('rat') {
                 '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
                 '.classpath', '.project', '.settings/**', 'bin/**', // Eclipse files
                 'bootstrap/settings.gradle', // empty file
-                '.jqwik-database'
+                '.jqwik-database',
+                '**/org.codehaus.groovy.transform.ASTTransformation'
     ]
 }
