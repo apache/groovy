@@ -18,7 +18,6 @@
  */
 package groovy.script
 
-import org.junit.Ignore
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
@@ -67,7 +66,7 @@ final class RuntimeResolveTests {
         runScript('/groovy/bugs/groovy9243/Main.groovy')
     }
 
-    @Test @Ignore
+    @Test
     void testResolveOuterMemberWithoutAnImport3() {
         assumeTrue(isAtLeastJdk('9.0')) // System.Logger
         runScript('/groovy/bugs/groovy9866/Main.groovy')
