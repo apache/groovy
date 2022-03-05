@@ -199,9 +199,25 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.CONVERSION);
 
         addPhaseOperation(source -> {
-            resolveVisitor.setClassNodeResolver(classNodeResolver);
-            for (ClassNode classNode : source.getAST().getClasses()) {
-                resolveVisitor.startResolving(classNode, source);
+            try {
+                resolveVisitor.phase = 1; // resolve head of each class
+                resolveVisitor.setClassNodeResolver(classNodeResolver);
+                for (ClassNode classNode : source.getAST().getClasses()) {
+                    resolveVisitor.startResolving(classNode, source);
+                }
+            } finally {
+                resolveVisitor.phase = 0;
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
+
+        addPhaseOperation(source -> {
+            try {
+                resolveVisitor.phase = 2; // resolve body of each class
+                for (ClassNode classNode : source.getAST().getClasses()) {
+                    resolveVisitor.startResolving(classNode, source);
+                }
+            } finally {
+                resolveVisitor.phase = 0;
             }
         }, Phases.SEMANTIC_ANALYSIS);
 

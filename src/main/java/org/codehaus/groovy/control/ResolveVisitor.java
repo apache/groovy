@@ -113,6 +113,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean checkingVariableTypeInDeclaration;
     private boolean inClosure, inPropertyExpression;
     private boolean isTopLevelProperty = true;
+    /*package*/ int phase; // sub-divide visit
 
     /**
      * A ConstructedNestedClass consists of an outer class and a name part, denoting a
@@ -423,7 +424,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
         for (; cn != null && cycleCheck.add(cn) && !isObjectType(cn); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;
-            // GROOVY-9866: unresolvable interfaces
         }
 
         // Another case we want to check here is if we are in a
@@ -1316,46 +1316,50 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             genericParameterNames = new HashMap<>();
         }
         resolveGenericsHeader(node.getGenericsTypes());
+        switch (phase) { // GROOVY-9866, GROOVY-10466
+          case 0:
+          case 1:
+            ClassNode sn = node.getUnresolvedSuperClass();
+            if (sn != null) {
+                resolveOrFail(sn, "", node, true);
+            }
+            for (ClassNode in : node.getInterfaces()) {
+                resolveOrFail(in, "", node, true);
+            }
 
-        ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) {
-            resolveOrFail(sn, "", node, true);
-        }
-        for (ClassNode in : node.getInterfaces()) {
-            resolveOrFail(in, "", node, true);
-        }
-
-        if (sn != null) checkCyclicInheritance(node, sn);
-        for (ClassNode in : node.getInterfaces()) {
-            checkCyclicInheritance(node, in);
-        }
-        if (node.getGenericsTypes() != null) {
-            for (GenericsType gt : node.getGenericsTypes()) {
-                if (gt != null && gt.getUpperBounds() != null) {
-                    for (ClassNode variant : gt.getUpperBounds()) {
-                        if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
+            if (sn != null) checkCyclicInheritance(node, sn);
+            for (ClassNode in : node.getInterfaces()) {
+                checkCyclicInheritance(node, in);
+            }
+            if (node.getGenericsTypes() != null) {
+                for (GenericsType gt : node.getGenericsTypes()) {
+                    if (gt != null && gt.getUpperBounds() != null) {
+                        for (ClassNode variant : gt.getUpperBounds()) {
+                            if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
+                        }
                     }
                 }
             }
-        }
-
-        // VariableScopeVisitor visits anon. inner class body inline, so resolve now
-        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
-            InnerClassNode cn = it.next();
-            if (cn.isAnonymous()) {
-                MethodNode enclosingMethod = cn.getEnclosingMethod();
-                if (enclosingMethod != null) {
-                    resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+          case 2:
+            // VariableScopeVisitor visits anon. inner class body inline, so resolve now
+            for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+                InnerClassNode cn = it.next();
+                if (cn.isAnonymous()) {
+                    MethodNode enclosingMethod = cn.getEnclosingMethod();
+                    if (enclosingMethod != null) {
+                        resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+                    }
+                    resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
                 }
-                resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
             }
+            if (phase == 1) break; // resolve other class headers before members, et al.
+
+            // initialize scopes/variables now that imports and super types are resolved
+            new VariableScopeVisitor(source).visitClass(node);
+
+            visitTypeAnnotations(node);
+            super.visitClass(node);
         }
-        // initialize scopes/variables now that imports and super types are resolved
-        new VariableScopeVisitor(source).visitClass(node);
-
-        visitTypeAnnotations(node);
-        super.visitClass(node);
-
         currentClass = oldNode;
     }
 
