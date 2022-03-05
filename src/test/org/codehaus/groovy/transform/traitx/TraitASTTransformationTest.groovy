@@ -2954,6 +2954,33 @@ final class TraitASTTransformationTest {
         }
     }
 
+    trait T10521 {
+        def m(Class<?> clazz, Object... array) {
+            clazz.name + array
+        }
+    }
+
+    @Test // GROOVY-10521
+    void testVariadicMethodOfPrecompiledTrait() {
+        System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
+        assertScript """
+            @Grab('org.spockframework:spock-core:2.2-M1-groovy-4.0')
+            @GrabExclude('org.apache.groovy:*')
+            import spock.lang.Specification
+
+            class C extends Specification implements ${T10521.name} {
+                void test() {
+                  when:
+                    String result = m(Object,'x')
+                  then:
+                    result == 'java.lang.Object[x]'
+                }
+            }
+
+            org.junit.runner.JUnitCore.runClasses(C)
+        """
+    }
+
     @Test // GROOVY-7287
     void testTraitWithMethodLevelGenericsShadowing1() {
         assertScript '''
@@ -3018,21 +3045,22 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    trait T7297 {
+        String title
+        def <U> List<U> m(U data) {
+            [data]
+        }
+    }
+
     @Test // GROOVY-7297
-    void testMethodlevelGenericsFromPrecompiledClass() {
-        // TODO: T needs to be outside the script
-        assertScript '''
-            trait T {
-                String title
-                public <U> List<U> m(U data) {
-                }
-            }
-            class C implements T {
+    void testMethodLevelGenericsFromPrecompiledClass() {
+        assertScript """
+            class C implements ${T7297.name} {
             }
             def c = new C(title: 'some title')
             assert c.title == 'some title'
-            // TODO: assert c.m(...) == ?
-        '''
+            assert c.m('x') == ['x']
+        """
     }
 
     @Test // GROOVY-9763
