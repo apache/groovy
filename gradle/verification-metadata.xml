@@ -148,7 +148,6 @@
          <trusted-key id="9d0a56aaa0d60e0c0c7dccc0b4c70893b62babe8" group="org.apache.logging.log4j"/>
          <trusted-key id="9d23533896a9784703585b6286e02c5a42196ca8" group="log4j" name="log4j" version="1.2.17"/>
          <trusted-key id="9ffed7a118d45a44e4a1e47130e6f80434a72a7f" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
-         <trusted-key id="a1fe765b15233ead18fa6abb93e55cb567b5c626" group="org.pantsbuild" name="jarjar" version="1.7.2"/>
          <trusted-key id="a413f67d71beec23add0ce0acb43338e060cf9fa" group="org.jacoco"/>
          <trusted-key id="a5bd02b93e7a40482eb1d66a5f69ad087600b22c" group="org.ow2.asm"/>
          <trusted-key id="a778fde933a96dda827840d8e2b3d84202b812d9" group="org.assertj"/>
@@ -290,6 +289,11 @@
       </component>
       <component group="com.eed3si9n.jarjar" name="jarjar" version="1.8.1">
          <artifact name="jarjar-1.8.1.jar">
+            <pgp value="ea313384ca0eba950ea017e937890e298d9a2bfa"/>
+         </artifact>
+      </component>
+      <component group="com.eed3si9n.jarjar" name="jarjar" version="1.8.0">
+         <artifact name="jarjar-1.8.0.jar">
             <pgp value="ea313384ca0eba950ea017e937890e298d9a2bfa"/>
          </artifact>
       </component>
