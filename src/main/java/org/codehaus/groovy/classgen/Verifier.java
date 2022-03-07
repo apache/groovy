@@ -679,20 +679,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         int accessorModifiers = adjustPropertyModifiersForMethod(node);
 
         Statement getterBlock = node.getGetterBlock();
-        if (getterBlock == null) {
+        if (getterBlock == null && !node.isPrivate()) {
             MethodNode getter = classNode.getGetterMethod(getterName, !node.isStatic());
             if (getter == null && node.getType().equals(ClassHelper.boolean_TYPE)) {
                 getter = classNode.getGetterMethod("is" + capitalize(name));
             }
-            if (!node.isPrivate() && methodNeedsReplacement(getter)) {
+            if (methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);
             }
         }
         Statement setterBlock = node.getSetterBlock();
-        if (setterBlock == null) {
-            // 2nd arg false below: though not usual, allow setter with non-void return type
-            MethodNode setter = classNode.getSetterMethod(setterName, false);
-            if (!node.isPrivate() && !isFinal(accessorModifiers) && methodNeedsReplacement(setter)) {
+        if (setterBlock == null && !node.isPrivate() && !isFinal(accessorModifiers)) {
+            boolean voidOnly = false; // accept setter with non-void return type
+            MethodNode setter = classNode.getSetterMethod(setterName, voidOnly);
+            if (methodNeedsReplacement(setter)) {
                 setterBlock = createSetterBlock(node, field);
             }
         }
@@ -706,7 +706,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             visitGetter(node, getterBlock, getterModifiers, getterName);
 
             if (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE)) {
-                visitGetter(node, getterBlock, getterModifiers, "is" + capitalize(name));
+                String isserName = "is" + capitalize(name);
+                MethodNode isser = classNode.getGetterMethod(isserName, !node.isStatic());
+                if (methodNeedsReplacement(isser)) {
+                    visitGetter(node, getterBlock, getterModifiers, isserName);
+                }
             }
         }
         if (setterBlock != null) {
