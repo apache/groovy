@@ -203,7 +203,7 @@ public class XmlNodePrinter {
         Object value = node.value();
         if (value instanceof List) {
             printName(node, ctx, true, isListOfSimple((List) value));
-            printList((List) value, ctx);
+            printList(node, ctx);
             printName(node, ctx, false, isListOfSimple((List) value));
             out.flush();
             return;
@@ -211,7 +211,7 @@ public class XmlNodePrinter {
 
         // treat as simple type - probably a String
         printName(node, ctx, true, preserveWhitespace);
-        printSimpleItemWithIndent(value);
+        printSimpleItemWithIndent(node);
         printName(node, ctx, false, preserveWhitespace);
         out.flush();
     }
@@ -224,14 +224,26 @@ public class XmlNodePrinter {
     }
 
     protected void printLineBegin() {
+        printLineBegin(null);
+    }
+
+    protected void printLineBegin(Node node) {
         out.printIndent();
     }
 
     protected void printLineEnd() {
-        printLineEnd(null);
+        printLineEnd(null, null);
+    }
+
+    protected void printLineEnd(Node node) {
+        printLineEnd(node, null);
     }
 
     protected void printLineEnd(String comment) {
+        printLineEnd(null, comment);
+    }
+
+    protected void printLineEnd(Node node, String comment) {
         if (comment != null) {
             out.print(" <!-- ");
             out.print(comment);
@@ -241,22 +253,26 @@ public class XmlNodePrinter {
         out.flush();
     }
 
-    protected void printList(List list, NamespaceContext ctx) {
-        out.incrementIndent();
-        for (Object value : list) {
-            /*
-             * If the current value is a node, recurse into that node.
-             */
-            if (value instanceof Node) {
-                print((Node) value, new NamespaceContext(ctx));
-                continue;
+    protected void printList(Node node, NamespaceContext ctx) {
+        final Object v = node.value();
+        if (v instanceof List) {
+            List list = (List) v;
+            out.incrementIndent();
+            for (Object value : list) {
+                /*
+                 * If the current value is a node, recurse into that node.
+                 */
+                if (value instanceof Node) {
+                    print((Node) value, new NamespaceContext(ctx));
+                    continue;
+                }
+                printSimpleItem(node, value);
             }
-            printSimpleItem(value);
+            out.decrementIndent();
         }
-        out.decrementIndent();
     }
 
-    protected void printSimpleItem(Object value) {
+    protected void printSimpleItem(Node node, Object value) {
         if (!preserveWhitespace) printLineBegin();
         printEscaped(FormatHelper.toString(value), false);
         if (!preserveWhitespace) printLineEnd();
@@ -270,7 +286,7 @@ public class XmlNodePrinter {
         if (name == null) {
             throw new NullPointerException("Name must not be null.");
         }
-        if (!preserve || begin) printLineBegin();
+        if (!preserve || begin) printLineBegin(begin ? null : node);
         out.print("<");
         if (!begin) {
             out.print("/");
@@ -283,7 +299,7 @@ public class XmlNodePrinter {
             printNameAttributes(node.attributes(), ctx);
         }
         out.print(">");
-        if (!preserve || !begin) printLineEnd();
+        if (!preserve || !begin) printLineEnd(!begin ? null : node);
     }
 
     protected boolean printSpecialNode(Node node) {
@@ -363,9 +379,9 @@ public class XmlNodePrinter {
         return object.toString();
     }
 
-    private void printSimpleItemWithIndent(Object value) {
+    private void printSimpleItemWithIndent(Node node) {
         if (!preserveWhitespace) out.incrementIndent();
-        printSimpleItem(value);
+        printSimpleItem(node, node.value());
         if (!preserveWhitespace) out.decrementIndent();
     }
 

@@ -188,9 +188,7 @@ The conference committee.'''
         assert template.toString() == '''\
 <document type='letter'>
   Dearest
-  <foo:to xmlns:foo='baz'>
-    Jochen &quot;blackdrag&quot; Theodorou
-  </foo:to>
+  <foo:to xmlns:foo='baz'>Jochen &quot;blackdrag&quot; Theodorou</foo:to>
   How are you today?
 </document>
 '''

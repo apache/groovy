@@ -23,11 +23,12 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.lang.Writable;
+import groovy.namespace.QName;
 import groovy.util.IndentPrinter;
 import groovy.util.Node;
+import groovy.util.NodeList;
 import groovy.xml.XmlNodePrinter;
 import groovy.xml.XmlParser;
-import groovy.namespace.QName;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.FormatHelper;
@@ -137,10 +138,10 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         @Override
-        protected void printSimpleItem(Object value) {
-            this.printLineBegin();
+        protected void printSimpleItem(Node node, Object value) {
+            this.printLineBegin(node);
             out.print(escapeSpecialChars(FormatHelper.toString(value)));
-            printLineEnd();
+            printLineEnd(node);
         }
 
         private String escapeSpecialChars(String s) {
@@ -186,18 +187,48 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         @Override
         protected void printLineBegin() {
-            out.print("out.print(\"\"\"");
-            out.printIndent();
+            printLineBegin(null);
         }
 
         @Override
-        protected void printLineEnd(String comment) {
-            out.print("\\n\"\"\");");
+        protected void printLineBegin(Node node) {
+            out.print("out.print(\"\"\"");
+            if (needNewlineAndRelatedIndents(node)){
+                out.printIndent();
+            }
+        }
+
+        @Override
+        protected void printLineEnd(Node node, String comment) {
+            out.print((needNewlineAndRelatedIndents(node) ? "\\n" : "") + "\"\"\");");
+
             if (comment != null) {
                 out.print(" // ");
                 out.print(comment);
             }
             out.print("\n");
+        }
+
+        private boolean needNewlineAndRelatedIndents(Node node) {
+            return !containsValueOrNone(node);
+        }
+
+        private boolean containsValueOrNone(Node node) {
+            if (null == node) return false;
+
+            final Object value = node.value();
+            if (!(value instanceof NodeList)) {
+                return true;
+            }
+            NodeList nodeList = (NodeList) value;
+            final int size = nodeList.size();
+            if (0 == size) {
+                return true;
+            }
+            if (1 == size && !(nodeList.get(0) instanceof Node)) {
+                return true;
+            }
+            return false;
         }
 
         @Override
