@@ -863,7 +863,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     } else if (!resultType.isGenericsPlaceHolder()) { // GROOVY-10324
                         Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
                         extractGenericsConnections(gt, resultType, resultType.redirect());
-                        extractGenericsConnections(gt, lType, getNextSuperClass(resultType, lType));
+                        ClassNode sc = resultType;
+                        do { sc = getNextSuperClass(sc, lType);
+                        } while (sc != null && !sc.equals(lType));
+                        extractGenericsConnections(gt, lType, sc);
 
                         resultType = applyGenericsContext(gt, resultType.redirect());// GROOVY-10235, et al.
                     }

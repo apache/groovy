@@ -2443,10 +2443,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def ift = node.getNodeMetaData(INFERRED_TYPE)
-                assert ift == make(List)
-                assert ift.isUsingGenerics()
+                assert ift == LIST_TYPE
                 def gts = ift.genericsTypes
-                assert gts.length==1
+                assert gts != null
+                assert gts.length == 1
                 assert gts[0].type == STRING_TYPE
             })
             Iterable<String> list = (List) null
