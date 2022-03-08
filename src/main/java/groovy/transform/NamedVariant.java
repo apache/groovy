@@ -84,7 +84,7 @@ import java.lang.annotation.Target;
  * }
  *
  * {@code @NamedVariant}
- * String foo(@NamedDelegate Color shade) {
+ * String foo({@code @NamedDelegate} Color shade) {
  *     shade
  * }
  *
