@@ -172,6 +172,13 @@ a = obj.prop[]
 a = obj['prop']
 :::[BinaryExpression,(1:5),(1:16)]
 
+###closureExpressionWithEmptyBlockStatement:::
+f{
+
+}
+:::[MethodCallExpression,(1:1),(3:2)];
+[ConstantExpression,(1:1),(1:2)][ArgumentListExpression,(1:2),(3:2)][ClosureExpression,(1:2),(3:2)][BlockStatement,(1:2),(3:2)]
+
 ###resolvedDeclarationExpression:::
 def i = Integer.parseInt("42")
 :::[DeclarationExpression,(1:1),(1:31)]
