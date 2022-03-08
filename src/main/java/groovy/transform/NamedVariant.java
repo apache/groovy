@@ -119,7 +119,7 @@ public @interface NamedVariant {
     String visibilityId() default Undefined.STRING;
 
     /**
-     * If true, add an implicit @NamedDelegate to the first parameter if no @NamedDelegate or @NamedParam annotations are found on any parameter.
+     * If true, add an implicit {@code @NamedDelegate} to the first parameter if no {@code @NamedDelegate} or {@code @NamedParam} annotations are found on any parameter.
      *
      * @since 2.5.3
      */
