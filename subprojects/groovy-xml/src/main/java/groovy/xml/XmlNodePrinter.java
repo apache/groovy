@@ -347,7 +347,7 @@ public class XmlNodePrinter {
         return node.text().length() == 0;
     }
 
-    private String getName(Object object) {
+    protected String getName(Object object) {
         if (object instanceof String) {
             return (String) object;
         } else if (object instanceof QName) {
