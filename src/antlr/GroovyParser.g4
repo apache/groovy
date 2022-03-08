@@ -499,7 +499,7 @@ lambdaBody
 
 // CLOSURE
 closure
-    :   LBRACE (nls (formalParameterList nls)? ARROW)? blockStatementsOpt RBRACE
+    :   LBRACE (nls (formalParameterList nls)? ARROW)? sep? blockStatementsOpt RBRACE
     ;
 
 // GROOVY-8991: Difference in behaviour with closure and lambda
@@ -509,7 +509,7 @@ closureOrLambdaExpression
     ;
 
 blockStatementsOpt
-    :   sep? blockStatements?
+    :   blockStatements?
     ;
 
 blockStatements
@@ -560,7 +560,7 @@ elementValueArrayInitializer
 // STATEMENTS / BLOCKS
 
 block
-    :   LBRACE blockStatementsOpt RBRACE
+    :   LBRACE sep? blockStatementsOpt RBRACE
     ;
 
 blockStatement
