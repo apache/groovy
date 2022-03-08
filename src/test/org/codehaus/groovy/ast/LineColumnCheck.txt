@@ -155,14 +155,6 @@ var = f{closure}
 :::[MethodCallExpression,(1:7),(1:17)];
 [ConstantExpression,(1:7),(1:8)][ArgumentListExpression,(1:8),(1:17)][ClosureExpression,(1:8),(1:17)]
 
-
-###closureExpressionWithEmptyBlockStatement:::
-f{
-
-}
-:::[MethodCallExpression,(1:1),(3:2)];
-[ConstantExpression,(1:1),(1:2)][ArgumentListExpression,(1:2),(3:2)][ClosureExpression,(1:2),(3:2)][BlockStatement,(1:3),(3:1)]
-
 ###ArrayExpressionD1:::
 def array = new int[1]
 :::[ArrayExpression,(1:13),(1:23)][ClassNode,(1:17),(1:20)][ConstantExpression,(1:21),(1:22)]
