@@ -100,6 +100,7 @@ import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -120,7 +121,6 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
@@ -1454,7 +1454,7 @@ public abstract class StaticTypeCheckingSupport {
                     // GROOVY-8034: non-static method may use class generics
                     gts = applyGenericsContext(candidateGenerics, gts);
                 }
-                GenericsUtils.extractPlaceholders(makeClassSafe0(OBJECT_TYPE, gts), candidateGenerics);
+                GenericsUtils.extractPlaceholders(GenericsUtils.makeClassSafe0(OBJECT_TYPE, gts), candidateGenerics);
 
                 // the outside context parts till now define placeholder we are not allowed to
                 // generalize, thus we save that for later use...
@@ -1734,12 +1734,11 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(GenericsUtils.parameterizeSAM(target).getV2());
             extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {returnType.asGenericsType()});
 
-        } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
+        } else if (type.equals(target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
 
-        } else {
-            // find matching super class or interface
-            ClassNode superClass = GenericsUtils.getSuperClass(type, target);
+        } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
+            ClassNode superClass = getNextSuperClass(type, target);
             if (superClass != null) {
                 if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
                     Map<String, ClassNode> spec = GenericsUtils.createGenericsSpec(type);
@@ -1922,8 +1921,8 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static GenericsType getCombinedGenericsType(final GenericsType gt1, final GenericsType gt2) {
-        ClassNode cn1 = makeClassSafe0(CLASS_Type, gt1);
-        ClassNode cn2 = makeClassSafe0(CLASS_Type, gt2);
+        ClassNode cn1 = GenericsUtils.makeClassSafe0(CLASS_Type, gt1);
+        ClassNode cn2 = GenericsUtils.makeClassSafe0(CLASS_Type, gt2);
         ClassNode lub = lowestUpperBound(cn1,cn2);
         return lub.getGenericsTypes()[0];
     }
