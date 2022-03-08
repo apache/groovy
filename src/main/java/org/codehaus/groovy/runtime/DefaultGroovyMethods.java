@@ -512,7 +512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return meta properties as Map of key/value pairs
      * @since 1.0
      */
-    public static Map getProperties(Object self) {
+    public static Map<String, Object> getProperties(Object self) {
         List<PropertyValue> metaProps = getMetaPropertyValues(self);
         Map<String, Object> props = new LinkedHashMap<>(metaProps.size());
 
