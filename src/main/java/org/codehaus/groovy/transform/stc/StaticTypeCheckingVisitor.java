@@ -4419,14 +4419,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (method != null) {
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
+
             if (isAssignment(op)) return left;
-            if (isCompareToBoolean(op)) return boolean_TYPE;
-            if (op == COMPARE_TO) return int_TYPE;
-            return inferReturnTypeGenerics(left, method, args(rightExpression));
+            if (!isCompareToBoolean(op) && op != COMPARE_TO)
+                return inferReturnTypeGenerics(left, method, args(rightExpression));
         }
 
-        // TODO: other cases
-
+        if (isCompareToBoolean(op)) return boolean_TYPE;
+        if (op == COMPARE_TO) return int_TYPE;
         return null;
     }
 

@@ -93,6 +93,15 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testOtherTypeComparison() {
+        shouldFailWithMessages '''
+            def that = new Object()
+            def test = (that >= this)
+            test.booleanValue() // no error
+        ''',
+        'Cannot find matching method java.lang.Object#compareTo'
+    }
+
     void testShiftOnPrimitives() {
         assertScript '''
             1 << 8
