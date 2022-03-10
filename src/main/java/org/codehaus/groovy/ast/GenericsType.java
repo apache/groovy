@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
-
 /**
  * This class is used to describe generic type signatures for ClassNodes.
  *
@@ -37,24 +35,21 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 public class GenericsType extends ASTNode {
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
 
-    private final ClassNode[] upperBounds;
-    private final ClassNode lowerBound;
-    private ClassNode type;
     private String name;
-    private boolean placeholder;
-    private boolean resolved;
-    private boolean wildcard;
+    private ClassNode type;
+    private final ClassNode lowerBound;
+    private final ClassNode[] upperBounds;
+    private boolean placeholder, resolved, wildcard;
 
-    public GenericsType(ClassNode type, ClassNode[] upperBounds, ClassNode lowerBound) {
-        this.type = type;
-        this.name = type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getName();
-        this.upperBounds = upperBounds;
+    public GenericsType(final ClassNode type, final ClassNode[] upperBounds, final ClassNode lowerBound) {
+        setType(type);
         this.lowerBound = lowerBound;
-        placeholder = type.isGenericsPlaceHolder();
-        resolved = false;
+        this.upperBounds = upperBounds;
+        this.placeholder = type.isGenericsPlaceHolder();
+        setName(placeholder ? type.getUnresolvedName() : type.getName());
     }
 
-    public GenericsType(ClassNode basicType) {
+    public GenericsType(final ClassNode basicType) {
         this(basicType, null, null);
     }
 
@@ -62,34 +57,40 @@ public class GenericsType extends ASTNode {
         return type;
     }
 
-    public void setType(ClassNode type) {
+    public void setType(final ClassNode type) {
         this.type = type;
     }
 
     public String toString() {
-        return toString(new HashSet<String>());
+        return toString(this, new HashSet<String>());
     }
 
-    private String toString(Set<String> visited) {
+    private static String toString(final GenericsType gt, final Set<String> visited) {
+        String name = gt.getName();
+        ClassNode type = gt.getType();
+        boolean wildcard = gt.isWildcard();
+        boolean placeholder = gt.isPlaceholder();
+        ClassNode lowerBound = gt.getLowerBound();
+        ClassNode[] upperBounds = gt.getUpperBounds();
+
         if (placeholder) visited.add(name);
+
         StringBuilder ret = new StringBuilder(wildcard ? "?" : ((type == null || placeholder) ? name : genericsBounds(type, visited)));
-        if (upperBounds != null) {
-            if (placeholder && upperBounds.length==1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object")) {
-                // T extends Object should just be printed as T
-            } else {
-                ret.append(" extends ");
-                for (int i = 0; i < upperBounds.length; i++) {
-                    ret.append(genericsBounds(upperBounds[i], visited));
-                    if (i + 1 < upperBounds.length) ret.append(" & ");
-                }
-            }
-        } else if (lowerBound != null) {
+        if (lowerBound != null) {
             ret.append(" super ").append(genericsBounds(lowerBound, visited));
+        } else if (upperBounds != null
+                // T extends Object should just be printed as T
+                && !(placeholder && upperBounds.length == 1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals(ClassHelper.OBJECT))) {
+            ret.append(" extends ");
+            for (int i = 0, n = upperBounds.length; i < n; i += 1) {
+                if (i != 0) ret.append(" & ");
+                ret.append(genericsBounds(upperBounds[i], visited));
+            }
         }
         return ret.toString();
     }
 
-    private String nameOf(ClassNode theType) {
+    private static String nameOf(final ClassNode theType) {
         StringBuilder ret = new StringBuilder();
         if (theType.isArray()) {
             ret.append(nameOf(theType.getComponentType()));
@@ -100,86 +101,80 @@ public class GenericsType extends ASTNode {
         return ret.toString();
     }
 
-    private String genericsBounds(ClassNode theType, Set<String> visited) {
+    private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
         StringBuilder ret = new StringBuilder();
 
         if (theType.isArray()) {
             ret.append(nameOf(theType));
-        } else if (theType.redirect() instanceof InnerClassNode) {
-            InnerClassNode innerClassNode = (InnerClassNode) theType.redirect();
-            String parentClassNodeName = innerClassNode.getOuterClass().getName();
-            if (Modifier.isStatic(innerClassNode.getModifiers()) || innerClassNode.isInterface()) {
-                ret.append(innerClassNode.getOuterClass().getName());
+        } else if (theType.getOuterClass() != null) {
+            String parentClassNodeName = theType.getOuterClass().getName();
+            if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
+                ret.append(parentClassNodeName);
             } else {
-                ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+                ret.append(genericsBounds(theType.getOuterClass(), new HashSet<String>()));
             }
-            ret.append(".");
-            String typeName = theType.getName();
-            ret.append(typeName.substring(parentClassNodeName.length() + 1));
+            ret.append('.');
+            ret.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
         } else {
             ret.append(theType.getName());
         }
 
         GenericsType[] genericsTypes = theType.getGenericsTypes();
-        if (genericsTypes == null || genericsTypes.length == 0)
+        if (genericsTypes == null || genericsTypes.length == 0) {
             return ret.toString();
+        }
 
-        // TODO instead of catching Object<T> here stop it from being placed into type in first place
+        // TODO: instead of catching Object<T> here stop it from being placed into type in first place
         if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && theType.getName().equals("java.lang.Object")) {
             return genericsTypes[0].getName();
         }
 
-        ret.append("<");
-        for (int i = 0; i < genericsTypes.length; i++) {
+        ret.append('<');
+        for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
             if (i != 0) ret.append(", ");
 
             GenericsType type = genericsTypes[i];
             if (type.isPlaceholder() && visited.contains(type.getName())) {
                 ret.append(type.getName());
-            }
-            else {
-                ret.append(type.toString(visited));
+            } else {
+                ret.append(toString(type, visited));
             }
         }
-        ret.append(">");
+        ret.append('>');
 
         return ret.toString();
-    }
-
-    public ClassNode[] getUpperBounds() {
-        return upperBounds;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setName(final String name) {
+        this.name = Objects.requireNonNull(name);
+    }
+
+    public boolean isResolved() {
+        return (resolved || isPlaceholder());
+    }
+
+    public void setResolved(final boolean resolved) {
+        this.resolved = resolved;
+    }
+
     public boolean isPlaceholder() {
         return placeholder;
     }
 
-    public void setPlaceholder(boolean placeholder) {
+    public void setPlaceholder(final boolean placeholder) {
         this.placeholder = placeholder;
-        type.setGenericsPlaceHolder(placeholder);
-    }
-
-    public boolean isResolved() {
-        return resolved || placeholder;
-    }
-
-    public void setResolved(boolean res) {
-        resolved = res;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+        getType().setGenericsPlaceHolder(placeholder);
     }
 
     public boolean isWildcard() {
         return wildcard;
     }
 
-    public void setWildcard(boolean wildcard) {
+    public void setWildcard(final boolean wildcard) {
         this.wildcard = wildcard;
     }
 
@@ -187,302 +182,290 @@ public class GenericsType extends ASTNode {
         return lowerBound;
     }
 
-    /**
-     * Tells if the provided class node is compatible with this generic type definition
-     * @param classNode the class node to be checked
-     * @return true if the class node is compatible with this generics type definition
-     */
-    public boolean isCompatibleWith(ClassNode classNode) {
-        return new GenericsTypeMatcher().matches(classNode);
+    public ClassNode[] getUpperBounds() {
+        return upperBounds;
     }
 
+    //--------------------------------------------------------------------------
+
     /**
-     * Implements generics type comparison.
+     * Compares this generics type with the provided class node. If the provided
+     * class node is compatible with the generics specification, returns true.
+     * Otherwise, returns false. The check is complete, meaning that nested
+     * generics are also checked.
+     *
+     * @return if {@code classNode} is or is not compatible with this generics specification
      */
-    private class GenericsTypeMatcher {
-
-        public boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
-            boolean result = type.equals(superOrInterface)
-                    || type.isDerivedFrom(superOrInterface)
-                    || type.implementsInterface(superOrInterface);
-            if (result) {
-                return true;
-            }
-            if (GROOVY_OBJECT_TYPE.equals(superOrInterface) && type.getCompileUnit()!=null) {
-                // type is being compiled so it will implement GroovyObject later
-                return true;
-            }
-            if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
-                WideningCategories.LowestUpperBoundClassNode cn = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
-                result = implementsInterfaceOrIsSubclassOf(type, cn.getSuperClass());
-                if (result) {
-                    for (ClassNode interfaceNode : cn.getInterfaces()) {
-                        result = implementsInterfaceOrIsSubclassOf(type,interfaceNode);
-                        if (!result) break;
-                    }
-                }
-                if (result) return true;
-            }
-            if (type.isArray() && superOrInterface.isArray()) {
-                return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
-            }
-            return false;
+    public boolean isCompatibleWith(final ClassNode classNode) {
+        GenericsType[] genericsTypes = classNode.getGenericsTypes();
+        if (genericsTypes != null && genericsTypes.length == 0) {
+            return true; // diamond always matches
         }
-
-        /**
-         * Compares this generics type with the one represented by the provided class node. If the provided
-         * classnode is compatible with the generics specification, returns true. Otherwise, returns false.
-         * The check is complete, meaning that we also check "nested" generics.
-         * @param classNode the classnode to be checked
-         * @return true iff the classnode is compatible with this generics specification
-         */
-        public boolean matches(ClassNode classNode) {
-            GenericsType[] genericsTypes = classNode.getGenericsTypes();
-            // diamond always matches
-            if (genericsTypes!=null && genericsTypes.length==0) return true;
-            if (classNode.isGenericsPlaceHolder()) {
-                // if the classnode we compare to is a generics placeholder (like <E>) then we
-                // only need to check that the names are equal
-                if (genericsTypes==null) return true;
-                String name0 = genericsTypes[0].getName();
-                if (!isWildcard()) {
-                    return name0.equals(getName());
+        if (classNode.isGenericsPlaceHolder()) {
+            // if the compare type is a generics placeholder (like <E>) then we
+            // only need to check that the names are equal
+            if (genericsTypes == null) {
+                return true;
+            }
+            String name0 = genericsTypes[0].getName();
+            if (!isWildcard()) {
+                return name0.equals(getName());
+            }
+            if (getLowerBound() != null) {
+                if (name0.equals(getLowerBound().getUnresolvedName())) {
+                    return true;
                 }
-                if (getLowerBound() != null) {
-                    if (name0.equals(getLowerBound().getUnresolvedName())) {
-                        return true;
-                    }
-                } else if (getUpperBounds() != null) {
-                    if (name0.equals(getUpperBounds()[0].getUnresolvedName())) {
-                        return true;
-                    }
+            } else if (getUpperBounds() != null) {
+                if (name0.equals(getUpperBounds()[0].getUnresolvedName())) {
+                    return true;
+                }
+            }
+            return checkGenerics(classNode);
+        }
+        if (isWildcard() || isPlaceholder()) {
+            // if the generics spec is a wildcard or a placeholder then check the bounds
+            ClassNode lowerBound = getLowerBound();
+            if (lowerBound != null) {
+                // for a lower bound, perform the upper bound checks with reversed arguments
+                if (!implementsInterfaceOrIsSubclassOf(lowerBound, classNode)) {
+                    return false;
                 }
                 return checkGenerics(classNode);
             }
-            if (wildcard || placeholder) {
-                // if the current generics spec is a wildcard spec or a placeholder spec
-                // then we must check upper and lower bounds
-                if (upperBounds != null) {
-                    // check that the provided classnode is a subclass of all provided upper bounds
-                    boolean upIsOk = true;
-                    for (int i = 0, upperBoundsLength = upperBounds.length; i < upperBoundsLength && upIsOk; i++) {
-                        final ClassNode upperBound = upperBounds[i];
-                        upIsOk = implementsInterfaceOrIsSubclassOf(classNode, upperBound);
+            ClassNode[] upperBounds = getUpperBounds();
+            if (upperBounds != null) {
+                // check that provided type extends or implements all upper bounds
+                for (ClassNode upperBound : upperBounds) {
+                    if (!implementsInterfaceOrIsSubclassOf(classNode, upperBound)) {
+                        return false;
                     }
-                    // if the provided classnode is a subclass of the upper bound
-                    // then check that the generic types supplied by the class node are compatible with
-                    // this generics specification
-                    // for example, we could have the spec saying List<String> but provided classnode
-                    // saying List<Integer>
-                    upIsOk = upIsOk && checkGenerics(classNode);
-                    return upIsOk;
                 }
-                if (lowerBound != null) {
-                    // if a lower bound is declared, then we must perform the same checks that for an upper bound
-                    // but with reversed arguments
-                    return implementsInterfaceOrIsSubclassOf(lowerBound, classNode) && checkGenerics(classNode);
+                // if the provided classnode is a subclass of the upper bound
+                // then check that the generic types supplied by the class node are compatible with
+                // this generics specification
+                // for example, we could have the spec saying List<String> but provided classnode
+                // saying List<Integer>
+                return checkGenerics(classNode);
+            }
+            // if there are no bounds, the generic type is basically Object, and everything is compatible
+            return true;
+        }
+        // last, we could have the spec saying List<String> and a classnode saying List<Integer> so
+        // we must check that generics are compatible
+        return getType().equals(classNode) && compareGenericsWithBound(classNode, type);
+    }
+
+    private static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
+        if (type.equals(superOrInterface)
+                || type.isDerivedFrom(superOrInterface)
+                || type.implementsInterface(superOrInterface)) {
+            return true;
+        }
+        if (ClassHelper.GROOVY_OBJECT_TYPE.equals(superOrInterface) && type.getCompileUnit() != null) {
+            // type is being compiled so it will implement GroovyObject later
+            return true;
+        }
+        if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
+            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
+            boolean result = implementsInterfaceOrIsSubclassOf(type, lub.getSuperClass());
+            if (result) {
+                for (ClassNode face : lub.getInterfaces()) {
+                    result = implementsInterfaceOrIsSubclassOf(type, face);
+                    if (!result) break;
                 }
-                // If there are no bounds, the generic type is basically Object, and everything is compatible.
-                return true;
             }
-            // if this is not a generics placeholder, first compare that types represent the same type
-            if ((type!=null && !type.equals(classNode))) {
-                return false;
+            if (result) return true;
+        }
+        if (type.isArray() && superOrInterface.isArray()) {
+            return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
+        }
+        return false;
+    }
+
+    /**
+     * Compares the bounds of this generics specification against the given type
+     * for compatibility.  Ex: String would satisfy &lt;? extends CharSequence>.
+     */
+    private boolean checkGenerics(final ClassNode classNode) {
+        ClassNode lowerBound = getLowerBound();
+        if (lowerBound != null) {
+            return compareGenericsWithBound(classNode, lowerBound);
+        }
+        ClassNode[] upperBounds = getUpperBounds();
+        if (upperBounds != null) {
+            for (ClassNode upperBound : upperBounds) {
+                if (!compareGenericsWithBound(classNode, upperBound)) {
+                    return false;
+                }
             }
-            // last, we could have the spec saying List<String> and a classnode saying List<Integer> so
-            // we must check that generics are compatible.
-            // The null check is normally not required but done to prevent from NPEs
-            return type == null || compareGenericsWithBound(classNode, type);
+        }
+        return true;
+    }
+
+    /**
+     * Given a parameterized type (List&lt;String&gt; for example), checks that its
+     * generic types are compatible with those from a bound.
+     * @param classNode the classnode from which we will compare generics types
+     * @param bound the bound to which the types will be compared
+     * @return true if generics are compatible
+     */
+    private static boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
+        if (classNode == null) {
+            return false;
+        }
+        if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
+            // if the bound is not using generics or the class node is a raw type, there's nothing to compare with
+            return true;
+        }
+        if (!classNode.equals(bound)) {
+             // the class nodes are on different types
+            // in this situation, we must choose the correct execution path : either the bound
+            // is an interface and we must find the implementing interface from the classnode
+            // to compare their parameterized generics, or the bound is a regular class and we
+            // must compare the bound with a superclass
+            if (bound.isInterface()) {
+                // iterate over all interfaces to check if any corresponds to the bound we are
+                // comparing to
+                for (ClassNode face : classNode.getAllInterfaces()) {
+                    if (face.equals(bound)) {
+                        // when we obtain an interface, the types represented by the interface
+                        // class node are not parameterized. This means that we must create a
+                        // new class node with the parameterized types that the current class node
+                        // has defined.
+                        ClassNode node = GenericsUtils.parameterizeType(classNode, face);
+                        return compareGenericsWithBound(node, bound);
+                    }
+                }
+            }
+            if (bound instanceof WideningCategories.LowestUpperBoundClassNode) {
+                // another special case here, where the bound is a "virtual" type
+                // we must then check the superclass and the interfaces
+                boolean success = compareGenericsWithBound(classNode, bound.getSuperClass());
+                if (success) {
+                    for (ClassNode face : bound.getInterfaces()) {
+                        success &= compareGenericsWithBound(classNode, face);
+                        if (!success) break;
+                    }
+                    if (success) return true;
+                }
+            }
+            return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
         }
 
-        /**
-         * Iterates over each generics bound of this generics specification, and checks
-         * that the generics defined by the bound are compatible with the generics specified
-         * by the type.
-         * @param classNode the classnode the bounds should be compared with
-         * @return true if generics from bounds are compatible
-         */
-        private boolean checkGenerics(final ClassNode classNode) {
-            if (upperBounds!=null) {
-                for (ClassNode upperBound : upperBounds) {
-                    if (!compareGenericsWithBound(classNode, upperBound)) return false;
-                }
-            }
-            if (lowerBound!=null) {
-                if (!lowerBound.redirect().isUsingGenerics()) {
-                    return compareGenericsWithBound(classNode, lowerBound);
-                }
-            }
+        GenericsType[] cnTypes = classNode.getGenericsTypes();
+        if (cnTypes == null) {
+            cnTypes = classNode.redirect().getGenericsTypes();
+        }
+        if (cnTypes == null) {
+            // may happen if generic type is Foo<T extends Foo> and classnode is Foo -> Foo
             return true;
         }
 
-        /**
-         * Given a parameterized type (List&lt;String&gt; for example), checks that its
-         * generic types are compatible with those from a bound.
-         * @param classNode the classnode from which we will compare generics types
-         * @param bound the bound to which the types will be compared
-         * @return true if generics are compatible
-         */
-        private boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
-            if (classNode==null) return false;
-            if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes()==null && classNode.redirect().getGenericsTypes()!=null)) {
-                // if the bound is not using generics, there's nothing to compare with
-                return true;
-            }
-            if (!classNode.equals(bound)) {
-                 // the class nodes are on different types
-                // in this situation, we must choose the correct execution path : either the bound
-                // is an interface and we must find the implementing interface from the classnode
-                // to compare their parameterized generics, or the bound is a regular class and we
-                // must compare the bound with a superclass
-                if (bound.isInterface()) {
-                    Set<ClassNode> interfaces = classNode.getAllInterfaces();
-                    // iterate over all interfaces to check if any corresponds to the bound we are
-                    // comparing to
-                    for (ClassNode anInterface : interfaces) {
-                        if (anInterface.equals(bound)) {
-                            // when we obtain an interface, the types represented by the interface
-                            // class node are not parameterized. This means that we must create a
-                            // new class node with the parameterized types that the current class node
-                            // has defined.
-                            ClassNode node = anInterface;
-                            if (node.getGenericsTypes() != null) {
-                                node = GenericsUtils.parameterizeType(classNode, node);
-                            }
-                            return compareGenericsWithBound(node, bound);
-                        }
-                    }
-                }
-                if (bound instanceof WideningCategories.LowestUpperBoundClassNode) {
-                    // another special case here, where the bound is a "virtual" type
-                    // we must then check the superclass and the interfaces
-                    boolean success = compareGenericsWithBound(classNode, bound.getSuperClass());
-                    if (success) {
-                        ClassNode[] interfaces = bound.getInterfaces();
-                        for (ClassNode anInterface : interfaces) {
-                            success &= compareGenericsWithBound(classNode, anInterface);
-                            if (!success) break;
-                        }
-                        if (success) return true;
-                    }
-                }
-                return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
-            }
-            GenericsType[] cnTypes = classNode.getGenericsTypes();
-            if (cnTypes==null && classNode.isRedirectNode()) cnTypes=classNode.redirect().getGenericsTypes();
-            if (cnTypes==null) {
-                // may happen if generic type is Foo<T extends Foo> and classnode is Foo -> Foo
-                return true;
-            }
-            GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
-            Map<GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
-            Map<GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
-            boolean match = true;
-            for (int i = 0; redirectBoundGenericTypes!=null && i < redirectBoundGenericTypes.length && match; i++) {
-                GenericsType redirectBoundType = redirectBoundGenericTypes[i];
-                GenericsType classNodeType = cnTypes[i];
-                if (classNodeType.isPlaceholder()) {
-                    GenericsTypeName name = new GenericsTypeName(classNodeType.getName());
-                    if (redirectBoundType.isPlaceholder()) {
-                        GenericsTypeName gtn = new GenericsTypeName(redirectBoundType.getName());
-                        match = name.equals(gtn);
-                        if (!match) {
-                            GenericsType boundGenericsType = boundPlaceHolders.get(gtn);
-                            if (boundGenericsType != null) {
-                                if (boundGenericsType.isPlaceholder()) {
+        GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
+        Map<GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
+        Map<GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
+        boolean match = true;
+        for (int i = 0; redirectBoundGenericTypes != null && i < redirectBoundGenericTypes.length && match; i += 1) {
+            GenericsType redirectBoundType = redirectBoundGenericTypes[i];
+            GenericsType classNodeType = cnTypes[i];
+            if (classNodeType.isPlaceholder()) {
+                GenericsTypeName name = new GenericsTypeName(classNodeType.getName());
+                if (redirectBoundType.isPlaceholder()) {
+                    GenericsTypeName gtn = new GenericsTypeName(redirectBoundType.getName());
+                    match = name.equals(gtn);
+                    if (!match) {
+                        GenericsType boundGenericsType = boundPlaceHolders.get(gtn);
+                        if (boundGenericsType != null) {
+                            if (boundGenericsType.isPlaceholder()) {
+                                match = true;
+                            } else if (boundGenericsType.isWildcard()) {
+                                if (boundGenericsType.getUpperBounds() != null) { // ? supports single bound only
+                                    match = classNodeType.isCompatibleWith(boundGenericsType.getUpperBounds()[0]);
+                                } else if (boundGenericsType.getLowerBound() != null) {
+                                    match = classNodeType.isCompatibleWith(boundGenericsType.getLowerBound());
+                                } else {
                                     match = true;
-                                } else if (boundGenericsType.isWildcard()) {
-                                    if (boundGenericsType.getUpperBounds() != null) { // multiple bounds not allowed for ?
-                                        match = classNodeType.isCompatibleWith(boundGenericsType.getUpperBounds()[0]);
-                                    } else if (boundGenericsType.getLowerBound() != null) {
-                                        match = classNodeType.isCompatibleWith(boundGenericsType.getLowerBound());
-                                    } else {
-                                        match = true;
-                                    }
                                 }
                             }
                         }
-                    } else {
-                        if (classNodePlaceholders.containsKey(name)) classNodeType=classNodePlaceholders.get(name);
-                        match = classNodeType.isCompatibleWith(redirectBoundType.getType());
                     }
                 } else {
-                    if (redirectBoundType.isPlaceholder()) {
-                        if (classNodeType.isPlaceholder()) {
-                            match = classNodeType.getName().equals(redirectBoundType.getName());
-                        } else {
-                            GenericsTypeName name = new GenericsTypeName(redirectBoundType.getName());
-                            if (boundPlaceHolders.containsKey(name)) {
-                                redirectBoundType = boundPlaceHolders.get(name);
-                                boolean wildcard = redirectBoundType.isWildcard();
-                                boolean placeholder = redirectBoundType.isPlaceholder();
-                                if (placeholder || wildcard) {
-                                    // placeholder aliases, like Map<U,V> -> Map<K,V>
-//                                    redirectBoundType = classNodePlaceholders.get(name);
-                                    if (wildcard) {
-                                        // ex: Comparable<Integer> <=> Comparable<? super T>
-                                        if (redirectBoundType.lowerBound!=null) {
-                                            GenericsType gt = new GenericsType(redirectBoundType.lowerBound);
-                                            if (gt.isPlaceholder()) {
-                                                // check for recursive generic typedef, like in
-                                                // <T extends Comparable<? super T>>
-                                                GenericsTypeName gtn = new GenericsTypeName(gt.getName());
-                                                if (classNodePlaceholders.containsKey(gtn)) {
-                                                    gt = classNodePlaceholders.get(gtn);
-                                                }
+                    if (classNodePlaceholders.containsKey(name))
+                        classNodeType = classNodePlaceholders.get(name);
+                    match = classNodeType.isCompatibleWith(redirectBoundType.getType());
+                }
+            } else {
+                if (redirectBoundType.isPlaceholder()) {
+                    if (classNodeType.isPlaceholder()) {
+                        match = classNodeType.getName().equals(redirectBoundType.getName());
+                    } else {
+                        GenericsTypeName name = new GenericsTypeName(redirectBoundType.getName());
+                        if (boundPlaceHolders.containsKey(name)) {
+                            redirectBoundType = boundPlaceHolders.get(name);
+                            if (redirectBoundType.isPlaceholder()) {
+                                if (classNodePlaceholders.containsKey(name))
+                                    redirectBoundType = classNodePlaceholders.get(name);
+
+                            } else if (redirectBoundType.isWildcard()) {
+                                if (redirectBoundType.getLowerBound() != null) {
+                                    // ex: class Comparable<Integer> <=> bound Comparable<? super T>
+                                    GenericsType gt = new GenericsType(redirectBoundType.getLowerBound());
+                                    if (gt.isPlaceholder()) {
+                                        // check for recursive generic typedef, like in <T extends Comparable<? super T>>
+                                        GenericsTypeName gtn = new GenericsTypeName(gt.getName());
+                                        if (classNodePlaceholders.containsKey(gtn)) {
+                                            gt = classNodePlaceholders.get(gtn);
+                                        }
+                                    }
+                                    // GROOVY-6095, GROOVY-9338
+                                    if (classNodeType.isWildcard()) {
+                                        if (classNodeType.getLowerBound() != null
+                                                || classNodeType.getUpperBounds() != null) {
+                                            match = classNodeType.checkGenerics(gt.getType());
+                                        } else {
+                                            match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                        }
+                                    } else {
+                                        match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                    }
+                                } else if (redirectBoundType.getUpperBounds() != null) {
+                                    // ex: class Comparable<Integer> <=> bound Comparable<? extends T & I>
+                                    for (ClassNode upperBound : redirectBoundType.getUpperBounds()) {
+                                        GenericsType gt = new GenericsType(upperBound);
+                                        if (gt.isPlaceholder()) {
+                                            // check for recursive generic typedef, like in <T extends Comparable<? super T>>
+                                            GenericsTypeName gtn = new GenericsTypeName(gt.getName());
+                                            if (classNodePlaceholders.containsKey(gtn)) {
+                                                gt = classNodePlaceholders.get(gtn);
                                             }
-                                            if (classNodeType.isWildcard()) {
-                                                if (classNodeType.getLowerBound() != null || classNodeType.getUpperBounds() != null) {
-                                                    match = classNodeType.new GenericsTypeMatcher().checkGenerics(gt.getType());
-                                                } else {
-                                                    match = false; // "?" (from Comparable<?>) does not satisfy anything
-                                                }
+                                        }
+                                        // GROOVY-6095, GROOVY-9338
+                                        if (classNodeType.isWildcard()) {
+                                            if (classNodeType.getLowerBound() != null) {
+                                                match = gt.checkGenerics(classNodeType.getLowerBound());
+                                            } else if (classNodeType.getUpperBounds() != null) {
+                                                match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
                                             } else {
-                                                match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                                match = false; // "?" (from Comparable<?>) does not satisfy anything
                                             }
+                                        } else {
+                                            match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
                                         }
-                                        if (match && redirectBoundType.upperBounds!=null) {
-                                            for (ClassNode upperBound : redirectBoundType.upperBounds) {
-                                                GenericsType gt = new GenericsType(upperBound);
-                                                if (gt.isPlaceholder()) {
-                                                    // check for recursive generic typedef, like in
-                                                    // <T extends Comparable<? super T>>
-                                                    GenericsTypeName gtn = new GenericsTypeName(gt.getName());
-                                                    if (classNodePlaceholders.containsKey(gtn)) {
-                                                        gt = classNodePlaceholders.get(gtn);
-                                                    }
-                                                }
-                                                // GROOVY-6095, GROOVY-9338
-                                                if (classNodeType.isWildcard()) {
-                                                    if (classNodeType.getLowerBound() != null) {
-                                                        match = gt.new GenericsTypeMatcher().checkGenerics(classNodeType.getLowerBound());
-                                                    } else if (classNodeType.getUpperBounds() != null) {
-                                                        match = gt.new GenericsTypeMatcher().checkGenerics(classNodeType.getUpperBounds()[0]);
-                                                    } else {
-                                                        match = false; // "?" (from Comparable<?>) does not satisfy anything
-                                                    }
-                                                } else {
-                                                    match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
-                                                }
-                                                if (!match) break;
-                                            }
-                                        }
-                                        continue; // GROOVY-10010
-                                    } else if (classNodePlaceholders.containsKey(name)) {
-                                        redirectBoundType = classNodePlaceholders.get(name);
+                                        if (!match) break;
                                     }
                                 }
+                                continue; // GROOVY-10010
                             }
-                            match = redirectBoundType.isCompatibleWith(classNodeType.getType());
                         }
-                    } else {
-                        // todo: the check for isWildcard should be replaced with a more complete check
-                        match = redirectBoundType.isWildcard() || classNodeType.isCompatibleWith(redirectBoundType.getType());
+                        match = redirectBoundType.isCompatibleWith(classNodeType.getType());
                     }
+                } else {
+                    // TODO: the check for isWildcard should be replaced with a more complete check
+                    match = redirectBoundType.isWildcard() || classNodeType.isCompatibleWith(redirectBoundType.getType());
                 }
             }
-            return match;
         }
+        return match;
     }
 
     /**
@@ -495,23 +478,27 @@ public class GenericsType extends ASTNode {
      * @param classNode the class for which we want to return the parameterized superclass
      * @return the parameterized superclass
      */
-    private static ClassNode getParameterizedSuperClass(ClassNode classNode) {
+    private static ClassNode getParameterizedSuperClass(final ClassNode classNode) {
         if (ClassHelper.OBJECT_TYPE.equals(classNode)) return null;
         ClassNode superClass = classNode.getUnresolvedSuperClass();
-        if (superClass==null) {
-            return ClassHelper.OBJECT_TYPE;
+        if (superClass == null) return ClassHelper.OBJECT_TYPE;
+
+        if (!classNode.isUsingGenerics() || !superClass.isUsingGenerics()) {
+            return superClass;
         }
-        if (!classNode.isUsingGenerics() || !superClass.isUsingGenerics()) return superClass;
+
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
         GenericsType[] redirectGenericTypes = classNode.redirect().getGenericsTypes();
         superClass = superClass.getPlainNodeReference();
-        if (genericsTypes==null || redirectGenericTypes==null || superClass.getGenericsTypes()==null) return superClass;
-        for (int i = 0, genericsTypesLength = genericsTypes.length; i < genericsTypesLength; i++) {
+        if (genericsTypes == null || redirectGenericTypes == null || superClass.getGenericsTypes() == null) {
+            return superClass;
+        }
+        for (int i = 0, genericsTypesLength = genericsTypes.length; i < genericsTypesLength; i += 1) {
             if (redirectGenericTypes[i].isPlaceholder()) {
-                final GenericsType genericsType = genericsTypes[i];
+                GenericsType genericsType = genericsTypes[i];
                 GenericsType[] superGenericTypes = superClass.getGenericsTypes();
-                for (int j = 0, superGenericTypesLength = superGenericTypes.length; j < superGenericTypesLength; j++) {
-                    final GenericsType superGenericType = superGenericTypes[j];
+                for (int j = 0, superGenericTypesLength = superGenericTypes.length; j < superGenericTypesLength; j += 1) {
+                    GenericsType superGenericType = superGenericTypes[j];
                     if (superGenericType.isPlaceholder() && superGenericType.getName().equals(redirectGenericTypes[i].getName())) {
                         superGenericTypes[j] = genericsType;
                     }
@@ -521,23 +508,13 @@ public class GenericsType extends ASTNode {
         return superClass;
     }
 
-    /**
-     * Represents GenericsType name
-     * TODO In order to distinguish GenericsType with same name(See GROOVY-8409), we should add a property to keep the declaring class.
-     *
-     * fixing GROOVY-8409 steps:
-     * 1) change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
-     * 2) try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
-     * 3) run all tests to see whether the change breaks anything
-     * 4) if all tests pass, congratulations! but if some tests are broken, try to debug and find why...
-     *
-     * We should find a way to set declaring class for `GenericsType` first, it can be completed at the resolving phase.
-     */
-    public static class GenericsTypeName {
-        private String name;
+    //--------------------------------------------------------------------------
 
-        public GenericsTypeName(String name) {
-            this.name = name;
+    public static class GenericsTypeName {
+        private final String name;
+
+        public GenericsTypeName(final String name) {
+            this.name = Objects.requireNonNull(name);
         }
 
         public String getName() {
@@ -545,21 +522,20 @@ public class GenericsType extends ASTNode {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            GenericsTypeName that = (GenericsTypeName) o;
-            return Objects.equals(name, that.name);
+        public boolean equals(Object that) {
+            if (this == that) return true;
+            if (!(that instanceof GenericsTypeName)) return false;
+            return getName().equals(((GenericsTypeName) that).getName());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name);
+            return getName().hashCode();
         }
 
         @Override
         public String toString() {
-            return name;
+            return getName();
         }
     }
 }
