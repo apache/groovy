@@ -1292,11 +1292,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test { Class clazz -> clazz.newInstance() }
         '''
 
+        File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            jointCompilationOptions = [memStub: true]
         }
-        File parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Face.java')
             a.write '''
@@ -1333,7 +1333,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
-            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
@@ -1522,6 +1521,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call A#<init>(java.lang.Class<java.lang.String>, java.lang.Class<java.lang.Integer>) with arguments [java.lang.Class<java.lang.Integer>, java.lang.Class<java.lang.String>]'
     }
 
+    void testMethodCallWithMapParameterUnbounded() {
+        assertScript """
+            import static ${this.class.name}.isEmpty
+            class C {
+                Map<String, ?> map = new HashMap()
+            }
+            assert isEmpty(new C().map)
+        """
+    }
+
     // GROOVY-9460
     void testMethodCallWithClassParameterUnbounded() {
         assertScript '''
@@ -1529,12 +1538,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static void baz(Class<?> target) {
                 }
             }
-            class Foo<D> { // cannot be "T" because that matches type parameter in Class
-                void test(Class<D> param) {
-                    Bar.baz(param) // Cannot call Bar#baz(java.lang.Class<?>) with arguments [java.lang.Class<D>]
+            class Foo<X> { // cannot be "T" because that matches type parameter in Class
+                void test(Class<X> c) {
+                    Bar.baz(c) // Cannot call Bar#baz(Class<?>) with arguments [Class<X>]
                 }
             }
             new Foo<String>().test(String.class)
+        '''
+    }
+
+    // GROOVY-10525
+    void testMethodCallWithClassParameterUnbounded2() {
+        assertScript '''
+            @Grab('javax.validation:validation-api:1.1.0.Final')
+            import javax.validation.Validator
+
+            void test(Object bean, List<Class<?>> types, Validator validator) {
+                validator.validate(bean, types as Class<?>[])
+            }
         '''
     }
 
@@ -1886,11 +1907,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8409, GROOVY-9902
     void testShouldUseMethodGenericType11() {
+        File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            jointCompilationOptions = [memStub: true]
         }
-        File parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Main.groovy')
             a.write '''
@@ -1925,7 +1946,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
-            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
@@ -2694,7 +2714,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            jointCompilationOptions = [memStub: true]
         }
         try {
             def a = new File(parentDir, 'aJavaClass.java')
@@ -2731,7 +2751,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
-            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
@@ -3093,11 +3112,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9822
+        File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
             jointCompilationOptions = [memStub: true]
         }
-        File parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Types.java')
             a.write '''
@@ -3796,7 +3815,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            jointCompilationOptions = [memStub: true]
         }
         try {
             def a = new File(parentDir, 'Bean.java')
@@ -3821,7 +3840,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
-            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
@@ -4026,11 +4044,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         // GROOVY-9821
         ['.', '?.', '*.'].each { op ->
+            File parentDir = File.createTempDir()
             config.with {
                 targetDirectory = File.createTempDir()
                 jointCompilationOptions = [memStub: true]
             }
-            File parentDir = File.createTempDir()
             try {
                 def a = new File(parentDir, 'Types.java')
                 a.write '''
@@ -4092,11 +4110,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         //
 
+        File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
             jointCompilationOptions = [memStub: true]
         }
-        File parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Pojo.java')
             a.write '''
@@ -4131,11 +4149,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10234
     void testSelfReferentialTypeParameter() {
+        File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
             jointCompilationOptions = [memStub: true]
         }
-        File parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Main.groovy')
             a.write '''
@@ -4221,26 +4239,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    static class MyList extends LinkedList<String> {}
+    //--------------------------------------------------------------------------
 
-    public static class ClassA<T> {
-        public <X> Class<X> foo(Class<X> classType) {
+    static class MyList
+        extends LinkedList<String> {
+    }
+
+    static class ClassA<T> {
+        def <X> Class<X> foo(Class<X> classType) {
             return classType;
         }
-
-        public <X> Class<X> bar(Class<T> classType) {
+        def <X> Class<X> bar(Class<T> classType) {
             return null;
         }
     }
 
-    public static class JavaClassSupport {
-        public static class Container<T> {
+    static class JavaClassSupport {
+        static class Container<T> {
         }
+        static class StringContainer extends Container<String> {
+        }
+        static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
+        }
+    }
 
-        public static class StringContainer extends Container<String> {
-        }
-
-        public static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
-        }
+    static boolean isEmpty(Map<?,?> map) {
+        map == null || map.isEmpty()
     }
 }
