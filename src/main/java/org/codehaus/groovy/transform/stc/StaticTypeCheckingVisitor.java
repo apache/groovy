@@ -3779,42 +3779,59 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new ArrayList<>();
-        if (isClassClassNodeWrappingConcreteType(receiver)) {
-            ClassNode staticType = receiver.getGenericsTypes()[0].getType();
-            owners.add(Receiver.make(staticType)); // Type from Class<Type>
-            addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
-            owners.add(Receiver.make(receiver)); // Class<Type>
-        } else {
-            owners.add(Receiver.make(receiver));
-            if (receiver.isInterface()) {
-                owners.add(Receiver.make(OBJECT_TYPE));
-            }
-            addSelfTypes(receiver, owners);
-            addTraitType(receiver, owners);
-        }
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
-                for (ClassNode node : potentialReceiverType) {
-                    owners.add(Receiver.make(node));
-                }
-            }
-        }
-        if (typeCheckingContext.lastImplicitItType != null
-                && objectExpression instanceof VariableExpression
-                && ((VariableExpression) objectExpression).getName().equals("it")) {
-            owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
-        }
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
                 && ((VariableExpression) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
-            owners.clear();
             List<Receiver<String>> enclosingClass = Collections.singletonList(
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
+        } else {
+            if (isClassClassNodeWrappingConcreteType(receiver)) {
+                ClassNode staticType = receiver.getGenericsTypes()[0].getType();
+                owners.add(Receiver.make(staticType)); // Type from Class<Type>
+                addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
+                owners.add(Receiver.make(receiver)); // Class<Type>
+            } else {
+                addBoundType(receiver, owners);
+                addSelfTypes(receiver, owners);
+                addTraitType(receiver, owners);
+                if (receiver.redirect().isInterface()) {
+                    owners.add(Receiver.make(OBJECT_TYPE));
+                }
+            }
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
+                if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
+                    for (ClassNode node : potentialReceiverType) {
+                        owners.add(Receiver.make(node));
+                    }
+                }
+            }
+            if (typeCheckingContext.lastImplicitItType != null
+                    && objectExpression instanceof VariableExpression
+                    && ((VariableExpression) objectExpression).getName().equals("it")) {
+                owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
+            }
         }
         return owners;
+    }
+
+    private static void addBoundType(final ClassNode receiver, final List<Receiver<String>> owners) {
+        if (!receiver.isGenericsPlaceHolder() || receiver.getGenericsTypes() == null) {
+            owners.add(Receiver.make(receiver));
+            return;
+        }
+
+        GenericsType gt = receiver.getGenericsTypes()[0];
+        if (gt.getLowerBound() == null && gt.getUpperBounds() != null) {
+            for (ClassNode cn : gt.getUpperBounds()) { // T extends C & I
+                addBoundType(cn, owners);
+                addSelfTypes(cn, owners);
+            }
+        } else {
+            owners.add(Receiver.make(OBJECT_TYPE)); // T or T super Type
+        }
     }
 
     private static void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
@@ -5845,71 +5862,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ParameterVariableExpression(final Parameter parameter) {
             super(parameter);
             this.parameter = parameter;
-            ClassNode inferred = parameter.getNodeMetaData(INFERRED_TYPE);
-            if (inferred == null) {
-                inferred = infer(parameter);
-
-                parameter.setNodeMetaData(INFERRED_TYPE, inferred);
-            }
-        }
-
-        private static ClassNode infer(final Variable variable) {
-            ClassNode originType = variable.getOriginType();
-
-            if (originType.isGenericsPlaceHolder()) {
-                GenericsType[] genericsTypes = originType.getGenericsTypes();
-
-                if (genericsTypes != null && genericsTypes.length > 0) {
-                    GenericsType gt = genericsTypes[0];
-                    ClassNode[] upperBounds = gt.getUpperBounds();
-
-                    if (upperBounds != null && upperBounds.length > 0) {
-                        return upperBounds[0];
-                    }
-                }
-            }
-
-            return originType;
+            this.parameter.getNodeMetaData(INFERRED_TYPE, x -> parameter.getOriginType());
         }
 
         @Override
-        public void copyNodeMetaData(final ASTNode other) {
-            parameter.copyNodeMetaData(other);
+        public Map<?, ?> getMetaDataMap() {
+            return parameter.getMetaDataMap();
         }
 
         @Override
-        public Object putNodeMetaData(final Object key, final Object value) {
-            return parameter.putNodeMetaData(key, value);
-        }
-
-        @Override
-        public void removeNodeMetaData(final Object key) {
-            parameter.removeNodeMetaData(key);
-        }
-
-        @Override
-        public Map<?, ?> getNodeMetaData() {
-            return parameter.getNodeMetaData();
-        }
-
-        @Override
-        public <T> T getNodeMetaData(final Object key) {
-            return parameter.getNodeMetaData(key);
-        }
-
-        @Override
-        public void setNodeMetaData(final Object key, final Object value) {
-            parameter.setNodeMetaData(key, value);
-        }
-
-        @Override
-        public int hashCode() {
-            return parameter.hashCode();
-        }
-
-        @Override
-        public boolean equals(final Object other) {
-            return parameter.equals(other);
+        public void setMetaDataMap(final Map<?, ?> metaDataMap) {
+            parameter.setMetaDataMap(metaDataMap);
         }
     }
 
