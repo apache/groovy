@@ -373,6 +373,67 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10283
+    void testDiamondInferrenceFromConstructor9() {
+        assertScript '''
+            class A<T1, T2> {
+            }
+            class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
+                T2 t
+                B(T2 t) {
+                    this.t  = t
+                }
+            }
+            class C {
+            }
+
+            new B<Integer,A<C,Integer>>(new A<>())
+        '''
+    }
+
+    // GROOVY-10280
+    void testTypeArgumentPropagation() {
+        assertScript '''
+            class Test<T> {
+                T test() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type.toString(false) == 'T'
+                    })
+                    def t = new Foo<T>().x.y.z
+                }
+            }
+            class Foo<X> {
+                Bar<X> x = new Bar<>()
+            }
+            class Bar<T> {
+                Baz<T> y = new Baz<>()
+            }
+            class Baz<Z> {
+                Z z
+            }
+
+            new Test<String>().test()
+        '''
+    }
+
+    void testTypeArgumentPropagation2() {
+        assertScript '''
+            class Foo<T extends Bar> {
+                public List<T> bars
+                void test() {
+                    bars[0].baz()
+                }
+            }
+            class Bar {
+                def baz() {}
+            }
+
+            def obj = new Foo(bars: [new Bar()])
+            obj.test()
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
