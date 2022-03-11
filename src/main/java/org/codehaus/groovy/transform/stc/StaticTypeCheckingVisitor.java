@@ -3761,42 +3761,59 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new ArrayList<>();
-        if (isClassClassNodeWrappingConcreteType(receiver)) {
-            ClassNode staticType = receiver.getGenericsTypes()[0].getType();
-            owners.add(Receiver.<String>make(staticType)); // Type from Class<Type>
-            addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
-            owners.add(Receiver.<String>make(receiver)); // Class<Type>
-        } else {
-            owners.add(Receiver.<String>make(receiver));
-            if (receiver.isInterface()) {
-                owners.add(Receiver.<String>make(OBJECT_TYPE));
-            }
-            addSelfTypes(receiver, owners);
-            addTraitType(receiver, owners);
-        }
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
-                for (ClassNode node : potentialReceiverType) {
-                    owners.add(Receiver.<String>make(node));
-                }
-            }
-        }
-        if (typeCheckingContext.lastImplicitItType != null
-                && objectExpression instanceof VariableExpression
-                && ((VariableExpression) objectExpression).getName().equals("it")) {
-            owners.add(Receiver.<String>make(typeCheckingContext.lastImplicitItType));
-        }
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
                 && ((VariableExpression) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
-            owners.clear();
             List<Receiver<String>> enclosingClass = Collections.singletonList(
                     Receiver.<String>make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
+        } else {
+            if (isClassClassNodeWrappingConcreteType(receiver)) {
+                ClassNode staticType = receiver.getGenericsTypes()[0].getType();
+                owners.add(Receiver.<String>make(staticType)); // Type from Class<Type>
+                addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
+                owners.add(Receiver.<String>make(receiver)); // Class<Type>
+            } else {
+                addBoundType(receiver, owners);
+                addSelfTypes(receiver, owners);
+                addTraitType(receiver, owners);
+                if (receiver.redirect().isInterface()) {
+                    owners.add(Receiver.<String>make(OBJECT_TYPE));
+                }
+            }
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
+                if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
+                    for (ClassNode node : potentialReceiverType) {
+                        owners.add(Receiver.<String>make(node));
+                    }
+                }
+            }
+            if (typeCheckingContext.lastImplicitItType != null
+                    && objectExpression instanceof VariableExpression
+                    && ((VariableExpression) objectExpression).getName().equals("it")) {
+                owners.add(Receiver.<String>make(typeCheckingContext.lastImplicitItType));
+            }
         }
         return owners;
+    }
+
+    private static void addBoundType(final ClassNode receiver, final List<Receiver<String>> owners) {
+        if (!receiver.isGenericsPlaceHolder() || receiver.getGenericsTypes() == null) {
+            owners.add(Receiver.<String>make(receiver));
+            return;
+        }
+
+        GenericsType gt = receiver.getGenericsTypes()[0];
+        if (gt.getLowerBound() == null && gt.getUpperBounds() != null) {
+            for (ClassNode cn : gt.getUpperBounds()) { // T extends C & I
+                addBoundType(cn, owners);
+                addSelfTypes(cn, owners);
+            }
+        } else {
+            owners.add(Receiver.<String>make(OBJECT_TYPE)); // T or T super Type
+        }
     }
 
     private static void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
@@ -5764,9 +5781,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             this.parameter = parameter;
             ClassNode inferred = parameter.getNodeMetaData(INFERRED_TYPE);
             if (inferred == null) {
-                inferred = infer(parameter);
-
-                parameter.setNodeMetaData(INFERRED_TYPE, inferred);
+                parameter.setNodeMetaData(INFERRED_TYPE, parameter.getOriginType());
             }
         }
 
@@ -5799,24 +5814,5 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         public void setNodeMetaData(Object key, Object value) {
             parameter.setNodeMetaData(key, value);
         }
-    }
-
-    private static ClassNode infer(Variable variable) {
-        ClassNode originType = variable.getOriginType();
-
-        if (originType.isGenericsPlaceHolder()) {
-            GenericsType[] genericsTypes = originType.getGenericsTypes();
-
-            if (null != genericsTypes && genericsTypes.length > 0) {
-                GenericsType gt = genericsTypes[0];
-                ClassNode[] upperBounds = gt.getUpperBounds();
-
-                if (null != upperBounds && upperBounds.length > 0) {
-                    return upperBounds[0];
-                }
-            }
-        }
-
-        return variable.getOriginType();
     }
 }
