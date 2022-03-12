@@ -888,4 +888,36 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             """
         }
     }
+
+    void testTypeCheckingOfClosureInMapConstructorCalls() {
+        shouldFailWithMessages '''
+            class Foo {
+                Number bar
+                Object baz
+            }
+
+            new Foo(bar: 123, baz: { ->
+                int i = Integer
+            })
+        ''',
+        'Cannot assign value of type java.lang.Class <java.lang.Integer> to variable of type int'
+
+        shouldFailWithMessages '''
+            import groovy.transform.NamedParam
+            import groovy.transform.NamedParams
+
+            class Foo {
+                Foo(@NamedParams([
+                    @NamedParam(value='bar',type=Number)
+                ]) Map<String,?> named, Object positional) {
+                }
+            }
+
+            new Foo(bar: Number, { ->
+                int i = Integer
+            })
+        ''',
+        'Cannot assign value of type java.lang.Class <java.lang.Integer> to variable of type int',
+        "named param 'bar' has type 'java.lang.Class <java.lang.Number>' but expected 'java.lang.Number'"
+    }
 }

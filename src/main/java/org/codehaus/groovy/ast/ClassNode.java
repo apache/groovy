@@ -1392,6 +1392,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return this.annotated;
     }
 
+    public GenericsType asGenericsType() {
+        if (!isGenericsPlaceHolder()) {
+            return new GenericsType(this);
+        } else {
+            ClassNode upper = (redirect != null ? redirect : this);
+            return new GenericsType(this, new ClassNode[]{upper}, null);
+        }
+    }
+
     public GenericsType[] getGenericsTypes() {
         return genericsTypes;
     }

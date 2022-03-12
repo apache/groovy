@@ -1274,6 +1274,37 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCompatibleArgumentsForPlaceholders1() {
+        assertScript '''
+            def <X> X foo(X x) {
+            }
+            def <Y> Y bar() {
+            }
+            def <Z> void baz() {
+                this.<Z>foo(bar())
+            }
+            this.<String>baz()
+        '''
+    }
+
+    // GROOVY-10482
+    void testCompatibleArgumentsForPlaceholders2() {
+        ['def', 'public', 'static', '@Deprecated'].each {
+            assertScript """
+                class Foo<X> {
+                    Foo(X x) {
+                    }
+                }
+                $it <Y> Y bar() {
+                }
+                $it <Z> void baz() {
+                    new Foo<Z>(bar()) // Cannot call Foo#<init>(Z) with arguments [#Y]
+                }
+                this.<String>baz()
+            """
+        }
+    }
+
     void testIncompatibleGenericsForTwoArguments() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, T arg2) {

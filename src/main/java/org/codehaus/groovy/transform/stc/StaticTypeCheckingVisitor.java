@@ -198,6 +198,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.init;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
@@ -2309,32 +2311,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             checkForbiddenSpreadArgument(argumentList);
             visitMethodCallArguments(receiver, argumentList, false, null);
+            final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
 
-            ClassNode[] args = getArgumentTypes(argumentList);
-
-            MethodNode node;
-            if (looksLikeNamedArgConstructor(receiver, args)
-                    && findMethod(receiver, "<init>", DefaultGroovyMethods.init(args)).size() == 1
-                    && findMethod(receiver, "<init>", args).isEmpty()) {
-                // bean-style constructor
-                node = typeCheckMapConstructor(call, receiver, arguments);
-                if (node != null) {
-                    storeTargetMethod(call, node);
-                    extension.afterMethodCall(call);
-                    return;
+            MethodNode ctor;
+            if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                    && findMethod(receiver, "<init>", argumentTypes).isEmpty()
+                    && findMethod(receiver, "<init>", init(argumentTypes)).size() == 1) {
+                ctor = typeCheckMapConstructor(call, receiver, arguments);
+            } else {
+                ctor = findMethodOrFail(call, receiver, "<init>", argumentTypes);
+                if (ctor != null) {
+                    Parameter[] parameters = ctor.getParameters();
+                    if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                            && parameters.length == argumentTypes.length - 1) {
+                        ctor = typeCheckMapConstructor(call, receiver, arguments);
+                    } else {
+                        if (parameters.length > 0 && receiver.getGenericsTypes() != null) { // GROOVY-8961, GROOVY-9734, GROOVY-9915, GROOVY-10482, et al.
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(null, receiver, ctor.getDeclaringClass());
+                            parameters = parameters.clone(); for (int i = 0; i < parameters.length; i += 1)
+                                parameters[i] = new Parameter(applyGenericsContext(context, parameters[i].getType()), parameters[i].getName());
+                        }
+                        resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
+                        typeCheckMethodsWithGenericsOrFail(receiver, argumentTypes, ctor, call);
+                        visitMethodCallArguments(receiver, argumentList, true, ctor);
+                    }
                 }
             }
-            node = findMethodOrFail(call, receiver, "<init>", args);
-            if (node != null) {
-                if (looksLikeNamedArgConstructor(receiver, args) && node.getParameters().length + 1 == args.length) {
-                    node = typeCheckMapConstructor(call, receiver, arguments);
-                } else {
-                    typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
-                }
-                if (node != null) {
-                    storeTargetMethod(call, node);
-                    visitMethodCallArguments(receiver, argumentList, true, node);
-                }
+            if (ctor != null) {
+                storeTargetMethod(call, ctor);
             }
 
             // GROOVY-9327: check for AIC in STC method with non-STC enclosing class
@@ -3610,7 +3614,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                         // GROOVY-8961, GROOVY-9734
-                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, directMethodCallCandidate);
+                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, directMethodCallCandidate.getParameters());
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
@@ -3995,7 +3999,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (bs.getStatements().size() == 0) {
             return null;
         }
-        Statement last = DefaultGroovyMethods.last(bs.getStatements());
+        Statement last = last(bs.getStatements());
         if (!(last instanceof ReturnStatement)) {
             return null;
         }
@@ -5238,12 +5242,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * argument is {@code List<T>} without explicit type arguments. Knowning the
      * method target of "m", {@code T} could be resolved.
      */
-    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final MethodNode inferredMethod) {
+    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
         for (int i = 0, n = actuals.length; i < n; i += 1) {
-            // check for method call with known target
             Expression a = argumentList.getExpression(i);
-            if (!(a instanceof MethodCallExpression)) continue;
-            if (((MethodCallExpression) a).isUsingGenerics()) continue;
+            // check for method call without type arguments, with a known target
+            if (!(a instanceof MethodCall) || (a instanceof MethodCallExpression
+                    && ((MethodCallExpression) a).isUsingGenerics())) continue;
             MethodNode aNode = a.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (aNode == null || aNode.getGenericsTypes() == null) continue;
 
@@ -5251,8 +5255,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode at = actuals[i];
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
 
-            int np = inferredMethod.getParameters().length;
-            Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
+            int np = parameterArray.length;
+            Parameter p = parameterArray[Math.min(i, np - 1)];
 
             ClassNode pt = p.getOriginType();
             if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
@@ -5262,6 +5266,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Map<GenericsTypeName, GenericsType> linked = new HashMap<>();
             Map<GenericsTypeName, GenericsType> source = GenericsUtils.extractPlaceholders(at);
             Map<GenericsTypeName, GenericsType> target = GenericsUtils.extractPlaceholders(pt);
+
+            if (at.isGenericsPlaceHolder()) // GROOVY-10482: call argument via "def <T> T m()"
+                target.put(new GenericsTypeName(at.getUnresolvedName()), pt.asGenericsType());
 
             // connect E:T from source to E:Type from target
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
