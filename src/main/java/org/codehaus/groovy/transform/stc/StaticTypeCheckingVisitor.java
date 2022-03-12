@@ -5391,9 +5391,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 actuals[i] = getType(a);
             }
 
-            // check for method call with known target
-            if (!(a instanceof MethodCallExpression)) continue;
-            if (((MethodCallExpression) a).isUsingGenerics()) continue;
+            // check for method call without type arguments, with a known target
+            if (!(a instanceof MethodCall) || (a instanceof MethodCallExpression
+                    && ((MethodCallExpression) a).isUsingGenerics())) continue;
             MethodNode aNode = a.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (aNode == null || aNode.getGenericsTypes() == null) continue;
 
