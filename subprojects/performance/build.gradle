@@ -25,12 +25,17 @@ configurations {
 }
 
 dependencies {
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
+    testCompile 'org.codehaus.groovy:groovy-all:2.5.16'
+    testCompile "junit:junit:$junitVersion"
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+def findProject = { name ->
+    rootProject.subprojects.find{it.name == name }
+}
 
 task performanceTests {
     ext.outputDir = file("$buildDir/compilation")
@@ -60,17 +65,25 @@ task performanceTests {
     }
 }
 
-['1.8.9', '2.0.8', '2.1.9', '2.2.2', '2.3.10', '2.3.11', '2.4.12', 'current'].each { version ->
-    def t = task "performanceTestGroovy${version.replace('.', '_')}"(type: JavaExec) {
+['2.0.8', '2.1.9', '2.2.2', '2.3.11', '2.4.21', '2.5.16', 'current'].each { version ->
+    def t = task "performanceTestGroovy_${version.replace('.', '_')}"(type: JavaExec) {
         dependsOn compileTestJava
         def groovyConf = configurations.detachedConfiguration(
-                dependencies.create(
-                        'current' == version ? files(rootProject.jar.archivePath) : "org.codehaus.groovy:groovy:$version")
+                *('current' == version ?
+                        [rootProject, findProject('groovy-test'), findProject('groovy-ant'), findProject('groovy-jsr223'), findProject('groovy-xml')].collect { Project p ->
+                            dependencies.create(files(p.jar.archivePath))
+                        } + [dependencies.create("org.ow2.asm:asm:$asmVersion"), dependencies.create("antlr:antlr:$antlrVersion")] :
+                        version < '2.5.0' ?
+                                [dependencies.create("org.codehaus.groovy:groovy-all:$version")]
+                                :
+                                ['groovy', 'groovy-test', 'groovy-jsr223', 'groovy-xml'].collect { String p ->
+                                    dependencies.create("org.codehaus.groovy:$p:$version")
+                                })
         )
         groovyConf.transitive = false
         main = 'org.apache.groovy.perf.CompilerPerformanceTest'
         classpath = groovyConf + sourceSets.test.output + configurations.stats
-        jvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxPermSize=512m']
+        jvmArgs = ['-Xms512m', '-Xmx512m']
 
         // configure some files to compile. This is an arbitrary set of files which can be compiled
         // independently of the version of Groovy being tested
@@ -84,7 +97,7 @@ task performanceTests {
                          'groovy/time',
                          'groovy/tree',
                          'gls/syntax'].collect { "../../src/test/$it" }
-        ['groovy-ant', 'groovy-test', 'groovy-jsr223'].collect(testFiles) { "../../subprojects/$it/src/test/groovy" }
+        ['groovy-jsr223', 'groovy-test', 'groovy-jsr223'].collect(testFiles) { "../../subprojects/$it/src/test/groovy" }
 
         ['ackermann', 'fibo', 'random', 'spectralnorm', 'ary', 'hello', 'recursive', 'threadring',
          'binarytrees', 'mandelbrot', 'regexdna', 'wordfreq',
@@ -95,10 +108,10 @@ task performanceTests {
         doFirst {
             def compileClassPath = [
                     '-cp',
-                    groovyConf.files[0]
+                    *groovyConf.files*.absolutePath
             ]
             rootProject.sourceSets.test.compileClasspath.files
-                    .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') && !it.name.contains('antlr') && !it.name.contains('asm') }
+                    .findAll { it.name.endsWith('jar') && !it.name.contains('groovy') }
                     .collect(compileClassPath) { it.absolutePath }
 
             args = [
