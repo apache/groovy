@@ -1203,7 +1203,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
         ''',
-        'Cannot call java.util.LinkedList#<init>(java.util.Collection<? extends java.lang.String>) with arguments [java.util.List<java.lang.Integer>]'
+        'Cannot call java.util.LinkedList#<init>(java.util.Collection<? extends java.lang.String>) with arguments [java.util.ArrayList<java.lang.Integer>]'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -2525,6 +2525,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Set<Integer> integers = newKeySet()
             integers.add(42)
             accept(integers)
+        '''
+    }
+
+    void testCompatibleArgumentsForPlaceholders5() {
+        assertScript '''
+            def <X> X foo(X x) {
+            }
+            def <Y> Y bar() {
+            }
+            def <Z> void baz() {
+                this.<Z>foo(bar())
+            }
+            this.<String>baz()
+        '''
+    }
+
+    // GROOVY-10482
+    void testCompatibleArgumentsForPlaceholders6() {
+        assertScript '''
+            class Foo<X> {
+                Foo(X x) {
+                }
+            }
+            def <Y> Y bar() {
+            }
+            def <Z> void baz() {
+                new Foo<Z>(bar()) // Cannot call Foo#<init>(Z) with arguments [#Y]
+            }
+            this.<String>baz()
         '''
     }
 

@@ -233,6 +233,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.init;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -2258,48 +2260,47 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        if (extension.beforeMethodCall(call)) {
-            extension.afterMethodCall(call);
-            return;
-        }
-        ClassNode receiver;
-        if (call.isThisCall()) {
-            receiver = makeThis();
-        } else if (call.isSuperCall()) {
-            receiver = makeSuper();
-        } else {
-            receiver = call.getType();
-        }
-        Expression arguments = call.getArguments();
-        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
-
-        checkForbiddenSpreadArgument(argumentList);
-        visitMethodCallArguments(receiver, argumentList, false, null);
-
-        ClassNode[] args = getArgumentTypes(argumentList);
-
-        MethodNode node;
-        if (looksLikeNamedArgConstructor(receiver, args)
-                && findMethod(receiver, "<init>", DefaultGroovyMethods.init(args)).size() == 1
-                && findMethod(receiver, "<init>", args).isEmpty()) {
-            // bean-style constructor
-            node = typeCheckMapConstructor(call, receiver, arguments);
-            if (node != null) {
-                storeTargetMethod(call, node);
-                extension.afterMethodCall(call);
-                return;
-            }
-        }
-        node = findMethodOrFail(call, receiver, "<init>", args);
-        if (node != null) {
-            if (looksLikeNamedArgConstructor(receiver, args) && node.getParameters().length + 1 == args.length) {
-                node = typeCheckMapConstructor(call, receiver, arguments);
+        if (!extension.beforeMethodCall(call)) {
+            ClassNode receiver;
+            if (call.isThisCall()) {
+                receiver = makeThis();
+            } else if (call.isSuperCall()) {
+                receiver = makeSuper();
             } else {
-                typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
+                receiver = call.getType();
             }
-            if (node != null) {
-                storeTargetMethod(call, node);
-                visitMethodCallArguments(receiver, argumentList, true, node);
+            Expression arguments = call.getArguments();
+            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
+
+            checkForbiddenSpreadArgument(argumentList);
+            visitMethodCallArguments(receiver, argumentList, false, null);
+            final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
+
+            MethodNode ctor;
+            if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                    && findMethod(receiver, "<init>", argumentTypes).isEmpty()
+                    && findMethod(receiver, "<init>", init(argumentTypes)).size() == 1) {
+                ctor = typeCheckMapConstructor(call, receiver, arguments);
+            } else {
+                ctor = findMethodOrFail(call, receiver, "<init>", argumentTypes);
+                if (ctor != null) {
+                    Parameter[] parameters = ctor.getParameters();
+                    if (looksLikeNamedArgConstructor(receiver, argumentTypes)
+                            && parameters.length == argumentTypes.length - 1) {
+                        ctor = typeCheckMapConstructor(call, receiver, arguments);
+                    } else {
+                        if (receiver.getGenericsTypes() != null) { // GROOVY-8909, GROOVY-9734, GROOVY-9844, GROOVY-9915, GROOVY-10482, et al.
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, ctor, argumentList);
+                            parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
+                        }
+                        resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
+                        typeCheckMethodsWithGenericsOrFail(receiver, argumentTypes, ctor, call);
+                        visitMethodCallArguments(receiver, argumentList, true, ctor);
+                    }
+                }
+            }
+            if (ctor != null) {
+                storeTargetMethod(call, ctor);
             }
         }
 
@@ -3998,7 +3999,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static boolean notReturningBlock(final Statement statement) {
         return statement.isEmpty() || !(statement instanceof BlockStatement)
-            || !(DefaultGroovyMethods.last(((BlockStatement) statement).getStatements()) instanceof ReturnStatement);
+            || !(last(((BlockStatement) statement).getStatements()) instanceof ReturnStatement);
     }
 
     @Override
@@ -5408,6 +5409,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Map<GenericsTypeName, GenericsType> linked = new HashMap<>();
             Map<GenericsTypeName, GenericsType> source = GenericsUtils.extractPlaceholders(at);
             Map<GenericsTypeName, GenericsType> target = GenericsUtils.extractPlaceholders(pt);
+
+            if (at.isGenericsPlaceHolder()) // GROOVY-10482: call argument via "def <T> T m()"
+                target.put(new GenericsTypeName(at.getUnresolvedName()), pt.asGenericsType());
 
             // connect E:T from source to E:Type from target
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
