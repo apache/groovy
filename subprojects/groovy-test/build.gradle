@@ -17,10 +17,6 @@
  *  under the License.
  */
 
-ext {
-    junitVersion = '4.13.2'
-}
-
 dependencies {
     api rootProject   // GroovyTestCase uses Closure...
     api "junit:junit:$junitVersion" // GroovyTestCase extends TestCase...
