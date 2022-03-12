@@ -2543,18 +2543,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10482
     void testCompatibleArgumentsForPlaceholders6() {
-        assertScript '''
-            class Foo<X> {
-                Foo(X x) {
+        ['', 'def', 'public', 'static', '@Deprecated'].each {
+            assertScript """
+                class Foo<X> {
+                    Foo(X x) {
+                    }
                 }
-            }
-            def <Y> Y bar() {
-            }
-            def <Z> void baz() {
-                new Foo<Z>(bar()) // Cannot call Foo#<init>(Z) with arguments [#Y]
-            }
-            this.<String>baz()
-        '''
+                $it <Y> Y bar() {
+                }
+                $it <Z> void baz() {
+                    new Foo<Z>(bar()) // Cannot call Foo#<init>(Z) with arguments [#Y]
+                }
+                this.<String>baz()
+            """
+        }
     }
 
     void testIncompatibleArgumentsForPlaceholders1() {
