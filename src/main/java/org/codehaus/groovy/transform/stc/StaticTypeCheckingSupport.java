@@ -1920,10 +1920,13 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType.getType();
     }
 
-    static GenericsType getCombinedGenericsType(final GenericsType gt1, final GenericsType gt2) {
+    static GenericsType getCombinedGenericsType(GenericsType gt1, GenericsType gt2) {
+        // GROOVY-9998, GROOVY-10499: unpack "?" that is from "? extends T"
+        if (isUnboundedWildcard(gt1)) gt1 = gt1.getType().asGenericsType();
+        if (isUnboundedWildcard(gt2)) gt2 = gt2.getType().asGenericsType();
         ClassNode cn1 = GenericsUtils.makeClassSafe0(CLASS_Type, gt1);
         ClassNode cn2 = GenericsUtils.makeClassSafe0(CLASS_Type, gt2);
-        ClassNode lub = lowestUpperBound(cn1,cn2);
+        ClassNode lub = lowestUpperBound(cn1, cn2);
         return lub.getGenericsTypes()[0];
     }
 
