@@ -1486,6 +1486,28 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10499
+    void testCompatibleArgumentsForPlaceholders7() {
+        ['?', 'Y', '? extends Y'].each {
+            assertScript """
+                class Foo<X> {
+                    Foo(X x) {
+                    }
+                }
+                class Bar<Y> {
+                    Bar(Foo<${it}> foo, Y y) {
+                    }
+                    Y baz(Y y) {
+                    }
+                }
+                def <Z> void test(Z z = null) {
+                    new Bar<>(new Foo<Z>(z), z).baz(z) // Cannot find matching method Bar#baz(Z)
+                }
+                test()
+            """
+        }
+    }
+
     void testIncompatibleGenericsForTwoArguments() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, T arg2) {
