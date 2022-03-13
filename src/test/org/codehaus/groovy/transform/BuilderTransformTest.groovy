@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -773,5 +774,46 @@ final class BuilderTransformTest {
 
             assert new FooBuilder().name('Mary').build().name == 'John'
         '''
+    }
+
+    @Test // GROOVY-9472
+    void testInnerClassReference() {
+        def sourceDir = File.createTempDir()
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        try {
+            new File(sourceDir, 'p').mkdir()
+
+            def a = new File(sourceDir, 'Main.groovy')
+            a.write '''
+                import p.Pogo
+
+                /*Pogo.PogoBuilder*/ pb = Pogo.builder()
+                Pogo p = pb.name('Frank Grimes').build()
+
+                assert p.name == 'Frank Grimes'
+            '''
+            def b = new File(sourceDir, 'p/Pogo.groovy')
+            b.write '''
+                package p
+
+                @groovy.transform.builder.Builder
+                class Pogo {
+                    String name
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            sourceDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 }
