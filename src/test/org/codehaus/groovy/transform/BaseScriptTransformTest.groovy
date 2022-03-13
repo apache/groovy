@@ -18,86 +18,105 @@
  */
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
 
-final class BaseScriptTransformTest extends gls.CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+/**
+ * Tests for the {@code @BaseScript} AST transform.
+ */
+final class BaseScriptTransformTest {
+
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
+        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.BaseScript') })
+    )
+
+    @Test
     void testInheritsFromCustomScript() {
-        assertScript '''
+        assertScript shell, '''
             abstract class Custom extends Script {
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             assert this.class.superclass == Custom
         '''
     }
 
+    @Test
     void testBaseScriptMustExtendsScript() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom {
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
         '''
     }
 
+    @Test
     void testThisObjectIsAssignedToBaseScriptVariable() {
-        assertScript '''
+        assertScript shell, '''
             abstract class Custom extends Script {
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             assert this == self
         '''
     }
 
+    @Test
     void testNotAllowedForClassFields() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom extends Script {
             }
 
             class Inner {
-                @groovy.transform.BaseScript Custom nope
+                @BaseScript Custom nope
             }
         '''
     }
 
+    @Test
     void testNotAllowedForScriptInnerClassFields() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom extends Script {
             }
 
             class Inner {
-                @groovy.transform.BaseScript Custom nope
+                @BaseScript Custom nope
             }
 
             println Inner.class.name
         '''
     }
 
+    @Test
     void testNotAllowedInClassMethods() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom extends Script {
             }
 
             class Inner {
                 void test() {
-                    @groovy.transform.BaseScript Custom nope
+                    @BaseScript Custom nope
                 }
             }
         '''
     }
 
+    @Test
     void testNotAllowedInScriptInnerClassMethods() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom extends Script {
             }
 
             class Inner {
                 void test() {
-                    @groovy.transform.BaseScript Custom nope
+                    @BaseScript Custom nope
                 }
             }
 
@@ -107,29 +126,23 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
 
     abstract class MyCustomScript extends Script {}
 
+    @Test
     void testBaseScriptFromCompiler() {
-        CompilerConfiguration config = new CompilerConfiguration()
-        config.scriptBaseClass = MyCustomScript.name
-        GroovyShell shell = new GroovyShell(config)
-
-        shell.evaluate('''
+        shell.config.scriptBaseClass = MyCustomScript.name
+        shell.evaluate '''
             abstract class Custom extends Script {
                 int meaningOfLife = 42
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             assert meaningOfLife == 42
-        ''')
+        '''
     }
 
-    // GROOVY-6585
+    @Test // GROOVY-6585
     void testBaseScriptAbstractMethod() {
-        CompilerConfiguration config = new CompilerConfiguration()
-        config.scriptBaseClass = MyCustomScript.name
-        GroovyShell shell = new GroovyShell(config)
-
-        def answer = shell.evaluate('''
+        def answer = shell.evaluate '''
             abstract class Custom extends Script {
                 private int _meaningOfLife = 0
                 int getMeaningOfLife() { _meaningOfLife }
@@ -148,23 +161,23 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
                 }
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             meaningOfLife |= 32
             assert meaningOfLife == 34
-        ''')
-
+        '''
         assert answer == 42
     }
 
+    @Test
     void testBaseScriptImplementsRunMethod() {
-        def result = new GroovyShell().evaluate('''
+        def result = shell.evaluate '''
             class Custom extends Script {
                 boolean iBeenRun
                 def run() { iBeenRun = true }
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             assert !iBeenRun
 
@@ -173,26 +186,27 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
             assert iBeenRun
 
             iBeenRun
-        ''')
-
+        '''
         assert result
     }
 
+    @Test
     void testBaseScriptCanImplementRunMethodWithArgs() {
-        assertScript '''
+        assertScript shell, '''
             abstract class Custom extends Script {
                 def run() { run(null) }
                 abstract run(Object x)
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             println "hello world"
         '''
     }
 
+    @Test
     void testScriptCanOverrideRun() {
-        assertScript '''
+        assertScript shell, '''
             abstract class Custom extends Script {
                 def depth = 3
                 def run() { myRun() }
@@ -206,14 +220,15 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
                 }
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             println "hello world"
         '''
     }
 
+    @Test
     void testScriptCanOverrideRunButNotIfFinal() {
-        shouldNotCompile '''
+        shouldFail shell, '''
             abstract class Custom extends Script {
                 def depth = 3
                 final def run() { myRun() }
@@ -227,14 +242,15 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
                 }
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             println "hello world"
         '''
     }
 
+    @Test
     void testBaseScriptOnImport() {
-        def result = new GroovyShell().evaluate('''
+        assertScript '''
             @BaseScript(Custom)
             import groovy.transform.BaseScript
 
@@ -248,14 +264,10 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
             super.run()
 
             assert iBeenRun
-
-            iBeenRun
-        ''')
-
-        assert result
+        '''
     }
 
-    // GROOVY-6706
+    @Test // GROOVY-6706
     void testBaseScriptOnImport2() {
         assertScript '''
             @BaseScript(Custom)
@@ -264,7 +276,7 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
             assert did_before
             assert !did_after
 
-            42
+            return 42
 
             abstract class Custom extends Script {
                 boolean did_before = false
@@ -285,12 +297,11 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBaseScriptOnPackage() {
-        def result = new GroovyShell().evaluate('''
+        assertScript shell, '''
             @BaseScript(Custom)
             package foo
-
-            import groovy.transform.BaseScript
 
             class Custom extends Script {
                 boolean iBeenRun
@@ -302,23 +313,19 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
             super.run()
 
             assert iBeenRun
-
-            iBeenRun
-        ''')
-
-        assert result
+        '''
     }
 
-    // GROOVY-6586
+    @Test // GROOVY-6586
     void testBaseScriptVsBinding() {
-        assertScript '''
+        assertScript shell, '''
             abstract class Custom extends Script {
                 private int _something = 1
                 int getSomething() { _something }
                 void setSomething(int i) { _something = i }
             }
 
-            @groovy.transform.BaseScript Custom self
+            @BaseScript Custom self
 
             assert binding.variables.size() == 0
             assert something == 1
@@ -329,33 +336,34 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testShouldNotAllowClassMemberIfUsedOnADeclaration() {
-        shouldNotCompile '''import groovy.transform.BaseScript
-
+        shouldFail shell, '''
             @BaseScript(Script) Script foo
             println 'ok'
         '''
     }
 
+    @Test
     void testShouldNotAllowClassMemberIsNotClassLiteral() {
-        shouldNotCompile '''
+        shouldFail '''
             @BaseScript('Script')
             import groovy.transform.BaseScript
             println 'ok'
         '''
     }
 
+    @Test
     void testShouldNotAllowBaseScriptOnMultipleAssignment() {
-        shouldNotCompile '''import groovy.transform.BaseScript
-
+        shouldFail shell, '''
             @BaseScript def (Script a, Script b) = [null,null]
             println 'ok'
         '''
     }
 
+    @Test
     void testShouldNotAllowBaseScriptOnVariableAssignment() {
-        shouldNotCompile '''import groovy.transform.BaseScript
-
+        shouldFail shell, '''
             @BaseScript a = null
             println 'ok'
         '''

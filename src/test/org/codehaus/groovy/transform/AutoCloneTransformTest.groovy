@@ -18,51 +18,57 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyShellTestCase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
 
-class AutoCloneTransformTest extends GroovyShellTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-    void testOk() {
-        assertScript """
-                import groovy.transform.AutoClone
+/**
+ * Tests for the {@code @AutoClone} AST transform.
+ */
+final class AutoCloneTransformTest {
 
-                @AutoClone
-                class Person {
-                    String first, last
-                    List favItems
-                    Date since
-                }
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
+        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.AutoClone') })
+    )
 
-                def p = new Person(first:'John', last:'Smith', favItems:['ipod', 'shiraz'], since:new Date())
-                def p2 = p.clone()
+    @Test
+    void testBasics() {
+        assertScript shell, '''
+            @AutoClone
+            class Person {
+                String first, last
+                List favItems
+                Date since
+            }
 
-                assert p instanceof Cloneable
-                assert p.favItems instanceof Cloneable
-                assert p.since instanceof Cloneable
-                assert !(p.first instanceof Cloneable)
+            def p = new Person(first:'John', last:'Smith', favItems:['ipod','shiraz'], since:new Date())
 
-                assert !p.is(p2)
-                assert !p.favItems.is(p2.favItems)
-                assert !p.since.is(p2.since)
-                assert p.first.is(p2.first)
-            """
+            assert p instanceof Cloneable
+            assert p.favItems instanceof Cloneable
+            assert p.since instanceof Cloneable
+            assert p.first !instanceof Cloneable
+
+            def p2 = p.clone()
+
+            assert !p.is(p2)
+            assert !p.favItems.is(p2.favItems)
+            assert !p.since.is(p2.since)
+            assert  p.first.is(p2.first)
+        '''
     }
 
+    @Test
     void testExcludesWithInvalidPropertyNameResultsInError() {
-        def message = shouldFail {
-            evaluate """
-                    import groovy.transform.AutoClone
-
-                    @AutoClone(excludes='sirName')
-                    class Person {
-                        String firstName
-                        String surName
-                    }
-
-                    new Person(firstName: "John", surName: "Doe").clone()
-                """
-        }
-        assert message.contains("Error during @AutoClone processing: 'excludes' property 'sirName' does not exist.")
+        def err = shouldFail shell, '''
+            @AutoClone(excludes='sirName')
+            class Person {
+                String firstName
+                String surName
+            }
+        '''
+        assert err =~ /Error during @AutoClone processing: 'excludes' property 'sirName' does not exist./
     }
-
 }

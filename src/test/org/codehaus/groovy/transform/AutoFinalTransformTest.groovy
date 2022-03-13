@@ -18,17 +18,25 @@
  */
 package org.codehaus.groovy.transform
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Tests for the {@code @AutoFinal} AST transform.
  */
-class AutoFinalTransformTest extends CompilableTestSupport {
+final class AutoFinalTransformTest {
 
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
+        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.AutoFinal', 'groovy.transform.ASTTest') })
+    )
+
+    @Test
     void testAutoFinalOnClass() {
         // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static java.lang.reflect.Modifier.isFinal
 
             @ASTTest(phase=SEMANTIC_ANALYSIS, value={
@@ -60,10 +68,10 @@ class AutoFinalTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAutoFinalOnClassButDisabledOnMethod() {
         // use ASTTest here since final modifier isn't put into bytecode so not available via reflection
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static java.lang.reflect.Modifier.isFinal
 
             @ASTTest(phase=SEMANTIC_ANALYSIS, value={
