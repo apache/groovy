@@ -18,23 +18,32 @@
  */
 package org.codehaus.groovy.transform
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Tests for {@code @Builder} transform.
+ * Tests for the {@code @Builder} transform.
  */
-class BuilderTransformTest extends CompilableTestSupport {
+final class BuilderTransformTest {
 
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
+        addCompilationCustomizers(new ImportCustomizer().tap { addStarImports('groovy.transform', 'groovy.transform.builder') })
+    )
+
+    @Test
     void testSimpleBuilder() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             @Builder(builderStrategy=SimpleStrategy)
             class Person {
                 String firstName
                 String lastName
                 int age
             }
+
             def person = new Person().setFirstName("Robert").setLastName("Lewandowski").setAge(21)
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
@@ -42,79 +51,82 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             def methods = Person.methods.findAll{ it.name.startsWith('set') && it.name.endsWith('e') }
             assert methods*.name.toSet() == ['setLastName', 'setAge', 'setFirstName'] as Set
-            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
-         """
+            assert methods.every{ it.getAnnotation(Generated) }
+        '''
     }
 
+    @Test
     void testSimpleBuilderInvalidUseOfForClass() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=SimpleStrategy, forClass=String)
-            class Person { }
-        """
-        assert message.contains("Annotation attribute 'forClass' not supported")
+            class Person {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'forClass' not supported")
     }
 
+    @Test
     void testSimpleBuilderInvalidUseOfBuilderClassName() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=SimpleStrategy, builderClassName='Creator')
-            class Person { }
-        """
-        assert message.contains("Annotation attribute 'builderClassName' not supported")
+            class Person {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'builderClassName' not supported")
     }
 
+    @Test
     void testSimpleBuilderInvalidUseOfBuilderMethodName() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=SimpleStrategy, builderMethodName='creator')
-            class Person { }
-        """
-        assert message.contains("Annotation attribute 'builderMethodName' not supported")
+            class Person {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'builderMethodName' not supported")
     }
 
+    @Test
     void testSimpleBuilderInvalidUseOfBuildMethodName() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=SimpleStrategy, buildMethodName='create')
-            class Person { }
-        """
-        assert message.contains("Annotation attribute 'buildMethodName' not supported")
+            class Person {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'buildMethodName' not supported")
     }
 
+    @Test
     void testSimpleBuilderInvalidUseOfIncludeSuperProperties() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=SimpleStrategy, includeSuperProperties=true)
-            class Person { }
-        """
-        assert message.contains("Annotation attribute 'includeSuperProperties' not supported")
+            class Person {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'includeSuperProperties' not supported")
     }
 
+    @Test
     void testSimpleBuilderCustomPrefix() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             @Builder(builderStrategy=SimpleStrategy, prefix="")
             class Person {
                 String firstName
                 String lastName
                 int age
             }
+
             def person = new Person()
             person.firstName("Robert").lastName("Lewandowski")
             person.setAge(21) // normal setters remain but can't be chained
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
             assert person.age == 21
-        """
+        '''
     }
 
+    @Test
     void testSimpleBuilderSetters() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @TupleConstructor(useSetters=true)
             @Builder(builderStrategy=SimpleStrategy, prefix="", useSetters=true)
             class Person {
@@ -137,14 +149,12 @@ class BuilderTransformTest extends CompilableTestSupport {
             p3.age = 15
             assert p3.name == "tom"
             assert p3.age == 30
-        """
+        '''
     }
 
+    @Test
     void testSimpleBuilderWithCanonicalAndExcludes() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.Canonical
-
+        assertScript shell, '''
             @Canonical(excludes='age')
             @Builder(builderStrategy=SimpleStrategy)
             class Person {
@@ -152,6 +162,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 String lastName
                 int age
             }
+
             def p = new Person().setFirstName("Robert").setLastName("Lewandowski")
             p.age = 21 // non-chained version should still be there
             assert "$p.firstName $p.lastName $p.age" == 'Robert Lewandowski 21'
@@ -162,31 +173,28 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDefaultBuilder() {
-        def shell = new GroovyShell()
-        shell.parse """
-            import groovy.transform.builder.Builder
-
+        shell.parse '''
             @Builder
             class Person {
                 String firstName
                 String lastName
                 int age
             }
-        """
-        shell.evaluate """
+        '''
+        assertScript shell, '''
             def builder = new Person.PersonBuilder()
             def person = builder.firstName("Robert").lastName("Lewandowski").age(21).build()
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
             assert person.age == 21
-        """
+        '''
     }
 
+    @Test
     void testDefaultBuilderUsingBuilderMethod() {
-        assertScript """
-            import groovy.transform.builder.Builder
-
+        assertScript shell, '''
             @Builder
             class Person {
                 String firstName
@@ -201,14 +209,13 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.age == 21
 
             def methods = Person.builder().getClass().methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
-            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
-        """
+            assert methods.every{ it.getAnnotation(Generated) }
+        '''
     }
 
+    @Test
     void testDefaultBuilderGenerics() {
-        assertScript """
-            import groovy.transform.builder.Builder
-
+        assertScript shell, '''
             @Builder
             class CookBook {
                 List<String> recipes
@@ -216,29 +223,25 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             def c = CookBook.builder().recipes(['Eggs Benedict', 'Poached Salmon']).build()
             assert c.recipes == ['Eggs Benedict', 'Poached Salmon']
-        """
-        def message = shouldNotCompile '''
-            import groovy.transform.builder.Builder
-            import groovy.transform.CompileStatic
+        '''
 
+        def err = shouldFail shell, '''
             @Builder
             class CookBook {
                 List<String> recipes
             }
-
 
             @CompileStatic
             def methodBadParams() {
                 CookBook.builder().recipes([35, 42]).build()
             }
         '''
-        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
+        assert err =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
+    @Test
     void testInitializerGenerics() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             @Builder(builderStrategy=InitializerStrategy)
             class CookBook {
                 List<String> recipes
@@ -246,50 +249,44 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             def c = new CookBook(CookBook.createInitializer().recipes(['Eggs Benedict', 'Poached Salmon']))
             assert c.recipes == ['Eggs Benedict', 'Poached Salmon']
-        """
-        def message = shouldNotCompile '''
-            import groovy.transform.builder.*
+        '''
 
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=InitializerStrategy)
             class CookBook {
                 List<String> recipes
             }
 
-
-            @groovy.transform.CompileStatic
+            @CompileStatic
             def methodBadParams() {
                 new CookBook(CookBook.createInitializer().recipes([35, 42]))
             }
         '''
-        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
+        assert err =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
+    @Test
     void testDefaultBuilderCustomNames() {
-        def shell = new GroovyShell()
-        shell.parse """
-            import groovy.transform.builder.Builder
-
+        shell.parse '''
             @Builder(builderClassName="Foo", buildMethodName="create")
             class Person {
                 String firstName
                 String lastName
                 int age
             }
-        """
-        shell.evaluate """
+        '''
+        assertScript shell, '''
             def builder = new Person.Foo()
             def person = builder.firstName("Robert").lastName("Lewandowski").age(21).create()
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
             assert person.age == 21
-        """
+        '''
     }
 
+    @Test
     void testDefaultBuilderUsingCanonical() {
-        assertScript '''
-            import groovy.transform.builder.Builder
-            import groovy.transform.Canonical
-
+        assertScript shell, '''
             // explicit excludes overrides excludes from @Canonical
             @Builder(buildMethodName='make', builderMethodName='maker', prefix='with', excludes='age')
             @Canonical(includes='firstName,age')
@@ -304,26 +301,22 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDefaultBuilderInvalidIncludeWithMethodAnnotation() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
-
+        def err = shouldFail shell, '''
             class NameUtil {
                 @Builder(includes='first')
                 static String join(String first, String last) {
                     first + ' ' + last
                 }
             }
-        """
-
-        assert message.contains("includes/excludes only allowed on classes")
+        '''
+        assert err.message.contains("includes/excludes only allowed on classes")
     }
 
+    @Test
     void testDefaultBuilderIncludeSuperProperties() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @Builder
             class Mamal {
                 int age
@@ -343,13 +336,12 @@ class BuilderTransformTest extends CompilableTestSupport {
                 assert person.age == 21
             }
             parentBuilder()
-         """
+         '''
     }
 
+    @Test
     void testExternalBuilder() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             class Person {
                 String firstName
                 String lastName
@@ -363,32 +355,33 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.lastName == "Lewandowski"
 
             def methods = PersonBuilder.methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
-            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
-        """
+            assert methods.every{ it.getAnnotation(Generated) }
+        '''
     }
 
+    @Test
     void testExternalBuilderInvalidUseOfBuilderClassName() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=ExternalStrategy, forClass=String, builderClassName='Creator')
-            class DummyStringBuilder { }
-        """
-        assert message.contains("Annotation attribute 'builderClassName' not supported")
+            class DummyStringBuilder {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'builderClassName' not supported")
     }
 
+    @Test
     void testExternalBuilderInvalidUseOfBuilderMethodName() {
-        def message = shouldNotCompile """
-            import groovy.transform.builder.*
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=ExternalStrategy, forClass=String, builderMethodName='creator')
-            class DummyStringBuilder { }
-        """
-        assert message.contains("Annotation attribute 'builderMethodName' not supported")
+            class DummyStringBuilder {
+            }
+        '''
+        assert err.message.contains("Annotation attribute 'builderMethodName' not supported")
     }
 
+    @Test
     void testExternalBuilderCustomPrefix() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             class Person {
                 String firstName
                 String lastName
@@ -403,14 +396,12 @@ class BuilderTransformTest extends CompilableTestSupport {
             p1.with { assert firstName == "Robert" && lastName == "Lewandowski" }
             def p2 = new PersonBuilder2().withFirstName("Robert").withLastName("Lewandowski").build()
             p2.with { assert firstName == "Robert" && lastName == "Lewandowski" }
-        """
+        '''
     }
 
+    @Test
     void testExternalBuilderWithIncludeAndCustomMethodName() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.Canonical
-
+        assertScript shell, '''
             @Canonical
             class Person {
                 String firstName
@@ -425,13 +416,12 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.firstName == "Robert"
             assert personBuilder.metaClass.methods.find { it.name == "lastName" } == null
             assert personBuilder.metaClass.methods.find { it.name == "firstName" } != null
-        """
+        '''
     }
 
+    @Test
     void testExternalBuilderWithExclude() {
-        assertScript """
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             class Person {
                 String firstName
                 String lastName
@@ -445,13 +435,12 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.firstName == "Robert"
             assert personBuilder.metaClass.methods.find { it.name == "lastName" } == null
             assert personBuilder.metaClass.methods.find { it.name == "firstName" } != null
-        """
+        '''
     }
 
+    @Test
     void testExternalBuilderWithCanonicalAndExcludes() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.Canonical
+        assertScript shell, '''
             import static groovy.test.GroovyAssert.shouldFail
 
             @Canonical(excludes='born')
@@ -473,11 +462,9 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testExternalBuilderIncludeSuperProperties() {
-        assertScript """
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Mamal {
                 int age
             }
@@ -497,14 +484,12 @@ class BuilderTransformTest extends CompilableTestSupport {
                 assert person.age == 21
             }
             parentBuilder()
-        """
+        '''
     }
 
+    @Test
     void testInitializerStrategy() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
@@ -523,12 +508,10 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
 
             def methods = Person.createInitializer().getClass().methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
-            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
+            assert methods.every{ it.getAnnotation(Generated) }
         '''
-        def message = shouldNotCompile '''
-            import groovy.transform.builder.*
-            import groovy.transform.CompileStatic
 
+        def err = shouldFail shell, '''
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
                 String firstName
@@ -541,15 +524,13 @@ class BuilderTransformTest extends CompilableTestSupport {
                 new Person(Person.createInitializer().firstName("John").lastName("Smith"))
             }
         '''
-        assert message.contains('[Static type checking] - Cannot call Person#<init>')
-        assert message =~ /.*SET.*SET.*UNSET.*/
+        assert err.message.contains('[Static type checking] - Cannot call Person#<init>')
+        assert err =~ /.*SET.*SET.*UNSET.*/
     }
 
+    @Test
     void testInitializerStrategyCanonical() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @Canonical
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
@@ -566,11 +547,9 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInitializerStrategyOnConstructorAndMethods() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
@@ -611,11 +590,9 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInitializerStrategySetters() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             @Canonical(useSetters=true)
             @Builder(builderStrategy=InitializerStrategy)
             class Person {
@@ -629,10 +606,8 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
             make()
         '''
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
 
+        assertScript shell, '''
             @Canonical
             @TupleConstructor(includes='')
             @Builder(builderStrategy=InitializerStrategy, useSetters=true, force=true)
@@ -649,11 +624,9 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInitializerStrategyIncludeSuperProperties() {
-        assertScript '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Mamal {
                 int age
             }
@@ -674,10 +647,8 @@ class BuilderTransformTest extends CompilableTestSupport {
             // dynamic case
             assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
         '''
-        def message = shouldNotCompile '''
-            import groovy.transform.builder.*
-            import groovy.transform.*
 
+        def err = shouldFail shell, '''
             class Mamal {
                 int age
             }
@@ -694,15 +665,14 @@ class BuilderTransformTest extends CompilableTestSupport {
                 new Person(Person.createInitializer().firstName("John").lastName("Smith"))
             }
         '''
-        assert message.contains('[Static type checking] - Cannot call Person#<init>')
-        assert message =~ /.*SET.*SET.*UNSET.*/
+        assert err.message.contains('[Static type checking] - Cannot call Person#<init>')
+        assert err =~ /.*SET.*SET.*UNSET.*/
     }
 
-    void testBuilderWithPackageName_GROOVY7501() {
-        assertScript '''
+    @Test // GROOVY-7501
+    void testBuilderWithPackageName() {
+        assertScript shell, '''
             package alfa.beta
-
-            import groovy.transform.builder.*
 
             @Builder class PersonDef { }
             assert PersonDef.builder().class.name == 'alfa.beta.PersonDef$PersonDefBuilder'
@@ -712,44 +682,45 @@ class BuilderTransformTest extends CompilableTestSupport {
         '''
     }
 
-    void testInitializerStrategyEmptyCases_GROOVY7503() {
-        def message = shouldNotCompile '''
-            import groovy.transform.builder.*
-            @Builder(builderStrategy=InitializerStrategy) class Foo { }
+    @Test // GROOVY-7503
+    void testInitializerStrategyEmptyCases() {
+        def err = shouldFail shell, '''
+            @Builder(builderStrategy=InitializerStrategy) class Foo {
+            }
         '''
-        assert message.contains('at least one property is required for this strategy')
-        message = shouldNotCompile '''
-            import groovy.transform.builder.*
-            @Builder(builderStrategy=InitializerStrategy, excludes='bar') class Foo { String bar }
+        assert err.message.contains('at least one property is required for this strategy')
+
+        err = shouldFail shell, '''
+            @Builder(builderStrategy=InitializerStrategy, excludes='bar') class Foo {
+                String bar
+            }
         '''
-        assert message.contains('at least one property is required for this strategy')
-        message = shouldNotCompile '''
-            import groovy.transform.builder.*
+        assert err.message.contains('at least one property is required for this strategy')
+
+        err = shouldFail shell, '''
             class Foo {
               @Builder(builderStrategy=InitializerStrategy)
               Foo() {
               }
             }
         '''
-        assert message.contains('at least one parameter is required for this strategy')
+        assert err.message.contains('at least one parameter is required for this strategy')
     }
 
-    void testInternalFieldsAreIncludedIfRequestedForSimpleStrategy_GROOVY6454() {
-        assertScript '''
-            import groovy.transform.builder.*
-
+    @Test // GROOVY-6454
+    void testInternalFieldsAreIncludedIfRequestedForSimpleStrategy() {
+        assertScript shell, '''
             @Builder(builderStrategy = SimpleStrategy, allNames = true)
             class HasInternalPropertyWithSimpleStrategy {
                 String $internal
             }
             assert new HasInternalPropertyWithSimpleStrategy().set$internal("foo").$internal == "foo"
-         '''
+        '''
     }
 
-    void testInternalFieldsAreIncludedIfRequestedForExternalStrategy_GROOVY6454() {
-        assertScript '''
-            import groovy.transform.builder.*
-
+    @Test // GROOVY-6454
+    void testInternalFieldsAreIncludedIfRequestedForExternalStrategy() {
+        assertScript shell, '''
             class HasInternalProperty {
                 String $internal
             }
@@ -758,26 +729,24 @@ class BuilderTransformTest extends CompilableTestSupport {
             class HasInternalPropertyBuilder { }
 
             assert new HasInternalPropertyBuilder().$internal("foo").build().$internal == "foo"
-         '''
+        '''
     }
 
-    void testInternalFieldsAreIncludedIfRequestedForDefaultStrategy_GROOVY6454() {
-        assertScript '''
-            import groovy.transform.builder.*
-
+    @Test // GROOVY-6454
+    void testInternalFieldsAreIncludedIfRequestedForDefaultStrategy() {
+        assertScript shell, '''
             @Builder(allNames = true)
             class HasInternalProperty {
                 String $internal
             }
 
             assert HasInternalProperty.builder().$internal("foo").$internal == "foo"
-         '''
+        '''
     }
 
-    void testInternalFieldsAreIncludedIfRequestedForInitializerStrategy_GROOVY6454() {
-        assertScript '''
-            import groovy.transform.builder.*
-
+    @Test // GROOVY-6454
+    void testInternalFieldsAreIncludedIfRequestedForInitializerStrategy() {
+        assertScript shell, '''
             @Builder(builderStrategy = InitializerStrategy, allNames = true)
             class HasInternalProperty {
                 String $internal
@@ -785,14 +754,12 @@ class BuilderTransformTest extends CompilableTestSupport {
 
             def initializer = HasInternalProperty.createInitializer()
             assert new HasInternalProperty(initializer.$internal("foo")).$internal == "foo"
-         '''
+        '''
     }
 
-    // GROOVY-8186
+    @Test // GROOVY-8186
     void testJavaBeanPropertiesAreProperlyProcessed() {
-        assertScript '''
-            import groovy.transform.builder.*
-
+        assertScript shell, '''
             class Foo {
               String getName() {
                 'John'
@@ -801,9 +768,10 @@ class BuilderTransformTest extends CompilableTestSupport {
             }
 
             @Builder(builderStrategy=ExternalStrategy, forClass=Foo)
-            class FooBuilder { }
+            class FooBuilder {
+            }
 
             assert new FooBuilder().name('Mary').build().name == 'John'
-         '''
+        '''
     }
 }

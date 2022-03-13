@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -25,11 +27,13 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class AutoImplementTransformTest {
 
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
+        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.AutoImplement') })
+    )
+
     @Test
     void testException() {
-        shouldFail UnsupportedOperationException, '''
-            import groovy.transform.*
-
+        shouldFail shell, UnsupportedOperationException, '''
             @AutoImplement(exception=UnsupportedOperationException)
             class Foo implements Iterator<String> { }
 
@@ -39,9 +43,7 @@ final class AutoImplementTransformTest {
 
     @Test
     void testExceptionWithMessage() {
-        def err = shouldFail UnsupportedOperationException, '''
-            import groovy.transform.*
-
+        def err = shouldFail shell, UnsupportedOperationException, '''
             @AutoImplement(exception=UnsupportedOperationException, message='Not supported by Foo')
             class Foo implements Iterator<String> { }
 
@@ -52,9 +54,7 @@ final class AutoImplementTransformTest {
 
     @Test
     void testClosureBody() {
-        shouldFail IllegalStateException, '''
-            import groovy.transform.*
-
+        shouldFail shell, IllegalStateException, '''
             @AutoImplement(code={ throw new IllegalStateException() })
             class Foo implements Iterator<String> { }
 
@@ -64,12 +64,12 @@ final class AutoImplementTransformTest {
 
     @Test
     void testInheritedMethodNotOverwritten() {
-        assertScript '''
+        assertScript shell, '''
             class WithNext {
                 String next() { 'foo' }
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo extends WithNext implements Iterator<String> { }
 
             assert new Foo().next() == 'foo'
@@ -78,8 +78,8 @@ final class AutoImplementTransformTest {
 
     @Test
     void testExistingMethodNotOverwritten() {
-        assertScript '''
-            @groovy.transform.AutoImplement
+        assertScript shell, '''
+            @AutoImplement
             class Foo implements Iterator<String> {
                 String next() { 'foo' }
             }
@@ -90,12 +90,12 @@ final class AutoImplementTransformTest {
 
     @Test // GROOVY-9816
     void testPropertyMethodsNotOverwritten() {
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 def getBaz(); void setBaz(baz)
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar {
                 def baz
             }
@@ -104,12 +104,12 @@ final class AutoImplementTransformTest {
             assert foo.baz == 123
         '''
 
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 def getBaz(); void setBaz(baz)
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar {
                 final baz = 123
             }
@@ -119,12 +119,12 @@ final class AutoImplementTransformTest {
             assert foo.baz == 123
         '''
 
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 boolean getBaz(); boolean isBaz()
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar {
                 boolean baz
             }
@@ -135,12 +135,12 @@ final class AutoImplementTransformTest {
             assert foo.baz
         '''
 
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 boolean getBaz(); boolean isBaz()
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar {
                 boolean baz
                 boolean getBaz() { baz }
@@ -152,12 +152,12 @@ final class AutoImplementTransformTest {
             assert foo.baz
         '''
 
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 boolean getBaz(); boolean isBaz()
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar {
                 boolean baz
                 boolean isBaz() { baz }
@@ -172,12 +172,12 @@ final class AutoImplementTransformTest {
 
     @Test
     void testVoidReturnType() {
-        assertScript '''
+        assertScript shell, '''
             interface Bar {
                 void baz()
             }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo implements Bar { }
 
             new Foo().baz() // no value to assert
@@ -186,7 +186,7 @@ final class AutoImplementTransformTest {
 
     @Test
     void testGenericReturnTypes() {
-        assertScript '''
+        assertScript shell, '''
             interface HasXs<T> {
                 T[] x()
             }
@@ -197,7 +197,7 @@ final class AutoImplementTransformTest {
 
             interface MyIt<T> extends Iterator<T> { }
 
-            @groovy.transform.AutoImplement
+            @AutoImplement
             class Foo extends HasXsY<Integer> implements MyIt<String> { }
 
             def publicMethods = Foo.methods.findAll{ it.modifiers == 1 }.collect{ "$it.returnType.simpleName $it.name" }*.toString()
@@ -207,8 +207,8 @@ final class AutoImplementTransformTest {
 
     @Test // GROOVY-8270
     void testGenericParameterTypes() {
-        assertScript '''
-            @groovy.transform.AutoImplement
+        assertScript shell, '''
+            @AutoImplement
             class Foo implements Comparator<String> { }
             // Can't have an abstract method in a non-abstract class. The class 'Foo' must be declared
             // abstract or the method 'int compare(java.lang.Object, java.lang.Object)' must be implemented.
@@ -219,9 +219,7 @@ final class AutoImplementTransformTest {
 
     @Test // GROOVY-10472
     void testCovariantReturnTypes() {
-        assertScript '''
-            import groovy.transform.AutoImplement
-
+        assertScript shell, '''
             interface Super { List findAll() }
             interface Sub extends Super { Iterable findAll() }
 
@@ -230,9 +228,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { ArrayList findAll() }
             interface Sub extends Super { Iterable findAll() }
 
@@ -241,9 +238,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { Iterable findAll() }
             interface Sub extends Super { List findAll() }
 
@@ -252,9 +248,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { Iterable findAll() }
             interface Sub extends Super { ArrayList findAll() }
 
@@ -263,9 +258,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { AbstractList findAll() }
             interface Sub extends Super { List findAll() }
 
@@ -274,9 +268,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { List findAll() }
             interface Sub extends Super { AbstractList findAll() }
 
@@ -285,9 +278,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { AbstractList findAll() }
             interface Sub extends Super { ArrayList findAll() }
 
@@ -296,9 +288,8 @@ final class AutoImplementTransformTest {
 
             assert !(new ThisClassFails().findAll())
         '''
-        assertScript '''
-            import groovy.transform.AutoImplement
 
+        assertScript shell, '''
             interface Super { ArrayList findAll() }
             interface Sub extends Super { AbstractList findAll() }
 
