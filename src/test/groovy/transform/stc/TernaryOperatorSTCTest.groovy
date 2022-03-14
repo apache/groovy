@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : ternary operator.
  */
@@ -153,6 +155,31 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10358
+    void testCommonInterface() {
+        assertScript '''
+            interface I {
+                int m(int i)
+            }
+            abstract class A implements I {
+            }
+            class B<T> extends A {
+                int m(int i) {
+                    i + 1
+                }
+            }
+            class C<T> extends A {
+                int m(int i) {
+                    i - 1
+                }
+            }
+
+            C<String> c = null; int i = 1
+            int x = (false ? c : new B<String>()).m(i) // Cannot find matching method A#m(int)
+            assert x == 2
+        '''
+    }
+
     // GROOVY-5523
     void testNull1() {
         assertScript '''
@@ -204,6 +231,42 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             Integer test() { false ? null : 42 }
 
             assert test() == 42
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10095
+    void testNull4() {
+        assertScript '''
+            float x = false ? 1.0 : null
+        '''
+    }
+
+    // GROOVY-10226
+    void testNull5() {
+        assertScript '''
+            class A<T> {
+            }
+            def <T extends A<String>> T test() {
+                final T x = null
+                true ? (T) null : x
+            }
+            assert test() == null
+        '''
+    }
+
+    // GROOVY-10158
+    void testNull6() {
+        assertScript '''
+            class A<T> {
+            }
+            class B<T extends A<String>> {
+                T m() {
+                    final T x = null
+                    final T y = null
+                    ( true ? x : y )
+                }
+            }
+            assert new B<A<String>>().m() == null
         '''
     }
 }
