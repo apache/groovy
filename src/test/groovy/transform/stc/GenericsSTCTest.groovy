@@ -2581,6 +2581,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10100
+    void testCompatibleArgumentsForPlaceholders8() {
+        assertScript '''
+            import java.util.function.Function
+
+            class C<T> {
+                T m(Object... args) {
+                }
+            }
+            def <T extends Number> void test() {
+                C<T> c = new C<>()
+                Function<String[], T> f = c::m
+                T t = f.apply(new String[]{"string"}) // Cannot assign value of type java.lang.String[] to variable of type T
+            }
+            test()
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }
