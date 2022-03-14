@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : closures.
  */
@@ -373,8 +375,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method A#m()'
     }
 
-    // GROOVY-10052
+    @NotYetImplemented // GROOVY-10356
     void testClosureSharedVariable4() {
+        assertScript '''
+            interface A {
+                void m()
+            }
+            def a = (A) null
+            def x = { ->
+                a = null
+            }
+            a?.m() // A closure shared variable [a] has been assigned with various types and ...
+        '''
+    }
+
+    // GROOVY-10052
+    void testClosureSharedVariable5() {
         assertScript '''
             String x
             def f = { ->
@@ -386,7 +402,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10052
-    void testClosureSharedVariable5() {
+    void testClosureSharedVariable6() {
         assertScript '''
             def x
             def f = { ->
@@ -524,12 +540,10 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5693
     void testClosureArgumentCheckWithFlowTyping() {
         assertScript '''
-            Closure a = {
-                int i ->
+            Closure a = { int i ->
                 println "First closure "+ i
             }
-            Closure b = {
-                String s ->
+            Closure b = { String s ->
                 println "Second closure "+ s
             }
             a(5)
@@ -542,6 +556,20 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             a(5)
             a = b
             a('Testing!')
+        '''
+    }
+
+    // GROOVY-10221
+    void testClosureArgumentCheckWithFlowTyping2() {
+        assertScript '''
+            class C<T1, T2 extends T1> {
+                void test() {
+                    def one = { T2 x -> "" }
+                    Closure<T2> two = { T2 x -> x }
+                    one(two((T2) null))
+                }
+            }
+            new C<Number,Integer>().test()
         '''
     }
 
