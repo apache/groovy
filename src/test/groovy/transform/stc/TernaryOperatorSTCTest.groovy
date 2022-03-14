@@ -155,6 +155,25 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10357
+    void testAbstractMethodDefault() {
+        assertScript '''
+            import java.util.function.Function
+
+            abstract class A {
+                abstract long m(Function<Boolean,Integer> f = { Boolean b -> b ? +1 : -1 })
+            }
+
+            def a = new A() {
+                @Override
+                long m(Function<Boolean,Integer> f) {
+                    f(true).longValue()
+                }
+            }
+            assert a.m() == 1L
+        '''
+    }
+
     // GROOVY-10358
     void testCommonInterface() {
         assertScript '''

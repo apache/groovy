@@ -4175,6 +4175,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && isTypeSource(expr, enclosingExpression.getRightExpression())) {
             targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
         } else if (enclosingMethod != null
+                && !enclosingMethod.isAbstract()
                 && !enclosingMethod.isVoidMethod()
                 && isTypeSource(expr, enclosingMethod)) {
              targetType = enclosingMethod.getReturnType();
