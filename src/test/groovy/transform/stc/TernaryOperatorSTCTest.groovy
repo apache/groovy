@@ -155,7 +155,26 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10386
+    // GROOVY-10357
+    void testAbstractMethodDefault() {
+        assertScript '''
+            import java.util.function.Function
+
+            abstract class A {
+                abstract long m(Function<Boolean,Integer> f = { Boolean b -> b ? +1 : -1 })
+            }
+
+            def a = new A() {
+                @Override
+                long m(Function<Boolean,Integer> f) {
+                    f(true).longValue()
+                }
+            }
+            assert a.m() == 1L
+        '''
+    }
+
+    // GROOVY-10358
     void testCommonInterface() {
         assertScript '''
             interface I {
@@ -173,6 +192,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
                     i - 1
                 }
             }
+
             C<String> c = null; int i = 1
             int x = (false ? c : new B<String>()).m(i) // Cannot find matching method A#m(int)
             assert x == 2
