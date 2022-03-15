@@ -1097,9 +1097,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!argumentList.getExpressions().isEmpty() && constructor != null) {
                 ClassNode type = GenericsUtils.parameterizeType(cceType, cceType);
                 type = inferReturnTypeGenerics(type, constructor, argumentList);
-                if (type.toString(false).indexOf('#') > 0 // GROOVY-9983, GROOVY-10291, GROOVY-10368
+                if (lType.getGenericsTypes() != null // GROOVY-10367: nothing to inspect
+                        && (type.toString(false).indexOf('#') > 0 // GROOVY-9983, GROOVY-10291, GROOVY-10368: unresolved generic
                         // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
-                        || checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
+                        || checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type))) {
                     // allow covariance of each type parameter, but maintain semantics for nested generics
 
                     ClassNode pType = GenericsUtils.parameterizeType(lType, type);
