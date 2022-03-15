@@ -989,7 +989,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             C.m(new A<>(new B()))
             C.m(new A<>(new E()))
             C.m(flag ? new A<>(new B()) : new A<>(new B()))
-            C.m(flag ? new A<>(new B()) : new A<>(new E())) // Cannot call m(A<B>) with arguments [A<? extends B>]
+            C.m(flag ? new A<>(new B()) : new A<>((B)null))
+            C.m(flag ? new A<>(new B()) : new A<>((B)new E())) // Cannot call m(A<B>) with arguments [A<? extends B>]
         '''
 
         shouldFailWithMessages types + '''
@@ -1003,6 +1004,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign A<? extends java.lang.Object> to: A<B>',
         'Cannot call C#m(A<B>) with arguments [A<java.lang.Object>]',
         'Cannot call C#m(A<B>) with arguments [A<? extends java.lang.Object>]'
+    }
+
+    // GROOVY-10114
+    void testDiamondInferrenceFromConstructor14a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+              T p
+            }
+            class B {
+                Character m() {
+                    (Character) '!'
+                }
+            }
+            (false ? new A<B>(new B()) : new A<>(new B())).p.m()
+            (false ? new A< >(new B()) : new A<>(new B())).p.m()
+            def a = (true ? new A<>(new B()) : new A<>(new B()))
+            assert a.p.m() == (char)'!'
+        '''
     }
 
     // GROOVY-9995
