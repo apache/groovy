@@ -152,7 +152,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInference() {
+    void testReturnTypeInference1() {
         assertScript '''
             class Foo<U> {
                 U method() { }
@@ -162,13 +162,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInferenceWithDiamond() {
+    void testReturnTypeInference2() {
         assertScript '''
-            class Foo<U> {
-                U method() { }
-            }
-            Foo<Integer> foo = new Foo<>()
-            Integer result = foo.method()
+        Object m() {
+          def s = '1234'
+          println 'Hello'
+        }
         '''
     }
 
@@ -291,7 +290,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 U method() { }
             }
             Foo<Integer> foo = new Foo<>()
-            Integer result = foo.method()
+            Integer integer = foo.method()
         '''
     }
 
@@ -333,6 +332,60 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6232
+    void testDiamondInferrenceFromConstructor5() {
+        ['"a",new Object()', 'new Object(),"b"', '"a","b"'].each { args ->
+            assertScript """
+                class C<T> {
+                    C(T x, T y) {
+                    }
+                }
+                C<Object> c = new C<>($args)
+            """
+        }
+    }
+
+    // GROOVY-9948
+    void testDiamondInferrenceFromConstructor6() {
+        assertScript '''
+            class C<T> {
+                T p
+                C(T p) {
+                    this.p = p
+                }
+            }
+
+            C<Integer> c = new C<>(1)
+            assert c.p < 10
+        '''
+    }
+
+    // GROOVY-9948
+    void testDiamondInferrenceFromConstructor7() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+
+            C<Integer> c = new C<>(1)
+            assert c.p < 10
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-9984
+    void testDiamondInferrenceFromConstructor7a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+
+            C<Integer> c = new C<>(null)
+            assert c.p === null
+        '''
+    }
+
     // GROOVY-9956
     void testDiamondInferrenceFromConstructor8() {
         assertScript '''
@@ -345,6 +398,42 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             C<I> ci = new C<I>(new D())
             ci = new C<>(new D()) // infers C<D> on RHS
+        '''
+    }
+
+    // GROOVY-9996
+    void testDiamondInferrenceFromConstructor8a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+            void test(C<I> c) { assert c.p instanceof D }
+
+            I i = new D() // infers D for "i"
+            def ci = new C<>(i) // infers C<D> for "ci"
+            test(ci)
+        '''
+    }
+
+    // GROOVY-10011
+    void testDiamondInferrenceFromConstructor8b() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            void test(I i) {
+                if (i instanceof D) {
+                    C<D> cd = new C<>(i)
+                }
+            }
+            test(new D())
         '''
     }
 
@@ -380,6 +469,131 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
     }
 
+    // GROOVY-9972
+    void testDiamondInferrenceFromConstructor9a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            C<D> cd = true ? new C<>(new D()) : new C<>(new D())
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            boolean b = false
+            C<D> cd = b ? new C<>(new D()) : (b ? new C<>((D) null) : new C<>(new D()))
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def cd
+            if (true) {
+                cd = new C<>(new D())
+            } else {
+                cd = new C<>((D) null)
+            }
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C {
+                List<D> list
+            }
+            class D {
+            }
+            List test(C... array) {
+                // old code used "List<D> many" as target for guts of closure
+                List<D> many = array.collectMany { it.list ?: [] }
+            }
+            def result = test(new C(), new C(list:[new D()]))
+            assert result.size() == 1
+        '''
+    }
+
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor9b() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def foo = { flag, C<D> cd = (flag ? new C<>(new D()) : new C<>(new D())) ->
+                cd.p.f.toLowerCase()
+            }
+            assert foo.call(true) == 'd#f'
+        '''
+
+        shouldFailWithMessages '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def foo = { flag, C<D> cd = (flag ? new C<>(new D()) : new C<>(new Object())) ->
+                cd.p.f.toLowerCase()
+            }
+        ''',
+        'Incompatible generic argument types. Cannot assign C<? extends java.lang.Object> to: C<D>'
+    }
+
+    @NotYetImplemented // GROOVY-9963
+    void testDiamondInferrenceFromConstructor10() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            static void m(String s) {
+                assert s.isEmpty()
+            }
+            m(new C<>("").p)
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10080
+    void testDiamondInferrenceFromConstructor11() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                int m(Object[] objects) {
+                    42
+                }
+            }
+            def closure = { ->
+                new C<>(new D())
+            }
+            def result = closure().p.m(new BigDecimal[0]) // Cannot find matching method Object#m(...)
+            assert result == 42
+        '''
+    }
+
     // GROOVY-10086
     void testDiamondInferrenceFromConstructor12() {
         shouldFailWithMessages '''
@@ -395,6 +609,180 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             m(0, new C<>(1))
         ''',
         'Cannot call', 'm(int, C <D>[]) with arguments [int, C <java.lang.Integer>]'
+    }
+
+    // GROOVY-9970
+    void testDiamondInferrenceFromConstructor13() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T extends B> {
+                T p
+            }
+            class B {
+            }
+            class C<T extends Number> {
+                void test(T n) {
+                    A<B> x = new A<>(new B())
+                    def closure = { ->
+                        A<B> y = new A<>(new B())
+                    }
+                    closure.call()
+                }
+            }
+            new C<Long>().test(42L)
+        '''
+    }
+
+    // GROOVY-9983
+    void testDiamondInferrenceFromConstructor14() {
+        String types = '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+                T p
+            }
+            class B {
+            }
+            class C {
+                static m(A<B> a_of_b) {
+                }
+            }
+        '''
+
+        assertScript types + '''
+            class E extends B {
+            }
+            boolean flag = true
+
+            A<B> v = new A<>(null)
+            A<B> w = new A<>(new B())
+            A<B> x = new A<>(new E())
+            A<B> y = flag ? new A<>(new B()) : new A<>(new B())
+            A<B> z = flag ? new A<>(new B()) : new A<>(new E())
+
+            C.m(new A<>(null))
+            C.m(new A<>(new B()))
+            C.m(new A<>(new E()))
+            C.m(flag ? new A<>(new B()) : new A<>(new B()))
+            C.m(flag ? new A<>(new B()) : new A<>((B)null))
+            C.m(flag ? new A<>(new B()) : new A<>((B)new E())) // Cannot call m(A<B>) with arguments [A<? extends B>]
+        '''
+
+        shouldFailWithMessages types + '''
+            A<B> x = new A<>(new Object())
+            A<B> y = true ? new A<>(new B()) : new A<>(new Object())
+
+            C.m(new A<>(new Object()))
+            C.m(true ? new A<>(new B()) : new A<>(new Object()))
+        ''',
+        'Cannot assign A <java.lang.Object> to: A <B>',
+        'Cannot assign A <? extends java.lang.Object> to: A <B>',
+        'Cannot call C#m(A <B>) with arguments [A <java.lang.Object>]',
+        'Cannot call C#m(A <B>) with arguments [A <? extends java.lang.Object>]'
+    }
+
+    // GROOVY-10114
+    void testDiamondInferrenceFromConstructor14a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+              T p
+            }
+            class B {
+                Character m() {
+                    (Character) '!'
+                }
+            }
+            (false ? new A<B>(new B()) : new A<>(new B())).p.m()
+            (false ? new A< >(new B()) : new A<>(new B())).p.m()
+            def a = (true ? new A<>(new B()) : new A<>(new B()))
+            assert a.p.m() == (char)'!'
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-9995
+    void testDiamondInferrenceFromConstructor15() {
+        [
+            ['Closure<A<Long>>', 'java.util.concurrent.Callable<A<Long>>'],
+            ['new A<>(42L)', 'return new A<>(42L)']
+        ].combinations { functionalType, returnStmt ->
+            assertScript """
+                @groovy.transform.TupleConstructor(defaults=false)
+                class A<T extends Number> {
+                    T p
+                }
+                $functionalType callable = { ->
+                    $returnStmt
+                }
+                Long n = callable.call().p
+                assert n == 42L
+            """
+        }
+    }
+
+    // GROOVY-10283
+    void testDiamondInferrenceFromConstructor16() {
+        assertScript '''
+            class A<T1, T2> {
+            }
+            class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
+                T2 t
+                B(T2 t) {
+                    this.t  = t
+                }
+            }
+            class C {
+            }
+
+            new B<Integer,A<C,Integer>>(new A<>())
+        '''
+    }
+
+    // GROOVY-10291
+    void testDiamondInferrenceFromConstructor17() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<X> {
+                X x
+            }
+            class B<Y> {
+                def m(Y y) { null }
+                def test() {
+                    def c = { Y yy -> null }
+
+                    Y y = null
+                    m(new A<>(y).x) // works
+                    c(new A<>(y).x) // fails
+                }
+            }
+            new B().test()
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10228
+    void testDiamondInferrenceFromConstructor18() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            def m(Number n) {
+                'works'
+            }
+            def x = 12345
+            x = m(new C<>(x).getP()) // Cannot find matching method
+            assert x == 'works'
+        '''
+    }
+
+    // GROOVY-10323
+    void testDiamondInferrenceFromConstructor19() {
+        assertScript '''
+            class C<T> {
+            }
+            def <T,T> T m(C<T> c) {
+            }
+            Number n = m(new C<>())
+        '''
     }
 
     // GROOVY-10324
@@ -547,93 +935,64 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9972
-    void testDiamondInferrenceFromConstructor10() {
+    // GROOVY-10266
+    void testDiamondInferrenceFromConstructor30() {
         assertScript '''
-            @groovy.transform.TupleConstructor
-            class C<T> {
-                T p
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+                T t
             }
-            class D {
-                public String f = 'D#f'
-            }
-            C<D> cd = true ? new C<>(new D()) : new C<>(new D())
-            assert cd.p.f.toLowerCase() == 'd#f'
-        '''
+            class B<U> {
+                def m() {
+                    U v = null
+                    U w = new A<>(v).t
 
-        assertScript '''
-            @groovy.transform.TupleConstructor
-            class C<T> {
-                T p
+                    String x = ""
+                    String y = new A<>(x).t
+                }
             }
-            class D {
-                public String f = 'D#f'
-            }
-            boolean b = false
-            C<D> cd = b ? new C<>(new D()) : (b ? new C<>((D) null) : new C<>(new D()))
-            assert cd.p.f.toLowerCase() == 'd#f'
-        '''
-
-        assertScript '''
-            @groovy.transform.TupleConstructor
-            class C {
-                List<D> list
-            }
-            class D {
-            }
-            List test(C... array) {
-                // old code used "List<D> many" as target for guts of closure
-                List<D> many = array.collectMany { it.list ?: [] }
-            }
-            def result = test(new C(), new C(list:[new D()]))
-            assert result.size() == 1
+            new B<String>().m()
         '''
     }
 
-    // GROOVY-9983
-    void testDiamondInferrenceFromConstructor11() {
-        String types = '''
-            @groovy.transform.TupleConstructor(defaults=false)
-            class A<T> {
-                T p
+    // GROOVY-10662
+    void testDiamondInferrenceFromConstructor31() {
+        assertScript '''
+            class A<X, T> {
+                A(T t, X x) {}
+                void m(X x) {}
             }
-            class B {
-            }
-            class C {
-                static m(A<B> a_of_b) {
+            class B<T extends Number> {
+                void test() {
+                    T t = (T) null
+                    Character c = 'c'
+                    def a = new A<>(c, t)
+                    a.m((T) null) // Cannot find matching method A#m(T)
                 }
             }
+            new B<Integer>().test()
         '''
+    }
 
-        assertScript types + '''
-            class E extends B {
+    @NotYetImplemented // GROOVY-10633
+    void testDiamondInferrenceFromConstructor32() {
+        assertScript '''
+            class A<T, Y> {
+                public B<Y> f
+                A(B<Y> b_of_y, T t) {
+                    this.f = b_of_y
+                }
             }
-            boolean flag = true
-
-            A<B> v = new A<>(null)
-            A<B> w = new A<>(new B())
-            A<B> x = new A<>(new E())
-            A<B> y = flag ? new A<>(new B()) : new A<>(new B())
-            A<B> z = flag ? new A<>(new B()) : new A<>(new E())
-
-            C.m(new A<>(null))
-            C.m(new A<>(new B()))
-            C.m(new A<>(new E()))
-            C.m(flag ? new A<>(new B()) : new A<>(new B()))
-            C.m(flag ? new A<>(new B()) : new A<>(new E())) // Cannot call m(A<B>) with arguments [A<? extends B>]
+            class B<T> {
+                void m(T t) {
+                }
+            }
+            <T extends Number> void test() {
+                def x = new B<T>()
+                new A<>(x, '').f.m((T) null)
+            }
+            test()
         '''
-
-        /*shouldFailWithMessages types + '''
-            A<B> x = new A<>(new Object())
-            A<B> y = true ? new A<>(new B()) : new A<>(new Object())
-
-            C.m(new A<>(new Object()))
-            C.m(true ? new A<>(new B()) : new A<>(new Object()))
-        ''',
-        'Cannot assign A<java.lang.Object> to: A<B>',
-        'Cannot assign A<? extends java.lang.Object> to: A<B>',
-        'Cannot call C#m(A<B>) with arguments [A<java.lang.Object>]',
-        'Cannot call C#m(A<B>) with arguments [A<? extends java.lang.Object>]'*/
     }
 
     // GROOVY-10280
@@ -688,13 +1047,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testLinkedListWithListArgumentAndWrongElementTypes() {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
-        ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        ''',
+        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
     void testCompatibleGenericAssignmentWithInference() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
+        ''',
+        'Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -706,7 +1067,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testGenericAssignmentWithSubClassAndWrongGenericType() {
         shouldFailWithMessages '''
             List<Integer> list = new groovy.transform.stc.GenericsSTCTest.MyList()
-        ''', 'Incompatible generic argument types'
+        ''',
+        'Incompatible generic argument types'
     }
 
     void testAddShouldBeAllowedOnUncheckedGenerics() {
@@ -722,7 +1084,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testAssignmentShouldFailBecauseOfLowerBound() {
         shouldFailWithMessages '''
             List<? super Number> list = ['string']
-        ''', 'Number'
+        ''',
+        'Cannot assign java.util.List <java.lang.String> to: java.util.List <? super java.lang.Number>'
     }
 
     void testGroovy5154() {
@@ -783,16 +1146,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class FooBound {
             }
             new Foo()
-        ''', 'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
-    }
-
-    void testVoidReturnTypeInferrence() {
-        assertScript '''
-        Object m() {
-          def s = '1234'
-          println 'Hello'
-        }
-        '''
+        ''',
+        'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
     }
 
     // GROOVY-5237
@@ -901,7 +1256,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             A<String, Integer> a = new B()
             a.test()
-        ''', 'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
+        ''',
+        'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
     }
 
     void testPutWithPrimitiveValue() {
@@ -1124,7 +1480,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Test()
-        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testAssignmentOfNewInstance() {
@@ -1164,7 +1521,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         }
         new ClassB()
-        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
+        ''',
+        'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-8961
@@ -1200,7 +1558,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             void test() {
               m = Collections.<Integer>emptyList()
             }
-        ''', '[Static type checking] - Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+        ''',
+        'Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
     }
 
     // GROOVY-9734
