@@ -1167,6 +1167,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10368
+    void testDiamondInferrenceFromConstructor25() {
+        ['T', 'T extends Number', 'T extends Object'].each {
+            assertScript """
+                class C<$it> {
+                    C(p) {
+                    }
+                }
+                void m(C<Integer> c) {
+                }
+                m(new C<>(null)) // Cannot call m(C<Integer>) with arguments [C<# extends Number>]
+            """
+        }
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
