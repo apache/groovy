@@ -199,6 +199,20 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10130
+    void testInstanceofGuard() {
+        assertScript '''
+            class A {
+            }
+            class B extends A {
+            }
+            def test(A x) {
+                (true && x instanceof B) ? new B[]{x} : null // Cannot convert A to B
+            }
+            assert test(null) == null
+        '''
+    }
+
     // GROOVY-5523
     void testNull1() {
         assertScript '''

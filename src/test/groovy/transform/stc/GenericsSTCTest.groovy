@@ -2628,6 +2628,37 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10115
+    void testCompatibleArgumentsForPlaceholders9() {
+        assertScript '''
+            class C<X, T extends X> {
+                T t
+                C(T t) {
+                    this.t = t
+                }
+            }
+            new C(null)
+        '''
+    }
+
+    // GROOVY-10116
+    void testCompatibleArgumentsForPlaceholders10() {
+        assertScript '''
+            class Foo<X,T> {
+                Foo(Bar<X,T> bar) {
+                }
+            }
+            class Bar<X,T> {
+            }
+            class Baz<T> {
+                void test() {
+                    Foo<T,Long> x = new Foo<T,Long>(new Bar<T,Long>()) // Cannot call Foo#<init>(Bar<T,Long>) with arguments [Bar<T,Long>]
+                }
+            }
+            new Baz().test()
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }
