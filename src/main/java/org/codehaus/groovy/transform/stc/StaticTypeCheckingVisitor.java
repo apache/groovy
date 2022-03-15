@@ -4248,8 +4248,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param type the inferred type of {@code expr}
      */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        ClassNode sourceType = Optional.ofNullable(getInferredReturnType(expr)).orElse(type);
-
+        ClassNode sourceType = type;
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         BinaryExpression enclosingExpression = typeCheckingContext.getEnclosingBinaryExpression();
@@ -4264,11 +4263,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
              targetType = enclosingMethod.getReturnType();
         }
 
+        if (expr instanceof VariableExpression && hasInferredReturnType(expr)) {
+            sourceType = getInferredReturnType(expr);
+        }
+
+        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
+            // GROOVY-10114: type parameter(s) could be inferred from call arguments
+            if (targetType == null) targetType = sourceType.getPlainNodeReference();
+            inferDiamondType((ConstructorCallExpression) expr, targetType);
+            return sourceType;
+        }
+
         if (targetType == null) return sourceType;
 
-        if (expr instanceof ConstructorCallExpression) {
-            inferDiamondType((ConstructorCallExpression) expr, targetType);
-        } else if (!isPrimitiveType(getUnwrapper(targetType)) && !targetType.equals(OBJECT_TYPE)
+        if (!isPrimitiveType(getUnwrapper(targetType)) && !OBJECT_TYPE.equals(targetType)
                 && !sourceType.isGenericsPlaceHolder() && missesGenericsTypes(sourceType)) {
             // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
             // the inferred type is the RHS type "completed" with generics information from LHS

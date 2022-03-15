@@ -526,7 +526,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8638
-    void _testReturnTypeInferenceWithMethodGenerics18() {
+    void testReturnTypeInferenceWithMethodGenerics18() {
         assertScript '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
@@ -1111,11 +1111,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign A <java.lang.Object> to: A <B>',
         'Cannot assign A <? extends java.lang.Object> to: A <B>',
-        'Cannot call C#m(A <B>) with arguments [A <java.lang.Object>]'/*,
-        'Cannot call C#m(A <B>) with arguments [A <? extends java.lang.Object>]'*/
+        'Cannot call C#m(A <B>) with arguments [A <java.lang.Object>]',
+        'Cannot call C#m(A <B>) with arguments [A <? extends java.lang.Object>]'
     }
 
-    @NotYetImplemented // GROOVY-10114
+    // GROOVY-10114
     void testDiamondInferrenceFromConstructor14a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1967,7 +1967,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10525
-    void _testMethodCallWithClassParameterUnbounded2() {
+    void testMethodCallWithClassParameterUnbounded2() {
         assertScript '''
             @Grab('javax.validation:validation-api:1.1.0.Final')
             import javax.validation.Validator
@@ -4161,7 +4161,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6760
-    void _testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
+    void testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
         assertScript '''
             @Grab('com.netflix.rxjava:rxjava-core:0.18.1')
             import rx.Observable
