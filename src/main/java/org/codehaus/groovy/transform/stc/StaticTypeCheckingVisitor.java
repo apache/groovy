@@ -4182,11 +4182,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
              targetType = enclosingMethod.getReturnType();
         }
 
+        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
+            // GROOVY-10114: type parameter(s) could be inferred from call arguments
+            if (targetType == null) targetType = sourceType.getPlainNodeReference();
+            inferDiamondType((ConstructorCallExpression) expr, targetType);
+            return sourceType;
+        }
+
         if (targetType == null) return sourceType;
 
-        if (expr instanceof ConstructorCallExpression) {
-            inferDiamondType((ConstructorCallExpression) expr, targetType);
-        } else if (!isPrimitiveType(getUnwrapper(targetType))
+        if (!isPrimitiveType(getUnwrapper(targetType))
                 && !isObjectType(targetType) && missesGenericsTypes(sourceType)) {
             // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
             // the inferred type is the RHS type "completed" with generics information from LHS
