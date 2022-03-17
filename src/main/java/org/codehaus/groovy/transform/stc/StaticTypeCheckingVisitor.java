@@ -3495,7 +3495,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 && objectExpression instanceof ClassExpression && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
                         } else if (targetMethodCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
-                            addStaticTypeError("Abstract method " + toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters())) + " cannot be called directly", call);
+                            String target = toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters()));
+                            if (Traits.hasDefaultImplementation(targetMethodCandidate)) { // GROOVY-10494
+                                addStaticTypeError("Default method " + target + " requires qualified super", call);
+                            } else {
+                                addStaticTypeError("Abstract method " + target + " cannot be called directly", call);
+                            }
                         }
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass);

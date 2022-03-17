@@ -269,6 +269,37 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10494
+    void testCallToSuperDefault() {
+        assertScript '''
+            interface I<T> {
+                default m(T t) {
+                    return t
+                }
+            }
+            class C implements I<String> {
+                @Override m(String s) {
+                    I.super.m(s)
+                }
+            }
+            String result = new C().m('works')
+            assert result == 'works'
+        '''
+
+        shouldFailWithMessages '''
+            interface I<T> {
+                default void m(T t) {
+                }
+            }
+            class C implements I<String> {
+                @Override void m(String s) {
+                    super.m(s)
+                }
+            }
+        ''',
+        'Default method m(T) requires qualified super'
+    }
+
     void testMethodCallFromSuperOwner() {
         assertScript '''
             class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {
