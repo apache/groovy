@@ -1760,6 +1760,26 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-7288
+    void testClassWithTraitDelegate() {
+        assertScript '''
+            trait T {
+                final foo = 'bar'
+            }
+            class D implements T {
+                def m() {
+                    return 'baz'
+                }
+            }
+            class C { // The class must be declared abstract or the method 'java.lang.String T__foo$get()' must be implemented
+                private @Delegate D provider = new D()
+            }
+            def c = new C()
+            assert c.foo == 'bar'
+            assert c.m() == 'baz'
+        '''
+    }
+
     @Test // GROOVY-9739
     void testTraitExtendsTraitWithDelegate() {
         assertScript '''

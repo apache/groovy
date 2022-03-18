@@ -38,7 +38,6 @@ import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -187,7 +186,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (skipInterfaces) return;
 
             Set<ClassNode> addedInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
-            addedInterfaces.removeIf(i -> !Modifier.isPublic(i.getModifiers()));
+            addedInterfaces.removeIf(i -> (i.getModifiers() & (ACC_PUBLIC | ACC_SYNTHETIC)) != ACC_PUBLIC); // GROOVY-7288 and JDK16+
             if (!addedInterfaces.isEmpty()) {
                 Set<ClassNode> ownerInterfaces = getInterfacesAndSuperInterfaces(delegate.owner);
                 for (ClassNode i : addedInterfaces) {
