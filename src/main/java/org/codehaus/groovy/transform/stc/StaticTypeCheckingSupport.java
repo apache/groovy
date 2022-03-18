@@ -1861,7 +1861,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         ClassNode[] upperBounds = gt.getUpperBounds();
         if (upperBounds != null) {
-            return (upperBounds.length != 1 || upperBounds[0].isGenericsPlaceHolder() || !OBJECT_TYPE.equals(upperBounds[0]));
+            return (upperBounds.length != 1 || upperBounds[0].isGenericsPlaceHolder() || !isObjectType(upperBounds[0]));
         }
         return false;
     }
