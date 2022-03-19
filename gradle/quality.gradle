@@ -34,6 +34,7 @@ allprojects { proj ->
             substitute module("org.codehaus.groovy:groovy") with project(":")
             substitute module("org.codehaus.groovy:groovy-ant") with project(":groovy-ant")
             substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
+            substitute module("org.codehaus.groovy:groovy-json") with project(":groovy-json")
             substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
         }
 
@@ -42,7 +43,7 @@ allprojects { proj ->
 
     dependencies {
         checkstyle "com.puppycrawl.tools:checkstyle:$checkstyleVersion"
-        codenarc "org.codenarc:CodeNarc:2.2.0"
+        codenarc "org.codenarc:CodeNarc:3.0.0"
         spotbugs "com.github.spotbugs:spotbugs:$spotbugsVersion"
         if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
             spotbugs 'javax.xml.bind:jaxb-api:2.3.0'
@@ -74,9 +75,9 @@ allprojects { proj ->
         //dependsOn jar
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
-        doFirst {
-            configurations.codenarc.files.each { println it }
-        }
+//        doFirst {
+//            configurations.codenarc.files.each { println it }
+//        }
     }
 
     tasks.withType(Checkstyle) {
