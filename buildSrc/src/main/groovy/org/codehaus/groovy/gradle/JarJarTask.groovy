@@ -25,6 +25,9 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -32,20 +35,21 @@ import org.gradle.api.tasks.TaskAction
 class JarJarTask extends DefaultTask {
     private final static String JARJAR_CLASS_NAME = 'org.pantsbuild.jarjar.JarJarTask'
 
-    String description = "Repackages dependencies into a shaded jar"
+    @Internal
+    String description = 'Repackages dependencies into a shaded jar'
 
     private List<Action<? super Manifest>> manifestTweaks = []
 
-    @Input
+    @InputFile
     File from
 
-    @Input
+    @InputFiles
     FileCollection repackagedLibraries
 
-    @Input
+    @InputFiles
     FileCollection jarjarToolClasspath
 
-    @Input
+    @InputFiles
     @org.gradle.api.tasks.Optional
     List<String> untouchedFiles = []
 
@@ -73,12 +77,13 @@ class JarJarTask extends DefaultTask {
 
     @Input
     @org.gradle.api.tasks.Optional
-    boolean createManifest = true
+    Boolean createManifest = true
 
     void withManifest(Action<? super Manifest> action) {
         manifestTweaks << action
     }
 
+    @Internal
     String getArchiveName() {
         outputFile.name
     }
@@ -97,7 +102,7 @@ class JarJarTask extends DefaultTask {
                 jarjar(jarfile: tmpJar, filesonly: true) {
                     zipfileset(
                             src: originalJar,
-                            excludes: (untouchedFiles+excludes).join(','))
+                            excludes: (untouchedFiles + excludes).join(','))
                     includedResources.each { String resource, String path ->
                         String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
                         String filename = resource.substring(resource.lastIndexOf('/') + 1)
@@ -146,7 +151,7 @@ class JarJarTask extends DefaultTask {
                 manifest {
                     // because we don't want to use JDK 1.8.0_91, we don't care and it will
                     // introduce cache misses
-                    attribute(name:'Created-By', value:'Gradle')
+                    attribute(name: 'Created-By', value: 'Gradle')
                 }
                 if (untouchedFiles) {
                     zipfileset(
