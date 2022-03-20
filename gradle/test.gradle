@@ -53,10 +53,8 @@ allprojects {
 
     // create an Indy test suite
     if (rootProject.indyCapable()) {
-        def dependencies = configurations.testRuntime.incoming.dependencies.findAll {
-            it.name.startsWith('groovy')
-        }.collect {
-            it.name
+        def dependencies = configurations.testRuntimeOnly.incoming.dependencies.findResults {
+            if (it.name.startsWith('groovy')) return it.name
         }
         task testWithIndy(type: Test) {
             systemProperties 'groovy.target.indy': true
