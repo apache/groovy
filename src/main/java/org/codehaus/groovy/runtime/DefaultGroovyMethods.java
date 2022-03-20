@@ -56,6 +56,7 @@ import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.util.ReversedList;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -11959,38 +11960,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Coerces the closure to an implementation of the given class.  The class
+     * Coerces the closure to an implementation of the given class. The class
      * is assumed to be an interface or class with a single method definition.
      * The closure is used as the implementation of that single method.
      *
-     * @param cl    the implementation of the single method
-     * @param clazz the target type
-     * @return a Proxy of the given type which wraps this closure.
+     * @param impl the implementation of the single method
+     * @param type the target type
+     * @return A proxy of the given type which wraps this closure.
+     *
      * @since 1.0
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Closure cl, Class<T> clazz) {
-        if (clazz.isInterface() && !(clazz.isInstance(cl))) {
-            if (Traits.isTrait(clazz)) {
-                Method samMethod = CachedSAMClass.getSAMMethod(clazz);
-                if (samMethod!=null) {
-                    Map impl = Collections.singletonMap(samMethod.getName(),cl);
-                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.singletonList(clazz));
+    public static <T> T asType(final Closure impl, final Class<T> type) {
+        if (type.isInterface() && !type.isInstance(impl)) {
+            if (Traits.isTrait(type) || ClassHelper.make(type).getAllInterfaces().stream().anyMatch(Traits::isTrait)) { // GROOVY-8243
+                Method sam = CachedSAMClass.getSAMMethod(type);
+                if (sam != null) {
+                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(Collections.singletonMap(sam.getName(), impl), Collections.singletonList(type));
                 }
             }
-            return (T) Proxy.newProxyInstance(
-                    clazz.getClassLoader(),
-                    new Class[]{clazz},
-                    new ConvertedClosure(cl));
+            return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type}, new ConvertedClosure(impl));
         }
+
         try {
-            return asType((Object) cl, clazz);
-        } catch (GroovyCastException ce) {
+            return asType((Object) impl, type);
+        } catch (GroovyCastException gce) {
             try {
-                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(cl, clazz);
-            } catch (GroovyRuntimeException cause) {
-                throw new GroovyCastException("Error casting closure to " + clazz.getName() +
-                        ", Reason: " + cause.getMessage());
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(impl, type);
+            } catch (GroovyRuntimeException gre) {
+                throw new GroovyCastException("Error casting closure to " + type.getName() + ", Reason: " + gre.getMessage());
             }
         }
     }
