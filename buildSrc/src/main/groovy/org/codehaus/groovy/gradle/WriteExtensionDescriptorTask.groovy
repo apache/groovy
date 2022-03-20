@@ -19,6 +19,7 @@
 package org.codehaus.groovy.gradle
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
@@ -27,7 +28,8 @@ import org.gradle.api.tasks.OutputFile
  * A Gradle task to generate module descriptor files for Groovy extension modules.
  */
 class WriteExtensionDescriptorTask extends DefaultTask {
-    String description = 'Generates the org.codehaus.groovy.runtime.ExtensionModule descriptor file of a module'
+    @Internal
+    final String description = 'Generates the org.codehaus.groovy.runtime.ExtensionModule descriptor file of a module'
     @Input String extensionClasses = ''
     @Input String staticExtensionClasses = ''
     @OutputFile File descriptor = computeDescriptorFile()
@@ -48,6 +50,4 @@ extensionClasses=${extensionClasses}
 staticExtensionClasses=${staticExtensionClasses}"""
         }
     }
-
 }
-
