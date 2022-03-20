@@ -26,21 +26,17 @@ buildscript {
         }
         mavenCentral()
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        maven {
-            url 'https://jitpack.io'
-        }
+        maven { url 'https://plugins.gradle.org/m2/' }
+        maven { url 'https://jitpack.io' }
     }
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "org.nosphere.apache:creadur-rat-gradle:0.7.0"
-        classpath "gradle.plugin.com.github.jk1:gradle-license-report:1.3"
+        classpath 'org.nosphere.apache:creadur-rat-gradle:0.7.0'
+        classpath 'gradle.plugin.com.github.jk1:gradle-license-report:1.3'
     }
 }
 
@@ -61,12 +57,11 @@ buildScanRecipes {
 ext.modules = {
     subprojects.findAll{ !['performance', 'binary-compatibility'].contains(it.name) }
 }
-ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
+ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith('snapshot')
 
 apply from: 'gradle/bad-practices.gradle'
-//apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
-apply plugin: "com.github.jk1.dependency-license-report"
+apply plugin: 'com.github.jk1.dependency-license-report'
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -115,7 +110,7 @@ task(copyTestResources, type: Copy)
 test.dependsOn(copyTestResources)
 
 repositories {
-    // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
+    // TODO: Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
 }
 
@@ -352,12 +347,13 @@ task dgmConverter(dependsOn:compileJava) {
     // Gradle classloading magic with Groovy will only work if it finds a *jar*
     // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-task bootstrapJar(type:Jar ) {
+task bootstrapJar(type: Jar) {
     dependsOn compileJava, dgmConverter
 
     from compileJava.destinationDir
     from dgmConverter.outputDir
 
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     destinationDir = file("$buildDir/bootstrap")
     classifier = 'bootstrap'
 }
@@ -367,10 +363,14 @@ allprojects {
         compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
     }
 
+    tasks.withType(AbstractCopyTask) {
+        duplicatesStrategy = DuplicatesStrategy.WARN
+    }
+
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
         options.incremental = true
-        //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        //options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
 
         if (classpath) {
             classpath = classpath + files(dgmConverter.outputDir)
@@ -389,10 +389,10 @@ allprojects {
     }
 
     tasks.withType(GroovyCompile) {
-        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
+        groovyOptions.forkOptions.jvmArgs += ['-Dgroovy.antlr4.cache.threshold=100']
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyOptions.encoding = 'UTF-8'
-        //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        //options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
                 files(project==rootProject?rootProject.bootstrapJar:rootProject.jar)
@@ -454,7 +454,7 @@ licenseReport {
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
 //task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
-//    source = fileTree(dir:"src").include ("**/*.java",'**/*.groovy','**/*.html','**/*.css','**/*.xml','**/*.properties','**/*.properties')
+//    source = fileTree(dir:'src').include ('**/*.java','**/*.groovy','**/*.html','**/*.css','**/*.xml','**/*.properties','**/*.properties')
 //}
 //
 //task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
@@ -468,8 +468,8 @@ licenseReport {
 def checkRepo(repo) {
     if (repo instanceof MavenArtifactRepository) {
         def repoUrl = repo.url.toString()
-        if (repoUrl.startsWith("http://")) {
-            throw new GradleException("Build should not use insecure HTTP-based URLs for repositories. Found: " + repoUrl)
+        if (repoUrl.startsWith('http://')) {
+            throw new GradleException("Build should not use insecure HTTP-based URLs for repositories. Found: $repoUrl")
         }
     }
 }
@@ -485,7 +485,7 @@ project.afterEvaluate {
 
 def UNSTABLE = /^([\d.-]+(alpha|beta|rc|ea|b|m)[\d.-]+(groovy[\d.-]+)?|2.4.0-b[\d.]+|200\d{5}(\.\d{6})?|2004-03-19)$/
 // ignore non-stable releases
-tasks.named("dependencyUpdates")?.configure {
+tasks.named('dependencyUpdates')?.configure {
     gradleReleaseChannel = 'current'
     rejectVersionIf {
         !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
