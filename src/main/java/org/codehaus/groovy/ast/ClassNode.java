@@ -36,7 +36,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -696,13 +695,17 @@ public class ClassNode extends AnnotatedNode {
         return node;
     }
 
-    public void addInterface(ClassNode type) {
+    public void addInterface(final ClassNode type) {
+        assert type != null && type.isInterface();
         ClassNode[] interfaces = getInterfaces();
-        if (!Arrays.asList(interfaces).contains(type)) {
-            interfaces = Arrays.copyOf(interfaces, interfaces.length + 1);
-            interfaces[interfaces.length - 1] = type;
-            setInterfaces(interfaces);
+        for (ClassNode face : interfaces) {
+            if (face.equals(type)) return;
         }
+        final int n = interfaces.length;
+
+        System.arraycopy(interfaces, 0, interfaces = new ClassNode[n + 1], 0, n);
+        interfaces[n] = type; // append interface
+        setInterfaces(interfaces);
     }
 
     @Override
