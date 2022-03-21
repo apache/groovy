@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.transform.CompileStatic;
@@ -524,7 +523,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addGroovyObjectInterfaceAndMethods(final ClassNode node, final String classInternalName) {
-        if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
+        if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.GROOVY_OBJECT_TYPE);
         FieldNode metaClassField = getMetaClassField(node);
 
         boolean shouldAnnotate = classNode.getModule().getContext() != null;

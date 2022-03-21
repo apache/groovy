@@ -36,6 +36,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -696,20 +697,11 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public void addInterface(ClassNode type) {
-        // let's check if it already implements an interface
-        boolean skip = false;
         ClassNode[] interfaces = getInterfaces();
-        for (ClassNode face : interfaces) {
-            if (type.equals(face)) {
-                skip = true;
-                break;
-            }
-        }
-        if (!skip) {
-            ClassNode[] newInterfaces = new ClassNode[interfaces.length + 1];
-            System.arraycopy(interfaces, 0, newInterfaces, 0, interfaces.length);
-            newInterfaces[interfaces.length] = type;
-            redirect().interfaces = newInterfaces;
+        if (!Arrays.asList(interfaces).contains(type)) {
+            interfaces = Arrays.copyOf(interfaces, interfaces.length + 1);
+            interfaces[interfaces.length - 1] = type;
+            setInterfaces(interfaces);
         }
     }
 
@@ -1017,9 +1009,11 @@ public class ClassNode extends AnnotatedNode {
      * NOTE: Doesn't consider an interface to implement itself.
      * I think this is intended to be called on ClassNodes representing
      * classes, not interfaces.
+     *
+     * @see org.codehaus.groovy.ast.tools.GeneralUtils#isOrImplements
      */
     public boolean declaresInterface(ClassNode classNode) {
-        ClassNode[] interfaces = redirect().getInterfaces();
+        ClassNode[] interfaces = getInterfaces();
         for (ClassNode face : interfaces) {
             if (face.equals(classNode)) {
                 return true;
