@@ -64,7 +64,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implem
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = GenericsType.EMPTY_ARRAY;
-    public static final String JAVA_LANG_OBJECT = "java.lang.Object";
+    public static final String JAVA_LANG_OBJECT = ClassHelper.OBJECT;
 
     /**
      * Given a parameterized type and a generic type information, aligns actual type parameters. For example, if a
@@ -167,8 +167,8 @@ public class GenericsUtils {
         GenericsType[] parameterized = node.getGenericsTypes();
         if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
-        if (redirectGenericsTypes == null ||
-                (node.isGenericsPlaceHolder() && redirectGenericsTypes.length != parameterized.length) /* GROOVY-8609 */ ) {
+        if (redirectGenericsTypes == null || (node.isGenericsPlaceHolder() // GROOVY-8609
+                                              && redirectGenericsTypes.length != parameterized.length)) {
             redirectGenericsTypes = parameterized;
         }
         if (redirectGenericsTypes.length != parameterized.length) {
@@ -269,7 +269,6 @@ public class GenericsUtils {
         genericsSpec = createGenericsSpec(targetRedirect, genericsSpec);
         extractSuperClassGenerics(hint, targetRedirect, genericsSpec);
         return correctToGenericsSpecRecurse(genericsSpec, targetRedirect);
-
     }
 
     public static ClassNode nonGeneric(final ClassNode type) {

@@ -66,7 +66,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 
 /**
@@ -186,7 +185,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (skipInterfaces) return;
 
             Set<ClassNode> addedInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
-            addedInterfaces.removeIf(i -> (i.getModifiers() & (ACC_PUBLIC | ACC_SYNTHETIC)) != ACC_PUBLIC); // GROOVY-7288 and JDK16+
+            addedInterfaces.removeIf(i -> (i.getModifiers() & (ACC_PUBLIC | ACC_SYNTHETIC)) != ACC_PUBLIC); // GROOVY-7288
             if (!addedInterfaces.isEmpty()) {
                 Set<ClassNode> ownerInterfaces = getInterfacesAndSuperInterfaces(delegate.owner);
                 for (ClassNode i : addedInterfaces) {

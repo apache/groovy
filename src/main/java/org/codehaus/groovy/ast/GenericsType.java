@@ -66,20 +66,21 @@ public class GenericsType extends ASTNode {
     }
 
     private static String toString(final GenericsType gt, final Set<String> visited) {
+        String name = gt.getName();
         ClassNode type = gt.getType();
         boolean wildcard = gt.isWildcard();
         boolean placeholder = gt.isPlaceholder();
         ClassNode lowerBound = gt.getLowerBound();
         ClassNode[] upperBounds = gt.getUpperBounds();
 
-        if (placeholder) visited.add(gt.getName());
+        if (placeholder) visited.add(name);
 
-        StringBuilder ret = new StringBuilder(wildcard || placeholder ? gt.getName() : genericsBounds(type, visited));
+        StringBuilder ret = new StringBuilder(wildcard || placeholder ? name : genericsBounds(type, visited));
         if (lowerBound != null) {
             ret.append(" super ").append(genericsBounds(lowerBound, visited));
         } else if (upperBounds != null
                 // T extends Object should just be printed as T
-                && !(placeholder && upperBounds.length == 1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object"))) {
+                && !(placeholder && upperBounds.length == 1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals(ClassHelper.OBJECT))) {
             ret.append(" extends ");
             for (int i = 0, n = upperBounds.length; i < n; i += 1) {
                 if (i != 0) ret.append(" & ");
@@ -444,7 +445,7 @@ public class GenericsType extends ASTNode {
                                         if (!match) break;
                                     }
                                 }
-                                continue;
+                                continue; // GROOVY-10010
                             }
                         }
                         match = redirectBoundType.isCompatibleWith(classNodeType.getType());

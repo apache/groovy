@@ -775,7 +775,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
             ClassNode resultType;
             if (op == ELVIS_EQUAL) {
-                Expression fullExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
+                Expression fullExpression = elvisX(leftExpression, rightExpression);
                 fullExpression.setSourcePosition(expression);
                 fullExpression.visit(this);
 
@@ -4409,7 +4409,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (leftExpression instanceof VariableExpression) {
-                ClassNode initialType = getOriginalDeclarationType(leftExpression).redirect();
+                ClassNode initialType = getOriginalDeclarationType(leftExpression);
 
                 if (isPrimitiveType(right) && initialType.isDerivedFrom(Number_TYPE)) {
                     return getWrapper(right);
