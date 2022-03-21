@@ -1484,7 +1484,7 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testSAMCoercionOfTraitOnAssignment() {
+    void testSAMCoercion1() {
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1508,7 +1508,7 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testSAMCoercionOfTraitOnMethod() {
+    void testSAMCoercion2() {
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1537,26 +1537,44 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testImplicitSAMCoercionBug() {
+    void testSAMCoercion3() {
         assertScript '''
             trait Greeter {
-                String greet() { "Hello $name" }
                 abstract String getName()
+                String greet() { "Hello $name" }
             }
             Greeter greeter = { 'Alice' }
             assert greeter.greet() == 'Hello Alice'
+            assert greeter.getName().equals('Alice')
         '''
     }
 
     @Test
-    void testExplicitSAMCoercionBug() {
+    void testSAMCoercion4() {
         assertScript '''
             trait Greeter {
-                String greet() { "Hello $name" }
                 abstract String getName()
+                String greet() { "Hello $name" }
             }
-            Greeter greeter = { 'Alice' } as Greeter
+            def greeter = { 'Alice' } as Greeter
             assert greeter.greet() == 'Hello Alice'
+            assert greeter.getName().equals('Alice')
+        '''
+    }
+
+    @Test // GROOVY-8243
+    void testSAMCoercion5() {
+        assertScript '''
+            trait T {
+                abstract def foo(int i)
+                def bar(double j) { "trait $j".toString() }
+            }
+            interface I extends T {
+            }
+
+            def obj = { "proxy $it".toString() } as I
+            assert obj.foo(123) == 'proxy 123'
+            assert obj.bar(4.5) == 'trait 4.5'
         '''
     }
 

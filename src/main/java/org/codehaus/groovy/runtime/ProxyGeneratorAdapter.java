@@ -23,7 +23,6 @@ import groovy.lang.GeneratedGroovyProxy;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
-import groovy.transform.Trait;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -42,7 +41,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -201,20 +199,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         cachedNoArgConstructor = constructor;
     }
 
-    private Class adjustSuperClass(Class superClass, final Class[] interfaces) {
-        boolean isSuperClassAnInterface = superClass.isInterface();
-        if (!isSuperClassAnInterface) {
+    private Class adjustSuperClass(final Class superClass, Class[] interfaces) {
+        if (!superClass.isInterface()) {
             return superClass;
         }
-        Class result = Object.class;
-        Set<ClassNode> traits = new LinkedHashSet<ClassNode>();
-        // check if it's a trait
-        collectTraits(superClass, traits);
-        if (interfaces != null) {
-            for (Class anInterface : interfaces) {
-                collectTraits(anInterface, traits);
-            }
+        if (interfaces == null || interfaces.length == 0) {
+            interfaces = new Class[]{superClass};
         }
+        assert Arrays.asList(interfaces).contains(superClass);
+
+        Set<ClassNode> traits = collectTraits(interfaces);
         if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
             ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(ClassNode.EMPTY_ARRAY), null);
@@ -225,30 +219,35 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             cu.compile(Phases.CONVERSION);
             su.getAST().addClass(cn);
             cu.compile(Phases.CLASS_GENERATION);
-            @SuppressWarnings("unchecked")
-            List<GroovyClass> classes = (List<GroovyClass>) cu.getClasses();
+            List<GroovyClass> classes = cu.getClasses();
             for (GroovyClass groovyClass : classes) {
                 if (groovyClass.getName().equals(name)) {
                     return loader.defineClass(name, groovyClass.getBytes());
                 }
             }
         }
-        return result;
+
+        return Object.class;
     }
 
-    private static void collectTraits(final Class clazz, final Set<ClassNode> traits) {
-        Annotation annotation = clazz.getAnnotation(Trait.class);
-        if (annotation != null) {
-            ClassNode trait = ClassHelper.make(clazz);
-            traits.add(trait.getPlainNodeReference());
-            LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
-            Traits.collectSelfTypes(trait, selfTypes, true, true);
-            for (ClassNode selfType : selfTypes) {
-                if (Traits.isTrait(selfType)) {
-                    traits.add(selfType.getPlainNodeReference());
+    private static Set<ClassNode> collectTraits(final Class[] interfaces) {
+        Set<ClassNode> traits = new LinkedHashSet<>();
+        for (Class face : interfaces) {
+            for (ClassNode node : ClassHelper.make(face).getAllInterfaces()) {
+                if (Traits.isTrait(node)) {
+                    traits.add(node.getPlainNodeReference());
+                    // check trait for @SelfType types that are / extend traits
+                    LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<>();
+                    Traits.collectSelfTypes(node, selfTypes, true, true);
+                    for (ClassNode selfType : selfTypes) {
+                        if (Traits.isTrait(selfType)) {
+                            traits.add(selfType.getPlainNodeReference());
+                        }
+                    }
                 }
             }
         }
+        return traits;
     }
 
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class[] interfaces) {
