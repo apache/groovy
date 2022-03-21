@@ -696,7 +696,6 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public void addInterface(final ClassNode type) {
-        assert type != null && type.isInterface();
         ClassNode[] interfaces = getInterfaces();
         for (ClassNode face : interfaces) {
             if (face.equals(type)) return;
