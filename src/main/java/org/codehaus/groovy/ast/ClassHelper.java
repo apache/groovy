@@ -52,7 +52,6 @@ import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GeneratedLambda;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
@@ -62,7 +61,6 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.invoke.SerializedLambda;
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
@@ -72,6 +70,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
@@ -181,8 +181,6 @@ public class ClassHelper {
             GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
-    private static final int ABSTRACT_STATIC_PRIVATE = Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE;
-    private static final int VISIBILITY = 5; // public|protected
     private static final String DYNAMIC_TYPE_METADATA = "_DYNAMIC_TYPE_METADATA_";
 
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
@@ -562,52 +560,45 @@ public class ClassHelper {
      * @return the method node if type is a SAM type, null otherwise
      */
     public static MethodNode findSAM(final ClassNode type) {
-        if (!Modifier.isAbstract(type.getModifiers())) return null;
         if (type.isInterface()) {
-            List<MethodNode> methods;
-            if (type.isInterface()) {
-                // e.g. BinaryOperator extends BiFunction, BinaryOperator contains no abstract method, but it is really a SAM
-                methods = type.redirect().getAllDeclaredMethods();
-            } else {
-                methods = type.getMethods();
-            }
-
-            MethodNode found = null;
-            for (MethodNode mi : methods) {
-                // ignore methods, that are not abstract and from Object
-                if (!Modifier.isAbstract(mi.getModifiers())) continue;
-                // ignore trait methods which have a default implementation
-                if (Traits.hasDefaultImplementation(mi)) continue;
-                if (isObjectType(mi.getDeclaringClass())) continue;
-                if (OBJECT_TYPE.getDeclaredMethod(mi.getName(), mi.getParameters()) != null) continue;
+            MethodNode sam = null;
+            for (MethodNode mn : type.getAbstractMethods()) {
+                // ignore methods that will have an implementation
+                if (Traits.hasDefaultImplementation(mn)) continue;
+                if (OBJECT_TYPE.getDeclaredMethod(mn.getName(), mn.getParameters()) != null) continue;
 
                 // we have two methods, so no SAM
-                if (found != null) return null;
-                found = mi;
+                if (sam != null) return null;
+                sam = mn;
             }
-            return found;
-
-        } else {
-            MethodNode found = null;
-            for (MethodNode mi : type.getAbstractMethods()) {
-                if (!hasUsableImplementation(type, mi)) {
-                    if (found != null) return null;
-                    found = mi;
+            return sam;
+        }
+        if (type.isAbstract()) {
+            MethodNode sam = null;
+            for (MethodNode mn : type.getAbstractMethods()) {
+                if (!hasUsableImplementation(type, mn)) {
+                    if (sam != null) return null;
+                    sam = mn;
                 }
             }
-            return found;
+            return sam;
         }
+        return null;
     }
 
-    private static boolean hasUsableImplementation(ClassNode c, MethodNode m) {
-        if (c == m.getDeclaringClass()) return false;
+    private static boolean hasUsableImplementation(final ClassNode c, final MethodNode m) {
+        ClassNode declaringClass = m.getDeclaringClass();
+        if (c.equals(declaringClass)) return false;
+        // GROOVY-10540: GroovyObject declared and Verifier not run yet
+        if (isGroovyObjectType(declaringClass) && c.getCompileUnit() != null) return true;
+
         MethodNode found = c.getDeclaredMethod(m.getName(), m.getParameters());
         if (found == null) return false;
-        int asp = found.getModifiers() & ABSTRACT_STATIC_PRIVATE;
-        int visible = found.getModifiers() & VISIBILITY;
-        if (visible != 0 && asp == 0) return true;
-        if (isObjectType(c)) return false;
-        return hasUsableImplementation(c.getSuperClass(), m);
+
+        int modifiers = (found.getModifiers() & 0x40F);//ACC_ABSTRACT|ACC_STATIC|ACC_PROTECTED|ACC_PRIVATE|ACC_PUBLIC
+        if (modifiers == Opcodes.ACC_PUBLIC || modifiers == Opcodes.ACC_PROTECTED) return true;
+
+        return !isObjectType(c) && hasUsableImplementation(c.getSuperClass(), m);
     }
 
     /**
@@ -627,7 +618,7 @@ public class ClassHelper {
 
         if (target.isInterface()) {
             for (ClassNode face : source.getUnresolvedInterfaces()) {
-                if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(face, target)) {
+                if (implementsInterfaceOrIsSubclassOf(face, target)) {
                     return face;
                 }
             }

@@ -123,6 +123,8 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
     // GROOVY-8074
     void testMapSubclassPropertyStyleAccess() {
         assertScript '''
+            @groovy.transform.stc.POJO
+            @groovy.transform.CompileStatic
             class MyMap extends LinkedHashMap {
                 def foo = 1
             }
