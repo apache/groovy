@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Objects;
 
 /**
  * Represents an import statement.
@@ -31,7 +31,7 @@ public class ImportNode extends AnnotatedNode {
     private final String packageName;
     private final boolean isStar;
     private final boolean isStatic;
-    private int hashCode;
+    private transient int hashCode;
 
     /**
      * An import of a single type, i.e.&#160;{@code import pack.Type} or {@code import pack.Type as Alias}
@@ -40,7 +40,7 @@ public class ImportNode extends AnnotatedNode {
      * @param alias optional alias
      */
     public ImportNode(final ClassNode type, final String alias) {
-        this.type = requireNonNull(type);
+        this.type = Objects.requireNonNull(type);
         this.alias = alias;
         this.isStar = false;
         this.isStatic = false;
@@ -58,7 +58,7 @@ public class ImportNode extends AnnotatedNode {
         this.alias = null;
         this.isStar = true;
         this.isStatic = false;
-        this.packageName = requireNonNull(packageName);
+        this.packageName = Objects.requireNonNull(packageName);
         this.fieldName = null;
     }
 
@@ -68,7 +68,7 @@ public class ImportNode extends AnnotatedNode {
      * @param type the type reference
      */
     public ImportNode(final ClassNode type) {
-        this.type = requireNonNull(type);
+        this.type = Objects.requireNonNull(type);
         this.alias = null;
         this.isStar = true;
         this.isStatic = true;
@@ -84,12 +84,12 @@ public class ImportNode extends AnnotatedNode {
      * @param alias     optional alias
      */
     public ImportNode(final ClassNode type, final String fieldName, final String alias) {
-        this.type = requireNonNull(type);
+        this.type = Objects.requireNonNull(type);
         this.alias = alias;
         this.isStar = false;
         this.isStatic = true;
         this.packageName = null;
-        this.fieldName = requireNonNull(fieldName);
+        this.fieldName = Objects.requireNonNull(fieldName);
     }
 
     /**
@@ -145,53 +145,32 @@ public class ImportNode extends AnnotatedNode {
     }
 
     public void setType(final ClassNode type) {
-        this.type = type;
+        this.type = Objects.requireNonNull(type);
         hashCode = 0;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof ImportNode))
+    public boolean equals(Object that) {
+        if (that == this) return true;
+        if (!(that instanceof ImportNode)) return false;
+
+        ImportNode node = (ImportNode) that;
+        if (!Objects.equals(type, node.type))
             return false;
-        ImportNode imp = (ImportNode) o;
-        if ((type == null) != (imp.type == null))
+        if (!Objects.equals(alias, node.alias))
             return false;
-        if (type != null && !type.equals(imp.type))
+        if (!Objects.equals(fieldName, node.fieldName))
             return false;
-        if ((alias == null) != (imp.alias == null))
+        if (!Objects.equals(packageName, node.packageName))
             return false;
-        if (alias != null && !alias.equals(imp.alias))
-            return false;
-        if ((fieldName == null) != (imp.fieldName == null))
-            return false;
-        if (fieldName != null && !fieldName.equals(imp.fieldName))
-            return false;
-        if ((packageName == null) != (imp.packageName == null))
-            return false;
-        if (packageName != null && !packageName.equals(imp.packageName))
-            return false;
-        if (isStar != imp.isStar)
-            return false;
-        if (isStatic != imp.isStatic)
-            return false;
-        return true;
+        return (isStar == node.isStar && isStatic == node.isStatic);
     }
 
     @Override
     public int hashCode() {
         int result = hashCode;
         if (result == 0) {
-            if (type != null)
-                result = 31 * result + type.hashCode();
-            if (alias != null)
-                result = 31 * result + alias.hashCode();
-            if (fieldName != null)
-                result = 31 * result + fieldName.hashCode();
-            if (packageName != null)
-                result = 31 * result + packageName.hashCode();
-            result = 31 * result +Boolean.hashCode(isStar);
-            result = 31 * result +Boolean.hashCode(isStatic);
-            hashCode = result;
+            hashCode = Objects.hash(type, alias, fieldName, packageName, isStar, isStatic);
         }
         return result;
     }

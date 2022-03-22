@@ -37,14 +37,20 @@ public class AnnotatedNode extends ASTNode implements GroovydocHolder<AnnotatedN
         return annotations;
     }
 
-    public List<AnnotationNode> getAnnotations(ClassNode type) {
+    public List<AnnotationNode> getAnnotations(final ClassNode type) {
         List<AnnotationNode> ret = new ArrayList<>(annotations.size());
-        for (AnnotationNode node : annotations) {
+        for (AnnotationNode node : getAnnotations()) {
             if (type.equals(node.getClassNode())) {
                 ret.add(node);
             }
         }
         return ret;
+    }
+
+    public AnnotationNode addAnnotation(final ClassNode type) {
+        AnnotationNode node = new AnnotationNode(type);
+        addAnnotation(node);
+        return node;
     }
 
     public void addAnnotation(AnnotationNode annotation) {
