@@ -20,6 +20,8 @@ package org.apache.groovy.groovysh
 
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
@@ -47,6 +49,7 @@ import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  */
+@CompileStatic
 class Main {
     final Groovysh groovysh
 
@@ -70,6 +73,7 @@ class Main {
      * create a Main instance, configures it according to CLI arguments, and starts the shell.
      * @param main must have a Groovysh member that has an IO member.
      */
+    @CompileDynamic
     static void main(final String[] args) {
         MessageSource messages = new MessageSource(Main)
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
@@ -231,11 +235,15 @@ class Main {
                 // Should never happen
                 throw new IllegalArgumentException("Invalid Terminal type: $type")
         }
+
+        Ansi.enabled = false
         if (enableAnsi) {
-            installAnsi() // must be called before IO(), since it modifies System.in
-            Ansi.enabled = !suppressColor
-        } else {
-            Ansi.enabled = false
+            try {
+                installAnsi() // must be called before IO(), since it modifies System.in
+                Ansi.enabled = !suppressColor
+            } catch (Throwable t) {
+                LOGGER.warning("ansi will be disabled because an error occurred while installing ansi: " + t.getMessage())
+            }
         }
 
         if (type != null) {
@@ -256,5 +264,6 @@ class Main {
     static void setSystemProperty(final String nameValue) {
         setSystemPropertyFrom(nameValue)
     }
-}
 
+    private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(Main.class.getName());
+}
