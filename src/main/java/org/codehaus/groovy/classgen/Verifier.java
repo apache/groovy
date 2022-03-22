@@ -154,9 +154,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public static final String INITIAL_EXPRESSION = "INITIAL_EXPRESSION";
     public static final String DEFAULT_PARAMETER_GENERATED = "DEFAULT_PARAMETER_GENERATED";
 
-    private static final Class<?> GENERATED_ANNOTATION = Generated.class;
-    private static final Class<?> INTERNAL_ANNOTATION  = Internal.class;
-    private static final Class<?> TRANSIENT_ANNOTATION = Transient.class;
+    private static final ClassNode GENERATED_ANNOTATION = ClassHelper.make(Generated.class);
+    private static final ClassNode INTERNAL_ANNOTATION  = ClassHelper.make(Internal .class);
+    private static final ClassNode TRANSIENT_ANNOTATION = ClassHelper.make(Transient.class);
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";
@@ -519,11 +519,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.GROOVY_OBJECT_TYPE);
         FieldNode metaClassField = getMetaClassField(node);
 
-        boolean shouldAnnotate = classNode.getModule().getContext() != null;
-        AnnotationNode generatedAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION)) : null;
-        AnnotationNode internalAnnotation  = shouldAnnotate ? new AnnotationNode(ClassHelper.make(INTERNAL_ANNOTATION))  : null;
-        AnnotationNode transientAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(TRANSIENT_ANNOTATION)) : null;
-
+        boolean shouldAnnotate = (classNode.getModule().getContext() != null);
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
             Statement getMetaClassCode = new BytecodeSequence(new BytecodeInstruction() {
@@ -563,9 +559,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode methodNode = addMethod(node, !shouldAnnotate, "getMetaClass", ACC_PUBLIC,
                     ClassHelper.METACLASS_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getMetaClassCode);
             if (shouldAnnotate) {
-                methodNode.addAnnotation(generatedAnnotation);
-                methodNode.addAnnotation(internalAnnotation);
-                methodNode.addAnnotation(transientAnnotation);
+                methodNode.addAnnotation(GENERATED_ANNOTATION);
+                methodNode.addAnnotation(INTERNAL_ANNOTATION );
+                methodNode.addAnnotation(TRANSIENT_ANNOTATION);
             }
         }
 
@@ -593,8 +589,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode methodNode = addMethod(node, !shouldAnnotate, "setMetaClass", ACC_PUBLIC,
                     ClassHelper.VOID_TYPE, SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY, setMetaClassCode);
             if (shouldAnnotate) {
-                methodNode.addAnnotation(generatedAnnotation);
-                methodNode.addAnnotation(internalAnnotation);
+                methodNode.addAnnotation(GENERATED_ANNOTATION);
+                methodNode.addAnnotation(INTERNAL_ANNOTATION);
             }
         }
     }

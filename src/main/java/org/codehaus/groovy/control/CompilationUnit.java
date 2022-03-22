@@ -239,6 +239,11 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.SEMANTIC_ANALYSIS);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            AnnotationCollectorTransform.ClassChanger xformer = new AnnotationCollectorTransform.ClassChanger();
+            xformer.transformClass(classNode);
+        }, Phases.SEMANTIC_ANALYSIS);
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             TraitComposer.doExtendTraits(classNode, source, this);
         }, Phases.CANONICALIZATION);
 
@@ -295,10 +300,6 @@ public class CompilationUnit extends ProcessingUnit {
             }
         });
 
-        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
-            AnnotationCollectorTransform.ClassChanger xformer = new AnnotationCollectorTransform.ClassChanger();
-            xformer.transformClass(classNode);
-        }, Phases.SEMANTIC_ANALYSIS);
         ASTTransformationVisitor.addPhaseOperations(this);
 
         // post-transform operations:
