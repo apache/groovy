@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -274,6 +275,27 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             }
         }, Phases.CANONICALIZATION);
+
+        addPhaseOperation(source -> {
+            for (ClassNode cn : source.getAST().getClasses()) {
+                // GROOVY-10540: add GroovyObject before STC and classgen
+                if (!cn.isInterface() && !cn.isDerivedFromGroovyObject()) {
+                    boolean cs = false, pojo = false, trait = false;
+                    for (AnnotationNode an : cn.getAnnotations()) {
+                        switch (an.getClassNode().getName()) {
+                        case "groovy.transform.CompileStatic":
+                            cs = true; break;
+                        case "groovy.transform.stc.POJO":
+                            pojo = true; break;
+                        case "groovy.transform.Trait":
+                            trait = true; break;
+                        }
+                    }
+                    if (!(cs && pojo) && !trait)
+                        cn.addInterface(ClassHelper.GROOVY_OBJECT_TYPE);
+                }
+            }
+        }, Phases.INSTRUCTION_SELECTION);
 
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
 

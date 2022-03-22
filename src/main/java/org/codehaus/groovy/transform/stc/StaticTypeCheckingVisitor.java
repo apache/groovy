@@ -152,7 +152,6 @@ import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
@@ -2461,7 +2460,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
-                if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
                 candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
 
@@ -4902,9 +4900,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (isGStringType(receiver)) {
             return findMethod(STRING_TYPE, name, args);
-        }
-        if (isBeingCompiled(receiver)) {
-            return findMethod(GROOVY_OBJECT_TYPE, name, args);
         }
 
         return EMPTY_METHODNODE_LIST;

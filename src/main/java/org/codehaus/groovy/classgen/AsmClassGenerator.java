@@ -1163,7 +1163,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private static boolean implementsGroovyObject(final ClassNode cn) {
-        return cn.isDerivedFromGroovyObject() /*|| (!cn.isInterface() && cn.getCompileUnit() != null)*/;
+        return cn.isDerivedFromGroovyObject(); // GROOVY-10540: added before classgen
     }
 
     @Override

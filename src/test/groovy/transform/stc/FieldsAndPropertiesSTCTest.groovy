@@ -479,17 +479,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5517
     void testShouldFindStaticPropertyEvenIfObjectImplementsMap() {
         assertScript '''
+            @groovy.transform.stc.POJO
+            @groovy.transform.CompileStatic
             class MyHashMap extends HashMap {
                 public static int version = 666
             }
             def map = new MyHashMap()
-            map['foo'] = 123
-            Object value = map.foo
+            map.foo = 123
+            def value = map.foo
             assert value == 123
+            map['foo'] = 4.5
             value = map['foo']
-            assert value == 123
-            int v = MyHashMap.version
-            assert v == 666
+            assert value == 4.5
+            value = map.version
+            assert value == 666
         '''
     }
 

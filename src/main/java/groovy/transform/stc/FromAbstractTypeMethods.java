@@ -19,6 +19,7 @@
 package groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -26,7 +27,8 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.trait.Traits;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,28 +42,15 @@ public class FromAbstractTypeMethods extends ClosureSignatureHint {
     @Override
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         String className = options[0];
-        ClassNode cn = findClassNode(sourceUnit, compilationUnit, className);
-        return extractSignaturesFromMethods(cn);
-    }
+        ClassNode classNode = findClassNode(sourceUnit, compilationUnit, className);
 
-    private static List<ClassNode[]> extractSignaturesFromMethods(final ClassNode cn) {
-        List<MethodNode> methods = cn.getAllDeclaredMethods();
-        List<ClassNode[]> signatures = new LinkedList<ClassNode[]>();
-        for (MethodNode method : methods) {
-            if (!method.isSynthetic() && method.isAbstract()) {
-                extractParametersFromMethod(signatures, method);
+        List<ClassNode[]> signatures = new ArrayList<>();
+        for (MethodNode method : classNode.getAbstractMethods()) {
+            if (!method.isSynthetic() && !Traits.hasDefaultImplementation(method)
+                    && !ClassHelper.isGroovyObjectType(method.getDeclaringClass())) {
+                signatures.add(Arrays.stream(method.getParameters()).map(Parameter::getOriginType).toArray(ClassNode[]::new));
             }
         }
         return signatures;
-    }
-
-    private static void extractParametersFromMethod(final List<ClassNode[]> signatures, final MethodNode method) {
-        if (Traits.hasDefaultImplementation(method)) return;
-        Parameter[] parameters = method.getParameters();
-        ClassNode[] typeParams = new ClassNode[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            typeParams[i] = parameters[i].getOriginType();
-        }
-        signatures.add(typeParams);
     }
 }
