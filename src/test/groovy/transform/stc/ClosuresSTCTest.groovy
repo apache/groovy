@@ -692,18 +692,67 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testSAMVariable() {
+    void testSAMType() {
         assertScript '''
-            interface SAM { def foo(); }
+            interface I { def m() }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE).name == 'SAM'
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'I'
             })
-            SAM s = {1}
-            assert s.foo() == 1
-            def t = (SAM) {2}
-            assert t.foo() == 2
+            I i = { 1 }
+            assert i.m() == 1
+            def x = (I) { 2 }
+            assert x.m() == 2
         '''
+
+        assertScript '''
+            interface I { int m() }
+            abstract class A implements I { }
+
+            I i = { 1 }
+            assert i.m() == 1
+            A a = { 2 }
+            assert a.m() == 2
+        '''
+
+        shouldFailWithMessages '''
+            interface I {
+                String toString()
+            }
+            I i = { p -> "" }
+        ''',
+        'Cannot assign'
+
+        shouldFailWithMessages '''
+            interface I {
+                String toString()
+            }
+            abstract class A implements I { }
+
+            A a = { "" } // implicit parameter
+        ''',
+        'Cannot assign'
+
+        assertScript '''
+            interface I { // non-functional, but every instance extends Object
+                boolean equals(Object)
+                int m()
+            }
+            I i = { 1 }
+            assert i.m() == 1
+        '''
+
+        shouldFailWithMessages '''
+            interface I {
+                boolean equals(Object)
+                int m()
+            }
+            abstract class A implements I { // no abstract methods
+                int m() { 1 }
+            }
+            A a = { 2 }
+        ''',
+        'Cannot assign'
     }
 
     // GROOVY-7927
@@ -824,51 +873,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             method({println 'a'}, {called=true;println 'b'})
             assert !called
         '''
-    }
-
-    void testSAMType() {
-        assertScript '''
-            interface Foo {int foo()}
-            Foo f = {1}
-            assert f.foo() == 1
-            abstract class Bar implements Foo {}
-            Bar b = {2}
-            assert b.foo() == 2
-        '''
-        shouldFailWithMessages '''
-            interface Foo2 {
-                String toString()
-            }
-            Foo2 f2 = {int i->"hi"}
-        ''',
-        'Cannot assign'
-        shouldFailWithMessages '''
-            interface Foo2 {
-                String toString()
-            }
-            abstract class Bar2 implements Foo2 {}
-            Bar2 b2 = {"there"}
-        ''',
-        'Cannot assign'
-        assertScript '''
-            interface Foo3 {
-                boolean equals(Object)
-                int f()
-            }
-            Foo3 f3 = {1}
-            assert f3.f() == 1
-        '''
-        shouldFailWithMessages '''
-            interface Foo3 {
-                boolean equals(Object)
-                int f()
-            }
-            abstract class Bar3 implements Foo3 {
-                int f(){2}
-            }
-            Bar3 b3 = {2}
-        ''',
-        'Cannot assign'
     }
 
     // GROOVY-6238

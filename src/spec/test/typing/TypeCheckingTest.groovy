@@ -625,7 +625,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
             // end::least_upper_bound_collection_inference[]
         ''',
-        'Cannot find matching method (Greeter or Salute)#exit()'
+        'Cannot find matching method (Greeter or Salute'
     }
 
     void testInstanceOfInference() {
