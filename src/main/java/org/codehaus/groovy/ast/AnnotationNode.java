@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Represents an annotation which can be attached to interfaces, classes, methods, fields, parameters, and other places.
  */
@@ -50,7 +52,7 @@ public class AnnotationNode extends ASTNode {
     private int allowedTargets = ALL_TARGETS;
 
     public AnnotationNode(ClassNode classNode) {
-        this.classNode = classNode;
+        this.classNode = requireNonNull(classNode);
     }
 
     public ClassNode getClassNode() {
