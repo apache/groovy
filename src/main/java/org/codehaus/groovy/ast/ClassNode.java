@@ -695,22 +695,16 @@ public class ClassNode extends AnnotatedNode {
         return node;
     }
 
-    public void addInterface(ClassNode type) {
-        // let's check if it already implements an interface
-        boolean skip = false;
+    public void addInterface(final ClassNode type) {
         ClassNode[] interfaces = getInterfaces();
         for (ClassNode face : interfaces) {
-            if (type.equals(face)) {
-                skip = true;
-                break;
-            }
+            if (face.equals(type)) return;
         }
-        if (!skip) {
-            ClassNode[] newInterfaces = new ClassNode[interfaces.length + 1];
-            System.arraycopy(interfaces, 0, newInterfaces, 0, interfaces.length);
-            newInterfaces[interfaces.length] = type;
-            redirect().interfaces = newInterfaces;
-        }
+        final int n = interfaces.length;
+
+        System.arraycopy(interfaces, 0, interfaces = new ClassNode[n + 1], 0, n);
+        interfaces[n] = type; // append interface
+        setInterfaces(interfaces);
     }
 
     @Override
@@ -1017,9 +1011,11 @@ public class ClassNode extends AnnotatedNode {
      * NOTE: Doesn't consider an interface to implement itself.
      * I think this is intended to be called on ClassNodes representing
      * classes, not interfaces.
+     *
+     * @see org.codehaus.groovy.ast.tools.GeneralUtils#isOrImplements
      */
     public boolean declaresInterface(ClassNode classNode) {
-        ClassNode[] interfaces = redirect().getInterfaces();
+        ClassNode[] interfaces = getInterfaces();
         for (ClassNode face : interfaces) {
             if (face.equals(classNode)) {
                 return true;

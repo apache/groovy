@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.io.StringReaderSource;
 import org.codehaus.groovy.control.io.URLReaderSource;
+import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.Reduction;
@@ -322,21 +323,11 @@ public class SourceUnit extends ProcessingUnit {
      * @param msg the error message
      * @param node the AST node
      * @throws CompilationFailedException on error
+     *
      * @since 3.0.0
      */
     public void addFatalError(String msg, ASTNode node) throws CompilationFailedException {
-        getErrorCollector().addFatalError(
-                new SyntaxErrorMessage(
-                        new SyntaxException(
-                                msg,
-                                node.getLineNumber(),
-                                node.getColumnNumber(),
-                                node.getLastLineNumber(),
-                                node.getLastColumnNumber()
-                        ),
-                        this
-                )
-        );
+        getErrorCollector().addFatalError(Message.create(new SyntaxException(msg, node), this));
     }
 
     public void addErrorAndContinue(SyntaxException se) {
