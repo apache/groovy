@@ -59,8 +59,8 @@ matrix:
     - env: BC='indy'
       jdk: oraclejdk8
 
-    - env: BC='sonar'
-      jdk: openjdk11
+#    - env: BC='sonar'
+#      jdk: openjdk11
 
 before_script:
   - unset _JAVA_OPTIONS
@@ -69,7 +69,7 @@ script:
   - ./gradlew -version
   - if [ "$TARGET_JAVA_HOME" != "" ]; then wget https://github.com/sormuras/bach/raw/master/install-jdk.sh -P /tmp/ && chmod 755 /tmp/install-jdk.sh; fi
   - if [ "$TARGET_JAVA_HOME" != "" ]; then /tmp/install-jdk.sh --target "$TARGET_JAVA_HOME" --workspace "/home/travis/.cache/install-jdk" --feature "$FEATURE" --license "$LICENSE" --cacerts; fi
-  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true -x testWithIndy; else travis_wait 60 ./gradlew testWithIndy; fi
+  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test -Ptarget.java.home=$TARGET_JAVA_HOME; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true -x testWithIndy; else travis_wait 60 ./gradlew testWithIndy -Ptarget.java.home=$TARGET_JAVA_HOME; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
