@@ -114,17 +114,19 @@ public class DomToGroovy {
     }
 
     public static Document parse(final Reader input) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new InputSource(input));
+        return parse(new InputSource(input));
     }
 
     public static Document parse(final InputStream input) throws Exception {
+        return parse(new InputSource(input));
+    }
+
+    private static Document parse(InputSource is) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new InputSource(input));
+        return builder.parse(is);
     }
 
     protected void print(Node node, Map namespaces, boolean endWithComma) {
@@ -170,33 +172,37 @@ public class DomToGroovy {
         if (length == 0) {
             printEnd(")", endWithComma);
         } else {
-            Node node = list.item(0);
-            if (length == 1 && node instanceof Text) {
-                Text textNode = (Text) node;
-                String text = getTextNodeData(textNode);
-                if (hasAttributes) print(", ");
-                printQuoted(text);
-                printEnd(")", endWithComma);
-            } else if (mixedContent(list)) {
-                println(") {");
-                out.incrementIndent();
-                boolean oldInMixed = inMixed;
-                inMixed = true;
-                for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
-                    print(node, namespaces, false);
-                }
-                inMixed = oldInMixed;
-                out.decrementIndent();
-                printIndent();
-                printEnd("}", endWithComma);
-            } else {
-                println(") {");
-                out.incrementIndent();
-                printChildren(element, namespaces);
-                out.decrementIndent();
-                printIndent();
-                printEnd("}", endWithComma);
+            printChildren(element, namespaces, endWithComma, hasAttributes, list, length);
+        }
+    }
+
+    private void printChildren(Element element, Map namespaces, boolean endWithComma, boolean hasAttributes, NodeList list, int length) {
+        Node node = list.item(0);
+        if (length == 1 && node instanceof Text) {
+            Text textNode = (Text) node;
+            String text = getTextNodeData(textNode);
+            if (hasAttributes) print(", ");
+            printQuoted(text);
+            printEnd(")", endWithComma);
+        } else if (mixedContent(list)) {
+            println(") {");
+            out.incrementIndent();
+            boolean oldInMixed = inMixed;
+            inMixed = true;
+            for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
+                print(node, namespaces, false);
             }
+            inMixed = oldInMixed;
+            out.decrementIndent();
+            printIndent();
+            printEnd("}", endWithComma);
+        } else {
+            println(") {");
+            out.incrementIndent();
+            printChildren(element, namespaces);
+            out.decrementIndent();
+            printIndent();
+            printEnd("}", endWithComma);
         }
     }
 
