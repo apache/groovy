@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import static groovy.xml.XmlUtil.setFeatureQuietly;
 
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
@@ -129,8 +130,8 @@ public class XmlSlurper extends DefaultHandler {
         factory.setNamespaceAware(namespaceAware);
         this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
-        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
+        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 
@@ -140,13 +141,6 @@ public class XmlSlurper extends DefaultHandler {
 
     public XmlSlurper(final SAXParser parser) throws SAXException {
         this(parser.getXMLReader());
-    }
-
-    private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
-        try {
-            factory.setFeature(feature, value);
-        }
-        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) { }
     }
 
     /**

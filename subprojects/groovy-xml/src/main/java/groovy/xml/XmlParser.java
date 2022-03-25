@@ -47,6 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static groovy.xml.XmlUtil.setFeatureQuietly;
+
 /**
  * A helper class for parsing XML into a tree of Node instances for a
  * simple way of processing XML. This parser does not preserve the XML
@@ -115,8 +117,8 @@ public class XmlParser implements ContentHandler {
         factory.setNamespaceAware(namespaceAware);
         this.namespaceAware = namespaceAware;
         factory.setValidating(validating);
-        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
+        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 
@@ -126,13 +128,6 @@ public class XmlParser implements ContentHandler {
 
     public XmlParser(SAXParser parser) throws SAXException {
         reader = parser.getXMLReader();
-    }
-
-    private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
-        try {
-            factory.setFeature(feature, value);
-        }
-        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) { }
     }
 
     /**

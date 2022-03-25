@@ -28,7 +28,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -243,9 +247,25 @@ public class XmlUtil {
      * @since 1.8.7
      */
     public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, Source... schemas) throws SAXException, ParserConfigurationException {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-        factory.setValidating(validating);
-        factory.setNamespaceAware(namespaceAware);
+        return newSAXParser(schemaLanguage, namespaceAware, validating, false, schemas);
+    }
+
+    /**
+     * Factory method to create a SAXParser configured to validate according to a particular schema language and
+     * optionally providing the schema sources to validate with.
+     *
+     * @param schemaLanguage   the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
+     * @param namespaceAware   will the parser be namespace aware
+     * @param validating       will the parser also validate against DTDs
+     * @param allowDoctypeDecl whether to allow doctype declarations (potentially insecure)
+     * @param schemas          the schemas to validate against
+     * @return the created SAXParser
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     * @since 3.0.11
+     */
+    public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, boolean allowDoctypeDecl, Source... schemas) throws SAXException, ParserConfigurationException {
+        SAXParserFactory factory = newFactoryInstance(namespaceAware, validating, allowDoctypeDecl);
         if (schemas.length != 0) {
             SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
             factory.setSchema(schemaFactory.newSchema(schemas));
@@ -255,6 +275,15 @@ public class XmlUtil {
             saxParser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", schemaLanguage);
         }
         return saxParser;
+    }
+
+    private static SAXParserFactory newFactoryInstance(boolean namespaceAware, boolean validating, boolean allowDoctypeDecl) {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setValidating(validating);
+        factory.setNamespaceAware(namespaceAware);
+        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDoctypeDecl);
+        return factory;
     }
 
     /**
@@ -389,9 +418,7 @@ public class XmlUtil {
     }
 
     private static SAXParser newSAXParser(boolean namespaceAware, boolean validating, Schema schema1) throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-        factory.setValidating(validating);
-        factory.setNamespaceAware(namespaceAware);
+        SAXParserFactory factory = newFactoryInstance(namespaceAware, validating, false);
         factory.setSchema(schema1);
         return factory.newSAXParser();
     }
@@ -466,5 +493,19 @@ public class XmlUtil {
         } catch (IllegalArgumentException e) {
             // ignore for factories that don't support this
         }
+    }
+
+    public static void setFeatureQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (ParserConfigurationException ignored) { }
+    }
+
+    public static void setFeatureQuietly(SAXParserFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) { }
     }
 }

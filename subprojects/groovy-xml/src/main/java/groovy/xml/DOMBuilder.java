@@ -111,17 +111,10 @@ public class DOMBuilder extends BuilderSupport {
         DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        setQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
+        XmlUtil.setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        XmlUtil.setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
-    }
-
-    private static void setQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
-        try {
-            factory.setFeature(feature, value);
-        }
-        catch (ParserConfigurationException ignored) { }
     }
 
     /**
