@@ -1578,6 +1578,19 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-8244
+    void testSAMCoercion6() {
+        assertScript '''
+            trait T {
+                abstract def foo(int a, int b = 2)
+            }
+            T t = { int a, int b ->
+                return a + b
+            }
+            assert t.foo(40) == 42
+        '''
+    }
+
     @Test
     void testMethodMissingInTrait() {
         assertScript '''

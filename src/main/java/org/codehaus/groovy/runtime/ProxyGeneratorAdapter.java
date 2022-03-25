@@ -492,40 +492,35 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     @Override
     public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
+        // do not generate bytecode for final, native, private or synthetic methods
+        if ((access & (ACC_FINAL | ACC_NATIVE | ACC_PRIVATE | ACC_SYNTHETIC)) != 0) return null;
+
         Object key = Arrays.asList(name, desc);
-        if (visitedMethods.contains(key)) return null;
-        if (Modifier.isPrivate(access) || Modifier.isNative(access) || ((access & ACC_SYNTHETIC) != 0)) {
-            // do not generate bytecode for private methods
-            return null;
-        }
-        int accessFlags = access;
-        visitedMethods.add(key);
-        if ((objectDelegateMethods.contains(name + desc) || delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) && !Modifier.isStatic(access) && !Modifier.isFinal(access)) {
-            if (!GROOVYOBJECT_METHOD_NAMESS.contains(name)) {
-                if (Modifier.isAbstract(access)) {
-                    // prevents the proxy from being abstract
-                    accessFlags -= ACC_ABSTRACT;
-                }
-                if (delegatedClosures.containsKey(name) || (!"<init>".equals(name) && hasWildcard)) {
+        if (!visitedMethods.add(key)) return null;
+
+        boolean objectDelegate = objectDelegateMethods.contains(name + desc);
+        boolean closureDelegate = delegatedClosures.containsKey(name);
+        boolean wildcardDelegate = hasWildcard && !"<init>".equals(name);
+
+        if ((objectDelegate || closureDelegate || wildcardDelegate) && !Modifier.isStatic(access)) {
+            if (!GROOVYOBJECT_METHOD_NAMESS.contains(name)
+                    // GROOVY-8244: proxy for abstract class/trait/interface only overrides abstract method(s)
+                    && (!Modifier.isAbstract(superClass.getModifiers()) || !isImplemented(superClass, name, desc))) {
+
+                if (closureDelegate || wildcardDelegate || !(objectDelegate && generateDelegateField)) {
                     delegatedClosures.put(name, Boolean.TRUE);
-                    return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
+                    return makeDelegateToClosureCall(name, desc, signature, exceptions, access & ~ACC_ABSTRACT);
                 }
-                if (generateDelegateField && objectDelegateMethods.contains(name + desc)) {
-                    return makeDelegateCall(name, desc, signature, exceptions, accessFlags);
-                }
-                delegatedClosures.put(name, Boolean.TRUE);
-                return makeDelegateToClosureCall(name, desc, signature, exceptions, accessFlags);
+                return makeDelegateCall(name, desc, signature, exceptions, access & ~ACC_ABSTRACT);
             }
         } else if ("getProxyTarget".equals(name) && "()Ljava/lang/Object;".equals(desc)) {
             return createGetProxyTargetMethod(access, name, desc, signature, exceptions);
+
         } else if ("<init>".equals(name) && (Modifier.isPublic(access) || Modifier.isProtected(access))) {
             return createConstructor(access, name, desc, signature, exceptions);
-        } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHOD_NAMESS.contains(name)) {
-            if (isImplemented(superClass, name, desc)) {
-                return null;
-            }
-            accessFlags -= ACC_ABSTRACT;
-            MethodVisitor mv = super.visitMethod(accessFlags, name, desc, signature, exceptions);
+
+        } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHOD_NAMESS.contains(name) && !isImplemented(superClass, name, desc)) {
+            MethodVisitor mv = super.visitMethod(access & ~ACC_ABSTRACT, name, desc, signature, exceptions);
             mv.visitCode();
             Type[] args = Type.getArgumentTypes(desc);
             if (emptyBody) {
@@ -564,6 +559,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             }
             mv.visitEnd();
         }
+
         return null;
     }
 
