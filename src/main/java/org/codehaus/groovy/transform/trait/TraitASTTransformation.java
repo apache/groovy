@@ -156,7 +156,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private static void generateMethodsWithDefaultArgs(final ClassNode cNode) {
-        new DefaultArgsMethodsAdder().addDefaultParameterMethods(cNode);
+        new Verifier() {
+            @Override
+            public void addDefaultParameterMethods(final ClassNode cn) {
+                setClassNode(cn); super.addDefaultParameterMethods(cn);
+            }
+        }.addDefaultParameterMethods(cNode);
     }
 
     private ClassNode createHelperClass(final ClassNode cNode) {
@@ -630,15 +635,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     //--------------------------------------------------------------------------
-
-    private static class DefaultArgsMethodsAdder extends Verifier {
-
-        @Override
-        public void addDefaultParameterMethods(final ClassNode node) {
-            setClassNode(node);
-            super.addDefaultParameterMethods(node);
-        }
-    }
 
     private static class PostTypeCheckingExpressionReplacer extends ClassCodeExpressionTransformer {
         private final SourceUnit sourceUnit;
