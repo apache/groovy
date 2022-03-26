@@ -103,7 +103,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private void createMethods(final ClassNode cNode, final ClassNode exception, final String message, final ClosureExpression code) {
         for (MethodNode candidate : getAllCorrectedMethodsMap(cNode).values()) {
             if (candidate.isAbstract()) {
-                addGeneratedMethod(cNode,
+                MethodNode mNode = addGeneratedMethod(cNode,
                         candidate.getName(),
                         candidate.getModifiers() & 0x7, // visibility only
                         candidate.getReturnType(),
@@ -111,6 +111,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         candidate.getExceptions(),
                         createMethodBody(cNode, candidate, exception, message, code)
                 );
+                mNode.setGenericsTypes(candidate.getGenericsTypes()); // GROOVY-10552
             }
         }
     }
