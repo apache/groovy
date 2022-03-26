@@ -58,9 +58,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
-import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 
 /**
  * Generates code for the {@code @AutoImplement} annotation.
@@ -104,7 +101,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private void createMethods(final ClassNode cNode, final ClassNode exception, final String message, final ClosureExpression code) {
         for (MethodNode candidate : getAllCorrectedMethodsMap(cNode).values()) {
             if (candidate.isAbstract()) {
-                addGeneratedMethod(cNode,
+                MethodNode mNode = addGeneratedMethod(cNode,
                         candidate.getName(),
                         candidate.getModifiers() & 0x7, // visibility only
                         candidate.getReturnType(),
@@ -112,6 +109,8 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         candidate.getExceptions(),
                         createMethodBody(cNode, candidate, exception, message, code)
                 );
+                mNode.addAnnotation(ClassHelper.OVERRIDE_TYPE);
+                mNode.setGenericsTypes(candidate.getGenericsTypes()); // GROOVY-10552
             }
         }
     }
@@ -173,7 +172,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             while (!interfaces.isEmpty()) {
                 ClassNode origInterface = interfaces.remove(0);
                 // ignore java.lang.Object; also methods added by Verifier for GroovyObject are already good enough
-                if (!isObjectType(origInterface) && !isGroovyObjectType(origInterface)) {
+                if (!ClassHelper.isObjectType(origInterface) && !ClassHelper.isGroovyObjectType(origInterface)) {
                     updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
                     ClassNode correctedInterface = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
                     for (MethodNode nextMethod : correctedInterface.getMethods()) {
@@ -196,12 +195,12 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
         }
 
         // GROOVY-9816: remove entries for to-be-generated property access and mutate methods
-        for (ClassNode cn = cNode; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
+        for (ClassNode cn = cNode; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             for (PropertyNode pn : cn.getProperties()) {
                 if (!pn.getField().isFinal()) {
                     result.remove(pn.getSetterNameOrDefault() + ":" + pn.getType().getText() + ",");
                 }
-                if (!isPrimitiveBoolean(pn.getType())) {
+                if (!ClassHelper.isPrimitiveBoolean(pn.getType())) {
                     result.remove(pn.getGetterNameOrDefault() + ":");
                 } else if (pn.getGetterName() != null) {
                     result.remove(pn.getGetterName() + ":");
