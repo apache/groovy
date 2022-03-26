@@ -299,4 +299,28 @@ final class AutoImplementTransformTest {
             assert !(new ThisClassFails().findAll())
         '''
     }
+
+    @Test // GROOVY-10552
+    void testMethodWithTypeParameter() {
+        assertScript shell, '''
+            interface I {
+                def <T> T m(List<T> list)
+            }
+
+            @AutoImplement
+            class C implements I {
+            }
+
+            Object result = new C().m([])
+            assert result == null
+        '''
+
+        assertScript shell, '''
+            @AutoImplement
+            class C implements java.sql.Connection {
+            }
+
+            new C().commit()
+        '''
+    }
 }
