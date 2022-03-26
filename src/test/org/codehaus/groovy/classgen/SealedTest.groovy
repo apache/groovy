@@ -18,18 +18,18 @@
  */
 package org.codehaus.groovy.classgen
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.Assume.assumeTrue
 
-@CompileStatic
-class SealedTest {
+final class SealedTest {
+
     @Test
     void testInferredPermittedNestedClasses() {
         assumeTrue(isAtLeastJdk('17.0'))
+
         assertScript '''
             sealed class Shape {
                 final class Triangle extends Shape { }
@@ -43,6 +43,7 @@ class SealedTest {
     @Test
     void testInferredPermittedNestedClassesWithNativeDisabled() {
         assumeTrue(isAtLeastJdk('17.0'))
+
         assertScript '''
             import groovy.transform.*
             @SealedOptions(mode=SealedMode.EMULATE)
