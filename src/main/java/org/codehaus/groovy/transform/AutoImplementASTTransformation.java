@@ -112,8 +112,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         statement = returnS(callX(varX("this"), accessorName));
                     }
                 }
-
-                addGeneratedMethod(cNode,
+                MethodNode mNode = addGeneratedMethod(cNode,
                         candidate.getName(),
                         candidate.getModifiers() & 0x7, // visibility only
                         candidate.getReturnType(),
@@ -121,6 +120,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         candidate.getExceptions(),
                         statement
                 );
+                mNode.setGenericsTypes(candidate.getGenericsTypes()); // GROOVY-10552
             }
         }
     }

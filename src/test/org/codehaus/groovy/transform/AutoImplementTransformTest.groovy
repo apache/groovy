@@ -192,4 +192,28 @@ class AutoImplementTransformTest extends GroovyShellTestCase {
             assert new Foo().compare('bar', 'baz') == 0
             '''
     }
+
+    // GROOVY-10552
+    void testMethodWithTypeParameter() {
+        assertScript '''
+            interface I {
+                def <T> T m(List<T> list)
+            }
+
+            @groovy.transform.AutoImplement
+            class C implements I {
+            }
+
+            Object result = new C().m([])
+            assert result == null
+        '''
+
+        assertScript '''
+            @groovy.transform.AutoImplement
+            class C implements java.sql.Connection {
+            }
+
+            new C().commit()
+        '''
+    }
 }
