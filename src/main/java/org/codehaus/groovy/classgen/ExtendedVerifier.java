@@ -213,9 +213,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         if (!typeUseAnnos.isEmpty()) {
-            targetType.addTypeAnnotations(typeUseAnnos);
-            targetType.setAnnotated(true);
             for (AnnotationNode anno : typeUseAnnos) {
+                if (!targetType.getTypeAnnotations().contains(anno)) {
+                    targetType.addTypeAnnotation(anno);
+                    targetType.setAnnotated(true);
+                }
                 if (keepTarget != null && !anno.isTargetAllowed(keepTarget)) {
                     mixed.remove(anno);
                 }
