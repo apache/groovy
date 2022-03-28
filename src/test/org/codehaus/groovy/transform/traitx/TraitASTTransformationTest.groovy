@@ -1888,12 +1888,45 @@ final class TraitASTTransformationTest {
             trait Foo {
                 @Deprecated void foo() { 'ok' }
             }
-            @ASTTest(phase=CANONICALIZATION,value={
-                assert node.getDeclaredMethod('foo').annotations.any { it.classNode.nameWithoutPackage == 'Deprecated'}
+            @ASTTest(phase=CANONICALIZATION, value={
+                assert node.getDeclaredMethod('foo').annotations.any {
+                    it.classNode.nameWithoutPackage == 'Deprecated'
+                }
             })
-            class Bar implements Foo {}
+            class Bar implements Foo {
+            }
             def b = new Bar()
             b.foo()
+        '''
+    }
+
+    @Test // GROOVY-10553
+    void testAnnotationShouldBeCarriedOver2() {
+        assertScript '''
+            import groovy.transform.*
+            import java.lang.annotation.*
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.FIELD,ElementType.TYPE_USE])
+            @interface Foo {
+            }
+
+            trait Bar {
+                @Foo String string
+            }
+            class Baz implements Bar {
+            }
+
+            @ASTTest(phase=CLASS_GENERATION, value={
+                def type = node.rightExpression.type
+
+                assert type.name == 'Baz'
+                def field = type.getField('Bar__string')
+                assert field.type.typeAnnotations.size() == 1
+
+                field = type.interfaces[1].getField('$ins$1Bar__string')
+                assert field.type.typeAnnotations.size() == 1 // no duplicate
+            })
+            def baz = new Baz(string:'foobar')
         '''
     }
 
