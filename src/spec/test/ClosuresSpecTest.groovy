@@ -365,20 +365,46 @@ class ClosuresSpecTest extends GroovyTestCase {
             def t = new Thing(name:'Printer')
             def cl = p.fetchAge
             cl.delegate = p
-            assert cl() == 42
+            assert cl() == 42          // <1>
             cl.delegate = t
-            assert cl() == 42
+            assert cl() == 42          // <1>
+
             cl.resolveStrategy = Closure.DELEGATE_ONLY
             cl.delegate = p
-            assert cl() == 42
+            assert cl() == 42          // <2>
             cl.delegate = t
             try {
-                cl()
+                cl()                   // <3>
                 assert false
             } catch (MissingPropertyException ex) {
                 // "age" is not defined on the delegate
             }
             // end::delegate_only[]
+        '''
+    }
+
+    void testDelegateOnlyPropertyMissing() {
+        assertScript '''
+            // tag::delegate_only_prop_missing[]
+            class Person {
+                String name
+                int age
+                def fetchAge = { age }
+            }
+            class Thing {
+                String name
+                def propertyMissing(String name) { -1 }
+            }
+
+            def p = new Person(name:'Jessica', age:42)
+            def t = new Thing(name:'Printer')
+            def cl = p.fetchAge
+            cl.resolveStrategy = Closure.DELEGATE_FIRST
+            cl.delegate = p
+            assert cl() == 42
+            cl.delegate = t
+            assert cl() == -1
+            // end::delegate_only_prop_missing[]
         '''
     }
 

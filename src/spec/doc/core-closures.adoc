@@ -365,6 +365,9 @@ of the delegate (resp. owner) does *not* have such a method or property:
 ----
 include::../test/ClosuresSpecTest.groovy[tags=delegate_only,indent=0]
 ----
+<1> for "owner first" it doesn't matter what the delegate is
+<2> for "delegate only" having `p` as the delegate succeeds
+<3> for "delegate only" having `t` as the delegate fails
 
 In this example, we define two classes which both have a `name` property but only the `Person` class declares an `age`.
 The `Person` class also declares a closure which references `age`. We can change the default resolution strategy from
@@ -375,6 +378,28 @@ the `Person` class, the owner is not used.
 
 NOTE: A comprehensive explanation about how to use this feature to develop DSLs can be found in a
 link:core-domain-specific-languages.html[dedicated section of the manual].
+
+==== Delegation strategy in the presence of metaprogramming
+
+When describing the "owner first" delegation strategy we spoke
+about using a property/method from the owner if it "_existed_" otherwise
+using the respective property/method from the delegate. And a similar
+story for "delegate first" but in reverse. Instead of using the word
+"_existed_", it would have been more accurate to use the wording "_handled_".
+That means that for "owner first", if the property/method exists in
+the owner, or it has a propertyMissing/methodMissing hook, then the owner
+will handle the member access.
+
+We can see this in action with a slightly altered version of our previous example:
+
+[source,groovy]
+----
+include::../test/ClosuresSpecTest.groovy[tags=delegate_only_prop_missing,indent=0]
+----
+
+In this example, even though our instance of the `Thing` class (our delegate for the last use of `cl`) has no `age` property,
+the fact that it handles the missing property via its `propertyMissing` hook,
+means that `age` will be `-1`.
 
 == Closures in GStrings
 
