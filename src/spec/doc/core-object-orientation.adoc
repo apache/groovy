@@ -669,7 +669,8 @@ include::../test/objectorientation/MethodsTest.groovy[tags=checked_method_declar
 [[fields]]
 ==== Fields
 
-A field is a member of a class or a trait which has:
+A field is a member of a class, interface or trait which stores data.
+A field defined in a Groovy source file has:
 
 * a mandatory _access modifier_ (`public`, `protected`, or `private`)
 * one or more optional _modifiers_ (`static`, `final`, `synchronized`)
