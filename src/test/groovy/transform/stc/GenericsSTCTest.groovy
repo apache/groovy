@@ -4390,6 +4390,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10528
+    void testRawTypeGuard() {
+        assertScript '''
+            void test(... args) {
+                args.each { object ->
+                    if (object instanceof Iterable) {
+                        object.each { test(it) }
+                    }
+                }
+            }
+            test(1,[2,3])
+        '''
+    }
+
     //--------------------------------------------------------------------------
 
     static class MyList

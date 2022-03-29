@@ -3047,17 +3047,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
         List<ClassNode[]> candidates = new LinkedList<>();
         for (ClassNode[] signature : closureSignatures) {
-            // in order to compute the inferred types of the closure parameters, we're using the following trick:
-            // 1. create a dummy MethodNode for which the return type is a class node for which the generic types are the types returned by the hint
-            // 2. call inferReturnTypeGenerics
-            // 3. fetch inferred types from the result of inferReturnTypeGenerics
-            // In practice, it could be done differently but it has the main advantage of reusing
-            // existing code, hence reducing the amount of code to debug in case of failure.
-            ClassNode[] inferred = resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
+            resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
             if (signature.length == closureParams.length // same number of arguments
                     || (signature.length == 1 && closureParams.length == 0) // implicit it
-                    || (closureParams.length > signature.length && inferred[inferred.length - 1].isArray())) { // vargs
-                candidates.add(inferred);
+                    || (closureParams.length > signature.length && last(signature).isArray())) { // vargs
+                candidates.add(signature);
             }
         }
         if (candidates.size() > 1) {
@@ -3116,47 +3110,51 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private ClassNode[] resolveGenericsFromTypeHint(final ClassNode receiver, final Expression arguments, final MethodNode selectedMethod, final ClassNode[] signature) {
-        ClassNode dummyResultNode = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
-        GenericsType[] genericTypes = new GenericsType[signature.length];
-        for (int i = 0, n = signature.length; i < n; i += 1) {
-            genericTypes[i] = new GenericsType(signature[i]);
-        }
-        dummyResultNode.setGenericsTypes(genericTypes);
+    /**
+     * Computes the inferred types of the closure parameters using the following trick:
+     * <ol>
+     * <li> creates a dummy MethodNode for which the return type is a class node
+     *      for which the generic types are the types returned by the hint
+     * <li> calls {@link #inferReturnTypeGenerics}
+     * <li> returns inferred types from the result
+     * </ol>
+     * In practice it could be done differently but it has the main advantage of
+     * reusing existing code, hence reducing the amount of code to debug in case
+     * of failure.
+     */
+    private void resolveGenericsFromTypeHint(final ClassNode receiver, final Expression arguments, final MethodNode selectedMethod, final ClassNode[] signature) {
+        ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
+        returnType.setGenericsTypes(Arrays.stream(signature).map(ClassNode::asGenericsType).toArray(GenericsType[]::new));
+
         MethodNode dummyMN = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
-        dummyMN = new MethodNode(
-                dummyMN.getName(),
-                dummyMN.getModifiers(),
-                dummyResultNode,
-                dummyMN.getParameters(),
-                dummyMN.getExceptions(),
-                EmptyStatement.INSTANCE
-        );
+        dummyMN = new MethodNode(dummyMN.getName(), dummyMN.getModifiers(), returnType, dummyMN.getParameters(), dummyMN.getExceptions(), null);
         dummyMN.setDeclaringClass(selectedMethod.getDeclaringClass());
         dummyMN.setGenericsTypes(selectedMethod.getGenericsTypes());
         if (selectedMethod instanceof ExtensionMethodNode) {
-            ExtensionMethodNode orig = (ExtensionMethodNode) selectedMethod;
             dummyMN = new ExtensionMethodNode(
                     dummyMN,
                     dummyMN.getName(),
                     dummyMN.getModifiers(),
-                    dummyResultNode,
-                    orig.getParameters(),
-                    orig.getExceptions(),
-                    EmptyStatement.INSTANCE,
-                    orig.isStaticExtension()
+                    returnType,
+                    selectedMethod.getParameters(),
+                    selectedMethod.getExceptions(),
+                    null,
+                    ((ExtensionMethodNode) selectedMethod).isStaticExtension()
             );
-            dummyMN.setDeclaringClass(orig.getDeclaringClass());
-            dummyMN.setGenericsTypes(orig.getGenericsTypes());
+            dummyMN.setDeclaringClass(selectedMethod.getDeclaringClass());
+            dummyMN.setGenericsTypes(selectedMethod.getGenericsTypes());
         }
-        ClassNode returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments);
+
+        returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments);
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
-        ClassNode[] inferred = new ClassNode[returnTypeGenerics.length];
         for (int i = 0, n = returnTypeGenerics.length; i < n; i += 1) {
-            GenericsType genericsType = returnTypeGenerics[i];
-            inferred[i] = getCombinedBoundType(genericsType);
+            GenericsType gt = returnTypeGenerics[i];
+            if (gt.isPlaceholder()) { // GROOVY-9968, GROOVY-10528, et al.
+                signature[i] = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
+            } else {
+                signature[i] = getCombinedBoundType(gt);
+            }
         }
-        return inferred;
     }
 
     private static String[] convertToStringArray(final Expression options) {
@@ -3203,7 +3201,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     );
                     if (resolved != null) {
                         if (resolved.length == 1) {
-                            resolved = resolveGenericsFromTypeHint(receiver, arguments, mn, resolved);
+                            resolveGenericsFromTypeHint(receiver, arguments, mn, resolved);
                             expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(resolved[0], stInt));
                         } else {
                             addStaticTypeError("Incorrect type hint found in method " + (mn), type);
