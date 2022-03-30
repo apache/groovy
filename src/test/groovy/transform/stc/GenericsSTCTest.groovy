@@ -4367,6 +4367,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10556
+    void testSelfReferentialTypeParameter3() {
+        ['(B) this', 'this as B'].each { self ->
+            assertScript """
+                abstract class A<B extends A<B,X>,X> {
+                    B m() {
+                       $self
+                    }
+                }
+                (new A(){}).m()
+            """
+        }
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
