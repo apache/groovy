@@ -39,6 +39,7 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -67,8 +68,19 @@ public class XmlUtil {
      * @return the pretty String representation of the Element
      */
     public static String serialize(Element element) {
+        return serialize(element, false);
+    }
+
+    /**
+     * Return a pretty String version of the Element.
+     *
+     * @param element                 the Element to serialize
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     * @return the pretty String representation of the Element
+     */
+    public static String serialize(Element element, boolean allowDocTypeDeclaration) {
         Writer sw = new StringBuilderWriter();
-        serialize(new DOMSource(element), sw);
+        serialize(new DOMSource(element), sw, allowDocTypeDeclaration);
         return sw.toString();
     }
 
@@ -79,8 +91,19 @@ public class XmlUtil {
      * @param os      the OutputStream to write to
      */
     public static void serialize(Element element, OutputStream os) {
+        serialize(element, os, false);
+    }
+
+    /**
+     * Write a pretty version of the Element to the OutputStream.
+     *
+     * @param element                 the Element to serialize
+     * @param os                      the OutputStream to write to
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     */
+    public static void serialize(Element element, OutputStream os, boolean allowDocTypeDeclaration) {
         Source source = new DOMSource(element);
-        serialize(source, os);
+        serialize(source, os, allowDocTypeDeclaration);
     }
 
     /**
@@ -90,8 +113,19 @@ public class XmlUtil {
      * @param w       the Writer to write to
      */
     public static void serialize(Element element, Writer w) {
+        serialize(element, w, false);
+    }
+
+    /**
+     * Write a pretty version of the Element to the Writer.
+     *
+     * @param element                 the Element to serialize
+     * @param w                       the Writer to write to
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     */
+    public static void serialize(Element element, Writer w, boolean allowDocTypeDeclaration) {
         Source source = new DOMSource(element);
-        serialize(source, w);
+        serialize(source, w, allowDocTypeDeclaration);
     }
 
     /**
@@ -191,8 +225,19 @@ public class XmlUtil {
      * @return the pretty String representation of the original content
      */
     public static String serialize(String xmlString) {
+        return serialize(xmlString, false);
+    }
+
+    /**
+     * Return a pretty version of the XML content contained in the given String.
+     *
+     * @param xmlString               the String to serialize
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     * @return the pretty String representation of the original content
+     */
+    public static String serialize(String xmlString, boolean allowDocTypeDeclaration) {
         Writer sw = new StringBuilderWriter();
-        serialize(asStreamSource(xmlString), sw);
+        serialize(asStreamSource(xmlString), sw, allowDocTypeDeclaration);
         return sw.toString();
     }
 
@@ -203,7 +248,18 @@ public class XmlUtil {
      * @param os        the OutputStream to write to
      */
     public static void serialize(String xmlString, OutputStream os) {
-        serialize(asStreamSource(xmlString), os);
+        serialize(xmlString, os, false);
+    }
+
+    /**
+     * Write a pretty version of the given XML string to the OutputStream.
+     *
+     * @param xmlString               the String to serialize
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     * @param os                      the OutputStream to write to
+     */
+    public static void serialize(String xmlString, OutputStream os, boolean allowDocTypeDeclaration) {
+        serialize(asStreamSource(xmlString), os, allowDocTypeDeclaration);
     }
 
     /**
@@ -213,7 +269,18 @@ public class XmlUtil {
      * @param w         the Writer to write to
      */
     public static void serialize(String xmlString, Writer w) {
-        serialize(asStreamSource(xmlString), w);
+        serialize(xmlString, w, false);
+    }
+
+    /**
+     * Write a pretty version of the given XML string to the Writer.
+     *
+     * @param xmlString               the String to serialize
+     * @param allowDocTypeDeclaration whether to allow doctype processing
+     * @param w                       the Writer to write to
+     */
+    public static void serialize(String xmlString, Writer w, boolean allowDocTypeDeclaration) {
+        serialize(asStreamSource(xmlString), w, allowDocTypeDeclaration);
     }
 
     /**
@@ -463,16 +530,17 @@ public class XmlUtil {
         return new StreamSource(new StringReader(xmlString));
     }
 
-    private static void serialize(Source source, OutputStream os) {
-        serialize(source, new StreamResult(new OutputStreamWriter(os, StandardCharsets.UTF_8)));
+    private static void serialize(Source source, OutputStream os, boolean allowDocTypeDeclaration) {
+        serialize(source, new StreamResult(new OutputStreamWriter(os, StandardCharsets.UTF_8)), allowDocTypeDeclaration);
     }
 
-    private static void serialize(Source source, Writer w) {
-        serialize(source, new StreamResult(w));
+    private static void serialize(Source source, Writer w, boolean allowDocTypeDeclaration) {
+        serialize(source, new StreamResult(w), allowDocTypeDeclaration);
     }
 
-    private static void serialize(Source source, StreamResult target) {
+    private static void serialize(Source source, StreamResult target, boolean allowDocTypeDeclaration) {
         TransformerFactory factory = TransformerFactory.newInstance();
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         setIndent(factory, 2);
         try {
             Transformer transformer = factory.newTransformer();
@@ -493,6 +561,13 @@ public class XmlUtil {
         } catch (IllegalArgumentException e) {
             // ignore for factories that don't support this
         }
+    }
+
+    public static void setFeatureQuietly(TransformerFactory factory, String feature, boolean value) {
+        try {
+            factory.setFeature(feature, value);
+        }
+        catch (TransformerConfigurationException ignored) { }
     }
 
     public static void setFeatureQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
