@@ -1859,27 +1859,30 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return applyGenericsContext(spec, type.getComponentType()).makeArray();
         }
-        ClassNode newType = type.getPlainNodeReference();
+
         GenericsType[] gt = type.getGenericsTypes();
         if (asBoolean(spec)) {
             gt = applyGenericsContext(spec, gt);
         }
-        newType.setGenericsTypes(gt);
-        if (type.isGenericsPlaceHolder()) {
-            boolean nonTrivial = hasNonTrivialBounds(gt[0]);
-            if (nonTrivial || !gt[0].isPlaceholder()) {
-                return getCombinedBoundType(gt[0]);
-            }
-            String placeholderName = gt[0].getName();
-            if (!placeholderName.equals(newType.getUnresolvedName())) {
-                ClassNode clean = make(placeholderName);
-                clean.setGenericsTypes(gt);
-                clean.setRedirect(newType);
-                newType = clean;
-            }
-            newType.setGenericsPlaceHolder(true);
+        if (!type.isGenericsPlaceHolder()) { // convert Type<T> to Type<...>
+            ClassNode cn = type.getPlainNodeReference();
+            cn.setGenericsTypes(gt);
+            return cn;
         }
-        return newType;
+
+        if (!gt[0].isPlaceholder()) { // convert T to Type or Type<...>
+            return getCombinedBoundType(gt[0]);
+        }
+
+        if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
+            ClassNode cn = make(gt[0].getName());
+            cn.setRedirect(gt[0].getType());
+            cn.setGenericsPlaceHolder(true);
+            cn.setGenericsTypes(gt);
+            return cn;
+        }
+
+        return type; // nothing to do
     }
 
     static ClassNode getCombinedBoundType(final GenericsType genericsType) {
@@ -1891,19 +1894,6 @@ public abstract class StaticTypeCheckingSupport {
             if (genericsType.getUpperBounds() != null) return genericsType.getUpperBounds()[0];
         }
         return genericsType.getType();
-    }
-
-    private static void applyContextGenerics(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext) {
-        if (placeholdersFromContext == null) return;
-        for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
-            GenericsType gt = entry.getValue();
-            if (gt.isPlaceholder()) {
-                GenericsTypeName name = new GenericsTypeName(gt.getName());
-                GenericsType outer = placeholdersFromContext.get(name);
-                if (outer == null) continue;
-                entry.setValue(outer);
-            }
-        }
     }
 
     private static Map<GenericsTypeName, GenericsType> getGenericsParameterMapOfThis(final ClassNode cn) {

@@ -1035,7 +1035,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9995
+    // GROOVY-9995
     void testDiamondInferrenceFromConstructor15() {
         [
             ['Closure<A<Long>>', 'java.util.concurrent.Callable<A<Long>>'],
@@ -2345,15 +2345,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, 'foo')
-        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
+        ''',
+        '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
+
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, List<T> arg2) {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''',
+        '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
     // GROOVY-9902
@@ -2595,7 +2598,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? extends CharSequence>> void bar(T a) {}
             }
             Foo.bar([new Object()])
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.Object>]'
+        ''',
+        'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.Object>]'
     }
 
     void testOutOfBoundsBySuperGenericParameterType() {
@@ -2604,7 +2608,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? super CharSequence>> void bar(T a) {}
             }
             Foo.bar(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.String>]'
+        ''',
+        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.String>]'
     }
 
     void testOutOfBoundsByExtendsPlaceholderParameterType() {
@@ -2615,7 +2620,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def <U extends List<Object>> void baz(U list) {
                 Foo.bar(list)
             }
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
+        ''',
+        'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
     }
 
     void testOutOfBoundsBySuperPlaceholderParameterType() {
@@ -2626,7 +2632,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def <U extends List<String>> void baz(U list) {
                 Foo.bar(list)
             }
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
+        ''',
+        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
     }
 
     // GROOVY-5721
@@ -3831,6 +3838,49 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+        }
+    }
+
+    @NotYetImplemented // GROOVY-10055
+    void testSelfReferentialTypeParameter2() {
+        assertScript '''
+            abstract class A<Self extends A<Self>> {
+                Self foo(inputs) {
+                    // ...
+                    this
+                }
+            }
+            abstract class B<Self extends B<Self>> extends A<Self> {
+                Self bar(inputs) {
+                    // ...
+                    this
+                }
+            }
+            class C<Self extends C<Self>> extends B<Self> { // see org.testcontainers.containers.PostgreSQLContainer
+                Self baz(inputs) {
+                    // ...
+                    this
+                }
+            }
+
+            new C<>()
+            .foo('x')
+            .bar('y') // error
+            .baz('z') // error
+        '''
+    }
+
+    // GROOVY-10556
+    void testSelfReferentialTypeParameter3() {
+        ['(B) this', 'this as B'].each { self ->
+            assertScript """
+                abstract class A<B extends A<B,X>,X> {
+                    B m() {
+                       $self
+                    }
+                }
+                (new A(){}).m()
+            """
         }
     }
 

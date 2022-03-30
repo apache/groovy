@@ -308,13 +308,13 @@ public class GenericsType extends ASTNode {
      * @return true if generics are compatible
      */
     private static boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
-        if (classNode == null) {
-            return false;
-        }
-        if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
-            // if the bound is not using generics or the class node is a raw type, there's nothing to compare with
+        if (classNode == null) return false;
+        if (bound.getGenericsTypes() == null
+                || classNode.isGenericsPlaceHolder() // GROOVY-10556: "T" vs "C<T extends C<?>>" bound
+                || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null))
+            // if the bound is not using generics or the class node is a raw type, there's nothing to compare
             return true;
-        }
+
         if (!classNode.equals(bound)) {
              // the class nodes are on different types
             // in this situation, we must choose the correct execution path : either the bound
