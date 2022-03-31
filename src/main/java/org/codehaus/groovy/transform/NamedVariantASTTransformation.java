@@ -29,9 +29,13 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -40,8 +44,10 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
@@ -121,11 +127,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         if (!annoFound && autoDelegate) { // the first param is the delegate
             processDelegateParam(mNode, mapParam, args, propNames, fromParams[0], coerce);
         } else {
+            Map<Parameter, Expression> seen = new HashMap<>();
             for (Parameter fromParam : fromParams) {
                 if (!annoFound) {
-                    if (!processImplicitNamedParam(this, mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
+                    if (!processImplicitNamedParam(this, mNode, mapParam, inner, args, propNames, fromParam, coerce, seen)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
-                    if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
+                    if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam, coerce, seen)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam, coerce)) return;
                 } else {
@@ -140,7 +147,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
     }
 
+    // for backwards compatibility
     static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce) {
+        return processImplicitNamedParam(xform, mNode, mapParam, inner, args, propNames, fromParam, coerce, null);
+    }
+
+    static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce, Map<Parameter, Expression> seen) {
         String name = fromParam.getName();
         ClassNode type = fromParam.getType();
         boolean required = !fromParam.hasInitialExpression();
@@ -156,11 +168,26 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             inner.addStatement(new AssertStatement(boolX(containsKey(mapParam, name)),
                     plusX(constX("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
         }
-        args.addExpression(namedParamValue(mapParam, name, type, coerce, fromParam.getInitialExpression()));
+        Expression defValue = earlierParamIfSeen(seen, fromParam.getInitialExpression());
+        Expression initExpr = namedParamValue(mapParam, name, type, coerce, defValue);
+        if (seen != null) {
+            seen.put(fromParam, initExpr);
+        }
+        args.addExpression(initExpr);
         return true;
     }
 
-    private boolean processExplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce) {
+    private static Expression earlierParamIfSeen(Map<Parameter, Expression> seen, Expression defValue) {
+        if (seen == null) return defValue;
+        // handle earlier param with or without cast
+        if (defValue instanceof CastExpression) {
+            defValue = ((CastExpression) defValue).getExpression();
+        }
+        return defValue instanceof VariableExpression ?
+            seen.getOrDefault(((VariableExpression) defValue).getAccessedVariable(), defValue) : defValue;
+    }
+
+    private boolean processExplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce, Map<Parameter, Expression> seen) {
         AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
 
         String name = getMemberStringValue(namedParam, "value");
@@ -187,7 +214,10 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             inner.addStatement(new AssertStatement(boolX(containsKey(mapParam, name)),
                     plusX(constX("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
         }
-        args.addExpression(namedParamValue(mapParam, name, type, coerce, fromParam.getInitialExpression()));
+        Expression defValue = earlierParamIfSeen(seen, fromParam.getInitialExpression());
+        Expression initExpr = namedParamValue(mapParam, name, type, coerce, defValue);
+        seen.put(fromParam, initExpr);
+        args.addExpression(initExpr);
         mapParam.addAnnotation(namedParam);
         fromParam.getAnnotations().remove(namedParam);
         return true;
