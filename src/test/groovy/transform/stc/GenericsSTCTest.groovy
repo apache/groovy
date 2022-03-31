@@ -3101,6 +3101,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10557
+    void testReturnTypeInferenceWithClosure2() {
+        assertScript '''
+            class C {
+                def <T> T m(java.util.function.Function<Reader,T> f)  {
+                    new StringReader("").withCloseable { reader ->
+                        f.apply(reader)
+                    }
+                }
+            }
+            Object result = new C().m { it.text.empty }
+            //                          ^^ StringReader
+            assert result == Boolean.TRUE
+        '''
+    }
+
     // GROOVY-6129
     void testShouldNotThrowNPE() {
         assertScript '''

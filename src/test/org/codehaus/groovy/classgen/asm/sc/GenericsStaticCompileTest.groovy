@@ -18,16 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.GenericsSTCTest
 
 /**
  * Unit tests for static compilation : generics.
  */
 class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
-
-    @Override @NotYetImplemented // GROOVY-8409
-    void testReturnTypeInferenceWithMethodGenerics14() {
-        super.testReturnTypeInferenceWithMethodGenerics14()
-    }
 }

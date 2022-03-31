@@ -1787,7 +1787,7 @@ public abstract class StaticTypeCheckingSupport {
         return newSpec;
     }
 
-    private static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
+    static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
         if (gts == null || spec == null || spec.isEmpty()) return gts;
         GenericsType[] newGTs = new GenericsType[gts.length];
         for (int i = 0, n = gts.length; i < n; i += 1) {
