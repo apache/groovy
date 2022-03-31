@@ -18,52 +18,43 @@
  */
 package groovy.bugs.vm8
 
-import gls.CompilableTestSupport
-import groovy.transform.NotYetImplemented
+import org.junit.Test
 
-class Groovy8409Bug extends CompilableTestSupport {
-    @NotYetImplemented
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8409Bug {
+
+    @Test
     void test() {
         assertScript '''
-        import groovy.transform.CompileStatic
-        import java.util.function.BiFunction
-
-        @CompileStatic
-        class Groovy8409Bug {
-        
-            static <T> T actionWrapperT(BiFunction<Date, URL, T> action) {
-                T result = action.apply(new Date(), new URL('http://www.example.com'))
-                // do something else here
-                return result
+            @groovy.transform.CompileStatic
+            class Groovy8409Bug {
+                static <T> T actionWrapperT(java.util.function.BiFunction<Date, URL, T> action) {
+                    T result = action.apply(new Date(), new URL('http://www.example.com'))
+                    // do something else here
+                    return result
+                }
+                static void main(String[] args) {
+                    Groovy8409Bug t = actionWrapperT { Date date, URL url -> new Groovy8409Bug() }
+                }
             }
-        
-            static void main(String[] args) {
-                Groovy8409Bug t = actionWrapperT { Date date, URL url -> new Groovy8409Bug() }
-            }
-        
-        }
         '''
     }
 
+    @Test
     void testWorkaround() {
         assertScript '''
-        import groovy.transform.CompileStatic
-        import java.util.function.BiFunction
-
-        @CompileStatic
-        class Groovy8409Bug {
-        
-            static <X> X actionWrapperT(BiFunction<Date, URL, X> action) {
-                X result = action.apply(new Date(), new URL('http://www.example.com'))
-                // do something else here
-                return result
+            @groovy.transform.CompileStatic
+            class Groovy8409Bug {
+                static <X> X actionWrapperT(java.util.function.BiFunction<Date, URL, X> action) {
+                    X result = action.apply(new Date(), new URL('http://www.example.com'))
+                    // do something else here
+                    return result
+                }
+                static void main(String[] args) {
+                    Groovy8409Bug t = actionWrapperT { Date date, URL url -> new Groovy8409Bug() }
+                }
             }
-        
-            static void main(String[] args) {
-                Groovy8409Bug t = actionWrapperT { Date date, URL url -> new Groovy8409Bug() }
-            }
-        
-        }
         '''
     }
 }
