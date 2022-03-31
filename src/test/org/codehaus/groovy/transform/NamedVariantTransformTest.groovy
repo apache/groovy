@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform
 
 import groovy.transform.CompileStatic
+import groovy.transform.NamedVariant
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -391,5 +392,31 @@ final class NamedVariantTransformTest {
             assert mapper.settings.headersRow == 0
             assert mapper.settings.firstDataRow == 1
         '''
+    }
+
+    @NamedVariant // GROOVY-10561
+    String fileInSourceSet(String language = 'java', String extension = language) {
+        return "$language -> .$extension"
+    }
+
+    @NamedVariant // GROOVY-10561
+    String foo(String a = 'a', String b = a, String c = (String) a) {
+        return "$a $b $c"
+    }
+
+    @Test // GROOVY-10561
+    void testReferenceToEarlierParam() {
+        assert fileInSourceSet() == 'java -> .java'
+        assert fileInSourceSet('groovy') == 'groovy -> .groovy'
+        assert fileInSourceSet(language: 'kotlin', extension: 'kt') == 'kotlin -> .kt'
+        assert fileInSourceSet(language: 'groovy') == 'groovy -> .groovy'
+    }
+
+    @Test // GROOVY-10561
+    void testEarlierParamInExpression() {
+        assert foo() == 'a a a'
+        assert foo('c') == 'c c c'
+        assert foo('c', 'd') == 'c d c'
+        assert foo('c', 'd', 'e') == 'c d e'
     }
 }
