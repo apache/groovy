@@ -167,7 +167,7 @@ tasks.named('compileJava') {
     doLast {
         execOperations.javaexec { spec ->
             spec.classpath(rootProject.configurations.tools)
-            spec.main('org.jboss.bridger.Bridger')
+            spec.mainClass = 'org.jboss.bridger.Bridger'
             spec.args(groovyCore.classesToBridge.asList().collect { it.absolutePath })
         }
     }
