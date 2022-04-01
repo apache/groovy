@@ -850,6 +850,27 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-10558
+    void testUsageOfOuterMethod6() {
+        assertScript '''
+            class Outer {
+                static byte[] hash(byte[] bytes) {
+                    bytes
+                }
+                static class Inner {
+                    def test(byte[] bytes) {
+                        hash(bytes)
+                    }
+                }
+            }
+
+            Object result = new Outer.Inner().test(new byte[1])
+            assert result instanceof byte[]
+            assert result.length == 1
+            assert result[0] == 0
+        '''
+    }
+
     @Test
     void testUsageOfOuterMethodOverridden() {
         assertScript '''
