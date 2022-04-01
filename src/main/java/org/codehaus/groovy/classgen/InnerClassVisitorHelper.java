@@ -34,11 +34,17 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -46,45 +52,33 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
+    private static final ClassNode OBJECT_ARRAY = ClassHelper.OBJECT_TYPE.makeArray();
+
     protected static void addFieldInit(final Parameter p, final FieldNode fn, final BlockStatement block) {
         block.addStatement(assignS(fieldX(fn), varX(p)));
     }
 
     protected static void setPropertyGetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        block.addStatement(
-                returnS(
-                        propX(
-                                target,
-                                dynName(parameters[0])
-                        )
-                )
-        );
+        block.addStatement(returnS(propX(target, dynName(parameters[0]))));
     }
 
     protected static void setPropertySetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        block.addStatement(
-                stmt(
-                        assignX(
-                                propX(
-                                        target,
-                                        dynName(parameters[0])
-                                ),
-                                varX(parameters[1])
-                        )
-                )
-        );
+        block.addStatement(stmt(assignX(propX(target, dynName(parameters[0])), varX(parameters[1]))));
     }
 
-    protected static void setMethodDispatcherCode(final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        block.addStatement(
-                returnS(
-                        callX(
-                                target,
-                                dynName(parameters[0]),
-                                args(new SpreadExpression(varX(parameters[1])))
-                        )
-                )
-        );
+    protected static void setMethodDispatcherCode    (final BlockStatement block, final Expression target, final Parameter[] parameters) {
+        // if (!(args instanceof Object[])) return target."$name"(args)
+        block.addStatement(ifS(
+            notX(isInstanceOfX(varX(parameters[1]), OBJECT_ARRAY)),
+            returnS(callX(target, dynName(parameters[0]), varX(parameters[1])))));
+
+        // if (((Object[])args).length == 1) return target."$name"(args[0])
+        block.addStatement(ifS(
+            eqX(propX(castX(OBJECT_ARRAY, varX(parameters[1])), "length"), constX(1, true)),
+            returnS(callX(target, dynName(parameters[0]), indexX(castX(OBJECT_ARRAY, varX(parameters[1])), constX(0, true))))));
+
+        // return target."$name"(*args)
+        block.addStatement(returnS(callX(target, dynName(parameters[0]), new SpreadExpression(varX(parameters[1])))));
     }
 
     private static Expression dynName(final Parameter p) {
