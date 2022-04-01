@@ -19,7 +19,7 @@ import me.champeau.gradle.japicmp.JapicmpTask
  *  under the License.
  */
 plugins {
-    id "me.champeau.gradle.japicmp" version "0.3.1"
+    id "me.champeau.gradle.japicmp" version "0.4.0"
     id 'org.apache.groovy-aggregating-project'
     id 'org.apache.groovy-common'
 }
@@ -43,10 +43,10 @@ rootProject.allprojects {
                 dependencies.add(thisProject.dependencies.create(baselineCoords))
             }
             def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
-                oldArchives = baseline
-                newArchives = files(tasks.named("jarjar"))
-                oldClasspath = files()
-                newClasspath = files()
+                oldArchives.from(baseline)
+                newArchives.from(files(tasks.named("jarjar")))
+                oldClasspath.from(files())
+                newClasspath.from(files())
                 accessModifier = "protected"
                 onlyModified = true
                 failOnModification = false
