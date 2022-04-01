@@ -24,15 +24,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.objectweb.asm.Opcodes;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -59,42 +54,29 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static void setPropertyGetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        block.addStatement(returnS(propX(target, dynName(parameters[0]))));
+        block.addStatement(returnS(propX(target, varX(parameters[0]))));
     }
 
     protected static void setPropertySetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        block.addStatement(stmt(assignX(propX(target, dynName(parameters[0])), varX(parameters[1]))));
+        block.addStatement(stmt(assignX(propX(target, varX(parameters[0])), varX(parameters[1]))));
     }
 
     protected static void setMethodDispatcherCode    (final BlockStatement block, final Expression target, final Parameter[] parameters) {
-        // if (!(args instanceof Object[])) return target."$name"(args)
+        // if (!(args instanceof Object[])) return target.(name)(args)
         block.addStatement(ifS(
             notX(isInstanceOfX(varX(parameters[1]), OBJECT_ARRAY)),
-            returnS(callX(target, dynName(parameters[0]), varX(parameters[1])))));
+            returnS(callX(target, varX(parameters[0]), varX(parameters[1])))));
 
-        // if (((Object[])args).length == 1) return target."$name"(args[0])
+        // if (((Object[])args).length == 1) return target.(name)(args[0])
         block.addStatement(ifS(
             eqX(propX(castX(OBJECT_ARRAY, varX(parameters[1])), "length"), constX(1, true)),
-            returnS(callX(target, dynName(parameters[0]), indexX(castX(OBJECT_ARRAY, varX(parameters[1])), constX(0, true))))));
+            returnS(callX(target, varX(parameters[0]), indexX(castX(OBJECT_ARRAY, varX(parameters[1])), constX(0, true))))));
 
-        // return target."$name"(*args)
-        block.addStatement(returnS(callX(target, dynName(parameters[0]), new SpreadExpression(varX(parameters[1])))));
+        // return target.(name)(*args)
+        block.addStatement(returnS(callX(target, varX(parameters[0]), new SpreadExpression(varX(parameters[1])))));
     }
 
-    private static Expression dynName(final Parameter p) {
-        List<ConstantExpression> gStringStrings = new ArrayList<>();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-
-        List<Expression> gStringValues = new ArrayList<>();
-        gStringValues.add(varX(p));
-
-        return new GStringExpression("$name", gStringStrings, gStringValues);
-    }
-
-    protected static boolean isStatic(final InnerClassNode cn) {
-        return cn.getDeclaredField("this$0") == null;
-    }
+    //--------------------------------------------------------------------------
 
     protected static ClassNode getClassNode(final ClassNode cn, final boolean isStatic) {
         return isStatic ? ClassHelper.CLASS_Type : cn; // TODO: Set class type parameter?
@@ -107,6 +89,10 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
             count += 1;
         }
         return count;
+    }
+
+    protected static boolean isStatic(final InnerClassNode cn) {
+        return cn.getDeclaredField("this$0") == null;
     }
 
     protected static boolean shouldHandleImplicitThisForInnerClass(final ClassNode cn) {
