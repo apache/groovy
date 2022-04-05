@@ -379,7 +379,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             if (sealedNative(classNode)) {
                 for (ClassNode sub: classNode.getPermittedSubclasses()) {
-                    classVisitor.visitPermittedSubclass(sub.getName());
+                    classVisitor.visitPermittedSubclass(BytecodeHelper.getClassInternalName(sub));
                 }
             }
 
