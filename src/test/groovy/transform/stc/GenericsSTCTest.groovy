@@ -4398,6 +4398,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-9968
+    void testSelfReferentialTypeParameter4() {
+        assertScript '''
+            abstract class A<B extends A<?>> implements Iterable<B> {
+            }
+            void m(A iterable) {
+                iterable?.each {
+                    m(it)
+                }
+            }
+            m(null)
+        '''
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
