@@ -1440,4 +1440,21 @@ method()
             new B()
         '''
     }
+
+    void testGroovy9968() {
+        assertScript '''
+            import groovy.transform.*
+            @Canonical class Pogo { String prop }
+            @Canonical class Type<T extends Pogo> implements Iterable<T> {
+                Iterator<T> iterator() {
+                    list.iterator()
+                }
+                List<T> list
+            }
+
+            def iterable = new Type([new Pogo('x'), new Pogo('y'), new Pogo('z')])
+            assert iterable.collect { Pogo p -> p.prop } == ['x', 'y', 'z']
+            assert iterable.collect { it.prop } == ['x', 'y', 'z']
+        '''
+    }
 }

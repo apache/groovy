@@ -3074,10 +3074,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return compilationUnit != null ? compilationUnit.getTransformLoader() : getSourceUnit().getClassLoader();
     }
 
-    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, Expression resolverClass, final Expression options) {
+    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
+        Parameter[] closureParams = expression.getParameters();
+        if (closureParams == null) return; // no-arg closure
+
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(expression, selectedMethod, hintClass, options);
         List<ClassNode[]> candidates = new LinkedList<ClassNode[]>();
-        Parameter[] closureParams = expression.getParameters();
         for (ClassNode[] signature : closureSignatures) {
             // in order to compute the inferred types of the closure parameters, we're using the following trick:
             // 1. create a dummy MethodNode for which the return type is a class node for which the generic types are the types returned by the hint
@@ -3086,7 +3088,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // In practice, it could be done differently but it has the main advantage of reusing
             // existing code, hence reducing the amount of code to debug in case of failure.
             ClassNode[] inferred = resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
-            if (closureParams == null) return; // no-arg closure
             if (signature.length == closureParams.length // same number of arguments
                     || (signature.length == 1 && closureParams.length == 0) // implicit it
                     || (closureParams.length > signature.length && inferred[inferred.length - 1].isArray())) { // vargs
@@ -3097,10 +3098,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Iterator<ClassNode[]> candIt = candidates.iterator();
             while (candIt.hasNext()) {
                 ClassNode[] inferred = candIt.next();
-                final int length = closureParams.length;
-                for (int i = 0; i < length; i++) {
+                for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    final ClassNode originType = closureParam.getOriginType();
+                    ClassNode originType = closureParam.getOriginType();
                     ClassNode inferredType;
                     if (i < inferred.length - 1 || inferred.length == closureParams.length) {
                         inferredType = inferred[i];
@@ -3113,7 +3113,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             continue;
                         }
                     }
-                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, i == length - 1)) {
+                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, i == (n - 1))) {
                         candIt.remove();
                     }
                 }
@@ -3130,10 +3130,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (closureParams.length == 0 && inferred.length == 1) {
                 expression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, inferred);
             } else {
-                final int length = closureParams.length;
-                for (int i = 0; i < length; i++) {
+                for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    final ClassNode originType = closureParam.getOriginType();
+                    ClassNode originType = closureParam.getOriginType();
                     ClassNode inferredType = OBJECT_TYPE;
                     if (i < inferred.length - 1 || inferred.length == closureParams.length) {
                         inferredType = inferred[i];
@@ -3145,7 +3144,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
                         }
                     }
-                    boolean lastArg = i == length - 1;
+                    boolean lastArg = i == (n - 1);
 
                     if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
                         addError("Expected parameter of type " + inferredType.toString(false) + " but got " + originType.toString(false), closureParam.getType());
@@ -3159,8 +3158,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode[] resolveGenericsFromTypeHint(final ClassNode receiver, final Expression arguments, final MethodNode selectedMethod, final ClassNode[] signature) {
         ClassNode dummyResultNode = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
-        final GenericsType[] genericTypes = new GenericsType[signature.length];
-        for (int i = 0; i < signature.length; i++) {
+        GenericsType[] genericTypes = new GenericsType[signature.length];
+        for (int i = 0, n = signature.length; i < n; i += 1) {
             genericTypes[i] = new GenericsType(signature[i]);
         }
         dummyResultNode.setGenericsTypes(genericTypes);
@@ -3209,7 +3208,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static ClassNode createUsableClassNodeFromGenericsType(final GenericsType genericsType) {
         ClassNode value = genericsType.getType();
         if (genericsType.isPlaceholder()) {
-            value = OBJECT_TYPE;
+            value = value.isRedirectNode() ? value.redirect() : OBJECT_TYPE; // GROOVY-9968
         }
         ClassNode lowerBound = genericsType.getLowerBound();
         if (lowerBound != null) {
