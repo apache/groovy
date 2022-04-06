@@ -342,16 +342,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10051
     void testReturnTypeInferenceWithMethodGenerics10() {
         assertScript '''
-            abstract class State<H extends Handle> {
-                // Why not return HandleContainer<H>? I can't really say.
-                def <T extends Handle> HandleContainer<T> getHandleContainer(key) {
-                }
+            interface Handle {
+                Result getResult()
             }
             class HandleContainer<H extends Handle> {
                 H handle
             }
-            interface Handle {
-                Result getResult()
+            abstract class State<H extends Handle> {
+                // Why not return HandleContainer<H>? I can't really say.
+                def <T extends Handle> HandleContainer<T> getHandleContainer(key) {
+                }
             }
             class Result {
                 int itemCount
@@ -373,6 +373,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert getStrings(null,[]).isEmpty()
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics1x() {
+        assertScript '''
+            interface Handle {
+                int getCount()
+            }
+            class HandleContainer<H extends Handle> {
+                H handle
+            }
+            interface Input {
+                HandleContainer<? extends Handle> getResult(key)
+            }
+            interface State {
+                def <X extends Handle> HandleContainer<X> getResult(key)
+            }
+
+            void test(Input input, State state) {
+                def container = state.getResult('k') ?: input.getResult('k')
+                Handle handle = container.handle
+                Integer count = handle.count
+                assert count == 1
+            }
+
+            Handle h = {->1}
+            def c = new HandleContainer(handle: h)
+            test({k->c} as Input, {k->c} as State)
         '''
     }
 
