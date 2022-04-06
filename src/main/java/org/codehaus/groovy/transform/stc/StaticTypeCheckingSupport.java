@@ -1346,7 +1346,7 @@ public abstract class StaticTypeCheckingSupport {
      * Given a generics type representing SomeClass&lt;T,V&gt; and a resolved placeholder map, returns a new generics type
      * for which placeholders are resolved recursively.
      */
-    protected static GenericsType fullyResolve(GenericsType gt, Map<GenericsTypeName, GenericsType> placeholders) {
+    protected static GenericsType fullyResolve(GenericsType gt, final Map<GenericsTypeName, GenericsType> placeholders) {
         GenericsType fromMap = placeholders.get(new GenericsTypeName(gt.getName()));
         if (gt.isPlaceholder() && fromMap != null) {
             gt = fromMap;
@@ -1370,31 +1370,37 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     protected static ClassNode fullyResolveType(final ClassNode type, final Map<GenericsTypeName, GenericsType> placeholders) {
-        if (type.isUsingGenerics() && !type.isGenericsPlaceHolder()) {
-            GenericsType[] gts = type.getGenericsTypes();
-            if (gts != null) {
-                GenericsType[] copy = new GenericsType[gts.length];
-                for (int i = 0; i < gts.length; i++) {
-                    GenericsType genericsType = gts[i];
-                    if (genericsType.isPlaceholder() && placeholders.containsKey(new GenericsTypeName(genericsType.getName()))) {
-                        copy[i] = placeholders.get(new GenericsTypeName(genericsType.getName()));
-                    } else {
-                        copy[i] = fullyResolve(genericsType, placeholders);
-                    }
-                }
-                gts = copy;
-            }
-            ClassNode result = type.getPlainNodeReference();
-            result.setGenericsTypes(gts);
-            return result;
-        } else if (type.isUsingGenerics() && OBJECT_TYPE.equals(type) && type.getGenericsTypes() != null) {
-            // Object<T>
-            GenericsType genericsType = placeholders.get(new GenericsTypeName(type.getGenericsTypes()[0].getName()));
-            if (genericsType != null) {
-                return genericsType.getType();
-            }
-        } else if (type.isArray()) {
+        if (type.isArray()) {
             return fullyResolveType(type.getComponentType(), placeholders).makeArray();
+        }
+        if (type.isUsingGenerics()) {
+            if (type.isGenericsPlaceHolder()) {
+                GenericsType gt = placeholders.get(new GenericsTypeName(type.getUnresolvedName()));
+                if (gt != null) {
+                    return gt.getType();
+                }
+                ClassNode cn = type.redirect();
+                return cn != type ? cn : OBJECT_TYPE;
+            } else {
+                GenericsType[] gts = type.getGenericsTypes();
+                if (gts != null) {  final int n = gts.length;
+                    GenericsType[] copy = new GenericsType[n];
+                    for (int i = 0; i < n; i += 1) {
+                        GenericsType gt = gts[i];
+                        if (gt.isPlaceholder()) {
+                            GenericsTypeName gtn = new GenericsTypeName(gt.getName());
+                            copy[i] = placeholders.containsKey(gtn)
+                                ? placeholders.get(gtn) : extractType(gt).asGenericsType();
+                        } else {
+                            copy[i] = fullyResolve(gt, placeholders);
+                        }
+                    }
+                    gts = copy;
+                }
+                ClassNode cn = type.getPlainNodeReference();
+                cn.setGenericsTypes(gts);
+                return cn;
+            }
         }
         return type;
     }
@@ -1804,7 +1810,7 @@ public abstract class StaticTypeCheckingSupport {
 
     public static ClassNode getCorrectedClassNode(ClassNode type, ClassNode superClass, boolean handlingGenerics) {
         ClassNode corrected;
-        if (handlingGenerics && missesGenericsTypes(type)) {
+        if (handlingGenerics && GenericsUtils.hasUnresolvedGenerics(type)) {
             corrected = superClass.getPlainNodeReference();
         } else {
             corrected = GenericsUtils.correctToGenericsSpecRecurse(GenericsUtils.createGenericsSpec(type), superClass);

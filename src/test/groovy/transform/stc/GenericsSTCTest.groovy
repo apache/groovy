@@ -198,16 +198,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10051
     void testReturnTypeInferenceWithMethodGenericsAndBounds() {
         assertScript '''
-            abstract class State<H extends Handle> {
-                // Why not return HandleContainer<H>? I can't really say.
-                def <T extends Handle> HandleContainer<T> getHandleContainer(key) {
-                }
+            interface Handle {
+                Result getResult()
             }
             class HandleContainer<H extends Handle> {
                 H handle
             }
-            interface Handle {
-                Result getResult()
+            abstract class State<H extends Handle> {
+                // Why not return HandleContainer<H>? I can't really say.
+                def <T extends Handle> HandleContainer<T> getHandleContainer(key) {
+                }
             }
             class Result {
                 int itemCount
@@ -229,6 +229,53 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert getStrings(null,[]).isEmpty()
+        '''
+
+        assertScript '''
+            interface Handle {
+                int getCount()
+            }
+            class HandleContainer<H extends Handle> {
+                H handle
+            }
+            interface Input {
+                HandleContainer<? extends Handle> getResult(key)
+            }
+            interface State {
+                def <X extends Handle> HandleContainer<X> getResult(key)
+            }
+
+            void test(Input input, State state) {
+                def container = state.getResult('k') ?: input.getResult('k')
+                Handle handle = container.handle
+                Integer count = handle.count
+                assert count == 1
+            }
+
+            Handle h = {->1}
+            def c = new HandleContainer(handle: h)
+            test({k->c} as Input, {k->c} as State)
+        '''
+    }
+
+    // GROOVY-9033
+    void testReturnTypeInferenceWithMethodGenerics8() {
+        shouldFailWithMessages '''
+            List<String> test() {
+              def x = [].each { }
+              x.add(new Object())
+              return x // List<E>
+            }
+        ''',
+        'Incompatible generic argument types.' // Cannot assign java.util.List<java.lang.Object> to: java.util.List<java.lang.String>
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].toString() == 'java.lang.String'
+                assert type.genericsTypes[1].toString() == 'java.util.List<java.lang.Object>' // not List<E>
+            })
+            def map = [ key: [] ]
         '''
     }
 
@@ -253,6 +300,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testDiamondInferrenceFromConstructor3() {
         assertScript '''
             Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
+        '''
+    }
+
+    // GROOVY-10324
+    void testDiamondInferrenceFromConstructor20() {
+        assertScript '''
+            class C<T> {
+            }
+            def <X> X m(C<X> c) {
+            }
+            List<String> x = m(new C<>())
+        '''
+    }
+
+    // GROOVY-10367
+    void testDiamondInferrenceFromConstructor26() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<X, Y extends X> { // works without Y
+              X x
+            }
+            def <Z extends Number> void test(Z z) {
+              z = new C<>(z).x // Cannot assign value of type Object to variable of type Z
+            }
+            test(null)
         '''
     }
 

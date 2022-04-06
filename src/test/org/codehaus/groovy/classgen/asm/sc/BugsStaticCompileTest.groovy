@@ -1202,7 +1202,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
                 def ift = node.getNodeMetaData(INFERRED_TYPE)
                 assert ift == make(Set)
                 assert ift.isUsingGenerics()
-                assert ift.genericsTypes[0].type==STRING_TYPE
+                assert ift.genericsTypes[0].name == 'java.lang.String'
             })
             def set = map.keySet()
             def key = set[0]
@@ -1214,7 +1214,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
                 def ift = node.getNodeMetaData(INFERRED_TYPE)
                 assert ift == make(Set)
                 assert ift.isUsingGenerics()
-                assert ift.genericsTypes[0].name=='K'
+                assert ift.genericsTypes[0].name == 'java.lang.Object'
             })
             def set = map.keySet()
             def key = set[0]

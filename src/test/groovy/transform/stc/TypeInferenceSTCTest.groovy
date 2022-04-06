@@ -35,10 +35,10 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker
 class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testStringToInteger() {
-        assertScript """
-        def name = "123" // we want type inference
-        name.toInteger() // toInteger() is defined by DGM
-        """
+        assertScript '''
+            def name = "123" // we want type inference
+            name.toInteger() // toInteger() is defined by DGM
+        '''
     }
 
     // GROOVY-9935
@@ -62,76 +62,72 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testAnnotationOnSingleMethod() {
-        GroovyShell shell = new GroovyShell()
-        shell.evaluate '''
-            // calling a method which has got some dynamic stuff in it
+    void testDynamicMethodWithinTypeCheckedClass() {
+        assertScript '''
+            import groovy.transform.*
 
-            import groovy.transform.TypeChecked
-            import groovy.xml.MarkupBuilder
-
-            class Greeter {
-                @TypeChecked
-                String greeting(String name) {
-                    generateMarkup(name.toUpperCase())
+            class C {
+                String m(String s) {
+                    generateMarkup(s.toUpperCase())
                 }
 
-                // MarkupBuilder is dynamic so we won't do typechecking here
-                String generateMarkup(String name) {
+                // MarkupBuilder is dynamic so skip type-checking
+                @TypeChecked(TypeCheckingMode.SKIP)
+                String generateMarkup(String s) {
                     def sw = new StringWriter()
-                    def mkp = new MarkupBuilder()
-                    mkp.html {
+                    def mb = new groovy.xml.MarkupBuilder(sw)
+                    mb.html {
                         body {
-                            div name
+                            div s
                         }
                     }
-                    sw
+                    sw.toString()
                 }
             }
 
-            def g = new Greeter()
-            g.greeting("Guillaume")
-
+            def c = new C()
+            def xml = c.m('x')
+            // TODO: check XML
         '''
     }
 
     void testInstanceOf() {
-        assertScript """
-        Object o
-        if (o instanceof String) o.toUpperCase()
-        """
+        assertScript '''
+            Object o
+            if (o instanceof String) o.toUpperCase()
+        '''
     }
 
     void testEmbeddedInstanceOf() {
-        assertScript """
-        Object o
-        if (o instanceof Object) {
-            if (o instanceof String) {
-                o.toUpperCase()
+        assertScript '''
+            Object o
+            if (o instanceof Object) {
+                if (o instanceof String) {
+                    o.toUpperCase()
+                }
             }
-        }
-        """
+        '''
     }
 
     void testEmbeddedInstanceOf2() {
-        assertScript """
-        Object o
-        if (o instanceof String) {
-            if (true) {
-                o.toUpperCase()
+        assertScript '''
+            Object o
+            if (o instanceof String) {
+                if (true) {
+                    o.toUpperCase()
+                }
             }
-        }
-        """
+        '''
     }
 
     void testEmbeddedInstanceOf3() {
         shouldFailWithMessages '''
-        Object o
-        if (o instanceof String) {
-            if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
-                o.toUpperCase()
+            Object o
+            if (o instanceof String) {
+                if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
+                    o.toUpperCase()
+                }
             }
-        }
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
@@ -151,7 +147,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             if (o instanceof String) {
                o.toUpperCase()
             } else {
-                o.toUpperCase() // ensure that type information is lost in else()
+                o.toUpperCase() // ensure that type information is lost in else
             }
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
@@ -166,6 +162,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             class Task<R extends Face> implements java.util.concurrent.Callable<String> {
                 R request
+
                 @Override
                 String call() {
                     if (request instanceof Impl) {
@@ -193,7 +190,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                void foo2() { println 'ok 2' }
             }
 
-
             def o = new A()
 
             if (o instanceof A) {
@@ -207,7 +203,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             if (o instanceof A || o instanceof B) {
               o.foo()
             }
-
         '''
     }
 
@@ -216,16 +211,11 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             class A {
                int foo() { 1 }
             }
-
             class B {
                int foo2() { 2 }
             }
-
-
             def o = new A()
-
             int result = o instanceof A?o.foo():(o instanceof B?o.foo2():3)
-
         '''
     }
 
@@ -516,7 +506,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testShouldNotFailWithWithAndExplicitTypedIt() {
+    void testShouldFailWithWithAndWrongExplicitIt() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -556,8 +546,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-
-   void testCallMethodInWithContextAndShadowing() {
+    void testCallMethodInWithContextAndShadowing() {
        // make sure that the method which is found in 'with' is actually the one from class A
        // which returns a String
        assertScript '''
@@ -572,6 +561,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 method().toUpperCase()
             }
         '''
+
        // check that if we switch signatures, it fails
        shouldFailWithMessages '''
             class A {
@@ -636,8 +626,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
         assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
-
-
     }
 
     void testChooseMethodWithTypeInference() {
@@ -685,11 +673,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testFlowTypingWithStringVariable() {
-        // as anything can be assigned to a string, flow typing engine
-        // could "erase" the type of the original variable although is must not
         assertScript '''
-            String str = new Object() // type checker will not complain, anything assignable to a String
-            str.toUpperCase() // should not complain
+            String s = new Object() // anything assignable to String
+            s.toUpperCase()
         '''
     }
 
@@ -698,7 +684,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def o
             o = 1L
             o = 2
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.rightExpression.accessedVariable.getNodeMetaData(DECLARATION_INFERRED_TYPE) == long_TYPE
             })
             def z = o
@@ -756,7 +742,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testSwitchCaseAnalysis() {
-        assertScript '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
+        assertScript '''
+            import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
 
             def method(int x) {
                 def returnValue= new Date()
@@ -768,10 +755,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                         returnValue = 1;
                         break;
                 }
-                @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                    def ift = node.getNodeMetaData(INFERRED_TYPE)
-                    assert ift instanceof LUB
-                    assert ift.name == 'java.io.Serializable'
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type instanceof LUB
+                    assert type.name == 'java.io.Serializable'
                 })
                 def val = returnValue
 
@@ -780,32 +767,33 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGroovy6215() {
+    // GROOVY-6215
+    void testSwitchCaseAnalysis2() {
         assertScript '''
-                def processNumber(int x) {
-                    def value = getValueForNumber(x)
-                    value
-                }
+            def processNumber(int x) {
+                def value = getValueForNumber(x)
+                value
+            }
 
-                def getValueForNumber(int x) {
-                    def valueToReturn
-                    switch(x) {
-                        case 1:
-                            valueToReturn = 'One'
-                            break
-                        case 2:
-                            valueToReturn = []
-                            valueToReturn << 'Two'
-                            break
-                    }
-                    valueToReturn
+            def getValueForNumber(int x) {
+                def valueToReturn
+                switch(x) {
+                    case 1:
+                        valueToReturn = 'One'
+                        break
+                    case 2:
+                        valueToReturn = []
+                        valueToReturn << 'Two'
+                        break
                 }
-                def v1 = getValueForNumber(1)
-                def v2 = getValueForNumber(2)
-                def v3 = getValueForNumber(3)
-                assert v1 == 'One'
-                assert v2 == ['Two']
-                assert v3 == null
+                valueToReturn
+            }
+            def v1 = getValueForNumber(1)
+            def v2 = getValueForNumber(2)
+            def v3 = getValueForNumber(3)
+            assert v1 == 'One'
+            assert v2 == ['Two']
+            assert v3 == null
         '''
     }
 
@@ -823,8 +811,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assertScript """
             $orig b = 65 as $orig
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
-                assert rit == make($dest)
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make($dest)
             })
             def pp = ++b
             println '++${orig} -> ' + pp.class + ' ' + pp
@@ -847,8 +835,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assertScript """
             $orig b = 65 as $orig
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def rit = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
-                assert rit == make($dest)
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == make($dest)
             })
             def pp = b++
             println '${orig}++ -> ' + pp.class + ' ' + pp
@@ -860,29 +848,29 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6522
     void testInferenceWithImplicitClosureCoercion() {
         assertScript '''
-interface CustomCallable<T> {
-    T call()
-}
+            interface CustomCallable<T> {
+                T call()
+            }
 
-class Thing {
-    static <T> T customType(CustomCallable<T> callable) {
-        callable.call()
-    }
+            class Thing {
+                static <T> T customType(CustomCallable<T> callable) {
+                    callable.call()
+                }
 
-    @ASTTest(phase=INSTRUCTION_SELECTION,value={
-        lookup('test').each {
-            def call = it.expression
-            def irt = call.getNodeMetaData(INFERRED_TYPE)
-            assert irt == LIST_TYPE
-        }
-    })
-    static void run() {
-        test: customType { [] } // return type is not inferred - fails compile
-    }
-}
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    lookup('test').each {
+                        def call = it.expression
+                        def type = call.getNodeMetaData(INFERRED_TYPE)
+                        assert type == LIST_TYPE
+                    }
+                })
+                static void run() {
+                    test: customType { [] } // return type is not inferred - fails compile
+                }
+            }
 
-Thing.run()
-'''
+            Thing.run()
+        '''
     }
 
     void testInferenceWithImplicitClosureCoercionAndArrayReturn() {
@@ -892,7 +880,7 @@ Thing.run()
             public <T> T[] intArray(ArrayFactory<T> f) {
                 f.array()
             }
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE.makeArray()
             })
             def array = intArray { new Integer[8] }
@@ -908,10 +896,10 @@ Thing.run()
                 f.list()
             }
 
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                def irt = node.getNodeMetaData(INFERRED_TYPE)
-                assert irt == LIST_TYPE
-                assert irt.genericsTypes[0].type == Integer_TYPE
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == LIST_TYPE
+                assert type.genericsTypes[0].type == Integer_TYPE
             })
             def res = list { new LinkedList<Integer>() }
             assert res.size() == 0
@@ -952,7 +940,7 @@ Thing.run()
     void testShouldInferPrimitiveBoolean() {
         assertScript '''
             def foo(Boolean o) {
-                @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     assert node.getNodeMetaData(INFERRED_TYPE) == boolean_TYPE
                 })
                 boolean b = o
@@ -1019,6 +1007,60 @@ Thing.run()
         }
     }
 
+    // GROOVY-5655
+    void testByteArrayInference() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE.makeArray()
+            })
+            def b = "foo".bytes
+            new String(b)
+        '''
+    }
+
+    // GROOVY-
+    void testGetAnnotationFails() {
+        assertScript '''
+            import groovy.transform.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.FIELD])
+            @interface Ann1 {}
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.FIELD])
+            @interface Ann2 {}
+
+            class A {
+                @Ann2
+                String field
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                lookup('second').each {
+                    assert it.expression.getNodeMetaData(INFERRED_TYPE).name == 'Ann2'
+                }
+            })
+            def doit(obj, String propName) {
+                def field = obj.getClass().getDeclaredField(propName)
+                if (field) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'Ann1'
+                    })
+                    def annotation = field.getAnnotation Ann1
+                    if(true) {
+                        second: annotation = field.getAnnotation Ann2
+                    }
+                    return annotation
+                }
+                return null
+            }
+
+            assert Ann2.isAssignableFrom(doit(new A(), "field").class)
+        '''
+    }
+
     // GROOVY-9847
     void testShouldKeepInferredTypeWhenPrivateInnerClass() {
         assertScript '''
@@ -1082,6 +1124,29 @@ Thing.run()
             }
 
             meth()
-'''
+        '''
+    }
+
+    // GROOVY-10089
+    void testInferredTypeForMapOfList() {
+        assertScript '''
+            void test(... attributes) {
+                List one = [
+                    [id:'x', options:[count:1]]
+                ]
+                List two = attributes.collect {
+                    def node = Collections.singletonMap('children', one)
+                    if (node) {
+                        node = node.get('children').find { child -> child['id'] == 'x' }
+                    }
+                    // inferred type of node must be something like Map<String,List<...>>
+
+                    [id: it['id'], name: node['name'], count: node['options']['count']]
+                    //                                        ^^^^^^^^^^^^^^^ GroovyCastException (map ctor for Collection)
+                }
+            }
+
+            test( [id:'x'] )
+        '''
     }
 }
