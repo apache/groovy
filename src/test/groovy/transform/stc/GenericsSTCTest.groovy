@@ -1941,9 +1941,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testReturnTypeInferenceWithClosure2() {
         assertScript '''
             class C {
-                def <T> T m(java.util.function.Function<Reader,T> f)  {
+                interface Function<T, R> {
+                    R apply(T t)
+                }
+                def <T> T m(Function<Reader,T> fn)  {
                     new StringReader("").withCloseable { reader ->
-                        f.apply(reader)
+                        fn.apply(reader)
                     }
                 }
             }
