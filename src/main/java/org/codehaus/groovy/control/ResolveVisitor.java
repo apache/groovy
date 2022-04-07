@@ -61,7 +61,6 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -1036,7 +1035,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
                     if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
-                return new ClassExpression(t);
+                ClassExpression ce = new ClassExpression(t);
+                ce.setSourcePosition(ve);
+                return ce;
             }
         }
         resolveOrFail(ve.getType(), ve);

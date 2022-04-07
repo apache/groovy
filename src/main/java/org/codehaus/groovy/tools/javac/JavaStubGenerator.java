@@ -77,6 +77,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
@@ -148,7 +149,7 @@ public class JavaStubGenerator {
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
 
 
-        if (null == outputPath) {
+        if (outputPath == null) {
             generateMemStub(classNode);
         } else {
             generateFileStub(classNode);
@@ -941,40 +942,31 @@ public class JavaStubGenerator {
         out.print(")");
     }
 
-    private void printAnnotations(PrintWriter out, AnnotatedNode annotated) {
+    private void printAnnotations(final PrintWriter out, final AnnotatedNode annotated) {
         if (!java5) return;
         for (AnnotationNode annotation : annotated.getAnnotations()) {
             printAnnotation(out, annotation);
         }
     }
 
-    private void printAnnotation(PrintWriter out, AnnotationNode annotation) {
-        out.print("@" + annotation.getClassNode().getName().replace('$', '.') + "(");
-        boolean first = true;
-        Map<String, Expression> members = annotation.getMembers();
-        for (Map.Entry<String, Expression> entry : members.entrySet()) {
-            String key = entry.getKey();
-            if (first) first = false;
-            else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(entry.getValue()));
+    private void printAnnotation(final PrintWriter out, final AnnotationNode annotation) {
+        StringJoiner sj = new StringJoiner(", ", "@" + annotation.getClassNode().getName().replace('$', '.') + "(", ") ");
+        for (Map.Entry<String, Expression> entry : annotation.getMembers().entrySet()) {
+            sj.add(entry.getKey() + "=" + getAnnotationValue(entry.getValue()));
         }
-        out.print(") ");
+        out.print(sj.toString());
     }
 
-    private String getAnnotationValue(Object memberValue) {
+    private String getAnnotationValue(final Object memberValue) {
         String val = "null";
         boolean replaceDollars = true;
         if (memberValue instanceof ListExpression) {
-            StringBuilder sb = new StringBuilder("{");
-            boolean first = true;
+            StringJoiner sj = new StringJoiner(",", "{", "}");
             ListExpression le = (ListExpression) memberValue;
             for (Expression e : le.getExpressions()) {
-                if (first) first = false;
-                else sb.append(",");
-                sb.append(getAnnotationValue(e));
+                sj.add(getAnnotationValue(e));
             }
-            sb.append("}");
-            val = sb.toString();
+            val = sj.toString();
         } else if (memberValue instanceof ConstantExpression) {
             ConstantExpression ce = (ConstantExpression) memberValue;
             Object constValue = ce.getValue();
