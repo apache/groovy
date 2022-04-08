@@ -1529,11 +1529,114 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
     }
 
+    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
+        assertScript '''
+            interface A {}
+            class B implements A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testPutWithPrimitiveValue() {
+        assertScript '''
+            def map = new HashMap<String, Integer>()
+            map.put('hello', 1)
+        '''
+    }
+
+    void testPutAtWithPrimitiveValue() {
+        assertScript '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = 1
+        '''
+    }
+
+    void testPutWithWrongValueType() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map.put('hello', new Object())
+        ''',
+        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
+    }
+
+    void testPutAtWithWrongValueType() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = new Object()
+        ''',
+        'Cannot call <K,V> java.util.HashMap <String, Integer>#putAt(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
+    }
+
+    // GROOVY-9069
+    void testPutAtWithWrongValueType2() {
+        shouldFailWithMessages '''
+            class ConfigAttribute {
+            }
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<ConfigAttribute>> value = [:]
+                    maps.put(key, value)
+                    maps[key] = value
+                }
+            }
+        ''',
+        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap <String, List>). Please check if the declared type is correct and if the method exists.',
+        'Cannot call <K,V> java.util.Map <String, Map>#putAt(java.lang.String, java.util.Map <String, List>) with arguments [java.lang.String, java.util.LinkedHashMap <String, List>]'
+    }
+
+    void testPutAtWithWrongValueType3() {
+        assertScript '''
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<String>> value = [:]
+                    // populate value
+                    maps[key] = value
+                    maps.put(key, value)
+                }
+            }
+        '''
+    }
+
+    // GROOVY-10576
+    void testPutAllWithMapParameterUnbounded() {
+        assertScript '''
+            class C {
+                Map<String,Object> map
+                void test(Map<String,?> m) {
+                    map.putAll(m) // Cannot call Map#putAll(Map<? extends String, ? extends Object>) with arguments [Map<String, ?>]
+                }
+            }
+            def obj = new C(map:[:])
+            obj.test(foo:'bar')
+            def map = obj.map
+
+            assert map == [foo:'bar']
+        '''
+    }
+
     void testMethodCallWithMapParameterUnbounded() {
         assertScript """
             import static ${this.class.name}.isEmpty
             class C {
-                Map<String, ?> map = new HashMap()
+                Map<String,?> map = new HashMap()
             }
             assert isEmpty(new C().map)
         """
@@ -1565,54 +1668,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 validator.validate(bean, types as Class<?>[])
             }
         '''
-    }
-
-    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
-        assertScript '''
-            class A {}
-            class B extends A {}
-            class C extends B {}
-            class Foo {
-                Foo(Class<? extends A> clazz) {}
-            }
-            new Foo(B)
-            new Foo(C)
-        '''
-    }
-
-    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
-        assertScript '''
-            interface A {}
-            class B implements A {}
-            class C extends B {}
-            class Foo {
-                Foo(Class<? extends A> clazz) {}
-            }
-            new Foo(B)
-            new Foo(C)
-        '''
-    }
-
-    void testPutMethodWithPrimitiveValue() {
-        assertScript '''
-            def map = new HashMap<String, Integer>()
-            map.put('hello', 1)
-        '''
-    }
-
-    void testPutAtMethodWithPrimitiveValue() {
-        assertScript '''
-            def map = new HashMap<String, Integer>()
-            map['hello'] = 1
-        '''
-    }
-
-    void testPutMethodWithWrongValueType() {
-        shouldFailWithMessages '''
-            def map = new HashMap<String, Integer>()
-            map.put('hello', new Object())
-        ''',
-        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
     }
 
     void testShouldComplainAboutToInteger() {
@@ -1869,22 +1924,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             List<String> list = ['a','b','c']
-            Collection<String> e = list.findAll { it }
+            Collection<String> strings = list.findAll { it }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def dmt = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-                assert dmt instanceof ExtensionMethodNode == false
+                assert dmt !instanceof ExtensionMethodNode
+                assert dmt.declaringClass == LIST_TYPE
                 assert dmt.name == 'addAll'
-                assert dmt.declaringClass == make(List)
             })
-            boolean r = list.addAll(e)
+            boolean r = list.addAll(strings)
         '''
     }
 
     void testAddAllWithCollectionShouldNotBeAllowed() {
         shouldFailWithMessages '''
             List<String> list = ['a','b','c']
-            Collection<Integer> e = (Collection<Integer>) [1,2,3]
-            boolean r = list.addAll(e)
+            Collection<Integer> numbers = (Collection<Integer>) [1,2,3]
+            boolean r = list.addAll(numbers)
         ''',
         'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
@@ -1959,14 +2014,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5559: related behaviour
-    void testGStringString() {
+    void testGStringVsString() {
         assertScript '''
             int i = 1
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == GSTRING_TYPE
             })
-            def str = "foo$i"
-            assert str == 'foo1'
+            def s = "i=$i"
+            assert s == 'i=1'
         '''
     }
 
@@ -2246,16 +2301,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def test() {
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     def type = node.getNodeMetaData(INFERRED_TYPE)
-                    assert type == make(List)
-                    assert type.genericsTypes.length==1
+                    assert type.equals(LIST_TYPE)
+                    assert type.genericsTypes.length == 1
                     assert type.genericsTypes[0].type == GSTRING_TYPE
                 })
                 List<GString> dates = ["${new Date()-1}", "${new Date()}", "${new Date()+1}"]
                 dates*.toUpperCase()
+
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     def type = node.getNodeMetaData(INFERRED_TYPE)
-                    assert type == make(List)
-                    assert type.genericsTypes.length==1
+                    assert type.equals(LIST_TYPE)
+                    assert type.genericsTypes.length == 1
                     assert type.genericsTypes[0].type == GSTRING_TYPE
                 })
                 List<GString> copied = []
