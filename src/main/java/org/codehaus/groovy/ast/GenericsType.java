@@ -412,8 +412,8 @@ public class GenericsType extends ASTNode {
                                                 match = gt.checkGenerics(classNodeType.getLowerBound());
                                             } else if (classNodeType.getUpperBounds() != null) {
                                                 match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
-                                            } else {
-                                                match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                            } else { // GROOVY-10576: "?" vs "? extends Object" (citation required) or no match
+                                                match = (!gt.isPlaceholder() && !gt.isWildcard() && isObjectType(gt.getType()));
                                             }
                                         } else {
                                             match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());

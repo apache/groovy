@@ -1598,11 +1598,114 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call A#<init>(java.lang.Class<java.lang.String>, java.lang.Class<java.lang.Integer>) with arguments [java.lang.Class<java.lang.Integer>, java.lang.Class<java.lang.String>]'
     }
 
+    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
+        assertScript '''
+            interface A {}
+            class B implements A {}
+            class C extends B {}
+            class Foo {
+                Foo(Class<? extends A> clazz) {}
+            }
+            new Foo(B)
+            new Foo(C)
+        '''
+    }
+
+    void testPutWithPrimitiveValue() {
+        assertScript '''
+            def map = new HashMap<String, Integer>()
+            map.put('hello', 1)
+        '''
+    }
+
+    void testPutAtWithPrimitiveValue() {
+        assertScript '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = 1
+        '''
+    }
+
+    void testPutWithWrongValueType() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map.put('hello', new Object())
+        ''',
+        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
+    }
+
+    void testPutAtWithWrongValueType() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = new Object()
+        ''',
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.String, java.lang.Integer>, java.lang.String, java.lang.Object]'
+    }
+
+    // GROOVY-9069
+    void testPutAtWithWrongValueType2() {
+        shouldFailWithMessages '''
+            class ConfigAttribute {
+            }
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<ConfigAttribute>> value = [:]
+                    maps.put(key, value)
+                    maps[key] = value
+                }
+            }
+        ''',
+        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>). Please check if the declared type is correct and if the method exists.',
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
+    }
+
+    void testPutAtWithWrongValueType3() {
+        assertScript '''
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<String>> value = [:]
+                    // populate value
+                    maps[key] = value
+                    maps.put(key, value)
+                }
+            }
+        '''
+    }
+
+    // GROOVY-10576
+    void testPutAllWithMapParameterUnbounded() {
+        assertScript '''
+            class C {
+                Map<String,Object> map
+                void test(Map<String,?> m) {
+                    map.putAll(m) // Cannot call Map#putAll(Map<? extends String, ? extends Object>) with arguments [Map<String, ?>]
+                }
+            }
+            def obj = new C(map:[:])
+            obj.test(foo:'bar')
+            def map = obj.map
+
+            assert map == [foo:'bar']
+        '''
+    }
+
     void testMethodCallWithMapParameterUnbounded() {
         assertScript """
             import static ${this.class.name}.isEmpty
             class C {
-                Map<String, ?> map = new HashMap()
+                Map<String,?> map = new HashMap()
             }
             assert isEmpty(new C().map)
         """
@@ -1632,92 +1735,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             void test(Object bean, List<Class<?>> types, Validator validator) {
                 validator.validate(bean, types as Class<?>[])
-            }
-        '''
-    }
-
-    void testConstructorCallWithClassParameterUsingClassLiteralArg() {
-        assertScript '''
-            class A {}
-            class B extends A {}
-            class C extends B {}
-            class Foo {
-                Foo(Class<? extends A> clazz) {}
-            }
-            new Foo(B)
-            new Foo(C)
-        '''
-    }
-
-    void testConstructorCallWithClassParameterUsingClassLiteralArgAndInterface() {
-        assertScript '''
-            interface A {}
-            class B implements A {}
-            class C extends B {}
-            class Foo {
-                Foo(Class<? extends A> clazz) {}
-            }
-            new Foo(B)
-            new Foo(C)
-        '''
-    }
-
-    void testPutMethodWithPrimitiveValue() {
-        assertScript '''
-            def map = new HashMap<String, Integer>()
-            map.put('hello', 1)
-        '''
-    }
-
-    void testPutAtMethodWithPrimitiveValue() {
-        assertScript '''
-            def map = new HashMap<String, Integer>()
-            map['hello'] = 1
-        '''
-    }
-
-    void testPutMethodWithWrongValueType() {
-        shouldFailWithMessages '''
-            def map = new HashMap<String, Integer>()
-            map.put('hello', new Object())
-        ''',
-        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
-    }
-
-    void testPutAtMethodWithWrongValueType() {
-        shouldFailWithMessages '''
-            def map = new HashMap<String, Integer>()
-            map['hello'] = new Object()
-        ''',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.String, java.lang.Integer>, java.lang.String, java.lang.Object]'
-    }
-
-    // GROOVY-9069
-    void testPutAtMethodWithWrongValueType2() {
-        shouldFailWithMessages '''
-            class ConfigAttribute {
-            }
-            void test(Map<String, Map<String, List<String>>> maps) {
-                maps.each { String key, Map<String, List<String>> map ->
-                    Map<String, List<ConfigAttribute>> value = [:]
-                    maps.put(key, value)
-                    maps[key] = value
-                }
-            }
-        ''',
-        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>). Please check if the declared type is correct and if the method exists.',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
-    }
-
-    void testPutAtMethodWithWrongValueType3() {
-        assertScript '''
-            void test(Map<String, Map<String, List<String>>> maps) {
-                maps.each { String key, Map<String, List<String>> map ->
-                    Map<String, List<String>> value = [:]
-                    // populate value
-                    maps[key] = value
-                    maps.put(key, value)
-                }
             }
         '''
     }
