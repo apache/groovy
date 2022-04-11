@@ -431,6 +431,10 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_03,in
 `_g` is an implicit variable for `agg` aggregate function,
 it represents the grouped `Queryable` object and its record(e.g. `r`) could reference the data source by alias(e.g. `n`)
 
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_13,indent=0]
+----
 
 Also, we could apply the aggregate functions for the whole GINQ result, i.e. no `groupby` clause is needed:
 [source, groovy]
