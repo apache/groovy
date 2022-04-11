@@ -25,8 +25,8 @@ install:
 
 matrix:
   include:
-#    - env: BC='indy' FEATURE='19' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-#      jdk: openjdk17
+    - env: BC='indy' FEATURE='19' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
+      jdk: openjdk17
     - env: BC='indy' FEATURE='18' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk17
     - env: BC='indy'
