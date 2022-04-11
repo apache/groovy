@@ -992,6 +992,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List<ConstructorNode> constructors = new ArrayList<>(type.getDeclaredConstructors());
         addDefaultParameters(constructors, (arguments, params, method) -> {
             // GROOVY-9151: check for references to parameters that have been removed
+            List<Parameter> paramList = Arrays.asList(params);
             for (ListIterator<Expression> it = arguments.getExpressions().listIterator(); it.hasNext(); ) {
                 Expression argument = it.next();
                 if (argument instanceof CastExpression) {
@@ -1001,7 +1002,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     VariableExpression v = (VariableExpression) argument;
                     if (v.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) v.getAccessedVariable();
-                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)
+                        if (p.hasInitialExpression() && !paramList.contains(p)
                                 && p.getInitialExpression() instanceof ConstantExpression) {
                             // replace argument "(Type) param" with "(Type) <param's default>" for simple default value
                             it.set(castX(method.getParameters()[it.nextIndex() - 1].getType(), p.getInitialExpression()));
@@ -1014,7 +1015,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) e.getAccessedVariable();
-                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
+                        if (p.hasInitialExpression() && !paramList.contains(p)) {
                             String error = String.format(
                                     "The generated constructor \"%s(%s)\" references parameter '%s' which has been replaced by a default value expression.",
                                     type.getNameWithoutPackage(),
