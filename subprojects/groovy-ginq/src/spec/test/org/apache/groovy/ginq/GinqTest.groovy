@@ -3006,6 +3006,19 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 31"() {
+        assertGinqScript '''
+            assert [['A', ['Apple', 'Apricot']], ['B', ['Banana']], ['C', ['Cantaloupe']]] == GQ {
+// tag::ginq_grouping_13[]
+                from fruit in ['Apple', 'Apricot', 'Banana', 'Cantaloupe']
+                groupby fruit.substring(0, 1) as firstChar
+                select firstChar, agg(_g.stream().map(r -> r.fruit).toList()) as fruit_list
+// end::ginq_grouping_13[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertGinqScript '''
             assert [[1, 2], [6, 3]] == GQ {
