@@ -170,7 +170,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         this.superClass = fixedSuperClass;
 
         // create the base list of classes which have possible methods to be overloaded
-        this.classList = new LinkedHashSet<Class>();
+        this.classList = new LinkedHashSet<>();
         this.classList.add(superClass);
         if (generateDelegateField) {
             classList.add(delegateClass);

@@ -165,6 +165,7 @@ allprojects {
 
     def producedJars = [jar]
     jar {
+        duplicatesStrategy = DuplicatesStrategy.WARN
         appendix = 'raw'
         manifest {
             from(allManifest) {
@@ -179,6 +180,7 @@ allprojects {
     if (rootProject.indyCapable()) {
         task jarWithIndy(type: Jar) {
             dependsOn compileGroovyWithIndy
+            duplicatesStrategy = DuplicatesStrategy.WARN
             classifier = 'indy'
             appendix = 'raw'
             from sourceSets.main.java.outputDir
