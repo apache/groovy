@@ -299,7 +299,8 @@ Only binary expressions(`==`, `&&`) are allowed in the `on` clause of hash join
 
 
 ==== Grouping
-`groupby` is equivalent to SQL's `GROUP BY`, and `having` is equivalent to SQL's `HAVING`
+`groupby` is equivalent to SQL's `GROUP BY`, and `having` is equivalent to SQL's `HAVING`.
+Each field in any nonaggregate expression in the `select` clause **must** be included in the `groupby` clause.
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_01,indent=0]
