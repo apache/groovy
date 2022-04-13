@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.LoopsSTCTest
 
 /**
- * Unit tests for static type checking : miscellaneous tests.
+ * Unit tests for static compilation : loops.
  */
 final class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
 

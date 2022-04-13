@@ -35,27 +35,6 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testForInLoopOnArray() {
-        assertScript '''
-            String[] strings = ['a','b','c']
-            for (string in strings) {
-                string.toUpperCase()
-            }
-        '''
-    }
-
-    // GROOVY-8882
-    void testForInLoopOnString() {
-        assertScript '''
-            for (s in 'abc') assert s instanceof String
-            for (String s in 'abc') assert s instanceof String
-        '''
-        assertScript '''
-            for (char c in 'abc') assert c instanceof Character
-            for (Character c in 'abc') assert c instanceof Character
-        '''
-    }
-
     void testMethodCallWithEachAndDefAndTwoFooMethods() {
         shouldFailWithMessages '''
             Date foo(Integer x) { new Date() }
@@ -190,6 +169,39 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             test(a:1,b:2,c:3.14)
+        '''
+    }
+
+    void testForInLoopOnArray() {
+        assertScript '''
+            String[] strings = ['a','b','c']
+            for (string in strings) {
+                string.toUpperCase()
+            }
+        '''
+    }
+
+    // GROOVY-10579
+    void testForInLoopOnArray2() {
+        assertScript '''
+            int[] numbers = [1,2,3,4,5]
+            int sum = 0
+            for (i in numbers) {
+                sum += i
+            }
+            assert sum == 15
+        '''
+    }
+
+    // GROOVY-8882
+    void testForInLoopOnString() {
+        assertScript '''
+            for (s in 'abc') assert s instanceof String
+            for (String s in 'abc') assert s instanceof String
+        '''
+        assertScript '''
+            for (char c in 'abc') assert c instanceof Character
+            for (Character c in 'abc') assert c instanceof Character
         '''
     }
 
