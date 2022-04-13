@@ -534,6 +534,34 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-10580
+    void testFinalVarIfElseStatementReturningBranch() {
+        assertScript '''
+            final int i
+            final boolean a = true
+            if (a) {
+                i = 1
+            } else {
+                throw new IllegalStateException('a is false')
+            }
+            def result = i
+            assert result == 1
+
+            def evalJ() {
+                final int j
+                final boolean b = true
+                if (!b) {
+                    return null
+                } else {
+                    j = 2
+                }
+                def result = j
+                return result
+            }
+            assert evalJ() == 2
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
