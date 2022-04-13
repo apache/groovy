@@ -20,10 +20,12 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -452,7 +454,11 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         @Override
         public Object newInstance(Class klass, Map attributes) throws InstantiationException,
                 IllegalAccessException {
-            return klass.newInstance();
+            try {
+                return klass.getDeclaredConstructor().newInstance();
+            } catch (InvocationTargetException | NoSuchMethodException e) {
+                throw new GroovyRuntimeException("Unable to create instance resolver", e);
+            }
         }
     }
 
