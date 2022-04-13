@@ -115,20 +115,19 @@ public class StaticTypesStatementWriter extends StatementWriter {
             OperandStack operandStack,
             MethodVisitor mv,
             ForStatement loop,
-            Expression collectionExpression,
-            ClassNode collectionType,
+            Expression arrayExpression,
+            ClassNode arrayType,
             Parameter loopVariable) {
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
-
+        BytecodeVariable variable = compileStack.defineVariable(loopVariable, arrayType.getComponentType(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
 
         AsmClassGenerator acg = controller.getAcg();
 
         // load array on stack
-        collectionExpression.visit(acg);
+        arrayExpression.visit(acg);
         mv.visitInsn(DUP);
-        int array = compileStack.defineTemporaryVariable("$arr", collectionType, true);
+        int array = compileStack.defineTemporaryVariable("$arr", arrayType, true);
         mv.visitJumpInsn(IFNULL, breakLabel);
 
         // $len = array.length
