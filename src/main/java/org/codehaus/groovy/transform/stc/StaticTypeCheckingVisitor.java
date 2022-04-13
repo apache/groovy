@@ -1908,6 +1908,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // for (int i=0; i<...; i++) style loop
             super.visitForLoop(forLoop);
         } else {
+            visitStatement(forLoop);
             collectionExpression.visit(this);
             ClassNode collectionType;
             if (collectionExpression instanceof VariableExpression && hasInferredReturnType(collectionExpression)) {
@@ -1936,7 +1937,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             typeCheckingContext.controlStructureVariables.put(forLoop.getVariable(), componentType);
             try {
-                super.visitForLoop(forLoop);
+                forLoop.getLoopBlock().visit(this);
             } finally {
                 typeCheckingContext.controlStructureVariables.remove(forLoop.getVariable());
             }
