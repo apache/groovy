@@ -21,6 +21,7 @@ package groovy.test;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.apache.groovy.test.ScriptTestAdapter;
@@ -77,7 +78,7 @@ public class GroovyTestSuite extends TestSuite {
             throw new RuntimeException("No filename given in the 'test' system property so cannot run a Groovy unit test");
         }
         System.out.println("Compiling: " + fileName);
-        Class type = compile(fileName);
+        Class<? extends TestCase> type = compile(fileName);
         String[] args = {};
         if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
             // let's treat the script as a Test
@@ -87,7 +88,7 @@ public class GroovyTestSuite extends TestSuite {
         }
     }
 
-    public Class compile(String fileName) throws Exception {
+    public Class<? extends TestCase> compile(String fileName) throws Exception {
         return loader.parseClass(new File(fileName));
     }
 }
