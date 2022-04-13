@@ -37,7 +37,7 @@ public class TemplateTest extends TestCase {
     }
 
     public void testBinding() throws CompilationFailedException, ClassNotFoundException, IOException {
-        Map binding = new HashMap();
+        Map<String, String> binding = new HashMap<>();
         binding.put("sam", "pullara");
 
         Template template1 = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");

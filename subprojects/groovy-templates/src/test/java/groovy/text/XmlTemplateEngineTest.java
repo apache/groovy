@@ -26,7 +26,7 @@ import java.util.Map;
 public class XmlTemplateEngineTest extends TestCase {
 
     public void testBinding() throws Exception {
-        Map binding = new HashMap();
+        Map<String, String> binding = new HashMap();
         binding.put("Christian", "Stein");
 
         XmlTemplateEngine xmlTemplateEngine = new XmlTemplateEngine();
@@ -46,7 +46,7 @@ public class XmlTemplateEngineTest extends TestCase {
     }
 
     public void testQuotes() throws Exception {
-        Map binding = new HashMap();
+        Map<String, String> binding = new HashMap();
         binding.put("Christian", "Stein");
 
         XmlTemplateEngine xmlTemplateEngine = new XmlTemplateEngine();
@@ -66,7 +66,7 @@ public class XmlTemplateEngineTest extends TestCase {
     }
 
     public void testNamespaces() throws Exception {
-        Map binding = new HashMap();
+        Map<String, String> binding = new HashMap();
         binding.put("Christian", "Stein");
 
         XmlTemplateEngine xmlTemplateEngine = new XmlTemplateEngine();
