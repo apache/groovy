@@ -290,13 +290,19 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         allVars.addAll(curState.keySet());
         allVars.addAll(ifState.keySet());
         allVars.addAll(elseState.keySet());
+        boolean ifReturning = returningBlock(ifElse.getIfBlock());
+        boolean elseReturning = returningBlock(ifElse.getElseBlock());
         for (Variable var : allVars) {
             VariableState beforeValue = curState.get(var);
             if (beforeValue != null) {
                 VariableState ifValue = ifState.get(var);
                 VariableState elseValue = elseState.get(var);
-                if (ifValue == elseValue) {
+                if (ifValue == elseValue || (elseReturning && !ifReturning)) {
                     curState.put(var, ifValue);
+                } else if (ifReturning && !elseReturning) {
+                    curState.put(var, elseValue);
+                } else if (ifReturning) {
+                    curState.put(var, beforeValue);
                 } else {
                     curState.put(var, beforeValue == VariableState.is_uninitialized ? VariableState.is_ambiguous : VariableState.is_var);
                 }
