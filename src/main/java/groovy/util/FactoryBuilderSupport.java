@@ -22,6 +22,7 @@ import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -659,7 +660,11 @@ public abstract class FactoryBuilderSupport extends Binding {
                 if (checkValueIsTypeNotString(value, name, beanClass)) {
                     return value;
                 } else {
-                    return beanClass.newInstance();
+                    try {
+                        return beanClass.getDeclaredConstructor().newInstance();
+                    } catch (NoSuchMethodException | InvocationTargetException e) {
+                        throw new GroovyRuntimeException("Failed to register bean factory", e);
+                    }
                 }
             }
         });

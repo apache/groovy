@@ -470,14 +470,14 @@ public class InvokerHelper {
         return script;
     }
 
-    public static Script newScript(Class<?> scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+    public static Script newScript(Class<? extends Script> scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Script script;
         try {
-            Constructor constructor = scriptClass.getConstructor(Binding.class);
-            script = (Script) constructor.newInstance(context);
+            Constructor<? extends Script> constructor = scriptClass.getConstructor(Binding.class);
+            script = constructor.newInstance(context);
         } catch (NoSuchMethodException e) {
             // Fallback for non-standard "Script" classes.
-            script = (Script) scriptClass.newInstance();
+            script = scriptClass.getDeclaredConstructor().newInstance();
             script.setBinding(context);
         }
         return script;
