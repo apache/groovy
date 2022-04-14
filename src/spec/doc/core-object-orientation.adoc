@@ -244,7 +244,7 @@ Different forms of inheritance are supported:
 * _implementation_ inheritance where code (methods, fields or properties) from a <<superclass,superclass>> or from
 one or more <<_traits,traits>> is reused by a child class
 * _contract_ inheritance where a class promises to provide particular abstract methods defined in a <<superclass,superclass>>,
-or defined in one or more <<_traits,traits>> or <<_interface,interfaces>>.
+or defined in one or more <<_traits,traits>> or <<interfaces,interfaces>>.
 
 [[superclass]]
 === Superclasses
@@ -253,6 +253,7 @@ Parent classes share visible fields, properties or methods with child classes.
 A child class may have at most one parent class.
 The `extends` keyword is used immediately prior to giving the superclass type.
 
+[[interfaces]]
 === Interfaces
 
 An interface defines a contract that a class needs to conform to.
