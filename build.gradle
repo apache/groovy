@@ -183,7 +183,7 @@ configurations {
 
 allprojects {
     tasks.withType(AbstractCopyTask).configureEach {
-        it.duplicatesStrategy = DuplicatesStrategy.FAIL
+        it.duplicatesStrategy = DuplicatesStrategy.WARN
     }
 }
 
