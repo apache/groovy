@@ -149,25 +149,26 @@ tasks.withType(AbstractArchiveTask) {
     reproducibleFileOrder = true
 }
 
-tasks.withType(Jar).configureEach {
+tasks.withType(Jar).configureEach {jar ->
     metaInf {
-        if (file("${projectDir}/LICENSE").exists()) {
-            from "${projectDir}/LICENSE"
-        } else {
-            from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
-                rename 'LICENSE-BASE', 'LICENSE'
+        if (jar.name == 'sourcesJar') {
+            if (file("${projectDir}/LICENSE").exists()) {
+                from "${projectDir}/LICENSE"
+            } else {
+                from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                    rename 'LICENSE-BASE', 'LICENSE'
+                }
             }
-        }
-        if (file("${projectDir}/NOTICE").exists()) {
-            from "${projectDir}/NOTICE"
-        } else {
-            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
-                rename 'NOTICE-BASE', 'NOTICE'
+            if (file("${projectDir}/NOTICE").exists()) {
+                from "${projectDir}/NOTICE"
+            } else {
+                from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                    rename 'NOTICE-BASE', 'NOTICE'
+                }
             }
         }
         from generateReleaseInfo
     }
-    exclude '**/package-info.class'
 }
 
 tasks.register("jarjar", JarJarTask) {

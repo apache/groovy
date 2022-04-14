@@ -183,7 +183,7 @@ configurations {
 
 allprojects {
     tasks.withType(AbstractCopyTask).configureEach {
-        it.duplicatesStrategy = DuplicatesStrategy.WARN
+        it.duplicatesStrategy = DuplicatesStrategy.FAIL
     }
 }
 
@@ -198,6 +198,7 @@ tasks.named('jar') {
         from("$projectDir/notices/NOTICE-JARJAR")
         rename '^([A-Z]+)-([^.]*)', '$1'
     }
+    exclude '**/package-info.class'
 }
 
 
