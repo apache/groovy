@@ -165,10 +165,10 @@ public class ConsoleTextEditor extends JScrollPane {
         });
         textEditor.setFont(new Font(defaultFamily, Font.PLAIN, fontSize));
 
-        setViewportView(new JPanel(new BorderLayout()) {{
-            add(numbersPanel, BorderLayout.WEST);
-            add(textEditor, BorderLayout.CENTER);
-        }});
+        JPanel view = new JPanel(new BorderLayout());
+        view.add(numbersPanel, BorderLayout.WEST);
+        view.add(textEditor, BorderLayout.CENTER);
+        setViewportView(view);
 
         textEditor.setDragEnabled(editable);
 
@@ -211,26 +211,26 @@ public class ConsoleTextEditor extends JScrollPane {
         doc.addDocumentListener(redoAction);
 
         InputMap im = textEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK, false);
+        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK, false);
         im.put(ks, StructuredSyntaxResources.UNDO);
         ActionMap am = textEditor.getActionMap();
         am.put(StructuredSyntaxResources.UNDO, undoAction);
 
-        ks = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK, false);
+        ks = KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK, false);
         im.put(ks, StructuredSyntaxResources.REDO);
         am.put(StructuredSyntaxResources.REDO, redoAction);
 
-        ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK, false);
+        ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK, false);
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
     }
 
     public void setShowLineNumbers(boolean showLineNumbers) {
         if (showLineNumbers) {
-            setViewportView(new JPanel(new BorderLayout()) {{
-                add(numbersPanel, BorderLayout.WEST);
-                add(textEditor, BorderLayout.CENTER);
-            }});
+            JPanel view = new JPanel(new BorderLayout());
+            view.add(numbersPanel, BorderLayout.WEST);
+            view.add(textEditor, BorderLayout.CENTER);
+            setViewportView(view);
         } else {
             setViewportView(textEditor);
         }
@@ -251,9 +251,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     protected void initActions() {
         ActionMap map = getActionMap();
-
-        PrintAction printAction = new PrintAction();
-        map.put(StructuredSyntaxResources.PRINT, printAction);
+        map.put(StructuredSyntaxResources.PRINT, new PrintAction());
     }
 
     private class PrintAction extends AbstractAction {
@@ -353,11 +351,11 @@ public class ConsoleTextEditor extends JScrollPane {
         return printAction;
     }
 
-    public void enableHighLighter(Class clazz) {
+    public void enableHighLighter(Class<? extends DocumentFilter> clazz) {
         DefaultStyledDocument doc = (DefaultStyledDocument) textEditor.getDocument();
 
         try {
-            DocumentFilter documentFilter = (DocumentFilter) clazz.getConstructor(doc.getClass()).newInstance(doc);
+            DocumentFilter documentFilter = clazz.getConstructor(doc.getClass()).newInstance(doc);
             doc.setDocumentFilter(documentFilter);
 
             disableMatchingHighlighter();
