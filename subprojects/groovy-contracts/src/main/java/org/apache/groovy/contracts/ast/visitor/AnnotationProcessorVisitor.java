@@ -60,6 +60,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
  */
 public class AnnotationProcessorVisitor extends BaseVisitor {
 
+    private static final String DO_CALL = "doCall";
     private ProcessingContextInformation pci;
 
     public AnnotationProcessorVisitor(final SourceUnit sourceUnit, final ReaderSource source, final ProcessingContextInformation pci) {
@@ -73,7 +74,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
     public void visitClass(ClassNode type) {
         handleClassNode(type);
 
-        List<MethodNode> methodNodes = new ArrayList<MethodNode>();
+        List<MethodNode> methodNodes = new ArrayList<>();
         methodNodes.addAll(type.getMethods());
         methodNodes.addAll(type.getDeclaredConstructors());
 
@@ -81,7 +82,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
             if (!CandidateChecks.isClassInvariantCandidate(type, methodNode) && !CandidateChecks.isPreOrPostconditionCandidate(type, methodNode))
                 continue;
 
-            handleMethodNode(methodNode, AnnotationUtils.hasMetaAnnotations(methodNode, ContractElement.class.getName()));
+            handleMethodAnnotations(methodNode, AnnotationUtils.hasMetaAnnotations(methodNode, ContractElement.class.getName()));
         }
 
         // visit all interfaces of this class
@@ -94,7 +95,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         if (!Modifier.isAbstract(superClass.getModifiers())) return;
 
         for (ClassNode interfaceClassNode : superClass.getInterfaces()) {
-            List<MethodNode> methodNodes = new ArrayList<MethodNode>(interfaceClassNode.getMethods());
+            List<MethodNode> methodNodes = new ArrayList<>(interfaceClassNode.getMethods());
 
             for (MethodNode interfaceMethodNode : methodNodes) {
                 final List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethodNode, ContractElement.class.getName());
@@ -109,14 +110,14 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
                 MethodNode implementationInOriginClassNode = origin.getMethod(interfaceMethodNode.getName(), interfaceMethodNode.getParameters());
                 if (implementationInOriginClassNode == null) continue;
 
-                handleMethodNode(implementationInOriginClassNode, annotationNodes);
+                handleMethodAnnotations(implementationInOriginClassNode, annotationNodes);
             }
         }
     }
 
     private void visitInterfaces(final ClassNode classNode, final ClassNode[] interfaces) {
         for (ClassNode interfaceClassNode : interfaces) {
-            List<MethodNode> methodNodes = new ArrayList<MethodNode>(interfaceClassNode.getMethods());
+            List<MethodNode> methodNodes = new ArrayList<>(interfaceClassNode.getMethods());
 
             // @ContractElement annotations are by now only supported on method interfaces
             for (MethodNode interfaceMethodNode : methodNodes) {
@@ -142,9 +143,9 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
                 MethodCallExpression doCall = callX(
                         ctorX(closureClassExpression.getType(), args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION)),
-                        "doCall"
+                        DO_CALL
                 );
-                doCall.setMethodTarget(closureClassExpression.getType().getMethods("doCall").get(0));
+                doCall.setMethodTarget(closureClassExpression.getType().getMethods(DO_CALL).get(0));
 
                 final BooleanExpression booleanExpression = boolX(doCall);
                 booleanExpression.setSourcePosition(annotationNode);
@@ -155,57 +156,59 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
     }
 
     private void handleInterfaceMethodNode(ClassNode type, MethodNode methodNode, List<AnnotationNode> annotationNodes) {
-        handleMethodNode(type.getMethod(methodNode.getName(), methodNode.getParameters()), annotationNodes);
+        handleMethodAnnotations(type.getMethod(methodNode.getName(), methodNode.getParameters()), annotationNodes);
     }
 
-    private void handleMethodNode(MethodNode methodNode, List<AnnotationNode> annotationNodes) {
+    private void handleMethodAnnotations(MethodNode methodNode, List<AnnotationNode> annotationNodes) {
         if (methodNode == null) return;
-
         for (AnnotationNode annotationNode : annotationNodes) {
             final AnnotationProcessor annotationProcessor = createAnnotationProcessor(annotationNode);
-
             if (annotationProcessor != null && annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME) instanceof ClassExpression) {
-                boolean isPostcondition = AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), org.apache.groovy.contracts.annotations.meta.Postcondition.class.getName());
-
-                ClassExpression closureClassExpression = (ClassExpression) annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME);
-
-                ArgumentListExpression closureArgumentList = new ArgumentListExpression();
-
-                for (Parameter parameter : methodNode.getParameters()) {
-                    closureArgumentList.addExpression(varX(parameter));
-                }
-
-                if (!isPrimitiveVoid(methodNode.getReturnType()) && isPostcondition && !(methodNode instanceof ConstructorNode)) {
-                    closureArgumentList.addExpression(localVarX("result", methodNode.getReturnType()));
-                }
-
-                if (isPostcondition && !(methodNode instanceof ConstructorNode)) {
-                    closureArgumentList.addExpression(localVarX("old", new ClassNode(Map.class)));
-                }
-
-                MethodCallExpression doCall = callX(
-                        ctorX(annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME).getType(), args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION)),
-                        "doCall",
-                        closureArgumentList
-                );
-                ClassNode type = annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME).getType();
-                doCall.setMethodTarget(type.getMethods("doCall").get(0));
-
-                final BooleanExpression booleanExpression = boolX(doCall);
-                booleanExpression.setSourcePosition(annotationNode);
-
-                annotationProcessor.process(pci, pci.contract(), methodNode.getDeclaringClass(), methodNode, closureClassExpression.getNodeMetaData(AnnotationClosureVisitor.META_DATA_ORIGINAL_TRY_CATCH_BLOCK), booleanExpression);
-
-                // if the implementation method has no annotation, we need to set a dummy marker in order to find parent pre/postconditions
-                if (!AnnotationUtils.hasAnnotationOfType(methodNode, annotationNode.getClassNode().getName())) {
-                    AnnotationNode annotationMarker = new AnnotationNode(annotationNode.getClassNode());
-                    annotationMarker.setMember(CLOSURE_ATTRIBUTE_NAME, annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME));
-                    annotationMarker.setRuntimeRetention(true);
-                    annotationMarker.setSourceRetention(false);
-
-                    methodNode.addAnnotation(annotationMarker);
-                }
+                handleMethodAnnotation(methodNode, annotationNode, annotationProcessor);
             }
+        }
+    }
+
+    private void handleMethodAnnotation(MethodNode methodNode, AnnotationNode annotationNode, AnnotationProcessor annotationProcessor) {
+        boolean isPostcondition = AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), org.apache.groovy.contracts.annotations.meta.Postcondition.class.getName());
+
+        ClassExpression closureClassExpression = (ClassExpression) annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME);
+
+        ArgumentListExpression closureArgumentList = new ArgumentListExpression();
+
+        for (Parameter parameter : methodNode.getParameters()) {
+            closureArgumentList.addExpression(varX(parameter));
+        }
+
+        if (!isPrimitiveVoid(methodNode.getReturnType()) && isPostcondition && !(methodNode instanceof ConstructorNode)) {
+            closureArgumentList.addExpression(localVarX("result", methodNode.getReturnType()));
+        }
+
+        if (isPostcondition && !(methodNode instanceof ConstructorNode)) {
+            closureArgumentList.addExpression(localVarX("old", new ClassNode(Map.class)));
+        }
+
+        MethodCallExpression doCall = callX(
+                ctorX(annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME).getType(), args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION)),
+                DO_CALL,
+                closureArgumentList
+        );
+        ClassNode type = annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME).getType();
+        doCall.setMethodTarget(type.getMethods(DO_CALL).get(0));
+
+        final BooleanExpression booleanExpression = boolX(doCall);
+        booleanExpression.setSourcePosition(annotationNode);
+
+        annotationProcessor.process(pci, pci.contract(), methodNode.getDeclaringClass(), methodNode, closureClassExpression.getNodeMetaData(AnnotationClosureVisitor.META_DATA_ORIGINAL_TRY_CATCH_BLOCK), booleanExpression);
+
+        // if the implementation method has no annotation, we need to set a dummy marker in order to find parent pre/postconditions
+        if (!AnnotationUtils.hasAnnotationOfType(methodNode, annotationNode.getClassNode().getName())) {
+            AnnotationNode annotationMarker = new AnnotationNode(annotationNode.getClassNode());
+            annotationMarker.setMember(CLOSURE_ATTRIBUTE_NAME, annotationNode.getMember(CLOSURE_ATTRIBUTE_NAME));
+            annotationMarker.setRuntimeRetention(true);
+            annotationMarker.setSourceRetention(false);
+
+            methodNode.addAnnotation(annotationMarker);
         }
     }
 
@@ -214,7 +217,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
         List<AnnotationNode> annotations = annotationNode.getClassNode().redirect().getAnnotations();
         for (AnnotationNode anno : annotations) {
-            Class typeClass = anno.getClassNode().getTypeClass();
+            Class<?> typeClass = anno.getClassNode().getTypeClass();
 
             if (typeClass.getName().equals("org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation")) {
                 annotationProcessingAnno = (ClassExpression) anno.getMember("value");
@@ -222,17 +225,12 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
             }
         }
 
-        if (annotationProcessingAnno == null)
-            throw new GroovyBugError("Annotation processing class could not be found! This indicates a bug in groovy-contracts, please file an issue!");
-
-        try {
-            final Class clz = Class.forName(annotationProcessingAnno.getType().getTypeClass().getName());
-            return (AnnotationProcessor) clz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException e) {
-        } catch (IllegalAccessException e) {
-        } catch (ClassNotFoundException e) {
-        } catch (NoSuchMethodException e) {
-        } catch (InvocationTargetException e) {
+        if (annotationProcessingAnno != null) {
+            try {
+                final Class<?> clz = Class.forName(annotationProcessingAnno.getType().getTypeClass().getName());
+                return (AnnotationProcessor) clz.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ignore) {
+            }
         }
 
         throw new GroovyBugError("Annotation processing class could not be instantiated! This indicates a bug in groovy-contracts, please file an issue!");
