@@ -48,6 +48,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -70,6 +71,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     public static final String FIND_PREVIOUS = "Find Previous";
     public static final String REPLACE = "Replace...";
     public static final String AUTO_INDENT = "AutoIndent";
+    public static final String DELETE = "delete";
 
     private static final String TABBED_SPACES = "    ";
     private static final Pattern TAB_BACK_PATTERN =
@@ -136,7 +138,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
      * Creates a new instance of TextEditor
      */
     public TextEditor(boolean tabsAsSpaces, boolean multiLineTab) {
-        this(multiLineTab, tabsAsSpaces, false);
+        this(tabsAsSpaces, multiLineTab, false);
     }
 
     /**
@@ -159,15 +161,15 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         aMap = getActionMap();
         InputMap iMap = getInputMap();
         KeyStroke keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0, false);
-        iMap.put(keyStroke, "delete");
-        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, KeyEvent.SHIFT_MASK, false);
-        iMap.put(keyStroke, "delete");
-        aMap.put("delete", action);
+        iMap.put(keyStroke, DELETE);
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, InputEvent.SHIFT_DOWN_MASK, false);
+        iMap.put(keyStroke, DELETE);
+        aMap.put(DELETE, action);
 
         // set all the actions
         action = new FindAction();
         aMap.put(FIND, action);
-        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_MASK, false);
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK, false);
         iMap.put(keyStroke, FIND);
 
         aMap.put(FIND_NEXT, FindReplaceUtility.FIND_ACTION);
@@ -175,7 +177,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         iMap.put(keyStroke, FIND_NEXT);
 
         aMap.put(FIND_PREVIOUS, FindReplaceUtility.FIND_ACTION);
-        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F3, KeyEvent.SHIFT_MASK, false);
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK, false);
         iMap.put(keyStroke, FIND_PREVIOUS);
 
         action = new TabAction();
@@ -185,12 +187,12 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
 
         action = new ShiftTabAction();
         aMap.put("TextEditor-shiftTabAction", action);
-        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, KeyEvent.SHIFT_MASK, false);
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_DOWN_MASK, false);
         iMap.put(keyStroke, "TextEditor-shiftTabAction");
 
         action = new ReplaceAction();
         getActionMap().put(REPLACE, action);
-        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_MASK, false);
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.CTRL_DOWN_MASK, false);
         do {
             iMap.remove(keyStroke);
             iMap = iMap.getParent();
