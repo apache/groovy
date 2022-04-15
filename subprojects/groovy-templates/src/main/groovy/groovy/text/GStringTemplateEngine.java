@@ -97,7 +97,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GStringTemplateEngine extends TemplateEngine {
     private final ClassLoader parentLoader;
     private static AtomicInteger counter = new AtomicInteger();
-    private static final boolean reuseClassLoader = SystemUtil.getBooleanSafe("groovy.GStringTemplateEngine.reuseClassLoader");
+    private static final boolean REUSE_CLASS_LOADER = SystemUtil.getBooleanSafe("groovy.GStringTemplateEngine.reuseClassLoader");
 
     public GStringTemplateEngine() {
         this(GStringTemplate.class.getClassLoader());
@@ -191,10 +191,10 @@ public class GStringTemplateEngine extends TemplateEngine {
 
             // Use a new class loader by default for each class so each class can be independently garbage collected
             final GroovyClassLoader loader =
-                    reuseClassLoader && parentLoader instanceof GroovyClassLoader
+                    REUSE_CLASS_LOADER && parentLoader instanceof GroovyClassLoader
                             ? (GroovyClassLoader) parentLoader
                             : VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
-            final Class groovyClass;
+            final Class<?> groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter.incrementAndGet() + ".groovy", "x"));
             } catch (Exception e) {
@@ -306,10 +306,10 @@ public class GStringTemplateEngine extends TemplateEngine {
 
         @Override
         public Writable make(final Map map) {
-            final Closure template = ((Closure) this.template.clone()).asWritable();
+            final Closure templateClosure = ((Closure) this.template.clone()).asWritable();
             Binding binding = new Binding(map);
-            template.setDelegate(binding);
-            return (Writable) template;
+            templateClosure.setDelegate(binding);
+            return (Writable) templateClosure;
         }
     }
 }
