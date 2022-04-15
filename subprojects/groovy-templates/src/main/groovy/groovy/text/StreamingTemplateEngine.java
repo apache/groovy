@@ -439,7 +439,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
          */
         StreamingTemplate(final Reader source, final ClassLoader parentLoader) throws CompilationFailedException, ClassNotFoundException, IOException {
             final StringBuilder target = new StringBuilder();
-            List<StringSection> sections = new ArrayList<StringSection>();
+            List<StringSection> sections = new ArrayList<>();
             Position sourcePosition = new Position(1, 1);
             Position targetPosition = new Position(1, 1);
             Position lastSourcePosition = new Position(1, 1);
@@ -597,7 +597,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         private Closure createTemplateClosure(List<StringSection> sections, final ClassLoader parentLoader, StringBuilder target) throws ClassNotFoundException {
             final GroovyClassLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
-            final Class groovyClass;
+            final Class<?> groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x"));
             } catch (MultipleCompilationErrorsException e) {
@@ -772,8 +772,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         @Override
         public Writable make(final Map map) {
             //we don't need a template.clone here as curry calls clone under the hood
-            final Closure template = this.template.curry(new Object[]{map});
-            return (Writable) template;
+            return (Writable) this.template.curry(new Object[]{map});
         }
 
         /*
@@ -825,22 +824,22 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         private String mangleExceptionMessage(String original, Position p) {
             String result = original;
-            int index = result.indexOf("@ line ");
-            if (index != -1) {
-                result = result.substring(0, index);
+            int idx = result.indexOf("@ line ");
+            if (idx != -1) {
+                result = result.substring(0, idx);
             }
 
             int count = 0;
-            index = 0;
+            idx = 0;
             for (char c : result.toCharArray()) {
                 if (c == ':') {
                     count++;
                     if (count == 3) {
-                        result = result.substring(index + 2);
+                        result = result.substring(idx + 2);
                         break;
                     }
                 }
-                index++;
+                idx++;
             }
 
             String msg = "Template parse error '" + result + "' at line " + p.row + ", column " + p.column;
