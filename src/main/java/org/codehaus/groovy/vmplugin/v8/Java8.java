@@ -624,6 +624,14 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
+    public void checkPermission(Permission perm) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(perm);
+        }
+    }
+
+    @Override
     public <T> T doPrivileged(PrivilegedAction<T> action) {
         return AccessController.doPrivileged(action);
     }

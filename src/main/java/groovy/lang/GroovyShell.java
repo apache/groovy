@@ -456,13 +456,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * The .class file created from the script is given the supplied codeBase
      */
     public Object evaluate(final String scriptText, final String fileName, final String codeBase) throws CompilationFailedException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-        }
-
+        VMPluginFactory.getPlugin().checkPermission(new GroovyCodeSourcePermission(codeBase));
         GroovyCodeSource gcs = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, codeBase));
-
         return evaluate(gcs);
     }
 

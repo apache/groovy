@@ -18,6 +18,8 @@
  */
 package groovy.console.ui.text;
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
 import java.awt.AWTPermission;
 import java.awt.Font;
 import java.awt.Toolkit;
@@ -45,10 +47,7 @@ public final class StructuredSyntaxResources {
     private static Clipboard getSystemClipboard() {
         try {
             // if we don't have access to the system clipboard, will throw a security exception
-            SecurityManager mgr = System.getSecurityManager();
-            if (mgr != null) {
-                mgr.checkPermission(new AWTPermission("accessClipboard"));
-            }
+            VMPluginFactory.getPlugin().checkPermission(new AWTPermission("accessClipboard"));
             return Toolkit.getDefaultToolkit().getSystemClipboard();
         }
         catch (Exception e) {

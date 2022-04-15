@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
+import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -130,6 +131,18 @@ public interface VMPlugin {
      * @throws SecurityException if the request is denied by the security manager
      */
     boolean trySetAccessible(AccessibleObject ao);
+
+    /**
+     * For JVM versions which support it, throws a {@code SecurityException}
+     * if access to the specified permission is not allowed by the current security policy.
+     * For JVM versions which don't support it, this operation is a NOP.
+     *
+     * @param perm the requested permission.
+     * @throws SecurityException    if access is not permitted based on the current security policy.
+     * @throws NullPointerException if the permission argument is {@code null}.
+     * @since 4.0.2
+     */
+    void checkPermission(Permission perm);
 
     /**
      * transform meta method

@@ -233,10 +233,7 @@ public class GroovyCodeSource {
     }
 
     private static CodeSource createCodeSource(final String codeBase) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-        }
+        VMPluginFactory.getPlugin().checkPermission(new GroovyCodeSourcePermission(codeBase));
         try {
             return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[]) null);
         }
