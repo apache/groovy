@@ -256,8 +256,37 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert Foo.class.annotations.size() == 3
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
         ''', { ex ->
-            assert ex.message.contains("Could not find class for Transformation Processor MyProcessor declared by Alias")
+            assert ex.message.contains('Could not find class for Transformation Processor MyProcessor declared by Alias')
         }
+    }
+
+    // GROOVY-10570
+    void testCollectorOnJavaAnno() {
+        shouldNotCompile '''
+            @groovy.transform.Groovy10570 // Java @interface with @AnnotationCollector
+            class Foo {
+                def bar
+            }
+        ''', { ex ->
+            assert ex.message.contains('Expecting static method `Object[][] value()` in groovy.transform.Groovy10570. Was it compiled from a Java source?')
+        }
+    }
+
+    // GROOVY-10570
+    void testCollectorOnJavaAnno2() {
+        assertScript '''
+            @groovy.transform.Groovy10570emu // Java @interface with @AnnotationCollector and value array
+            class Foo {
+                def bar
+            }
+            assert Foo.class.annotations.size() == 1
+            assert Foo.class.annotations[0].annotationType().name == 'groovy.transform.EqualsAndHashCode'
+
+            // test application of "@EqualsAndHashCode(canEqual=false)"
+            groovy.test.GroovyAssert.shouldFail NoSuchMethodException,{
+                Foo.class.getDeclaredMethod('canEqual', Object)
+            }
+        '''
     }
 
     void testAnnotationOnAnnotation() {
