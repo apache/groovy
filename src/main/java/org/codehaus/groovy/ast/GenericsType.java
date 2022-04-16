@@ -71,20 +71,21 @@ public class GenericsType extends ASTNode {
     }
 
     private static String toString(final GenericsType gt, final Set<String> visited) {
+        String name = gt.getName();
         ClassNode type = gt.getType();
         boolean wildcard = gt.isWildcard();
         boolean placeholder = gt.isPlaceholder();
         ClassNode lowerBound = gt.getLowerBound();
         ClassNode[] upperBounds = gt.getUpperBounds();
 
-        if (placeholder) visited.add(gt.getName());
+        if (placeholder) visited.add(name);
 
-        StringBuilder ret = new StringBuilder(wildcard || placeholder ? gt.getName() : genericsBounds(type, visited));
+        StringBuilder ret = new StringBuilder(wildcard || placeholder ? name : genericsBounds(type, visited));
         if (lowerBound != null) {
             ret.append(" super ").append(genericsBounds(lowerBound, visited));
         } else if (upperBounds != null
                 // T extends Object should just be printed as T
-                && !(placeholder && upperBounds.length == 1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals("java.lang.Object"))) {
+                && !(placeholder && upperBounds.length == 1 && !upperBounds[0].isGenericsPlaceHolder() && upperBounds[0].getName().equals(ClassHelper.OBJECT))) {
             ret.append(" extends ");
             for (int i = 0, n = upperBounds.length; i < n; i += 1) {
                 if (i != 0) ret.append(" & ");
@@ -96,30 +97,21 @@ public class GenericsType extends ASTNode {
 
     private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
         StringBuilder ret = appendName(theType, new StringBuilder());
-
         GenericsType[] genericsTypes = theType.getGenericsTypes();
-        if (genericsTypes == null || genericsTypes.length == 0 || theType.isGenericsPlaceHolder()) { // GROOVY-10583
-            return ret.toString();
-        }
-
-        // TODO: instead of catching Object<T> here, stop it from being placed into type in the first place
-        if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && ret.toString().equals(ClassHelper.OBJECT)) {
-            return genericsTypes[0].getName();
-        }
-
-        ret.append('<');
-        for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
-            if (i != 0) ret.append(", ");
-
-            GenericsType type = genericsTypes[i];
-            if (type.isPlaceholder() && visited.contains(type.getName())) {
-                ret.append(type.getName());
-            } else {
-                ret.append(toString(type, visited));
+        if (genericsTypes != null && genericsTypes.length > 0
+                && !theType.isGenericsPlaceHolder()) { // GROOVY-10583
+            ret.append('<');
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                if (i != 0) ret.append(", ");
+                GenericsType type = genericsTypes[i];
+                if (type.isPlaceholder() && visited.contains(type.getName())) {
+                    ret.append(type.getName());
+                } else {
+                    ret.append(toString(type, visited));
+                }
             }
+            ret.append('>');
         }
-        ret.append('>');
-
         return ret.toString();
     }
 
