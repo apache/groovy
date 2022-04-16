@@ -61,6 +61,7 @@ public class GenericsType extends ASTNode {
         this.type = type;
     }
 
+    @Override
     public String toString() {
         return toString(this, new HashSet<String>());
     }
@@ -90,59 +91,42 @@ public class GenericsType extends ASTNode {
         return ret.toString();
     }
 
-    private static String nameOf(final ClassNode theType) {
-        StringBuilder ret = new StringBuilder();
-        if (theType.isArray()) {
-            ret.append(nameOf(theType.getComponentType()));
-            ret.append("[]");
-        } else {
-            ret.append(theType.getName());
+    private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
+        StringBuilder ret = appendName(theType, new StringBuilder());
+        GenericsType[] genericsTypes = theType.getGenericsTypes();
+        if (genericsTypes != null && genericsTypes.length > 0
+                && !theType.isGenericsPlaceHolder()) { // GROOVY-10583
+            ret.append('<');
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                if (i != 0) ret.append(", ");
+                GenericsType type = genericsTypes[i];
+                if (type.isPlaceholder() && visited.contains(type.getName())) {
+                    ret.append(type.getName());
+                } else {
+                    ret.append(toString(type, visited));
+                }
+            }
+            ret.append('>');
         }
         return ret.toString();
     }
 
-    private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
-        StringBuilder ret = new StringBuilder();
-
+    private static StringBuilder appendName(final ClassNode theType, final StringBuilder sb) {
         if (theType.isArray()) {
-            ret.append(nameOf(theType));
+            appendName(theType.getComponentType(), sb).append("[]");
         } else if (theType.getOuterClass() != null) {
             String parentClassNodeName = theType.getOuterClass().getName();
             if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
-                ret.append(parentClassNodeName);
+                sb.append(parentClassNodeName);
             } else {
-                ret.append(genericsBounds(theType.getOuterClass(), new HashSet<String>()));
+                sb.append(genericsBounds(theType.getOuterClass(), new HashSet<String>()));
             }
-            ret.append('.');
-            ret.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
+            sb.append('.');
+            sb.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
         } else {
-            ret.append(theType.getName());
+            sb.append(theType.isGenericsPlaceHolder() ? theType.getUnresolvedName() : theType.getName());
         }
-
-        GenericsType[] genericsTypes = theType.getGenericsTypes();
-        if (genericsTypes == null || genericsTypes.length == 0) {
-            return ret.toString();
-        }
-
-        // TODO: instead of catching Object<T> here stop it from being placed into type in first place
-        if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && theType.getName().equals("java.lang.Object")) {
-            return genericsTypes[0].getName();
-        }
-
-        ret.append('<');
-        for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
-            if (i != 0) ret.append(", ");
-
-            GenericsType type = genericsTypes[i];
-            if (type.isPlaceholder() && visited.contains(type.getName())) {
-                ret.append(type.getName());
-            } else {
-                ret.append(toString(type, visited));
-            }
-        }
-        ret.append('>');
-
-        return ret.toString();
+        return sb;
     }
 
     public String getName() {
