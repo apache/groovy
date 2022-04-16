@@ -98,12 +98,12 @@ public class GenericsType extends ASTNode {
         StringBuilder ret = appendName(theType, new StringBuilder());
 
         GenericsType[] genericsTypes = theType.getGenericsTypes();
-        if (genericsTypes == null || genericsTypes.length == 0) {
+        if (genericsTypes == null || genericsTypes.length == 0 || theType.isGenericsPlaceHolder()) { // GROOVY-10583
             return ret.toString();
         }
 
-        // TODO: instead of catching Object<T> here stop it from being placed into type in first place
-        if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && theType.getName().equals("java.lang.Object")) {
+        // TODO: instead of catching Object<T> here, stop it from being placed into type in the first place
+        if (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder() && ret.toString().equals(ClassHelper.OBJECT)) {
             return genericsTypes[0].getName();
         }
 
