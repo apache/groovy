@@ -78,17 +78,22 @@ public class GroovyTestSuite extends TestSuite {
             throw new RuntimeException("No filename given in the 'test' system property so cannot run a Groovy unit test");
         }
         System.out.println("Compiling: " + fileName);
-        Class<? extends TestCase> type = compile(fileName);
+        Class<?> type = compile(fileName);
         String[] args = {};
-        if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
+        if (TestCase.class.isAssignableFrom(type)) {
+            addToTestSuite(type);
+        } else if (Script.class.isAssignableFrom(type)) {
             // let's treat the script as a Test
             addTest(new ScriptTestAdapter(type, args));
-        } else {
-            addTestSuite(type);
         }
     }
 
-    public Class<? extends TestCase> compile(String fileName) throws Exception {
+    @SuppressWarnings("unchecked")
+    private void addToTestSuite(Class<?> type) {
+        addTestSuite((Class<? extends TestCase>) type);
+    }
+
+    public Class<?> compile(String fileName) throws Exception {
         return loader.parseClass(new File(fileName));
     }
 }

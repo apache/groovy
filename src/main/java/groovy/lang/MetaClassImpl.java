@@ -264,7 +264,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#respondsTo(Object, String, Object[])
      */
     @Override
-    public List respondsTo(final Object obj, final String name, final Object[] argTypes) {
+    public List<MetaMethod> respondsTo(final Object obj, final String name, final Object[] argTypes) {
         Class[] classes = castArgumentsToClassArray(argTypes);
         MetaMethod m = getMetaMethod(name, classes);
         if (m != null) {
@@ -277,12 +277,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#respondsTo(Object, String)
      */
     @Override
-    public List respondsTo(final Object obj, final String name) {
+    public List<MetaMethod> respondsTo(final Object obj, final String name) {
         final Object o = getMethods(getTheClass(), name, false);
         if (o instanceof FastArray) {
             return ((FastArray) o).toList();
         }
-        return Collections.singletonList(o);
+        return Collections.<MetaMethod>singletonList((MetaMethod) o);
     }
 
     /**

@@ -295,7 +295,7 @@ public class GroovyAssert {
      * @return the test case method
      * @throws RuntimeException if no method could be found.
      */
-    private static Method findRunningJUnitTestMethod(Class caller) {
+    private static Method findRunningJUnitTestMethod(Class<?> caller) {
         final Class<?>[] args = new Class<?>[]{};
 
         // search the initial junit test
