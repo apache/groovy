@@ -656,6 +656,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned from the closure
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static Object use(Object self, Object[] array) {
         if (array.length < 2)
             throw new IllegalArgumentException(
@@ -1156,6 +1157,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if the switchValue is deemed to be assignable from the given class
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static boolean isCase(Class caseValue, Object switchValue) {
         if (switchValue instanceof Class) {
             Class val = (Class) switchValue;
@@ -2449,8 +2451,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return returns the self parameter
      * @since 1.5.0
      */
-    public static <K, V> Map<K, V> each(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
-        for (Map.Entry entry : self.entrySet()) {
+    public static <K, V> Map<K, V> each(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
             callClosureForMapEntry(closure, entry);
         }
         return self;
@@ -2470,7 +2472,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #each(Map, Closure)
      * @since 1.7.2
      */
-    public static <K, V> Map<K, V> reverseEach(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> reverseEach(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         final Iterator<Map.Entry<K, V>> entries = reverse(self.entrySet().iterator());
         while (entries.hasNext()) {
             callClosureForMapEntry(closure, entries.next());
@@ -2496,9 +2499,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.5.0
      */
-    public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class, options="index=true") Closure closure) {
+    public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class, options="index=true") Closure<?> closure) {
         int counter = 0;
-        for (Map.Entry entry : self.entrySet()) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
             callClosureForMapEntryAndCounter(closure, entry, counter++);
         }
         return self;
@@ -2789,6 +2792,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a collection of objects which match the filter
      * @since 1.5.6
      */
+    @SuppressWarnings("unchecked")
     public static Collection grep(Object self, Object filter) {
         Collection answer = createSimilarOrDefaultCollection(self);
         BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
@@ -3100,8 +3104,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K,V> Number count(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         long answer = 0;
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Object entry : self.entrySet()) {
-            if (bcw.callForMap((Map.Entry)entry)) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (bcw.callForMap(entry)) {
                 ++answer;
             }
         }
@@ -3323,7 +3327,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size) {
-        return collate((Iterable)Arrays.asList(self), size, true);
+        return collate((Iterable<T>)Arrays.asList(self), size, true);
     }
 
     /**
@@ -3355,7 +3359,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step) {
-        return collate((Iterable)Arrays.asList(self), size, step, true);
+        return collate((Iterable<T>)Arrays.asList(self), size, step, true);
     }
 
     /**
@@ -3387,7 +3391,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
-        return collate((Iterable)Arrays.asList(self), size, size, keepRemainder);
+        return collate((Iterable<T>)Arrays.asList(self), size, size, keepRemainder);
     }
 
     /**
@@ -3445,7 +3449,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
-        return collate((Iterable)Arrays.asList(self), size, step, keepRemainder);
+        return collate((Iterable<T>)Arrays.asList(self), size, step, keepRemainder);
     }
 
     /**
@@ -3458,6 +3462,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Closure#IDENTITY
      * @since 1.8.5
      */
+    @SuppressWarnings("unchecked")
     public static Collection collect(Object self) {
         return collect(self, Closure.IDENTITY);
     }
@@ -3656,6 +3661,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.2.0
      */
+    @SuppressWarnings("unchecked")
     public static <C extends Collection> C collectNested(Iterable self, C collector, Closure transform) {
         for (Object element : self) {
             if (element instanceof Collection) {
@@ -3940,6 +3946,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
+    @SuppressWarnings("unchecked")
     public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
         return collectEntries(self, (Map) createSimilarMap(self), transform);
     }
@@ -4168,6 +4175,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collectEntries(self, Closure.IDENTITY);
     }
 
+    @SuppressWarnings("unchecked")
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
         if (newEntry instanceof Map) {
             leftShift(result, (Map)newEntry);
@@ -4779,6 +4787,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the values found
      * @since 1.6.0
      */
+    @SuppressWarnings("unchecked")
     public static List findAll(Object self, Closure closure) {
         return findMany(new ArrayList(), InvokerHelper.asIterator(self), closure);
     }
@@ -4851,7 +4860,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Collection#containsAll(Collection)
      * @since 2.4.0
      */
-    public static boolean containsAll(Iterable self, Object[] items) {
+    public static boolean containsAll(Iterable<?> self, Object[] items) {
         return asCollection(self).containsAll(Arrays.asList(items));
     }
 
@@ -4868,6 +4877,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Collection#removeAll(Collection)
      * @since 1.7.2
      */
+    @SuppressWarnings("unchecked")
     public static boolean removeAll(Collection self, Object[] items) {
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(Arrays.asList(items));
@@ -4888,6 +4898,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see    Collection#retainAll(Collection)
      * @since 1.7.2
      */
+    @SuppressWarnings("unchecked")
     public static boolean retainAll(Collection self, Object[] items) {
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(Arrays.asList(items));
@@ -5074,6 +5085,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List whose first item is the accepted values and whose second item is the rejected values
      * @since 1.6.0
      */
+    @SuppressWarnings("unchecked")
     public static Collection split(Object self, Closure closure) {
         List accept = new ArrayList();
         List reject = new ArrayList();
@@ -5198,6 +5210,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.util.GroovyCollections#combinations(Iterable)
      * @since 2.2.0
      */
+    @SuppressWarnings("unchecked")
     public static List combinations(Iterable self, Closure<?> function) {
         return collect(GroovyCollections.combinations(self), function);
     }
@@ -5213,6 +5226,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.util.GroovyCollections#combinations(Iterable)
      * @since 2.2.0
      */
+    @SuppressWarnings("unchecked")
     public static void eachCombination(Iterable self, Closure<?> function) {
         each(GroovyCollections.combinations(self), function);
     }
@@ -5825,6 +5839,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.8.7
      */
+    @SuppressWarnings("unchecked")
     public static <T, V extends T> T inject(Collection<T> self, @ClosureParams(value=FromString.class,options="V,T") Closure<V> closure ) {
         if( self.isEmpty() ) {
             throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
@@ -5879,6 +5894,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
         // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
         return (T) inject((Iterator) self.iterator(), initialValue, closure);
@@ -5958,6 +5974,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.8.7
      */
+    @SuppressWarnings("unchecked")
     public static <T, V extends T> T inject(Object self, Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         if( !iter.hasNext() ) {
@@ -5981,6 +5998,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Collection, Object, Closure)
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return (T) inject(iter, initialValue, closure);
@@ -8103,6 +8121,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value the values to put at the given sublist or a Collection of values
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static void putAt(List self, EmptyRange range, Object value) {
         RangeInfo info = subListBorders(self.size(), range);
         List sublist = self.subList(info.from, info.to);
@@ -8162,6 +8181,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param col   the collection of values to put at the given sublist
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     public static void putAt(List self, IntRange range, Collection col) {
         List sublist = resizeListWithRangeAndGetSublist(self, range);
         if (col.isEmpty()) return;
@@ -8183,6 +8203,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value the value to put at the given sublist
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static void putAt(List self, IntRange range, Object value) {
         List sublist = resizeListWithRangeAndGetSublist(self, range);
         sublist.add(value);
@@ -8199,6 +8220,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param values the value to put at the given sublist
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static void putAt(List self, List splice, List values) {
         if (splice.isEmpty()) {
             if ( ! values.isEmpty() )
@@ -8229,6 +8251,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value  the value to put at the given sublist
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static void putAt(List self, List splice, Object value) {
         if (splice.isEmpty()) {
             return;
@@ -8695,6 +8718,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #toSpreadMap(java.util.Map)
      * @since 2.4.0
      */
+    @SuppressWarnings("unchecked")
     public static SpreadMap toSpreadMap(Iterable self) {
         if (self == null)
             throw new GroovyRuntimeException("Fail to convert Iterable to SpreadMap, because it is null.");
@@ -11857,6 +11881,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asType(Collection, Class)
      * @since 2.4.12
      */
+    @SuppressWarnings("unchecked")
     public static <T> T asType(Iterable iterable, Class<T> clazz) {
         if (Collection.class.isAssignableFrom(clazz)) {
             return asType((Collection) toList(iterable), clazz);
@@ -11970,6 +11995,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> T asType(final Closure impl, final Class<T> type) {
         if (type.isInterface() && !type.isInstance(impl)) {
             if (Traits.isTrait(type) || ClassHelper.make(type).getAllInterfaces().stream().anyMatch(Traits::isTrait)) { // GROOVY-8243
@@ -12077,7 +12103,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> List<T> shuffled(List<T> self) {
-        List<T> copy = new ArrayList(self);
+        List<T> copy = new ArrayList<>(self);
         Collections.shuffle(copy);
         return copy;
     }
@@ -12098,7 +12124,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> List<T> shuffled(List<T> self, Random rnd) {
-        List<T> copy = new ArrayList(self);
+        List<T> copy = new ArrayList<>(self);
         Collections.shuffle(copy, rnd);
         return copy;
     }
@@ -12340,6 +12366,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
+    @SuppressWarnings("unchecked")
     public static <T> T[] plus(final T[] left, final Object[] right) {
         T[] result = Arrays.copyOf(left, left.length + right.length);
         T[] temp = (T[]) DefaultTypeTransformation.castToType(right, left.getClass());
@@ -12369,6 +12396,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
+    @SuppressWarnings("unchecked")
     public static <T> T[] plus(final T[] left, final Object right) {
         T[] result = Arrays.copyOf(left, left.length + 1);
         result[left.length] = (T) DefaultTypeTransformation.castToType(right, left.getClass().getComponentType());
@@ -12402,6 +12430,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
+    @SuppressWarnings("unchecked")
     public static <T> T[] plus(final T[] left, final Collection<?> right) {
         T[] result = Arrays.copyOf(left, left.length + right.size());
         int i = left.length;
@@ -13142,6 +13171,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *         is empty, <code>false</code> otherwise.
      * @since 2.4.0
      */
+    @SuppressWarnings("unchecked")
     public static boolean disjoint(Iterable left, Iterable right) {
         Collection leftCol = asCollection(left);
         Collection rightCol = asCollection(right);
@@ -13458,6 +13488,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting Set
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
         Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
@@ -13496,6 +13527,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting Set
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Object removeMe) {
         Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
         final Set<T> ansSet = createSimilarSet(self);
@@ -13696,6 +13728,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Collection with the given elements removed
      * @since 4.0.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<T> comparator) {
         Collection<T> self1 = asCollection(self);
         Collection<?> removeMe1 = asCollection(removeMe);
@@ -14032,6 +14065,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return flatten(toList(self), new ArrayList());
     }
 
+    @SuppressWarnings("unchecked")
     private static Collection flatten(Iterable elements, Collection addTo) {
         for (Object element : elements) {
             if (element instanceof Collection) {
@@ -15137,6 +15171,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the returned values from the array corresponding to the range
      * @since 1.5.0
      */
+    @SuppressWarnings("unchecked")
     protected static List primitiveArrayGet(Object self, Range range) {
         List answer = new ArrayList();
         for (Object next : range) {
@@ -15156,6 +15191,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the returned values from the array
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     protected static List primitiveArrayGet(Object self, Collection indices) {
         List answer = new ArrayList();
         for (Object value : indices) {
@@ -17766,6 +17802,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static Object asArrayType(Object object, Class type) {
         if (type.isAssignableFrom(object.getClass())) {
             return object;
