@@ -455,6 +455,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * Evaluates some script against the current Binding and returns the result.
      * The .class file created from the script is given the supplied codeBase
      */
+    @SuppressWarnings("removal") // TODO a future Groovy version should skip security checks
     public Object evaluate(final String scriptText, final String fileName, final String codeBase) throws CompilationFailedException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
