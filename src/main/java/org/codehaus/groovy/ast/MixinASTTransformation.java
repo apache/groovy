@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.Mixin;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -43,7 +42,8 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 @Deprecated
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class MixinASTTransformation extends AbstractASTTransformation {
-    private static final ClassNode MY_TYPE = make(Mixin.class);
+    @SuppressWarnings("deprecation")
+    private static final ClassNode MY_TYPE = make(groovy.lang.Mixin.class);
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
