@@ -69,11 +69,11 @@ public final class FindReplaceUtility {
 
     private static final JPanel FIND_PANEL = new JPanel();
     private static final JLabel FIND_LABEL = new JLabel("Find What:    ");
-    private static final JComboBox FIND_FIELD = new JComboBox();
+    private static final JComboBox<String> FIND_FIELD = new JComboBox<>();
 
     private static final JPanel REPLACE_PANEL = new JPanel();
     private static final JLabel REPLACE_LABEL = new JLabel("Replace With:");
-    private static final JComboBox REPLACE_FIELD = new JComboBox();
+    private static final JComboBox<String> REPLACE_FIELD = new JComboBox<>();
 
     private static final JPanel BUTTON_PANEL = new JPanel();
     private static final JButton FIND_BUTTON = new JButton();
@@ -321,8 +321,8 @@ public final class FindReplaceUtility {
     }
 
     private static void setListStrings() {
-        Object findObject = FIND_FIELD.getSelectedItem();
-        Object replaceObject = REPLACE_FIELD.isShowing() ?
+        String findObject = (String) FIND_FIELD.getSelectedItem();
+        String replaceObject = REPLACE_FIELD.isShowing() ?
                 (String) REPLACE_FIELD.getSelectedItem() : "";
 
         if (findObject != null && replaceObject != null) {

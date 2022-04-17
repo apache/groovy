@@ -42,6 +42,7 @@ public final class StructuredSyntaxResources {
         return systemClipboard;
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should skip clipboard security check
     private static Clipboard getSystemClipboard() {
         try {
             // if we don't have access to the system clipboard, will throw a security exception
