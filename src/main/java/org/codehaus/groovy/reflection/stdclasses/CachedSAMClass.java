@@ -100,6 +100,7 @@ public class CachedSAMClass extends CachedClass {
         }
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
     private static Method[] getDeclaredMethods(final Class c) {
         try {
             Method[] methods = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Method[]>) c::getDeclaredMethods);

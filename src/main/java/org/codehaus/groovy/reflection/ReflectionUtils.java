@@ -272,6 +272,7 @@ public class ReflectionUtils {
                           || extraIgnoredPackages.contains(c.getPackage().getName())))));
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should deprecate this class
     private static class ClassContextHelper extends SecurityManager {
         @Override
         public Class[] getClassContext() {

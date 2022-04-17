@@ -831,6 +831,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @throws ClassNotFoundException     if the class could not be found
      * @throws CompilationFailedException if the source file could not be compiled
      */
+    @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
     public Class loadClass(final String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve)
             throws ClassNotFoundException, CompilationFailedException {
         // look into cache

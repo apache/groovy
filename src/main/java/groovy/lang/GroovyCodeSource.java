@@ -232,6 +232,7 @@ public class GroovyCodeSource {
         return cachable;
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
     private static CodeSource createCodeSource(final String codeBase) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
