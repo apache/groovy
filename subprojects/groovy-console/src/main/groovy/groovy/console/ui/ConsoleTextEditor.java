@@ -80,6 +80,7 @@ public class ConsoleTextEditor extends JScrollPane {
         }
 
         @Override
+        @SuppressWarnings("deprecation") // TODO switch viewToModel/modelToView once minimum JDK version for Groovy >= 9
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             // starting position in document

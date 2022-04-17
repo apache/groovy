@@ -508,6 +508,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         //The overtype caret will simply be a horizontal line one pixel high
         // (once we determine where to paint it)
         @Override
+        @SuppressWarnings("deprecation") // TODO switch modelToView => modelToView2D once minimum JDK version for Groovy >= 9
         public void paint(Graphics g) {
             if (isVisible()) {
                 try {
