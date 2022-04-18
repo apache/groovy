@@ -20,12 +20,12 @@ package groovy.security;
 
 import groovy.lang.GroovyCodeSource;
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.junit.Ignore;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.PropertyPermission;
@@ -63,7 +63,7 @@ public class SecurityTest extends SecurityTestSupport {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Void>) () -> {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             Security.setProperty("package.access", "javax.print");
             return null;
         });

@@ -26,11 +26,11 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,7 +103,7 @@ public class CachedSAMClass extends CachedClass {
     @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
     private static Method[] getDeclaredMethods(final Class c) {
         try {
-            Method[] methods = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Method[]>) c::getDeclaredMethods);
+            Method[] methods = AccessController.doPrivileged((PrivilegedAction<Method[]>) c::getDeclaredMethods);
             if (methods!=null) return methods;
         } catch (java.security.AccessControlException ace) {
             // swallow and do as if no method is available

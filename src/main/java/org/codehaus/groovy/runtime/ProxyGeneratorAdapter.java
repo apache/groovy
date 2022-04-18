@@ -34,7 +34,6 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -45,6 +44,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,11 +134,11 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     static {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Method method : GroovyObject.class.getMethods()) {
             names.add(method.getName());
         }
-        GROOVYOBJECT_METHOD_NAMESS = new HashSet<String>(names);
+        GROOVYOBJECT_METHOD_NAMESS = new HashSet<>(names);
     }
 
     private final Class<?> superClass;
@@ -181,8 +181,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             final Class delegateClass) {
         super(ASM_API_VERSION, new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES));
         this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
-        this.visitedMethods = new LinkedHashSet<Object>();
-        this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<String, Boolean>();
+        this.visitedMethods = new LinkedHashSet<>();
+        this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<>();
         boolean wildcard = false;
         for (Map.Entry<Object, Object> entry : closureMap.entrySet()) {
             String name = entry.getKey().toString();
@@ -286,8 +286,14 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return traits;
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
+    private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
+        return AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class<?>[] interfaces) {
-        return VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
+        return AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
     }
 
     private InnerLoader findClassLoader(final Class<?> clazz, final Class<?>[] interfaces) {
@@ -297,9 +303,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     }
 
     private static Set<String> createDelegateMethodList(final Class<?> superClass, final Class<?> delegateClass, final Class<?>[] interfaces) {
-        Set<String> selectedMethods = new HashSet<String>();
-        List<Method> interfaceMethods = new ArrayList<Method>();
-        List<Method> superClassMethods = new ArrayList<Method>();
+        Set<String> selectedMethods = new HashSet<>();
+        List<Method> interfaceMethods = new ArrayList<>();
+        List<Method> superClassMethods = new ArrayList<>();
         Collections.addAll(superClassMethods, superClass.getDeclaredMethods());
         if (interfaces != null) {
             for (Class<?> thisInterface : interfaces) {
@@ -311,7 +317,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
                 }
             }
         }
-        List<Method> additionalMethods = getInheritedMethods(delegateClass, new ArrayList<Method>());
+        List<Method> additionalMethods = getInheritedMethods(delegateClass, new ArrayList<>());
         for (Method method : additionalMethods) {
             if (method.getName().indexOf('$') != -1)
                 continue;
@@ -363,7 +369,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
     @Override
     public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaces) {
-        Set<String> interfacesSet = new LinkedHashSet<String>();
+        Set<String> interfacesSet = new LinkedHashSet<>();
         if (interfaces != null) Collections.addAll(interfacesSet, interfaces);
         for (Class<?> extraInterface : classList) {
             if (extraInterface.isInterface()) interfacesSet.add(BytecodeHelper.getClassInternalName(extraInterface));
@@ -865,7 +871,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
                 for (Class<?> c : interfaces) {
                     if (c.getClassLoader() != parent) {
                         if (internalClassLoaders == null)
-                            internalClassLoaders = new ArrayList<ClassLoader>(interfaces.length);
+                            internalClassLoaders = new ArrayList<>(interfaces.length);
                         if (!internalClassLoaders.contains(c.getClassLoader())) {
                             internalClassLoaders.add(c.getClassLoader());
                         }

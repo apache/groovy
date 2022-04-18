@@ -32,13 +32,13 @@ import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
@@ -595,7 +595,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         }
 
         private Closure createTemplateClosure(List<StringSection> sections, final ClassLoader parentLoader, StringBuilder target) throws ClassNotFoundException {
-            final GroovyClassLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+            final GroovyClassLoader loader = createClassLoader(parentLoader);
             final Class<?> groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x"));
@@ -617,6 +617,11 @@ public class StreamingTemplateEngine extends TemplateEngine {
             }
 
             return result;
+        }
+
+        @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
+        private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
+            return AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
         }
 
         /**

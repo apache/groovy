@@ -18,11 +18,10 @@
  */
 package groovy.xml;
 
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
-
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -33,7 +32,7 @@ public class FactorySupport {
     static Object createFactory(PrivilegedExceptionAction action) throws ParserConfigurationException {
         Object factory;
         try {
-            factory = VMPluginFactory.getPlugin().doPrivileged(action);
+            factory = AccessController.doPrivileged(action);
         } catch (PrivilegedActionException pae) {
             Exception e = pae.getException();
             if (e instanceof ParserConfigurationException) {
