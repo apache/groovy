@@ -53,7 +53,6 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1443,8 +1442,10 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader groovyLoader = AccessController.doPrivileged(
-                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(loader, configuration));
+        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+        GroovyClassLoader groovyLoader = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
+                new GroovyClassLoader(loader, configuration));
+
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
             groovyLoader.setResourceLoader(filename -> null);

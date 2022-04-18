@@ -20,7 +20,6 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import static java.util.Objects.requireNonNull;
@@ -100,13 +99,17 @@ public abstract class ProcessingUnit {
     public void setClassLoader(final GroovyClassLoader loader) {
         // ClassLoaders should only be created inside a doPrivileged block in case
         // this method is invoked by code that does not have security permissions.
-        this.classLoader = loader != null ? loader : AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> {
+        this.classLoader = loader != null ? loader : createClassLoader();
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
+    private GroovyClassLoader createClassLoader() {
+        return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> {
             ClassLoader parent = Thread.currentThread().getContextClassLoader();
             if (parent == null) parent = ProcessingUnit.class.getClassLoader();
             return new GroovyClassLoader(parent, getConfiguration());
         });
     }
-
     /**
      * Errors found during the compilation should be reported through the ErrorCollector.
      */

@@ -30,8 +30,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.sql.DataSource;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -271,8 +269,8 @@ public class Sql implements AutoCloseable {
 
     private boolean withinBatch;
 
-    private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
-    private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
+    private final Map<String, Statement> statementCache = new HashMap<>();
+    private final Map<String, String> namedParamSqlCache = new HashMap<>();
     private final Map<String, List<Tuple<?>>> namedParamIndexPropCache = new HashMap<>();
     private List<String> keyColumnNames;
 
@@ -4300,28 +4298,34 @@ public class Sql implements AutoCloseable {
         if (dataSource != null) {
             // Use a doPrivileged here as many different properties need to be
             // read, and the policy shouldn't have to list them all.
-            Connection con;
-            try {
-                con = AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
-                    @Override
-                    public Connection run() throws SQLException {
-                        return dataSource.getConnection();
-                    }
-                });
-            } catch (PrivilegedActionException pae) {
-                Exception e = pae.getException();
-                if (e instanceof SQLException) {
-                    throw (SQLException) e;
-                } else {
-                    throw (RuntimeException) e;
-                }
-            }
+            Connection con = createConnection(dataSource);
             if (cacheStatements || cacheConnection) {
                 useConnection = con;
             }
             return con;
         }
         return useConnection;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private Connection createConnection(DataSource dataSource) throws SQLException {
+        Connection con;
+        try {
+            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                @Override
+                public Connection run() throws SQLException {
+                    return dataSource.getConnection();
+                }
+            });
+        } catch (java.security.PrivilegedActionException pae) {
+            Exception e = pae.getException();
+            if (e instanceof SQLException) {
+                throw (SQLException) e;
+            } else {
+                throw (RuntimeException) e;
+            }
+        }
+        return con;
     }
 
     /**

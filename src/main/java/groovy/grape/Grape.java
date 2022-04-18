@@ -20,7 +20,6 @@ package groovy.grape;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
@@ -155,13 +154,14 @@ public class Grape {
         }
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
-                    GrapeEngine instance = getInstance();
-                    if (instance != null) {
+                    GrapeEngine instance1 = getInstance();
+                    if (instance1 != null) {
                         if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
                             args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                         }
@@ -171,7 +171,7 @@ public class Grape {
                         if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
                             args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
                         }
-                        instance.grab(args, dependencies);
+                        instance1.grab(args, dependencies);
                     }
                     return null;
                 }

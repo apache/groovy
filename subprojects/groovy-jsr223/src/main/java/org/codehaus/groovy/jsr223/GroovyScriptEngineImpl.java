@@ -79,7 +79,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -109,12 +108,17 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     public GroovyScriptEngineImpl() {
-        this(AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+        this(createClassLoader());
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static GroovyClassLoader createClassLoader() {
+        return java.security.AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
             @Override
             public GroovyClassLoader run() {
                 return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));
             }
-        }));
+        });
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {

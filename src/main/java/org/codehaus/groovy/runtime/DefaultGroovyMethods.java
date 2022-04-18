@@ -125,7 +125,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
@@ -462,10 +461,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (groovyObject && field.getName().equals("metaClass")) {
                         continue;
                     }
-                    AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-                        ReflectionUtils.trySetAccessible(field);
-                        return null;
-                    });
+                    trySetAccessible(field);
                     buffer.append(" ");
                     buffer.append(field.getName());
                     buffer.append("=");
@@ -482,6 +478,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         buffer.append(">");
         return buffer.toString();
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the accessible check not as a privileged action
+    private static void trySetAccessible(final Field field) {
+        java.security.AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            ReflectionUtils.trySetAccessible(field);
+            return null;
+        });
     }
 
     /**

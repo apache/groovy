@@ -21,7 +21,6 @@ package org.codehaus.groovy.tools;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -33,7 +32,6 @@ public class GroovyStarter {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
     }
-
 
     public static void rootLoader(String[] args) {
         String conf = System.getProperty("groovy.starter.conf",null);
@@ -99,7 +97,7 @@ public class GroovyStarter {
             }
         }
         // create loader and execute main class
-        ClassLoader loader = AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
+        ClassLoader loader = getLoader(lc);
         Method m=null;
         try {
             Class c = loader.loadClass(lc.getMainClass());
@@ -112,6 +110,11 @@ public class GroovyStarter {
         } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e3) {
             exit(e3);
         }
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static RootLoader getLoader(LoaderConfiguration lc) {
+        return java.security.AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
     }
 
     private static void exit(Exception e) {

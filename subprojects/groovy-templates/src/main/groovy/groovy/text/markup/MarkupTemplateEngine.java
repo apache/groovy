@@ -43,7 +43,6 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -70,7 +69,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final TemplateGroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
     private final TemplateConfiguration templateConfiguration;
-    private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
+    private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<>();
     private final TemplateResolver templateResolver;
 
     public MarkupTemplateEngine() {
@@ -101,7 +100,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
                     }
             );
         }
-        groovyClassLoader = AccessController.doPrivileged((PrivilegedAction<TemplateGroovyClassLoader>) () -> new TemplateGroovyClassLoader(parentLoader, compilerConfiguration));
+        groovyClassLoader = doPrivileged((PrivilegedAction<TemplateGroovyClassLoader>) () -> new TemplateGroovyClassLoader(parentLoader, compilerConfiguration));
         if (DEBUG_BYTECODE) {
             compilerConfiguration.setBytecodePostprocessor(BytecodeDumper.STANDARD_ERR);
         }
@@ -116,7 +115,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param tplConfig         template engine configuration
      */
     public MarkupTemplateEngine(final ClassLoader parentLoader, final File templateDirectory, TemplateConfiguration tplConfig) {
-        this(AccessController.doPrivileged(
+        this(doPrivileged(
                 new PrivilegedAction<URLClassLoader>() {
                     @Override
                     public URLClassLoader run() {
@@ -125,6 +124,11 @@ public class MarkupTemplateEngine extends TemplateEngine {
                 }),
                 tplConfig,
                 null);
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     private static URL[] buildURLs(final File templateDirectory) {

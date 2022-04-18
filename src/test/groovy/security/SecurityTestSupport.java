@@ -33,10 +33,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.Permission;
-import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
@@ -72,9 +69,10 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         return securityDisabled;
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should remove this method
     public static void resetSecurityPolicy(String policyFileURL) {
         System.setProperty("java.security.policy", policyFileURL);
-        Policy.getPolicy().refresh();
+        java.security.Policy.getPolicy().refresh();
     }
 
     protected class SecurityTestResultPrinter extends ResultPrinter {
@@ -91,11 +89,10 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
     }
 
-    protected GroovyClassLoader loader =
-            AccessController.doPrivileged(
-                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(SecurityTestSupport.class.getClassLoader())
-            );
+    protected GroovyClassLoader loader = doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
+            new GroovyClassLoader(SecurityTestSupport.class.getClassLoader()));
 
+    @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager
     private SecurityManager securityManager;
     private ClassLoader currentClassLoader;
 
@@ -124,6 +121,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
     //test case: a.groovy depends on b.groovy; a.groovy is parsed (and in the process the gcl
     //loads b.groovy via findClass).  Note that b.groovy is only available in the groovy class loader.
     //See
+    @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager
     protected void setUp() {
         if (checkSecurity()) {
             securityManager = System.getSecurityManager();
@@ -132,7 +130,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
             }
         }
         currentClassLoader = Thread.currentThread().getContextClassLoader();
-        AccessController.doPrivileged((PrivilegedAction) () -> {
+        doPrivileged((PrivilegedAction) () -> {
             Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable e) {
@@ -144,12 +142,18 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         });
     }
 
+    @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager
     protected void tearDown() {
-        AccessController.doPrivileged((PrivilegedAction) () -> {
+        doPrivileged((PrivilegedAction) () -> {
             System.setSecurityManager(securityManager);
             Thread.currentThread().setContextClassLoader(currentClassLoader);
             return null;
         });
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     protected synchronized String generateClassName() {
@@ -205,6 +209,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
     }
 
+    @SuppressWarnings("removal") // TODO in a future Groovy version remove AccessControlException
     protected void executeTest(Class test, Permission missingPermission) {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(test);
@@ -225,8 +230,8 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
                 boolean otherFailure = false;
                 for (Enumeration e = result.errors(); e.hasMoreElements();) {
                     TestFailure failure = (TestFailure) e.nextElement();
-                    if (failure.thrownException() instanceof AccessControlException) {
-                        AccessControlException ace = (AccessControlException) failure.thrownException();
+                    if (failure.thrownException() instanceof java.security.AccessControlException) {
+                        java.security.AccessControlException ace = (java.security.AccessControlException) failure.thrownException();
                         if (missingPermission.implies(ace.getPermission())) {
                             continue;
                         }
@@ -242,12 +247,13 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
     }
 
+    @SuppressWarnings("removal") // TODO in a future Groovy version remove AccessControlException
     protected void executeScript(Class scriptClass, Permission missingPermission) {
         try {
             Script script = InvokerHelper.createScript(scriptClass, new Binding());
             script.run();
             //InvokerHelper.runScript(scriptClass, null);
-        } catch (AccessControlException ace) {
+        } catch (java.security.AccessControlException ace) {
             if (missingPermission != null && missingPermission.implies(ace.getPermission())) {
                 return;
             } else {
@@ -271,7 +277,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        doPrivileged((PrivilegedAction<Void>) () -> {
             GroovyCodeSource gcs = null;
             try {
                 gcs = new GroovyCodeSource(file);
@@ -296,7 +302,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        doPrivileged((PrivilegedAction<Void>) () -> {
             parseAndExecute(new GroovyCodeSource(scriptStr, generateClassName(), effectiveCodeBase), missingPermission);
             return null;
         });

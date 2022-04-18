@@ -31,7 +31,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -123,7 +122,7 @@ public class GroovyCodeSource {
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
         try {
-            Object[] info = AccessController.doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
+            Object[] info = doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
                 // retrieve the content of the file using the provided encoding
                 if (encoding != null) {
                     scriptText = ResourceGroovyMethods.getText(infile, encoding);
@@ -148,6 +147,11 @@ public class GroovyCodeSource {
             }
             throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);
         }
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     /**

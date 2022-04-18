@@ -26,7 +26,6 @@ import org.codehaus.groovy.runtime.callsite.GroovySunClassLoader;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,10 +35,10 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
 
     public ClassLoaderForClassArtifacts(Class klazz) {
         super(klazz.getClassLoader());
-        this.klazz = new SoftReference<Class> (klazz);
+        this.klazz = new SoftReference<>(klazz);
     }
 
-    public Class define (String name, byte [] bytes) {
+    public Class define(String name, byte[] bytes) {
         Class cls = defineClass(name, bytes, 0, bytes.length, klazz.get().getProtectionDomain());
         resolveClass(cls);
         return cls;
@@ -49,12 +48,12 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
     public Class loadClass(String name) throws ClassNotFoundException {
         Class cls = findLoadedClass(name);
         if (cls != null)
-          return cls;
+            return cls;
 
         if (GroovySunClassLoader.sunVM != null) {
             cls = GroovySunClassLoader.sunVM.doesKnow(name);
             if (cls != null)
-              return cls;
+                return cls;
         }
 
         return super.loadClass(name);
@@ -68,15 +67,15 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         final String name;
         final String clsName = klazz.get().getName();
         if (clsName.startsWith("java."))
-            name = clsName.replace('.','_') + "$" + methodName;
+            name = clsName.replace('.', '_') + "$" + methodName;
         else
             name = clsName + "$" + methodName;
         int suffix = classNamesCounter.getAndIncrement();
-        return suffix == -1? name : name + "$" + suffix;
+        return suffix == -1 ? name : name + "$" + suffix;
     }
 
     public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes) {
-        final Class cls = AccessController.doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
+        final Class cls = definePrivileged(name, bytes);
 
         if (cls != null) {
             try {
@@ -85,5 +84,10 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private Class definePrivileged(String name, byte[] bytes) {
+        return java.security.AccessController.doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
     }
 }

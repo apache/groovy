@@ -54,7 +54,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -527,7 +526,12 @@ public class GroovyMain {
             }
         }
 
-        AccessController.doPrivileged(new DoSetContext(shell.getClassLoader()));
+        doPrivileged(new DoSetContext(shell.getClassLoader()));
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     /**

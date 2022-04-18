@@ -44,7 +44,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -288,12 +287,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
     @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
-        return AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+        return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
     }
 
     @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class<?>[] interfaces) {
-        return AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
+        return java.security.AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
     }
 
     private InnerLoader findClassLoader(final Class<?> clazz, final Class<?>[] interfaces) {
