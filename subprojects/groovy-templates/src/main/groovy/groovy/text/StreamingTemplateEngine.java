@@ -38,7 +38,6 @@ import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
@@ -621,7 +620,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
         private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
-            return AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+            return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
         }
 
         /**

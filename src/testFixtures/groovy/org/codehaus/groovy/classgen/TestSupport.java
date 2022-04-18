@@ -44,7 +44,6 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -57,9 +56,15 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     final ClassLoader parentLoader = getClass().getClassLoader();
     protected final GroovyClassLoader loader =
-            AccessController.doPrivileged(
-                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader)
-            );
+            createClassLoader();
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private GroovyClassLoader createClassLoader() {
+        return java.security.AccessController.doPrivileged(
+                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader)
+        );
+    }
+
     final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
     final ModuleNode module = new ModuleNode(unit);
 
@@ -137,12 +142,17 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected void assertScript(final String text, final String scriptName) throws Exception {
         log.info("About to execute script");
         log.info(text);
-        GroovyCodeSource gcs = AccessController.doPrivileged(
-                (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
-        );
+        GroovyCodeSource gcs = getCodeSource(text, scriptName);
         Class<?> groovyClass = loader.parseClass(gcs);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private GroovyCodeSource getCodeSource(String text, String scriptName) {
+        return java.security.AccessController.doPrivileged(
+                (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
+        );
     }
 
     protected void assertScriptFile(String fileName) throws Exception {

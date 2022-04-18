@@ -66,7 +66,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.Permission;
@@ -110,8 +109,9 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         @Override
+        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
         public URL loadGroovySource(final String filename) throws MalformedURLException {
-            return AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
+            return java.security.AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
                 for (String extension : config.getScriptExtensions()) {
                     try {
                         URL ret = getSourceFile(filename, extension);
@@ -253,9 +253,14 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, fileName, "/groovy/script"));
+        GroovyCodeSource gcs = createCodeSource((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, fileName, "/groovy/script"));
         gcs.setCachable(false);
         return parseClass(gcs);
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private GroovyCodeSource createCodeSource(PrivilegedAction<GroovyCodeSource> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     /**
@@ -278,7 +283,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
+        GroovyCodeSource gcs = createCodeSource((PrivilegedAction<GroovyCodeSource>) () -> {
             try {
                 String scriptText = IOGroovyMethods.getText(reader);
                 return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
@@ -425,12 +430,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 perms = new Permissions();
             }
 
-            ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
-                @Override
-                public ProtectionDomain run() {
-                    return getClass().getProtectionDomain();
-                }
-            });
+            ProtectionDomain myDomain = getProtectionDomain();
             PermissionCollection myPerms = myDomain.getPermissions();
             if (myPerms != null) {
                 for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
@@ -443,6 +443,16 @@ public class GroovyClassLoader extends URLClassLoader {
         }
         perms.setReadOnly();
         return perms;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private ProtectionDomain getProtectionDomain() {
+        return java.security.AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+            @Override
+            public ProtectionDomain run() {
+                return getClass().getProtectionDomain();
+            }
+        });
     }
 
     public static class InnerLoader extends GroovyClassLoader {
@@ -643,8 +653,12 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the ClassCollector
      */
     protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
-        InnerLoader loader = AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(GroovyClassLoader.this));
-        return new ClassCollector(loader, unit, su);
+        return new ClassCollector(createLoader(), unit, su);
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private InnerLoader createLoader() {
+        return java.security.AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(GroovyClassLoader.this));
     }
 
     public static class ClassCollector implements CompilationUnit.ClassgenCallback {
@@ -1082,8 +1096,9 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param path is a jar file or a directory.
      * @see #addURL(URL)
      */
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     public void addClasspath(final String path) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        java.security.AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
 
             URI newURI;
             try {

@@ -25,7 +25,6 @@ import org.objectweb.asm.ClassWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
@@ -35,7 +34,7 @@ public class GroovySunClassLoader extends SunClassLoader {
     public static final SunClassLoader sunVM;
 
     static {
-        sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+        sunVM = doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
             try {
                 if (SunClassLoader.sunVM != null) {
                     return new GroovySunClassLoader();
@@ -44,6 +43,11 @@ public class GroovySunClassLoader extends SunClassLoader {
             }
             return null;
         });
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     protected GroovySunClassLoader() throws Throwable {

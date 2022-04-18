@@ -53,7 +53,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         BindPath bp = new BindPath();
         bp.propertyName = propertyName;
         bp.updateLocalSyntheticProperties(syntheticBindings);
-        List<BindPath> childPaths = new ArrayList<BindPath>();
+        List<BindPath> childPaths = new ArrayList<>();
         for (Map.Entry<String, BindPathSnooper> entry : snooper.fields.entrySet()) {
             childPaths.add(createBindPath(entry.getKey(), entry.getValue()));
         }
@@ -72,7 +72,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
             final Class closureClass = closure.getClass();
 
             // do in privileged block since we may be looking at private stuff
-            Closure closureLocalCopy = java.security.AccessController.doPrivileged(new PrivilegedAction<Closure>() {
+            Closure closureLocalCopy = doPrivileged(new PrivilegedAction<Closure>() {
                 @Override
                 public Closure run() {
                     // assume closures have only 1 constructor, of the form (Object, Reference*)
@@ -118,7 +118,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
             e.printStackTrace(System.out);
             throw new RuntimeException("A closure expression binding could not be created because of " + e.getClass().getName() + ":\n\t" + e.getMessage());
         }
-        List<BindPath> rootPaths = new ArrayList<BindPath>();
+        List<BindPath> rootPaths = new ArrayList<>();
         for (Map.Entry<String, BindPathSnooper> entry : delegate.fields.entrySet()) {
             BindPath bp =createBindPath(entry.getKey(), entry.getValue());
             bp.currentObject = closure;
@@ -130,6 +130,12 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         fb.bindPaths = rootPaths.toArray(EMPTY_BINDPATH_ARRAY);
         return fb;
     }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
+    }
+
 
     // TODO when JDK9+ is minimum, use canAccess and remove suppression
     @SuppressWarnings("deprecation")
@@ -159,7 +165,7 @@ class DeadEndObject {
 class BindPathSnooper extends GroovyObjectSupport {
     static final DeadEndObject DEAD_END = new DeadEndObject();
 
-    Map<String, BindPathSnooper> fields = new LinkedHashMap<String, BindPathSnooper>();
+    Map<String, BindPathSnooper> fields = new LinkedHashMap<>();
 
     @Override
     public Object getProperty(String property) {

@@ -31,7 +31,6 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +56,7 @@ public class CachedClass {
             PrivilegedAction<CachedField[]> action = () -> Arrays.stream(getTheClass().getDeclaredFields())
                 .filter(f -> ReflectionUtils.checkCanSetAccessible(f, CachedClass.class))
                 .map(CachedField::new).toArray(CachedField[]::new);
-            return AccessController.doPrivileged(action);
+            return doPrivileged(action);
         }
     };
 
@@ -71,7 +70,7 @@ public class CachedClass {
                 .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class))
                 .map(c -> new CachedConstructor(CachedClass.this, c))
                 .toArray(CachedConstructor[]::new);
-            return AccessController.doPrivileged(action);
+            return doPrivileged(action);
         }
     };
 
@@ -91,7 +90,7 @@ public class CachedClass {
                     return CachedMethod.EMPTY_ARRAY;
                 }
             };
-            CachedMethod[] declaredMethods = AccessController.doPrivileged(action);
+            CachedMethod[] declaredMethods = doPrivileged(action);
 
             List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
@@ -134,12 +133,17 @@ public class CachedClass {
         }
     };
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the action not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
+    }
+
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
         private static final long serialVersionUID = 4410385968428074090L;
 
         @Override
         public CallSiteClassLoader initValue() {
-            return AccessController.doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
+            return doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
         }
     };
 

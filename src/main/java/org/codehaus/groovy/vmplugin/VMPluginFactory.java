@@ -22,7 +22,6 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.math.BigDecimal;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.logging.Level;
@@ -55,8 +54,13 @@ public class VMPluginFactory {
         return PLUGIN;
     }
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
+    }
+
     private static VMPlugin createPlugin() {
-        return AccessController.doPrivileged((PrivilegedAction<VMPlugin>) () -> {
+        return doPrivileged((PrivilegedAction<VMPlugin>) () -> {
             final BigDecimal specVer = new BigDecimal(VMPlugin.getJavaVersion());
             ClassLoader loader = VMPluginFactory.class.getClassLoader();
             for (Map.Entry<BigDecimal, String> entry : PLUGIN_MAP.entrySet()) {

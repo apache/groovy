@@ -47,7 +47,6 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -61,23 +60,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * with dependent scripts.
  */
 public class GroovyScriptEngine implements ResourceConnector {
-    private static final ClassLoader CL_STUB = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
+    private static final ClassLoader CL_STUB = doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
 
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     private static class LocalData {
         CompilationUnit cu;
         final StringSetMap dependencyCache = new StringSetMap();
-        final Map<String, String> precompiledEntries = new HashMap<String, String>();
+        final Map<String, String> precompiledEntries = new HashMap<>();
     }
 
-    private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
+    private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<>(null);
 
     private static synchronized ThreadLocal<LocalData> getLocalData() {
         ThreadLocal<LocalData> local = localData.get();
         if (local != null) return local;
-        local = new ThreadLocal<LocalData>();
-        localData = new WeakReference<ThreadLocal<LocalData>>(local);
+        local = new ThreadLocal<>();
+        localData = new WeakReference<>(local);
         return local;
     }
 
@@ -261,7 +260,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             StringSetMap cache = localData.dependencyCache;
             cache.makeTransitiveHull();
             long time = getCurrentTime();
-            Set<String> entryNames = new HashSet<String>();
+            Set<String> entryNames = new HashSet<>();
             for (Map.Entry<String, Set<String>> entry : cache.entrySet()) {
                 String className = entry.getKey();
                 Class clazz = getClassCacheEntry(className);
@@ -297,7 +296,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
 
         private Set<String> convertToPaths(Set<String> orig, Map<String, String> precompiledEntries) {
-            Set<String> ret = new HashSet<String>();
+            Set<String> ret = new HashSet<>();
             for (String className : orig) {
                 Class clazz = getClassCacheEntry(className);
                 if (clazz == null) continue;
@@ -339,7 +338,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     private GroovyClassLoader initGroovyLoader() {
         GroovyClassLoader groovyClassLoader =
-                AccessController.doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
+                doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
                     if (parentLoader instanceof GroovyClassLoader) {
                         return new ScriptClassLoader((GroovyClassLoader) parentLoader);
                     } else {
@@ -348,6 +347,11 @@ public class GroovyScriptEngine implements ResourceConnector {
                 });
         for (URL root : roots) groovyClassLoader.addURL(root);
         return groovyClassLoader;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     /**

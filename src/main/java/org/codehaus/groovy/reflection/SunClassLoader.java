@@ -25,8 +25,9 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class SunClassLoader extends ClassLoader {
     static {
         SunClassLoader res;
         try {
-            res = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+            res = doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
                 try {
                     return new SunClassLoader();
                 } catch (Throwable e) {
@@ -57,6 +58,11 @@ public class SunClassLoader extends ClassLoader {
             res = null;
         }
         sunVM = res;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     protected SunClassLoader() throws Throwable {

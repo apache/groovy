@@ -27,9 +27,7 @@ import junit.textui.TestRunner;
 import org.apache.groovy.test.ScriptTestAdapter;
 
 import java.io.File;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
-
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
@@ -51,8 +49,9 @@ public class GroovyTestSuite extends TestSuite {
 
     protected static String file = null;
 
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     protected final GroovyClassLoader loader =
-            AccessController.doPrivileged(
+            java.security.AccessController.doPrivileged(
                     (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(GroovyTestSuite.class.getClassLoader())
             );
 

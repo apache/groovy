@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -237,9 +236,14 @@ public class SourceUnit extends ProcessingUnit {
 
         buildAST();
 
-        if ("xml".equals(AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("groovy.ast")))) {
+        if ("xml".equals(getProperty("groovy.ast"))) {
             XStreamUtils.serialize(name, ast);
         }
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should get the property not as a privileged action
+    private String getProperty(String key) {
+        return java.security.AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(key));
     }
 
     /**

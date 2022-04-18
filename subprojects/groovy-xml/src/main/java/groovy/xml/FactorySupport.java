@@ -21,27 +21,24 @@ package groovy.xml;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 /**
  * Support class for creating XML Factories
  */
 public class FactorySupport {
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     static Object createFactory(PrivilegedExceptionAction action) throws ParserConfigurationException {
-        Object factory;
         try {
-            factory = AccessController.doPrivileged(action);
-        } catch (PrivilegedActionException pae) {
+            return java.security.AccessController.doPrivileged(action);
+        } catch (java.security.PrivilegedActionException pae) {
             Exception e = pae.getException();
             if (e instanceof ParserConfigurationException) {
-                throw(ParserConfigurationException) e;
+                throw (ParserConfigurationException) e;
             } else {
                 throw new RuntimeException(e);
             }
         }
-        return factory;
     }
 
     public static DocumentBuilderFactory createDocumentBuilderFactory() throws ParserConfigurationException {

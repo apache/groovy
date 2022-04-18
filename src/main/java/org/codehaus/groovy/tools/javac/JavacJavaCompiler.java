@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -189,8 +188,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             }
 
             try {
-                CodeSource codeSource = AccessController.doPrivileged(
-                        (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource());
+                CodeSource codeSource = getCodeSource();
                 if (codeSource != null) {
                     paths.add(new File(codeSource.getLocation().toURI()).getPath());
                 }
@@ -202,5 +200,11 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
 
         return params;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private CodeSource getCodeSource() {
+        return java.security.AccessController.doPrivileged(
+                (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource());
     }
 }

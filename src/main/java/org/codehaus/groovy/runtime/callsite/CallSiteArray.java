@@ -26,10 +26,8 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.stream.IntStream;
-
 
 public final class CallSiteArray {
     public static final Object[] NOPARAM = new Object[0];
@@ -60,7 +58,7 @@ public final class CallSiteArray {
     }
 
     private static CallSite createCallStaticSite(CallSite callSite, final Class receiver, Object[] args) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        doPrivileged((PrivilegedAction<Void>) () -> {
             try {
                 Class.forName(receiver.getName(), true, receiver.getClassLoader());
             } catch (Exception e) {
@@ -76,6 +74,11 @@ public final class CallSiteArray {
 
         replaceCallSite(callSite, site);
         return site;
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static void doPrivileged(PrivilegedAction<Void> action) {
+        java.security.AccessController.doPrivileged(action);
     }
 
     private static CallSite createCallConstructorSite(CallSite callSite, Class receiver, Object[] args) {

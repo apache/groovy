@@ -27,7 +27,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -41,13 +40,18 @@ public class ReevaluatingReference<T> {
     static {
         try {
             //TODO Jochen: move the findSpecial to a central place together with others to easy security configuration
-            FALLBACK_HANDLE = AccessController.doPrivileged((PrivilegedExceptionAction<MethodHandle>) () -> MethodHandles.lookup().findSpecial(
+            FALLBACK_HANDLE = doPrivileged((PrivilegedExceptionAction<MethodHandle>) () -> MethodHandles.lookup().findSpecial(
                     ReevaluatingReference.class, "replacePayLoad",
                     MethodType.methodType(Object.class),
                     ReevaluatingReference.class));
         } catch (PrivilegedActionException e) {
             throw new GroovyBugError(e);
         }
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
+        return java.security.AccessController.doPrivileged(action);
     }
 
     private final Supplier<T> valueSupplier;

@@ -62,7 +62,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Vector;
@@ -562,9 +561,9 @@ public class Groovy extends Java {
         }
 
         final String scriptName = computeScriptName();
-        final GroovyClassLoader classLoader =
-                AccessController.doPrivileged(
-                        (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(baseClassLoader));
+        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+        final GroovyClassLoader classLoader = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
+                new GroovyClassLoader(baseClassLoader));
         addClassPathes(classLoader);
         configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);

@@ -60,7 +60,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
 import javax.swing.Icon
-import javax.swing.JApplet
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JLabel
@@ -99,6 +98,7 @@ import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
 import java.util.logging.Logger
 import java.util.prefs.Preferences
+
 /**
  * Groovy Swing console.
  *
@@ -416,7 +416,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     @Deprecated
-    void run(JApplet applet) {
+    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
+    void run(javax.swing.JApplet applet) {
         run([
                 rootContainerDelegate: {
                     containingWindows += SwingUtilities.getRoot(applet.getParent())

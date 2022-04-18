@@ -30,7 +30,6 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -135,9 +134,9 @@ public abstract class CompileTaskSupport
     }
 
     protected GroovyClassLoader createClassLoader() {
-        GroovyClassLoader gcl =
-                AccessController.doPrivileged(
-                        (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(ClassLoader.getSystemClassLoader(), config));
+        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+        GroovyClassLoader gcl = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
+                new GroovyClassLoader(ClassLoader.getSystemClassLoader(), config));
 
         Path path = getClasspath();
         if (path != null) {
