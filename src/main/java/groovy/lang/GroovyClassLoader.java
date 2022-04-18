@@ -387,6 +387,7 @@ public class GroovyClassLoader extends URLClassLoader {
         }
     }
 
+    @SuppressWarnings("deprecation") // TODO replace getPackage with getDefinedPackage once min JDK version >= 9
     private void definePackageInternal(String className) {
         int i = className.lastIndexOf('.');
         if (i != -1) {
