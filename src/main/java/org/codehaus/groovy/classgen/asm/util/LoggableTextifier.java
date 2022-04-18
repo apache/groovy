@@ -312,8 +312,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public void visitVarInsn(int opcode, int var) {
-        super.visitVarInsn(opcode, var);
+    public void visitVarInsn(int opcode, int varIndex) {
+        super.visitVarInsn(opcode, varIndex);
         log();
     }
 
@@ -330,6 +330,7 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
+    @Deprecated
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         super.visitMethodInsn(opcode, owner, name, desc);
         log();
@@ -366,8 +367,8 @@ public class LoggableTextifier extends Textifier {
     }
 
     @Override
-    public void visitIincInsn(int var, int increment) {
-        super.visitIincInsn(var, increment);
+    public void visitIincInsn(int varIndex, int increment) {
+        super.visitIincInsn(varIndex, increment);
         log();
     }
 
