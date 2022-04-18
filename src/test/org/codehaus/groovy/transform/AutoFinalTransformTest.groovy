@@ -19,10 +19,11 @@
 package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.customizers.*
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests for the {@code @AutoFinal} AST transform.
@@ -111,5 +112,34 @@ final class AutoFinalTransformTest {
             assert js.fullName(true, ', ') == 'Smith, John'
             assert js.initials(true) == 'js'
         '''
+    }
+
+    @Test // GROOVY-10585
+    void testAutoFinalOnClassWithAnInnerInterface() {
+        assertScript shell, '''
+            @AutoFinal
+            class C {
+                interface I {
+                }
+            }
+            new C()
+        '''
+    }
+
+    @Test // GROOVY-10585
+    void testAutoFinalOnMethodButDisabledViaConfig() {
+        shell.@config.addCompilationCustomizers(new ASTTransformationCustomizer(groovy.transform.AutoFinal, enabled: false))
+        def err = shouldFail shell, '''
+            class C {
+                void one(x) {
+                    x = 1
+                }
+                @AutoFinal
+                void two(y) {
+                    y = 2
+                }
+            }
+        '''
+        assert err =~ /The parameter \[y\] is declared final but is reassigned/
     }
 }
