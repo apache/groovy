@@ -25,10 +25,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.apache.groovy.test.ScriptTestAdapter;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
+
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
@@ -51,7 +52,7 @@ public class GroovyTestSuite extends TestSuite {
     protected static String file = null;
 
     protected final GroovyClassLoader loader =
-            VMPluginFactory.getPlugin().doPrivileged(
+            AccessController.doPrivileged(
                     (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(GroovyTestSuite.class.getClassLoader())
             );
 

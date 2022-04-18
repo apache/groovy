@@ -60,6 +60,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
 import javax.swing.Icon
+import javax.swing.JApplet
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JLabel
@@ -412,6 +413,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void run() {
         run(frameConsoleDelegates)
+    }
+
+    @Deprecated
+    void run(JApplet applet) {
+        run([
+                rootContainerDelegate: {
+                    containingWindows += SwingUtilities.getRoot(applet.getParent())
+                    applet
+                },
+                menuBarDelegate      : { arg ->
+                    current.JMenuBar = build(arg)
+                }
+        ])
     }
 
     void run(Map defaults) {

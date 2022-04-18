@@ -22,11 +22,11 @@ import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.GroovySunClassLoader;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,7 +76,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
     }
 
     public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes) {
-        final Class cls = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
+        final Class cls = AccessController.doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
 
         if (cls != null) {
             try {

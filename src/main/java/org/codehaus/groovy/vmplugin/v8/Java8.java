@@ -68,9 +68,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.AccessController;
 import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -624,18 +621,22 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public <T> T doPrivileged(PrivilegedAction<T> action) {
-        return AccessController.doPrivileged(action);
-    }
-
-    @Override
-    public <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
-        return AccessController.doPrivileged(action);
-    }
-
-    @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, final Class<?> caller) {
         return metaMethod;
+    }
+
+    @Override
+    @Deprecated
+    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
+    public <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
+        throw new UnsupportedOperationException("doPrivileged is no longer supported");
+    }
+
+    @Override
+    @Deprecated
+    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
+    public <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException {
+        throw new UnsupportedOperationException("doPrivileged is no longer supported");
     }
 
     @Override
@@ -669,7 +670,7 @@ public class Java8 implements VMPlugin {
 
     private Object getInvokeSpecialHandleFallback(final Method method, final Object receiver) {
         if (!method.isAccessible()) {
-            AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            AccessController.doPrivileged((java.security.PrivilegedAction<Object>) () -> {
                 ReflectionUtils.trySetAccessible(method);
                 return null;
             });
@@ -714,7 +715,7 @@ public class Java8 implements VMPlugin {
             try {
                 if (!lookup.isAccessible()) {
                     final Constructor<MethodHandles.Lookup> finalReference = lookup;
-                    AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                    AccessController.doPrivileged((java.security.PrivilegedAction<Object>) () -> {
                         ReflectionUtils.trySetAccessible(finalReference);
                         return null;
                     });

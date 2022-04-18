@@ -22,7 +22,6 @@ import groovy.security.GroovyCodeSourcePermission;
 import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -123,7 +123,7 @@ public class GroovyCodeSource {
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
         try {
-            Object[] info = VMPluginFactory.getPlugin().doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
+            Object[] info = AccessController.doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
                 // retrieve the content of the file using the provided encoding
                 if (encoding != null) {
                     scriptText = ResourceGroovyMethods.getText(infile, encoding);

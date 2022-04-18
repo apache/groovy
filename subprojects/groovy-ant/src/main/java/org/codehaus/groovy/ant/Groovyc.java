@@ -42,7 +42,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassVisitor;
 import picocli.CommandLine;
 
@@ -54,6 +53,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1443,7 +1443,7 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader groovyLoader = VMPluginFactory.getPlugin().doPrivileged(
+        GroovyClassLoader groovyLoader = AccessController.doPrivileged(
                 (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(loader, configuration));
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups

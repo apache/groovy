@@ -22,7 +22,6 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Reference;
 import org.codehaus.groovy.reflection.ReflectionUtils;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
@@ -73,7 +72,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
             final Class closureClass = closure.getClass();
 
             // do in privileged block since we may be looking at private stuff
-            Closure closureLocalCopy = VMPluginFactory.getPlugin().doPrivileged(new PrivilegedAction<Closure>() {
+            Closure closureLocalCopy = java.security.AccessController.doPrivileged(new PrivilegedAction<Closure>() {
                 @Override
                 public Closure run() {
                     // assume closures have only 1 constructor, of the form (Object, Reference*)

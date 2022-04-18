@@ -32,12 +32,12 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.Utilities;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -237,7 +237,7 @@ public class SourceUnit extends ProcessingUnit {
 
         buildAST();
 
-        if ("xml".equals(VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<String>) () -> System.getProperty("groovy.ast")))) {
+        if ("xml".equals(AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("groovy.ast")))) {
             XStreamUtils.serialize(name, ast);
         }
     }

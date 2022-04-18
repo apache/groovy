@@ -46,8 +46,8 @@ import org.codehaus.groovy.control.ParserPlugin
 import org.codehaus.groovy.control.ParserPluginFactory
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Token
-import org.codehaus.groovy.vmplugin.VMPluginFactory
 
+import java.security.AccessController
 import java.security.PrivilegedAction
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -222,7 +222,7 @@ final class TestUtils {
     }
 
     private static ModuleNode buildAST(File sourceFile, CompilerConfiguration config) {
-        def loader = VMPluginFactory.getPlugin().doPrivileged({ ->
+        def loader = AccessController.doPrivileged({ ->
             new GroovyClassLoader()
         } as PrivilegedAction<GroovyClassLoader>)
 
@@ -242,7 +242,7 @@ final class TestUtils {
     }
 
     private static ModuleNode buildAST(String sourceText, CompilerConfiguration config) {
-        def loader = VMPluginFactory.getPlugin().doPrivileged({ ->
+        def loader = AccessController.doPrivileged({ ->
             new GroovyClassLoader()
         } as PrivilegedAction<GroovyClassLoader>)
 

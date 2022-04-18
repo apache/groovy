@@ -37,7 +37,6 @@ import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.gse.DependencyTracker;
 import org.codehaus.groovy.tools.gse.StringSetMap;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -48,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -61,7 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * with dependent scripts.
  */
 public class GroovyScriptEngine implements ResourceConnector {
-    private static final ClassLoader CL_STUB = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
+    private static final ClassLoader CL_STUB = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
 
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
@@ -339,7 +339,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     private GroovyClassLoader initGroovyLoader() {
         GroovyClassLoader groovyClassLoader =
-                VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
+                AccessController.doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
                     if (parentLoader instanceof GroovyClassLoader) {
                         return new ScriptClassLoader((GroovyClassLoader) parentLoader);
                     } else {
