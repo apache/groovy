@@ -40,6 +40,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 
 public class MacroLibGroovyMethods {
+    private MacroLibGroovyMethods() {}
+
     private static final ClassNode NAMED_VALUE = ClassHelper.make(NamedValue.class);
 
     @Macro
@@ -98,6 +100,7 @@ public class MacroLibGroovyMethods {
         return listX(Arrays.stream(exps).map(exp -> namedValueExpr(exp)).collect(Collectors.toList()));
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> List<NamedValue<T>> NVL(Object self, T... args) {
         throw new IllegalStateException("MacroLibGroovyMethods.NVL(Object...) should never be called at runtime. Are you sure you are using it correctly?");
     }
