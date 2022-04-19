@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.groovydoc;
 
-public interface GroovyDoc extends Comparable {
+public interface GroovyDoc extends Comparable<GroovyDoc> {
 
     String commentText();
 

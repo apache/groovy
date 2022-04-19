@@ -24,12 +24,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class MockOutputTool implements OutputTool {
-    Set outputAreas; // dirs
-    Map output;
+    private Set<String> outputAreas; // dirs
+    private Map<String, String> output;
 
     public MockOutputTool() {
-        outputAreas = new LinkedHashSet();
-        output = new LinkedHashMap();
+        outputAreas = new LinkedHashSet<>();
+        output = new LinkedHashMap<>();
     }
 
     @Override
@@ -47,7 +47,7 @@ public class MockOutputTool implements OutputTool {
     }
 
     public String getText(String fileName) {
-        return (String) output.get(fileName);
+        return output.get(fileName);
     }
 
     @Override
