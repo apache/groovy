@@ -613,8 +613,9 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
 
     // ----------------------------- inner classes --------------------------------------
 
+    @SuppressWarnings("unchecked")
     public static List<ASTNodePredicate> matchByClass(Class<ASTNode>... classes) {
-        ArrayList<ASTNodePredicate> result = new ArrayList<ASTNodePredicate>(classes.length);
+        ArrayList<ASTNodePredicate> result = new ArrayList<>(classes.length);
         for (final Class<ASTNode> astNodeClass : classes) {
             result.add(new MatchByClass(astNodeClass));
         }
