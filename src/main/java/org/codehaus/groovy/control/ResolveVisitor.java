@@ -1226,7 +1226,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     protected void visitAnnotation(final AnnotationNode node) {
-        resolveOrFail(node.getClassNode(), " for annotation", node);
+        resolveOrFail(node.getClassNode(), " for annotation", node, true);
 
         for (Map.Entry<String, Expression> member : node.getMembers().entrySet()) {
             Expression value = transformInlineConstants(transform(member.getValue()));
