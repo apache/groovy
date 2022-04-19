@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
-    private final static Pattern EQUIVALENT_PACKAGE_IMPORT = Pattern.compile("[^/]+$");
+    private static final Pattern EQUIVALENT_PACKAGE_IMPORT = Pattern.compile("[^/]+$");
     private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
     private static final GroovyPackageDoc[] EMPTY_GROOVYPACKAGEDOC_ARRAY = new GroovyPackageDoc[0];
 
@@ -41,16 +41,16 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     private final Map<String, GroovyClassDoc> classDocs;
     private final Map<String, String> equivalentPackageImports;
     private List<GroovyClassDoc> classDocValues = null;
-    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<String, GroovyClassDoc>();
+    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<>();
     private final ClassNamedCache classNamedCache;
 
     private String description = "";
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
-        packageDocs = new LinkedHashMap<String, GroovyPackageDoc>();
-        classDocs = new LinkedHashMap<String, GroovyClassDoc>();
-        equivalentPackageImports = new HashMap<String, String>();
+        packageDocs = new LinkedHashMap<>();
+        classDocs = new LinkedHashMap<>();
+        equivalentPackageImports = new HashMap<>();
         classNamedCache = new ClassNamedCache(classDocs);
     }
 
@@ -82,7 +82,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     @Override
     public GroovyClassDoc[] classes() {
         if (classDocValues == null) {
-            classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
+            classDocValues = new ArrayList<>(classDocs.values());
             Collections.sort(classDocValues);
         }
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
@@ -116,7 +116,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     @Override
     public GroovyPackageDoc[] specifiedPackages() {
         if (packageDocValues == null) {
-            packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
+            packageDocValues = new ArrayList<>(packageDocs.values());
             Collections.sort(packageDocValues);
         }
         return packageDocValues.toArray(EMPTY_GROOVYPACKAGEDOC_ARRAY);
@@ -124,7 +124,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     @Override
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {
-        Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<String, GroovyClassDoc>();
+        Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<>();
         for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
             String fullClassName = entry.getKey();
             String equivalentPackageImport = findEquivalentPackageImport(fullClassName);
@@ -208,8 +208,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
                 if (lastSlashIdx > 0) {
                     String shortKey = key.substring(lastSlashIdx + 1);
                     if (shortKey.equals(name) && (!hasPackage || key.startsWith(fullPathName))) {
-                        GroovyClassDoc value = entry.getValue();
-                        return value;
+                        return entry.getValue();
                     }
                 }
             }
