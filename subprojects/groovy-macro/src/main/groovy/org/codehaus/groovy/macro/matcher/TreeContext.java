@@ -37,13 +37,12 @@ public class TreeContext {
     }
     final TreeContext parent;
     final ASTNode node;
-    final List<TreeContext> siblings = new LinkedList<TreeContext>();
-    final List<TreeContextAction> onPopHandlers = new LinkedList<TreeContextAction>();
-    final Map<Object, List<?>> userdata = MapWithDefault.newInstance(
-            new HashMap<Object, List<?>>(),
-            new Closure(this) {
+    final List<TreeContext> siblings = new LinkedList<>();
+    final List<TreeContextAction> onPopHandlers = new LinkedList<>();
+    final Map<Object, List<Object>> userdata = MapWithDefault.newInstance(
+            new HashMap<Object, List<Object>>(),
+            new Closure<List<Object>>(this) {
                 private static final long serialVersionUID = -4694773031569936343L;
-
                 public Object doCall(Object key) {
                     return new LinkedList<Object>();
                 }
@@ -58,19 +57,20 @@ public class TreeContext {
         }
     }
 
-    public Map<?, List<?>> getUserdata() {
+    public Map<Object, List<Object>> getUserdata() {
         return userdata;
     }
 
+    @SuppressWarnings("unchecked")
     public void putUserdata(Object key, Object value) {
         ((List)userdata.get(key)).add(value);
     }
 
-    public List<?> getUserdata(Object key) {
+    public List<Object> getUserdata(Object key) {
         return getUserdata(key,true);
     }
 
-    public List<?> getUserdata(Object key, boolean searchParent) {
+    public List<Object> getUserdata(Object key, boolean searchParent) {
         if (userdata.containsKey(key)) {
             return userdata.get(key);
         } else if (parent!=null && searchParent) {
@@ -136,7 +136,6 @@ public class TreeContext {
             sb.append("<-");
             p = p.parent;
         }
-        //sb.append(", siblings=").append(siblings);
         sb.append('}');
         return sb.toString();
     }
