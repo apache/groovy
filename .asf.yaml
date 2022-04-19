@@ -11,3 +11,6 @@ github:
     - dynamic-typing
     - static-typing
     - compiler
+    - apache
+  notifications:
+    jira_options: link label comment
