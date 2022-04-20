@@ -493,7 +493,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8638
     void testReturnTypeInferenceWithMethodGenerics18() {
         assertScript '''
-            @Grab('com.google.guava:guava:30.1.1-jre')
+            @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
 
             ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
@@ -608,6 +608,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Pogo[] pogos = [new Pogo(s:'foo'), new Pogo(s:'bar')]
             List<String> strings = pogos.sort(true, new Sorter())*.s // sort(T[],boolean,Comparator<? super T>)
             assert strings == ['bar', 'foo']
+        '''
+    }
+
+    // GROOVY-10589
+    void testReturnTypeInferenceWithMethodGenerics25() {
+        String pogo = '''
+            @groovy.transform.TupleConstructor
+            class Pogo {
+                final java.time.Instant timestamp
+            }
+            List<Pogo> pogos = []
+        '''
+        assertScript pogo + '''
+            Comparator<Pogo> cmp = { Pogo a, Pogo b -> a.timestamp <=> b.timestamp }
+            pogos = pogos.sort(false, cmp)
+        '''
+        assertScript pogo + '''
+            pogos = pogos.sort(false) { Pogo a, Pogo b ->
+                a.timestamp <=> b.timestamp
+            }
+        '''
+        assertScript pogo + '''
+            pogos = pogos.sort(false) { it.timestamp }
         '''
     }
 
