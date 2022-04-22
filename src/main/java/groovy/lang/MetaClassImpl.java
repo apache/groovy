@@ -116,6 +116,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static groovy.lang.Tuple.tuple;
@@ -2459,77 +2460,73 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private void setupProperties(final PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
-            LinkedList<CachedClass> superClasses = new LinkedList<>();
-            superClasses.add(ReflectionCache.OBJECT_CLASS);
-            LinkedList<CachedClass> superInterfaces = new LinkedList<>(theCachedClass.getInterfaces());
-
+            CachedClass superClass = ReflectionCache.OBJECT_CLASS;
+            List<CachedClass> superInterfaces = new ArrayList<>(theCachedClass.getInterfaces());
+            superInterfaces.remove(theCachedClass); // always includes interface theCachedClass
             // sort interfaces so that we may ensure a deterministic behaviour in case of
-            // ambiguous fields (class implementing two interfaces using the same field)
+            // ambiguous fields -- class implementing two interfaces using the same field
             if (superInterfaces.size() > 1) {
                 superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
-            Map<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
-            for (CachedClass iclass : superInterfaces) {
-                Map<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
+            Map<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>());
+            for (CachedClass sInterface : superInterfaces) {
+                Map<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(sInterface, x -> new LinkedHashMap<>());
                 copyNonPrivateFields(sPropertyIndex, iPropertyIndex, null);
-                addFields(iclass, iPropertyIndex);
+                addFields(sInterface, iPropertyIndex);
             }
             addFields(theCachedClass, iPropertyIndex);
 
             applyPropertyDescriptors(propertyDescriptors);
-            applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
-
-            makeStaticPropertyIndex();
+            applyStrayPropertyMethods(superClass, classPropertyIndex.computeIfAbsent(superClass, x -> new LinkedHashMap<>()), true);
         } else {
-            LinkedList<CachedClass> superClasses = getSuperClasses();
-            LinkedList<CachedClass> superInterfaces = new LinkedList<>(theCachedClass.getInterfaces());
-
+            List<CachedClass> superClasses = getSuperClasses();
+            List<CachedClass> superInterfaces = new ArrayList<>(theCachedClass.getInterfaces());
             // sort interfaces so that we may ensure a deterministic behaviour in case of
-            // ambiguous fields (class implementing two interfaces using the same field)
+            // ambiguous fields -- class implementing two interfaces using the same field
             if (superInterfaces.size() > 1) {
                 superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
-            // if this an Array, then add the special read-only "length" property
-            if (theCachedClass.isArray) {
+            if (theCachedClass.isArray) { // add the special read-only "length" property
                 LinkedHashMap<String, MetaProperty> map = new LinkedHashMap<>();
                 map.put("length", arrayLengthProperty);
                 classPropertyIndex.put(theCachedClass, map);
             }
 
-            inheritStaticInterfaceFields(superClasses, new LinkedHashSet<>(superInterfaces));
+            inheritStaticInterfaceFields(superClasses, superInterfaces);
             inheritFields(superClasses);
 
             applyPropertyDescriptors(propertyDescriptors);
 
             applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
             applyStrayPropertyMethods(superClasses, classPropertyIndexForSuper, false);
-
-            makeStaticPropertyIndex();
         }
+        fillStaticPropertyIndex();
     }
 
-    private void makeStaticPropertyIndex() {
-        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
-        for (Map.Entry<String, MetaProperty> entry : propertyMap.entrySet()) {
-            MetaProperty mp = entry.getValue();
-            if (mp instanceof CachedField) {
-                CachedField mfp = (CachedField) mp;
-                if (!mfp.isStatic()) continue;
-            } else if (mp instanceof MetaBeanProperty) {
-                MetaProperty result = establishStaticMetaProperty(mp);
-                if (result == null) continue;
-                else {
-                    mp = result;
-                }
-            } else if (mp instanceof MultipleSetterProperty) {
-                MultipleSetterProperty msp = (MultipleSetterProperty) mp;
-                mp = msp.createStaticVersion();
+    private void fillStaticPropertyIndex() {
+        BiConsumer<String, MetaProperty> indexStaticProperty = (name, prop) -> {
+            if (prop instanceof CachedField) {
+                CachedField field = (CachedField) prop;
+                if (!field.isStatic()) { prop = null; }
+            } else if (prop instanceof MetaBeanProperty) {
+                prop = establishStaticMetaProperty(prop);
+            } else if (prop instanceof MultipleSetterProperty) {
+                prop = ((MultipleSetterProperty) prop).createStaticVersion();
             } else {
-                continue; // ignore all other types
+                prop = null; // ignore all other types
             }
-            staticPropertyIndex.put(entry.getKey(), mp);
+
+            if (prop != null) staticPropertyIndex.put(name, prop);
+        };
+
+        classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>()).forEach(indexStaticProperty);
+
+        if (theCachedClass.isInterface) { // GROOVY-10592: static interface accessors
+            Map<String, MetaProperty> strayProperties = new LinkedHashMap<>();
+            applyStrayPropertyMethods(theCachedClass, strayProperties, true);
+            strayProperties.forEach(indexStaticProperty);
         }
     }
 
@@ -2568,7 +2565,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return staticProperty;
     }
 
-    private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Set<CachedClass> interfaces) {
+    private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Iterable<CachedClass> interfaces) {
         for (CachedClass iclass : interfaces) {
             LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
             addFields(iclass, iPropertyIndex);
@@ -2611,31 +2608,36 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex, boolean isThis) {
-        // now look for any stray getters that may be used to define a property
-        for (CachedClass superClass : superClasses) {
-            MetaMethodIndex.Header header = metaMethodIndex.getHeader(superClass.getTheClass());
-            Map<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(superClass, sc -> new LinkedHashMap<>());
-            for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
-                String methodName = e.name;
-                int methodNameLength = methodName.length();
-                boolean isBooleanGetter = methodName.startsWith("is");
-                if (methodNameLength < (isBooleanGetter ? 3 : 4)) continue;
+    private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, LinkedHashMap<String, MetaProperty>> propertyIndex, boolean isThis) {
+        for (CachedClass cc : classes) {
+            applyStrayPropertyMethods(cc, propertyIndex.computeIfAbsent(cc, x -> new LinkedHashMap<>()), isThis);
+        }
+    }
 
-                boolean isGetter = methodName.startsWith("get") || isBooleanGetter;
-                boolean isSetter = methodName.startsWith("set");
-                if (!isGetter && !isSetter) continue;
+    /**
+     * Looks for any stray getters/setters that may be used to define a property.
+     */
+    private void applyStrayPropertyMethods(CachedClass source, Map<String, MetaProperty> target, boolean isThis) {
+        MetaMethodIndex.Header header = metaMethodIndex.getHeader(source.getTheClass());
+        for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
+            String methodName = e.name;
+            int methodNameLength = methodName.length();
+            boolean isBooleanGetter = methodName.startsWith("is");
+            if (methodNameLength < (isBooleanGetter ? 3 : 4)) continue;
 
-                Object propertyMethods = filterPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
-                if (propertyMethods == null) continue;
+            boolean isGetter = methodName.startsWith("get") || isBooleanGetter;
+            boolean isSetter = methodName.startsWith("set");
+            if (!isGetter && !isSetter) continue;
 
-                String propName = getPropName(methodName);
-                if (propertyMethods instanceof MetaMethod) {
-                    createMetaBeanProperty(propertyIndex, propName, isGetter, (MetaMethod) propertyMethods);
-                } else {
-                    for (MetaMethod m : (Iterable<MetaMethod>) propertyMethods) {
-                        createMetaBeanProperty(propertyIndex, propName, isGetter, m);
-                    }
+            Object propertyMethods = filterPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
+            if (propertyMethods == null) continue;
+
+            String propName = getPropName(methodName);
+            if (propertyMethods instanceof MetaMethod) {
+                createMetaBeanProperty(target, propName, isGetter, (MetaMethod) propertyMethods);
+            } else {
+                for (MetaMethod m : (Iterable<MetaMethod>) propertyMethods) {
+                    createMetaBeanProperty(target, propName, isGetter, m);
                 }
             }
         }
