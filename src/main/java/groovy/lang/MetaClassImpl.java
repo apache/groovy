@@ -2291,9 +2291,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static CategoryMethod findCategoryMethod(final String name, final Class<?> sender, final java.util.function.Predicate<CachedClass[]> paramFilter) {
         List<CategoryMethod> categoryMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (categoryMethods != null) {
-            return categoryMethods.stream().filter(categoryMethod ->
-                categoryMethod.getDeclaringClass().isAssignableFrom(sender) && paramFilter.test(categoryMethod.getParameterTypes())
-            ).sorted().findFirst().orElse(null);
+            List<CategoryMethod> choices = new ArrayList<>();
+            for (CategoryMethod categoryMethod : categoryMethods) {
+                if (categoryMethod.getOwnerClass().isAssignableFrom(sender)
+                        && paramFilter.test(categoryMethod.getParameterTypes())) {
+                    choices.add(categoryMethod);
+                }
+            }
+            if (!choices.isEmpty()) {
+                if (choices.size() > 1) { // GROOVY-5453, GROOVY-10214: order by self-type distance
+                    choices.sort(Comparator.comparingLong(m -> MetaClassHelper.calculateParameterDistance(
+                            new Class[]{sender}, new ParameterTypes(new CachedClass[]{m.getOwnerClass()}))));
+                }
+                return choices.get(0);
+            }
         }
         return null;
     }

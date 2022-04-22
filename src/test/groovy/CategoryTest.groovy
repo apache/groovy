@@ -22,7 +22,8 @@ import groovy.test.GroovyTestCase
 
 final class CategoryTest extends GroovyTestCase {
 
-    void setUp() {
+    @Override
+    protected void setUp() {
         def dummy = null
         CategoryTestPropertyCategory.setSomething(dummy, 'hello')
         CategoryTestHelperPropertyReplacer.setaProperty(dummy, 'anotherValue')
@@ -280,7 +281,7 @@ final class CategoryTest extends GroovyTestCase {
     }
 
     // GROOVY-5453
-    void testOverloadedGetterMethod() {
+    void testOverloadedGetterMethod1() {
         assertScript '''
             class Cat {
                 static getFoo(String s) {'String'}
@@ -289,6 +290,39 @@ final class CategoryTest extends GroovyTestCase {
             use (Cat) {
                 assert 'abc'.getFoo() == 'String'
                 assert 'abc'.foo      == 'String'
+            }
+        '''
+    }
+
+    // GROOVY-10214
+    void testOverloadedGetterMethod2() {
+        assertScript '''
+            class Cat {
+                static String getFoo(Boolean self) {
+                    'Boolean'
+                }
+                static String getFoo(Byte    self) {
+                    'Byte'
+                }
+                static String getFoo(Short   self) {
+                    'Short'
+                }
+                static String getFoo(Integer self) {
+                    'Integer'
+                }
+                static String getFoo(Long    self) {
+                    'Long'
+                }
+                static String getFoo(Float   self) {
+                    'Float'
+                }
+                static String getFoo(Double  self) {
+                    'Double'
+                }
+            }
+            use (Cat) {
+                assert 123.foo == 'Integer'
+                assert 4.5d.foo == 'Double'
             }
         '''
     }
