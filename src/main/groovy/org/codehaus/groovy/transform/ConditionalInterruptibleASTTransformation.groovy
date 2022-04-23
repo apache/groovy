@@ -28,12 +28,10 @@ import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.tools.ClosureUtils
+import org.codehaus.groovy.ast.tools.GeneralUtils
 import org.codehaus.groovy.control.CompilePhase
 
 /**
@@ -48,25 +46,21 @@ import org.codehaus.groovy.control.CompilePhase
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
-    private static final ClassNode MY_TYPE = ClassHelper.make(ConditionalInterrupt)
-
     private ClosureExpression conditionNode
     private String conditionMethod
-    private MethodCallExpression conditionCallExpression
     private ClassNode currentClass
 
     protected ClassNode type() {
-        MY_TYPE
+        ClassHelper.make(ConditionalInterrupt)
     }
 
-    @SuppressWarnings('Instanceof')
     protected void setupTransform(AnnotationNode node) {
         super.setupTransform(node)
-        ClosureExpression member = (ClosureExpression) node.getMember('value')
-        if (!member || !(member instanceof ClosureExpression)) internalError("Expected closure value for annotation parameter 'value'. Found $member")
-        conditionNode = member
+        def member = node.getMember('value')
+        if (member !instanceof ClosureExpression)
+            internalError("Expected closure value for annotation parameter 'value'. Found $member")
+        conditionNode = (ClosureExpression) member
         conditionMethod = 'conditionalTransform' + node.hashCode() + '$condition'
-        conditionCallExpression = new MethodCallExpression(new VariableExpression('this'), conditionMethod, new ArgumentListExpression())
     }
 
     protected String getErrorMessage() {
@@ -75,15 +69,14 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
 
     void visitClass(ClassNode type) {
         currentClass = type
-        def method = type.addMethod(conditionMethod, ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, conditionNode.code)
-        method.synthetic = true
+        type.addSyntheticMethod(conditionMethod, ACC_PRIVATE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, conditionNode.code)
         if (applyToAllMembers) {
             super.visitClass(type)
         }
     }
 
     protected Expression createCondition() {
-        conditionCallExpression
+        GeneralUtils.callThisX(conditionMethod)
     }
 
     @Override

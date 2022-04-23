@@ -18,82 +18,92 @@
  */
 package groovy.transform
 
-import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
 
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import java.lang.reflect.Modifier
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Unit test for WithReadLock and WithWriteLock annotations.
+ * Tests for the {@link WithReadLock} and {@link WithWriteLock} AST transforms.
  */
-class ReadWriteLockTest extends GroovyTestCase {
+final class ReadWriteLockTest {
 
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
+        new ImportCustomizer().tap {
+            addStarImports('groovy.transform')
+            addStaticStars('java.lang.reflect.Modifier')
+            addImport('java.util.concurrent.locks.ReentrantReadWriteLock')
+        }
+    ))
+
+    @Test
     void testLockFieldDefaultsForReadLock() {
-        def tester = new GroovyClassLoader().parseClass('''
-        class MyClass {
-            @groovy.transform.WithReadLock
-            public void readerMethod1() { }
-        }
-''')
-        def field = tester.getDeclaredField('$reentrantlock')
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isTransient(field.modifiers)
-        assert Modifier.isFinal(field.modifiers)
-        assert !Modifier.isStatic(field.modifiers)
+        assertScript shell, '''
+            class C {
+                @WithReadLock void m() { }
+            }
 
-        assert field.type == ReentrantReadWriteLock
+            def field = C.getDeclaredField('$reentrantlock')
+            assert field.type == ReentrantReadWriteLock
+            assert !isTransient(field.modifiers)
+            assert isPrivate(field.modifiers)
+            assert !isStatic(field.modifiers)
+            assert isFinal(field.modifiers)
+        '''
     }
 
+    @Test
     void testLockFieldDefaultsForWriteLock() {
-        def tester = new GroovyClassLoader().parseClass('''
-        class MyClass {
-            @groovy.transform.WithWriteLock
-            public void readerMethod1() { }
-        }
-''')
-        def field = tester.getDeclaredField('$reentrantlock')
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isTransient(field.modifiers)
-        assert Modifier.isFinal(field.modifiers)
-        assert !Modifier.isStatic(field.modifiers)
+        assertScript shell, '''
+            class C {
+                @WithWriteLock void m() { }
+            }
 
-        assert field.type == ReentrantReadWriteLock
+            def field = C.getDeclaredField('$reentrantlock')
+            assert field.type == ReentrantReadWriteLock
+            assert !isTransient(field.modifiers)
+            assert isPrivate(field.modifiers)
+            assert !isStatic(field.modifiers)
+            assert isFinal(field.modifiers)
+        '''
     }
 
+    @Test
     void testLockFieldDefaultsForStaticReadLock() {
-        def tester = new GroovyClassLoader().parseClass('''
-        class MyClass {
-            @groovy.transform.WithReadLock
-            public static void readerMethod1() { }
-        }
-''')
-        def field = tester.getDeclaredField('$REENTRANTLOCK')
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isTransient(field.modifiers)
-        assert Modifier.isFinal(field.modifiers)
-        assert Modifier.isStatic(field.modifiers)
+        assertScript shell, '''
+            class C {
+                @WithReadLock static void m() { }
+            }
 
-        assert field.type == ReentrantReadWriteLock
+            def field = C.getDeclaredField('$REENTRANTLOCK')
+            assert field.type == ReentrantReadWriteLock
+            assert !isTransient(field.modifiers)
+            assert isPrivate(field.modifiers)
+            assert isStatic(field.modifiers)
+            assert isFinal(field.modifiers)
+        '''
     }
 
+    @Test
     void testLockFieldDefaultsForStaticWriteLock() {
-        def tester = new GroovyClassLoader().parseClass('''
-        class MyClass {
-            @groovy.transform.WithWriteLock
-            public static void readerMethod1() { }
-        }
-''')
-        def field = tester.getDeclaredField('$REENTRANTLOCK')
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isTransient(field.modifiers)
-        assert Modifier.isFinal(field.modifiers)
-        assert Modifier.isStatic(field.modifiers)
+        assertScript shell, '''
+            class C {
+                @WithWriteLock static void m() { }
+            }
 
-        assert field.type == ReentrantReadWriteLock
+            def field = C.getDeclaredField('$REENTRANTLOCK')
+            assert field.type == ReentrantReadWriteLock
+            assert !isTransient(field.modifiers)
+            assert isPrivate(field.modifiers)
+            assert isStatic(field.modifiers)
+            assert isFinal(field.modifiers)
+        '''
     }
 
+    @Test
     void testLocking() {
-
         def tester = new MyClass()
         tester.readerMethod1()
         tester.readerMethod2()
@@ -111,8 +121,8 @@ class ReadWriteLockTest extends GroovyTestCase {
         tester.readerMethod1()
     }
 
+    @Test
     void testStaticLocking() {
-
         def tester = new MyClass()
         tester.staticReaderMethod1()
         tester.staticReaderMethod2()
@@ -130,10 +140,11 @@ class ReadWriteLockTest extends GroovyTestCase {
         tester.staticReaderMethod1()
     }
 
+    @Test
     void testDeadlockingDoesNotOccur() {
         def tester = new MyClass()
 
-        // this tests for deadlocks from not releaseing in finally block 
+        // this tests for deadlocks from not releaseing in finally block
         shouldFail { tester.namedReaderMethod1() }
         shouldFail { tester.namedReaderMethod2() }
         shouldFail { tester.namedWriterMethod1() }
@@ -145,41 +156,40 @@ class ReadWriteLockTest extends GroovyTestCase {
         shouldFail { tester.namedReaderMethod1() }
     }
 
+    @Test
     void testCompileError_NamingConflict() {
-        shouldFail("lock field with name 'unknown' not found") {
-            '''
+        def err = shouldFail shell, '''
             class MyClass {
                 @groovy.transform.WithWriteLock('unknown')
                 public static void readerMethod1() { }
-            } '''
-        }
+            }
+        '''
+        assert err =~ /lock field with name 'unknown' not found/
 
-        shouldFail("lock field with name 'myLock' should be static") {
-            '''
+        err = shouldFail shell, '''
             class MyClass {
-                def myLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+                def myLock = new ReentrantReadWriteLock()
 
                 @groovy.transform.WithWriteLock('myLock')
                 public static void readerMethod1() { }
-            } '''
-        }
+            }
+        '''
+        assert err =~ /lock field with name 'myLock' should be static/
 
-        shouldFail("lock field with name 'myLock' should not be static") {
-            '''
+        err = shouldFail shell, '''
             class MyClass {
-                static def myLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+                static def myLock = new ReentrantReadWriteLock()
 
                 @groovy.transform.WithWriteLock('myLock')
                 public void readerMethod1() { }
-            } '''
-        }
+            }
+        '''
+        assert err =~ /lock field with name 'myLock' should not be static/
     }
 
-    // GROOVY-8758
+    @Test // GROOVY-8758
     void testShouldBeAllowedInInnerClassWithCompileStatic() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @CompileStatic
             class A {
                 private class B {
@@ -198,77 +208,68 @@ class ReadWriteLockTest extends GroovyTestCase {
         '''
     }
 
-    def shouldFail(String expectedText, Closure c) {
-        String script = c()
-        try {
-            new GroovyClassLoader().parseClass(script)
-            fail('Failure Expected')
-        } catch (Exception e) {
-            assert e.getMessage().contains(expectedText)
+    //--------------------------------------------------------------------------
+
+    static class MyClass {
+        def readerMethod1Called = false
+        def readerMethod2Called = false
+        def writerMethod1Called = false
+        def writerMethod2Called = false
+        def staticReaderMethod1Called = false
+        def staticReaderMethod2Called = false
+        def staticWriterMethod1Called = false
+        def staticWriterMethod2Called = false
+        def myLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+
+        @WithReadLock
+        void readerMethod1() {
+            readerMethod1Called = true
         }
-    }
-}
+        @WithReadLock
+        void readerMethod2() {
+            readerMethod2Called = true
+        }
+        @WithWriteLock
+        void writerMethod1() {
+            writerMethod1Called = true
+        }
+        @WithWriteLock
+        void writerMethod2() {
+            writerMethod2Called = true
+        }
 
-class MyClass {
+        @WithReadLock('myLock')
+        void namedReaderMethod1() {
+            throw new Exception()
+        }
+        @WithReadLock('myLock')
+        void namedReaderMethod2() {
+            throw new Exception()
+        }
+        @WithWriteLock('myLock')
+        void namedWriterMethod1() {
+            throw new Exception()
+        }
+        @WithWriteLock('myLock')
+        void namedWriterMethod2() {
+            throw new Exception()
+        }
 
-    def readerMethod1Called = false
-    def readerMethod2Called = false
-    def writerMethod1Called = false
-    def writerMethod2Called = false
-    def staticReaderMethod1Called = false
-    def staticReaderMethod2Called = false
-    def staticWriterMethod1Called = false
-    def staticWriterMethod2Called = false
-    def myLock = new ReentrantReadWriteLock()
-
-    @WithReadLock
-    void readerMethod1() {
-        readerMethod1Called = true
-    }
-    @WithReadLock
-    void readerMethod2() {
-        readerMethod2Called = true
-    }
-    @WithWriteLock
-    void writerMethod1() {
-        writerMethod1Called = true
-    }
-    @WithWriteLock
-    void writerMethod2() {
-        writerMethod2Called = true
-    }
-
-    @WithReadLock('myLock')
-    void namedReaderMethod1() {
-        throw new Exception()
-    }
-    @WithReadLock('myLock')
-    void namedReaderMethod2() {
-        throw new Exception()
-    }
-    @WithWriteLock('myLock')
-    void namedWriterMethod1() {
-        throw new Exception()
-    }
-    @WithWriteLock('myLock')
-    void namedWriterMethod2() {
-        throw new Exception()
-    }
-
-    @WithReadLock
-    void staticReaderMethod1() {
-        staticReaderMethod1Called = true
-    }
-    @WithReadLock
-    void staticReaderMethod2() {
-        staticReaderMethod2Called = true
-    }
-    @WithWriteLock
-    void staticWriterMethod1() {
-        staticWriterMethod1Called = true
-    }
-    @WithWriteLock
-    void staticWriterMethod2() {
-        staticWriterMethod2Called = true
+        @WithReadLock
+        void staticReaderMethod1() {
+            staticReaderMethod1Called = true
+        }
+        @WithReadLock
+        void staticReaderMethod2() {
+            staticReaderMethod2Called = true
+        }
+        @WithWriteLock
+        void staticWriterMethod1() {
+            staticWriterMethod1Called = true
+        }
+        @WithWriteLock
+        void staticWriterMethod2() {
+            staticWriterMethod2Called = true
+        }
     }
 }

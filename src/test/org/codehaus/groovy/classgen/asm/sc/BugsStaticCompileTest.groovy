@@ -931,8 +931,7 @@ import groovy.transform.TypeCheckingMode
 
     // GROOVY-6095
     void testServletError() {
-        def shell = new GroovyShell()
-        shell.evaluate '''
+        assertScript '''
             @Grab('javax.servlet:javax.servlet-api:3.0.1')
             import groovy.transform.CompileStatic
 

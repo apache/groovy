@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm
 
 import groovy.transform.Generated
-import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.Test
@@ -27,22 +26,21 @@ import org.junit.Test
 /**
  * Verifies if {@link Generated} annotations are added on {@code call} methods of generated closure classes.
  */
-class ClosureWriterGeneratedAnnotationTest extends TestCase {
-    private CompilationUnit compileScript(String scriptText) {
-        CompilationUnit compilationUnit = new CompilationUnit()
-        compilationUnit.addSource("script", scriptText)
-        compilationUnit.compile(Phases.ALL)
+final class ClosureWriterGeneratedAnnotationTest {
 
-        compilationUnit
+    private CompilationUnit compileScript(String script) {
+        new CompilationUnit().tap {
+            addSource('script', script)
+            compile(Phases.CLASS_GENERATION)
+        }
     }
 
     private Collection<Class> findGeneratedClosureClasses(String outerClassName, CompilationUnit compilationUnit) {
-        Collection<Class> generatedClosureClasses = []
+        List<Class> generatedClosureClasses = []
         compilationUnit.classes.each {
             generatedClosureClasses.add(compilationUnit.classLoader.defineClass(it.name, it.bytes))
         }
-
-        return generatedClosureClasses.findAll({ it.name.matches(/.*${ outerClassName }\$\_.*\_closure.*/) })
+        generatedClosureClasses.findAll { it.name =~ /${outerClassName}\$\_.*\_closure/ }
     }
 
     /**
@@ -50,19 +48,18 @@ class ClosureWriterGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithNoParameters() {
-        String scriptText = """    
-        class MyClass {
-            void myMethod() {
-                [1..3].each {
-                    println it
+        String scriptText = '''
+            class MyClass {
+                void myMethod() {
+                    [1..3].each {
+                        println it
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethods = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethods = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethods.size() == 0
     }
@@ -72,19 +69,18 @@ class ClosureWriterGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithSingleParameter() {
-        String scriptText = """    
-        class MyClass {
-            void myMethod() {
-                [1..3].each { Integer myInt ->
-                    println myInt
+        String scriptText = '''
+            class MyClass {
+                void myMethod() {
+                    [1..3].each { Integer myInt ->
+                        println myInt
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
@@ -96,19 +92,18 @@ class ClosureWriterGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithMultipleParameters() {
-        String scriptText = """    
-        class MyClass {
-            void myMethod() {
-                [1..3].eachWithIndex { IntRange entry, Integer i ->
-                    println entry[i]
+        String scriptText = '''
+            class MyClass {
+                void myMethod() {
+                    [1..3].eachWithIndex { IntRange entry, Integer i ->
+                        println entry[i]
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
