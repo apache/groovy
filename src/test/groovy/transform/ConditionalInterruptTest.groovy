@@ -18,186 +18,193 @@
  */
 package groovy.transform
 
-import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
- * Test for {@link ConditionalInterrupt} AST Transformation.
+ * Tests for the {@link ConditionalInterrupt} AST transform.
  */
-class ConditionalInterruptTest extends GroovyTestCase {
+final class ConditionalInterruptTest {
 
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
+        new ImportCustomizer().tap {
+            addStarImports('groovy.transform')
+            addStaticImport('groovy.test.GroovyAssert', 'shouldFail')
+        }
+    ))
+
+    @Test
     void testMethodIsVisited_AndExceptionMessage() {
-
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ visited = true })
-            class MyClass {
-              boolean visited = false
-              def myMethod() { }
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ visited = true })
+            class C {
+                protected boolean visited
+                def m() { }
             }
-        ''')
 
-        def instance = c.newInstance()
-        def message = shouldFail(InterruptedException) {
-            instance.myMethod()
-        }
-        assert message == 'Execution interrupted. The following condition failed: { visited = true }'
-        assert instance.visited
+            def obj = new C()
+            def err = shouldFail(InterruptedException) {
+                obj.m()
+            }
+            assert obj.visited
+            assert err.message == 'Execution interrupted. The following condition failed: { visited = true }'
+        '''
     }
 
+    @Test
     void testMethodIsVisitedCompileStatic() {
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.*
+        assertScript shell, '''
             @CompileStatic
-            @ConditionalInterrupt({ visited = true })
-            class MyClass {
-              boolean visited = false
-              def myMethod() { }
+            @ConditionalInterrupt(applyToAllClasses=false, value={ visited = true })
+            class C {
+                protected boolean visited
+                def m() { }
             }
-        ''')
-        def instance = c.newInstance()
-        def message = shouldFail(InterruptedException) {
-            instance.myMethod()
-        }
-        assert message == 'Execution interrupted. The following condition failed: { visited = true }'
-        assert instance.visited
+
+            def obj = new C()
+            def err = shouldFail(InterruptedException) {
+                obj.m()
+            }
+            assert obj.visited
+            assert err.message == 'Execution interrupted. The following condition failed: { visited = true }'
+        '''
     }
 
+    @Test
     void testMethodIsVisited_AndCustomExceptionMessage() {
-
-        def c = new GroovyClassLoader(this.class.classLoader).parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt(thrown=groovy.transform.CustomException, value={ visited = true })
-            class MyClass {
-              boolean visited = false
-              def myMethod() { }
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, thrown=CustomException, value={ visited = true })
+            class C {
+                protected boolean visited
+                def m() { }
             }
-        ''')
 
-        def instance = c.newInstance()
-        def message = shouldFail(CustomException) {
-            instance.myMethod()
-        }
-        assert message == 'Execution interrupted. The following condition failed: { visited = true }'
-        assert instance.visited
+            def obj = new C()
+            def err = shouldFail(CustomException) {
+                obj.m()
+            }
+            assert obj.visited
+            assert err.message == 'Execution interrupted. The following condition failed: { visited = true }'
+        '''
     }
 
+    @Test
     void testStaticMethodIsNotVisited() {
-         def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ visited = true })
-            class MyClass {
-              boolean visited = false
-              static def myMethod() { }
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ visited = true })
+            class C {
+                protected boolean visited
+                static m() { }
             }
-        ''')
 
-        def instance = c.newInstance()
-        instance.myMethod()
-        assert !instance.visited
+            def obj = new C()
+            obj.m()
+
+            assert !obj.visited
+        '''
     }
 
+    @Test
     void testClosureFieldIsVisited() {
-
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ visited = true })
-            class MyClass {
-              boolean visited = false
-              def myMethod = { }
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ visited = true })
+            class C {
+                protected boolean visited
+                def m = { -> }
             }
-        ''')
 
-        def instance = c.newInstance()
-        shouldFail(InterruptedException) {
-            instance.myMethod()
-        }
-        assert instance.visited
+            def obj = new C()
+            shouldFail(InterruptedException) {
+                obj.m()
+            }
+            assert obj.visited
+        '''
     }
 
+    @Test
     void testWhileLoopVisited() {
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ count > 5 })
-            class MyClass {
-                int count = 0
-                def myMethod = {
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ count > 5 })
+            class C {
+                protected int count
+                def m = { ->
                     while (count < 10) {
-                        count++
+                        count += 1
                     }
                 }
             }
-        ''')
 
-        def instance = c.newInstance()
-        shouldFail(InterruptedException) {
-            instance.myMethod()
-        }
-        assert 6 == instance.count
+            def obj = new C()
+            shouldFail(InterruptedException) {
+                obj.m()
+            }
+            assert obj.count == 6
+        '''
     }
 
+    @Test
     void testForLoopVisited() {
-
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ count > 5 })
-            class MyClass {
-                int count = 0
-                def myMethod = {
-                    for (int x = 0; x < 10; x++) {
-                        count++
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ count > 5 })
+            class C {
+                protected int count
+                def m = {
+                    for (int i = 0; i < 10; i += 1) {
+                        count += 1
                     }
                 }
             }
-        ''')
 
-        def instance = c.newInstance()
-        shouldFail(InterruptedException) {
-            instance.myMethod()
-        }
-        assert 6 == instance.count
+            def obj = new C()
+            shouldFail(InterruptedException) {
+                obj.m()
+            }
+            assert obj.count == 6
+        '''
     }
 
+    @Test
     void testStaticClosureFieldNotVisited() {
-
-        def c = new GroovyClassLoader().parseClass('''
-            import groovy.transform.ConditionalInterrupt
-            @ConditionalInterrupt({ visited = true })
-            class MyClass {
-                boolean visited = false
-                static def myMethod = { }
+        assertScript shell, '''
+            @ConditionalInterrupt(applyToAllClasses=false, value={ visited = true })
+            class C {
+                protected boolean visited
+                static m = { -> }
             }
-        ''')
 
-        def instance = c.newInstance()
-        instance.myMethod()
-        assert !instance.visited
+            def obj = new C()
+            obj.m()
+
+            assert !obj.visited
+        '''
     }
 
+    @Test
     void testSharedContext() {
-        def shell = new GroovyShell()
-
-        def script = shell.parse('''
-            import groovy.transform.ConditionalInterrupt
-
+        assertScript shell, '''
             class Helper {
-                static int i=0
-                static def shouldInterrupt() { i++>1 }
+                static int i
+                static def shouldInterrupt() { ++i > 1 }
             }
 
-            @ConditionalInterrupt({ Helper.shouldInterrupt() })
-            class MyClass {
-                def myMethod() { }
+            @ConditionalInterrupt(applyToAllClasses=false, value={ Helper.shouldInterrupt() })
+            class C {
+                def m = { -> }
             }
 
-            @ConditionalInterrupt({ Helper.shouldInterrupt() })
-            class MyOtherClass {
-                def myOtherMethod() { new MyClass().myMethod() }
+            @ConditionalInterrupt(applyToAllClasses=false, value={ Helper.shouldInterrupt() })
+            class D {
+                def m() {
+                    new C().m()
+                }
             }
 
-            new MyOtherClass().myOtherMethod()
-        ''', 'myScript')
-        shouldFail(InterruptedException) {
-            script.run()
-        }
+            shouldFail(InterruptedException) {
+                new D().m()
+            }
+        '''
     }
 }

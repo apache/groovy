@@ -18,72 +18,82 @@
  */
 package groovy.transform
 
-import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.Test
 
-import java.lang.ref.SoftReference
-import java.lang.reflect.Modifier
+import static groovy.test.GroovyAssert.assertScript
 
 /**
- * Unit tests for the Lazy annotation
+ * Tests for the {@link Lazy} AST transform.
  */
-class LazyTest extends GroovyTestCase {
+final class LazyTest {
+
+    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
+        new ImportCustomizer().tap { addStaticStars('java.lang.reflect.Modifier') }
+    ))
+
+    @Test
     void testLazyPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass(
-          '''class MyClass {
-            |    @Lazy int index = { ->
-            |        1
-            |    }
-            |}'''.stripMargin() )
-        // Should be a private non-volatile Integer
-        def field = tester.getDeclaredField( '$index' )
-        assert field
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isVolatile(field.modifiers)
-        assert field.type == Integer
+        assertScript shell, '''
+            class C {
+                @Lazy int index = { -> 1 }
+            }
+
+            def field = C.getDeclaredField('$index')
+            assert field
+            assert field.type == Integer
+            assert isPrivate(field.modifiers)
+            assert !isVolatile(field.modifiers)
+        '''
     }
 
+    @Test
     void testLazyVolatilePrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass(
-          '''class MyClass {
-            |    @Lazy volatile int index = { ->
-            |        1
-            |    }
-            |}'''.stripMargin() )
-        // Should be a private volatile Integer
-        def field = tester.getDeclaredField( '$index' )
-        assert field
-        assert Modifier.isPrivate(field.modifiers)
-        assert Modifier.isVolatile(field.modifiers)
-        assert field.type == Integer
+        assertScript shell, '''
+            class C {
+                @Lazy volatile int index = { -> 1 }
+            }
+
+            def field = C.getDeclaredField('$index')
+            assert field
+            assert field.type == Integer
+            assert isPrivate(field.modifiers)
+            assert isVolatile(field.modifiers)
+        '''
     }
 
+    @Test
     void testLazySoftPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass(
-          '''class MyClass {
-            |    @Lazy(soft=true) int index = { ->
-            |        1
-            |    }
-            |}'''.stripMargin() )
-        // Should be a private non-volatile SoftReference
-        def field = tester.getDeclaredField( '$index' )
-        assert field
-        assert Modifier.isPrivate(field.modifiers)
-        assert !Modifier.isVolatile(field.modifiers)
-        assert field.type == SoftReference
+        assertScript shell, '''
+            import java.lang.ref.SoftReference as SoftRef
+
+            class C {
+                @Lazy(soft=true) int index = { -> 1 }
+            }
+
+            def field = C.getDeclaredField('$index')
+            assert field
+            assert field.type == SoftRef
+            assert isPrivate(field.modifiers)
+            assert !isVolatile(field.modifiers)
+        '''
     }
 
+    @Test
     void testLazyVolatileSoftPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass(
-          '''class MyClass {
-            |    @Lazy(soft=true) volatile int index = { ->
-            |        1
-            |    }
-            |}'''.stripMargin() )
-        // Should be a private volatile SoftReference
-        def field = tester.getDeclaredField( '$index' )
-        assert field
-        assert Modifier.isPrivate(field.modifiers)
-        assert Modifier.isVolatile(field.modifiers)
-        assert field.type == SoftReference
+        assertScript shell, '''
+            import java.lang.ref.SoftReference as SoftRef
+
+            class C {
+                @Lazy(soft=true) volatile int index = { -> 1 }
+            }
+
+            def field = C.getDeclaredField('$index')
+            assert field
+            assert field.type == SoftRef
+            assert isPrivate(field.modifiers)
+            assert isVolatile(field.modifiers)
+        '''
     }
 }

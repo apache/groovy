@@ -113,7 +113,7 @@ final class TransformsAndCustomClassLoadersTest {
         try (def loader = new GroovyClassLoader(this.class.classLoader)) {
             def unit = new CompilationUnit(null, null, dependencyLoader, transformLoader)
             unit.addSource('Foo.groovy', source)
-            unit.compile()
+            unit.compile(CompilePhase.CLASS_GENERATION.phaseNumber)
 
             assert unit.classes.size() == 1
             def classInfo = unit.classes[0]

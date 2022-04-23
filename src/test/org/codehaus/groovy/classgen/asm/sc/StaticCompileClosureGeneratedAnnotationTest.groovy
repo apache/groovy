@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.Generated
-import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.Test
@@ -29,22 +28,21 @@ import java.lang.reflect.Method
 /**
  * Verifies if {@link Generated} annotations are added on {@code call} methods of generated closure classes when static compilation is used.
  */
-class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
-    private CompilationUnit compileScript(String scriptText) {
-        CompilationUnit compilationUnit = new CompilationUnit()
-        compilationUnit.addSource("script", scriptText)
-        compilationUnit.compile(Phases.ALL)
+final class StaticCompileClosureGeneratedAnnotationTest {
 
-        compilationUnit
+    private CompilationUnit compileScript(String script) {
+        new CompilationUnit().tap {
+            addSource('script', script)
+            compile(Phases.CLASS_GENERATION)
+        }
     }
 
     private Collection<Class> findGeneratedClosureClasses(String outerClassName, CompilationUnit compilationUnit) {
-        Collection<Class> generatedClosureClasses = []
+        List<Class> generatedClosureClasses = []
         compilationUnit.classes.each {
             generatedClosureClasses.add(compilationUnit.classLoader.defineClass(it.name, it.bytes))
         }
-
-        return generatedClosureClasses.findAll({ it.name.matches(/.*${ outerClassName }\$\_.*\_closure.*/) })
+        generatedClosureClasses.findAll { it.name =~ /${outerClassName}\$\_.*\_closure/ }
     }
 
     /**
@@ -52,20 +50,19 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithNoParameters() {
-        String scriptText = """
-        @groovy.transform.CompileStatic
-        class MyClass {
-            void myMethod() {
-                [1..3].each {
-                    println it
+        String scriptText = '''
+            @groovy.transform.CompileStatic
+            class MyClass {
+                void myMethod() {
+                    [1..3].each {
+                        println it
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethodCollection.size() == 2
         callMethodCollection.each { Method method ->
@@ -80,20 +77,19 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithSingleParameter() {
-        String scriptText = """
-        @groovy.transform.CompileStatic
-        class MyClass {
-            void myMethod() {
-                [1..3].each { IntRange myIntRange ->
-                  println myIntRange
+        String scriptText = '''
+            @groovy.transform.CompileStatic
+            class MyClass {
+                void myMethod() {
+                    [1..3].each { IntRange myIntRange ->
+                      println myIntRange
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
@@ -105,20 +101,19 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
      */
     @Test
     void testClosureWithMultipleParameters() {
-        String scriptText = """
-        @groovy.transform.CompileStatic
-        class MyClass {
-            void myMethod() {
-                [1..3].eachWithIndex { IntRange entry, Integer i ->
-                    println entry[i]
+        String scriptText = '''
+            @groovy.transform.CompileStatic
+            class MyClass {
+                void myMethod() {
+                    [1..3].eachWithIndex { IntRange entry, Integer i ->
+                        println entry[i]
+                    }
                 }
             }
-        }
-        """
-
+        '''
         CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses("MyClass", compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == "call" }
+        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
+        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
