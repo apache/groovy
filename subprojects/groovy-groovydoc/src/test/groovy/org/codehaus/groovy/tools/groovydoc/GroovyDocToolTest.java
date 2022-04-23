@@ -766,7 +766,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
         final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/Test.html");
- 
+
         // Test should etends a.List
         final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/))List)\\.html'[^>]*>List</a>").matcher(testAdapterDoc);
         
@@ -793,6 +793,88 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("Test interface should extends List", extendedClass.find());
 
         assertEquals("Classes from imported packages should shadow classes from default packages", "a/List", extendedClass.group(1));
+    }
+
+    public void testGroovyExtendsStarImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Groovy interface b.TestStar imports a.* and extends List.
+        // List should be recognized as a.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/List.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStar.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStar.html");
+
+        // TestStar should etends a.List
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/))List)\\.html'[^>]*>List</a>").matcher(testAdapterDoc);
+        
+        assertTrue("TestStar interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/List", extendedClass.group(1));
+    }
+
+    public void testJavaExtendsStarImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Java interface b.TestStar imports a.* and extends List.
+        // List should be recognized as a.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/List.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStar.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStar.html");
+
+        // TestStar should etends a.List
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/))List)\\.html'[^>]*>List</a>").matcher(testAdapterDoc);
+        
+        assertTrue("TestStar interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/List", extendedClass.group(1));
+    }
+
+    public void testGroovyExtendsStaticImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Groovy interface b.TestStatic imports a.StaticList.List and extends List.
+        // List should be recognized as a.StaticList.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/StaticList.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStatic.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStatic.html");
+
+        // TestStatic should etends a.StaticList.List
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/StaticList\\.))List)\\.html'[^>]*>((StaticList\\.)?List)</a>").matcher(testAdapterDoc);
+        
+        assertTrue("TestStatic interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/StaticList.List", extendedClass.group(1));
+        assertEquals("Classes from imported packages should shadow classes from default packages", "StaticList.List", extendedClass.group(5));
+    }
+
+    public void testJavaExtendsStaticImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Java interface b.TestStatic imports a.StaticList.List and extends List.
+        // List should be recognized as a.StaticList.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/StaticList.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStatic.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/TestStatic.html");
+
+        // TestStatic should etends a.StaticList.List".
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/StaticList\\.))List)\\.html'[^>]*>((StaticList\\.)?List)</a>").matcher(testAdapterDoc);
+        
+        assertTrue("TestStatic interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/StaticList.List", extendedClass.group(1));
+        assertEquals("Classes from imported packages should shadow classes from default packages", "StaticList.List", extendedClass.group(5));
     }
 
     public void testClassDeclarationHeader() throws Exception {
