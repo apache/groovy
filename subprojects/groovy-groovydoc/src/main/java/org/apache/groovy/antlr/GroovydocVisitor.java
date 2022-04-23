@@ -92,7 +92,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         final List<String> imports = new ArrayList<>();
         for (ImportNode iNode : node.getModule().getImports()) {
             String name = iNode.getClassName();
-            imports.add(name);
+            imports.add(name.replace('.', '/'));
             if (iNode.getAlias() != null && !iNode.getAlias().isEmpty()) {
                 aliases.put(iNode.getAlias(), name.replace('.', '/'));
             }

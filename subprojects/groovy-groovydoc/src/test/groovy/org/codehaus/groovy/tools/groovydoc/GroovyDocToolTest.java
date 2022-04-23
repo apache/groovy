@@ -755,6 +755,46 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("The constructor parameter link text should be Foo", "Foo", constructor.group(3));
     }
 
+    public void testGroovyExtendsImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Groovy interface b.Test imports a.List and extends List.
+        // List should be recognized as a.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/List.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/Test.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/Test.html");
+ 
+        // Test should etends a.List
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/))List)\\.html'[^>]*>List</a>").matcher(testAdapterDoc);
+        
+        assertTrue("Test interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/List", extendedClass.group(1));
+    }
+
+    public void testJavaExtendsImportedClassWithNameWhichExistInDefaultPackages() throws Exception {
+        // Java interface b.Test imports a.List and extends List.
+        // List should be recognized as a.List and not java.util.List 
+        htmlTool.add(Arrays.asList(
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/a/List.java",
+                "org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/Test.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        final String testAdapterDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/groovy_10593/b/Test.html");
+
+        // Test should etends a.List
+        final Matcher extendedClass = Pattern.compile("extends\\s+<a[^>]*href='[^']*(((java/util/)|(a/))List)\\.html'[^>]*>List</a>").matcher(testAdapterDoc);
+        
+        assertTrue("Test interface should extends List", extendedClass.find());
+
+        assertEquals("Classes from imported packages should shadow classes from default packages", "a/List", extendedClass.group(1));
+    }
+
     public void testClassDeclarationHeader() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(Arrays.asList(
