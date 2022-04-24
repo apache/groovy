@@ -82,6 +82,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
         String qual = qualPath.map(value -> value.asString().replace('.', '/') + "/").orElse("");
         String id = n.getName().getIdentifier();
         String name = qual + id;
+        if (n.isAsterisk()) name +="/*";
         imports.add(name);
         aliases.put(id, name);
         super.visit(n, arg);
