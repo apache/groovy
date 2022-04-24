@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import com.github.javaparser.ast.expr.Name;
+import com.github.javaparser.JavaParser;
+
 import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
@@ -38,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -682,11 +686,24 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private GroovyClassDoc resolveInternalClassDocFromImport(GroovyRootDoc rootDoc, String baseName) {
         if (isPrimitiveType(baseName)) return null;
         for (String importName : importedClassesAndPackages) {
-            if (importName.endsWith("/" + baseName)) {
-                GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(importName);
-                if (doc != null) return doc;
+            String targetClassName = null;
+            if (aliases.containsKey(baseName)) {
+                targetClassName = aliases.get(baseName);
+            } else if (importName.endsWith("/" + baseName)) {
+                targetClassName = importName;
             } else if (importName.endsWith("/*")) {
-                GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(importName.substring(0, importName.length() - 1) + baseName);
+                targetClassName = importName.substring(0, importName.length() - 1) + baseName;
+            }
+            // need this for correct resolution of static imports
+            if (targetClassName != null){
+                GroovyClassDoc doc = null;
+                Optional<Name>  name = new JavaParser().parseName(targetClassName.replace('/','.')).getResult();
+                String staticPart = "";
+                while (doc == null && name.isPresent()) {               
+                    doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name.get().asString().replace('.','/')+staticPart);
+                    staticPart = "."+name.get().getIdentifier()+staticPart;
+                    name = name.get().getQualifier();
+                }
                 if (doc != null) return doc;
             }
         }
