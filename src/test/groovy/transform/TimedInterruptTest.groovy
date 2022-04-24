@@ -19,9 +19,7 @@
 package groovy.transform
 
 import groovy.mock.interceptor.StubFor
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import java.util.concurrent.TimeoutException
@@ -34,13 +32,13 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class TimedInterruptTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
-        new ImportCustomizer().tap {
-            addStarImports('groovy.transform')
-            addStaticStars(TimedInterruptTest.name)
-            addImport('groovy.mock.interceptor.StubFor')
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            staticStar TimedInterruptTest.name
+            normal 'groovy.mock.interceptor.StubFor'
         }
-    ))
+    }
 
     @Test
     void testClassMethodIsVisited() {

@@ -20,8 +20,6 @@ package groovy.transform
 
 import groovy.mock.interceptor.StubFor
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 import org.junit.After
 import org.junit.Before
@@ -39,12 +37,12 @@ import static org.junit.Assume.assumeTrue
  */
 final class ThreadInterruptTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
-        new ImportCustomizer().tap {
-            addStarImports('groovy.transform')
-            addImport('groovy.mock.interceptor.StubFor')
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            normal 'groovy.mock.interceptor.StubFor'
         }
-    ))
+    }
     private static final boolean jdk12plus = isAtLeastJdk('12.0')
     private Map<String, MethodNode> oldValues = [:]
 

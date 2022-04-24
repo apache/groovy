@@ -18,8 +18,6 @@
  */
 package groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -29,9 +27,11 @@ import static groovy.test.GroovyAssert.assertScript
  */
 final class LazyTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
-        new ImportCustomizer().tap { addStaticStars('java.lang.reflect.Modifier') }
-    ))
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            staticStar 'java.lang.reflect.Modifier'
+        }
+    }
 
     @Test
     void testLazyPrimitiveWrapping() {

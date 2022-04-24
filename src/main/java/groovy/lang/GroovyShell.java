@@ -39,6 +39,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.codehaus.groovy.control.ResolveVisitor.EMPTY_STRING_ARRAY;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -47,16 +48,34 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 public class GroovyShell extends GroovyObjectSupport {
 
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final String CONFIGURATION_CUSTOMIZER = "org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder";
 
     private final Binding context;
     private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         GroovyMain.main(args);
     }
+
+    /**
+     * @since 4.0.3
+     */
+    public static GroovyShell withConfig(@DelegatesTo(type = CONFIGURATION_CUSTOMIZER) final Closure<Void> spec) {
+        //TODO return new GroovyShell(CompilerCustomizationBuilder.withConfig(new CompilerConfiguration(), spec));
+        CompilerConfiguration config = new CompilerConfiguration();
+        try {
+            Class.forName(CONFIGURATION_CUSTOMIZER)
+                .getDeclaredMethod("withConfig", CompilerConfiguration.class, Closure.class)
+                .invoke(null, config, spec);
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyRuntimeException(e);
+        }
+        return new GroovyShell(config);
+    }
+
+    //--------------------------------------------------------------------------
 
     public GroovyShell() {
         this(null, new Binding());

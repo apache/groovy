@@ -18,7 +18,6 @@
  */
 package groovy.grape;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -121,10 +120,9 @@ public class Grape {
         if (instance == null) {
             try {
                 // by default use GrapeIvy
-                //TODO META-INF/services resolver?
+                // TODO: META-INF/services resolver?
                 instance = (GrapeEngine) Class.forName("groovy.grape.GrapeIvy").getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                //LOGME
+            } catch (ReflectiveOperationException ignore) {
             }
         }
         return instance;
