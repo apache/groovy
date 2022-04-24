@@ -22,9 +22,8 @@ import groovy.util.AbstractFactory;
 import groovy.util.FactoryBuilderSupport;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,29 +31,25 @@ import java.util.Map;
  *
  * @since 2.1.0
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public class CustomizersFactory extends AbstractFactory implements PostCompletionFactory {
-    private static final CompilationCustomizer[] EMPTY_COMPILATIONCUSTOMIZER_ARRAY = new CompilationCustomizer[0];
 
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
-        return new LinkedList();
+        return new ArrayList();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void setChild(final FactoryBuilderSupport builder, final Object parent, final Object child) {
         if (parent instanceof Collection && child instanceof CompilationCustomizer) {
             ((Collection) parent).add(child);
         }
     }
 
-
     @Override
-    @SuppressWarnings("unchecked")
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
-        if (node instanceof List) {
-            List col = (List) node;
-            return col.toArray(EMPTY_COMPILATIONCUSTOMIZER_ARRAY);
+        if (node instanceof Collection) {
+            return ((Collection) node).toArray(new CompilationCustomizer[0]);
         }
         return node;
     }

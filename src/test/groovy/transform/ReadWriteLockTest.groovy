@@ -18,8 +18,6 @@
  */
 package groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -30,13 +28,13 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class ReadWriteLockTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
-        new ImportCustomizer().tap {
-            addStarImports('groovy.transform')
-            addStaticStars('java.lang.reflect.Modifier')
-            addImport('java.util.concurrent.locks.ReentrantReadWriteLock')
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            staticStar 'java.lang.reflect.Modifier'
+            normal 'java.util.concurrent.locks.ReentrantReadWriteLock'
         }
-    ))
+    }
 
     @Test
     void testLockFieldDefaultsForReadLock() {

@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -30,9 +28,9 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class AutoCloneTransformTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
-        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.AutoClone') })
-    )
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports { normal 'groovy.transform.AutoClone' }
+    }
 
     @Test
     void testBasics() {

@@ -22,13 +22,11 @@ import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
 import groovy.transform.TypeChecked
 import groovy.xml.MarkupBuilder
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 import static asciidoctor.Utils.stripAsciidocMarkup
 
-class TypeCheckingExtensionSpecTest extends GroovyTestCase {
+final class TypeCheckingExtensionSpecTest extends GroovyTestCase {
 
     void testIntro() {
         def out = new PrintWriter(new ByteArrayOutputStream())
@@ -613,13 +611,11 @@ new DelegateTest().delegate()
     }
 
     private def assertScriptWithExtension(String extensionName, String code, Closure<Void> configurator=null) {
-        def config = new CompilerConfiguration()
-        config.addCompilationCustomizers(
-                new ASTTransformationCustomizer(TypeChecked, extensions:[extensionName]))
-        def binding = new Binding()
-        def shell = new GroovyShell(binding,config)
+        def shell = GroovyShell.withConfig {
+            ast(TypeChecked, extensions: [extensionName])
+        }
         if (configurator) {
-            configurator.call(binding)
+            configurator.call(shell.context)
         }
         shell.evaluate(code)
     }

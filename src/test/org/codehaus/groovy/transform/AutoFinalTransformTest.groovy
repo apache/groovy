@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.*
 import org.junit.Test
 
@@ -30,9 +29,9 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class AutoFinalTransformTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().
-        addCompilationCustomizers(new ImportCustomizer().tap { addImports('groovy.transform.AutoFinal', 'groovy.transform.ASTTest') })
-    )
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports { normal 'groovy.transform.AutoFinal', 'groovy.transform.ASTTest' }
+    }
 
     @Test
     void testAutoFinalOnClass() {

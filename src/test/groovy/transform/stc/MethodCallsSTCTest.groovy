@@ -20,7 +20,8 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 /**
  * Unit tests for static type checking : method calls.
@@ -29,11 +30,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     @Override
     protected void configure() {
-        config.addCompilationCustomizers(new ImportCustomizer().tap {
-            addImport('A', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass' )
-            addImport('B', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass2')
-            addImport('C', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass3')
-        })
+        withConfig(config) {
+            imports {
+                alias 'A', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass'
+                alias 'B', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass2'
+                alias 'C', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass3'
+            }
+        }
     }
 
     void testMethodCallOnInstance() {

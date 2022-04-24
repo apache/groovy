@@ -18,8 +18,6 @@
  */
 package groovy.transform
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -29,12 +27,12 @@ import static groovy.test.GroovyAssert.assertScript
  */
 final class ConditionalInterruptTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().addCompilationCustomizers(
-        new ImportCustomizer().tap {
-            addStarImports('groovy.transform')
-            addStaticImport('groovy.test.GroovyAssert', 'shouldFail')
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            staticMember 'groovy.test.GroovyAssert', 'shouldFail'
         }
-    ))
+    }
 
     @Test
     void testMethodIsVisited_AndExceptionMessage() {
