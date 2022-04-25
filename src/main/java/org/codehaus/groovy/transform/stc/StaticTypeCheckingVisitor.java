@@ -557,9 +557,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Checks for private method call from inner or outer class.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final MethodNode mn) {
-        if (mn == null) {
-            return;
-        }
         ClassNode declaringClass = mn.getDeclaringClass();
         ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
         if (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) {
@@ -569,7 +566,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (packageName == null) {
                 packageName = "";
             }
-            if ((Modifier.isPrivate(mods) && sameModule)) {
+            if (Modifier.isPrivate(mods) && sameModule) {
                 addPrivateFieldOrMethodAccess(source, declaringClass, PV_METHODS_ACCESS, mn);
             } else if (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName())
                     && !implementsInterfaceOrIsSubclassOf(enclosingClassNode, declaringClass)) {
@@ -1792,34 +1789,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * This method is used to filter search results in which null means "no match",
-     * to filter out illegal access to instance members from a static context.
+     * Filters search result to prevent access to instance members from a static
+     * context.
      * <p>
-     * Return null if the given member is not static, but we want to access in
-     * a static way (staticOnly=true). If we want to access in a non-static way
-     * we always return the member, since then access to static members and
+     * Return null if the given member is not static, but we want to access in a
+     * static way (staticOnly=true). If we want to access in a non-static way we
+     * always return the member, since then access to static members and
      * non-static members is allowed.
+     *
+     * @return {@code member} or null
      */
-    @SuppressWarnings("unchecked")
     private <T> T allowStaticAccessToMember(final T member, final boolean staticOnly) {
-        if (member == null) return null;
-        if (!staticOnly) return member;
-        boolean isStatic;
-        if (member instanceof Variable) {
-            Variable v = (Variable) member;
-            isStatic = Modifier.isStatic(v.getModifiers());
-        } else if (member instanceof List) {
-            List<MethodNode> list = (List<MethodNode>) member;
-            if (list.size() == 1) {
-                return (T) Collections.singletonList(allowStaticAccessToMember(list.get(0), staticOnly));
-            }
-            return (T) Collections.emptyList();
-        } else {
-            MethodNode mn = (MethodNode) member;
-            isStatic = mn.isStatic();
+        if (member == null || !staticOnly) return member;
+
+        if (member instanceof List) {
+            @SuppressWarnings("unchecked")
+            T list = (T) ((List<MethodNode>) member).stream()
+                    .map(m -> allowStaticAccessToMember(m, true))
+                    .filter(Objects::nonNull).collect(Collectors.toList());
+            return list;
         }
-        if (staticOnly && !isStatic) return null;
-        return member;
+
+        boolean isStatic;
+        if (member instanceof FieldNode) {
+            isStatic = ((FieldNode) member).isStatic();
+        } else if (member instanceof MethodNode) {
+            isStatic = ((MethodNode) member).isStatic();
+        } else {
+            isStatic = ((PropertyNode) member).isStatic();
+        }
+        return (isStatic ? member : null);
     }
 
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
@@ -3834,23 +3833,50 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return classNodes;
     }
 
-    protected void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
-        call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+    protected void storeTargetMethod(final Expression call, final MethodNode target) {
+        if (target == null) {
+            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET); return;
+        }
+        call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,target);
 
-        checkOrMarkPrivateAccess(call, directMethodCallCandidate);
-        checkSuperCallFromClosure(call, directMethodCallCandidate);
-        extension.onMethodSelection(call, directMethodCallCandidate);
+        checkInterfaceStaticCall(call, target);
+        checkOrMarkPrivateAccess(call, target);
+        checkSuperCallFromClosure(call, target);
+        extension.onMethodSelection(call, target);
     }
 
-    private void checkSuperCallFromClosure(final Expression call, final MethodNode directCallTarget) {
-        if (call instanceof MethodCallExpression && typeCheckingContext.getEnclosingClosure() != null) {
-            Expression objectExpression = ((MethodCallExpression) call).getObjectExpression();
-            if (isSuperExpression(objectExpression)) {
-                ClassNode current = typeCheckingContext.getEnclosingClassNode();
-                current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(directCallTarget);
-                call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
+    private void checkInterfaceStaticCall(final Expression call, final MethodNode target) {
+        if (target instanceof ExtensionMethodNode) return;
+        ClassNode declaringClass = target.getDeclaringClass();
+        if (declaringClass.isInterface() && target.isStatic()) {
+            Expression objectExpression = getObjectExpression(call);
+            if (objectExpression != null) { ClassNode type = getType(objectExpression);
+                if (!isClassClassNodeWrappingConcreteType(type) || !type.getGenericsTypes()[0].getType().equals(declaringClass)) {
+                    addStaticTypeError("static method of interface " + prettyPrintTypeName(declaringClass) + " can only be accessed with class qualifier", call);
+                }
             }
         }
+    }
+
+    private void checkSuperCallFromClosure(final Expression call, final MethodNode target) {
+        if (isSuperExpression(getObjectExpression(call)) && typeCheckingContext.getEnclosingClosure() != null) {
+            ClassNode current = typeCheckingContext.getEnclosingClassNode();
+            current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(target);
+            call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
+        }
+    }
+
+    private static Expression getObjectExpression(final Expression expression) {
+        if (expression instanceof MethodCallExpression) {
+            return ((MethodCallExpression) expression).getObjectExpression();
+        }
+        if (expression instanceof PropertyExpression) {
+            return ((PropertyExpression) expression).getObjectExpression();
+        }
+        /*if (expression instanceof MethodPointerExpression) {
+            return ((MethodPointerExpression) expression).getExpression();
+        }*/
+        return null;
     }
 
     protected void typeCheckClosureCall(final Expression arguments, final ClassNode[] argumentTypes, final Parameter[] parameters) {
