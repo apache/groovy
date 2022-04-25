@@ -18,9 +18,12 @@
  */
 package groovy.bugs
 
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy8579 {
 
@@ -48,5 +51,44 @@ final class Groovy8579 {
 
             assert test() instanceof Comparator
         '''
+    }
+
+    @Test // GROOVY-10592
+    void testCallToStaticInterfaceMethod4() {
+        ['CompileStatic', 'TypeChecked'].each { mode ->
+            def sourceDir = File.createTempDir()
+            def config = new CompilerConfiguration(
+                targetDirectory: File.createTempDir(),
+                jointCompilationOptions: [memStub: true]
+            )
+            try {
+                def a = new File(sourceDir, 'Face.java')
+                a.write '''
+                    interface Face {
+                        static String getValue() {
+                            return "value";
+                        }
+                    }
+                '''
+                def b = new File(sourceDir, 'Main.groovy')
+                b.write """
+                    @groovy.transform.${mode}
+                    void test(Face face) {
+                        face.value
+                    }
+                """
+
+                def loader = new GroovyClassLoader(this.class.classLoader)
+                def cu = new JavaAwareCompilationUnit(config, loader)
+                cu.addSources(a, b)
+                def err = shouldFail {
+                    cu.compile()
+                }
+                assert err =~ /static method of interface Face can only be accessed /
+            } finally {
+                sourceDir.deleteDir()
+                config.targetDirectory.deleteDir()
+            }
+        }
     }
 }
