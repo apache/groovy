@@ -40,7 +40,6 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -574,9 +573,5 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (dynamic != null) {
             expression.getObjectExpression().putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
         }
-    }
-
-    @Override
-    public void visitSpreadExpression(final SpreadExpression expression) {
     }
 }
