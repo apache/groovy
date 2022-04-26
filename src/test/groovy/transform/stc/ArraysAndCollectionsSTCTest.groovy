@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+
 /**
  * Unit tests for static type checking : arrays and collections.
  */
@@ -222,6 +224,31 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             List classes = list*.toUpperCase()
             assert classes == ['A','B','C']
         '''
+
+        assertScript '''
+            def list = 'a,b,c'.split(',')*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+
+        // GROOVY-8133
+        assertScript '''
+            def list = ['a','b','c'].stream()*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+
+        shouldFailWithMessages '''
+            def list = 'abc'*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        ''',
+        'Spread-dot operator can only be used on iterable types'
+
+        config.compilationCustomizers
+              .find { it instanceof ASTTransformationCustomizer }
+              .annotationParameters = [extensions: PrecompiledExtensionNotExtendingDSL.name]
+        assertScript '''
+            def list = 'abc'*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
     }
 
     void testInferredMapDotProperty() {
@@ -299,7 +326,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     void testForInLoopWithRange() {
         assertScript '''
-            for (int i in 1..10) { i*2 }
+            for (int i in 1..10) { i * 2 }
         '''
     }
 
@@ -742,7 +769,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6311
     void testSetSpread() {
-        assertScript """
+        assertScript '''
             class Inner {Set<String> strings}
             class Outer {Set<Inner> inners}
             Outer outer = new Outer(inners: [ new Inner(strings: ['abc', 'def'] as Set), new Inner(strings: ['ghi'] as Set) ] as Set)
@@ -750,36 +777,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert res[1].contains('ghi')
             assert res[0].contains('abc')
             assert res[0].contains('def')
-        """
-    }
-
-    // GROOVY-6241
-    void testAsImmutable() {
-        assertScript """
-            List<Integer> list = [1, 2, 3]
-            List<Integer> immutableList = [1, 2, 3].asImmutable()
-            Map<String, Integer> map = [foo: 123, bar: 456]
-            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
-        """
-    }
-
-    // GROOVY-6350
-    void testListPlusList() {
-        assertScript """
-            def foo = [] + []
-            assert foo==[]
-        """
-    }
-
-    // GROOVY-7122
-    void testIterableLoop() {
-        assertScript '''
-            int countIt(Iterable<Integer> list) {
-                int count = 0
-                for (Integer obj : list) {count ++}
-                return count
-            }
-            countIt([1,2,3])==3
         '''
     }
 
@@ -794,6 +791,56 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 foos*.name
             }
             assert meth().toSet() == ['pls', 'bar'].toSet()
+        '''
+    }
+
+    // GROOVY-10599
+    void testListExpressionWithSpreadExpression() {
+        assertScript '''
+            void test(List<String> list) {
+                assert list == ['x','y','z']
+            }
+            List<String> strings = ['y','z']
+            test(['x', *strings])
+        '''
+        assertScript '''
+            void test(List<String> list) {
+                assert list == ['x','y','z']
+            }
+            List<String> getStrings() {
+                return ['y','z']
+            }
+            test(['x', *strings])
+        '''
+    }
+
+    // GROOVY-6241
+    void testAsImmutable() {
+        assertScript '''
+            List<Integer> list = [1, 2, 3]
+            List<Integer> immutableList = [1, 2, 3].asImmutable()
+            Map<String, Integer> map = [foo: 123, bar: 456]
+            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
+        '''
+    }
+
+    // GROOVY-6350
+    void testListPlusList() {
+        assertScript '''
+            def foo = [] + []
+            assert foo==[]
+        '''
+    }
+
+    // GROOVY-7122
+    void testIterableLoop() {
+        assertScript '''
+            int countIt(Iterable<Integer> list) {
+                int count = 0
+                for (Integer obj : list) {count ++}
+                return count
+            }
+            countIt([1,2,3])==3
         '''
     }
 

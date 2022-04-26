@@ -4976,24 +4976,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected ClassNode getType(final ASTNode exp) {
-        ClassNode cn = exp.getNodeMetaData(INFERRED_TYPE);
-        if (cn != null) {
-            return cn;
+    protected ClassNode getType(final ASTNode node) {
+        ClassNode type = node.getNodeMetaData(INFERRED_TYPE);
+        if (type != null) {
+            return type;
         }
-        if (exp instanceof ClassExpression) {
-            ClassNode node = CLASS_Type.getPlainNodeReference();
-            node.setGenericsTypes(new GenericsType[]{
-                    new GenericsType(((ClassExpression) exp).getType())
-            });
-            return node;
+        if (node instanceof ClassExpression) {
+            type = ((ClassExpression) node).getType();
+            return makeClassSafe0(CLASS_Type, new GenericsType(type));
         }
-        if (exp instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) exp;
-            ClassNode selfTrait = isTraitSelf(vexp);
-            if (selfTrait != null) return makeSelf(selfTrait);
+        if (node instanceof VariableExpression) {
+            VariableExpression vexp = (VariableExpression) node;
+            type = isTraitSelf(vexp);
+            if (type != null) return makeSelf(type);
             if (vexp.isThisExpression()) return makeThis();
             if (vexp.isSuperExpression()) return makeSuper();
+
             Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 FieldNode fieldNode = (FieldNode) variable;
@@ -5009,7 +5007,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
-                ClassNode type = null;
                 // check if param part of control structure - but not if inside instanceof
                 List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(vexp);
                 if (temporaryTypesForExpression == null || temporaryTypesForExpression.isEmpty()) {
@@ -5028,74 +5025,73 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return vexp.getOriginType();
         }
+        if (node instanceof Parameter || node instanceof FieldNode || node instanceof PropertyNode) {
+            return ((Variable) node).getOriginType();
+        }
 
-        if (exp instanceof ListExpression) {
-            return inferListExpressionType((ListExpression) exp);
-        }
-        if (exp instanceof MapExpression) {
-            return inferMapExpressionType((MapExpression) exp);
-        }
-        if (exp instanceof ConstructorCallExpression) {
-            return ((ConstructorCallExpression) exp).getType();
-        }
-        if (exp instanceof MethodNode) {
-            if ((exp == GET_DELEGATE || exp == GET_OWNER || exp == GET_THISOBJECT) && typeCheckingContext.getEnclosingClosure() != null) {
+        if (node instanceof MethodNode) {
+            if ((node == GET_DELEGATE || node == GET_OWNER || node == GET_THISOBJECT)
+                    && typeCheckingContext.getEnclosingClosure() != null) {
                 return typeCheckingContext.getEnclosingClassNode();
             }
-            ClassNode ret = getInferredReturnType(exp);
-            return ret != null ? ret : ((MethodNode) exp).getReturnType();
+            type = ((MethodNode) node).getReturnType();
+            return Optional.ofNullable(getInferredReturnType(node)).orElse(type);
         }
-        if (exp instanceof FieldNode || exp instanceof PropertyNode) {
-            return ((Variable) exp).getOriginType();
-        }
-        if (exp instanceof RangeExpression) {
-            ClassNode plain = RANGE_TYPE.getPlainNodeReference();
-            RangeExpression re = (RangeExpression) exp;
-            ClassNode fromType = getType(re.getFrom());
-            ClassNode toType = getType(re.getTo());
-            if (fromType.equals(toType)) {
-                plain.setGenericsTypes(new GenericsType[]{
-                        new GenericsType(wrapTypeIfNecessary(fromType))
-                });
-            } else {
-                plain.setGenericsTypes(new GenericsType[]{
-                        new GenericsType(wrapTypeIfNecessary(lowestUpperBound(fromType, toType)))
-                });
+        if (node instanceof MethodCall) {
+            if (node instanceof ConstructorCallExpression) {
+                return ((ConstructorCallExpression) node).getType();
             }
-            return plain;
+            MethodNode target = node.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (target != null) {
+                return getType(target);
+            }
         }
-        if (exp instanceof UnaryPlusExpression) {
-            return getType(((UnaryPlusExpression) exp).getExpression());
-        }
-        if (exp instanceof UnaryMinusExpression) {
-            return getType(((UnaryMinusExpression) exp).getExpression());
-        }
-        if (exp instanceof BitwiseNegationExpression) {
-            return getType(((BitwiseNegationExpression) exp).getExpression());
-        }
-        if (exp instanceof Parameter) {
-            return ((Parameter) exp).getOriginType();
-        }
-        if (exp instanceof ClosureExpression) {
-            ClassNode type = CLOSURE_TYPE.getPlainNodeReference();
-            ClassNode returnType = getInferredReturnType(exp);
+        if (node instanceof ClosureExpression) {
+            type = CLOSURE_TYPE.getPlainNodeReference();
+            ClassNode returnType = getInferredReturnType(node);
             if (returnType != null) {
                 type.setGenericsTypes(new GenericsType[]{
                     new GenericsType(wrapTypeIfNecessary(returnType))
                 });
             }
-            Parameter[] parameters = ((ClosureExpression) exp).getParameters();
+            Parameter[] parameters = ((ClosureExpression) node).getParameters();
             int nParameters = parameters == null ? 0
                : parameters.length == 0 ? -1 : parameters.length;
             type.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters);
             return type;
-        } else if (exp instanceof MethodCall) {
-            MethodNode target = exp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            if (target != null) {
-                return getType(target);
-            }
         }
-        return ((Expression) exp).getType();
+
+        if (node instanceof ListExpression) {
+            return inferListExpressionType((ListExpression) node);
+        }
+        if (node instanceof MapExpression) {
+            return inferMapExpressionType((MapExpression) node);
+        }
+        if (node instanceof RangeExpression) {
+            RangeExpression re = (RangeExpression) node;
+            ClassNode fromType = getType(re.getFrom());
+            ClassNode toType = getType(re.getTo());
+            if (fromType.equals(toType)) {
+                type = wrapTypeIfNecessary(fromType);
+            } else {
+                type = wrapTypeIfNecessary(lowestUpperBound(fromType, toType));
+            }
+            return makeClassSafe0(RANGE_TYPE, new GenericsType(type));
+        }
+        if (node instanceof SpreadExpression) {
+            type = getType(((SpreadExpression) node).getExpression());
+            return inferComponentType(type, null); // for list literal
+        }
+        if (node instanceof UnaryPlusExpression) {
+            return getType(((UnaryPlusExpression) node).getExpression());
+        }
+        if (node instanceof UnaryMinusExpression) {
+            return getType(((UnaryMinusExpression) node).getExpression());
+        }
+        if (node instanceof BitwiseNegationExpression) {
+            return getType(((BitwiseNegationExpression) node).getExpression());
+        }
+        return ((Expression) node).getType();
     }
 
     private ClassNode getTypeFromClosureArguments(final Parameter parameter, final TypeCheckingContext.EnclosingClosure enclosingClosure) {

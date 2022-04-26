@@ -19,7 +19,6 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
@@ -1149,75 +1148,52 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testSpreadArgsForbiddenInMethodCall() {
+    void testSpreadArgsForbiddenInNonStaticMethodCall() {
         shouldFailWithMessages '''
-            void foo(String a, String b, int c, double d1, double d2) {}
-            void bar(String[] args, int c, double[] nums) {
-                foo(*args, c, *nums)
+            def foo(String a, String b, int c, double d, double e) {
+            }
+            def bar(String[] strings, int i, double[] numbers) {
+                foo(*strings, i, *numbers)
             }
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot find matching method'
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInStaticMethodCall() {
         shouldFailWithMessages '''
-            static void foo(String a, String b, int c, double d1, double d2) {}
-            static void bar(String[] args, int c, double[] nums) {
-                foo(*args, c, *nums)
+            static foo(String a, String b, int c, double d, double e) {
+            }
+            static bar(String[] strings, int i, double[] numbers) {
+                foo(*strings, i, *numbers)
             }
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot find matching method'
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInConstructorCall() {
         shouldFailWithMessages '''
-            class SpreadInCtor {
-                SpreadInCtor(String a, String b) { }
+            class C {
+                C(String a, String b) {
+                }
             }
-            new SpreadInCtor(*['A', 'B'])
+            new C(*['A','B'])
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot find matching method SpreadInCtor#<init>(java.util.List<E>)'
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
         shouldFailWithMessages '''
             def closure = { String a, String b, String c -> println "$a $b $c" }
-            def strings = ['A', 'B', 'C']
+            def strings = ['A','B','C']
             closure(*strings)
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with [java.lang.Object]'
-    }
-
-    // GROOVY-8133
-    void testSpreadDot() {
-        assertScript '''
-            def list = ['a','b','c'].stream()*.toUpperCase()
-            assert list == ['A', 'B', 'C']
-        '''
-        assertScript '''
-            def list = 'a,b,c'.split(',')*.toUpperCase()
-            assert list == ['A', 'B', 'C']
-        '''
-
-        shouldFailWithMessages '''
-            def list = 'abc'*.toUpperCase()
-            assert list == ['A', 'B', 'C']
-        ''',
-        'Spread-dot operator can only be used on iterable types'
-
-        config.compilationCustomizers
-              .find { it instanceof ASTTransformationCustomizer }
-              .annotationParameters = [extensions: PrecompiledExtensionNotExtendingDSL.name]
-        assertScript '''
-            def list = 'abc'*.toUpperCase()
-            assert list == ['A', 'B', 'C']
-        '''
+        'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with '
     }
 
     // GROOVY-10476
