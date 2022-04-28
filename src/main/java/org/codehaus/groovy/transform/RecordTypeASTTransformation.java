@@ -206,7 +206,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 createRecordToString(cNode);
             } else {
                 ToStringASTTransformation.createToString(cNode, false, false, null,
-                        null, true, false, false, true,
+                        null, true, false, false, false,
                         false, false, false, false, true,
                         new String[]{"[", "]", "=", ", "});
             }
