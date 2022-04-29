@@ -367,6 +367,21 @@ final class RecordTest {
         '''
     }
 
+
+    @Test
+    void testShallowImmutability() {
+        assertScript '''
+            record HasItems(List items) { }
+
+            def itemRec = new HasItems(['a', 'b'])
+            assert itemRec.items().size() == 2
+            itemRec.items().clear()
+            itemRec.items() << 'c'
+            assert itemRec.items() == ['c']
+            assert itemRec.toString() == 'HasItems[items=[c]]'
+        '''
+    }
+
     @Test
     void testCoerce() {
         assertScript '''
