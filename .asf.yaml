@@ -12,5 +12,6 @@ github:
     - static-typing
     - compiler
     - apache
-  notifications:
-    jira_options: link label comment
+
+notifications:
+  jira_options: link label comment
