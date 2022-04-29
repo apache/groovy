@@ -24,6 +24,7 @@ import groovy.lang.DelegatesTo;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.EmptyRange;
 import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
@@ -15666,6 +15667,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number plus(Character left, Character right) {
         return plus(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Appends a String to the literal of the Map instance.
+     *
+     * <pre class="groovyTestCase">
+     * assert '[a:1] is a map' == [a:1] + ' is a map'
+     * </pre>
+     *
+     * @param left  a Map
+     * @param right a String
+     * @return the concatenated string
+     * @since 4.0.3
+     */
+    public static String plus(Map left, String right) {
+        return DefaultGroovyMethods.toString(left) + right;
+    }
+
+    /**
+     * Appends a GString to the literal of the Map instance.
+     *
+     * <pre class="groovyTestCase">
+     * assert '[a:1] is a map' == [a:1] + " is ${'a'} map"
+     * </pre>
+     *
+     * @param left  a Map
+     * @param right a GString
+     * @return the concatenated string
+     * @since 4.0.3
+     */
+    public static String plus(Map left, GString right) {
+        return DefaultGroovyMethods.toString(left) + right;
     }
 
     /**
