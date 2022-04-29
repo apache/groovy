@@ -1039,6 +1039,21 @@ public class JavaStubGenerator {
         }
 
         out.println();
+
+        // non-static imports required if any unresolved nodes encountered -- Java type(s)?
+        if (!Boolean.TRUE.equals(currentModule.getNodeMetaData("require.imports"))) return;
+
+        for (ImportNode i : currentModule.getImports()) {
+            if (i.getType().hasPackageName() && (i.getAlias() == null
+                    || i.getAlias().equals(i.getType().getNameWithoutPackage())))
+                out.println("import " + i.getType().getName().replace('$', '.') + ";");
+        }
+
+        for (ImportNode si : currentModule.getStarImports()) {
+            out.println("import " + si.getPackageName() + "*;");
+        }
+
+        out.println();
     }
 
     public void clean() {
