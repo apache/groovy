@@ -29,26 +29,27 @@ import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecial
 
 public class JavaAwareResolveVisitor extends ResolveVisitor {
 
-    public JavaAwareResolveVisitor(CompilationUnit cu) {
+    public JavaAwareResolveVisitor(final CompilationUnit cu) {
         super(cu);
     }
 
     @Override
-    public void visitConstructor(ConstructorNode node) {
+    public void visitConstructor(final ConstructorNode node) {
         super.visitConstructor(node);
         Statement code = node.getCode();
         Expression cce = getFirstIfSpecialConstructorCall(code);
-        if (cce == null) return;
-        cce.visit(this);
+        if (cce != null)
+            cce.visit(this);
     }
 
     @Override
-    protected void visitClassCodeContainer(Statement code) {
+    protected void visitClassCodeContainer(final Statement stmt) {
         // do nothing here, leave it to the normal resolving
     }
 
     @Override
-    public void addError(String msg, ASTNode expr) {
-        // do nothing here, leave it to the normal resolving
+    public void addError(final String error, final ASTNode node) {
+        if (error.startsWith("unable to resolve")) // GROOVY-10607
+            getSourceUnit().getAST().putNodeMetaData("require.imports", Boolean.TRUE);
     }
 }
