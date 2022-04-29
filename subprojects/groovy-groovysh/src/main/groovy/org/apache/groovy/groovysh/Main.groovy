@@ -26,7 +26,7 @@ import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
 import jline.WindowsTerminal
-import org.apache.groovy.groovysh.util.NoExitSecurityManager
+import org.apache.groovy.groovysh.util.SecurityManagerUtil
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -186,15 +186,13 @@ class Main {
             }
         }
 
-
-        SecurityManager psm = System.getSecurityManager()
-        System.setSecurityManager(new NoExitSecurityManager())
+        SecurityManagerUtil sm = new SecurityManagerUtil()
 
         try {
             code = shell.run(evalString, filenames)
         }
         finally {
-            System.setSecurityManager(psm)
+            sm.close()
         }
 
         // Force the JVM to exit at this point, since shell could have created threads or
