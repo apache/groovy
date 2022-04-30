@@ -29,9 +29,16 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class TraitASTTransformationTest {
 
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            normal 'org.codehaus.groovy.transform.trait.Traits'
+        }
+    }
+
     @Test
     void testTraitOverrideAnnotation() {
-        assertScript '''
+        assertScript shell, '''
             interface MyInterface {
                 String fooMethod()
                 void noMethod()
@@ -52,7 +59,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithNoMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {}
 
             class Foo implements MyTrait {}
@@ -63,7 +70,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithOneMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 int a() { 1 }
             }
@@ -77,7 +84,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithTwoMethods() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 int a() { 1 }
                 int b() { a() }
@@ -93,7 +100,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithTwoMethodsAndOneOverride() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 int a() { 1 }
                 int b() { a() }
@@ -112,7 +119,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithTwoMethodsAndOneAbstract() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 abstract int a()
                 int b() { a() }
@@ -131,7 +138,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithTwoMethodsAndOneAbstractNotImplemented() {
-        shouldFail '''
+        shouldFail shell, '''
             abstract trait MyTrait {
                 abstract int a()
                 int b() { a() }
@@ -149,18 +156,18 @@ final class TraitASTTransformationTest {
 
     @Test
     void testWithPrecompiledTraitWithOneMethod() {
-        assertScript '''
-            import org.codehaus.groovy.transform.traitx.TraitASTTransformationTest.TestTrait as TestTrait
+        assertScript shell, """
+            import ${this.class.name}.TestTrait
 
             class Foo implements TestTrait {}
             def foo = new Foo()
             assert foo.a() == 123
-        '''
+        """
     }
 
     @Test
     void testTraitWithConstructor() {
-        shouldFail '''
+        shouldFail shell, '''
             abstract trait MyTrait {
                 MyTrait() {
                     println 'woo'
@@ -175,7 +182,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithField() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 private String message = 'Hello'
                 String getBlah() {
@@ -191,8 +198,9 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithField2() {
-        assertScript '''
+        assertScript shell, '''
             import org.codehaus.groovy.transform.traitx.TestTrait2
+
             class Foo implements TestTrait2 {
                 def cat() { "cat" }
             }
@@ -205,9 +213,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithSetValue() {
-        assertScript '''
-            import groovy.transform.Trait
-
+        assertScript shell, '''
             trait Named {
                 private String name
                 void setLabel(String val) { name = val }
@@ -230,7 +236,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithProperty() {
-        assertScript '''
+        assertScript shell, '''
             trait Named {
                 String name
             }
@@ -245,9 +251,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClosureExpressionInTrait() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             trait GreetingObject {
                 String greeting = 'Welcome!'
                 Closure greeter() {
@@ -264,7 +268,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUpdatePropertyFromSelf() {
-        assertScript '''
+        assertScript shell, '''
             trait Updater {
                 void update() {
                     config.key = 'value'
@@ -282,9 +286,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateFieldInTraitShouldBeRemapped() {
-        assertScript '''
-            import groovy.transform.ASTTest
-
+        assertScript shell, '''
             trait Foo {
                 private int i = 0
                 int sum(int x) { x+i }
@@ -304,9 +306,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticallyCompiledTrait() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             @CompileStatic
             trait Foo {
                private String msg = 'foo'
@@ -324,7 +324,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testOverridePropertyDefinedInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Id {
                 Long id = 123L
             }
@@ -339,7 +339,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testOverridePropertyGetterDefinedInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Id {
                 Long id = 123L
             }
@@ -354,7 +354,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSimpleTraitInheritance() {
-        assertScript '''
+        assertScript shell, '''
             trait Top { String methodFromA() { 'A' } }
             trait Bottom extends Top { String methodFromB() { 'B' }}
             class Foo implements Bottom {}
@@ -367,7 +367,7 @@ final class TraitASTTransformationTest {
     @Test
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParent() {
         10.times {
-            assertScript '''
+            assertScript shell, '''
                 trait Top { String methodFromA() { 'A' } }
                 trait Bottom extends Top {
                     String methodFromA() { 'B' }
@@ -383,7 +383,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParentAndClass() {
-        assertScript '''
+        assertScript shell, '''
             trait Top { String methodFromA() { 'A' } }
             trait Bottom extends Top {
                 String methodFromA() { 'B' }
@@ -400,7 +400,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitOnEnum() {
-        assertScript '''
+        assertScript shell, '''
             trait WithBar { int bar }
 
             enum MyEnum implements WithBar {
@@ -420,7 +420,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClassImplementingTraitWithSameMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo() { 1 }
             }
@@ -433,7 +433,7 @@ final class TraitASTTransformationTest {
             assert x.foo() == 2 // default order, B is first
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo() { 1 }
             }
@@ -446,7 +446,7 @@ final class TraitASTTransformationTest {
             assert x.foo() == 1 // default order, A is first
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo() { 1 }
             }
@@ -462,7 +462,7 @@ final class TraitASTTransformationTest {
             assert x.foo() == 1
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo() { 1 }
             }
@@ -479,14 +479,14 @@ final class TraitASTTransformationTest {
         '''
 
         // make sure it is compatible with @CompileStatic
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo() { 1 }
             }
             trait B {
                 int foo() { 2 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class AB implements A,B {
                 int foo() {
                     B.super.foo()
@@ -497,7 +497,7 @@ final class TraitASTTransformationTest {
         '''
 
         // GROOVY-10144
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def m() { 'T' }
             }
@@ -514,7 +514,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithGenerics1() {
-        assertScript '''
+        assertScript shell, '''
             trait Provider<T> {
                 T get() {
                     null
@@ -525,14 +525,14 @@ final class TraitASTTransformationTest {
             assert c.get() == null
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait Provider<T> {
                 T get() {
                     null
                 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class StringProvider implements Provider<String> {}
             def c = new StringProvider()
             assert c.get() == null
@@ -541,7 +541,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithGenerics2() {
-        assertScript '''
+        assertScript shell, '''
             trait Provider<T> {
                 T get(T ref) {
                     ref
@@ -552,14 +552,14 @@ final class TraitASTTransformationTest {
             assert c.get('foo') == 'foo'
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait Provider<T> {
                 T get(T ref) {
                     ref
                 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class StringProvider implements Provider<String> {}
             def c = new StringProvider()
             assert c.get('foo') == 'foo'
@@ -568,7 +568,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9760
     void testTraitWithGenerics3() {
-        assertScript '''
+        assertScript shell, '''
             trait Provider<T> {
                 T get(T ref) {
                     ref
@@ -579,14 +579,14 @@ final class TraitASTTransformationTest {
             assert new UnspecifiedProvider().get('foo') == 'foo'
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait Provider<T> {
                 T get(T ref) {
                     ref
                 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class UnspecifiedProvider implements Provider {
             }
             assert new UnspecifiedProvider().get('foo') == 'foo'
@@ -595,7 +595,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithGenericProperty() {
-        assertScript '''
+        assertScript shell, '''
             trait PropertyProvider<T> {
                 T foo
             }
@@ -605,12 +605,12 @@ final class TraitASTTransformationTest {
             assert c.foo == 'foo'
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait PropertyProvider<T> {
                 T foo
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class StringProperty implements PropertyProvider<String> {}
             def c = new StringProperty()
             c.foo = 'foo'
@@ -620,7 +620,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithComplexGenericProperty() {
-        assertScript '''
+        assertScript shell, '''
             trait PropertyProvider<T> {
                 List<T> foo
             }
@@ -630,25 +630,25 @@ final class TraitASTTransformationTest {
             assert c.foo == ['foo']
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait PropertyProvider<T> {
                 List<T> foo
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class StringProperty implements PropertyProvider<String> {}
             def c = new StringProperty()
             c.foo = ['foo']
             assert c.foo == ['foo']
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait PropertyProvider<T> {
                 List<T> foo
             }
             class StringProperty implements PropertyProvider<String> {}
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 def c = new StringProperty()
                 c.foo = ['foo']
@@ -660,7 +660,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithGenericField() {
-        assertScript '''
+        assertScript shell, '''
             trait PropertyProvider<T> {
                 private T foo
                 void set(T t) { foo = t}
@@ -672,14 +672,14 @@ final class TraitASTTransformationTest {
             assert c.get() == 'foo'
         '''
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait PropertyProvider<T> {
                 private T foo
                 void set(T t) { foo = t}
                 T get() { foo }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class StringProperty implements PropertyProvider<String> {}
             def c = new StringProperty()
             c.set('foo')
@@ -689,7 +689,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -710,7 +710,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeDoubleTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -743,7 +743,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeWithTraitsDGM() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -772,7 +772,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeWithTraitsDGMAndExplicitOverride() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -804,7 +804,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeTraitUnderCompileStaticShouldUseMethodFromTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -819,7 +819,7 @@ final class TraitASTTransformationTest {
                 String speak() { "I'm a special duck!" }
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 def d = new Duck()
                 d = d.withTraits(Flying, Speaking)
@@ -833,7 +833,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeWithTraitsDGMAndExtraMethodCompileStatic() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -850,7 +850,7 @@ final class TraitASTTransformationTest {
                 String speak() { "I'm a special duck!"}
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 def d = new Duck()
                 d = d.withTraits(Flying, Speaking)
@@ -865,7 +865,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeTraitWithMethodOfTheSameSignature() {
-        assertScript '''
+        assertScript shell, '''
             trait Flying {
                 String ability() { 'fly' }
                 String fly() {
@@ -886,18 +886,17 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithDelegatesTo() {
-        assertScript '''
+        assertScript shell, '''
             trait Route {
                 void from(@DelegatesTo(To) Closure c) {
                     c.delegate = new To()
-
                 }
             }
             class To {
                void test() { println 'Test' }
             }
             class Foo implements Route {}
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void exec() {
                def f = new Foo()
                f.from {
@@ -910,18 +909,18 @@ final class TraitASTTransformationTest {
 
     @Test
     void testProxyGenerationShouldNotFail() {
-        assertScript '''
-            trait Foo { }
-            class A {}
-            def o = new A()
-            def a = o.withTraits(Foo)
-            def b = a.withTraits(Foo) // shouldn't fail
+        assertScript shell, '''
+            trait T { }
+            class C { }
+            def o = new C()
+            def t = o.withTraits(T)
+            def u = t.withTraits(T) // shouldn't fail
         '''
     }
 
     @Test
     void testShouldNotThrowNPEWithInheritanceUsingExtends() {
-        assertScript '''
+        assertScript shell, '''
             trait Named {
                 String name
             }
@@ -939,7 +938,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticInnerClassInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Outer {
                 Inner doSomething() {
                     new Inner()
@@ -959,7 +958,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testNonStaticInnerClassInTrait() {
-        shouldFail '''
+        shouldFail shell, '''
             trait Outer {
                 Inner doSomething() {
                     new Inner()
@@ -972,7 +971,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClosureInsideTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Doubler {
                 int foo(int x) {
                     { -> 2*x }.call()
@@ -986,7 +985,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClosureInsideTraitAccessingProperty() {
-        assertScript '''
+        assertScript shell, '''
             trait Doubler {
                 int x
                 int foo() {
@@ -1002,7 +1001,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testThisDotClassInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Classic {
                 Class clazz() {
                     this.class
@@ -1016,7 +1015,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testShouldNotThrowStackOverflow() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 private String message = 'Hello'
                 String getMessage() { this.message }
@@ -1031,8 +1030,7 @@ final class TraitASTTransformationTest {
             assert foo.blah() == 'Groovy'
         '''
 
-        assertScript '''
-            import groovy.transform.CompileStatic
+        assertScript shell, '''
             @CompileStatic
             trait TestTrait {
                 private String message = 'Hello'
@@ -1056,7 +1054,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9255
     void testTraitSuperPropertyGet() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def x = 'value'
             }
@@ -1068,7 +1066,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 boolean x = true
             }
@@ -1080,7 +1078,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == true
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def getX() { 'value' }
             }
@@ -1092,7 +1090,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 boolean isX() { true }
             }
@@ -1107,7 +1105,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9672
     void testTraitSuperPropertyGetStatic() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static x = 'value'
             }
@@ -1119,7 +1117,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static boolean x = true
             }
@@ -1131,7 +1129,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == true
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static getX() { 'value' }
             }
@@ -1143,7 +1141,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static boolean isX() { true }
             }
@@ -1155,7 +1153,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == true
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 static getX() { 'A' }
             }
@@ -1173,7 +1171,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitSuperPropertySet() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def x
             }
@@ -1186,7 +1184,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait T {
                 final x = 'const'
             }
@@ -1201,7 +1199,7 @@ final class TraitASTTransformationTest {
         assert err =~ /No such property: super for class: T/
 
         // TODO: add support for compound assignment
-        shouldFail MissingPropertyException, '''
+        shouldFail shell, MissingPropertyException, '''
             trait T {
                 def x = 'value'
             }
@@ -1215,7 +1213,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'valuable'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def setX(value) { 'retval' }
             }
@@ -1230,7 +1228,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9672
     void testTraitSuperPropertySetStatic() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static x
             }
@@ -1243,7 +1241,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'value'
         '''
 
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait T {
                 static final x = 'const'
             }
@@ -1257,7 +1255,7 @@ final class TraitASTTransformationTest {
         '''
         assert err =~ /No such property: super for class: T/
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static setX(value) { 'retval' }
             }
@@ -1269,7 +1267,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'retval'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 static setX(value) { 'A' }
             }
@@ -1287,7 +1285,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9673
     void testTraitSuperPropertySetWithOverloads() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def setX(Number n) {
                     'Number'
@@ -1304,7 +1302,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 'Number'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 def setX(Number n) {
                     'Number'
@@ -1324,7 +1322,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9672
     void testTraitSuperCallStatic() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 static m() { 'A' }
             }
@@ -1342,7 +1340,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitSuperCallWhenExtendingAnotherTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Foo {
                 int foo() { 1 }
             }
@@ -1356,8 +1354,7 @@ final class TraitASTTransformationTest {
             assert b.foo() == 2
         '''
 
-        assertScript '''
-            import groovy.transform.CompileStatic
+        assertScript shell, '''
             @CompileStatic
             trait Foo {
                 int foo() { 1 }
@@ -1376,7 +1373,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9256
     void testTraitSuperCallWithinClosure() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
               int getX() { 42 }
             }
@@ -1390,7 +1387,7 @@ final class TraitASTTransformationTest {
             assert new C().test() == 42
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
               int getX() { 42 }
             }
@@ -1407,7 +1404,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitShouldNotTakeOverSuperClassMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
             }
@@ -1427,7 +1424,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitShouldTakeOverSuperClassMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
             }
@@ -1442,7 +1439,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testOverrideUsingRuntimeTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
             }
@@ -1454,7 +1451,7 @@ final class TraitASTTransformationTest {
             assert b.foo() == 'from Trait'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
             }
@@ -1470,7 +1467,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitOverrideHierarchy() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
                 String bar() { 'from Trait' }
@@ -1498,7 +1495,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSAMCoercion1() {
-        assertScript '''
+        assertScript shell, '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
                 abstract String bar()
@@ -1507,12 +1504,12 @@ final class TraitASTTransformationTest {
             assert sam.foo() == 'hellohello'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
                 abstract String bar()
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 SAMTrait sam = { 'hello' }
                 assert sam.foo() == 'hellohello'
@@ -1522,7 +1519,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSAMCoercion2() {
-        assertScript '''
+        assertScript shell, '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
                 abstract String bar()
@@ -1533,7 +1530,7 @@ final class TraitASTTransformationTest {
             test { 'hello' } // SAM coercion
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
                 abstract String bar()
@@ -1541,7 +1538,7 @@ final class TraitASTTransformationTest {
             void test(SAMTrait sam) {
                 assert sam.foo() == 'hellohello'
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void doTest() {
                 test { 'hello' } // SAM coercion
             }
@@ -1551,7 +1548,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSAMCoercion3() {
-        assertScript '''
+        assertScript shell, '''
             trait Greeter {
                 abstract String getName()
                 String greet() { "Hello $name" }
@@ -1564,7 +1561,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSAMCoercion4() {
-        assertScript '''
+        assertScript shell, '''
             trait Greeter {
                 abstract String getName()
                 String greet() { "Hello $name" }
@@ -1577,7 +1574,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8243
     void testSAMCoercion5() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 abstract def foo(int i)
                 def bar(double j) { "trait $j".toString() }
@@ -1593,7 +1590,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8244
     void testSAMCoercion6() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 abstract def foo(int a, int b = 2)
             }
@@ -1606,7 +1603,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testMethodMissingInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait MethodMissingProvider {
                 def methodMissing(String name, args) {
                     name
@@ -1620,7 +1617,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPropertyMissingInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait PropertyMissingProvider {
                 def propertyMissing(String name) {
                     name
@@ -1634,7 +1631,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testShouldUseDefinitionFromClassInsteadOfTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait TestTrait {
                 String foo() { 'from Trait' }
             }
@@ -1648,7 +1645,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateFieldNameConflict() {
-        assertScript '''
+        assertScript shell, '''
             trait Trait1 { private int v = 111; int getValueFromTrait1() { v } }
             trait Trait2 { private int v = 222; int getValueFromTrait2() { v } }
             class Impl implements Trait1,Trait2 {}
@@ -1660,7 +1657,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateMethodInTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait DoingSecretThings {
                 private String secret() { 'secret' }
                 String foo() { secret() }
@@ -1673,7 +1670,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateMethodInTraitAccessingPrivateField() {
-        assertScript '''
+        assertScript shell, '''
             trait DoingSecretThings {
                 private int x = 0
                 private int secret() { x+=1; x }
@@ -1687,8 +1684,8 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateMethodInTraitWithCompileStatic() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait DoingSecretThings {
                 private String secret() { 'secret' }
                 String foo() { secret() }
@@ -1701,8 +1698,8 @@ final class TraitASTTransformationTest {
 
     @Test
     void testPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait DoingSecretThings {
                 private int x = 0
                 private int secret() { x+=1; x }
@@ -1717,8 +1714,8 @@ final class TraitASTTransformationTest {
 
     @Test
     void testNoShadowingPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait DoingSecretThings {
                 private int x = 0
                 private int secret() { x+=1; x }
@@ -1735,7 +1732,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testNoShadowingPrivateMethodInTraitAccessingPrivateField() {
-        assertScript '''
+        assertScript shell, '''
             trait DoingSecretThings {
                 private int x = 0
                 private int secret() { x+=1; x }
@@ -1752,7 +1749,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testMixPrivatePublicMethodsOfSameName() {
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait DoingSecretThings {
                 private String secret(String s) { s.toUpperCase() }
                 String secret() { 'public' }
@@ -1768,7 +1765,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testInterfaceExtendingTraitShouldNotTriggerRuntimeError() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 void foo() { println 'A' }
             }
@@ -1789,7 +1786,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithDelegate() {
-        assertScript '''
+        assertScript shell, '''
             trait ListTrait<T> {
                 private @Delegate ArrayList<T> list = new ArrayList<T>()
             }
@@ -1806,7 +1803,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7288
     void testClassWithTraitDelegate() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 final foo = 'bar'
             }
@@ -1826,7 +1823,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9739
     void testTraitExtendsTraitWithDelegate() {
-        assertScript '''
+        assertScript shell, '''
             class Main implements ClientSupport {
                 static main(args) {
                     def tester = new Main(client: new Client())
@@ -1857,9 +1854,9 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9901
     void testTraitWithMemozied() {
-        assertScript '''
+        assertScript shell, '''
             trait Foo {
-                @groovy.transform.Memoized
+                @Memoized
                 double method() {
                     Math.random()
                 }
@@ -1882,9 +1879,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testAnnotationShouldBeCarriedOver() {
-        assertScript '''
-            import groovy.transform.ASTTest
-
+        assertScript shell, '''
             trait Foo {
                 @Deprecated void foo() { 'ok' }
             }
@@ -1902,8 +1897,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-10553
     void testAnnotationShouldBeCarriedOver2() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import java.lang.annotation.*
             @Retention(RetentionPolicy.RUNTIME)
             @Target([ElementType.FIELD,ElementType.TYPE_USE])
@@ -1932,8 +1926,8 @@ final class TraitASTTransformationTest {
 
     @Test
     void testShouldCompileTraitMethodStatically() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
+        def err = shouldFail shell, '''
+            @CompileStatic
             trait Foo {
                 int foo() { 1+'foo'}
             }
@@ -1943,7 +1937,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitStaticMethod() {
-        assertScript '''
+        assertScript shell, '''
             trait StaticProvider {
                 static String foo() { 'static method' }
             }
@@ -1951,7 +1945,7 @@ final class TraitASTTransformationTest {
             assert Foo.foo() == 'static method'
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait StaticProvider {
                 static String foo() { bar() }
                 static String bar() { 'static method' }
@@ -1963,7 +1957,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitStaticField() {
-        assertScript '''
+        assertScript shell, '''
             trait StaticFieldProvider {
                 public static int VAL = 123
             }
@@ -1971,7 +1965,7 @@ final class TraitASTTransformationTest {
             assert Foo.StaticFieldProvider__VAL == 123
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait StaticFieldProvider {
                 public static int VAL = 123
                 public static void update(int x) { VAL = x }
@@ -1985,7 +1979,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitStaticProperty() {
-        assertScript '''
+        assertScript shell, '''
             trait StaticPropertyProvider {
                 static int VAL = 123
                 public static void update(int x) { VAL = x }
@@ -1997,7 +1991,7 @@ final class TraitASTTransformationTest {
             assert Foo.VAL == 456
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static p = 1
             }
@@ -2012,7 +2006,7 @@ final class TraitASTTransformationTest {
         '''
 
         // GROOVY-9678
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static p = 1
             }
@@ -2029,9 +2023,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
-        assertScript '''
-            import org.codehaus.groovy.transform.trait.Traits
-
+        assertScript shell, '''
             trait Foo {
                 void foo() {}
             }
@@ -2050,9 +2042,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitMethodShouldNotBeDefaultImplementationUsingReflection() {
-        assertScript '''
-            import org.codehaus.groovy.transform.trait.Traits
-
+        assertScript shell, '''
             trait Foo {
                 void foo() {}
             }
@@ -2071,9 +2061,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflectionAndGenericTypes() {
-        assertScript '''
-            import org.codehaus.groovy.transform.trait.Traits
-
+        assertScript shell, '''
             trait Foo<F,T> {
                 T foo(F from) {}
             }
@@ -2094,7 +2082,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUseOfThisInInitializer() {
-        assertScript '''
+        assertScript shell, '''
             trait Dummyable  {
                 String x = this.class.name
 
@@ -2112,7 +2100,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUseOfMethodInInitializer() {
-        assertScript '''
+        assertScript shell, '''
             trait Dummyable  {
                 String x = whoAmI()
 
@@ -2134,7 +2122,7 @@ final class TraitASTTransformationTest {
     @Test
     void testTraitShouldNotBeAllowedToExtendInterface() {
         // GROOVY-6672
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait Foo extends Serializable {}
             Foo x = null
         '''
@@ -2143,7 +2131,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testImplementingingAbstractClass() {
-        assertScript '''
+        assertScript shell, '''
             abstract class AbstractSomething {
                 abstract String something()
             }
@@ -2166,7 +2154,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testShouldNotOverrideMethodImplementedFromAbstractClass() {
-        assertScript '''
+        assertScript shell, '''
             abstract class AbstractSomething {
                 abstract String something()
             }
@@ -2197,7 +2185,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testIncrementPropertyOfTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Level {
                 int maxLevel
                 int currentLevel = 0
@@ -2226,7 +2214,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testIncrementPropertyOfTraitUsingPlusPlus() {
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait Level {
                 int maxLevel
                 int currentLevel = 0
@@ -2257,7 +2245,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testIncrementPropertyOfTraitUsingPrefixPlusPlus() {
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             trait Level {
                 int maxLevel
                 int currentLevel = 0
@@ -2288,7 +2276,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-6691
     void testTraitImplementingGenericSuperTrait() {
-        assertScript '''
+        assertScript shell, '''
             class App {}
             trait Base<T> {
                 T value
@@ -2297,7 +2285,7 @@ final class TraitASTTransformationTest {
             }
             trait Applicative extends Base<App> { }
             class Dummy implements Applicative {}
-            @groovy.transform.TypeChecked
+            @TypeChecked
             void test() {
                 def d = new Dummy()
                 d.set(new App())
@@ -2305,7 +2293,7 @@ final class TraitASTTransformationTest {
             test()
         '''
 
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             class App {}
             trait Base<T> {
                 T value
@@ -2314,7 +2302,7 @@ final class TraitASTTransformationTest {
             }
             trait Applicative extends Base<App> { }
             class Dummy implements Applicative {}
-            @groovy.transform.TypeChecked
+            @TypeChecked
             void test() {
                 def d = new Dummy()
                 d.set('oh noes!')
@@ -2327,7 +2315,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUpdateFieldFromOtherReceiver() {
-        assertScript '''
+        assertScript shell, '''
             class Person {
                 String name
             }
@@ -2346,7 +2334,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUseStaticFieldInTraitBody() {
-        assertScript '''
+        assertScript shell, '''
             import java.util.logging.Logger
 
             trait Loggable {
@@ -2367,7 +2355,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testUpdateStaticFieldInTraitBody() {
-        assertScript '''
+        assertScript shell, '''
             trait Loggable {
 
                 static int CALLS = 0
@@ -2389,7 +2377,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testProxyTarget() {
-        assertScript '''
+        assertScript shell, '''
             trait Helloable implements CharSequence {
                 void hello() { println "hello" }
             }
@@ -2406,8 +2394,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitsGetAsType() {
-        assertScript '''
-            import org.codehaus.groovy.transform.trait.Traits
+        assertScript shell, '''
             trait Helloable implements CharSequence {
                 void hello() { println "hello" }
             }
@@ -2428,9 +2415,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStackableTraits() {
-        assertScript '''
-            import org.codehaus.groovy.transform.trait.Traits
-
+        assertScript shell, '''
             trait A {
                 int foo(int x) { x }
             }
@@ -2450,7 +2435,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStackableTraitsWithExplicitClasses() {
-        assertScript '''
+        assertScript shell, '''
             interface IntQueue {
                 Integer get()
                 void put(Integer x)
@@ -2493,7 +2478,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStackableTraitsWithDynamicTraits() {
-        assertScript '''
+        assertScript shell, '''
             interface IntQueue {
                 Integer get()
                 void put(Integer x)
@@ -2533,7 +2518,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSuperKeywordInRegularTraitInheritance() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo(x) { 1+x }
             }
@@ -2548,7 +2533,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSuperKeywordInRegularTraitMultipleInheritance() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 int foo(x) { 1+x }
             }
@@ -2566,12 +2551,12 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticallyCompiledTraitWithCallToSuper() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait A {
                 int foo(int x) { 1+x }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait B extends A {
                 int foo(int x) { 2*super.foo(x)}
             }
@@ -2583,13 +2568,13 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticallyCompiledTraitWithCallToSuperInPackage() {
-        assertScript '''
+        assertScript shell, '''
             package blah
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait A {
                 int foo(int x) { 1+x }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait B extends A {
                 int foo(int x) { 2*super.foo(x)}
             }
@@ -2601,13 +2586,13 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticallyCompiledTraitWithCallToSuperInPackageAndUnderscoreInClassName() {
-        assertScript '''
+        assertScript shell, '''
             package blah
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait A {
                 int foo(int x) { 1+x }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait B_B extends A {
                 int foo(int x) { 2*super.foo(x)}
             }
@@ -2619,12 +2604,12 @@ final class TraitASTTransformationTest {
 
     @Test
     void testStaticallyCompiledTraitWithCallToSuperAndNoExplicitSuperTrait() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
+            @CompileStatic
             trait A {
                 int foo(int x) { 1+x }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             trait B {
                 int foo(int x) { 2*(int)super.foo(x)}
             }
@@ -2636,7 +2621,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testFieldInTraitAndDynamicProxy() {
-        assertScript '''
+        assertScript shell, '''
             trait WithName {
                 public String name
             }
@@ -2648,9 +2633,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testFieldInTraitModifiers() {
-        assertScript '''
-            import groovy.transform.ASTTest
-
+        assertScript shell, '''
             trait A {
                 public int foo
             }
@@ -2662,16 +2645,15 @@ final class TraitASTTransformationTest {
             def b = new B()
         '''
 
-        assertScript '''
-            import groovy.transform.ASTTest
-            import java.lang.reflect.Modifier
+        assertScript shell, '''
+            import static java.lang.reflect.Modifier.isPrivate
 
             trait A {
                 private int foo
             }
             @ASTTest(phase=INSTRUCTION_SELECTION,value={
                 def field = node.getField('A__foo')
-                assert Modifier.isPrivate(field.modifiers)
+                assert isPrivate(field.modifiers)
             })
             class B implements A {}
             def b = new B()
@@ -2680,7 +2662,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testDecorateFinalClassWithTrait() {
-        assertScript '''
+        assertScript shell, '''
             trait Filtering {
                 StringBuilder append(String str) {
                     def subst = str.replace('o','')
@@ -2696,7 +2678,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-6708
     void testCovariantReturnTypeWithGenericsInheritance() {
-        assertScript '''
+        assertScript shell, '''
             trait Top<X> {
                 X self(X x) {x}
             }
@@ -2709,7 +2691,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSuperCallInTraitAndDeepHierarchy() {
-        assertScript '''
+        assertScript shell, '''
             interface IntQueue {
                 Integer get()
                 void put(Integer x)
@@ -2752,7 +2734,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testCallToSuperTraitWithStackable() {
-        assertScript '''
+        assertScript shell, '''
             trait T2 {
                 void foo() {
                     println 'T2'
@@ -2782,7 +2764,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7058
     void testShouldNotThrowNPEBecauseOfIncompleteGenericsTypeInformation() {
-        assertScript '''
+        assertScript shell, '''
             class Project { Task task(String name, Map args) {} }
             class Task {}
             interface Plugin<P>{}
@@ -2801,7 +2783,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7123
     void testHelperSetterShouldNotReturnVoid() {
-        assertScript '''
+        assertScript shell, '''
             trait A {
                 def foo
                 def bar() { foo = 42 }
@@ -2814,10 +2796,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSimpleSelfType() {
-        assertScript '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             trait A {
                 int a() { 1 }
             }
@@ -2835,10 +2814,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testSimpleSelfTypeInSubTrait() {
-        assertScript '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             trait A {
                 int a() { 1 }
             }
@@ -2863,10 +2839,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testDoubleSelfType() {
-        assertScript '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             trait A {
                 int a() { 1 }
             }
@@ -2887,10 +2860,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClassDoesNotImplementSelfType() {
-        def err = shouldFail '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        def err = shouldFail shell, '''
             @CompileStatic
             @SelfType([String,Serializable])
             trait B {
@@ -2906,9 +2876,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClassDoesNotImplementSelfTypeDefinedInInheritedTrait() {
-        def err = shouldFail '''
-            import groovy.transform.SelfType
-
+        def err = shouldFail shell, '''
             interface Self { def bar() }
             @SelfType(Self)
             trait Trait {
@@ -2924,10 +2892,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClassDoesNotImplementSelfTypeUsingAbstractClass() {
-        def err = shouldFail '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        def err = shouldFail shell, '''
             @CompileStatic
             @SelfType([String,Serializable])
             trait B {
@@ -2944,10 +2909,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testMethodAcceptingThisAsSelfTrait() {
-        assertScript '''
-            import groovy.transform.SelfType
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             class CommunicationService {
                 static void sendMessage(String from, String to, String message) {
                     println "$from sent [$message] to $to"
@@ -2979,10 +2941,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeSelfType() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import groovy.transform.SelfType
-
+        assertScript shell, '''
             trait A {
                 int a() { 1 }
             }
@@ -3000,10 +2959,7 @@ final class TraitASTTransformationTest {
 
     @Test
     void testRuntimeSelfTypeWithInheritance() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import groovy.transform.SelfType
-
+        assertScript shell, '''
             trait A {
                 int a() { 1 }
             }
@@ -3047,7 +3003,7 @@ final class TraitASTTransformationTest {
     @Test // GROOVY-10521
     void testVariadicMethodOfPrecompiledTrait() {
         System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
-        assertScript """
+        assertScript shell, """
             @Grab('org.spockframework:spock-core:2.2-M1-groovy-4.0')
             @GrabExclude('org.apache.groovy:*')
             import spock.lang.Specification
@@ -3067,7 +3023,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7287
     void testTraitWithMethodLevelGenericsShadowing1() {
-        assertScript '''
+        assertScript shell, '''
             trait Configurable<ConfigObject> {
                 ConfigObject configObject
 
@@ -3114,7 +3070,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7287
     void testTraitWithMethodLevelGenericsShadowing2() {
-        assertScript '''
+        assertScript shell, '''
             trait SomeTrait {
                 def <T extends Number> T someOtherMethod() {}
             }
@@ -3138,7 +3094,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-7297
     void testMethodLevelGenericsFromPrecompiledClass() {
-        assertScript """
+        assertScript shell, """
             class C implements ${T7297.name} {
             }
             def c = new C(title: 'some title')
@@ -3149,7 +3105,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9763
     void testTraitWithStaticMethodGenericsSC() {
-        assertScript '''
+        assertScript shell, '''
             trait T {
                 static <U> U m(Closure<U> callable) {
                     callable.call()
@@ -3157,7 +3113,7 @@ final class TraitASTTransformationTest {
             }
             class C implements T {
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             def test() {
                 C.m({ -> 'works' })
             }
@@ -3167,7 +3123,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8281
     void testFinalFieldsDependency() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 private final String foo = 'foo'
                 private final String foobar = foo.toUpperCase() + 'bar'
@@ -3182,7 +3138,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8282
     void testBareNamedArgumentPrivateMethodCall() {
-        assertScript '''
+        assertScript shell, '''
             trait BugReproduction {
                 def foo() {
                     bar(a: 1)
@@ -3200,7 +3156,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8730
     void testAbstractMethodsNotNeededInHelperClass() {
-        assertScript '''
+        assertScript shell, '''
             import static groovy.test.GroovyAssert.shouldFail
 
             trait Foo { abstract bar() }
@@ -3219,7 +3175,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8731
     void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound() {
-        assertScript '''
+        assertScript shell, '''
             trait StaticFooBarBaz {
                 static int foo() { 100 }
                 static int baz() { 200 }
@@ -3244,7 +3200,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-6716
     void testAnonymousInnerClassStyleTraitUsage() {
-        assertScript '''
+        assertScript shell, '''
             interface Foo { def foo() }
             def f = new Foo() { def foo() { 42 } }
             assert f.foo() == 42
@@ -3261,7 +3217,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8722
     void testFinalModifierSupport() {
-        assertScript '''
+        assertScript shell, '''
             import static java.lang.reflect.Modifier.isFinal
 
             trait Foo {
@@ -3298,7 +3254,7 @@ final class TraitASTTransformationTest {
             }
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait Startable {
                 final int start() { doStart() * 2 }
                 abstract int doStart()
@@ -3316,7 +3272,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8880
     void testTraitWithInitBlock() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 final String first = 'FOO'
                 final String last = 'BAR'
@@ -3336,7 +3292,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8880
     void testTraitWithStaticInitBlock() {
-        assertScript '''
+        assertScript shell, '''
             trait MyTrait {
                 static final String first = 'FOO'
                 static final String last = 'BAR'
@@ -3354,7 +3310,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8892
     void testTraitWithStaticInitBlockWithAndWithoutProps() {
-        assertScript '''
+        assertScript shell, '''
             class Counter {
                 static int count = 0
             }
@@ -3378,7 +3334,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8954
     void testTraitWithPropertyAlsoFromInterfaceSC() {
-        assertScript '''
+        assertScript shell, '''
             interface DomainProp {
                 boolean isNullable()
             }
@@ -3389,7 +3345,7 @@ final class TraitASTTransformationTest {
                 boolean nullable = true
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             abstract class CustomProp extends OrderedProp implements Nullable { }
 
             assert new CustomProp() {}
@@ -3398,9 +3354,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8272
     void testTraitAccessToInheritedStaticMethods() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
+        assertScript shell, '''
             @CompileStatic
             trait Foo {
                 static String go() {
@@ -3423,7 +3377,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-10312
     void testTraitAccessToInheritedStaticMethods2() {
-        assertScript '''
+        assertScript shell, '''
             trait Foo {
                 static String staticMethod(String string) {
                     return string
@@ -3453,7 +3407,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-10312
     void testTraitAccessToInheritedStaticMethods3() {
-        assertScript '''
+        assertScript shell, '''
             interface Foo {
                 public static final String BANG = '!'
             }
@@ -3481,7 +3435,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9386
     void testTraitPropertyInitializedByTap() {
-        assertScript '''
+        assertScript shell, '''
             class P {
                 int prop
             }
@@ -3500,7 +3454,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9386
     void testTraitPropertyInitializedByWith() {
-        assertScript '''
+        assertScript shell, '''
             class P {
                 int prop
             }
@@ -3519,7 +3473,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-8000
     void testTraitMultiLevelGenerics() {
-        assertScript '''
+        assertScript shell, '''
             trait TopTrait<X> { X getSomeThing() {}
             }
             trait MiddleTrait<Y> implements TopTrait<Y> {
@@ -3532,7 +3486,7 @@ final class TraitASTTransformationTest {
             assert new Implementation().getSomeThing() == null
         '''
 
-        assertScript '''
+        assertScript shell, '''
             trait TopTrait<T> { T getSomeThing() {}
             }
             trait MiddleTrait<T> implements TopTrait<T> {
@@ -3548,7 +3502,7 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-9660
     void testAsGenericsParam() {
-        assertScript '''
+        assertScript shell, '''
             trait Data {}
             class TestData implements Data {}
             class AbstractData<D extends Data>{ D data }
