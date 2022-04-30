@@ -529,16 +529,16 @@ public abstract class StaticTypeCheckingSupport {
         switch (op) {
             case COMPARE_EQUAL:
             case COMPARE_NOT_EQUAL:
-                // this is only correct in this context here, normally
+                // this is only correct in this specific context; normally
                 // we would have to compile against compareTo if available
                 // but since we don't compile here, this one is enough
                 return "equals";
 
             case COMPARE_TO:
-            case COMPARE_GREATER_THAN:
-            case COMPARE_GREATER_THAN_EQUAL:
             case COMPARE_LESS_THAN:
             case COMPARE_LESS_THAN_EQUAL:
+            case COMPARE_GREATER_THAN:
+            case COMPARE_GREATER_THAN_EQUAL:
                 return "compareTo";
 
             case BITWISE_AND:
