@@ -4453,6 +4453,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         }
+        if (op == FIND_REGEX) {
+            // this case always succeeds the result is a Matcher
+            return Matcher_TYPE;
+        }
+
         if (isArrayOp(op)) {
             // using getPNR() to ignore generics at this point
             // and a different binary expression not to pollute the AST
@@ -4464,39 +4469,37 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return method != null ? inferComponentType(left, right) : null;
         }
-        if (op == FIND_REGEX) {
-            // this case always succeeds the result is a Matcher
-            return Matcher_TYPE;
-        }
-        // the left operand is determining the result of the operation
-        // for primitives and their wrapper we use a fixed table here
+
         String operationName = getOperationName(op);
+        if (operationName == null) throw new GroovyBugError(
+                "Unknown result type for binary operator " + op);
+        // the left operand is determining the result of the operation
+        // for primitives and their wrapper we use a fixed table here:
         ClassNode mathResultType = getMathResultType(op, leftRedirect, rightRedirect, operationName);
         if (mathResultType != null) {
             return mathResultType;
         }
-
         // GROOVY-9006: compare to null for types that overload equals
         if ("equals".equals(operationName) && (left == UNKNOWN_PARAMETER_TYPE
                                             || right == UNKNOWN_PARAMETER_TYPE)) {
             return boolean_TYPE;
         }
-
         // GROOVY-5890: do not mix Class<Type> with Type
         if (leftExpression instanceof ClassExpression) {
             left = CLASS_Type.getPlainNodeReference();
         }
-
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
+
             if (isAssignment(op)) return left;
-            if (isCompareToBoolean(op)) return boolean_TYPE;
-            if (op == COMPARE_TO) return int_TYPE;
-            return inferReturnTypeGenerics(left, method, args(rightExpression));
+            if (!"compareTo".equals(operationName))
+                return inferReturnTypeGenerics(left, method, args(rightExpression));
         }
-        //TODO: other cases
+
+        if (isCompareToBoolean(op)) return boolean_TYPE;
+        if (op == COMPARE_TO) return int_TYPE;
         return null;
     }
 

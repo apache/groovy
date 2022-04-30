@@ -833,7 +833,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
         }
         // end::cl_pt_failure[]
-        ''', 'No such property: age for class: java.lang.Object', 'Cannot find matching method'
+        ''', 'No such property: age for class: java.lang.Object'
 
         assertScript '''
         class Person {

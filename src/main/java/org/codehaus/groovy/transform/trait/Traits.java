@@ -262,17 +262,17 @@ public abstract class Traits {
     }
 
     /**
-     * Returns the name of a method without the super trait specific prefix. If the method name
-     * doesn't correspond to a super trait method call, the result will be null.
-     * @param origName the name of a method
-     * @return null if the name doesn't start with the super trait prefix, otherwise the name without the prefix
+     * Returns the trait and method names derived from super-trait name scheme
+     * or {@code null} if the method name doesn't correspond to a trait method.
      */
-    public static String[] decomposeSuperCallName(String origName) {
-        if (origName.contains(SUPER_TRAIT_METHOD_PREFIX)) {
-            int endIndex = origName.indexOf(SUPER_TRAIT_METHOD_PREFIX);
-            String tName = origName.substring(0, endIndex).replace('_','.').replace("..","_");
-            String fName = origName.substring(endIndex+SUPER_TRAIT_METHOD_PREFIX.length());
-            return new String[]{tName, fName};
+    public static String[] decomposeSuperCallName(final String methodName) {
+        if (methodName != null) {
+            int endIndex = methodName.indexOf(SUPER_TRAIT_METHOD_PREFIX);
+            if (endIndex != -1) {
+                String tName = methodName.substring(0, endIndex).replace('_', '.').replace("..", "_");
+                String fName = methodName.substring(endIndex + SUPER_TRAIT_METHOD_PREFIX.length());
+                return new String[]{tName, fName};
+            }
         }
         return null;
     }
