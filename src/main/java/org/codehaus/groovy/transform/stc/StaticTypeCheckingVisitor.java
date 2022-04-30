@@ -4435,9 +4435,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return method != null ? inferComponentType(left, right) : null;
         }
 
-        // the left operand is determining the result of the operation
-        // for primitives and their wrapper we use a fixed table here
         String operationName = getOperationName(op);
+        if (operationName == null) throw new GroovyBugError(
+                "Unknown result type for binary operator " + op);
+        // the left operand is determining the result of the operation
+        // for primitives and their wrapper we use a fixed table here:
         ClassNode mathResultType = getMathResultType(op, leftRedirect, rightRedirect, operationName);
         if (mathResultType != null) {
             return mathResultType;
@@ -4457,7 +4459,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
             if (isAssignment(op)) return left;
-            if (!isCompareToBoolean(op) && op != COMPARE_TO)
+            if (!"compareTo".equals(operationName))
                 return inferReturnTypeGenerics(left, method, args(rightExpression));
         }
 
