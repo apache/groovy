@@ -27,34 +27,33 @@ import org.codehaus.groovy.GroovyBugError;
  * @see Types
  */
 public class Token extends CSTNode {
-    public static final Token NULL = new Token();
+
     public static final Token EOF = new Token(Types.EOF, "", -1, -1);
+    public static final Token NULL = new Token(Types.UNKNOWN, "", -1, -1);
 
-    //---------------------------------------------------------------------------
-    // TOKEN INITIALIZATION AND SUCH
+    //--------------------------------------------------------------------------
 
-    private int type = Types.UNKNOWN;  // the actual type identified by the lexer
-    private int meaning = Types.UNKNOWN;  // an interpretation applied to the token after the fact
+    /** the actual type identified by the lexer */
+    private final int type;
+    /** an interpretation applied to the token after the fact */
+    private int meaning;
 
-    private String text = "";             // the text of the token
-    private int startLine = -1;             // the source line on which the token begins
-    private int startColumn = -1;             // the source column on which the token begins
+    /** the text of the token */
+    private String text;
+    /** the source line on which the token begins */
+    private final int startLine;
+    /** the source column on which the token begins */
+    private final int startColumn;
 
     /**
      * Initializes the Token with the specified information.
      */
-    public Token(int type, String text, int startLine, int startColumn) {
+    public Token(final int type, final String text, final int startLine, final int startColumn) {
+        this.text = text;
         this.type = type;
         this.meaning = type;
-        this.text = text;
         this.startLine = startLine;
         this.startColumn = startColumn;
-    }
-
-    /**
-     * Initializes the NULL Token.
-     */
-    private Token() {
     }
 
     /**
@@ -63,11 +62,10 @@ public class Token extends CSTNode {
     public Token dup() {
         Token token = new Token(this.type, this.text, this.startLine, this.startColumn);
         token.setMeaning(this.meaning);
-
         return token;
     }
 
-    //---------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // NODE IDENTIFICATION AND MEANING
 
     /**
@@ -85,7 +83,7 @@ public class Token extends CSTNode {
      * convenience.
      */
     @Override
-    public CSTNode setMeaning(int meaning) {
+    public CSTNode setMeaning(final int meaning) {
         this.meaning = meaning;
         return this;
     }
@@ -99,7 +97,7 @@ public class Token extends CSTNode {
         return type;
     }
 
-    //---------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // MEMBER ACCESS
 
     /**
@@ -176,7 +174,7 @@ public class Token extends CSTNode {
         return startColumn;
     }
 
-    //---------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // OPERATIONS
 
     /**
@@ -218,73 +216,69 @@ public class Token extends CSTNode {
         return created;
     }
 
-    //---------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // TOKEN FACTORIES
 
     /**
      * Creates a token that represents a keyword.  Returns null if the
      * specified text isn't a keyword.
      */
-    public static Token newKeyword(String text, int startLine, int startColumn) {
-
+    public static Token newKeyword(final String text, final int startLine, final int startColumn) {
         int type = Types.lookupKeyword(text);
         if (type != Types.UNKNOWN) {
             return new Token(type, text, startLine, startColumn);
         }
-
         return null;
     }
 
     /**
      * Creates a token that represents a double-quoted string.
      */
-    public static Token newString(String text, int startLine, int startColumn) {
+    public static Token newString(final String text, final int startLine, final int startColumn) {
         return new Token(Types.STRING, text, startLine, startColumn);
     }
 
     /**
      * Creates a token that represents an identifier.
      */
-    public static Token newIdentifier(String text, int startLine, int startColumn) {
+    public static Token newIdentifier(final String text, final int startLine, final int startColumn) {
         return new Token(Types.IDENTIFIER, text, startLine, startColumn);
     }
 
     /**
      * Creates a token that represents an integer.
      */
-    public static Token newInteger(String text, int startLine, int startColumn) {
+    public static Token newInteger(final String text, final int startLine, final int startColumn) {
         return new Token(Types.INTEGER_NUMBER, text, startLine, startColumn);
     }
 
     /**
      * Creates a token that represents a decimal number.
      */
-    public static Token newDecimal(String text, int startLine, int startColumn) {
+    public static Token newDecimal(final String text, final int startLine, final int startColumn) {
         return new Token(Types.DECIMAL_NUMBER, text, startLine, startColumn);
     }
 
     /**
      * Creates a token that represents a symbol, using a library for the text.
      */
-    public static Token newSymbol(int type, int startLine, int startColumn) {
+    public static Token newSymbol(final int type, final int startLine, final int startColumn) {
         return new Token(type, Types.getText(type), startLine, startColumn);
     }
 
     /**
      * Creates a token that represents a symbol, using a library for the type.
      */
-    public static Token newSymbol(String type, int startLine, int startColumn) {
-        return new Token(Types.lookupSymbol(type), type, startLine, startColumn);
+    public static Token newSymbol(final String text, final int startLine, final int startColumn) {
+        return new Token(Types.lookupSymbol(text), text, startLine, startColumn);
     }
 
     /**
      * Creates a token with the specified meaning.
      */
-    public static Token newPlaceholder(int type) {
+    public static Token newPlaceholder(final int meaning) {
         Token token = new Token(Types.UNKNOWN, "", -1, -1);
-        token.setMeaning(type);
-
+        token.setMeaning(meaning);
         return token;
     }
-
 }

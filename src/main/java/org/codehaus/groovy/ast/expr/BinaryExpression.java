@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Represents two expressions and an operation
  */
@@ -34,18 +36,13 @@ public class BinaryExpression extends Expression {
     private final Token operation;
     private boolean safe = false;
 
-    public BinaryExpression(Expression leftExpression,
-                            Token operation,
-                            Expression rightExpression) {
+    public BinaryExpression(final Expression leftExpression, final Token operation, final Expression rightExpression) {
         this.leftExpression = leftExpression;
-        this.operation = operation;
         this.rightExpression = rightExpression;
+        this.operation = requireNonNull(operation);
     }
 
-    public BinaryExpression(Expression leftExpression,
-                            Token operation,
-                            Expression rightExpression,
-                            boolean safe) {
+    public BinaryExpression(final Expression leftExpression, final Token operation, final Expression rightExpression, final boolean safe) {
         this(leftExpression, operation, rightExpression);
         this.safe = safe;
     }

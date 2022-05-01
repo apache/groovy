@@ -46,41 +46,44 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 public class DeclarationExpression extends BinaryExpression {
 
     /**
-     * Creates a DeclarationExpression for VariableExpressions like "def x" or "String y = 'foo'".
+     * Creates a declaration like "def v" or "int w = 0".
+     *
      * @param left
      *      the left hand side of a variable declaration
      * @param operation
-     *      the operation, typically an assignment operator
+     *      the operation, assumed to be assignment operator
      * @param right
-     *      the right hand side of a declaration
+     *      the right hand side of a declaration; {@link EmptyExpression} for no initial value
      */
-    public DeclarationExpression(VariableExpression left, Token operation, Expression right) {
-        super(left,operation,right);
+    public DeclarationExpression(final VariableExpression left, final Token operation, final Expression right) {
+        this((Expression) left, operation, right);
     }
 
     /**
-     * Creates a DeclarationExpression for Expressions like "def (x, y) = [1, 2]"
+     * Creates a declaration like "def v" or "int w = 0" or "def (x, y) = [1, 2]".
+     *
      * @param left
-     *      the left hand side of a declaration. Must be either a VariableExpression or
-     *      a TupleExpression with at least one element.
+     *      the left hand side of a declaration -- either a {@link VariableExpression} or
+     *      a {@link TupleExpression} with at least one element
      * @param operation
-     *       the operation, typically an assignment operator
+     *       the operation, assumed to be assignment operator
      * @param right
      *       the right hand side of a declaration
      */
-    public DeclarationExpression(Expression left, Token operation, Expression right) {
-        super(left,operation,right);
+    public DeclarationExpression(final Expression left, final Token operation, final Expression right) {
+        super(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), right);
         check(left);
     }
 
-    private static void check(Expression left) {
+    private static void check(final Expression left) {
         if (left instanceof VariableExpression) {
-            //nothing
+            // all good
         } else if (left instanceof TupleExpression) {
             TupleExpression tuple = (TupleExpression) left;
-            if (tuple.getExpressions().isEmpty()) throw new GroovyBugError("one element required for left side");
+            if (tuple.getExpressions().isEmpty())
+                throw new GroovyBugError("one element required for left side");
         } else {
-            throw new GroovyBugError("illegal left expression for declaration: "+left);
+            throw new GroovyBugError("illegal left expression for declaration: " + left);
         }
     }
 
