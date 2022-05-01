@@ -82,6 +82,7 @@ import java.util.stream.Stream;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isCachedType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
@@ -99,6 +100,8 @@ import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -250,38 +253,41 @@ public class JavaStubGenerator {
                 }
 
                 @Override
-                public void visitProperty(PropertyNode node) {
+                public void visitProperty(PropertyNode pn) {
                     // GROOVY-8233 skip static properties for traits since they don't make the interface
-                    if (!node.isStatic() || !Traits.isTrait(node.getDeclaringClass())) {
-                        super.visitProperty(node);
+                    if (!pn.isStatic() || !Traits.isTrait(pn.getDeclaringClass())) {
+                        super.visitProperty(pn);
                     }
                 }
 
                 @Override
                 public void addCovariantMethods(ClassNode cn) {}
                 @Override
-                protected void addInitialization(ClassNode node) {}
+                protected void addInitialization(ClassNode cn) {}
                 @Override
-                protected void addPropertyMethod(MethodNode method) {
-                    doAddMethod(method);
+                protected void addInitialization(ClassNode cn, ConstructorNode c) {}
+                @Override
+                protected void addPropertyMethod(MethodNode mn) {
+                    doAddMethod(mn);
                 }
                 @Override
-                protected void addReturnIfNeeded(MethodNode node) {}
+                protected void addReturnIfNeeded(MethodNode mn) {}
+
                 @Override
-                protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+                protected MethodNode addMethod(ClassNode cn, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
                     return doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
 
                 @Override
-                protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
-                    if (code instanceof ExpressionStatement) {//GROOVY-4508
-                        Statement temp = code;
+                protected void addConstructor(Parameter[] params, ConstructorNode ctor, Statement code, ClassNode node) {
+                    if (code instanceof ExpressionStatement) { //GROOVY-4508
+                        Statement stmt = code;
                         code = new BlockStatement();
-                        ((BlockStatement) code).addStatement(temp);
+                        ((BlockStatement) code).addStatement(stmt);
                     }
-                    ConstructorNode ctrNode = new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
-                    ctrNode.setDeclaringClass(node);
-                    constructors.add(ctrNode);
+                    ConstructorNode newCtor = new ConstructorNode(ctor.getModifiers(), params, ctor.getExceptions(), code);
+                    newCtor.setDeclaringClass(node);
+                    constructors.add(newCtor);
                 }
 
                 @Override
@@ -398,8 +404,7 @@ public class JavaStubGenerator {
     private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
         if (!isEnum) printConstructors(out, classNode);
 
-        @SuppressWarnings("unchecked")
-        List<MethodNode> methods = (List) propertyMethods.clone();
+        List<MethodNode> methods = new ArrayList<>(propertyMethods);
         methods.addAll(classNode.getMethods());
         for (MethodNode method : methods) {
             if (isEnum && method.isSynthetic()) {
@@ -526,16 +531,22 @@ public class JavaStubGenerator {
         out.print(fieldNode.getName());
         if (isInterface || fieldNode.isFinal()) {
             out.print(" = ");
-            Expression valueExpr = fieldNode.getInitialValueExpression();
-            if (valueExpr instanceof ConstantExpression) {
-                valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
+            if (fieldNode.isStatic()) {
+                Expression value = fieldNode.getInitialValueExpression();
+                value = ExpressionUtils.transformInlineConstants(value, type);
+                if (value instanceof ConstantExpression) {
+                    value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
+                                || (isLongCategory(type) && isPrimitiveInt(value.getType()))
+                                || (isFloatingCategory(type) && isBigDecimalType(value.getType())))
+                            && (isPrimitiveBoolean(type) || isStaticConstantInitializerType(type))) {
+                        printValue(out, (ConstantExpression) value);
+                        out.println(';');
+                        return;
+                    }
+                }
             }
-            if (valueExpr instanceof ConstantExpression
-                    && fieldNode.isStatic() && fieldNode.isFinal()
-                    && fieldNode.getType().equals(valueExpr.getType())
-                    && (isStaticConstantInitializerType(valueExpr.getType()) || isPrimitiveBoolean(valueExpr.getType()))) {
-                printValue(out, (ConstantExpression) valueExpr);
-            } else if (isPrimitiveType(type)) {
+            if (isPrimitiveType(type)) {
                 if (isPrimitiveBoolean(type)) {
                     out.print("false");
                 } else {
@@ -825,7 +836,7 @@ public class JavaStubGenerator {
             out.print(ce.getText());
             out.print('L');
         } else {
-            if (!isPrimitiveInt(type) && !isPrimitiveBoolean(type)) {
+            if (!isPrimitiveInt(type) && !isPrimitiveBoolean(type) && !isBigDecimalType(type)) {
                 out.print('(');
                 printType(out, type);
                 out.print(')');
@@ -834,10 +845,10 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printReturn(PrintWriter out, ClassNode retType) {
-        if (!isPrimitiveVoid(retType)) {
+    private void printReturn(final PrintWriter out, final ClassNode type) {
+        if (!isPrimitiveVoid(type)) {
             out.print("return ");
-            printDefaultValue(out, retType);
+            printDefaultValue(out, type);
             out.print(";");
         }
     }
