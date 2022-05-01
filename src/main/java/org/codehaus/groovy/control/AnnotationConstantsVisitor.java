@@ -35,34 +35,36 @@ import java.math.BigDecimal;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 
 /**
- * Visitor to resolve constants in annotation definitions.
+ * Resolves constants in annotation definitions.
  */
 public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
-    private SourceUnit source;
-    private boolean inAnnotationDef;
 
-    public void visitClass(ClassNode node, SourceUnit source) {
-        this.source = source;
-        this.inAnnotationDef = node.isAnnotationDefinition();
-        super.visitClass(node);
-        this.inAnnotationDef = false;
+    private boolean annotationDef;
+    private SourceUnit sourceUnit;
+
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return sourceUnit;
+    }
+
+    public void visitClass(final ClassNode classNode, final SourceUnit sourceUnit) {
+        this.sourceUnit = sourceUnit;
+        this.annotationDef = classNode.isAnnotationDefinition();
+        super.visitClass(classNode);
+        this.annotationDef = false;
     }
 
     @Override
-    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        if (!inAnnotationDef) return;
-        visitStatement(node.getFirstStatement(), node.getReturnType());
-    }
-
-    private static void visitStatement(Statement statement, ClassNode returnType) {
-        if (statement instanceof ReturnStatement) {
-            // normal path
-            ReturnStatement rs = (ReturnStatement) statement;
-            rs.setExpression(transformConstantExpression(rs.getExpression(), returnType));
-        } else if (statement instanceof ExpressionStatement) {
-            // path for JavaStubGenerator
-            ExpressionStatement es = (ExpressionStatement) statement;
-            es.setExpression(transformConstantExpression(es.getExpression(), returnType));
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        if (annotationDef) {
+            Statement statement = node.getFirstStatement();
+            if (statement instanceof ReturnStatement) {
+                ReturnStatement rs = (ReturnStatement) statement;
+                rs.setExpression(transformConstantExpression(rs.getExpression(), node.getReturnType()));
+            } else if (statement instanceof ExpressionStatement) {
+                ExpressionStatement es = (ExpressionStatement) statement;
+                es.setExpression(transformConstantExpression(es.getExpression(), node.getReturnType()));
+            }
         }
     }
 
@@ -125,9 +127,5 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
     private static Expression configure(Expression orig, Expression result) {
         result.setSourcePosition(orig);
         return result;
-    }
-
-    protected SourceUnit getSourceUnit() {
-        return source;
     }
 }

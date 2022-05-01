@@ -82,9 +82,16 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
+import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.isStaticConstantInitializerType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -228,10 +235,10 @@ public class JavaStubGenerator {
                 }
 
                 @Override
-                public void visitProperty(PropertyNode node) {
+                public void visitProperty(PropertyNode pn) {
                     // GROOVY-8233 skip static properties for traits since they don't make the interface
-                    if (!node.isStatic() || !Traits.isTrait(node.getDeclaringClass())) {
-                        super.visitProperty(node);
+                    if (!pn.isStatic() || !Traits.isTrait(pn.getDeclaringClass())) {
+                        super.visitProperty(pn);
                     }
                 }
 
@@ -371,8 +378,7 @@ public class JavaStubGenerator {
     private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
         if (!isEnum) printConstructors(out, classNode);
 
-        @SuppressWarnings("unchecked")
-        List<MethodNode> methods = (List<MethodNode>) propertyMethods.clone();
+        List<MethodNode> methods = new ArrayList<>(propertyMethods);
         methods.addAll(classNode.getMethods());
         for (MethodNode method : methods) {
             if (isEnum && method.isSynthetic()) {
@@ -499,17 +505,23 @@ public class JavaStubGenerator {
         out.print(fieldNode.getName());
         if (isInterface || fieldNode.isFinal()) {
             out.print(" = ");
-            Expression valueExpr = fieldNode.getInitialValueExpression();
-            if (valueExpr instanceof ConstantExpression) {
-                valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
+            if (fieldNode.isStatic()) {
+                Expression value = fieldNode.getInitialValueExpression();
+                value = ExpressionUtils.transformInlineConstants(value, type);
+                if (value instanceof ConstantExpression) {
+                    value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
+                                || (isLongCategory(type) && value.getType().equals(int_TYPE))
+                                || (isFloatingCategory(type) && BigDecimal_TYPE.equals(value.getType())))
+                            && (type.equals(boolean_TYPE) || isStaticConstantInitializerType(type))) {
+                        printValue(out, (ConstantExpression) value);
+                        out.println(';');
+                        return;
+                    }
+                }
             }
-            if (valueExpr instanceof ConstantExpression
-                    && fieldNode.isStatic() && fieldNode.isFinal()
-                    && fieldNode.getType().equals(valueExpr.getType())
-                    && (ClassHelper.isStaticConstantInitializerType(valueExpr.getType()) || valueExpr.getType().equals(ClassHelper.boolean_TYPE))) {
-                printValue(out, (ConstantExpression) valueExpr);
-            } else if (ClassHelper.isPrimitiveType(type)) {
-                if (type.equals(ClassHelper.boolean_TYPE)) {
+            if (isPrimitiveType(type)) {
+                if (type.equals(boolean_TYPE)) {
                     out.print("false");
                 } else {
                     out.print('(');
@@ -799,7 +811,7 @@ public class JavaStubGenerator {
             out.print(ce.getText());
             out.print('L');
         } else {
-            if (type != ClassHelper.int_TYPE && type != ClassHelper.boolean_TYPE) {
+            if (type != int_TYPE && type != boolean_TYPE && !type.equals(BigDecimal_TYPE)) {
                 out.print('(');
                 printType(out, type);
                 out.print(')');
@@ -817,13 +829,13 @@ public class JavaStubGenerator {
     }
 
     private void printDefaultValue(final PrintWriter out, final ClassNode type) {
-        if (type != null && !type.equals(ClassHelper.boolean_TYPE)) {
+        if (type != null && !type.equals(boolean_TYPE)) {
             out.print("(");
             printType(out, type);
             out.print(")");
         }
-        if (type != null && ClassHelper.isPrimitiveType(type)) {
-            if (type.equals(ClassHelper.boolean_TYPE)) {
+        if (type != null && isPrimitiveType(type)) {
+            if (type.equals(boolean_TYPE)) {
                 out.print("false");
             } else {
                 out.print("0");
@@ -845,14 +857,14 @@ public class JavaStubGenerator {
     }
 
     private void printTypeName(PrintWriter out, ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type)) {
-            if (type.equals(ClassHelper.boolean_TYPE)) {
+        if (isPrimitiveType(type)) {
+            if (type.equals(boolean_TYPE)) {
                 out.print("boolean");
             } else if (type.equals(ClassHelper.byte_TYPE)) {
                 out.print("byte");
             } else if (type.equals(ClassHelper.char_TYPE)) {
                 out.print("char");
-            } else if (type.equals(ClassHelper.int_TYPE)) {
+            } else if (type.equals(int_TYPE)) {
                 out.print("int");
             } else if (type.equals(ClassHelper.long_TYPE)) {
                 out.print("long");
