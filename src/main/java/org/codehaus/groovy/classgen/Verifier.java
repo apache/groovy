@@ -1136,7 +1136,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ConstructorCallExpression specialCtorCall = getFirstIfSpecialConstructorCall(firstStatement);
 
         // in case of this(...) let the other constructor initialize
-        if (specialCtorCall != null && (specialCtorCall.isThisCall())) return;
+        if (specialCtorCall != null && specialCtorCall.isThisCall()) return;
 
         boolean isEnum = node.isEnum();
         List<Statement> statements = new ArrayList<>();
@@ -1283,8 +1283,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     expression
             ));
             if (fieldNode.isStatic()) {
-                // GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
-                // initialized first so that code dependent on it does not see their values as empty
+                // GROOVY-3311: pre-defined constants added by compiler for numbers/characters should be
+                // initialized first so that code dependent on them does not see their values as empty
                 Expression initialValueExpression = fieldNode.getInitialValueExpression();
                 Expression transformed = transformInlineConstants(initialValueExpression, fieldNode.getType());
                 if (transformed instanceof ConstantExpression) {
