@@ -695,14 +695,16 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 targetClassName = importName.substring(0, importName.length() - 1) + baseName;
             }
             // need this for correct resolution of static imports
-            if (targetClassName != null){
+            if (targetClassName != null) {
                 GroovyClassDoc doc = null;
-                Optional<Name>  name = new JavaParser().parseName(targetClassName.replace('/','.')).getResult();
-                String staticPart = "";
-                while (doc == null && name.isPresent()) {               
-                    doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name.get().asString().replace('.','/')+staticPart);
-                    staticPart = "."+name.get().getIdentifier()+staticPart;
-                    name = name.get().getQualifier();
+                Optional<Name> maybeName = new JavaParser().parseName(targetClassName.replace('/', '.')).getResult();
+                StringBuilder staticPart = new StringBuilder();
+                while (doc == null && maybeName.isPresent()) {
+                    Name name = maybeName.get();
+                    doc = ((SimpleGroovyRootDoc) rootDoc).classNamedExact(name.asString().replace('.', '/') + staticPart.toString());
+                    staticPart.insert(0, name.getIdentifier());
+                    staticPart.insert(0, ".");
+                    maybeName = name.getQualifier();
                 }
                 if (doc != null) return doc;
             }
