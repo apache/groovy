@@ -123,31 +123,36 @@ public abstract class Selector {
     public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CALL_TYPES callType = CALL_TYPES_VALUES[callID];
         switch (callType) {
-            case INIT: return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case METHOD: return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case GET: 
+            case INIT:
+                return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case METHOD:
+                return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case GET:
                 return new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case SET:
                 throw new GroovyBugError("your call tried to do a property set, which is not supported.");
-            case CAST:  return new CastSelector(callSite, arguments);
-            default: throw new GroovyBugError("unexpected call type");
+            case CAST:
+                return new CastSelector(callSite, arguments);
+            default:
+                throw new GroovyBugError("unexpected call type");
         }
     }
+
     abstract void setCallSiteTarget();
 
     /**
-     * Helper method to transform the given arguments, consisting of the receiver 
+     * Helper method to transform the given arguments, consisting of the receiver
      * and the actual arguments in an Object[], into a new Object[] consisting
-     * of the receiver and the arguments directly. Before the size of args was 
+     * of the receiver and the arguments directly. Before the size of args was
      * always 2, the returned Object[] will have a size of 1+n, where n is the
      * number arguments.
      */
     private static Object[] spread(Object[] args, boolean spreadCall) {
         if (!spreadCall) return args;
         Object[] normalArguments = (Object[]) args[1];
-        Object[] ret = new Object[normalArguments.length+1];
+        Object[] ret = new Object[normalArguments.length + 1];
         ret[0] = args[0];
-        System.arraycopy(normalArguments, 0, ret, 1, ret.length-1);
+        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
         return ret;
     }
 
@@ -155,16 +160,15 @@ public abstract class Selector {
         private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
-            super(callSite, Selector.class, "", CALL_TYPES.CAST, false, false, false, arguments);
+            super(callSite, Selector.class, "", CALL_TYPES.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, arguments);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
         }
 
         @Override
         public void setCallSiteTarget() {
-            // targetTypes String, Enum and Class are handled 
-            // by the compiler already
-            // Boolean / boolean
+            // target types String, Enum and Class are handled by the compiler
+
             handleBoolean();
             handleNullWithoutBoolean();
 
@@ -187,40 +191,40 @@ public abstract class Selector {
         }
 
         private void castAndSetGuards() {
-            handle =  MethodHandles.explicitCastArguments(handle,targetType);
+            handle = MethodHandles.explicitCastArguments(handle, targetType);
             setGuards(args[0]);
             doCallSiteTargetSet();
         }
 
         private void handleNullWithoutBoolean() {
-            if (handle!=null || args[0]!=null) return;
+            if (handle != null || args[0] != null) return;
 
             if (staticTargetType.isPrimitive()) {
-                handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION,1,staticTargetType);
+                handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
                 // need to call here here because we used the static target type
                 // it won't be done otherwise because handle.type() == callSite.type()
-                castAndSetGuards(); 
+                castAndSetGuards();
             } else {
-               handle = MethodHandles.identity(staticSourceType);
+                handle = MethodHandles.identity(staticSourceType);
             }
         }
 
         private void handleInstanceCase() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (staticTargetType.isAssignableFrom(args[0].getClass())) {
                 handle = MethodHandles.identity(staticSourceType);
             }
         }
 
-        private static boolean isAbstractClassOf(Class toTest, Class givenOnCallSite) {
+        private static boolean isAbstractClassOf(Class<?> toTest, Class<?> givenOnCallSite) {
             if (!toTest.isAssignableFrom(givenOnCallSite)) return false;
             if (givenOnCallSite.isInterface()) return true;
             return Modifier.isAbstract(givenOnCallSite.getModifiers());
         }
 
         private void handleCollections() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (!(args[0] instanceof Collection)) return;
             if (isAbstractClassOf(HashSet.class, staticTargetType)) {
@@ -231,44 +235,41 @@ public abstract class Selector {
         }
 
         private void handleSAM() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (!(args[0] instanceof Closure)) return;
             Method m = CachedSAMClass.getSAMMethod(staticTargetType);
-            if (m==null) return;
+            if (m == null) return;
             //TODO: optimize: add guard based on type Closure
             handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType);
         }
 
         private void castToTypeFallBack() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             // generic fallback to castToType
             handle = MethodHandles.insertArguments(DTT_CAST_TO_TYPE, 1, staticTargetType);
         }
 
         private void handleBoolean() {
-            if (handle!=null) return;
+            if (handle != null) return;
+            boolean primitive = (staticTargetType == boolean.class);
+            if (!primitive && staticTargetType != Boolean.class) return;
+            // boolean->boolean, Boolean->boolean, boolean->Boolean are handled by the compiler
+            // which leaves (T)Z and (T)Boolean, where T is the static type but runtime type of T might be Boolean
 
-            // boolean->boolean, Boolean->boolean, boolean->Boolean
-            // is handled by compiler
-            // that leaves (T)Z and (T)Boolean, where T is the static type
-            // but runtime type of T might be Boolean
-
-            boolean primitive = staticTargetType==boolean.class;
-            if (!primitive && staticTargetType!=Boolean.class) return;
             if (args[0]==null) {
                 if (primitive) {
-                    handle = MethodHandles.constant(boolean.class, false);
+                    handle = MethodHandles.constant(boolean.class, Boolean.FALSE);
                     handle = MethodHandles.dropArguments(handle, 0, staticSourceType);
                 } else {
                     handle = BOOLEAN_IDENTITY;
                 }
             } else if (args[0] instanceof Boolean) {
-                // give value through or unbox
+                // passthrough or unboxing
                 handle = BOOLEAN_IDENTITY;
-            } else { 
-                //call asBoolean
+            } else {
+                // call asBoolean
                 name = "asBoolean";
                 super.setCallSiteTarget();
             }
@@ -331,7 +332,7 @@ public abstract class Selector {
                     if (Modifier.isStatic(f.getModifiers())) {
                         // normally we would do the following
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
-                        // but because there is a bug in invokedynamic in all jdk7 versions 
+                        // but because there is a bug in invokedynamic in all jdk7 versions
                         // maybe use Unsafe.ensureClassInitialized
                         handle = META_PROPERTY_GETTER.bindTo(res);
                     }
@@ -340,7 +341,7 @@ public abstract class Selector {
                 }
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(res);
-            } 
+            }
         }
 
         private boolean isMarkedInternal(Method reflectionMethod) {
@@ -362,8 +363,8 @@ public abstract class Selector {
         }
 
         /**
-         * The MOP requires all get property operations to go through 
-         * {@link GroovyObject#getProperty(String)}. We do this in case 
+         * The MOP requires all get property operations to go through
+         * {@link GroovyObject#getProperty(String)}. We do this in case
          * no property was found before.
          */
         @Override
@@ -439,7 +440,7 @@ public abstract class Selector {
                 super.setHandleForMetaMethod();
             }
             if (beanConstructor) {
-                // we have handle that takes no arguments to create the bean, 
+                // we have handle that takes no arguments to create the bean,
                 // we have to use its return value to call #setBeanProperties with it
                 // and the meta class.
 
@@ -459,7 +460,7 @@ public abstract class Selector {
         }
 
         /**
-         * In case of a bean constructor we don't do any varags or implicit null argument 
+         * In case of a bean constructor we don't do any varags or implicit null argument
          * transformations. Otherwise we do the same as for {@link MethodSelector#correctParameterLength()}
          */
         @Override
@@ -541,7 +542,7 @@ public abstract class Selector {
         /**
          * Sets the null constant for safe navigation.
          * In case of foo?.bar() and foo being null, we don't call the method,
-         * instead we simply return null. This produces a handle, which will 
+         * instead we simply return null. This produces a handle, which will
          * return the constant.
          */
         public boolean setNullForSafeNavigation() {
@@ -598,7 +599,7 @@ public abstract class Selector {
         /**
          * Creates a MethodHandle using a before selected MetaMethod.
          * If the MetaMethod has reflective information available, then
-         * we will use that information to create the target MethodHandle. 
+         * we will use that information to create the target MethodHandle.
          * If that is not the case we will produce a handle, which will use the
          * MetaMethod itself for invocation.
          */
@@ -645,7 +646,7 @@ public abstract class Selector {
                         // or it might be an object (static method invocation on instance)
                         // Object.class handles both cases at once
                         handle = MethodHandles.dropArguments(handle, 0, Object.class);
-                    } 
+                    }
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
@@ -738,8 +739,8 @@ public abstract class Selector {
 
         /**
          * Handles cases in which we have to correct the length of arguments
-         * using the parameters. This might be needed for vargs and for one 
-         * parameter calls without arguments (null is used then).  
+         * using the parameters. This might be needed for vargs and for one
+         * parameter calls without arguments (null is used then).
          */
         public void correctParameterLength() {
             if (handle==null) return;
@@ -766,14 +767,14 @@ public abstract class Selector {
                 // so we really need to rewrap
                 handle = handle.asCollector(lastParam, 1);
             } else if (params.length > args.length) {
-                // we depend on the method selection having done a good 
+                // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
                 handle = MethodHandles.insertArguments(handle, params.length-1, Array.newInstance(lastParam.getComponentType(), 0));
                 if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
             } else { //params.length < args.length
-                // we depend on the method selection having done a good 
+                // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // all trailing arguments belong into the vargs array
                 handle = handle.asCollector(
@@ -797,7 +798,7 @@ public abstract class Selector {
                 throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
             }
             for (int i=0; i<args.length; i++) {
-                if (parameters[i]==Object.class) continue; 
+                if (parameters[i]==Object.class) continue;
                 Object arg = unwrapIfWrapped(args[i]);
                 // we have to handle here different cases in which we do no
                 // transformations. We depend on our method selection to have
@@ -806,8 +807,8 @@ public abstract class Selector {
                 // the argument is an instance of the parameter type. We also
                 // exclude boxing, since the MethodHandles will do that part
                 // already for us. Another case is the conversion of a primitive
-                // to another primitive or of the wrappers, or a combination of 
-                // these. This is also handled already. What is left is the 
+                // to another primitive or of the wrappers, or a combination of
+                // these. This is also handled already. What is left is the
                 // GString conversion and the number conversions.
 
                 if (arg==null) continue;
@@ -821,7 +822,7 @@ public abstract class Selector {
                 if (wrappedPara==TypeHelper.getWrapperClass(got)) continue;
 
                 // equal in terms of an assignment in Java. That means according to Java widening rules, or
-                // a subclass, interface, superclass relation, this case then handles also 
+                // a subclass, interface, superclass relation, this case then handles also
                 // primitive to primitive conversion. Those case are also solved by explicitCastArguments.
                 if (parameters[i].isAssignableFrom(got)) continue;
 
@@ -849,15 +850,15 @@ public abstract class Selector {
         }
 
         /**
-         * Adds the standard exception handler.  
+         * Adds the standard exception handler.
          */
         public void addExceptionHandler() {
             //TODO: if we would know exactly which paths require the exceptions
-            //      and which paths not, we can sometimes save this guard 
+            //      and which paths not, we can sometimes save this guard
             if (handle==null || !catchException) return;
             Class returnType = handle.type().returnType();
             if (returnType!=Object.class) {
-                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class); 
+                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
                 handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
             } else {
                 handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
@@ -878,7 +879,7 @@ public abstract class Selector {
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
                 MetaClass mc = (MetaClass) go.getMetaClass();
-                MethodHandle test = SAME_MC.bindTo(mc); 
+                MethodHandle test = SAME_MC.bindTo(mc);
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
@@ -919,7 +920,7 @@ public abstract class Selector {
                 if (arg==null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                     if (LOG_ENABLED) LOG.info("added null argument check at pos "+i);
-                } else { 
+                } else {
                     Class argClass = arg.getClass();
                     if (pt[i].isPrimitive()) continue;
                     //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
@@ -967,7 +968,7 @@ public abstract class Selector {
         public boolean setInterceptor() {
             if (!(this.args[0] instanceof GroovyInterceptable)) return false;
             handle = MethodHandles.insertArguments(INTERCEPTABLE_INVOKER, 1, this.name);
-            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1); 
+            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
             handle = handle.asType(targetType);
             return true;
         }
