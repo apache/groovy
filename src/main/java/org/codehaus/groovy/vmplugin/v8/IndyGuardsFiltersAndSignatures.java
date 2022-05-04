@@ -68,7 +68,7 @@ public class IndyGuardsFiltersAndSignatures {
             META_PROPERTY_GETTER,
             SLOW_META_CLASS_FIND,
             MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
-            INTERCEPTABLE_INVOKER, INVOKE_METHOD,
+            INTERCEPTABLE_INVOKER,
             BOOLEAN_IDENTITY, CLASS_FOR_NAME,
             DTT_CAST_TO_TYPE, SAM_CONVERSION,
             HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR,
@@ -94,7 +94,6 @@ public class IndyGuardsFiltersAndSignatures {
             MOP_INVOKE_CONSTRUCTOR = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
             MOP_INVOKE_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", INVOKER);
             INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
-            INVOKE_METHOD = LOOKUP.findStatic(InvokerHelper.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object.class));
 
             BOOLEAN_IDENTITY = MethodHandles.identity(Boolean.class);
             CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));

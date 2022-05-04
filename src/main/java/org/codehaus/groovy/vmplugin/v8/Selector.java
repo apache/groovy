@@ -77,7 +77,6 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.GRO
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HASHSET_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HAS_CATEGORY_IN_CURRENT_THREAD_GUARD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INTERCEPTABLE_INVOKER;
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INVOKE_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.IS_NULL;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_CLASS_INVOKE_STATIC_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_METHOD_INVOKER;
@@ -269,10 +268,11 @@ public abstract class Selector {
                 thenZero = MethodHandles.identity(staticSourceType).asType(MethodType.methodType(Boolean.class, staticSourceType));
             }
 
-            MethodHandle elseCallAsBoolean = MethodHandles.insertArguments(INVOKE_METHOD, 1, "asBoolean", null).asType(targetType);
+            name = "asBoolean";
+            super.setCallSiteTarget();
+            MethodHandle elseCallAsBoolean = handle;
 
             handle = MethodHandles.guardWithTest(ifNull, thenZero, elseCallAsBoolean);
-            callSite.setTarget(handle); // handle is re-useable for any argument
         }
     }
 

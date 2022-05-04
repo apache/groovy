@@ -23,8 +23,9 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy10535 {
+
     @Test
-    void testBooleanTypecast_invokeDynamicOptimization() {
+    void testBooleanTypecast_invokeDynamicOptimization1() {
         assertScript '''
             @groovy.transform.CompileStatic
             class C {
@@ -35,6 +36,47 @@ final class Groovy10535 {
                     }
                     strings = ['x']
                     assert test(strings) !== null
+                }
+                static test(Collection<String> values) {
+                    if (values) return 'thing'
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testBooleanTypecast_invokeDynamicOptimization2() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static main(args) {
+                    Collection<String> strings = ['x']
+                    for (int i = 0; i <= 200_000; i += 1) {
+                        assert test(strings) !== null
+                    }
+                    strings = null
+                    assert test(strings) === null
+                }
+                static test(Collection<String> values) {
+                    if (values) return 'thing'
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testBooleanTypecast_invokeDynamicOptimization3() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static main(args) {
+                    Collection<String> strings
+                    for (int i = 0; i <= 200_000; i += 1) {
+                        strings = [i as String]
+                        assert test(strings) !== null
+                    }
+                    strings = null
+                    assert test(strings) === null
                 }
                 static test(Collection<String> values) {
                     if (values) return 'thing'
