@@ -68,7 +68,6 @@ import java.util.HashSet;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BOOLEAN_IDENTITY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.CLASS_FOR_NAME;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.DTT_CAST_TO_TYPE;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.EQUALS;
@@ -162,16 +161,15 @@ public abstract class Selector {
         private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
-            super(callSite, Selector.class, "", CallType.CAST, false, false, false, arguments);
+            super(callSite, Selector.class, "", CallType.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, arguments);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
         }
 
         @Override
         public void setCallSiteTarget() {
-            // targetTypes String, Enum and Class are handled 
-            // by the compiler already
-            // Boolean / boolean
+            // target types String, Enum and Class are handled by the compiler
+
             handleBoolean();
             handleNullWithoutBoolean();
 
@@ -256,29 +254,25 @@ public abstract class Selector {
 
         private void handleBoolean() {
             if (handle != null) return;
-
-            // boolean->boolean, Boolean->boolean, boolean->Boolean
-            // is handled by compiler
-            // that leaves (T)Z and (T)Boolean, where T is the static type
-            // but runtime type of T might be Boolean
-
-            boolean primitive = staticTargetType == boolean.class;
+            boolean primitive = (staticTargetType == boolean.class);
             if (!primitive && staticTargetType != Boolean.class) return;
-            if (args[0] == null) {
-                if (primitive) {
-                    handle = MethodHandles.constant(boolean.class, false);
-                    handle = MethodHandles.dropArguments(handle, 0, staticSourceType);
-                } else {
-                    handle = BOOLEAN_IDENTITY;
-                }
-            } else if (args[0] instanceof Boolean) {
-                // give value through or unbox
-                handle = BOOLEAN_IDENTITY;
-            } else {
-                //call asBoolean
-                name = "asBoolean";
-                super.setCallSiteTarget();
+            // boolean->boolean, Boolean->boolean, boolean->Boolean are handled by the compiler
+            // which leaves (T)Z and (T)Boolean, where T is the static type but runtime type of T might be Boolean
+
+            MethodHandle ifNull = IS_NULL.asType(MethodType.methodType(boolean.class, staticSourceType));
+
+            MethodHandle thenZero;
+            if (primitive) { // false
+                thenZero = MethodHandles.dropArguments(MethodHandles.constant(boolean.class, Boolean.FALSE), 0, staticSourceType);
+            } else { // (Boolean)null
+                thenZero = MethodHandles.identity(staticSourceType).asType(MethodType.methodType(Boolean.class, staticSourceType));
             }
+
+            name = "asBoolean";
+            super.setCallSiteTarget();
+            MethodHandle elseCallAsBoolean = handle;
+
+            handle = MethodHandles.guardWithTest(ifNull, thenZero, elseCallAsBoolean);
         }
     }
 
@@ -338,7 +332,7 @@ public abstract class Selector {
                     if (Modifier.isStatic(f.getModifiers())) {
                         // normally we would do the following
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
-                        // but because there is a bug in invokedynamic in all jdk7 versions 
+                        // but because there is a bug in invokedynamic in all jdk7 versions
                         // maybe use Unsafe.ensureClassInitialized
                         handle = META_PROPERTY_GETTER.bindTo(res);
                     }
@@ -403,8 +397,8 @@ public abstract class Selector {
          */
         @Override
         public MetaClass getMetaClass() {
-            Object receiver = args[0];
-            mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class<?>) receiver);
+            mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class<?>) args[0]);
+            if (LOG_ENABLED) LOG.info("meta class is " + mc);
             return mc;
         }
 
@@ -447,7 +441,7 @@ public abstract class Selector {
                 super.setHandleForMetaMethod();
             }
             if (beanConstructor) {
-                // we have handle that takes no arguments to create the bean, 
+                // we have handle that takes no arguments to create the bean,
                 // we have to use its return value to call #setBeanProperties with it
                 // and the meta class.
 
@@ -508,8 +502,8 @@ public abstract class Selector {
      */
     private static class MethodSelector extends Selector {
         private static final Object[] SINGLE_NULL_ARRAY = {null};
-        protected MetaClass mc;
         private boolean isCategoryMethod;
+        protected MetaClass mc;
 
         public MethodSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
@@ -579,7 +573,7 @@ public abstract class Selector {
                 this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
             mc.initialize();
-
+            if (LOG_ENABLED) LOG.info("meta class is " + mc);
             return mc;
         }
 
@@ -648,7 +642,7 @@ public abstract class Selector {
                     handle = correctClassForNameAndUnReflectOtherwise(m);
                     if (LOG_ENABLED) LOG.info("successfully unreflected method");
                     if (isStaticCategoryTypeMethod) {
-                        handle = MethodHandles.insertArguments(handle, 0, new Object[]{null});
+                        handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                         handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
                     } else if (!isCategoryTypeMethod && isStatic(m)) {
                         // we drop the receiver, which might be a Class (invocation on Class)
@@ -717,7 +711,7 @@ public abstract class Selector {
                 if (receiver instanceof GroovyObject) {
                     // if the meta class call fails we may still want to fall back to call
                     // GroovyObject#invokeMethod if the receiver is a GroovyObject
-                    if (LOG_ENABLED) LOG.info("add MissingMethod handler for GrooObject#invokeMethod fallback path");
+                    if (LOG_ENABLED) LOG.info("add MissingMethod handler for GroovyObject#invokeMethod fallback path");
                     handle = MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
                 }
             }
@@ -775,14 +769,14 @@ public abstract class Selector {
                 // so we really need to rewrap
                 handle = handle.asCollector(lastParam, 1);
             } else if (params.length > args.length) {
-                // we depend on the method selection having done a good 
+                // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
                 handle = MethodHandles.insertArguments(handle, params.length - 1, Array.newInstance(lastParam.getComponentType(), 0));
                 if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
             } else { //params.length < args.length
-                // we depend on the method selection having done a good 
+                // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // all trailing arguments belong into the vargs array
                 handle = handle.asCollector(
@@ -815,8 +809,8 @@ public abstract class Selector {
                 // the argument is an instance of the parameter type. We also
                 // exclude boxing, since the MethodHandles will do that part
                 // already for us. Another case is the conversion of a primitive
-                // to another primitive or of the wrappers, or a combination of 
-                // these. This is also handled already. What is left is the 
+                // to another primitive or of the wrappers, or a combination of
+                // these. This is also handled already. What is left is the
                 // GString conversion and the number conversions.
 
                 if (arg == null) continue;
@@ -830,7 +824,7 @@ public abstract class Selector {
                 if (wrappedPara == TypeHelper.getWrapperClass(got)) continue;
 
                 // equal in terms of an assignment in Java. That means according to Java widening rules, or
-                // a subclass, interface, superclass relation, this case then handles also 
+                // a subclass, interface, superclass relation, this case then handles also
                 // primitive to primitive conversion. Those case are also solved by explicitCastArguments.
                 if (parameters[i].isAssignableFrom(got)) continue;
 
@@ -863,7 +857,7 @@ public abstract class Selector {
          */
         public void addExceptionHandler() {
             //TODO: if we would know exactly which paths require the exceptions
-            //      and which paths not, we can sometimes save this guard 
+            //      and which paths not, we can sometimes save this guard
             if (handle == null || !catchException) return;
             Class<?> returnType = handle.type().returnType();
             if (returnType != Object.class) {
@@ -973,8 +967,6 @@ public abstract class Selector {
         public void setSelectionBase() {
             if (thisCall) {
                 selectionBase = sender;
-            } else if (args[0] == null) {
-                selectionBase = NullObject.class;
             } else {
                 selectionBase = mc.getTheClass();
             }
@@ -985,8 +977,8 @@ public abstract class Selector {
          * Sets a handle to call {@link GroovyInterceptable#invokeMethod(String, Object)}
          */
         public boolean setInterceptor() {
-            if (!(this.args[0] instanceof GroovyInterceptable)) return false;
-            handle = MethodHandles.insertArguments(INTERCEPTABLE_INVOKER, 1, this.name);
+            if (!(args[0] instanceof GroovyInterceptable)) return false;
+            handle = MethodHandles.insertArguments(INTERCEPTABLE_INVOKER, 1, name);
             handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
             handle = handle.asType(targetType);
             return true;
@@ -1004,7 +996,6 @@ public abstract class Selector {
         public void setCallSiteTarget() {
             if (!setNullForSafeNavigation() && !setInterceptor()) {
                 getMetaClass();
-                if (LOG_ENABLED) LOG.info("meta class is " + mc);
                 setSelectionBase();
                 MetaClassImpl mci = getMetaClassImpl(mc, callType != CallType.GET);
                 chooseMeta(mci);
