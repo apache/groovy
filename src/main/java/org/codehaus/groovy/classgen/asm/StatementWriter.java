@@ -53,7 +53,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ATHROW;
@@ -572,34 +572,38 @@ public class StatementWriter {
     public void writeReturn(final ReturnStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitReturnStatement");
         writeStatementLabel(statement);
+        ClassNode rType = controller.getReturnType();
+        CompileStack cs = controller.getCompileStack();
+        OperandStack os = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-        ClassNode returnType = controller.getReturnType();
 
-        if (isPrimitiveVoid(returnType)) {
+        if (ClassHelper.isPrimitiveVoid(rType)) {
             if (!statement.isReturningNullOrVoid()) { // TODO: move to Verifier
                 controller.getAcg().throwException("Cannot use return statement with an expression on a method that returns void");
             }
-            controller.getCompileStack().applyBlockRecorder();
+            cs.applyBlockRecorder();
             mv.visitInsn(RETURN);
-            return;
+        } else {
+            Expression expression = statement.getExpression();
+            expression.visit(controller.getAcg());
+
+            if (!isNullConstant(expression) || ClassHelper.isPrimitiveType(rType)) {
+                os.doGroovyCast(rType);
+            } else { // GROOVY-10617
+                os.replace(rType);
+            }
+
+            if (cs.hasBlockRecorder()) {
+                ClassNode top = os.getTopOperand();
+                int returnVal = cs.defineTemporaryVariable("returnValue", rType, true);
+                cs.applyBlockRecorder();
+                os.load(top, returnVal);
+                cs.removeVar(returnVal);
+            }
+
+            BytecodeHelper.doReturn(mv, rType);
+            os.remove(1);
         }
-
-        Expression expression = statement.getExpression();
-        expression.visit(controller.getAcg());
-
-        operandStack.doGroovyCast(returnType);
-
-        if (controller.getCompileStack().hasBlockRecorder()) {
-            ClassNode type = operandStack.getTopOperand();
-            int returnValueIdx = controller.getCompileStack().defineTemporaryVariable("returnValue", returnType, true);
-            controller.getCompileStack().applyBlockRecorder();
-            operandStack.load(type, returnValueIdx);
-            controller.getCompileStack().removeVar(returnValueIdx);
-        }
-
-        BytecodeHelper.doReturn(mv, returnType);
-        operandStack.remove(1);
     }
 
     public void writeExpressionStatement(final ExpressionStatement statement) {

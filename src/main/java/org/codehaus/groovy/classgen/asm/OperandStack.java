@@ -487,21 +487,20 @@ public class OperandStack {
     public void pushConstant(final ConstantExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         Object value = expression.getValue();
-        ClassNode origType = expression.getType().redirect();
-        ClassNode type = ClassHelper.getUnwrapper(origType);
-        boolean boxing = !origType.equals(type);
-        boolean asPrimitive = boxing || ClassHelper.isPrimitiveType(type);
+        ClassNode exprType = expression.getType();
+        ClassNode type = ClassHelper.getUnwrapper(exprType);
+        boolean boxing = !exprType.equals(type);
+        boolean primitive = boxing || ClassHelper.isPrimitiveType(type);
 
         if (value == null) {
             mv.visitInsn(ACONST_NULL);
-        } else if (boxing && value instanceof Boolean) {
-            // special path for boxed boolean
-            Boolean bool = (Boolean) value;
-            String text = bool ? "TRUE" : "FALSE";
+            type = ClassHelper.OBJECT_TYPE;
+        } else if (boxing && value instanceof Boolean) { // load static value
+            String text = ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
             mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", text, "Ljava/lang/Boolean;");
             boxing = false;
-            type = origType;
-        } else if (asPrimitive) {
+            type = exprType;
+        } else if (primitive) {
             pushPrimitiveConstant(mv, value, type);
         } else if (value instanceof BigDecimal) {
             newInstance(mv, value);

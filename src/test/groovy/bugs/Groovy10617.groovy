@@ -20,18 +20,14 @@ package groovy.bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
+final class Groovy10617 extends AbstractBytecodeTestCase {
 
-final class Groovy10565 extends AbstractBytecodeTestCase {
-
-    void testPermittedSubclassName() {
-        if (!isAtLeastJdk('17.0')) return
-
+    void testReturnInsertion() {
         def bytecode = compile '''
-            package example
-            sealed class Foo permits Bar { }
-            class Bar extends Foo { }
+            String m() {
+                // return null (implicit)
+            }
         '''
-        assert bytecode.hasSequence(['PERMITTEDSUBCLASS example/Bar'])
+        assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(Ljava/lang/Object;)Ljava/lang/String;'])
     }
 }

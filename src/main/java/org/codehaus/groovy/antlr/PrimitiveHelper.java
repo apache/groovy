@@ -32,34 +32,37 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 
 public class PrimitiveHelper {
+
     private PrimitiveHelper() {
     }
 
-    public static Expression getDefaultValueForPrimitive(ClassNode type) {
+    public static Expression getDefaultValueForPrimitive(final ClassNode type) {
         if (isPrimitiveInt(type)) {
-            return new ConstantExpression(0);
+            return new ConstantExpression(0, true);
         }
         if (isPrimitiveLong(type)) {
-            return new ConstantExpression(0L);
+            return new ConstantExpression(0L, true);
         }
         if (isPrimitiveDouble(type)) {
-            return new ConstantExpression(0.0);
-        }
-        if (isPrimitiveFloat(type)) {
-            return new ConstantExpression(0.0F);
+            return new ConstantExpression(0.0, true);
         }
         if (isPrimitiveBoolean(type)) {
-            return ConstantExpression.FALSE;
+            return new ConstantExpression(Boolean.FALSE, true);
         }
-        if (isPrimitiveShort(type)) {
-            return new ConstantExpression((short) 0);
-        }
+
         if (isPrimitiveByte(type)) {
-            return new ConstantExpression((byte) 0);
+            return new ConstantExpression((byte) 0, true);
         }
         if (isPrimitiveChar(type)) {
-            return new ConstantExpression((char) 0);
+            return new ConstantExpression((char) 0, true);
         }
+        if (isPrimitiveFloat(type)) {
+            return new ConstantExpression((float) 0, true);
+        }
+        if (isPrimitiveShort(type)) {
+            return new ConstantExpression((short) 0, true);
+        }
+
         return null;
     }
 }

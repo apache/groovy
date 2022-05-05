@@ -18,18 +18,29 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.Test
 
-class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
-    void testTupleConstructor1() {
-        assertScript '''
-            @groovy.transform.TupleConstructor
+import static groovy.test.GroovyAssert.assertScript
+
+final class TupleConstructorStaticCompilationTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            normal 'groovy.transform.TupleConstructor'
+            normal 'groovy.transform.CompileStatic'
+        }
+    }
+
+    @Test
+    void testTupleConstructor() {
+        assertScript shell, '''
+            @TupleConstructor(defaults=false)
             class Person {
                 String firstName
                 String lastName
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             Person m() {
                 new Person('Cedric','Champeau')
             }
@@ -39,16 +50,17 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
         '''
     }
 
-    void testTupleConstructor1WithMissingArgument() {
-        assertScript '''
-            @groovy.transform.TupleConstructor
+    @Test
+    void testTupleConstructorWithMissingArgument() {
+        assertScript shell, '''
+            @TupleConstructor
             class Person {
                 String firstName
                 String lastName
                 Integer age
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             Person m() {
                 new Person('Cedric','Champeau')
             }
@@ -59,9 +71,10 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testTupleConstructorWithMissingArgumentOfSameTypeAsPrevious() {
-        assertScript '''
-            @groovy.transform.TupleConstructor
+        assertScript shell, '''
+            @TupleConstructor
             class Person {
                 String firstName
                 String lastName
@@ -69,7 +82,7 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
                 Integer priority
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             Person m() {
                 new Person('Cedric','Champeau',32)
             }
@@ -81,9 +94,10 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
         '''
     }
 
-    void testConstructorWithDefaultArgsAndPossibleMessup() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+    @Test
+    void testDeclaredConstructorWithDefaultArgumentInTheFirstPosition() {
+        assertScript shell, '''
+            @CompileStatic
             class Foo {
                 String val
                 Foo(String arg1='foo', String arg2) {
