@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -54,16 +53,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ATHROW;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.GOTO;
-import static org.objectweb.asm.Opcodes.IFEQ;
-import static org.objectweb.asm.Opcodes.MONITORENTER;
-import static org.objectweb.asm.Opcodes.MONITOREXIT;
-import static org.objectweb.asm.Opcodes.NOP;
-import static org.objectweb.asm.Opcodes.RETURN;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class StatementWriter {
 
@@ -111,14 +102,13 @@ public class StatementWriter {
         writeStatementLabel(statement);
 
         CompileStack compileStack = controller.getCompileStack();
-        OperandStack operandStack = controller.getOperandStack();
-
         compileStack.pushLoop(statement.getVariableScope(), statement.getStatementLabels());
 
         // then get the iterator and generate the loop control
-        MethodCallExpression iterator = new MethodCallExpression(statement.getCollectionExpression(), "iterator", new ArgumentListExpression());
+        Expression iterator = callX(statement.getCollectionExpression(), "iterator");
+        ((MethodCallExpression) iterator).setImplicitThis(false);
+        iterator = castX(ClassHelper.Iterator_TYPE, iterator);
         iterator.visit(controller.getAcg());
-        operandStack.doGroovyCast(ClassHelper.Iterator_TYPE);
 
         writeForInLoopControlAndBlock(statement);
         compileStack.pop();

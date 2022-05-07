@@ -84,7 +84,8 @@ public class Token extends CSTNode {
      */
     @Override
     public CSTNode setMeaning(final int meaning) {
-        this.meaning = meaning;
+        if (this != EOF && this != NULL)
+            this.meaning = meaning;
         return this;
     }
 
@@ -153,7 +154,7 @@ public class Token extends CSTNode {
      * will do it.
      */
     public void setText(String text) {
-        this.text = text;
+        if (this != EOF && this != NULL) this.text = text;
     }
 
     /**
