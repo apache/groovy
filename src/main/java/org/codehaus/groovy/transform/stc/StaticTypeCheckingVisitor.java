@@ -2272,7 +2272,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression arguments = call.getArguments();
             ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
 
-            checkForbiddenSpreadArgument(argumentList);
             visitMethodCallArguments(receiver, argumentList, false, null);
             final ClassNode[] argumentTypes = getArgumentTypes(argumentList);
 
@@ -2285,23 +2284,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ctor = findMethodOrFail(call, receiver, "<init>", argumentTypes);
                 if (ctor != null) {
                     Parameter[] parameters = ctor.getParameters();
-                    if (looksLikeNamedArgConstructor(receiver, argumentTypes)
-                            && parameters.length == argumentTypes.length - 1) {
-                        ctor = typeCheckMapConstructor(call, receiver, arguments);
-                    } else {
-                        if (receiver.getGenericsTypes() != null) { // GROOVY-8909, GROOVY-9734, GROOVY-9844, GROOVY-9915, GROOVY-10482, et al.
-                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, ctor, argumentList);
-                            parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
-                        }
-                        resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
-                        typeCheckMethodsWithGenericsOrFail(receiver, argumentTypes, ctor, call);
-                        visitMethodCallArguments(receiver, argumentList, true, ctor);
+                    if (receiver.getGenericsTypes() != null) { // GROOVY-8909, GROOVY-9734, GROOVY-9844, GROOVY-9915, GROOVY-10482, et al.
+                        Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, ctor, argumentList);
+                        parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                     }
+                    resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
+                    typeCheckMethodsWithGenericsOrFail(receiver, argumentTypes, ctor, call);
+                    visitMethodCallArguments(receiver, argumentList, true, ctor);
+                    checkForbiddenSpreadArgument(argumentList, parameters);
+                } else {
+                    checkForbiddenSpreadArgument(argumentList);
                 }
             }
-            if (ctor != null) {
-                storeTargetMethod(call, ctor);
-            }
+            if (ctor != null) storeTargetMethod(call, ctor);
         }
 
         // GROOVY-9327: check for AIC in STC method with non-STC enclosing class
@@ -2676,15 +2671,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
 
-        Expression callArguments = call.getArguments();
-
-        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
-
-        checkForbiddenSpreadArgument(argumentList);
-
         ClassNode receiver = call.getOwnerType();
-        visitMethodCallArguments(receiver, argumentList, false, null);
+        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
 
+        visitMethodCallArguments(receiver, argumentList, false, null);
         ClassNode[] args = getArgumentTypes(argumentList);
 
         try {
@@ -2709,10 +2699,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     break;
                 }
             }
-            if (mn == null) {
-                throw new GroovyBugError("Invalid state finding valid method: receivers should never be empty and findMethod should never return null");
-            }
-            if (mn.isEmpty()) {
+            if (mn == null || mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
             boolean callArgsVisited = false;
@@ -2725,19 +2712,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
                         visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
-                        ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
+                        ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
                         returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                         callArgsVisited = true;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
-
                 } else {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 }
-                if (!callArgsVisited) {
-                    visitMethodCallArguments(receiver, argumentList, true, call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
-                }
+            }
+
+            MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (!callArgsVisited) {
+                visitMethodCallArguments(receiver, argumentList, true, target);
+            }
+            if (target != null) { Parameter[] params = target.getParameters();
+                checkClosureMetadata(argumentList.getExpressions(), params);
+                checkForbiddenSpreadArgument(argumentList, params);
+            } else {
+                checkForbiddenSpreadArgument(argumentList);
             }
         } finally {
             extension.afterMethodCall(call);
@@ -3346,7 +3340,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression callArguments = call.getArguments();
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
 
-        checkForbiddenSpreadArgument(argumentList);
         // visit closures *after* the method has been chosen
         visitMethodCallArguments(receiver, argumentList, false, null);
 
@@ -3390,6 +3383,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (variable instanceof ASTNode) {
                         Parameter[] parameters = ((ASTNode) variable).getNodeMetaData(CLOSURE_ARGUMENTS);
                         if (parameters != null) {
+                            checkForbiddenSpreadArgument(argumentList, parameters);
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
                         ClassNode type = getType((ASTNode) variable);
@@ -3418,10 +3412,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
-                int nArgs = 0;
-                if (callArguments instanceof ArgumentListExpression) {
-                    nArgs = ((ArgumentListExpression) callArguments).getExpressions().size();
-                }
+                List<Expression> list = argumentList.getExpressions();
+                int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : Integer.MAX_VALUE;
                 storeTargetMethod(call, nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
             } else {
                 // method call receivers are :
@@ -3568,8 +3560,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!callArgsVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
-            if (target != null) {
-                checkClosureMetadata(argumentList.getExpressions(), target.getParameters());
+            if (target != null) { Parameter[] params = target.getParameters();
+                checkClosureMetadata(argumentList.getExpressions(), params);
+                checkForbiddenSpreadArgument(argumentList, params);
+            } else {
+                checkForbiddenSpreadArgument(argumentList);
             }
         } finally {
             typeCheckingContext.popEnclosingMethodCall();
@@ -3812,10 +3807,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected void checkForbiddenSpreadArgument(final ArgumentListExpression argumentList) {
-        for (Expression arg : argumentList.getExpressions()) {
-            if (arg instanceof SpreadExpression) {
-                addStaticTypeError("The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time", arg);
+    private   void checkForbiddenSpreadArgument(final ArgumentListExpression arguments, final Parameter[] parameters) {
+        if (!isVargs(parameters)) {
+            checkForbiddenSpreadArgument(arguments);
+        } else { // GROOVY-10597: allow spread for the ... param
+            List<Expression> list = arguments.getExpressions();
+            list = list.subList(0, parameters.length - 1);
+            checkForbiddenSpreadArgument(args(list));
+        }
+    }
+
+    protected void checkForbiddenSpreadArgument(final ArgumentListExpression arguments) {
+        for (Expression argument : arguments) {
+            if (argument instanceof SpreadExpression) {
+                addStaticTypeError("The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time", argument);
             }
         }
     }

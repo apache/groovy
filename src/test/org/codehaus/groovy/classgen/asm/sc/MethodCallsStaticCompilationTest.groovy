@@ -36,6 +36,13 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest impleme
         }
     }
 
+    @Override
+    void testSpreadArgsRestrictedInConstructorCall() {
+        shouldFail {
+            super.testSpreadArgsRestrictedInConstructorCall()
+        }
+    }
+
     // GROOVY-7863
     void testDoublyNestedPrivateMethodAccess() {
         assertScript '''

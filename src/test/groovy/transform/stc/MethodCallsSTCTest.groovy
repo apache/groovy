@@ -1123,7 +1123,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGetNameFromSuperInterfaceUsingConcreteImpl() {
+    void testGetNameFromSuperInterfaceViaConcreteType1() {
         assertScript '''
             interface Upper { String getName() }
             interface Lower extends Upper {}
@@ -1135,7 +1135,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGetNameFromSuperInterfaceUsingConcreteImplSubclass() {
+    void testGetNameFromSuperInterfaceViaConcreteType2() {
         assertScript '''
             interface Upper { String getName() }
             interface Lower extends Upper {}
@@ -1148,7 +1148,25 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testSpreadArgsForbiddenInNonStaticMethodCall() {
+    void testSpreadArgsRestrictedInNonStaticMethodCall() {
+        // GROOVY-10597
+        assertScript '''
+            def m(int i, String... strings) {
+                '' + i + strings.join('')
+            }
+            List<String> strings() {['3','4']}
+            assert m(1, '2', *strings(), '5') == '12345'
+        '''
+
+        shouldFailWithMessages '''
+            def foo(String one, String... zeroOrMore) {
+            }
+            def bar(String[] strings) {
+                foo(*strings)
+            }
+        ''',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+
         shouldFailWithMessages '''
             def foo(String a, String b, int c, double d, double e) {
             }
@@ -1161,7 +1179,25 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method '
     }
 
-    void testSpreadArgsForbiddenInStaticMethodCall() {
+    void testSpreadArgsRestrictedInStaticMethodCall() {
+        // GROOVY-10597
+        assertScript '''
+            static m(int i, String... strings) {
+                return '' + i + strings.join('')
+            }
+            List<String> strings = ['3','4']
+            assert m(1,'2',*strings,'5') == '12345'
+        '''
+
+        shouldFailWithMessages '''
+            static foo(String one, String... zeroOrMore) {
+            }
+            static bar(String[] strings) {
+                foo(*strings)
+            }
+        ''',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+
         shouldFailWithMessages '''
             static foo(String a, String b, int c, double d, double e) {
             }
@@ -1174,7 +1210,27 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method '
     }
 
-    void testSpreadArgsForbiddenInConstructorCall() {
+    void testSpreadArgsRestrictedInConstructorCall() {
+        // GROOVY-10597
+        assertScript '''
+            class C {
+                C(String one, String... zeroOrMore) {
+                    String result = one + zeroOrMore.join('')
+                    assert result == 'ABC'
+                }
+            }
+            new C('A', *['B'], 'C')
+        '''
+
+        shouldFailWithMessages '''
+            class C {
+                C(String one, String... zeroOrMore) {
+                }
+            }
+            new C(*['A','B'])
+        ''',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+
         shouldFailWithMessages '''
             class C {
                 C(String a, String b) {
@@ -1186,9 +1242,25 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method '
     }
 
-    void testSpreadArgsForbiddenInClosureCall() {
+    void testSpreadArgsRestrictedInClosureCall() {
+        // GROOVY-10597
+        assertScript '''
+            def closure = { String one, String... zeroOrMore ->
+                return one + zeroOrMore.join('')
+            }
+            String result = closure('A', *['B','C'])
+            assert result == 'ABC'
+        '''
+
         shouldFailWithMessages '''
-            def closure = { String a, String b, String c -> println "$a $b $c" }
+            def closure = { String one, String... zeroOrMore -> }
+            def strings = ['A','B','C']
+            closure(*strings)
+        ''',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+
+        shouldFailWithMessages '''
+            def closure = { String a, String b, String c -> }
             def strings = ['A','B','C']
             closure(*strings)
         ''',
