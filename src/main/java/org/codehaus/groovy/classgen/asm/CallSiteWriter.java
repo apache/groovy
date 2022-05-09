@@ -165,58 +165,58 @@ public class CallSiteWriter {
         mv.visitEnd();
     }
 
-    private void generateCreateCallSiteArray() { 
-        List<String> callSiteInitMethods = new LinkedList<String>(); 
-        int index = 0; 
-        int methodIndex = 0; 
-        final int size = callSites.size(); 
-        final int maxArrayInit = 5000; 
+    private void generateCreateCallSiteArray() {
+        List<String> callSiteInitMethods = new LinkedList<String>();
+        int index = 0;
+        int methodIndex = 0;
+        final int size = callSites.size();
+        final int maxArrayInit = 5000;
         // create array initialization methods
-        while (index < size) { 
-            methodIndex++; 
-            String methodName = "$createCallSiteArray_" + methodIndex; 
-            callSiteInitMethods.add(methodName); 
+        while (index < size) {
+            methodIndex++;
+            String methodName = "$createCallSiteArray_" + methodIndex;
+            callSiteInitMethods.add(methodName);
             MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, methodName, "([Ljava/lang/String;)V", null, null);
             controller.setMethodVisitor(mv);
-            mv.visitCode(); 
-            int methodLimit = size; 
+            mv.visitCode();
+            int methodLimit = size;
             // check if the next block is over the max allowed
-            if ((methodLimit - index) > maxArrayInit) { 
-                methodLimit = index + maxArrayInit; 
-            } 
-            for (; index < methodLimit; index++) { 
-                mv.visitVarInsn(ALOAD, 0); 
-                mv.visitLdcInsn(index); 
-                mv.visitLdcInsn(callSites.get(index)); 
-                mv.visitInsn(AASTORE); 
-            } 
-            mv.visitInsn(RETURN); 
-            mv.visitMaxs(2,1); 
-            mv.visitEnd(); 
+            if ((methodLimit - index) > maxArrayInit) {
+                methodLimit = index + maxArrayInit;
+            }
+            for (; index < methodLimit; index++) {
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitLdcInsn(index);
+                mv.visitLdcInsn(callSites.get(index));
+                mv.visitInsn(AASTORE);
+            }
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(2,1);
+            mv.visitEnd();
         }
         // create base createCallSiteArray method
         MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, CREATE_CSA_METHOD, GET_CALLSITEARRAY_DESC, null, null);
         controller.setMethodVisitor(mv);
-        mv.visitCode(); 
-        mv.visitLdcInsn(size); 
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/String"); 
-        mv.visitVarInsn(ASTORE, 0); 
-        for (String methodName : callSiteInitMethods) { 
+        mv.visitCode();
+        mv.visitLdcInsn(size);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+        mv.visitVarInsn(ASTORE, 0);
+        for (String methodName : callSiteInitMethods) {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), methodName, "([Ljava/lang/String;)V", false);
-        } 
+        }
 
-        mv.visitTypeInsn(NEW, CALLSITE_ARRAY_CLASS); 
-        mv.visitInsn(DUP); 
-        controller.getAcg().visitClassExpression(new ClassExpression(controller.getClassNode())); 
+        mv.visitTypeInsn(NEW, CALLSITE_ARRAY_CLASS);
+        mv.visitInsn(DUP);
+        controller.getAcg().visitClassExpression(new ClassExpression(controller.getClassNode()));
 
         mv.visitVarInsn(ALOAD, 0);
 
         mv.visitMethodInsn(INVOKESPECIAL, CALLSITE_ARRAY_CLASS, "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V", false);
-        mv.visitInsn(ARETURN); 
-        mv.visitMaxs(0,0); 
-        mv.visitEnd(); 
-    } 
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0,0);
+        mv.visitEnd();
+    }
 
     private int allocateIndex(String name) {
         callSites.add(name);
@@ -294,54 +294,66 @@ public class CallSiteWriter {
         invokeSafe(safe, "callGetProperty", "callGetPropertySafe");
     }
 
-    public void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
+    public void makeCallSite(final Expression receiver, final String message, final Expression arguments,
+            final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
         prepareSiteAndReceiver(receiver, message, implicitThis);
 
-        CompileStack compileStack = controller.getCompileStack();
-        compileStack.pushImplicitThis(implicitThis);
-        compileStack.pushLHS(false);
-        boolean constructor = message.equals(CONSTRUCTOR);
-        OperandStack operandStack = controller.getOperandStack();
+        AsmClassGenerator acg = controller.getAcg();
+        CompileStack cs = controller.getCompileStack();
+        OperandStack os = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
 
-        // arguments
+        cs.pushLHS(false);
+        cs.pushImplicitThis(implicitThis);
+
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-        int numberOfArguments = containsSpreadExpression ? -1 : AsmClassGenerator.argumentSize(arguments);
-        int operandsToReplace = 1;
+        int numberOfArguments = AsmClassGenerator.argumentSize(arguments), operandsToReplace = 1;
         if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
-            ArgumentListExpression ae = InvocationWriter.makeArgumentList(arguments);
-            controller.getCompileStack().pushImplicitThis(false);
+            ArgumentListExpression list = InvocationWriter.makeArgumentList(arguments);
+            cs.pushImplicitThis(false);
             if (containsSpreadExpression) {
                 numberOfArguments = -1;
-                controller.getAcg().despreadList(ae.getExpressions(), true);
+                acg.despreadList(list.getExpressions(), true);
             } else {
-                numberOfArguments = ae.getExpressions().size();
-                for (int i = 0; i < numberOfArguments; i++) {
-                    Expression argument = ae.getExpression(i);
-                    argument.visit(controller.getAcg());
-                    operandStack.box();
-                    if (argument instanceof CastExpression) controller.getAcg().loadWrapper(argument);
+                numberOfArguments = list.getExpressions().size();
+                for (Expression argument : list) {
+                    argument.visit(acg);
+                    os.box();
+                    if (argument instanceof CastExpression) {
+                        acg.loadWrapper(argument);
+                    }
                 }
                 operandsToReplace += numberOfArguments;
             }
-            controller.getCompileStack().popImplicitThis();
-        }
-        controller.getCompileStack().popLHS();
-        controller.getCompileStack().popImplicitThis();
-
-        MethodVisitor mv = controller.getMethodVisitor();
-
-        if (numberOfArguments > 4) {
-            final String createArraySignature = getCreateArraySignature(numberOfArguments);
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", createArraySignature, false);
-            //TODO: use pre-generated Object[]
-            operandStack.replace(ClassHelper.OBJECT_TYPE.makeArray(),numberOfArguments);
-            operandsToReplace = operandsToReplace-numberOfArguments+1;
+            cs.popImplicitThis();
         }
 
-        final String desc = getDescForParamNum(numberOfArguments);
+        cs.popLHS();
+        cs.popImplicitThis();
+
+        String desc;
+        switch (numberOfArguments) {
+        case 0:
+            desc = ")Ljava/lang/Object;"; break;
+        case 1:
+            desc = "Ljava/lang/Object;)Ljava/lang/Object;"; break;
+        case 2:
+            desc = "Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"; break;
+        case 3:
+            desc = "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"; break;
+        case 4:
+            desc = "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"; break;
+        default:
+            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", getCreateArraySignature(numberOfArguments), false);
+            os.replace(ClassHelper.OBJECT_TYPE.makeArray(), numberOfArguments);
+            operandsToReplace = operandsToReplace - numberOfArguments + 1;
+        case -1: // spread expression case produces Object[]
+            desc = "[Ljava/lang/Object;)Ljava/lang/Object;";
+        }
+
         if (callStatic) {
             mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callStatic", "(Ljava/lang/Class;" + desc, true);
-        } else if (constructor) {
+        } else if (message.equals(CONSTRUCTOR)) {
             mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callConstructor", "(Ljava/lang/Object;" + desc, true);
         } else if (callCurrent) {
             mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "callCurrent", "(Lgroovy/lang/GroovyObject;" + desc, true);
@@ -350,24 +362,8 @@ public class CallSiteWriter {
         } else {
             mv.visitMethodInsn(INVOKEINTERFACE, CALLSITE_CLASS, "call", "(Ljava/lang/Object;" + desc, true);
         }
-        operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToReplace);
-    }
 
-    private static String getDescForParamNum(int numberOfArguments) {
-        switch (numberOfArguments) {
-            case 0:
-              return ")Ljava/lang/Object;";
-            case 1:
-              return "Ljava/lang/Object;)Ljava/lang/Object;";
-            case 2:
-                return "Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
-            case 3:
-                return "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
-            case 4:
-                return "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
-            default:
-                return "[Ljava/lang/Object;)Ljava/lang/Object;";
-        }
+        os.replace(ClassHelper.OBJECT_TYPE, operandsToReplace);
     }
 
     public List<String> getCallSites() {

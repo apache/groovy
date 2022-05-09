@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -430,24 +431,31 @@ public class StaticInvocationWriter extends InvocationWriter {
                         || isGStringType(lastArgType) && isStringType(lastPrmType.getComponentType())))
         )) {
             OperandStack operandStack = controller.getOperandStack();
-            int stackLength = operandStack.getStackLength() + nArgs;
             // first arguments/parameters as usual
             for (int i = 0; i < nPrms - 1; i += 1) {
                 visitArgument(argumentList.get(i), parameters[i].getType());
             }
             // wrap remaining arguments in an array for last parameter
+            boolean spread = false;
             List<Expression> lastArgs = new ArrayList<>();
             for (int i = nPrms - 1; i < nArgs; i += 1) {
-                lastArgs.add(argumentList.get(i));
+                Expression arg = argumentList.get(i);
+                lastArgs.add(arg);
+                spread = spread || arg instanceof SpreadExpression;
             }
-            ArrayExpression array = new ArrayExpression(lastPrmType.getComponentType(), lastArgs);
-            array.visit(controller.getAcg());
-            // adjust stack length
-            while (operandStack.getStackLength() < stackLength) {
-                operandStack.push(ClassHelper.OBJECT_TYPE);
+            if (spread) { // GROOVY-10597
+                controller.getAcg().despreadList(lastArgs, true);
+                operandStack.push(ClassHelper.OBJECT_TYPE.makeArray());
+                controller.getInvocationWriter().coerce(operandStack.getTopOperand(), lastPrmType);
+            } else {
+                controller.getAcg().visitArrayExpression(new ArrayExpression(lastPrmType.getComponentType(), lastArgs));
             }
+            // adjust operand stack
             if (nArgs == nPrms - 1) {
                 operandStack.remove(1);
+            } else {
+                for (int n = lastArgs.size(); n > 1; n -= 1)
+                    operandStack.push(ClassHelper.OBJECT_TYPE);
             }
         } else if (nArgs == nPrms) {
             for (int i = 0; i < nArgs; i += 1) {
