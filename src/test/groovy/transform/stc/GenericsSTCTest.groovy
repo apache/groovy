@@ -4480,6 +4480,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10619
+    void testSelfReferentialTypeParameter5() {
+        assertScript '''
+            @Grab('org.springframework.boot:spring-boot-starter-webflux:2.6.7')
+            import static org.springframework.http.MediaType.APPLICATION_JSON
+            import org.springframework.core.ParameterizedTypeReference
+
+            List<BigDecimal> test(org.springframework.web.reactive.function.client.WebClient web) {
+                def response = web.get()
+                    .uri('/something?id={id}', 'id').accept(APPLICATION_JSON).retrieve()
+                    .toEntity(new ParameterizedTypeReference<List<BigDecimal>>() {})
+                    .block(java.time.Duration.ofSeconds(2))
+                return response.getBody() ?: []
+            }
+        '''
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
