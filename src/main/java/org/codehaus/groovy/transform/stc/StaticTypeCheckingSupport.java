@@ -1936,31 +1936,44 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return boundUnboundedWildcards(type.getComponentType()).makeArray();
         }
-        ClassNode target = type.redirect();
-        if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return type;
+        ClassNode redirect = type.redirect();
+        if (redirect == null || redirect == type || !isUsingGenericsOrIsArrayUsingGenerics(redirect)) {
+            return type;
+        }
         ClassNode newType = type.getPlainNodeReference();
         newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
-        newType.setGenericsTypes(boundUnboundedWildcards(type.getGenericsTypes(), target.getGenericsTypes()));
+        newType.setGenericsTypes(boundUnboundedWildcards(type.getGenericsTypes(), redirect.getGenericsTypes()));
         return newType;
     }
 
-    private static GenericsType[] boundUnboundedWildcards(final GenericsType[] usage, final GenericsType[] declaration) {
-        GenericsType[] newGts = new GenericsType[usage.length];
-        for (int i = 0, n = usage.length; i < n; i += 1) {
-            newGts[i] = boundUnboundedWildcard(usage[i], declaration[i]);
+    private static GenericsType[] boundUnboundedWildcards(final GenericsType[] actual, final GenericsType[] declared) {
+        int n = actual.length; GenericsType[] newTypes = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
+            newTypes[i] = boundUnboundedWildcard(actual[i], declared[i]);
         }
-        return newGts;
+        return newTypes;
     }
 
-    private static GenericsType boundUnboundedWildcard(final GenericsType gt, final GenericsType spec) {
-        if (isUnboundedWildcard(gt)) {
-            ClassNode base = makeWithoutCaching("?");
-            // The bounds on the declared type are at least as good as the ones on an unbounded wildcard, since it has none!
-            GenericsType newGt = new GenericsType(base, spec.getUpperBounds(), spec.getLowerBound());
-            newGt.setWildcard(true);
-            return newGt;
+    private static GenericsType boundUnboundedWildcard(final GenericsType actual, final GenericsType declared) {
+        if (!isUnboundedWildcard(actual)) return actual;
+        ClassNode   lowerBound = declared.getLowerBound();
+        ClassNode[] upperBounds = declared.getUpperBounds();
+        if (lowerBound != null) {
+            assert upperBounds == null;
+        } else if (upperBounds == null) {
+            upperBounds = new ClassNode[]{OBJECT_TYPE};
+        } else if (declared.isPlaceholder()) {
+            upperBounds = upperBounds.clone();
+            for (int i = 0, n = upperBounds.length; i < n; i += 1) {
+                // GROOVY-10055, GROOVY-10619: purge self references
+                if (GenericsUtils.extractPlaceholders(upperBounds[i])
+                    .containsKey(new GenericsTypeName(declared.getName())))
+                        upperBounds[i] = upperBounds[i].getPlainNodeReference();
+            }
         }
-        return gt;
+        GenericsType newType = new GenericsType(makeWithoutCaching("?"), upperBounds, lowerBound);
+        newType.setWildcard(true);
+        return newType;
     }
 
     public static boolean isUnboundedWildcard(final GenericsType gt) {
