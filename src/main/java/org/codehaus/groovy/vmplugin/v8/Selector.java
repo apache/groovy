@@ -378,6 +378,7 @@ public abstract class Selector {
     }
 
     private static class InitSelector extends MethodSelector {
+        private static final MethodType MT_OBJECT = MethodType.methodType(Object.class);
         private boolean beanConstructor;
 
         public InitSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
@@ -448,7 +449,7 @@ public abstract class Selector {
                 // to do this we first bind the values to #setBeanProperties
                 MethodHandle con = BEAN_CONSTRUCTOR_PROPERTY_SETTER.bindTo(mc);
                 // inner class case
-                MethodType foldTargetType = MethodType.methodType(Object.class);
+                MethodType foldTargetType = MT_OBJECT;
                 if (args.length == 3) {
                     con = MethodHandles.dropArguments(con, 1, targetType.parameterType(1));
                     foldTargetType = foldTargetType.insertParameterTypes(0, targetType.parameterType(1));
