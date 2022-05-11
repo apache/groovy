@@ -74,6 +74,12 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assert testClass.myMethodE() == "the injected E"
     }
 
+    // GROOVY-10201
+    void testDelegateOfString() {
+        // on JDK17+, delegate is String which implements the sealed interface ConstantDesc
+        assert generator.instantiateDelegate('foo').size() == 3
+    }
+
     void testDelegateWithBaseClass() {
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
