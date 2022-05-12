@@ -932,11 +932,12 @@ public abstract class Selector {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
                     if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
                 } else {
-                    Class<?> argClass = arg.getClass();
-                    if (paramType.isPrimitive()) continue;
-                    //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
+                    if (Modifier.isFinal(paramType.getModifiers())) {
+                        // primitive types are also `final`
+                        continue;
+                    }
                     test = SAME_CLASS.
-                            bindTo(argClass).
+                            bindTo(arg.getClass()).
                             asType(MethodType.methodType(boolean.class, paramType));
                     if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                 }
