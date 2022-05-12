@@ -1486,4 +1486,24 @@ method()
             assert iterable.collect { it.prop } == ['x', 'y', 'z']
         '''
     }
+
+    void testGroovy10180() {
+        assertScript '''
+            void test(args) {
+                if (args instanceof Map) {
+                    args.each { e ->
+                        def k = e.key, v = e.value
+                    }
+                }
+            }
+        '''
+        assertScript '''
+            void test(args) {
+                if (args instanceof Map) {
+                    args.each { k, v ->
+                    }
+                }
+            }
+        '''
+    }
 }

@@ -688,8 +688,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitMethodCallExpression(MethodCallExpression expression) {
-
-        Expression objectExp = expression.getObjectExpression()
+        Expression objectExp = expression.objectExpression
         if (objectExp instanceof VariableExpression) {
             visitVariableExpression(objectExp, false)
         } else {
@@ -702,25 +701,23 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             print '?'
         }
         print '.'
-        Expression method = expression.getMethod()
+        Expression method = expression.method
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
         } else {
             method.visit(this)
         }
-        expression.getArguments().visit(this)
+        expression.arguments.visit(this)
     }
 
     @Override
     void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
+        boolean parens = expression?.arguments instanceof MethodCallExpression
+                || expression?.arguments instanceof VariableExpression
         print expression?.ownerType?.name + '.' + expression?.method
-        if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
-            print '('
-            expression?.arguments?.visit this
-            print ')'
-        } else {
-            expression?.arguments?.visit this
-        }
+        if (parens) print '('
+        expression?.arguments?.visit(this)
+        if (parens) print ')'
     }
 
     @Override

@@ -182,28 +182,63 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testMultipleInstanceOf() {
         assertScript '''
             class A {
-               void foo() { println 'ok' }
+                void bar() { }
             }
-
             class B {
-               void foo() { println 'ok' }
-               void foo2() { println 'ok 2' }
+                void bar() { }
             }
 
-            def o = new A()
-
-            if (o instanceof A) {
-               o.foo()
+            def foo(o) {
+                if (o instanceof A) {
+                    o.bar()
+                }
+                if (o instanceof B) {
+                    o.bar()
+                }
             }
-
-            if (o instanceof B) {
-               o.foo()
-            }
-
-            if (o instanceof A || o instanceof B) {
-              o.foo()
-            }
+            foo(new A())
+            foo(new B())
         '''
+        shouldFailWithMessages '''
+            class A {
+                void bar() { }
+            }
+            class B {
+                void bar() { }
+            }
+
+            def foo(o) {
+                if (o instanceof A || o instanceof B) {
+                    o.bar()
+                }
+            }
+            foo(new A())
+            foo(new B())
+        ''',
+        'Reference to method is ambiguous. Cannot choose between [void A#bar(), void B#bar()]'
+    }
+
+    // GROOVY-8965
+    void testMultipleInstanceOf2() {
+        assertScript '''
+            def foo(o) {
+                if (o instanceof Integer || o instanceof Double) {
+                    ((Number) o).floatValue()
+                }
+            }
+            def bar = foo(1.1d)
+            assert bar == 1.1f
+        '''
+        shouldFailWithMessages '''
+            def foo(o) {
+                if (o instanceof Integer || o instanceof Double) {
+                    o.floatValue() // CCE: Double cannot be cast to Integer
+                }
+            }
+            def bar = foo(1.1d)
+            assert bar == 1.1f
+        ''',
+        'Reference to method is ambiguous. Cannot choose between [float java.lang.Integer#floatValue(), float java.lang.Double#floatValue()]'
     }
 
     void testInstanceOfInTernaryOp() {
