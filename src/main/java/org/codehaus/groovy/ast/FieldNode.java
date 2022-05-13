@@ -23,12 +23,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import java.lang.reflect.Field;
 
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
-import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 
 /**
  * Represents a field (member variable)
@@ -66,11 +62,6 @@ public class FieldNode extends AnnotatedNode implements Variable {
     }
 
     @Override
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
@@ -103,58 +94,20 @@ public class FieldNode extends AnnotatedNode implements Variable {
         return dynamicTyped;
     }
 
-    public void setModifiers(int modifiers) {
-        this.modifiers = modifiers;
+    @Override
+    public int getModifiers() {
+        return modifiers;
     }
 
-    /**
-     * @return true if the field is static
-     */
-    public boolean isStatic() {
-        return (modifiers & ACC_STATIC) != 0;
+    public void setModifiers(final int modifiers) {
+        this.modifiers = modifiers;
     }
 
     /**
      * @return true if the field is an enum
      */
     public boolean isEnum() {
-        return (modifiers & ACC_ENUM) != 0;
-    }
-
-    /**
-     * @return true if the field is final
-     */
-    public boolean isFinal() {
-        return (modifiers & ACC_FINAL) != 0;
-    }
-
-    /**
-     * @return true if the field is volatile
-     */
-    public boolean isVolatile() {
-        return (modifiers & ACC_VOLATILE) != 0;
-    }
-
-    /**
-     * @return true if the field is public
-     */
-    public boolean isPublic() {
-        return (modifiers & ACC_PUBLIC) != 0;
-    }
-
-    /**
-     * @return true if the field is protected
-     */
-    public boolean isProtected() {
-        return (modifiers & ACC_PROTECTED) != 0;
-    }
-
-    /**
-     * @return true if the field is private
-     * @since 2.5.0
-     */
-    public boolean isPrivate() {
-        return (modifiers & ACC_PRIVATE) != 0;
+        return (getModifiers() & ACC_ENUM) != 0;
     }
 
     /**
@@ -180,21 +133,6 @@ public class FieldNode extends AnnotatedNode implements Variable {
 
     public void setInitialValueExpression(Expression initialValueExpression) {
         this.initialValueExpression = initialValueExpression;
-    }
-
-    /**
-     * @deprecated
-     */
-    @Deprecated @Override
-    public boolean isClosureSharedVariable() {
-        return false;
-    }
-
-    /**
-     * @deprecated
-     */
-    @Deprecated @Override
-    public void setClosureSharedVariable(boolean inClosure) {
     }
 
     @Override

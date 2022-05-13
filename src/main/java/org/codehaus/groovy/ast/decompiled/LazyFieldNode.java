@@ -131,48 +131,6 @@ class LazyFieldNode extends FieldNode implements LazyInitializable {
     }
 
     @Override
-    public boolean isStatic() {
-        lazyInit();
-        return delegate.isStatic();
-    }
-
-    @Override
-    public boolean isEnum() {
-        lazyInit();
-        return delegate.isEnum();
-    }
-
-    @Override
-    public boolean isFinal() {
-        lazyInit();
-        return delegate.isFinal();
-    }
-
-    @Override
-    public boolean isVolatile() {
-        lazyInit();
-        return delegate.isVolatile();
-    }
-
-    @Override
-    public boolean isPublic() {
-        lazyInit();
-        return delegate.isPublic();
-    }
-
-    @Override
-    public boolean isProtected() {
-        lazyInit();
-        return delegate.isProtected();
-    }
-
-    @Override
-    public boolean isPrivate() {
-        lazyInit();
-        return delegate.isPrivate();
-    }
-
-    @Override
     public void setOwner(ClassNode owner) {
         super.setOwner(owner);
     }
@@ -199,20 +157,6 @@ class LazyFieldNode extends FieldNode implements LazyInitializable {
     public void setInitialValueExpression(Expression initialValueExpression) {
         lazyInit();
         delegate.setInitialValueExpression(initialValueExpression);
-    }
-
-    @Override
-    @Deprecated
-    public boolean isClosureSharedVariable() {
-        lazyInit();
-        return delegate.isClosureSharedVariable();
-    }
-
-    @Override
-    @Deprecated
-    public void setClosureSharedVariable(boolean inClosure) {
-        lazyInit();
-        delegate.setClosureSharedVariable(inClosure);
     }
 
     @Override
