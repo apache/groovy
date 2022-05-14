@@ -50,7 +50,9 @@ final class GrabResolverTest {
         grapeRoot.deleteOnExit()
 
         Grape.instance.settings.getResolver('downloadGrapes').resolvers.removeAll {
-            it.name == 'jcenter' || it.name == 'localm2' || it.name == 'cachedGrapes'
+            // jcenter is no longer used but it is left in this test just in case
+            // someone running this test has an old ~/.groovy/grapeConfig.xml
+            it.name == 'localm2' || it.name == 'cachedGrapes' || it.name == 'jcenter'
         }
     }
 
