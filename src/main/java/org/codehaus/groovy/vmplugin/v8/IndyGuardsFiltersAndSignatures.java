@@ -59,7 +59,7 @@ public class IndyGuardsFiltersAndSignatures {
             INVOKER = MethodType.methodType(Object.class, Object.class, String.class, Object[].class);
 
     protected static final MethodHandle
-            SAME_CLASS, SAME_MC, IS_NULL,
+            SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
             META_METHOD_INVOKER, GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
@@ -78,6 +78,7 @@ public class IndyGuardsFiltersAndSignatures {
     static {
         try {
             SAME_CLASS = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
+            SAME_CLASSES = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Object[].class, Object[].class));
             SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
             IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
             UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
@@ -195,5 +196,23 @@ public class IndyGuardsFiltersAndSignatures {
     public static boolean sameClass(Class<?> c, Object o) {
         if (o == null) return false;
         return o.getClass() == c;
+    }
+
+    /**
+     * Guard to check if the provided objects have the same
+     * class as the other provided objects.
+     */
+    public static boolean sameClasses(Object[] cs, Object[] os) {
+        for (int i = 0; i < cs.length; i++) {
+            Object c = cs[i];
+            if (null == c) continue;
+
+            Object o = os[i];
+            if (null == o) return false;
+
+            if (o.getClass() != c.getClass())
+                return false;
+        }
+        return true;
     }
 }
