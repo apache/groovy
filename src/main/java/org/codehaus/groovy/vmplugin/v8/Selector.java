@@ -85,7 +85,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NULL_REF;
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
@@ -923,29 +923,10 @@ public abstract class Selector {
 
             // guards for receiver and parameter
             Class<?>[] pt = handle.type().parameterArray();
-            for (int i = 0; i < args.length; i++) {
-                Object arg = args[i];
-                Class<?> paramType = pt[i];
-                MethodHandle test;
-
-                if (arg == null) {
-                    test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
-                    if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
-                } else {
-                    if (Modifier.isFinal(paramType.getModifiers())) {
-                        // primitive types are also `final`
-                        continue;
-                    }
-                    test = SAME_CLASS.
-                            bindTo(arg.getClass()).
-                            asType(MethodType.methodType(boolean.class, paramType));
-                    if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
-                }
-                Class<?>[] drops = new Class[i];
-                System.arraycopy(pt, 0, drops, 0, drops.length);
-                test = MethodHandles.dropArguments(test, 0, drops);
-                handle = MethodHandles.guardWithTest(test, handle, fallback);
-            }
+            MethodHandle test = SAME_CLASSES.bindTo(args)
+                    .asCollector(Object[].class, pt.length)
+                    .asType(MethodType.methodType(boolean.class, pt));
+            handle = MethodHandles.guardWithTest(test, handle, fallback);
         }
 
         /**
