@@ -949,7 +949,7 @@ public abstract class Selector {
                     test = MethodHandles.dropArguments(test, 0, drops);
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
-            } else {
+            } else if (Arrays.stream(pt).anyMatch(paramType -> !Modifier.isFinal(paramType.getModifiers()))) {
                 // Avoid guards as possible as we could
                 MethodHandle test = SAME_CLASSES.bindTo(args)
                         .asCollector(Object[].class, pt.length)
