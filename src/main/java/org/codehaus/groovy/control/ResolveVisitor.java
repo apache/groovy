@@ -1493,13 +1493,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (genericsType.isResolved()) return true;
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
-        // save name before redirect
-        GenericsTypeName name = new GenericsTypeName(type.getName());
-        visitTypeAnnotations(type);
-        ClassNode[] bounds = genericsType.getUpperBounds();
-        if (!genericParameterNames.containsKey(name)) {
-            if (bounds != null) {
-                for (ClassNode upperBound : bounds) {
+        visitTypeAnnotations(type); // JSR-308 support
+        GenericsType tp = genericParameterNames.get(new GenericsTypeName(type.getName()));
+        if (tp != null) {
+            ClassNode[] bounds = tp.getUpperBounds();
+            if (bounds != null && (bounds.length > 1 || (bounds[0].isRedirectNode()
+                                   && bounds[0].redirect().getGenericsTypes() != null))) {
+                // GROOVY-10622: bounds are too complex for a redirect-only representation
+                //genericsType.setUpperBounds(bounds);
+                type.setGenericsPlaceHolder(true);
+                type.setRedirect(bounds[0]);
+            } else {
+                type.setRedirect(tp.getType());
+            }
+            genericsType.setPlaceholder(true);
+        } else {
+            ClassNode[] upperBounds = genericsType.getUpperBounds();
+            if (upperBounds != null) {
+                for (ClassNode upperBound : upperBounds) {
                     resolveOrFail(upperBound, genericsType);
                     type.setRedirect(upperBound);
                     resolveGenericsTypes(upperBound.getGenericsTypes());
@@ -1509,16 +1520,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 resolveOrFail(type, genericsType);
             }
-        } else {
-            GenericsType gt = genericParameterNames.get(name);
-            type.setRedirect(gt.getType());
-            genericsType.setPlaceholder(true);
         }
-
         if (genericsType.getLowerBound() != null) {
             resolveOrFail(genericsType.getLowerBound(), genericsType);
         }
-
         if (resolveGenericsTypes(type.getGenericsTypes())) {
             genericsType.setResolved(genericsType.getType().isResolved());
         }

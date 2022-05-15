@@ -634,6 +634,39 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10622
+    void testReturnTypeInferenceWithMethodGenerics26() {
+        String types = '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<X> {
+                X x
+            }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class B<Y> {
+                Y y
+            }
+            class C {
+                C(byte b) { }
+            }
+        '''
+        assertScript types + '''
+            def <T extends A<Byte>> void test(B<T> b_of_t) {
+                def t = b_of_t.getY()
+                def x = t.getX()
+                new C(x)
+            }
+            test(new B<>(new A<>((byte)1)))
+        '''
+        assertScript types + '''
+            def <T extends A<Byte>> void test(B<T> b_of_t) {
+                def t = b_of_t.y
+                def x = t.x
+                new C(x)
+            }
+            test(new B<>(new A<>((byte)1)))
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
