@@ -90,6 +90,7 @@ class Main {
             D(longOpt: 'define', type: Map, argName: 'name=value', messages['cli.option.define.description'])
             T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+            pr(longOpt: 'enable-preview', messages['cli.option.enable.preview.description'])
         }
         OptionAccessor options = cli.parse(args)
 
