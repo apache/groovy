@@ -4341,6 +4341,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // instead of storing an "unknown" type, reset the type information
             // by determining the declaration type of the expression
             cn = getOriginalDeclarationType(exp);
+            // GROOVY-10356, GROOVY-10623: "def"
+            if (isDynamicTyped(cn)) return;
         }
         if (cn != null && isPrimitiveType(cn)) {
             if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {

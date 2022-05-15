@@ -75,17 +75,16 @@ import org.codehaus.groovy.macro.matcher.internal.MatchingConstraintsBuilder
 @AutoFinal @CompileStatic
 class ASTMatcher extends ContextualClassCodeVisitor {
 
-    public static final String WILDCARD = "_"
+    public static final String WILDCARD = '_'
 
-    private Object current = null
     private boolean match = true
+    private Object  current
 
     private ASTMatcher() {
     }
 
     @Override
     protected SourceUnit getSourceUnit() {
-        return null
     }
 
     /**
@@ -230,7 +229,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def nodeProps = node.properties
             def curProps = cur.properties
             if (nodeProps.size() == curProps.size()) {
-                def iter = curProps.iterator()
+                Iterator<? extends ASTNode> iter = curProps.iterator()
                 // now let's visit the contents of the class
                 for (PropertyNode pn : nodeProps) {
                     doWithNode(pn, iter.next()) {
@@ -307,8 +306,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     void visitImports(ModuleNode node) {
         if (node) {
             doWithNode(node, current) {
-                ModuleNode module = (ModuleNode) current
-                def imports = module.imports
+                def imports = ((ModuleNode) current).imports
                 if (imports.size() == node.imports.size()) {
                     def iter = imports.iterator()
                     for (ImportNode importNode : node.imports) {
@@ -321,38 +319,38 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     failIfNot(false)
                     return
                 }
-                imports = module.starImports
-                if (imports.size() == node.starImports.size()) {
-                    def iter = imports.iterator()
-                    for (ImportNode importNode : node.starImports) {
-                        doWithNode(importNode, iter.next()) {
-                            visitAnnotations(importNode)
-                            importNode.visit(this)
+                def starImports = ((ModuleNode) current).starImports
+                if (starImports.size() == node.starImports.size()) {
+                    def iter = starImports.iterator()
+                    for (starImport in node.starImports) {
+                        doWithNode(starImport, iter.next()) {
+                            visitAnnotations(starImport)
+                            starImport.visit(this)
                         }
                     }
                 } else {
                     failIfNot(false)
                     return
                 }
-                imports = module.staticImports
-                if (imports.size() == node.staticImports.size()) {
-                    def iter = imports.values().iterator()
-                    for (ImportNode importNode : node.staticImports.values()) {
-                        doWithNode(importNode, iter.next()) {
-                            visitAnnotations(importNode)
-                            importNode.visit(this)
+                def staticImports = ((ModuleNode) current).staticImports
+                if (staticImports.size() == node.staticImports.size()) {
+                    def iter = staticImports.values().iterator()
+                    for (staticImport in node.staticImports.values()) {
+                        doWithNode(staticImport, iter.next()) {
+                            visitAnnotations(staticImport)
+                            staticImport.visit(this)
                         }
                     }
                 } else {
                     failIfNot(false)
                 }
-                imports = module.staticStarImports
-                if (imports.size() == node.staticStarImports.size()) {
-                    def iter = imports.values().iterator()
-                    for (ImportNode importNode : node.staticStarImports.values()) {
-                        doWithNode(importNode, iter.next()) {
-                            visitAnnotations(importNode)
-                            importNode.visit(this)
+                def staticStarImports = ((ModuleNode) current).staticStarImports
+                if (staticStarImports.size() == node.staticStarImports.size()) {
+                    def iter = staticStarImports.values().iterator()
+                    for (staticStarImport in node.staticStarImports.values()) {
+                        doWithNode(staticStarImport, iter.next()) {
+                            visitAnnotations(staticStarImport)
+                            staticStarImport.visit(this)
                         }
                     }
                 } else {

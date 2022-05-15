@@ -1062,18 +1062,22 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
-    // GROOVY-5535
+    // GROOVY-5535, GROOVY-10623
     void testAssignToNullInsideIf() {
-        assertScript '''
-            Date test() {
-                Date x = new Date()
-                if (true) {
-                    x = null
+        ['Date', 'def', 'var'].each {
+            assertScript """
+                Date test() {
+                    $it x = new Date()
+                    if (true) {
+                        x = null
+                        Date y = x
+                    }
+                    Date z = x
+                    return x
                 }
-                x
-            }
-            assert test() == null
-        '''
+                assert test() == null
+            """
+        }
     }
 
     // GROOVY-10294
@@ -1100,6 +1104,17 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             def y = x()
             def z = y.p // false positive: field access error
             y = null
+        '''
+    }
+
+    // GROOVY-10623
+    void testAssignToNullAfterInit() {
+        assertScript '''
+            class C {
+            }
+            def x = new C()
+            x = null
+            C c = x
         '''
     }
 

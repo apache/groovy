@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : closures.
  */
@@ -375,7 +373,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method A#m()'
     }
 
-    @NotYetImplemented // GROOVY-10356
+    // GROOVY-10356
     void testClosureSharedVariable4() {
         assertScript '''
             interface A {
@@ -385,7 +383,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def x = { ->
                 a = null
             }
-            a?.m() // A closure shared variable [a] has been assigned with various types and ...
+            a?.m()
         '''
     }
 
