@@ -457,11 +457,11 @@ class GrapeIvy implements GrapeEngine {
         if (report.getDownloadSize() && reportDownloads) {
             System.err.println("Downloaded ${report.getDownloadSize() >> 10} Kbytes in ${report.getDownloadTime()}ms:\n  ${report.getAllArtifactsReports()*.toString().join('\n  ')}")
         }
-        md = report.getModuleDescriptor()
 
         if (!args.preserveFiles) {
-            cacheManager.getResolvedIvyFileInCache(md.getModuleRevisionId()).delete()
-            cacheManager.getResolvedIvyPropertiesInCache(md.getModuleRevisionId()).delete()
+            def revision = report.getModuleDescriptor().getModuleRevisionId()
+            cacheManager.getResolvedIvyPropertiesInCache(revision).delete()
+            cacheManager.getResolvedIvyFileInCache(revision).delete()
         }
 
         report

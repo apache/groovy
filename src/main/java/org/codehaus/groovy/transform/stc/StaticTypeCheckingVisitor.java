@@ -1073,15 +1073,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode getOriginalDeclarationType(final Expression lhs) {
-        if (lhs instanceof VariableExpression) {
-            Variable var = findTargetVariable((VariableExpression) lhs);
-            if (!(var instanceof DynamicVariable || var instanceof PropertyNode)) {
-                return var.getOriginType();
-            }
-        } else if (lhs instanceof FieldExpression) {
-            return ((FieldExpression) lhs).getField().getOriginType();
+        Variable var = null;
+        if (lhs instanceof FieldExpression) {
+            var = ((FieldExpression) lhs).getField();
+        } else if (lhs instanceof VariableExpression) {
+            var = findTargetVariable((VariableExpression) lhs);
         }
-        return getType(lhs);
+        return var != null && !(var instanceof DynamicVariable) ? var.getOriginType() : getType(lhs);
     }
 
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
@@ -4300,11 +4298,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void storeType(final Expression exp, ClassNode cn) {
-        if (cn == UNKNOWN_PARAMETER_TYPE) {
-            // this can happen for example when "null" is used in an assignment or a method parameter.
-            // In that case, instead of storing the virtual type, we must "reset" type information
+        if (cn == UNKNOWN_PARAMETER_TYPE) { // null for assignment or parameter
+            // instead of storing an "unknown" type, reset the type information
             // by determining the declaration type of the expression
             cn = getOriginalDeclarationType(exp);
+            // GROOVY-10356, GROOVY-10623: "def"
+            if (isDynamicTyped(cn)) return;
         }
         if (cn != null && isPrimitiveType(cn)) {
             if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {
