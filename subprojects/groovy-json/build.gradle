@@ -28,6 +28,7 @@ dependencies {
     testImplementation 'net.javacrumbs.json-unit:json-unit:2.33.0'
 
     testRuntimeOnly project(':'), {
+        because "Tests are using Grapes"
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }

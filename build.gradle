@@ -163,6 +163,7 @@ dependencies {
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
 
     testRuntimeOnly(project(":")) {
+        because "Tests are using Grapes"
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
