@@ -5313,8 +5313,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (context != null) {
             returnType = applyGenericsContext(context, returnType);
 
-            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null && GenericsUtils.hasUnresolvedGenerics(returnType)) {
-                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: do not return "Stream<E>" for raw type "List#stream()"
+            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null
+                    && !receiver.isGenericsPlaceHolder() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: not "Stream<E>" for raw type
             }
         }
 
@@ -5640,8 +5641,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode current = type;
             while (current != null) {
                 Map<GenericsTypeName, GenericsType> placeHolders = new HashMap<>();
-                // GROOVY-10055: handle diamond or raw
-                if (current.getGenericsTypes() != null
+                if (current.isGenericsPlaceHolder())
+                    // GROOVY-10622: type param bound "T extends Set<Type>"
+                    current = current.asGenericsType().getUpperBounds()[0];
+                // GROOVY-10055: handle diamond or raw type
+                else if (current.getGenericsTypes() != null
                         ? current.getGenericsTypes().length == 0
                         : current.redirect().getGenericsTypes() != null) {
                     for (GenericsType gt : current.redirect().getGenericsTypes()) {
