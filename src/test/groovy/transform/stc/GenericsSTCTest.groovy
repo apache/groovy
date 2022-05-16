@@ -1272,6 +1272,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10343
+    void testDiamondInferrenceFromConstructor27() {
+        assertScript '''
+            class C<T1, T2 extends T1> {
+                T1 p
+                C(T1 p) { this.p = p }
+                T2 m() { return null }
+            }
+            void test(Integer x) {
+                def c = new C<>(x) // type witness for T1 can also help bound T2
+                def y = c.m()
+                Integer z = y // Cannot assign value of type Object to variable of type Integer
+            }
+            test(1234)
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
