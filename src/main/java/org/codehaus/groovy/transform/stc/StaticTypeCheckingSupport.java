@@ -1638,22 +1638,24 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static ClassNode extractType(final GenericsType gt) {
+    private static ClassNode extractType(GenericsType gt) {
+        ClassNode cn;
         if (!gt.isPlaceholder()) {
-            return getCombinedBoundType(gt);
-        }
-        // For a placeholder, a type based on the generics type is used for the compatibility check, to match on
-        // the actual bounds and not the name of the placeholder.
-        ClassNode replacementType = gt.getType().redirect();
-        if (gt.getType().getGenericsTypes() != null) {
-            GenericsType realGt = gt.getType().getGenericsTypes()[0];
-            if (realGt.getLowerBound() != null) {
-                replacementType = realGt.getLowerBound();
-            } else if (asBoolean(realGt.getUpperBounds())) {
-                replacementType = realGt.getUpperBounds()[0];
+            cn = getCombinedBoundType(gt);
+        } else {
+            // discard the placeholder
+            cn = gt.getType().redirect();
+
+            if (gt.getType().getGenericsTypes() != null)
+                gt = gt.getType().getGenericsTypes()[0];
+
+            if (gt.getLowerBound() != null) {
+                cn = gt.getLowerBound();
+            } else if (asBoolean(gt.getUpperBounds())) {
+                cn = gt.getUpperBounds()[0];
             }
         }
-        return replacementType;
+        return cn;
     }
 
     private static boolean equalIncludingGenerics(final GenericsType one, final GenericsType two) {
