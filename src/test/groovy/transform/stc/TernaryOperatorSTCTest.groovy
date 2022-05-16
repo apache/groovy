@@ -134,7 +134,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10330
-    void testTypeParameterTypeParameter() {
+    void testTypeParameterTypeParameter1() {
         assertScript '''
             class C<T> {
                 T y
@@ -152,6 +152,17 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new C<String>().test('FOO', { it.toLowerCase() })
+        '''
+    }
+
+    // GROOVY-10363
+    void testTypeParameterTypeParameter2() {
+        assertScript '''
+            def <X extends java.util.function.Supplier<Number>> X m(X x, X y) {
+                X z = true ? x : y // z infers as Supplier<Object>
+                return z
+            }
+            assert m(null,null) == null
         '''
     }
 
