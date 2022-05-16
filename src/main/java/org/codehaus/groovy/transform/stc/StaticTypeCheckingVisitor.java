@@ -1474,7 +1474,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
-        ClassNode objectExpressionType = getType(objectExpression);
+        ClassNode  objectExpressionType = getType(objectExpression);
+        if (objectExpression instanceof ConstructorCallExpression) { // GROOVY-9963
+            inferDiamondType((ConstructorCallExpression) objectExpression, objectExpressionType);
+        }
         List<ClassNode> enclosingTypes = typeCheckingContext.getEnclosingClassNodes();
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if ("this".equals(propertyName) && staticOnlyAccess) {

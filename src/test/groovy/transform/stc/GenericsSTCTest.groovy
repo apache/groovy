@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.GroovyAssert
 import groovy.transform.NotYetImplemented
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
@@ -285,7 +286,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10098
-    void testReturnTypeInferenceWithMethodGenerics16() {
+    void testReturnTypeInferenceWithMethodGenerics17() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T extends Number> {
@@ -301,9 +302,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10749
     void testReturnTypeInferenceWithMethodGenerics29() {
-        String named = 'class Named { String name }'
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
 
-        assertScript named + '''
+        assertScript '''
+            class Named { String name }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
                 assert type.toString(false) == 'java.util.stream.Collector <Named, ?, java.util.Map>'
@@ -588,7 +590,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign C<? extends java.lang.Object> to: C<D>'
     }
 
-    @NotYetImplemented // GROOVY-9963
+    // GROOVY-9963
     void testDiamondInferrenceFromConstructor10() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1653,7 +1655,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9945
-    void testShouldUseMethodGenericType7() {
+    void testShouldUseMethodGenericType9() {
         assertScript '''
             interface I<T> {
             }
@@ -1671,6 +1673,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8409, GROOVY-9915, GROOVY-10745
     void testShouldUseMethodGenericType10() {
+        if (GroovyAssert.isAtLeastJdk('1.8')) {
+            assertScript '''
+                Map map() { [:] }
+                Optional.of(map()).orElse(Collections.emptyMap())
+            '''
+        }
         assertScript '''
             interface OngoingStubbing<T> /*extends IOngoingStubbing*/ {
                 // type parameter from enclosing type in signature:
@@ -1688,21 +1696,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             when(foo()).thenReturn(Optional.empty())
         '''
-
-        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
-
-        assertScript '''
-            Map map() { [:] }
-            Optional.of(map()).orElse(Collections.emptyMap());
-        '''
     }
 
-    @NotYetImplemented // GROOVY-8409, GROOVY-9902
+    // GROOVY-8409, GROOVY-9902
     void testShouldUseMethodGenericType11() {
-        File parentDir = File.createTempDir()
+        File parentDir = createTempDir()
         config.with {
-            targetDirectory = File.createTempDir()
-            jointCompilationOptions = [memStub: true]
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
         }
         try {
             def a = new File(parentDir, 'Main.groovy')
@@ -1738,6 +1739,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
