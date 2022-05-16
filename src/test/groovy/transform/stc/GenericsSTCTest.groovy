@@ -2136,6 +2136,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10364
+    void testShouldUseMethodGenericType15() {
+        assertScript '''
+            class A<T> {
+            }
+            class B<T> {
+                void m(A<T> a_of_t, T t) {
+                }
+            }
+            class C<X, Y extends X> {
+                void test() {
+                    B<Y> b_of_y = new B<Y>()
+                    b_of_y.m(new A<Y>(), (Y) null) // Cannot call B#m(A<Y extends X>, Y) with arguments [A<Y>, Y]
+                }
+            }
+            new C<Number,Integer>().test()
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode

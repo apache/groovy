@@ -1337,31 +1337,39 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return fullyResolveType(type.getComponentType(), placeholders).makeArray();
         }
-        if (type.isUsingGenerics()) {
-            if (type.isGenericsPlaceHolder()) {
-                GenericsType gt = placeholders.get(new GenericsTypeName(type.getUnresolvedName()));
-                if (gt != null) {
-                    return gt.getType();
+        if (!type.isUsingGenerics()) {
+            return type;
+        }
+        if (type.isGenericsPlaceHolder()) {
+            GenericsType gt = placeholders.get(new GenericsTypeName(type.getUnresolvedName()));
+            if (gt != null) {
+                return gt.getType();
+            }
+            ClassNode cn = type.redirect();
+            return cn != type ? cn : OBJECT_TYPE;
+        }
+
+        GenericsType[] gts = type.getGenericsTypes();
+        if (asBoolean(gts)) {
+            gts = gts.clone();
+            for (int i = 0, n = gts.length; i < n; i += 1) {
+                GenericsType gt = gts[i];
+                if (gt.isPlaceholder()) { String name = gt.getName();
+                    gt = placeholders.get(new GenericsTypeName(name));
+                    if (gt == null) gt = extractType(gts[i]).asGenericsType();
+                    // GROOVY-10364: skip placeholder from the enclosing context
+                    if (gt.isPlaceholder() && gt.getName().equals(name)) continue;
+
+                    gts[i] = gt;
+                } else {
+                    gts[i] = fullyResolve(gt, placeholders);
                 }
-                ClassNode cn = type.redirect();
-                return cn != type ? cn : OBJECT_TYPE;
-            } else {
-                GenericsType[] gts = type.getGenericsTypes();
-                if (gts != null) {
-                    gts = Arrays.stream(gts).map(gt -> {
-                        if (gt.isPlaceholder()) {
-                            GenericsTypeName gtn = new GenericsTypeName(gt.getName());
-                            return placeholders.getOrDefault(gtn, extractType(gt).asGenericsType());
-                        }
-                        return fullyResolve(gt, placeholders);
-                    }).toArray(GenericsType[]::new);
-                }
-                ClassNode cn = type.getPlainNodeReference();
-                cn.setGenericsTypes(gts);
-                return cn;
             }
         }
-        return type;
+
+        ClassNode cn = type.getPlainNodeReference();
+        cn.setGenericsTypes(gts);
+        return cn;
     }
 
     /**
