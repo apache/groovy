@@ -888,7 +888,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign C<? extends java.lang.Object> to: C<D>'
     }
 
-    @NotYetImplemented // GROOVY-9963
+    // GROOVY-9963
     void testDiamondInferrenceFromConstructor10() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
