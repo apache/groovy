@@ -4219,8 +4219,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (targetType == null) return sourceType;
 
-        if (!isPrimitiveType(getUnwrapper(targetType))
-                && !isObjectType(targetType) && missesGenericsTypes(sourceType)) {
+        if (!isPrimitiveType(getUnwrapper(targetType)) && !isObjectType(targetType)
+                && !sourceType.isGenericsPlaceHolder() && missesGenericsTypes(sourceType)) {
             // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
             // the inferred type is the RHS type "completed" with generics information from LHS
             return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
