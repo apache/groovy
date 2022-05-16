@@ -2338,6 +2338,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10373
+    void testAssignNullTypeParameterWithUpperBounds2() {
+        assertScript '''
+            class A<I, E extends I>  {
+                void bar(E y) { }
+            }
+            class B<T> {
+            }
+            class C<S extends B<Character>> {
+                A<S, ? extends S> foo() {
+                    (A<S, ? extends S>) null
+                }
+            }
+            class D<I extends B<Character>> {
+                void test() {
+                    C<I> x = (C<I>) null
+                    x?.foo()?.bar(null)
+                }
+            }
+            new D<B<Character>>().test()
+        '''
+    }
+
     void testMethodCallWithArgumentUsingNestedGenerics() {
         assertScript '''
            ThreadLocal<Map<Integer, String>> cachedConfigs = new ThreadLocal<Map<Integer, String>>()
