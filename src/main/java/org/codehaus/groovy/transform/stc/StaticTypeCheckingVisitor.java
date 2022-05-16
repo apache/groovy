@@ -4265,8 +4265,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (expr instanceof ConstructorCallExpression) {
             inferDiamondType((ConstructorCallExpression) expr, targetType);
-        } else if (!isPrimitiveType(getUnwrapper(targetType))
-                && !OBJECT_TYPE.equals(targetType) && missesGenericsTypes(sourceType)) {
+        } else if (!isPrimitiveType(getUnwrapper(targetType)) && !targetType.equals(OBJECT_TYPE)
+                && !sourceType.isGenericsPlaceHolder() && missesGenericsTypes(sourceType)) {
             // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
             // the inferred type is the RHS type "completed" with generics information from LHS
             return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
