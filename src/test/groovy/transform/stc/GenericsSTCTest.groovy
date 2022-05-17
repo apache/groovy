@@ -1301,7 +1301,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 A<T> p
             }
             def b = new B<>(new A<>(1L))
-            A<Long> x = b.p // Cannot assign A<Object> to: A<Long>
+            A<Long> x = b.p // Cannot assign A<Object> to A<Long>
+        '''
+    }
+
+    // GROOVY-10624
+    void testDiamondInferrenceFromConstructor29() {
+        assertScript '''
+            class A<T> {
+            }
+            class B<T> {
+                B(A<T> a) { }
+            }
+            B<Float> x = new B<>(new A<>()) // Cannot assign B<Object> to B<Float>
         '''
     }
 
