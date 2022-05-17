@@ -232,6 +232,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.init;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
@@ -2282,7 +2283,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ctor = findMethodOrFail(call, receiver, "<init>", argumentTypes);
                 if (ctor != null) {
                     Parameter[] parameters = ctor.getParameters();
-                    if (receiver.getGenericsTypes() != null) { // GROOVY-8909, GROOVY-9734, GROOVY-9844, GROOVY-9915, GROOVY-10482, et al.
+                    if (asBoolean(receiver.getGenericsTypes())) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, et al.
                         Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, ctor, argumentList);
                         parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                     }
