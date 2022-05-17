@@ -2323,7 +2323,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             && parameters.length == argumentTypes.length - 1) {
                         ctor = typeCheckMapConstructor(call, receiver, arguments);
                     } else {
-                        if (parameters.length > 0 && receiver.getGenericsTypes() != null) { // GROOVY-8961, GROOVY-9734, GROOVY-9915, GROOVY-10482, et al.
+                        if (parameters.length > 0 && asBoolean(receiver.getGenericsTypes())) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, GROOVY-10624, et al.
                             Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(null, receiver, ctor.getDeclaringClass());
                             parameters = parameters.clone(); for (int i = 0; i < parameters.length; i += 1)
                                 parameters[i] = new Parameter(applyGenericsContext(context, parameters[i].getType()), parameters[i].getName());

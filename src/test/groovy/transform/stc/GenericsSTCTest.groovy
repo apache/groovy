@@ -328,6 +328,51 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-10343
+    void testDiamondInferrenceFromConstructor27() {
+        assertScript '''
+            class C<T1, T2 extends T1> {
+                T1 p
+                C(T1 p) { this.p = p }
+                T2 m() { return null }
+            }
+            void test(Integer x) {
+                def c = new C<>(x) // type witness for T1 can also help bound T2
+                def y = c.m()
+                Integer z = y // Cannot assign value of type Object to variable of type Integer
+            }
+            test(1234)
+        '''
+    }
+
+    // GROOVY-10316
+    void testDiamondInferrenceFromConstructor28() {
+        assertScript '''
+            class A<T> {
+                A(T t) {
+                }
+            }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class B<T> {
+                A<T> p
+            }
+            def b = new B<>(new A<>(1L))
+            A<Long> x = b.p // Cannot assign A<Object> to A<Long>
+        '''
+    }
+
+    // GROOVY-10624
+    void testDiamondInferrenceFromConstructor29() {
+        assertScript '''
+            class A<T> {
+            }
+            class B<T> {
+                B(A<T> a) { }
+            }
+            B<Float> x = new B<>(new A<>()) // Cannot assign B<Object> to B<Float>
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
