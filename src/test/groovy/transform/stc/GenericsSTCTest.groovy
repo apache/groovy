@@ -1289,6 +1289,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10316
+    void testDiamondInferrenceFromConstructor28() {
+        assertScript '''
+            class A<T> {
+                A(T t) {
+                }
+            }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class B<T> {
+                A<T> p
+            }
+            def b = new B<>(new A<>(1L))
+            A<Long> x = b.p // Cannot assign A<Object> to: A<Long>
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
