@@ -3085,6 +3085,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10365
+    void testCorrectlyBoundedTypeParameterTypeArgument() {
+        assertScript '''
+            interface I {
+            }
+            class A<T extends Number, Y> implements I {
+                double m(Integer i) {
+                    i.doubleValue()
+                }
+            }
+            class B<T extends I> {
+                public int f
+                double test(A<Float, ? extends T> a) { // "T" is re-purposed
+                    a.m(f) // Cannot call A#m(java.lang.Integer) with arguments [int]
+                }
+            }
+            double result = new B<I>(f:2).test(new A<>())
+            assert result == 2.0d
+        '''
+    }
+
     void testOutOfBoundsByExtendsGenericParameterType() {
         shouldFailWithMessages '''
             class Foo {

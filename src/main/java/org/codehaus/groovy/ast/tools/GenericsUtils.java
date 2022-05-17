@@ -40,6 +40,7 @@ import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -142,6 +142,11 @@ public class GenericsUtils {
         return gt;
     }
 
+    /**
+     * Returns the type parameter/argument relationships of the specified type.
+     *
+     * @param type the class node to check
+     */
     public static Map<GenericsType.GenericsTypeName, GenericsType> extractPlaceholders(final ClassNode type) {
         Map<GenericsType.GenericsTypeName, GenericsType> placeholders = new HashMap<>();
         extractPlaceholders(type, placeholders);
@@ -149,8 +154,8 @@ public class GenericsUtils {
     }
 
     /**
-     * For a given classnode, fills in the supplied map with the parameterized
-     * types it defines.
+     * Populates the supplied map with the type parameter/argument relationships
+     * of the specified type.
      *
      * @param type the class node to check
      * @param placeholders the generics type information collector
@@ -164,56 +169,53 @@ public class GenericsUtils {
         }
 
         if (!type.isUsingGenerics() || !type.isRedirectNode()) return;
-        GenericsType[] parameterized = type.getGenericsTypes();
-        if (parameterized == null || parameterized.length == 0) return;
+        GenericsType[] parameterized = type.getGenericsTypes(); int n;
+        if (parameterized == null || (n = parameterized.length) == 0) return;
 
-        Consumer<GenericsType> extractor = (GenericsType gt) -> {
-            ClassNode lowerBound = gt.getLowerBound();
-            if (lowerBound != null) {
-                extractPlaceholders(lowerBound, placeholders);
-            }
-            ClassNode[] upperBounds = gt.getUpperBounds();
-            if (upperBounds != null) {
-                for (ClassNode upperBound : upperBounds) {
-                    extractPlaceholders(upperBound, placeholders);
-                }
-            }
-        };
-
-        // GROOVY-8609, GROOVY-10067
+        // GROOVY-8609, GROOVY-10067, etc.
         if (type.isGenericsPlaceHolder()) {
             GenericsType gt = parameterized[0];
-            placeholders.put(new GenericsType.GenericsTypeName(gt.getName()), gt);
-            extractor.accept(gt);
+            placeholders.putIfAbsent(new GenericsType.GenericsTypeName(gt.getName()), gt);
             return;
         }
 
         GenericsType[] redirectGenericsTypes = type.redirect().getGenericsTypes();
-        if (redirectGenericsTypes == null) redirectGenericsTypes = parameterized;
-        else if (redirectGenericsTypes.length != parameterized.length) {
+        if (redirectGenericsTypes == null) {
+            redirectGenericsTypes = parameterized;
+        } else if (redirectGenericsTypes.length != n) {
             throw new GroovyBugError("Expected earlier checking to detect generics parameter arity mismatch" +
                     "\nExpected: " + type.getName() + toGenericTypesString(redirectGenericsTypes) +
                     "\nSupplied: " + type.getName() + toGenericTypesString(parameterized));
         }
 
-        List<GenericsType> valueList = new LinkedList<>();
-        for (int i = 0, n = redirectGenericsTypes.length; i < n; i += 1) {
+        List<GenericsType> typeArguments = new ArrayList<>(n);
+        for (int i = 0; i < n; i += 1) {
             GenericsType rgt = redirectGenericsTypes[i];
             if (rgt.isPlaceholder()) {
-                GenericsType.GenericsTypeName name = new GenericsType.GenericsTypeName(rgt.getName());
-                if (!placeholders.containsKey(name)) {
-                    GenericsType value = parameterized[i];
-                    placeholders.put(name, value);
-                    valueList.add(value);
-                }
+                GenericsType typeArgument = parameterized[i];
+                placeholders.computeIfAbsent(new GenericsType.GenericsTypeName(rgt.getName()), name -> {
+                    typeArguments.add(typeArgument);
+                    return typeArgument;
+                });
             }
         }
 
-        for (GenericsType value : valueList) {
-            if (value.isWildcard()) {
-                extractor.accept(value);
-            } else if (!value.isPlaceholder()) {
-                extractPlaceholders(value.getType(), placeholders);
+        // examine non-placeholder type args
+        for (GenericsType gt : typeArguments) {
+            if (gt.isWildcard()) {
+                ClassNode lowerBound = gt.getLowerBound();
+                if (lowerBound != null) {
+                    extractPlaceholders(lowerBound, placeholders);
+                } else {
+                    ClassNode[] upperBounds = gt.getUpperBounds();
+                    if (upperBounds != null) {
+                        for (ClassNode upperBound : upperBounds) {
+                            extractPlaceholders(upperBound, placeholders);
+                        }
+                    }
+                }
+            } else if (!gt.isPlaceholder()) {
+                extractPlaceholders(gt.getType(), placeholders);
             }
         }
     }
