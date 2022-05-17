@@ -70,8 +70,6 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
  */
 public class WideningCategories {
 
-    private static final List<ClassNode> EMPTY_CLASSNODE_LIST = Collections.emptyList();
-
     private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Collections.unmodifiableMap(new HashMap<ClassNode, Integer>() {
         private static final long serialVersionUID = -5178744121420941913L;
 
@@ -321,7 +319,7 @@ public class WideningCategories {
         return null;
     }
 
-    private static ClassNode lowestUpperBound(ClassNode a, ClassNode b, List<ClassNode> interfacesImplementedByA, List<ClassNode> interfacesImplementedByB) {
+    private static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b, Set<ClassNode> interfacesImplementedByA, Set<ClassNode> interfacesImplementedByB) {
         // first test special cases
         if (a==null || b==null) {
             // this is a corner case, you should not
@@ -441,49 +439,32 @@ public class WideningCategories {
             return buildTypeWithInterfaces(a,b, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
         }
 
-        // Look at the super classes
         ClassNode sa = a.getUnresolvedSuperClass();
         ClassNode sb = b.getUnresolvedSuperClass();
 
-        // extract implemented interfaces before "going up"
-        Set<ClassNode> ifa = new HashSet<ClassNode>();
-        extractInterfaces(a, ifa);
-        Set<ClassNode> ifb = new HashSet<ClassNode>();
-        extractInterfaces(b, ifb);
-        interfacesImplementedByA = interfacesImplementedByA==null?new LinkedList<ClassNode>(ifa):interfacesImplementedByA;
-        interfacesImplementedByB = interfacesImplementedByB==null?new LinkedList<ClassNode>(ifb):interfacesImplementedByB;
-
-        // check if no superclass is defined
-        // meaning that we reached the top of the object hierarchy
-        if (sa==null || sb==null) return buildTypeWithInterfaces(OBJECT_TYPE, OBJECT_TYPE, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
-
-
-        // if one superclass is derived (or equals) another
-        // then it is the common super type
+        if (interfacesImplementedByA == null)
+            interfacesImplementedByA = GeneralUtils.getInterfacesAndSuperInterfaces(a);
+        if (interfacesImplementedByB == null)
+            interfacesImplementedByB = GeneralUtils.getInterfacesAndSuperInterfaces(b);
+        // check if no superclass is defined, meaning that we reached the top of the object hierarchy
+        if (sa == null || sb == null) {
+            return buildTypeWithInterfaces(OBJECT_TYPE, OBJECT_TYPE, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
+        }
+        // if one superclass is derived (or equals) another then it is the common super type
         if (sa.isDerivedFrom(sb) || sb.isDerivedFrom(sa)) {
             return buildTypeWithInterfaces(sa, sb, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
         }
-        // superclasses are on distinct hierarchy branches, so we
-        // recurse on them
+        // superclasses are on distinct hierarchy branches, so we recurse on them
         return lowestUpperBound(sa, sb, interfacesImplementedByA, interfacesImplementedByB);
     }
 
-    private static void extractInterfaces(ClassNode node, Set<ClassNode> interfaces) {
-        if (node==null) return;
-        Collections.addAll(interfaces, node.getInterfaces());
-        extractInterfaces(node.getSuperClass(), interfaces);
-    }
-    
     /**
-     * Given the list of interfaces implemented by two class nodes, returns the list of the most specific common
-     * implemented interfaces.
-     * @param fromA
-     * @param fromB
-     * @return the list of the most specific common implemented interfaces
+     * Given the interfaces implemented by two types, returns a list of the most
+     * specific common implemented interfaces.
      */
-    private static List<ClassNode> keepLowestCommonInterfaces(List<ClassNode> fromA, List<ClassNode> fromB) {
-        if (fromA==null||fromB==null) return EMPTY_CLASSNODE_LIST;
-        Set<ClassNode> common = new HashSet<ClassNode>(fromA);
+    private static List<ClassNode> keepLowestCommonInterfaces(final Set<ClassNode> fromA, final Set<ClassNode> fromB) {
+        if (fromA == null || fromB == null) return Collections.emptyList();
+        Set<ClassNode> common = new HashSet<>(fromA);
         common.retainAll(fromB);
         List<ClassNode> result = new ArrayList<ClassNode>(common.size());
         for (ClassNode classNode : common) {

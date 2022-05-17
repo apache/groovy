@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : ternary operator.
  */
@@ -180,6 +182,46 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             assert a.m() == 1L
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10358
+    void testCommonInterface() {
+        assertScript '''
+            interface I {
+                int m(int i)
+            }
+            abstract class A implements I {
+            }
+            class B<T> extends A {
+                int m(int i) {
+                    i + 1
+                }
+            }
+            class C<T> extends A {
+                int m(int i) {
+                    i - 1
+                }
+            }
+
+            C<String> c = null; int i = 1
+            int x = (false ? c : new B<String>()).m(i) // Cannot find matching method A#m(int)
+            assert x == 2
+        '''
+    }
+
+    // GROOVY-10603
+    void testCommonInterface2() {
+        assertScript '''
+            interface I {}
+            interface J extends I {}
+            class Foo implements I {}
+            class Bar implements J {}
+
+            I test(Foo x, Bar y) {
+                true ? x : y // Cannot return value of type GroovyObject for method returning I
+            }
+            test(null, null)
         '''
     }
 
