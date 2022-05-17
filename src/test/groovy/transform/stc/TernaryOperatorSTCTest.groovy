@@ -210,6 +210,21 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10603
+    void testCommonInterface2() {
+        assertScript '''
+            interface I {}
+            interface J extends I {}
+            class Foo implements I {}
+            class Bar implements J {}
+
+            I test(Foo x, Bar y) {
+                true ? x : y // Cannot return value of type GroovyObject for method returning I
+            }
+            test(null, null)
+        '''
+    }
+
     // GROOVY-10130
     void testInstanceofGuard() {
         assertScript '''

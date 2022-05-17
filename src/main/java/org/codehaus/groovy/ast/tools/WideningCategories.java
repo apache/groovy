@@ -299,7 +299,7 @@ public class WideningCategories {
         return gt.getType();
     }
 
-    private static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b, List<ClassNode> interfacesImplementedByA, List<ClassNode> interfacesImplementedByB) {
+    private static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b, Set<ClassNode> interfacesImplementedByA, Set<ClassNode> interfacesImplementedByB) {
         // first test special cases
         if (a == null || b == null) {
             // this is a corner case, you should not
@@ -418,47 +418,31 @@ public class WideningCategories {
             return buildTypeWithInterfaces(a, b, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
         }
 
-        // Look at the super classes
         ClassNode sa = a.getUnresolvedSuperClass();
         ClassNode sb = b.getUnresolvedSuperClass();
 
-        // extract implemented interfaces before "going up"
-        Set<ClassNode> ifa = new HashSet<>();
-        extractInterfaces(a, ifa);
-        Set<ClassNode> ifb = new HashSet<>();
-        extractInterfaces(b, ifb);
-        interfacesImplementedByA = interfacesImplementedByA == null ? new LinkedList<>(ifa) : interfacesImplementedByA;
-        interfacesImplementedByB = interfacesImplementedByB == null ? new LinkedList<>(ifb) : interfacesImplementedByB;
+        if (interfacesImplementedByA == null)
+            interfacesImplementedByA = GeneralUtils.getInterfacesAndSuperInterfaces(a);
+        if (interfacesImplementedByB == null)
+            interfacesImplementedByB = GeneralUtils.getInterfacesAndSuperInterfaces(b);
 
-        // check if no superclass is defined
-        // meaning that we reached the top of the object hierarchy
-        if (sa == null || sb == null)
+        // check if no superclass is defined, meaning that we reached the top of the object hierarchy
+        if (sa == null || sb == null) {
             return buildTypeWithInterfaces(OBJECT_TYPE, OBJECT_TYPE, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
-
-        // if one superclass is derived (or equals) another
-        // then it is the common super type
+        }
+        // if one superclass is derived (or equals) another then it is the common super type
         if (sa.isDerivedFrom(sb) || sb.isDerivedFrom(sa)) {
             return buildTypeWithInterfaces(sa, sb, keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB));
         }
-        // superclasses are on distinct hierarchy branches, so we
-        // recurse on them
+        // superclasses are on distinct hierarchy branches, so we recurse on them
         return lowestUpperBound(sa, sb, interfacesImplementedByA, interfacesImplementedByB);
     }
 
-    private static void extractInterfaces(final ClassNode node, final Set<ClassNode> interfaces) {
-        if (node == null) return;
-        Collections.addAll(interfaces, node.getInterfaces());
-        extractInterfaces(node.getSuperClass(), interfaces);
-    }
-
     /**
-     * Given the list of interfaces implemented by two class nodes, returns the list of the most specific common
-     * implemented interfaces.
-     * @param fromA
-     * @param fromB
-     * @return the list of the most specific common implemented interfaces
+     * Given the interfaces implemented by two types, returns a list of the most
+     * specific common implemented interfaces.
      */
-    private static List<ClassNode> keepLowestCommonInterfaces(final List<ClassNode> fromA, final List<ClassNode> fromB) {
+    private static List<ClassNode> keepLowestCommonInterfaces(final Set<ClassNode> fromA, final Set<ClassNode> fromB) {
         if (fromA == null || fromB == null) return Collections.emptyList();
         Set<ClassNode> common = new HashSet<>(fromA);
         common.retainAll(fromB);
