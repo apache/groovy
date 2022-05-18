@@ -1104,15 +1104,10 @@ Printer
 
     // GROOVY-10092
     void testAssignBooleanValueToFloatLocalVariable() {
-        assertScript '''
-            class C {
-                void test() {
-                    float x = true // internal compiler error: Boolean cannot be cast to Number
-                }
-            }
-            //new C().test()
-            'TODO: STC error for incompatible assignment'
-        '''
+        shouldFailWithMessages '''
+            float x = true // internal compiler error: Boolean cannot be cast to Number
+        ''',
+        'Cannot assign value of type boolean to variable of type float'
     }
 
     // GROOVY-10424
