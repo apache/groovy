@@ -1345,6 +1345,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10266
+    void testDiamondInferrenceFromConstructor30() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+                T t
+            }
+            class B<U> {
+                def m() {
+                    U v = null
+                    U w = new A<>(v).t
+
+                    String x = ""
+                    String y = new A<>(x).t
+                }
+            }
+            new B<String>().m()
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
