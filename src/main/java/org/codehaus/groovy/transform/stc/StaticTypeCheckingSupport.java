@@ -121,9 +121,8 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
-import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
@@ -691,21 +690,33 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode rightRedirect = right.redirect();
         if (leftRedirect == rightRedirect) return true;
 
-        if (rightRedirect == void_WRAPPER_TYPE) return leftRedirect == VOID_TYPE;
-        if (rightRedirect == VOID_TYPE) return leftRedirect == void_WRAPPER_TYPE;
+        if (leftRedirect == VOID_TYPE) return rightRedirect == void_WRAPPER_TYPE;
+        if (leftRedirect == void_WRAPPER_TYPE) return rightRedirect == VOID_TYPE;
 
-        if (isNumberType(rightRedirect) || isNumberCategory(rightRedirect)) {
-            if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
-                // any number can be assigned to BigDecimal or Number
+        if (isLongCategory(getUnwrapper(leftRedirect))) {
+            // byte, char, int, long or short can be assigned any base number
+            if (isNumberType(rightRedirect) /*|| rightRedirect == char_TYPE*/) {
                 return true;
             }
-            if (isBigIntegerType(leftRedirect)) {
-                return isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
+        } else if (isFloatingCategory(getUnwrapper(leftRedirect))) {
+            // float or double can be assigned any base number type or BigDecimal
+            if (isNumberType(rightRedirect) || isBigDecimalType(rightRedirect)) {
+                return true;
             }
+        } else if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
+            // BigDecimal or Number can be assigned any derivitave of java.lang.Number
+            if (isNumberType(rightRedirect) || rightRedirect.isDerivedFrom(Number_TYPE)) {
+                return true;
+            }
+        } else if (isBigIntegerType(leftRedirect)) {
+            // BigInteger can be assigned byte, char, int, long, short or BigInteger
+            if (isLongCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE)) {
+                return true;
+            }
+        } else if (isWildcardLeftHandSide(leftRedirect)) {
+            // Object, String, [Bb]oolean or Class can be assigned anything (except null to boolean)
+            return !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression));
         }
-
-        // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
-        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression))) return true;
 
         if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
         if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
@@ -727,17 +738,8 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        // simple check on being subclass
-        if (right.isDerivedFrom(left) || (left.isInterface() && right.implementsInterface(left))) return true;
-
-        // if left and right are primitives or numbers allow
-        if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;
-        if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
-
-        // left is a float/double and right is a BigDecimal
-        if (isFloatingCategory(leftRedirect) && isBigDecimalType(rightRedirect)) {
-            return true;
-        }
+        // simple sub-type check
+        if (!left.isInterface() ? right.isDerivedFrom(left) : GeneralUtils.isOrImplements(right, left)) return true;
 
         if (right.isDerivedFrom(CLOSURE_TYPE) && isSAMType(left)) {
             return true;
