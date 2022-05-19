@@ -472,7 +472,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 chars()
             }
         ''',
-        'Cannot return value of type #T for method returning java.util.List'
+        'Cannot return value of type java.lang.CharSequence for method returning java.util.List'
     }
 
     // GROOVY-10098
@@ -1441,6 +1441,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             new C().test()
         '''
+    }
+
+    // GROOVY-10342
+    void testAssignmentShouldWorkForParameterizedType2() {
+        assertScript '''
+            class C<T> {
+                T t
+            }
+            def <X> X m() {
+                123
+            }
+            def <N extends Number> void test() {
+                int x = m()
+                Integer y = m()
+                C<Integer> z = new C<>(); z.t = m()
+
+                C<N> c_of_n = new C<N>(); c_of_n.t = m() // Cannot assign value of type #X to variable of type N
+            }
+            test()
+        '''
+
+        shouldFailWithMessages '''
+            def <X extends CharSequence> X m() {
+            }
+            def <N extends Number> void test() {
+                N n = m()
+            }
+        ''',
+        'Cannot assign value of type java.lang.CharSequence to variable of type N'
     }
 
     // GROOVY-9555
