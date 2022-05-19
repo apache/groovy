@@ -121,6 +121,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.ast.tools.WideningCategories.implementsInterfaceOrSubclassOf;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
@@ -698,11 +699,21 @@ public abstract class StaticTypeCheckingSupport {
             if (isNumberType(rightRedirect) /*|| rightRedirect == char_TYPE*/) {
                 return true;
             }
+            if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
+            if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
+            if ((leftRedirect == char_TYPE || leftRedirect == Character_TYPE) && rightRedirect == STRING_TYPE) {
+                return rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1;
+            }
         } else if (isFloatingCategory(getUnwrapper(leftRedirect))) {
             // float or double can be assigned any base number type or BigDecimal
             if (isNumberType(rightRedirect) || isBigDecimalType(rightRedirect)) {
                 return true;
             }
+        } else if (left.isGenericsPlaceHolder()) { // must precede non-final types
+            return right.getUnresolvedName().charAt(0) != '#' // RHS not adaptable
+                    ? left.getGenericsTypes()[0].isCompatibleWith(right) // GROOVY-7307, GROOVY-9952, et al.
+                    : implementsInterfaceOrSubclassOf(leftRedirect, rightRedirect); // GROOVY-10067, GROOVY-10342
+
         } else if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
             // BigDecimal or Number can be assigned any derivitave of java.lang.Number
             if (isNumberType(rightRedirect) || rightRedirect.isDerivedFrom(Number_TYPE)) {
@@ -713,20 +724,14 @@ public abstract class StaticTypeCheckingSupport {
             if (isLongCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE)) {
                 return true;
             }
+        } else if (leftRedirect.isDerivedFrom(Enum_Type)) {
+            // Enum types can be assigned String or GString (triggers `valueOf` call)
+            if (rightRedirect == STRING_TYPE || isGStringOrGStringStringLUB(rightRedirect)) {
+                return true;
+            }
         } else if (isWildcardLeftHandSide(leftRedirect)) {
             // Object, String, [Bb]oolean or Class can be assigned anything (except null to boolean)
             return !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression));
-        }
-
-        if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
-        if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
-        if ((leftRedirect == char_TYPE || leftRedirect == Character_TYPE) && rightRedirect == STRING_TYPE) {
-            return rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1;
-        }
-
-        // if left is an enum and right is String or GString we do valueOf
-        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == STRING_TYPE || isGStringType(rightRedirect))) {
-            return true;
         }
 
         // if right is array, map or collection we try invoking the constructor
@@ -738,16 +743,14 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        // simple sub-type check
-        if (!left.isInterface() ? right.isDerivedFrom(left) : GeneralUtils.isOrImplements(right, left)) return true;
+        if (implementsInterfaceOrSubclassOf(right, left)) {
+            return true;
+        }
 
         if (right.isDerivedFrom(CLOSURE_TYPE) && isSAMType(left)) {
             return true;
         }
 
-        if (left.isGenericsPlaceHolder()) {
-            return left.getGenericsTypes()[0].isCompatibleWith(right);
-        }
         // GROOVY-7316, GROOVY-10256: "Type x = m()" given "def <T> T m()"; T adapts to target
         return right.isGenericsPlaceHolder() && right.asGenericsType().isCompatibleWith(left);
     }
@@ -865,6 +868,9 @@ public abstract class StaticTypeCheckingSupport {
      * with trailing "[]".
      */
     static String prettyPrintType(final ClassNode type) {
+        if (type.getUnresolvedName().charAt(0) == '#') {
+            return type.redirect().toString(false);
+        }
         return type.toString(false);
     }
 

@@ -848,7 +848,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
 
-                if (lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
+                if (lType.isUsingGenerics()
+                        && missesGenericsTypes(resultType)
+                        // GROOVY-10324, GROOVY-10342, et al.
+                        && !resultType.isGenericsPlaceHolder()) {
                     // unchecked assignment
                     // List<Type> list = new LinkedList()
                     // Iterable<Type> iter = new LinkedList()
@@ -858,8 +861,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // the inferred type of the binary expression is the type of the RHS
                     // "completed" with generics type information available from the LHS
                     if (lType.equals(resultType)) {
+                        // GROOVY-6126, GROOVY-6558, GROOVY-6564, et al.
                         if (!lType.isGenericsPlaceHolder()) resultType = lType;
-                    } else if (!resultType.isGenericsPlaceHolder()) { // GROOVY-10324
+                    } else {
+                        // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, et al.
                         Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
                         extractGenericsConnections(gt, resultType, resultType.redirect());
                         ClassNode sc = resultType;
@@ -867,7 +872,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         } while (sc != null && !sc.equals(lType));
                         extractGenericsConnections(gt, lType, sc);
 
-                        resultType = applyGenericsContext(gt, resultType.redirect());// GROOVY-10235, et al.
+                        resultType = applyGenericsContext(gt, resultType.redirect());
                     }
                 }
 
