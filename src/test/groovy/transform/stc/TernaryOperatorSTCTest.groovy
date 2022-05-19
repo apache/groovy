@@ -166,6 +166,37 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10271
+    void testFunctionalInterfaceTarget1() {
+        ['true', 'false'].each { flag ->
+            assertScript """import java.util.function.Supplier
+
+                Supplier<Integer> x = { -> 1 }
+                Supplier<Integer> y = $flag ? x : { -> 2 }
+
+                assert y.get() == ($flag ? 1 : 2)
+            """
+        }
+    }
+
+    // GROOVY-10272
+    void testFunctionalInterfaceTarget2() {
+        assertScript '''
+            import java.util.function.Function
+
+            Function<Integer, Long> x
+            if (true) {
+                x = { a -> a.longValue() }
+            } else {
+                x = { Integer b -> (Long)b }
+            }
+            assert x.apply(42) == 42L
+
+            Function<Integer, Long> y = (true ? { a -> a.longValue() } : { Integer b -> (Long)b })
+            assert y.apply(42) == 42L
+        '''
+    }
+
     // GROOVY-10357
     void testAbstractMethodDefault() {
         assertScript '''
@@ -186,7 +217,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10358
-    void testCommonInterface() {
+    void testCommonInterface1() {
         assertScript '''
             interface I {
                 int m(int i)

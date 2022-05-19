@@ -4176,12 +4176,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         Expression trueExpression = expression.getTrueExpression();
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, null);
-        trueExpression.visit(this);
-        if (typeOfTrue == null) typeOfTrue = getType(trueExpression);
+        typeOfTrue = Optional.ofNullable(typeOfTrue).orElse(visitValueExpression(trueExpression));
         typeCheckingContext.popTemporaryTypeInfo(); // instanceof doesn't apply to false branch
         Expression falseExpression = expression.getFalseExpression();
-        falseExpression.visit(this);
-        ClassNode typeOfFalse = getType(falseExpression);
+        ClassNode typeOfFalse = visitValueExpression(falseExpression);
 
         ClassNode resultType;
         if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) { // GROOVY-5523
@@ -4203,11 +4201,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * @param expr true or false branch of ternary expression
+     * @return the inferred type of {@code expr}
+     */
+    private ClassNode visitValueExpression(final Expression expr) {
+        if (expr instanceof ClosureExpression) {
+            ClassNode targetType = checkForTargetType(expr, null);
+            if (isFunctionalInterface(targetType))
+                processFunctionalInterfaceAssignment(targetType, expr);
+        }
+        expr.visit(this);
+        return getType(expr);
+    }
+
+    /**
+     * @param expr true or false branch of ternary expression
      * @param type the inferred type of {@code expr}
      */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        ClassNode sourceType = Optional.ofNullable(getInferredReturnType(expr)).orElse(type);
-
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         BinaryExpression enclosingExpression = typeCheckingContext.getEnclosingBinaryExpression();
@@ -4221,6 +4231,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && isTypeSource(expr, enclosingMethod)) {
              targetType = enclosingMethod.getReturnType();
         }
+
+        if (expr instanceof ClosureExpression) { // GROOVY-10271, GROOVY-10272
+            return isSAMType(targetType) ? targetType : type;
+        }
+
+        ClassNode sourceType = Optional.ofNullable(getInferredReturnType(expr)).orElse(type);
 
         if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
             // GROOVY-10114: type parameter(s) could be inferred from call arguments
