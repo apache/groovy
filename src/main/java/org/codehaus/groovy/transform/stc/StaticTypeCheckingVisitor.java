@@ -1020,10 +1020,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         Function<Expression, MethodNode> setterCall = right -> {
-            MethodCallExpression call = callX(receiver, setterInfo.name, right);
-            call.setImplicitThis(false);
-            visitMethodCallExpression(call);
-            return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
+            try {
+                MethodCallExpression call = new MethodCallExpression(receiver, setterInfo.name, right);
+                call.setImplicitThis(false);
+                visitMethodCallExpression(call);
+                return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            } finally {
+                typeCheckingContext.popEnclosingBinaryExpression();
+            }
         };
 
         Function<MethodNode, ClassNode> setterType = setter -> {
