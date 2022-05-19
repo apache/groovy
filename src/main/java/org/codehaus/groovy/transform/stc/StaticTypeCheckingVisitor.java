@@ -986,9 +986,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 valueExpression = binX(leftExpression, op, rightExpression);
             }
         }
-        MethodCallExpression call = callX(ve, setterInfo.name, valueExpression);
-        call.setImplicitThis(false);
-        visitMethodCallExpression(call);
+        MethodCallExpression call = new MethodCallExpression(ve, setterInfo.name, valueExpression);
+        typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
+        try {
+            call.setImplicitThis(false);
+            visitMethodCallExpression(call);
+        } finally {
+            typeCheckingContext.popEnclosingBinaryExpression();
+        }
         MethodNode directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (directSetterCandidate == null) {
             // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
@@ -996,7 +1001,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
                 if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
-                    call = callX(ve, setterInfo.name, castX(type, valueExpression));
+                    call = new MethodCallExpression(ve, setterInfo.name, castX(type, valueExpression));
                     call.setImplicitThis(false);
                     visitMethodCallExpression(call);
                     directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);

@@ -1114,7 +1114,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10419
-    void testElvisAssignmentAndSetter() {
+    void testElvisAssignmentAndSetter1() {
         assertScript '''
             class C {
                 def p
@@ -1122,13 +1122,26 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                     this.p = p
                 }
             }
-            @groovy.transform.TypeChecked
-            void test(C c) {
-                c.p ?= 'x'
-            }
             def c = new C()
-            test(c)
+            c.p ?= 'x'
             assert c.p == 'x'
+            c.with {
+                p ?= 'y'
+            }
+            assert c.p == 'x'
+        '''
+    }
+
+    // GROOVY-10628
+    void testElvisAssignmentAndSetter2() {
+        assertScript '''
+            class C {
+                String getFoo() {
+                }
+                void setFoo(String foo) {
+                }
+            }
+            new C().foo ?= 'bar'
         '''
     }
 }
