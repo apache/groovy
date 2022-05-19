@@ -166,7 +166,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10271
+    // GROOVY-10271
     void testFunctionalInterfaceTarget1() {
         for (flag in ['true', 'false']) {
             assertScript """import java.util.function.Supplier
@@ -179,7 +179,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-10272
+    // GROOVY-10272
     void testFunctionalInterfaceTarget2() {
         assertScript '''
             import java.util.function.Function
@@ -235,7 +235,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10358
-    void testCommonInterface() {
+    void testCommonInterface1() {
         assertScript '''
             interface I {
                 int m(int i)

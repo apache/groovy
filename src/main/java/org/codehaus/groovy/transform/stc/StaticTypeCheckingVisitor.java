@@ -4205,12 +4205,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         Expression trueExpression = expression.getTrueExpression();
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, null);
-        trueExpression.visit(this);
-        if (typeOfTrue == null) typeOfTrue = getType(trueExpression);
+        typeOfTrue = Optional.ofNullable(typeOfTrue).orElse(visitValueExpression(trueExpression));
         typeCheckingContext.popTemporaryTypeInfo(); // instanceof doesn't apply to false branch
         Expression falseExpression = expression.getFalseExpression();
-        falseExpression.visit(this);
-        ClassNode typeOfFalse = getType(falseExpression);
+        ClassNode typeOfFalse = visitValueExpression(falseExpression);
 
         ClassNode resultType;
         if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) { // GROOVY-5523
@@ -4228,6 +4226,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
+    }
+
+    /**
+     * @param expr true or false branch of ternary expression
+     * @return the inferred type of {@code expr}
+     */
+    private ClassNode visitValueExpression(final Expression expr) {
+        if (expr instanceof ClosureExpression) {
+            applyTargetType(checkForTargetType(expr, null), expr);
+        }
+        expr.visit(this);
+        return getType(expr);
     }
 
     /**
@@ -4255,11 +4265,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
              targetType = enclosingMethod.getReturnType();
         }
 
+        if (expr instanceof ClosureExpression) { // GROOVY-10271, GROOVY-10272
+            return isSAMType(targetType) ? targetType : sourceType;
+        }
+
         if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
             // GROOVY-10114: type parameter(s) could be inferred from call arguments
             if (targetType == null) targetType = sourceType.getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) expr, targetType);
-            return sourceType;
         }
 
         if (targetType == null) return sourceType;
