@@ -21,6 +21,7 @@ package groovy.transform.stc
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
 
 final class MethodReferenceTest {
@@ -168,6 +169,8 @@ final class MethodReferenceTest {
             }
             test()
         '''
+
+        if (!isAtLeastJdk('11.0')) return
 
         assertScript shell, '''
             @CompileStatic
