@@ -30,7 +30,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
@@ -83,28 +82,23 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, int insn, ClassNode methodOwnerClassNode, MethodNode methodNode, boolean serializable) {
-        Parameter[] parameters = methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
-        List<Object> argumentList = new LinkedList<>();
+    default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final boolean serializable) {
+        Object[] arguments = !serializable ? new Object[3] : new Object[]{null, null, null, 5, 0};
 
-        argumentList.add(Type.getType(abstractMethodDesc));
-        argumentList.add(
-                new Handle(
-                        insn,
-                        BytecodeHelper.getClassInternalName(methodOwnerClassNode.getName()),
-                        methodNode.getName(),
-                        BytecodeHelper.getMethodDescriptor(methodNode),
-                        methodOwnerClassNode.isInterface()
-                )
-        );
-        argumentList.add(Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters)));
+        arguments[0] = Type.getType(abstractMethodDesc);
 
-        if (serializable) {
-            argumentList.add(5);
-            argumentList.add(0);
-        }
+        arguments[1] = new Handle(
+                insn, // H_INVOKESTATIC or H_INVOKEVIRTUAL or H_INVOKEINTERFACE (GROOVY-9853)
+                BytecodeHelper.getClassInternalName(methodOwner.getName()),
+                methodNode.getName(),
+                BytecodeHelper.getMethodDescriptor(methodNode),
+                methodOwner.isInterface());
 
-        return argumentList.toArray();
+        arguments[2] = Type.getType(
+                BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(),
+                (Parameter[]) methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)));
+
+        return arguments;
     }
 
     default ClassNode convertParameterType(ClassNode targetType, ClassNode parameterType, ClassNode inferredType) {

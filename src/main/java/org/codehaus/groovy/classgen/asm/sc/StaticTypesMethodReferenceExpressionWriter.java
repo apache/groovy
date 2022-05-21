@@ -134,14 +134,23 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             }
         }
 
+        int referenceKind;
+        if (isConstructorReference || methodRefMethod.isStatic()) {
+            referenceKind = Opcodes.H_INVOKESTATIC;
+        } else if (methodRefMethod.getDeclaringClass().isInterface()) {
+            referenceKind = Opcodes.H_INVOKEINTERFACE; // GROOVY-9853
+        } else {
+            referenceKind = Opcodes.H_INVOKEVIRTUAL;
+        }
+
         controller.getMethodVisitor().visitInvokeDynamicInsn(
                 abstractMethod.getName(),
                 createAbstractMethodDesc(functionalInterfaceType, typeOrTargetRef),
                 createBootstrapMethod(classNode.isInterface(), false),
                 createBootstrapMethodArguments(
                         abstractMethodDesc,
-                        methodRefMethod.isStatic() || isConstructorReference ? Opcodes.H_INVOKESTATIC : Opcodes.H_INVOKEVIRTUAL,
-                        isConstructorReference ? controller.getClassNode() : typeOrTargetRefType,
+                        referenceKind,
+                        isConstructorReference ? classNode : typeOrTargetRefType,
                         methodRefMethod,
                         false
                 )

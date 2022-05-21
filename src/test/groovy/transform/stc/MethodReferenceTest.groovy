@@ -20,6 +20,8 @@ package groovy.transform.stc
 
 import groovy.test.GroovyTestCase
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 final class MethodReferenceTest extends GroovyTestCase {
 
     // class::instanceMethod
@@ -128,6 +130,68 @@ final class MethodReferenceTest extends GroovyTestCase {
 
             fh = new FunctionHolder(One::getId)
             assert fh.apply(new Two(id:'xyz')) == 'xyz' // sub-type argument
+        '''
+    }
+
+    // class::instanceMethod -- GROOVY-9853
+    void testFunctionCI6() {
+        assertScript '''
+            import java.util.function.*
+            @groovy.transform.CompileStatic
+            void test() {
+                ToIntFunction<CharSequence> f = CharSequence::size
+                int size = f.applyAsInt("")
+                assert size == 0
+            }
+            test()
+        '''
+
+        assertScript '''
+            import java.util.function.*
+            @groovy.transform.CompileStatic
+            void test() {
+                ToIntFunction<CharSequence> f = CharSequence::length
+                int length = f.applyAsInt("")
+                assert length == 0
+            }
+            test()
+        '''
+
+        assertScript '''
+            import java.util.function.*
+            @groovy.transform.CompileStatic
+            void test() {
+                Function<CharSequence,Integer> f = CharSequence::length
+                Integer length = f.apply("")
+                assert length == 0
+            }
+            test()
+        '''
+
+        assertScript '''
+            import java.util.function.*
+            import java.util.stream.IntStream
+
+            @groovy.transform.CompileStatic
+            void test() {
+                Function<CharSequence,IntStream> f = CharSequence::chars // default method
+                IntStream chars = f.apply("")
+                assert chars.count() == 0
+            }
+            test()
+        '''
+
+        if (!isAtLeastJdk('11.0')) return
+
+        assertScript '''
+            import java.util.function.*
+            @groovy.transform.CompileStatic
+            void test() {
+                ToIntBiFunction<CharSequence,CharSequence> f = CharSequence::compare // static method
+                int result = f.applyAsInt("","")
+                assert result == 0
+            }
+            test()
         '''
     }
 
