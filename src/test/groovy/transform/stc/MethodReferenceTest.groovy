@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -27,10 +25,13 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class MethodReferenceTest {
 
-    private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().tap {
-        addCompilationCustomizers(new ImportCustomizer().addStarImports('java.util.function')
-                .addImports('java.util.stream.Collectors', 'groovy.transform.CompileStatic'))
-    })
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            normal 'groovy.transform.CompileStatic'
+            normal 'java.util.stream.Collectors'
+            star 'java.util.function'
+        }
+    }
 
     @Test // class::instanceMethod
     void testFunctionCI() {
@@ -61,13 +62,11 @@ final class MethodReferenceTest {
     @Test // class::instanceMethod -- GROOVY-10047
     void testFunctionCI3() {
         assertScript shell, '''
-            import static java.util.stream.Collectors.toMap
-
             @CompileStatic
             void p() {
                 List<String> list = ['a','bc','def']
                 Function<String,String> self = str -> str // help for toMap
-                def map = list.stream().collect(toMap(self, String::length))
+                def map = list.stream().collect(Collectors.toMap(self, String::length))
                 assert map == [a: 1, bc: 2, 'def': 3]
             }
 
@@ -75,13 +74,11 @@ final class MethodReferenceTest {
         '''
 
         assertScript shell, '''
-            import static java.util.stream.Collectors.toMap
-
             @CompileStatic
             void p() {
                 List<String> list = ['a','bc','def']
                 // TODO: inference for T in toMap(Function<? super T,...>, Function<? super T,...>)
-                def map = list.stream().collect(toMap(Function.<String>identity(), String::length))
+                def map = list.stream().collect(Collectors.toMap(Function.<String>identity(), String::length))
                 assert map == [a: 1, bc: 2, 'def': 3]
             }
 
@@ -99,7 +96,6 @@ final class MethodReferenceTest {
 
             p()
         '''
-
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
@@ -129,6 +125,61 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-9853
+    void testFunctionCI6() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                ToIntFunction<CharSequence> f = CharSequence::size
+                int size = f.applyAsInt("")
+                assert size == 0
+            }
+            test()
+        '''
+
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                ToIntFunction<CharSequence> f = CharSequence::length
+                int length = f.applyAsInt("")
+                assert length == 0
+            }
+            test()
+        '''
+
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Function<CharSequence,Integer> f = CharSequence::length
+                Integer length = f.apply("")
+                assert length == 0
+            }
+            test()
+        '''
+
+        assertScript shell, '''
+            import java.util.stream.IntStream
+
+            @CompileStatic
+            void test() {
+                Function<CharSequence,IntStream> f = CharSequence::chars // default method
+                IntStream chars = f.apply("")
+                assert chars.count() == 0
+            }
+            test()
+        '''
+
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                ToIntBiFunction<CharSequence,CharSequence> f = CharSequence::compare // static method
+                int result = f.applyAsInt("","")
+                assert result == 0
+            }
+            test()
+        '''
+    }
+
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript shell, '''
@@ -145,12 +196,11 @@ final class MethodReferenceTest {
     void testBinaryOperatorCI() {
         assertScript shell, '''
             @CompileStatic
-            void p() {
+            void test() {
                 def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::add)
                 assert 6.0G == result
             }
-
-            p()
+            test()
         '''
     }
 
@@ -456,12 +506,10 @@ final class MethodReferenceTest {
     @Test // class::staticMethod
     void testFunctionCS2() {
         assertScript shell, '''
-            import static java.util.stream.Collectors.toMap
-
             @CompileStatic
             void p() {
                 List<String> list = ['x','y','z']
-                def map = list.stream().collect(toMap(Function.identity(), Collections::singletonList))
+                def map = list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
                 assert map == [x: ['x'], y: ['y'], z: ['z']]
             }
 
@@ -611,7 +659,6 @@ final class MethodReferenceTest {
                 [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
             }
         '''
-
         assert err.message.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
     }
 
@@ -623,7 +670,6 @@ final class MethodReferenceTest {
                 Function<String,String> reference = String::toLowerCaseX
             }
         '''
-
         assert err.message.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
     }
 
@@ -641,7 +687,6 @@ final class MethodReferenceTest {
                 baz(this::foo) // not yet supported!
             }
         '''
-
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 
@@ -659,7 +704,6 @@ final class MethodReferenceTest {
                 }
             }
         '''
-
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 }
