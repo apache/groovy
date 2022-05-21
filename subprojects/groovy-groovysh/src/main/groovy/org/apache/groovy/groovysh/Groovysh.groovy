@@ -572,7 +572,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                     io.err.println(buff)
 
-                    buff.setLength(0) // Reset the buffer
+                    Groovysh.reset(buff) // Reset the buffer
                     if (doBreak) {
                         io.err.println('        @|bold ...|@')
                         break
@@ -580,6 +580,11 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
                 }
             }
         }
+    }
+
+    @CompileStatic
+    private static void reset(StringBuilder buff) {
+        buff.setLength(0)
     }
 
     // protected for mocking in tests
