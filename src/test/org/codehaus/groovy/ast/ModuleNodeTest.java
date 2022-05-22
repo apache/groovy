@@ -45,7 +45,7 @@ public final class ModuleNodeTest {
         ModuleNode mn = new ModuleNode((CompileUnit) null);
         mn.setDescription("#script.groovy");
 
-        assertEquals("Dummy class name should not be empty", "#script", mn.getScriptClassDummy().getName());
+        assertEquals("Dummy class name should not be empty", "_script", mn.getScriptClassDummy().getName());
     }
 
     @Test // GROOVY-9577

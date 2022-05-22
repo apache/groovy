@@ -28,11 +28,11 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 
 /**
- * Before Groovy 1.8, the structure of closure's inner classes
- * was a bit different than it is now in 1.8+.
- *
- * This test checks that closure inner classes are direct child of their enclosing class,
- * instead of being child of the outermost class.
+ * Before Groovy 1.8, the structure of closure's inner class was a bit different
+ * than it is now.
+ * <p>
+ * This test checks that closure inner class is direct child of its enclosing
+ * class, instead of being child of the outermost class.
  */
 final class ClosureAndInnerClassNodeStructureTest {
 
@@ -97,16 +97,18 @@ final class ClosureAndInnerClassNodeStructureTest {
         '''
     }
 
-    @Test //GROOVY-7119, GROOVY-7120
-    void testIrregularMethodName() {
-        assertScript '''
-            class X {
-                def 'foo!bar'() {
-                    return {}
+    @Test // GROOVY-7119, GROOVY-7120
+    void testIrregularMethodNames() {
+        [' ', '!', '"', '#', '$', '&', '\\\'', '(', ')', '*', '+', ',', '-', ':', '=', '@', '^', '{', '}', '~'].each { c ->
+            assertScript """
+                class X {
+                    def 'foo${c}bar'() {
+                        return {}
+                    }
                 }
-            }
-            def str = new X().'foo!bar'().getClass().getName()
-            assert str == 'X$_foo_bar_closure1'
-        '''
+                def str = new X().'foo${c}bar'().getClass().getName()
+                assert str == 'X\$_foo_bar_closure1'
+            """
+        }
     }
 }

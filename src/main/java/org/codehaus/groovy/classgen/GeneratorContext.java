@@ -24,9 +24,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.MethodNode;
 
-
 /**
- * A context shared across generations of a class and its inner classes
+ * A context shared across generations of a class and its inner classes.
  */
 public class GeneratorContext {
 
@@ -83,33 +82,31 @@ public class GeneratorContext {
                 + syntheticMethodIdx++;
     }
 
-    private static final int MIN_ENCODING = ' ';
-    private static final int MAX_ENCODING = ']';
-    private static final boolean[] CHARACTERS_TO_ENCODE = new boolean[MAX_ENCODING-MIN_ENCODING+1];
+    private static final boolean[] CHARACTERS_TO_ENCODE;
+    private static final int MIN_ENCODING, MAX_ENCODING;
     static {
-        CHARACTERS_TO_ENCODE[' '-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['!'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['/'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['.'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE[';'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['$'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['<'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['>'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['['-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE[']'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE[':'-MIN_ENCODING] = true;
-        CHARACTERS_TO_ENCODE['\\'-MIN_ENCODING] = true;
+        char[] chars = {' ', '!', '"', '#', '$', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '@', '[', '\\', ']', '^', '{', '}', '~'};
+
+        MIN_ENCODING = chars[0];
+        MAX_ENCODING = chars[chars.length - 1];
+        CHARACTERS_TO_ENCODE = new boolean[MAX_ENCODING - MIN_ENCODING + 1];
+
+        for (char c : chars) {
+            CHARACTERS_TO_ENCODE[c - MIN_ENCODING] = true;
+        }
     }
 
-    public static String encodeAsValidClassName(String name) {
-        final int l = name.length();
-        StringBuilder b = null;
+    public static String encodeAsValidClassName(final String name) {
+        if (name.equals("module-info") || name.equals("package-info")) return name;
+
         int lastEscape = -1;
-        for(int i = 0; i < l; ++i) {
-            final int encodeIndex = name.charAt(i) - MIN_ENCODING;
+        StringBuilder b = null;
+        final int n = name.length();
+        for (int i = 0; i < n; i += 1) {
+            int encodeIndex = name.charAt(i) - MIN_ENCODING;
             if (encodeIndex >= 0 && encodeIndex < CHARACTERS_TO_ENCODE.length) {
                 if (CHARACTERS_TO_ENCODE[encodeIndex]) {
-                    if(b == null) {
+                    if (b == null) {
                         b = new StringBuilder(name.length() + 3);
                         b.append(name, 0, i);
                     } else {
@@ -120,9 +117,9 @@ public class GeneratorContext {
                 }
             }
         }
-        if(b == null) return name;
-        if (lastEscape == -1) throw new GroovyBugError("unexpected escape char control flow in "+name);
-        b.append(name, lastEscape + 1, l);
+        if (b == null) return name;
+        if (lastEscape == -1) throw new GroovyBugError("unexpected escape char control flow in " + name);
+        b.append(name, lastEscape + 1, n);
         return b.toString();
     }
 }
