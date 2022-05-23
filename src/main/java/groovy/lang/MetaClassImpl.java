@@ -1022,7 +1022,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
 
-        } catch (MissingMethodExceptionNoStack | InvokerInvocationException e) {
+        } catch (MissingMethodExceptionNoStack | InvokerInvocationException | IllegalArgumentException e) {
             if (ownerIsClass) {
                 if (MethodClosure.NEW.equals(methodName)) { // CONSTRUCTOR REFERENCE
                     if (!ownerClass.isArray()) {

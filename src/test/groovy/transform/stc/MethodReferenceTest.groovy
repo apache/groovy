@@ -709,4 +709,14 @@ final class MethodReferenceTest {
         '''
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
+
+    @Test // GROOVY-10635
+    void testRecordComponentMethodReference() {
+        assertScript shell, '''
+            record Bar(String name) { }
+
+            def bars = [new Bar(name: 'A'), new Bar(name: 'B')]
+            assert bars.stream().map(Bar::name).map(String::toLowerCase).toList() == ['a', 'b']
+        '''
+    }
 }
