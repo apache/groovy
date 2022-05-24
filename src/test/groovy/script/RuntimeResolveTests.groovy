@@ -74,6 +74,7 @@ final class RuntimeResolveTests {
 
     @Test
     void testResolvePackagePeersAndCompileTrait() {
+        runScript('/groovy/bugs/groovyA143/Main.groovy')
         runScript('/groovy/bugs/groovyA144/Main.groovy')
     }
 

@@ -43,6 +43,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -100,8 +101,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             return transformBinaryExpression((BinaryExpression) exp, weavedType);
         } else if (exp instanceof StaticMethodCallExpression) {
             StaticMethodCallExpression call = (StaticMethodCallExpression) exp;
-            ClassNode ownerType = call.getOwnerType();
-            if (traitClass.equals(ownerType)) {
+            if (call.getOwnerType().equals(traitClass)) {
                 MethodCallExpression mce = callX(
                         varX(weaved),
                         call.getMethod(),
@@ -187,9 +187,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         Expression leftExpression = exp.getLeftExpression();
         Expression rightExpression = exp.getRightExpression();
         Token operation = exp.getOperation();
-        if (operation.getText().equals("=")) {
+        if (operation.getType() == Types.ASSIGN) {
             String leftFieldName = null;
-            // it's an assignment
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
                 leftFieldName = ((VariableExpression) leftExpression).getAccessedVariable().getName();
             } else if (leftExpression instanceof FieldExpression) {
@@ -197,14 +196,13 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             } else if (leftExpression instanceof PropertyExpression
                     && (((PropertyExpression) leftExpression).isImplicitThis() || "this".equals(((PropertyExpression) leftExpression).getObjectExpression().getText()))) {
                 leftFieldName = ((PropertyExpression) leftExpression).getPropertyAsString();
-                FieldNode fn = tryGetFieldNode(weavedType, leftFieldName);
-                if (fieldHelper == null || fn == null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
-                    return binX(propX(varX(weaved), leftFieldName), operation, transform(rightExpression));
-                }
             }
             if (leftFieldName != null) {
-                FieldNode fn = weavedType.getDeclaredField(leftFieldName);
                 FieldNode staticField = tryGetFieldNode(weavedType, leftFieldName);
+                if (fieldHelper == null || staticField == null && !fieldHelper.hasPossibleMethod(Traits.helperSetterName(new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null)), rightExpression)) {
+                    return binX(propX(varX(weaved), leftFieldName), operation, transform(rightExpression)); // GROOVY-7342, GROOVY-7456, GROOVY-9739, GROOVY-10143, et al.
+                }
+                FieldNode fn = weavedType.getDeclaredField(leftFieldName);
                 if (fn == null) {
                     fn = new FieldNode(leftFieldName, 0, ClassHelper.OBJECT_TYPE, weavedType, null);
                 }
@@ -217,7 +215,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 MethodCallExpression mce = callX(
                         receiver,
                         method,
-                        args(super.transform(rightExpression))
+                        super.transform(rightExpression)
                 );
                 mce.setImplicitThis(false);
                 mce.setSourcePosition(exp);
@@ -225,6 +223,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 return mce;
             }
         }
+
         Expression leftTransform = transform(leftExpression);
         Expression rightTransform = transform(rightExpression);
         Expression ret = exp instanceof DeclarationExpression ?
