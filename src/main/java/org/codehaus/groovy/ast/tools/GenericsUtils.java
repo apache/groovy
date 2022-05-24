@@ -64,7 +64,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implem
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = GenericsType.EMPTY_ARRAY;
-    public static final String JAVA_LANG_OBJECT = "java.lang.Object";
+    public static final String JAVA_LANG_OBJECT = ClassHelper.OBJECT;
 
     /**
      * Given a parameterized type and a generic type information, aligns actual type parameters. For example, if a

@@ -3482,4 +3482,22 @@ final class TraitASTTransformationTest {
             new AbstractData<TestData>()
         '''
     }
+
+    // GROOVY-10598
+    void testAssignOperators() {
+        assertScript shell, '''
+            trait T {
+            }
+            class C implements T {
+                @TypeChecked test() {
+                    @ASTTest(phase=CANONICALIZATION, value={
+                        // simulates GrailsASTUtils#addApiVariableDeclaration DeclarationExpression
+                        node.operation.@type = org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR
+                    })
+                    def var = null
+                }
+            }
+            new C().test()
+        '''
+    }
 }

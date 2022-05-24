@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -92,30 +93,25 @@ public abstract class TraitComposer {
     public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
 
     /**
-     * Given a class node, if this class node implements a trait, then generate all the appropriate
-     * code which delegates calls to the trait. It is safe to call this method on a class node which
-     * does not implement a trait.
-     * @param cNode a class node
-     * @param unit the source unit
+     * Given a class node, if this class node implements a trait, then generate
+     * all the appropriate code which delegates calls to the trait.  It is safe
+     * to call this method on a class node which does not implement a trait.
      */
-    public static void doExtendTraits(final ClassNode cNode, final SourceUnit unit, final CompilationUnit cu) {
-        if (cNode.isInterface()) return;
-        boolean isItselfTrait = Traits.isTrait(cNode);
-        SuperCallTraitTransformer superCallTransformer = new SuperCallTraitTransformer(unit);
-        if (isItselfTrait) {
-            checkTraitAllowed(cNode, unit);
+    public static void doExtendTraits(final ClassNode cn, final SourceUnit su, final CompilationUnit cu) {
+        if (cn.isInterface()) return;
+        if (Traits.isTrait(cn)) {
+            checkTraitAllowed(cn, su);
             return;
         }
-        if (!cNode.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
-            List<ClassNode> traits = Traits.findTraits(cNode);
-            for (ClassNode trait : traits) {
-                TraitHelpersTuple helpers = Traits.findHelpers(trait);
-                applyTrait(trait, cNode, helpers, unit);
-                superCallTransformer.visitClass(cNode);
-                if (unit!=null) {
-                    ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(unit, cu.getTransformLoader());
-                    collector.visitClass(cNode);
-                }
+        if (!cn.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
+            GroovyClassVisitor visitor = new SuperCallTraitTransformer(su);
+            for (ClassNode trait : Traits.findTraits(cn)) {
+                applyTrait(trait, cn, Traits.findHelpers(trait), su);
+                visitor.visitClass(cn);
+            }
+            if (su != null) {
+                visitor = new ASTTransformationCollectorCodeVisitor(su, cu.getTransformLoader());
+                visitor.visitClass(cn);
             }
         }
     }
