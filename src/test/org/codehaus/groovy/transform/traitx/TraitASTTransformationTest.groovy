@@ -22,6 +22,8 @@ import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -3350,6 +3352,96 @@ final class TraitASTTransformationTest {
             Main.test1()
             new Main().test2()
         '''
+    }
+
+    @Test // GROOVY-10143
+    void testTraitAccessToInheritedProperty() {
+        def sourceDir = File.createTempDir()
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        try {
+            def a = new File(sourceDir, 'A.groovy')
+            a.write '''
+                abstract class A {
+                }
+            '''
+            def b = new File(sourceDir, 'B.groovy')
+            b.write '''
+                @groovy.transform.SelfType(A)
+                trait B {
+                    abstract boolean booleanMethod1()
+                    abstract boolean booleanMethod2()
+                    abstract boolean booleanMethod3()
+                    Object getManager() {
+                        if (this.managerObject == null) {
+                            this.managerObject = new C(this as B)
+                        }
+                        this.managerObject
+                    }
+                    C managerObject
+                }
+            '''
+            def c = new File(sourceDir, 'C.groovy')
+            c.write '''
+                class C {
+                    final B base
+                    C(B base) {
+                        this.base = base
+                    }
+                }
+            '''
+            def d = new File(sourceDir, 'D.groovy')
+            d.write '''
+                @groovy.transform.SelfType([A])
+                trait D extends B {
+                    boolean booleanMethod1() {
+                        true
+                    }
+                    boolean booleanMethod2() {
+                        true
+                    }
+                    boolean booleanMethod3() {
+                        true
+                    }
+                    @Override
+                    Object getManager() {
+                        if (managerObject == null) {
+                            managerObject = new E(this as B)
+                        }
+                        managerObject
+                    }
+                }
+            '''
+            def e = new File(sourceDir, 'E.groovy')
+            e.write '''
+                @groovy.transform.InheritConstructors
+                class E extends C {
+                    String getStringValue() {
+                        'string value'
+                    }
+                }
+            '''
+            def f = new File(sourceDir, 'Main.groovy')
+            f.write '''
+                class X extends A implements D {
+                }
+                def x = new X()
+                assert x.manager.base === x
+                assert x.manager.stringValue == 'string value'
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new CompilationUnit(config, null, loader)
+            cu.addSources(a, b, c, d, e, f)
+            cu.compile()
+
+            loader.addClasspath(config.targetDirectory.absolutePath)
+            loader.loadClass('Main').main()
+        } finally {
+            [sourceDir, config.targetDirectory]*.deleteDir()
+        }
     }
 
     @Test // GROOVY-9386
