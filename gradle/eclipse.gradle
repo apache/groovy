@@ -33,6 +33,8 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
         }
 
         project.tasks.eclipse.doLast {
+            if (!file("${project.projectDir}/.classpath").exists()) return
+
             file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs").with { prefs ->
                 if (!prefs.exists()) {
                     append('''\
@@ -106,11 +108,23 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
     }
 
     eclipse.classpath.file.whenMerged {
+        // it's just 'src/test' not 'src/test/java' and 'src/test/groovy'
         entries.removeAll { entry -> entry.path in ['src/test/groovy', 'src/test-resources'] }
 
         entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
             entry.entryAttributes['ignore_optional_problems'] = 'true'
             entry.entryAttributes['optional'] = 'true'
+        }
+    }
+
+    // exclude folder 'subprojects' from root project
+    eclipse.project.resourceFilter {
+        type = 'EXCLUDE_ALL'
+        appliesTo = 'FOLDERS'
+        recursive = false
+        matcher {
+            id = 'org.eclipse.ui.ide.multiFilter'
+            arguments = '1.0-projectRelativePath-matches-true-false-subprojects'
         }
     }
 
