@@ -171,7 +171,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                             .map(e -> e.getType().getText())
                             .collect(Collectors.joining(","))
                     + ")] in the type[" + typeOrTargetRefType.getText() + "]", methodReferenceExpression);
-        } else if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
+        } else if (parametersWithExactType.length > 0 && isTypeReferringInstanceMethod(typeOrTargetRef, methodRefMethod)) {
             ClassNode firstParameterType = parametersWithExactType[0].getType();
             if (!isAssignableTo(firstParameterType, typeOrTargetRefType)) {
                 throw new RuntimeParserException("Invalid receiver type: " + firstParameterType.getText() + " is not compatible with " + typeOrTargetRefType.getText(), typeOrTargetRef);
@@ -268,7 +268,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         return chooseMethodRefMethodCandidate(typeOrTargetRef, methods.stream().filter(method -> {
             Parameter[] parameters = method.getParameters();
-            if (isTypeReferingInstanceMethod(typeOrTargetRef, method)) {
+            if (isTypeReferringInstanceMethod(typeOrTargetRef, method)) {
                 // there is an implicit parameter for "String::length"
                 ClassNode firstParamType = method.getDeclaringClass();
 
@@ -304,7 +304,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return (methodRefMethod instanceof ExtensionMethodNode);
     }
 
-    private static boolean isTypeReferingInstanceMethod(final Expression typeOrTargetRef, final MethodNode mn) {
+    private static boolean isTypeReferringInstanceMethod(final Expression typeOrTargetRef, final MethodNode mn) {
         // class::instanceMethod
         return (typeOrTargetRef instanceof ClassExpression) && ((mn != null && !mn.isStatic())
                 || (isExtensionMethod(mn) && !((ExtensionMethodNode) mn).isStaticExtension()));
