@@ -158,4 +158,15 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             def s = (() -> ['']) as Supplier<Number>
         ''', 'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
     }
+
+    // GROOVY-8045
+    void testCoerceToFunctionalInterface2() {
+        assertScript '''import java.util.function.*
+            def f(Supplier<Integer>... suppliers) {
+                suppliers*.get().sum()
+            }
+            Object result = f({->1},{->2})
+            assert result == 3
+        '''
+    }
 }
