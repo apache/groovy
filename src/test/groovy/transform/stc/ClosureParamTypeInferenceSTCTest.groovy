@@ -1222,6 +1222,20 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
         '''
     }
 
+    void testGroovy6022() {
+        assertScript '''import groovy.transform.stc.SimpleType
+            class Item {
+                int x
+            }
+
+            void m(Item item, @ClosureParams(value=SimpleType, options="Item") Closure... closures) {
+                closures*.call(item)
+            }
+
+            m(new Item(), { item -> item.x }, { it.x })
+        '''
+    }
+
     void testGroovy6602() {
         shouldFailWithMessages '''import groovy.transform.stc.SimpleType
             void foo(@ClosureParams(value=SimpleType, options="java.lang.Number") Closure c) {

@@ -747,14 +747,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Tuple2<Parameter, Expression> visitEnhancedForControl(final EnhancedForControlContext ctx) {
-        Parameter parameter = configureAST(
-                new Parameter(this.visitType(ctx.type()), this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName()),
-                ctx.variableDeclaratorId());
+        Parameter parameter = new Parameter(this.visitType(ctx.type()), this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName());
+        ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
+        modifierManager.processParameter(parameter);
 
-        // FIXME Groovy will ignore variableModifier of parameter in the for control
-        // In order to make the new parser behave same with the old one, we do not process variableModifier*
-
-        return tuple(parameter, (Expression) this.visit(ctx.expression()));
+        return tuple(configureAST(parameter, ctx.variableDeclaratorId()), (Expression) this.visit(ctx.expression()));
     }
 
     @Override

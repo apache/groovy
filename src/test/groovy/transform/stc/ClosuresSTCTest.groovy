@@ -69,12 +69,28 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10636
+    void testClosureWithoutArguments6() {
+        assertScript '''
+            def f(Closure<Number>... closures) {
+                closures*.call().sum()
+            }
+            Object result = f({->1},{->2})
+            assert result == 3
+        '''
+        shouldFailWithMessages '''
+            def f(Closure<Number>... closures) {
+            }
+            f({->1},{->'x'})
+        ''',
+        'Cannot return value of type java.lang.String for closure expecting java.lang.Number'
+    }
+
     void testClosureWithArguments1() {
         assertScript '''
             def c = { int a, int b -> a + b }
             assert c(5, 7) == 12
         '''
-
         shouldFailWithMessages '''
             def c = { int a, int b -> a + b }
             c('5', '7')
@@ -87,7 +103,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def result = { int a, int b -> a + b }(5, 7)
             assert result == 12
         '''
-
         shouldFailWithMessages '''
             { int a, int b -> a + b }('5', 7)
         ''',

@@ -2790,14 +2790,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         expressions.addAll(arguments.getExpressions());
 
         int nExpressions = expressions.size();
+        int nthParameter = parameters.length - 1;
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitClosures && expression instanceof ClosureExpression
                     || !visitClosures && !(expression instanceof ClosureExpression)) {
-                if (i < parameters.length && visitClosures) {
-                    Parameter target = parameters[i];
-                    ClassNode targetType = target.getType();
+                if (visitClosures && nthParameter != -1) { // GROOVY-10636: vargs call
                     ClosureExpression source = (ClosureExpression) expression;
+                    Parameter target = parameters[Math.min(i, nthParameter)];
+                    ClassNode targetType = target.getType();
+                    if (targetType.isArray() && i >= nthParameter)
+                        targetType = targetType.getComponentType();
                     checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, source, target);
                     if (selectedMethod instanceof ExtensionMethodNode) {
                         if (i > 0) {

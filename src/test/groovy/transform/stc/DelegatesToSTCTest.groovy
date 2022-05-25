@@ -389,6 +389,51 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6022
+    void testDelegatesToVariadicParameter() {
+        assertScript '''
+            def m(@DelegatesTo.Target target, @DelegatesTo(strategy=Closure.DELEGATE_FIRST) Closure... a) {
+                for (Closure c : a) {
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = target
+                    c()
+                }
+            }
+
+            m([x:0], { get('x') }, { put('y',1) })
+        '''
+
+        assertScript '''
+            class Item {
+                int x
+            }
+
+            void m(@DelegatesTo.Target Item item, @DelegatesTo(strategy=Closure.DELEGATE_FIRST) Closure... closures) {
+                for (closure in closures) {
+                    closure.resolveStrategy = Closure.DELEGATE_FIRST
+                    closure.delegate = item
+                    closure.call()
+                }
+            }
+
+            m(new Item(), { x })
+        '''
+
+        assertScript '''
+            class Item {
+                int x
+            }
+
+            void m(@DelegatesTo.Target Item item, @DelegatesTo(strategy=Closure.DELEGATE_FIRST) Closure... closures) {
+                for (@DelegatesTo(strategy=Closure.DELEGATE_FIRST) Closure closure : closures) {
+                    item.with(closure)
+                }
+            }
+
+            m(new Item(), { x })
+        '''
+    }
+
     // GROOVY-6055
     void testDelegatesToInStaticContext() {
         assertScript '''
