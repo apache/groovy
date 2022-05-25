@@ -597,30 +597,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             if (enclosingClosure != null) {
                 switch (name) {
-                    case "delegate":
-                        DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
-                        if (dm != null) {
-                            storeType(vexp, dm.getType());
-                            return;
-                        }
-                        // falls through
-                    case "owner":
-                        if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
-                            storeType(vexp, CLOSURE_TYPE);
-                            return;
-                        }
-                        // falls through
-                    case "thisObject":
-                        storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                  case "delegate":
+                    DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                    if (dm != null) {
+                        storeType(vexp, dm.getType());
                         return;
-                    case "parameterTypes":
-                        storeType(vexp, CLASS_Type.makeArray());
+                    }
+                    // falls through
+                  case "owner":
+                    if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                        storeType(vexp, CLOSURE_TYPE);
                         return;
-                    case "maximumNumberOfParameters":
-                    case "resolveStrategy":
-                    case "directive":
-                        storeType(vexp, int_TYPE);
-                        return;
+                    }
+                    // falls through
+                  case "thisObject":
+                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                    return;
+                  case "parameterTypes":
+                    storeType(vexp, CLASS_Type.makeArray());
+                    return;
+                  case "maximumNumberOfParameters":
+                  case "resolveStrategy":
+                  case "directive":
+                    storeType(vexp, int_TYPE);
+                    return;
                 }
             }
 
@@ -1778,10 +1778,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 // map*.property syntax acts on Entry
                 switch (pexp.getPropertyAsString()) {
-                case "key":
+                  case "key":
                     pexp.putNodeMetaData(READONLY_PROPERTY,Boolean.TRUE); // GROOVY-10326
                     return makeClassSafe0(LIST_TYPE, gts[0]);
-                case "value":
+                  case "value":
                     GenericsType v = gts[1];
                     if (!v.isWildcard()
                             && !Modifier.isFinal(v.getType().getModifiers())
@@ -1789,7 +1789,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         v = GenericsUtils.buildWildcardType(v.getType()); // GROOVY-10325
                     }
                     return makeClassSafe0(LIST_TYPE, v);
-                default:
+                  default:
                     addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
                 }
             }
@@ -2708,7 +2708,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     break;
                 }
             }
-            if (mn == null || mn.isEmpty()) {
+            if (mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
             boolean callArgsVisited = false;
@@ -2720,10 +2720,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
-                        ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
-                        returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
-                        callArgsVisited = true;
+                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate); callArgsVisited = true;
+                        ClassNode rt = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
+                        if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
+                            returnType = rt;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
@@ -3278,30 +3278,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static void addReceivers(final List<Receiver<String>> receivers, final Collection<Receiver<String>> owners, final DelegationMetadata dmd, final String path) {
         int strategy = dmd.getStrategy();
         switch (strategy) {
-            case Closure.DELEGATE_ONLY:
-            case Closure.DELEGATE_FIRST:
-                addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
-                if (strategy == Closure.DELEGATE_FIRST) {
-                    if (dmd.getParent() == null) {
-                        receivers.addAll(owners);
-                    } else {
-                        //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
-                        addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
-                    }
-                }
-                break;
-            case Closure.OWNER_ONLY:
-            case Closure.OWNER_FIRST:
+          case Closure.DELEGATE_ONLY:
+          case Closure.DELEGATE_FIRST:
+            addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
+            if (strategy == Closure.DELEGATE_FIRST) {
                 if (dmd.getParent() == null) {
                     receivers.addAll(owners);
                 } else {
                     //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
                     addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
                 }
-                if (strategy == Closure.OWNER_FIRST) {
-                    addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
-                }
-                break;
+            }
+            break;
+          case Closure.OWNER_ONLY:
+          case Closure.OWNER_FIRST:
+            if (dmd.getParent() == null) {
+                receivers.addAll(owners);
+            } else {
+                //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
+                addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
+            }
+            if (strategy == Closure.OWNER_FIRST) {
+                addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
+            }
+            break;
         }
     }
 
@@ -3359,21 +3359,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isCallOnClosure = false;
         FieldNode fieldNode = null;
         switch (name) {
-            case "call":
-            case "doCall":
-                if (!isThisObjectExpression) {
-                    isCallOnClosure = receiver.equals(CLOSURE_TYPE);
-                    break;
+          case "call":
+          case "doCall":
+            if (!isThisObjectExpression) {
+                isCallOnClosure = receiver.equals(CLOSURE_TYPE);
+                break;
+            }
+          default:
+            if (isThisObjectExpression) {
+                ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+                fieldNode = enclosingType.getDeclaredField(name);
+                if (fieldNode != null && getType(fieldNode).equals(CLOSURE_TYPE)
+                        && !enclosingType.hasPossibleMethod(name, callArguments)) {
+                    isCallOnClosure = true;
                 }
-            default:
-                if (isThisObjectExpression) {
-                    ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-                    fieldNode = enclosingType.getDeclaredField(name);
-                    if (fieldNode != null && getType(fieldNode).equals(CLOSURE_TYPE)
-                            && !enclosingType.hasPossibleMethod(name, callArguments)) {
-                        isCallOnClosure = true;
-                    }
-                }
+            }
         }
 
         try {
@@ -4920,7 +4920,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     node.setDeclaringClass(property.getDeclaringClass());
                     return Collections.singletonList(node);
                 }
-            } else if (methods.isEmpty() && args != null && args.length == 1) {
+            } else if (methods.isEmpty() && args.length == 1) {
                 // maybe we are looking for a setter ?
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
@@ -5951,10 +5951,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public static class SignatureCodecFactory {
         public static SignatureCodec getCodec(final int version, final ClassLoader classLoader) {
             switch (version) {
-                case 1:
-                    return new SignatureCodecVersion1(classLoader);
-                default:
-                    return null;
+              case 1:
+                return new SignatureCodecVersion1(classLoader);
+              default:
+                return null;
             }
         }
     }
