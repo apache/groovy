@@ -108,6 +108,9 @@ public class VariableExpressionTransformer {
         MethodCallExpression mce = callThisX(dmct.getName());
         mce.getMethod().setSourcePosition(ve);
         mce.setMethodTarget(dmct);
+        // GROOVY-10637: return type might be parameterized
+        mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
+         ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
         return mce;
     }
 }
