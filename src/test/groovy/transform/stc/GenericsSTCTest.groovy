@@ -695,6 +695,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10637
+    void testReturnTypeInferenceWithMethodGenerics27() {
+        assertScript '''
+            class Outer extends groovy.transform.stc.MyBean<Inner> {
+                static class Inner {
+                    String string
+                }
+                def bar() {
+                    { -> value.string }.call()
+                }
+            }
+
+            def foo = new Outer(value: new Outer.Inner(string:'hello world'))
+            assert foo.bar() == 'hello world'
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
