@@ -346,17 +346,17 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
     void testConstructJavaBeanFromMap() {
         assertScript '''import groovy.transform.stc.MyBean
 
-        MyBean bean = new MyBean(name:'Cedric')
-        assert bean.name == 'Cedric'
+        MyBean bean = new MyBean<String>(value:'Cedric')
+        assert bean.value == 'Cedric'
         '''
     }
     void testConstructJavaBeanFromMapAndSubclass() {
         assertScript '''import groovy.transform.stc.MyBean
-        class MyBean2 extends MyBean {
+        class MyBean2 extends MyBean<String> {
             int age
         }
-        MyBean2 bean = new MyBean2(name:'Cedric', age:33)
-        assert bean.name == 'Cedric'
+        MyBean2 bean = new MyBean2(value:'Cedric', age:33)
+        assert bean.value == 'Cedric'
         assert bean.age == 33
         '''
     }

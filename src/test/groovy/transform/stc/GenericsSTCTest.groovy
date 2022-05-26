@@ -717,7 +717,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10637
-    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics27() {
         assertScript '''
             class Outer extends groovy.transform.stc.MyBean<Inner> {

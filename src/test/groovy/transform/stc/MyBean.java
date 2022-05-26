@@ -21,14 +21,15 @@ package groovy.transform.stc;
 /**
  * A simple Java bean, used by unit test for GROOVY-5578
  */
-public class MyBean {
-    private String name;
+public class MyBean<T> {
 
-    public String getName() {
-        return name;
+    private T value;
+
+    public T getValue() {
+        return value;
     }
 
-    public void setName(final String name) {
-        this.name = name;
+    public void setValue(final T value) {
+        this.value = value;
     }
 }
