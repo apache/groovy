@@ -25,7 +25,7 @@ dependencies {
 
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
-    testImplementation 'net.javacrumbs.json-unit:json-unit:2.33.0'
+    testImplementation 'net.javacrumbs.json-unit:json-unit:2.35.0'
 
     testRuntimeOnly project(':'), {
         because "Tests are using Grapes"
