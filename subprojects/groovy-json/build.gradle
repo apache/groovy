@@ -42,3 +42,10 @@ plugins.withId('eclipse') {
         entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
     }
 }
+
+tasks.named('rat') {
+    excludes += [
+            // test file
+            'src/test/resources/groovy9802.json'
+    ]
+}
