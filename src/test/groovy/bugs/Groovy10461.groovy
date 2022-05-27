@@ -30,7 +30,7 @@ final class Groovy10461 {
             @GrabExclude('org.codehaus.groovy:groovy-xml')
             @GrabExclude('org.codehaus.groovy:groovy-json')
 
-            @Grab('com.fasterxml.jackson.core:jackson-databind:2.13.2.2')
+            @Grab('com.fasterxml.jackson.core:jackson-databind:2.13.3')
             import com.fasterxml.jackson.databind.ObjectMapper
 
             @Grab('io.rest-assured:rest-assured:4.4.0')
