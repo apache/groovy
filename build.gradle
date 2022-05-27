@@ -211,7 +211,7 @@ dependencies {
     testImplementation project(':groovy-dateutil')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-macro')
-    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0'
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
     testImplementation "net.jcip:jcip-annotations:$jcipAnnotationsVersion"
 }
 
