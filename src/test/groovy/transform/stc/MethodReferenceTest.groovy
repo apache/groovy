@@ -240,6 +240,82 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-9813
+    void testFunctionII() {
+        String asList = '''
+            def <T> List<T> asList(T... a) {
+                return Arrays.asList(a)
+            }
+        '''
+
+        assertScript shell, asList + '''
+            @CompileStatic
+            void test() {
+                Supplier<List> zero = this::asList
+                def list = zero.get()
+                assert list.isEmpty()
+            }
+            test()
+        '''
+
+        assertScript shell, asList + '''
+            @CompileStatic
+            void test() {
+                Function<Integer, List> one = this::asList
+                def list = one.apply(1)
+                assert list.size() == 1
+                assert list[0] == 1
+            }
+            test()
+        '''
+
+        assertScript shell, asList + '''
+            @CompileStatic
+            void test() {
+                BiFunction<Integer, Integer, List> two = this::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
+            test()
+        '''
+
+        assertScript shell, asList + '''
+            @CompileStatic
+            void test() { def that = this
+                BiFunction<Integer, Integer, List> two = that::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
+            test()
+        '''
+    }
+
+    @Test // instance::instanceMethod
+    @groovy.test.NotYetImplemented
+    void testFunctionII2() {
+        assertScript shell, """
+            class C {
+                def m(... args) {
+                    [this, *args]
+                }
+            }
+            @CompileStatic
+            void test(C c) {
+                BiFunction<Integer, Integer, List> two = c::m
+                def list = two.apply(1,2)
+                assert list.size() == 3
+                assert list[0] == c
+                assert list[1] == 1
+                assert list[2] == 2
+            }
+            test(new C())
+        """
+    }
+
     @Test // instance::instanceMethod -- GROOVY-10057
     void testPredicateII() {
         assertScript shell, '''

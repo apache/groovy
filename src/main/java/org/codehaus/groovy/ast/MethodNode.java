@@ -110,6 +110,7 @@ public class MethodNode extends AnnotatedNode {
     public void setModifiers(int modifiers) {
         invalidateCachedData();
         this.modifiers = modifiers;
+        getVariableScope().setInStaticContext(isStatic());
     }
 
     public String getName() {

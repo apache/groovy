@@ -211,7 +211,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private MethodNode addSyntheticMethodForVariadicReference(final MethodNode mn, final int samParameters, final boolean isStaticTarget) {
         Parameter[] parameters = new Parameter[samParameters];
-        Expression arguments = null, receiver = null;
+        Expression arguments, receiver;
         if (mn.isStatic()) {
             for (int i = 0, j = mn.getParameters().length-1; i < samParameters; i += 1) {
                 ClassNode t = mn.getParameters()[Math.min(i, j)].getType();
@@ -222,11 +222,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             receiver = classX(mn.getDeclaringClass());
         } else {
             int p = 0;
-            if (isStaticTarget) parameters[p++] = new Parameter(mn.getDeclaringClass(), "o");
-            for (int i = 0, j = mn.getParameters().length-1; i < samParameters - p; i += 1) {
+            if (isStaticTarget) parameters[p++] = new Parameter(mn.getDeclaringClass(), "target");
+            for (int i = 0, j = mn.getParameters().length-1, n = samParameters-p; i < n; i += 1) {
                 ClassNode t = mn.getParameters()[Math.min(i, j)].getType();
                 if (i >= j) t = t.getComponentType(); // targets the array
-                parameters[p++] = new Parameter(t, "p" + p);
+                parameters[p] = new Parameter(t, "p" + p); p += 1;
             }
             if (isStaticTarget) {
                 arguments = new ArgumentListExpression(removeFirstParameter(parameters));
@@ -247,6 +247,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         MethodNode delegateMethod = addSyntheticMethod(methodName, mn.getReturnType(), methodCall, parameters, mn.getExceptions());
         if (!isStaticTarget && !mn.isStatic()) delegateMethod.setModifiers(delegateMethod.getModifiers() & ~Opcodes.ACC_STATIC);
         delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        delegateMethod.setGenericsTypes(mn.getGenericsTypes());
         return delegateMethod;
     }
 
