@@ -126,8 +126,41 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-9853
+    @Test // class::instanceMethod -- GROOVY-9813
     void testFunctionCI6() {
+        String head = '''
+            @CompileStatic
+            class C {
+                def <T> List<T> asList(T... a) {
+                    return Arrays.asList(a)
+                }
+                static main(args) {
+        '''
+        String tail = '''
+                }
+            }
+        '''
+
+        shouldFail shell, head + '''
+            Supplier<List> zero = C::asList
+        ''' + tail
+
+        assertScript shell, head + '''
+            Function<C, List> one = C::asList
+            def list = one.apply(new C())
+            assert list.isEmpty()
+        ''' + tail
+
+        assertScript shell, head + '''
+            BiFunction<C, Integer, List> two = C::asList
+            def list = two.apply(new C(),1)
+            assert list.size() == 1
+            assert list[0] == 1
+        ''' + tail
+    }
+
+    @Test // class::instanceMethod -- GROOVY-9853
+    void testFunctionCI7() {
         assertScript shell, '''
             @CompileStatic
             void test() {
@@ -493,6 +526,32 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new
+    void testFunctionCN5() {
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                Function<String, Integer> f = Integer::new
+                assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
+            }
+
+            p()
+        '''
+    }
+
+    @Test // arrayClass::new
+    void testIntFunctionCN6() {
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                IntFunction<Integer[]> f = Integer[]::new
+                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(f)
+            }
+
+            p()
+        '''
+    }
+
     @Test // class::staticMethod
     void testFunctionCS() {
         assertScript shell, '''
@@ -545,7 +604,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::staticMethod
-    void testFunctionCS_RHS() {
+    void testFunctionCS4() {
         assertScript shell, '''
             @CompileStatic
             void p() {
@@ -553,13 +612,12 @@ final class MethodReferenceTest {
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
-
             p()
         '''
     }
 
     @Test // class::staticMethod
-    void testFunctionCS_RHS_NOTYPE() {
+    void testFunctionCS5() {
         assertScript shell, '''
             @CompileStatic
             void p() {
@@ -567,33 +625,42 @@ final class MethodReferenceTest {
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
-
             p()
         '''
     }
 
-    @Test // class::new
-    void testFunctionCN_RHS() {
+    @Test // class::staticMethod -- GROOVY-9813
+    void testFunctionCS6() {
         assertScript shell, '''
             @CompileStatic
             void p() {
-                Function<String, Integer> f = Integer::new
-                assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
+                Supplier<List> zero = Arrays::asList
+                def list = zero.get()
+                assert list.isEmpty()
             }
-
             p()
         '''
-    }
 
-    @Test // arrayClass::new
-    void testIntFunctionCN_RHS() {
         assertScript shell, '''
             @CompileStatic
             void p() {
-                IntFunction<Integer[]> f = Integer[]::new
-                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(f)
+                Function<Integer, List> one = Arrays::asList
+                def list = one.apply(1)
+                assert list.size() == 1
+                assert list[0] == 1
             }
+            p()
+        '''
 
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                BiFunction<Integer, Integer, List> two = Arrays::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
             p()
         '''
     }
@@ -606,7 +673,6 @@ final class MethodReferenceTest {
                 def result = ['a', 'ab', 'abc'].stream().map(String::size).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
-
             p()
         '''
     }
@@ -619,7 +685,6 @@ final class MethodReferenceTest {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
             }
-
             p()
         '''
     }
@@ -633,7 +698,6 @@ final class MethodReferenceTest {
                 assert 3 == result.size()
                 assert ['[a:1]', '[b:2]', '[c:3]'] == result
             }
-
             p()
         '''
     }
@@ -649,7 +713,6 @@ final class MethodReferenceTest {
                 result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
             }
-
             p()
         '''
     }
@@ -713,8 +776,8 @@ final class MethodReferenceTest {
     @Test // GROOVY-10635
     void testRecordComponentMethodReference() {
         assertScript shell, '''
-            record Bar(String name) { }
-
+            record Bar(String name) {
+            }
             def bars = [new Bar(name: 'A'), new Bar(name: 'B')]
             assert bars.stream().map(Bar::name).map(String::toLowerCase).toList() == ['a', 'b']
         '''

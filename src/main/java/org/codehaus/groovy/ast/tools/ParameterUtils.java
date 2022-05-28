@@ -27,6 +27,14 @@ import java.util.function.BiPredicate;
 
 public class ParameterUtils {
 
+    /**
+     * @since 5.0.0
+     */
+    public static boolean isVargs(final Parameter[] parameters) {
+        if (parameters == null || parameters.length == 0) return false;
+        return (parameters[parameters.length - 1].getType().isArray());
+    }
+
     public static boolean parametersEqual(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, false);
     }

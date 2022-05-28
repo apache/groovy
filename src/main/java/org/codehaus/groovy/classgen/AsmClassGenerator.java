@@ -154,6 +154,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
@@ -2321,10 +2322,6 @@ public class AsmClassGenerator extends ClassGenerator {
     @Deprecated
     public static boolean isNullConstant(final Expression expression) {
         return ExpressionUtils.isNullConstant(expression);
-    }
-
-    private static boolean isVargs(final Parameter[] parameters) {
-        return (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray());
     }
 
     private void loadThis(final VariableExpression thisOrSuper) {
