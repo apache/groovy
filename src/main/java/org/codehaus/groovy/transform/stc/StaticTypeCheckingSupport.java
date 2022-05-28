@@ -491,9 +491,9 @@ public abstract class StaticTypeCheckingSupport {
         return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }
 
+    @Deprecated
     static boolean isVargs(final Parameter[] parameters) {
-        if (parameters == null || parameters.length == 0) return false;
-        return (parameters[parameters.length - 1].getType().isArray());
+        return ParameterUtils.isVargs(parameters);
     }
 
     public static boolean isCompareToBoolean(final int op) {
