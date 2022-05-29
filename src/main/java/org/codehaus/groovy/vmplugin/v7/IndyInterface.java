@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -96,6 +98,14 @@ public class IndyInterface {
      * LOOKUP constant used for for example unreflect calls
      */
     public static final MethodHandles.Lookup LOOKUP = org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
+
+
+    /**
+     * Callback for constant meta class update change (legacy API)
+     */
+    protected static void invalidateSwitchPoints() {
+        VMPluginFactory.getPlugin().invalidateCallSites();
+    }
 
     /**
      * bootstrap method for method calls from Groovy compiled code with indy
