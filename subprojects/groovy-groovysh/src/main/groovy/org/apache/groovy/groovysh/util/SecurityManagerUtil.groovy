@@ -32,7 +32,7 @@ class SecurityManagerUtil {
     }
 
     private boolean autoEnabledUntilJDK17() {
-        !CompilerConfiguration.isPostJDK18(VMPlugin.javaVersion)
+        !CompilerConfiguration.isPostJDK18(VMPlugin.getJavaVersion())
     }
 
     private boolean explicitlyEnabled() {
