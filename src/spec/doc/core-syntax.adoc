@@ -768,8 +768,8 @@ include::../test/SyntaxTest.groovy[tags=multi_dim_list,indent=0]
 
 == Arrays
 
-Groovy reuses the list notation for arrays, but to make such literals arrays, 
-you need to explicitely define the type of the array through coercion or type declaration.
+Groovy reuses the list notation for arrays, but to make such literals arrays,
+you need to explicitly define the type of the array through coercion or type declaration.
 
 [source,groovy]
 ----
