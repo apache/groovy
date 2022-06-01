@@ -151,7 +151,7 @@ class Order {
     /** Valuation closure: "of { qty, unitPrice -> ... }" */
     def of(Closure valueCalculation) {
         // in order to be able to define closures like { qty * unitPrice }
-        // without having to explicitely pass the parameters to the closure
+        // without having to explicitly pass the parameters to the closure
         // we can wrap the closure inside another one
         // and that closure sets a delegate to the qty and unitPrice variables
         def wrapped = { qty, unitPrice ->
