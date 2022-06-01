@@ -77,7 +77,7 @@ class Gep3OrderDslTest extends GroovyTestCase {
         assert orders[1].allOrNone == true
         assert orders[1].limitPrice == 80
         assert orders[1].quantity == 150
-        assert orders[1].security.name == 'VMW' 
+        assert orders[1].security.name == 'VMW'
     }
 }
 
