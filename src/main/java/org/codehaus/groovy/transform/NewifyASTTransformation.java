@@ -401,7 +401,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             Expression argsToUse = argsExp;
             if (classType.getOuterClass() != null && ((classType.getModifiers() & org.objectweb.asm.Opcodes.ACC_STATIC) == 0)) {
                 if (!(argsExp instanceof ArgumentListExpression)) {
-                    addError("Non-static inner constructor arguments must be an argument list expression; pass 'this' pointer explicitely as first constructor argument otherwise.", mce);
+                    addError("Non-static inner constructor arguments must be an argument list expression; pass 'this' pointer explicitly as first constructor argument otherwise.", mce);
                     return mce;
                 }
                 final ArgumentListExpression argsListExp = (ArgumentListExpression) argsExp;
