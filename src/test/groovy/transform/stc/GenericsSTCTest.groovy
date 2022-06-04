@@ -289,7 +289,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10049, GROOVY-10053
+    // GROOVY-10049
     void testReturnTypeInferenceWithMethodGenerics9() {
         assertScript '''
             def <X> Set<X> f(Class<X> x) {
@@ -302,7 +302,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def result = g(Integer)
             assert result == [ 42 ]
         '''
+    }
 
+    @NotYetImplemented // GROOVY-10053
+    void testReturnTypeInferenceWithMethodGenericsA() {
         ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
             assertScript """
                 Set<Number> f() {
@@ -319,7 +322,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert result == [42] as Set
             """
         }
+    }
 
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenericsB() {
         assertScript '''
             def <T> String test(Iterable<T> iterable) {
                 Iterator<T> it = iterable.iterator()
@@ -1972,6 +1978,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new C<Number,Integer>().test()
+        '''
+    }
+
+    // GROOVY-10648
+    void testShouldUseMethodGenericType16() {
+        assertScript '''
+            def <T extends Number> Set<T> test(Iterable<T> iterable) {
+                final Set<T> result = new HashSet<>()
+                iterable.forEach { result.add(it) }
+                return result
+            }
+            def set = test([1,2.3])
+            assert set.size() == 2
+            assert 1 in set
         '''
     }
 
