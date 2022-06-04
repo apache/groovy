@@ -2277,6 +2277,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10648
+    void testShouldUseMethodGenericType16() {
+        assertScript '''
+            def <T extends Number> Set<T> test(Iterable<T> iterable) {
+                final Set<T> result = new HashSet<>()
+                iterable.forEach { result.add(it) }
+                return result
+            }
+            def set = test([1,2.3])
+            assert set.size() == 2
+            assert 1 in set
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
