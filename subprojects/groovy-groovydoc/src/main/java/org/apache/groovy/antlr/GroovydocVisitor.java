@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,12 +74,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private String packagePath;
     private SimpleGroovyClassDoc currentClassDoc = null;
     private Map<String, GroovyClassDoc> classDocs = new HashMap<>();
+    private final Properties properties;
     private static final String FS = "/";
 
     public GroovydocVisitor(final SourceUnit unit, String packagePath, List<LinkArgument> links) {
+        this(unit, packagePath, links, new Properties());
+    }
+
+    public GroovydocVisitor(final SourceUnit unit, String packagePath, List<LinkArgument> links, Properties properties) {
         this.unit = unit;
         this.packagePath = packagePath;
         this.links = links;
+        this.properties = properties;
     }
 
     @Override
@@ -117,6 +124,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             currentClassDoc.setTokenType(SimpleGroovyDoc.INTERFACE_DEF);
         }
         if (node.isScript()) {
+            if ("false".equals(properties.getProperty("processScripts", "true"))) return;
             currentClassDoc.setScript(true);
         }
         for (ClassNode iface : node.getInterfaces()) {
@@ -205,6 +213,10 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     public void visitMethod(MethodNode node) {
         if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
             return;
+        if ("false".equals(properties.getProperty("includeMainForScripts", "true"))
+                && currentClassDoc.isScript() && "main".equals(node.getName()) && node.isStatic() && node.getParameters().length == 1)
+            return;
+
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(node.getName(), currentClassDoc);
         meth.setReturnType(new SimpleGroovyType(makeType(node.getReturnType())));
         setConstructorOrMethodCommon(node, meth);
