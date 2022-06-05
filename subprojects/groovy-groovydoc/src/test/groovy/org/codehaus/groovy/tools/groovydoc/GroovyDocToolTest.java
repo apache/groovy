@@ -1356,6 +1356,42 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertFalse("Script local variables should not appear in groovydoc output", scriptDoc.contains("localVar"));
     }
 
+    public void testScriptCommandLineOptions() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
+
+        // default params
+        htmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
+        assertNotNull("Expected to find Script.html in: " + output, scriptDoc);
+        assertTrue("There should be a reference to method run in: " + scriptDoc, scriptDoc.contains("#run()"));
+        assertTrue("There should be a reference to method main in: " + scriptDoc, scriptDoc.contains("#main("));
+
+        // -noscript case
+        Properties props = new Properties();
+        props.put("processScripts", "false");
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        htmlTool.add(srcList);
+        output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
+        assertNull("Expected to not find Script.html in: " + output, scriptDoc);
+
+        // -nomainforscript case
+        props = new Properties();
+        props.put("includeMainForScripts", "false");
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        htmlTool.add(srcList);
+        output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
+        assertNotNull("Expected to find Script.html in: " + output, scriptDoc);
+        assertTrue("There should be a reference to method run in: " + scriptDoc, scriptDoc.contains("#run()"));
+        assertFalse("There should not be a reference to method main in: " + scriptDoc, scriptDoc.contains("#main("));
+    }
+
     private boolean containsTagWithName(String text, String tagname, String name) {
         return text.matches("(?s).*<"+ tagname + "[^>]* name=\""+ name + "\".*");
     }
