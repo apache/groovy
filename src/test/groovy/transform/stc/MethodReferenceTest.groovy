@@ -294,13 +294,12 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod
-    @groovy.test.NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-10653
     void testFunctionII2() {
-        assertScript shell, """
+        assertScript shell, '''
             class C {
-                def m(... args) {
-                    [this, *args]
+                List m(... args) {
+                    [this,*args]
                 }
             }
             @CompileStatic
@@ -313,7 +312,20 @@ final class MethodReferenceTest {
                 assert list[2] == 2
             }
             test(new C())
-        """
+        '''
+    }
+
+    @Test // instance::instanceMethod (DGM) -- GROOVY-10653
+    void testFunctionII3() {
+        assertScript shell, '''
+            @CompileStatic
+            int test(CharSequence chars) {
+                IntSupplier sizing = chars::size // from StringGroovyMethods
+                return sizing.getAsInt()
+            }
+            int size = test("foo")
+            assert size == 3
+        '''
     }
 
     @Test // instance::instanceMethod -- GROOVY-10057

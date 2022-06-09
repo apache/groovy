@@ -39,9 +39,9 @@ import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,6 +86,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode classNode = controller.getClassNode();
         Expression typeOrTargetRef = methodReferenceExpression.getExpression();
         boolean isClassExpression = (typeOrTargetRef instanceof ClassExpression);
+        boolean targetIsArgument = false; // implied argument for expr::staticMethod?
         ClassNode typeOrTargetRefType = isClassExpression ? typeOrTargetRef.getType()
                 : controller.getTypeChooser().resolveType(typeOrTargetRef, classNode);
 
@@ -107,35 +108,44 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (isExtensionMethod(methodRefMethod)) {
             ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
-            methodRefMethod = extensionMethodNode.getExtensionMethodNode();
-            if (extensionMethodNode.isStaticExtension()) {
+            methodRefMethod  = extensionMethodNode.getExtensionMethodNode();
+            boolean isStatic = extensionMethodNode.isStaticExtension();
+            if (isStatic) { // create adapter method to pass extra argument
                 methodRefMethod = addSyntheticMethodForDGSM(methodRefMethod);
             }
-            typeOrTargetRef = makeClassTarget(methodRefMethod.getDeclaringClass(), typeOrTargetRef);
-            typeOrTargetRefType = typeOrTargetRef.getType();
-
+            if (isStatic || isClassExpression) {
+                // replace expression with declaring type
+                typeOrTargetRefType = methodRefMethod.getDeclaringClass();
+                typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
+            } else { // GROOVY-10653
+                targetIsArgument = true; // ex: "string"::size
+            }
         } else if (isVargs(methodRefMethod.getParameters())) {
             int mParameters = abstractMethod.getParameters().length;
             int nParameters = methodRefMethod.getParameters().length;
             if (isTypeReferringInstanceMethod(typeOrTargetRef, methodRefMethod)) nParameters += 1;
             if (mParameters > nParameters || mParameters == nParameters-1 || (mParameters == nParameters
                     && !isAssignableTo(last(parametersWithExactType).getType(), last(methodRefMethod.getParameters()).getType()))) {
-                methodRefMethod = addSyntheticMethodForVariadicReference(methodRefMethod, mParameters, isClassExpression); // GROOVY-9813
-                if (methodRefMethod.isStatic()) {
-                    typeOrTargetRef = makeClassTarget(methodRefMethod.getDeclaringClass(), typeOrTargetRef);
-                    typeOrTargetRefType = typeOrTargetRef.getType();
+                // GROOVY-9813: reference to variadic method which needs adapter method to match runtime arguments to its parameters
+                if (!isClassExpression && !methodRefMethod.isStatic() && !methodRefMethod.getDeclaringClass().equals(classNode)) {
+                    targetIsArgument = true; // GROOVY-10653: create static adapter in source class with target as first parameter
+                    mParameters += 1;
+                }
+                methodRefMethod = addSyntheticMethodForVariadicReference(methodRefMethod, mParameters, isClassExpression || targetIsArgument);
+                if (methodRefMethod.isStatic() && !targetIsArgument) {
+                    // replace expression with declaring type
+                    typeOrTargetRefType = methodRefMethod.getDeclaringClass();
+                    typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
                 }
             }
         }
 
         if (!isClassExpression) {
-            if (isConstructorReference) {
-                // TODO: move the checking code to the parser
-                addFatalError("Constructor reference must be className::new", methodReferenceExpression);
-            } else if (methodRefMethod.isStatic()) {
-                ClassExpression classExpression = classX(typeOrTargetRefType);
-                classExpression.setSourcePosition(typeOrTargetRef);
-                typeOrTargetRef = classExpression;
+            if (isConstructorReference) { // TODO: move this check to the parser
+                addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
+            } else if (methodRefMethod.isStatic() && !targetIsArgument) {
+                // "string"::valueOf refers to static method, so instance is superflous
+                typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
                 isClassExpression = true;
             } else {
                 typeOrTargetRef.visit(controller.getAcg());
@@ -151,20 +161,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             referenceKind = Opcodes.H_INVOKEVIRTUAL;
         }
 
+        String methodName = abstractMethod.getName();
+        String methodDesc = BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(),
+                isClassExpression ? Parameter.EMPTY_ARRAY : new Parameter[]{new Parameter(typeOrTargetRefType, "__METHODREF_EXPR_INSTANCE")});
+
         methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
         try {
-            controller.getMethodVisitor().visitInvokeDynamicInsn(
-                    abstractMethod.getName(),
-                    createAbstractMethodDesc(functionalInterfaceType, typeOrTargetRef),
-                    createBootstrapMethod(classNode.isInterface(), false),
-                    createBootstrapMethodArguments(
-                            abstractMethodDesc,
-                            referenceKind,
-                            isConstructorReference ? classNode : typeOrTargetRefType,
-                            methodRefMethod,
-                            false
-                    )
+            Handle bootstrapMethod = createBootstrapMethod(classNode.isInterface(), false);
+            Object[] bootstrapArgs = createBootstrapMethodArguments(
+                    abstractMethodDesc,
+                    referenceKind,
+                    methodRefMethod.getDeclaringClass(),
+                    methodRefMethod,
+                    false
             );
+            controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, methodDesc, bootstrapMethod, bootstrapArgs);
         } finally {
             methodRefMethod.removeNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
         }
@@ -279,17 +290,6 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             parameters,
             exceptions,
             returnS(returnValue));
-    }
-
-    private String createAbstractMethodDesc(final ClassNode functionalInterfaceType, final Expression methodRef) {
-        List<Parameter> methodReferenceSharedVariableList = new ArrayList<>();
-
-        if (!(methodRef instanceof ClassExpression)) {
-            prependParameter(methodReferenceSharedVariableList, "__METHODREF_EXPR_INSTANCE",
-                controller.getTypeChooser().resolveType(methodRef, controller.getClassNode()));
-        }
-
-        return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), methodReferenceSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
 
     private Parameter[] createParametersWithExactType(final MethodNode abstractMethod, final ClassNode[] inferredParamTypes) {
