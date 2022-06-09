@@ -131,6 +131,31 @@ final class LambdaTest {
     }
 
     @Test
+    void testBiFunctionAndVariadicMethod() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.function.BiFunction
+
+            class C {
+                List m(... args) {
+                    [this,*args]
+                }
+            }
+
+            @CompileStatic
+            void test(C c) {
+                BiFunction<Integer, Integer, List> f = (i, j) -> c.m(i, j)
+                def list = f.apply(1,2)
+                assert list.size() == 3
+                assert list[0] == c
+                assert list[1] == 1
+                assert list[2] == 2
+            }
+            test(new C())
+        '''
+    }
+
+    @Test
     void testPredicate() {
         assertScript '''
             import groovy.transform.CompileStatic
