@@ -383,7 +383,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                     se = new ResourceException(message, se);
                 }
             } catch (IOException e1) {
-                String message = "Cannot open URL: " + root + resourceName;
+                String message = "Cannot open URL: " + root + ", " + resourceName;
                 groovyScriptConn = null;
                 if (se == null) {
                     se = new ResourceException(message);
