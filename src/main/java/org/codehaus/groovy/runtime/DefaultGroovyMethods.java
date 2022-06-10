@@ -160,7 +160,7 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -526,7 +526,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             try {
                 props.put(mp.getName(), mp.getValue());
             } catch (Exception e) {
-                Logger.getLogger(DefaultGroovyMethods.class.getName()).throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
+                java.util.logging.Logger.getLogger(DefaultGroovyMethods.class.getName())
+                    .throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
             }
         }
         return props;
@@ -11584,17 +11585,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce a Boolean instance to a boolean value.
+     * <pre class="groovyTestCase">
+     * // you can omit ".asBoolean()"
+     * assert Boolean.TRUE.asBoolean()
+     * assert !Boolean.FALSE.asBoolean()
+     * </pre>
      *
-     * @param bool the Boolean
-     * @return the boolean value
      * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
-        if (null == bool) {
-            return false;
-        }
+        return bool != null && bool.booleanValue();
+    }
 
-        return bool;
+    /**
+     * Coerce an AtomicBoolean instance to a boolean value.
+     * <pre class="groovyTestCase">
+     * import java.util.concurrent.atomic.AtomicBoolean
+     *
+     * // you can omit ".asBoolean()"
+     * assert  new AtomicBoolean(true).asBoolean()
+     * assert !new AtomicBoolean(false).asBoolean()
+     * assert !new AtomicBoolean(true).tap{set(false)}
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static boolean asBoolean(AtomicBoolean bool) {
+        return bool != null && bool.get();
     }
 
     /**
@@ -11608,11 +11625,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Collection collection) {
-        if (null == collection) {
-            return false;
-        }
-
-        return !collection.isEmpty();
+        return collection != null && !collection.isEmpty();
     }
 
     /**
@@ -11626,11 +11639,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Map map) {
-        if (null == map) {
-            return false;
-        }
-
-        return !map.isEmpty();
+        return map != null && !map.isEmpty();
     }
 
     /**
@@ -11643,11 +11652,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Iterator iterator) {
-        if (null == iterator) {
-            return false;
-        }
-
-        return iterator.hasNext();
+        return iterator != null && iterator.hasNext();
     }
 
     /**
@@ -11660,11 +11665,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Enumeration enumeration) {
-        if (null == enumeration) {
-            return false;
-        }
-
-        return enumeration.hasMoreElements();
+        return enumeration != null && enumeration.hasMoreElements();
     }
 
     /**
@@ -11677,11 +11678,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Object[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11694,11 +11691,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(byte[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11711,11 +11704,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(short[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11728,11 +11717,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(int[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11745,11 +11730,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(long[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11762,11 +11743,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(float[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11779,11 +11756,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(double[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11796,11 +11769,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(boolean[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11813,11 +11782,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(char[] array) {
-        if (null == array) {
-            return false;
-        }
-
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
@@ -11830,11 +11795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Character character) {
-        if (null == character) {
-            return false;
-        }
-
-        return character != 0;
+        return character != null && character != 0;
     }
 
     /**
@@ -11870,11 +11831,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Number number) {
-        if (null == number) {
-            return false;
-        }
-
-        return number.doubleValue() != 0;
+        return number != null && number.doubleValue() != 0;
     }
 
     /**
