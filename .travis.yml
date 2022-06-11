@@ -27,35 +27,23 @@ matrix:
   include:
     - env: BC='legacy' FEATURE='17' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
-    - env: BC='legacy'
-      jdk: openjdk14
-    - env: BC='legacy'
-      jdk: openjdk13
-    - env: BC='legacy'
-      jdk: openjdk12
-    - env: BC='legacy'
+    - env: BC='legacy' FEATURE='16' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
     - env: BC='legacy'
-      jdk: openjdk10
+      jdk: openjdk15
     - env: BC='legacy'
-      jdk: oraclejdk9
+      jdk: openjdk11
     - env: BC='legacy'
       jdk: oraclejdk8
 
     - env: BC='indy' FEATURE='17' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
-    - env: BC='indy'
-      jdk: openjdk14
-    - env: BC='indy'
-      jdk: openjdk13
-    - env: BC='indy'
-      jdk: openjdk12
-    - env: BC='indy'
+    - env: BC='indy' FEATURE='16' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
       jdk: openjdk11
     - env: BC='indy'
-      jdk: openjdk10
+      jdk: openjdk15
     - env: BC='indy'
-      jdk: oraclejdk9
+      jdk: openjdk11
     - env: BC='indy'
       jdk: oraclejdk8
 
@@ -81,4 +69,3 @@ cache:
   directories:
 #    - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-
