@@ -21,6 +21,9 @@ on:
   pull_request:
     branches:
       - GROOVY_3_0_X
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:

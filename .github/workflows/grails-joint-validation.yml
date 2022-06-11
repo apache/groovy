@@ -28,6 +28,9 @@ on:
       - GROOVY_2_5_X
       - GROOVY_3_0_X
 #      - master
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
