@@ -18,33 +18,35 @@
  */
 package groovy.bugs
 
-class Groovy6932Bug extends GroovyTestCase {
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy6932 {
+    @Test
     void testLoggingWithinClosuresShouldHaveGuards() {
         assertScript '''
-            @Grab('org.slf4j:slf4j-simple:1.7.30')
-            import groovy.util.logging.Slf4j
-
-            new TestCode().doSomethingThatLogs()
-
-            @Slf4j
-            class TestCode {
-                void doSomethingThatLogs(){
+            @groovy.util.logging.Log
+            class C {
+                void m() {
                     int info = 0
                     int trace = 0
-                    log.info createLogString("${info++}")
-                    log.trace createLogString("${trace++}")
-                    Closure c1 = { log.info createLogString("${info++}") }
+                    log.info(createLogString(info++))
+                    log.finest(createLogString(trace++))
+                    Closure c1 = { log.info(createLogString(info++)) }
                     c1()
-                    Closure c2 = { log.trace createLogString("${trace++}") }
+                    Closure c2 = { log.finest(createLogString(trace++)) }
                     c2()
                     assert info == 2
                     assert trace == 0
                 }
 
-                String createLogString(def p){
+                String createLogString(p) {
                     "called with $p"
                 }
             }
+
+            new C().m()
         '''
     }
 }
