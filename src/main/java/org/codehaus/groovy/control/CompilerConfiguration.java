@@ -107,10 +107,15 @@ public class CompilerConfiguration {
             JDK15, Opcodes.V15
     );
 
-    /** The valid targetBytecode values. */
+    /**
+     * The valid targetBytecode values.
+     */
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
-    public static final int ASM_API_VERSION = Opcodes.ASM8;
+    /**
+     * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
+     */
+    public static final int ASM_API_VERSION = Opcodes.ASM9;
 
     @Deprecated
     public static final String CURRENT_JVM_VERSION = JDK7;
