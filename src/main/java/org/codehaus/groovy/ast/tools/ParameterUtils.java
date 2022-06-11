@@ -28,7 +28,7 @@ import java.util.function.BiPredicate;
 public class ParameterUtils {
 
     /**
-     * @since 5.0.0
+     * @since 4.0.4
      */
     public static boolean isVargs(final Parameter[] parameters) {
         if (parameters == null || parameters.length == 0) return false;
