@@ -21,27 +21,29 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldNotRequireIntermediateVariableToPass() {
         assertScript '''
             class Stream<T> implements Iterable<T> {
-                public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
+                static Stream<String> from(BufferedReader reader) {
+                    new Stream<>(data: ['a', 'b', 'c'])
+                }
 
                 List<T> data
 
-                public Iterator<T> iterator() { data.iterator() }
+                Iterator<T> iterator() { data.iterator() }
 
-                public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
-                    new Stream(data: data.collect(closure).flatten() as List)
+                def <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
+                    new Stream<U>(data: data.collect(closure).flatten() as List)
                 }
             }
 
-            Map<String, Integer> frequencies = [:].withDefault { 0 }
-            BufferedReader r = null
-            Stream.from(r)
-                .flatMap { String it -> it.toList() }
-                .each { String it -> frequencies[it.toUpperCase()]++ }
+            Map<String, Integer> frequencies = new HashMap<>()
+            frequencies = frequencies.withDefault { 0 }
+            Stream.from(null)
+                .flatMap { String s -> s.toList() }
+                .each { String s -> frequencies[s.toUpperCase()]++ }
             assert frequencies == [A:1, B:1, C:1]
         '''
     }
@@ -49,21 +51,23 @@ class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCompilat
     void testShouldNotRequireIntermediateVariableToPassWithEachParamInference() {
         assertScript '''
             class Stream<T> implements Iterable<T> {
-                public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
+                static Stream<String> from(BufferedReader reader) {
+                    new Stream<>(data: ['a', 'b', 'c'])
+                }
 
                 List<T> data
 
-                public Iterator<T> iterator() { data.iterator() }
+                Iterator<T> iterator() { data.iterator() }
 
-                public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
-                    new Stream(data: data.collect(closure).flatten() as List)
+                def <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
+                    new Stream<U>(data: data.collect(closure).flatten() as List)
                 }
             }
 
-            Map<String, Integer> frequencies = [:].withDefault { 0 }
-            BufferedReader r = null
-            Stream.from(r)
-                .flatMap { String it -> it.toList() }
+            Map<String, Integer> frequencies = new HashMap<>()
+            frequencies = frequencies.withDefault { 0 }
+            Stream.from(null)
+                .flatMap { String s -> s.toList() }
                 .each { frequencies[it.toUpperCase()]++ }
             assert frequencies == [A:1, B:1, C:1]
         '''

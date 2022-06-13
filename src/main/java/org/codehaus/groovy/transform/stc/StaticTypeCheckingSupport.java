@@ -100,7 +100,6 @@ import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -1746,25 +1745,14 @@ public abstract class StaticTypeCheckingSupport {
         } else if (type.equals(CLOSURE_TYPE) && isSAMType(target)) {
             // GROOVY-9974, GROOVY-10052: Lambda, Closure, Pointer or Reference for SAM-type receiver
             ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(GenericsUtils.parameterizeSAM(target).getV2());
-            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {returnType.asGenericsType()});
+            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[]{returnType.asGenericsType()});
 
         } else if (type.equals(target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
 
         } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
-            ClassNode superClass = getNextSuperClass(type, target);
-            if (superClass != null) {
-                if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
-                    Map<String, ClassNode> spec = GenericsUtils.createGenericsSpec(type);
-                    if (!spec.isEmpty()) {
-                        superClass = GenericsUtils.correctToGenericsSpecRecurse(spec, superClass);
-                    }
-                }
-                extractGenericsConnections(connections, superClass, target);
-            } else {
-                // if we reach here, we have an unhandled case
-                throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
-            }
+            ClassNode goal = GenericsUtils.parameterizeType(type, target);
+            extractGenericsConnections(connections, goal.getGenericsTypes(), target.getGenericsTypes());
         }
     }
 

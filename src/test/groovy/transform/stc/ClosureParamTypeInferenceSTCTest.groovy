@@ -95,66 +95,66 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testInferenceForDGM_collectManyUsingFirstSignature() {
         assertScript '''
-def map = [bread:3, milk:5, butter:2]
-def result = map.collectMany{ k, v -> k.startsWith('b') ? k.toList() : [] }
-assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
-'''
+            def map = [bread:3, milk:5, butter:2]
+            def result = map.collectMany{ k, v -> k.startsWith('b') ? k.toList() : [] }
+            assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+        '''
     }
 
     void testInferenceForDGM_collectManyUsingSecondSignature() {
         assertScript '''
-def map = [bread:3, milk:5, butter:2]
-def result = map.collectMany{ e -> e.key.startsWith('b') ? e.key.toList() : [] }
-assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
-'''
+            def map = [bread:3, milk:5, butter:2]
+            def result = map.collectMany{ e -> e.key.startsWith('b') ? e.key.toList() : [] }
+            assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+        '''
     }
 
     void testInferenceForDGM_collectManyUsingSecondSignatureAndImplicitIt() {
         assertScript '''
-def map = [bread:3, milk:5, butter:2]
-def result = map.collectMany{ it.key.startsWith('b') ? it.key.toList() : [] }
-assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
-'''
+            def map = [bread:3, milk:5, butter:2]
+            def result = map.collectMany{ it.key.startsWith('b') ? it.key.toList() : [] }
+            assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+        '''
     }
 
-    void testInferenceForDGM_CollectMap() {
+    void testInferenceForDGM_collectMap() {
         assertScript '''
-        assert [a: 'foo',b:'bar'].collect { k,v -> k+v } == ['afoo','bbar']
-        assert [a: 'foo',b:'bar'].collect { e -> e.key+e.value } == ['afoo','bbar']
-        assert [a: 'foo',b:'bar'].collect { it.key+it.value } == ['afoo','bbar']
-'''
+            assert [a: 'foo',b:'bar'].collect { k,v -> k+v } == ['afoo','bbar']
+            assert [a: 'foo',b:'bar'].collect { e -> e.key+e.value } == ['afoo','bbar']
+            assert [a: 'foo',b:'bar'].collect { it.key+it.value } == ['afoo','bbar']
+        '''
     }
 
-    void testInferenceForDGM_CollectMapWithCollection() {
+    void testInferenceForDGM_collectMapWithCollection() {
         assertScript '''
-        assert [a: 'foo',b:'bar'].collect([]) { k,v -> k+v } == ['afoo','bbar']
-        assert [a: 'foo',b:'bar'].collect([]) { e -> e.key+e.value } == ['afoo','bbar']
-        assert [a: 'foo',b:'bar'].collect([]) { it.key+it.value } == ['afoo','bbar']
-'''
+            assert [a: 'foo',b:'bar'].collect([]) { k,v -> k+v } == ['afoo','bbar']
+            assert [a: 'foo',b:'bar'].collect([]) { e -> e.key+e.value } == ['afoo','bbar']
+            assert [a: 'foo',b:'bar'].collect([]) { it.key+it.value } == ['afoo','bbar']
+        '''
     }
 
     void testInferenceForDGM_collectEntries() {
         assertScript '''
             assert ['a','b','c'].collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesWithCollector() {
         assertScript '''
             assert ['a','b','c'].collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesIterator() {
         assertScript '''
             assert ['a','b','c'].iterator().collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesIteratorWithCollector() {
         assertScript '''
             assert ['a','b','c'].iterator().collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesOnMap() {
@@ -162,7 +162,7 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:'a',b:'b',c:'c'].collectEntries { k,v -> [k+k, v.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
             assert [a:'a',b:'b',c:'c'].collectEntries { e -> [e.key+e.key, e.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
             assert [a:'a',b:'b',c:'c'].collectEntries { [it.key+it.key, it.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesOnMapWithCollector() {
@@ -170,39 +170,39 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:'a',b:'b',c:'c'].collectEntries([:]) { k,v -> [k+k, v.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
             assert [a:'a',b:'b',c:'c'].collectEntries([:]) { e -> [e.key+e.key, e.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
             assert [a:'a',b:'b',c:'c'].collectEntries([:]) { [it.key+it.key, it.value.toUpperCase() ]} == [aa:'A',bb:'B',cc:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesOnArray() {
         assertScript '''
             String[] array = ['a','b','c']
             assert array.collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectEntriesOnArrayWithCollector() {
         assertScript '''
             String[] array = ['a','b','c']
             assert array.collectEntries([:]) { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnIterable() {
         assertScript '''
             assert (0..5).collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnIterator() {
         assertScript '''
             assert (0..5).iterator().collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnIterableWithCollector() {
         assertScript '''
             assert (0..5).collectMany([]) { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnMap() {
@@ -210,7 +210,7 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:0,b:1,c:2].collectMany { k,v -> [v, 2*v ]} == [0,0,1,2,2,4]
             assert [a:0,b:1,c:2].collectMany { e -> [e.value, 2*e.value ]} == [0,0,1,2,2,4]
             assert [a:0,b:1,c:2].collectMany { [it.value, 2*it.value ]} == [0,0,1,2,2,4]
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnMapWithCollector() {
@@ -218,14 +218,14 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:0,b:1,c:2].collectMany([]) { k,v -> [v, 2*v ]} == [0,0,1,2,2,4]
             assert [a:0,b:1,c:2].collectMany([]) { e -> [e.value, 2*e.value ]} == [0,0,1,2,2,4]
             assert [a:0,b:1,c:2].collectMany([]) { [it.value, 2*it.value ]} == [0,0,1,2,2,4]
-'''
+        '''
     }
 
     void testInferenceForDGM_collectManyOnArray() {
         assertScript '''
             Integer[] arr = (0..5) as Integer[]
             assert arr.collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
-'''
+        '''
     }
 
     void testInferenceOnNonExtensionMethod() {
@@ -620,31 +620,32 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
         '''
     }
 
-    void testInferenceForEachWithIndexOnMap() {
+    void testInferenceForDGM_eachWithIndexOnMap() {
         assertScript '''
             [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
             [a:'A',bb:'B',ccc:'C'].eachWithIndex { e,i -> assert e.key.toUpperCase() == e.value*(1+i) }
         '''
     }
-    void testInferenceForEachWithIndexOnIterable() {
+    void testInferenceForDGM_eachWithIndexOnIterable() {
         assertScript '''
             ['1','2','3'].eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
         '''
     }
-    void testInferenceForEachWithIndexOnIterator() {
+    void testInferenceForDGM_eachWithIndexOnIterator() {
         assertScript '''
             ['1','2','3'].iterator().eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
         '''
     }
-
-    void testInferenceForDGM_everyOnMap() {
+    void testInferenceForDGM_eachWithIndexOnRecursiveIterable() { // GROOVY-10651
         assertScript '''
-            assert [a:'A',b:'B',cc:'CC'].every { String k, String v -> k == v.toLowerCase() }
-            assert [a:'A',b:'B',cc:'CC'].every { k, v -> k == v.toLowerCase() }
-            assert [a:'A',b:'B',cc:'CC'].every { e -> e.key == e.value.toLowerCase() }
-            assert [a:'A',b:'B',cc:'CC'].every { it.key == it.value.toLowerCase() }
+            void proc(groovy.transform.stc.TreeNode node) {
+                node.eachWithIndex { child, index ->
+                    proc(child) // recurse
+                }
+            }
         '''
     }
+
     void testInferenceForDGM_everyOnIterable() {
         assertScript '''
             assert ['foo','bar','baz'].every { String it -> it.length() == 3 }
@@ -664,6 +665,14 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             String[] items = ['foo','bar','baz']
             assert items.every { it.length() == 3 }
             assert items.every { String s -> s.length() == 3 }
+        '''
+    }
+    void testInferenceForDGM_everyOnMap() {
+        assertScript '''
+            assert [a:'A',b:'B',cc:'CC'].every { String k, String v -> k == v.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { k, v -> k == v.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { e -> e.key == e.value.toLowerCase() }
+            assert [a:'A',b:'B',cc:'CC'].every { it.key == it.value.toLowerCase() }
         '''
     }
 
@@ -697,26 +706,6 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             def items2 = ['foo','bar','baz']
             assert items2.findIndexValues { it.startsWith('ba') } == [1, 2]
             assert items2.iterator().findIndexValues { it.startsWith('ba') } == [1, 2]
-        '''
-    }
-
-    void testInferenceForDGM_findResult() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.findResult { it.startsWith('ba') ? it : null } == 'bar'
-            def items2 = ['foo','bar','baz']
-            assert items2.findResult { it.startsWith('ba') ? it : null } == 'bar'
-            assert items2.iterator().findResult { it.startsWith('ba') ? it : null } == 'bar'
-        '''
-    }
-
-    void testInferenceForDGM_findResults() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
-            def items2 = ['foo','bar','baz']
-            assert items2.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
-            assert items2.iterator().findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
         '''
     }
 
@@ -816,6 +805,15 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:1, b:2, c:3].findResult('a') { "${it.key.toUpperCase()}$it.value"=='C4'?2*it.value:null } == 'a'
         '''
     }
+    void testInferenceForDGM_findResult() {
+        assertScript '''
+            String[] items1 = ['foo','bar','baz']
+            assert items1.findResult { it.startsWith('ba') ? it : null } == 'bar'
+            def items2 = ['foo','bar','baz']
+            assert items2.findResult { it.startsWith('ba') ? it : null } == 'bar'
+            assert items2.iterator().findResult { it.startsWith('ba') ? it : null } == 'bar'
+        '''
+    }
 
     void testInferenceForDGM_findResultsOnIterable() {
         assertScript '''
@@ -830,6 +828,15 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
             assert [a:1, b:2, c:3].findResults { k, v -> "${k.toUpperCase()}$v"=='C3'?2*v:null } == [6]
             assert [a:1, b:2, c:3].findResults { e -> "${e.key.toUpperCase()}$e.value"=='C3'?2*e.value:null } == [6]
             assert [a:1, b:2, c:3].findResults { "${it.key.toUpperCase()}$it.value"=='C3'?2*it.value:null } == [6]
+        '''
+    }
+    void testInferenceForDGM_findResults() {
+        assertScript '''
+            String[] items1 = ['foo','bar','baz']
+            assert items1.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
+            def items2 = ['foo','bar','baz']
+            assert items2.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
+            assert items2.iterator().findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
         '''
     }
 

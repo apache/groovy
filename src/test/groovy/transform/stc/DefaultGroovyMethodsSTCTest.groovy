@@ -172,11 +172,14 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7283
-    void testListWithDefaultInfersInt() {
+    void testListWithDefault() {
         assertScript '''
             def list = [].withDefault{ it.longValue() }
+            //                         ^^ int parameter
             list[0] = list[3]
-            assert list[0] == 3 && list[0].class == Long
+
+            assert list[0].class == Long
+            assert list[0] === 3L
         '''
     }
 
