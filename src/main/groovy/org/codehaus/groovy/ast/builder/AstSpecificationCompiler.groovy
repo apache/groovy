@@ -167,7 +167,7 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      */
     @CompileStatic
     private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock,
-            @ClosureParams(value=FromString, options="java.util.List<org.codehaus.groovy.ast.ASTNode>") Closure ctorBlock) {
+            @ClosureParams(value=FromString, options='java.util.List<org.codehaus.groovy.ast.ASTNode>') Closure ctorBlock) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
         def oldProps = new ArrayList<>(expression)
@@ -192,7 +192,7 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      *       the single closure argument used during invocation
      */
     private void makeNode(Class target, String typeAlias, List<Class<? super ASTNode>> ctorArgs, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             target.newInstance(*enforceConstraints(typeAlias, ctorArgs))
         }
     }
@@ -256,14 +256,14 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      *       a type parameter
      */
     private void makeNodeWithClassParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Class type) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             expression.add(0, ClassHelper.make(type))
             target.newInstance(*enforceConstraints(alias, spec))
         }
     }
 
     private void makeNodeWithStringParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, String text) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             expression.add(0, text)
             target.newInstance(*enforceConstraints(alias, spec))
         }
