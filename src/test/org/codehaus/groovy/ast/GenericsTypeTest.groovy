@@ -72,23 +72,22 @@ public class GenericsTypeTest extends GenericsTestCase {
     }
 
     void testNestedGenerics() {
-        def listStringType = extractTypesFromCode('List<String> type').type
-        def listInteger = extractTypesFromCode('List<Integer> type').type
-        def stringListType = extractTypesFromCode('org.codehaus.groovy.ast.GenericsTypeTest.StringList type').type
+        def listStringType  = extractTypesFromCode('List<String> type').type
+        def listIntegerType = extractTypesFromCode('List<Integer> type').type
+        def stringListType  = extractTypesFromCode('org.codehaus.groovy.ast.GenericsTypeTest.StringList type').type
         def integerListType = extractTypesFromCode('org.codehaus.groovy.ast.GenericsTypeTest.IntegerList type').type
+
         def typeinfo = extractTypesFromCode('List<? extends List<String>> type')
         def generics = typeinfo.generics[0]
+
         assert generics.toString() == '? extends java.util.List<java.lang.String>'
-        assert generics.isCompatibleWith(ClassHelper.LIST_TYPE)
-        assert generics.isCompatibleWith(ClassHelper.make(LinkedList))
-        assert !generics.isCompatibleWith(ClassHelper.OBJECT_TYPE)
         assert generics.isCompatibleWith(listStringType)
-        assert !generics.isCompatibleWith(listInteger)
+        assert !generics.isCompatibleWith(listIntegerType)
         assert generics.isCompatibleWith(stringListType)
         assert !generics.isCompatibleWith(integerListType)
-
-        def classNode = extractTypesFromCode('List<Integer> type').type
-        assert !generics.isCompatibleWith(classNode)
+        assert generics.isCompatibleWith(ClassHelper.LIST_TYPE.plainNodeReference)
+        assert generics.isCompatibleWith(ClassHelper.make(LinkedList).plainNodeReference)
+        assert !generics.isCompatibleWith(ClassHelper.OBJECT_TYPE)
     }
 
     void testNestedGenerics2() {

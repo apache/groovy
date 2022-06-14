@@ -18,26 +18,37 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyShellTestCase
+import org.junit.Test
 
-class InheritConstructorsTransformTest extends GroovyShellTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class InheritConstructorsTransformTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports { star 'groovy.transform' }
+    }
+
+    @Test
     void testStandardCase() {
-        assertScript '''
-            import groovy.transform.InheritConstructors
-            @InheritConstructors class CustomException extends RuntimeException { }
+        assertScript shell, '''
+            @InheritConstructors
+            class CustomException extends RuntimeException {
+            }
+
             def ce = new CustomException('foo')
             assert ce.message == 'foo'
         '''
     }
 
+    @Test
     void testOverrideCase() {
-        assertScript '''
-            import groovy.transform.InheritConstructors
+        assertScript shell, '''
             @InheritConstructors
             class CustomException2 extends RuntimeException {
                 CustomException2() { super('bar') }
             }
+
             def ce = new CustomException2()
             assert ce.message == 'bar'
             ce = new CustomException2('foo')
@@ -45,37 +56,43 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testChainedCase() {
-        assertScript '''
-            import groovy.transform.InheritConstructors
+        assertScript shell, '''
             @InheritConstructors
-            class CustomException5 extends CustomException4 {}
+            class CustomException5 extends CustomException4 {
+            }
             @InheritConstructors
-            class CustomException3 extends RuntimeException {}
+            class CustomException3 extends RuntimeException {
+            }
             @InheritConstructors
-            class CustomException4 extends CustomException3 {}
+            class CustomException4 extends CustomException3 {
+            }
+
             def ce = new CustomException5('baz')
             assert ce.message == 'baz'
         '''
     }
 
-    // GROOVY-7059
+    @Test // GROOVY-7059
     void testCopyAnnotations() {
-        assertScript '''
+        assertScript shell, '''
             import java.lang.annotation.*
-            import groovy.transform.InheritConstructors
 
             @Retention(RetentionPolicy.RUNTIME)
             @Target([ElementType.CONSTRUCTOR])
-            public @interface Foo1 {}
+            public @interface Foo1 {
+            }
 
             @Retention(RetentionPolicy.SOURCE)
             @Target([ElementType.CONSTRUCTOR])
-            public @interface Foo2 {}
+            public @interface Foo2 {
+            }
 
             @Retention(RetentionPolicy.RUNTIME)
             @Target([ElementType.PARAMETER])
-            public @interface Foo3 {}
+            public @interface Foo3 {
+            }
 
             class Bar {
                 @Foo1 @Foo2
@@ -91,7 +108,8 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             }
 
             @InheritConstructors(constructorAnnotations=true, parameterAnnotations=true)
-            class Baz extends Bar {}
+            class Baz extends Bar {
+            }
 
             new Baz().class.constructors.each { cons ->
                 def ans = cons.annotations.toString() + cons.parameterAnnotations.toString()
@@ -113,9 +131,9 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testInnerClassUsage() {
-        assertScript '''
-            import groovy.transform.InheritConstructors
+        assertScript shell, '''
             @InheritConstructors
             class Outer extends RuntimeException {
                 @InheritConstructors
@@ -142,10 +160,29 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    // GROOVY-6874
-    void testParametersWithGenericsAndCompileStatic() {
-        assertScript '''
-            import groovy.transform.*
+    @Test // GROOVY-6874
+    void testParametersWithGenericsAndCompileStatic1() {
+        assertScript shell, '''
+            abstract class A<X, Y> {
+                A(Set<Y> set) {
+                }
+            }
+
+            @CompileStatic
+            @InheritConstructors
+            class C<Z> extends A<Integer, Z> {
+                void test() {
+                    new C<Z>(new HashSet<Z>())
+                }
+            }
+
+            new C<String>().test()
+        '''
+    }
+
+    @Test // GROOVY-6874
+    void testParametersWithGenericsAndCompileStatic2() {
+        assertScript shell, '''
             import java.math.RoundingMode
 
             @CompileStatic
@@ -184,10 +221,9 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    // GROOVY-6874
-    void testParametersWithGenericsAndCompileStatic_errors() {
-        def message = shouldFail '''
-            import groovy.transform.*
+    @Test // GROOVY-6874
+    void testParametersWithGenericsAndCompileStatic3() {
+        def err = shouldFail shell, '''
             import java.math.RoundingMode
 
             @CompileStatic
@@ -223,24 +259,23 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             op.bar(RoundingMode.DOWN)
             assert op.toString() == '3|DOWN'
         '''
-        assert message.contains('Cannot call OrderPublisher#<init>(java.util.Deque<java.lang.Integer>) with arguments [java.util.LinkedList<java.lang.String>]')
-        assert message.contains('Cannot find matching method OrderPublisher#<init>(java.util.Date)')
-        assert message.contains('Cannot call OrderPublisher#<init>(java.util.Set<java.math.RoundingMode>) with arguments [java.util.HashSet<java.util.Date>]')
+        assert err.message.contains('Cannot call OrderPublisher#<init>(java.util.Deque<java.lang.Integer>) with arguments [java.util.LinkedList<java.lang.String>]')
+        assert err.message.contains('Cannot find matching method OrderPublisher#<init>(java.util.Date)')
+        assert err.message.contains('Cannot call OrderPublisher#<init>(java.util.Set<java.math.RoundingMode>) with arguments [java.util.HashSet<java.util.Date>]')
     }
 
-    // GROOVY-9323
+    @Test // GROOVY-9323
     void testAnnotationsCopiedForConstructorsFromPrecompiledClass() {
-        assertScript '''
-            @groovy.transform.InheritConstructors(constructorAnnotations=true)
-            class MyChildException extends org.codehaus.groovy.transform.MyException9323 {}
+        assertScript shell, """
+            @InheritConstructors(constructorAnnotations=true)
+            class MyChildException extends ${this.class.name}.MyException9323 {}
 
             def annos = MyChildException.constructors[0].annotations*.annotationType().simpleName
             assert annos.contains('Generated') && annos.contains('Deprecated')
-        '''
+        """
     }
-}
 
-class MyException9323 extends RuntimeException {
-    @Deprecated
-    MyException9323() {}
+    static class MyException9323 extends RuntimeException {
+        @Deprecated MyException9323() {}
+    }
 }

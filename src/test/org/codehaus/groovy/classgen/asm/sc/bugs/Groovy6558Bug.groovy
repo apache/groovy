@@ -21,37 +21,41 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
-    void testShouldCompilePostfixPlusOnMap() {
-            assertScript '''
-    Map<String,Integer> frequencies = [a:0]
-    frequencies[ 'a' ]++
-    assert frequencies.a == 1
+    void testPostfixPlusOnMap() {
+        assertScript '''
+            Map<String,Integer> frequencies = [a:0]
+            frequencies['a']++
+
+            assert frequencies.a == 1
         '''
     }
 
-    void testShouldCompilePostfixPlusOnMapWithDefault() {
-            assertScript '''
-    Map<String,Integer> frequencies = [:].withDefault { 0 }
-    frequencies[ 'a' ]++
-    assert frequencies.a == 1
+    void testPostfixPlusOnMapWithDefault() {
+        assertScript '''
+            Map<String,Integer> frequencies = [:].withDefault { 0 }
+            frequencies['a']++
+
+            assert frequencies.a == 1
         '''
     }
 
-    void testShouldCompilePrefixPlusOnMap() {
-            assertScript '''
-    Map<String,Integer> frequencies = [a:0]
-    ++frequencies[ 'a' ]
-    assert frequencies.a == 1
+    void testPrefixPlusOnMap() {
+        assertScript '''
+            Map<String,Integer> frequencies = [a:0]
+            ++frequencies['a']
+
+            assert frequencies.a == 1
         '''
     }
 
-    void testShouldCompilePrefixPlusOnMapWithDefault() {
-            assertScript '''
-    Map<String,Integer> frequencies = [:].withDefault { 0 }
-    ++frequencies[ 'a' ]
-    assert frequencies.a == 1
+    void testPrefixPlusOnMapWithDefault() {
+        assertScript '''
+            Map<String,Integer> frequencies = [:].withDefault { 0 }
+            ++frequencies['a']
+
+            assert frequencies.a == 1
         '''
     }
 }

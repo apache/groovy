@@ -5949,20 +5949,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Wrapper for a Parameter so it can be treated like a VariableExpression
-     * and tracked in the ifElseForWhileAssignmentTracker.
-     * <p>
-     * This class purposely does not adhere to the normal equals and hashCode
-     * contract on the Object class and delegates those calls to the wrapped
-     * variable.
+     * and tracked in the {@code ifElseForWhileAssignmentTracker}.
      */
-    private static class ParameterVariableExpression extends VariableExpression {
+    private class ParameterVariableExpression extends VariableExpression {
 
         private final Parameter parameter;
 
         ParameterVariableExpression(final Parameter parameter) {
             super(parameter);
             this.parameter = parameter;
-            this.parameter.getNodeMetaData(INFERRED_TYPE, x -> parameter.getOriginType());
+
+            ClassNode inferredType = getNodeMetaData(INFERRED_TYPE);
+            if (inferredType == null) {
+                inferredType = typeCheckingContext.controlStructureVariables.get(parameter); // for/catch/closure
+                if (inferredType == null) {
+                    TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+                    if (enclosingClosure != null) inferredType = getTypeFromClosureArguments(parameter, enclosingClosure);
+                }
+                setNodeMetaData(INFERRED_TYPE, inferredType != null ? inferredType : parameter.getType()); // GROOVY-10651
+            }
         }
 
         @Override

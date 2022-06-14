@@ -22,11 +22,11 @@ import groovy.transform.InheritConstructors;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
@@ -44,7 +43,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 
 /**
  * Handles generation of code for the {@code @}InheritConstructors annotation.
@@ -52,7 +51,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGener
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class InheritConstructorsASTTransformation extends AbstractASTTransformation {
 
-    private static final ClassNode INHERIT_CONSTRUCTORS_TYPE = make(InheritConstructors.class);
+    private static final ClassNode INHERIT_CONSTRUCTORS_TYPE = ClassHelper.make(InheritConstructors.class);
     private static final String ANNOTATION = "@" + INHERIT_CONSTRUCTORS_TYPE.getNameWithoutPackage();
 
     @Override
@@ -87,17 +86,18 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         }
     }
 
-    private void addConstructorUnlessAlreadyExisting(ClassNode classNode, ConstructorNode consNode, boolean copyConstructorAnnotations, boolean copyParameterAnnotations) {
-        Parameter[] origParams = consNode.getParameters();
-        if (consNode.isPrivate()) return;
-        Parameter[] params = new Parameter[origParams.length];
+    private void addConstructorUnlessAlreadyExisting(final ClassNode classNode, final ConstructorNode ctorNode, final boolean copyConstructorAnnotations, final boolean copyParameterAnnotations) {
+        if (ctorNode.isPrivate()) return;
+        Parameter[] oldParams = ctorNode.getParameters();
+        Parameter[] newParams = new Parameter[oldParams.length];
         Map<String, ClassNode> genericsSpec = createGenericsSpec(classNode);
-        extractSuperClassGenerics(classNode, classNode.getSuperClass(), genericsSpec);
-        List<Expression> theArgs = buildParams(origParams, params, genericsSpec, copyParameterAnnotations);
-        if (isExisting(classNode, params)) return;
-        ConstructorNode added = addGeneratedConstructor(classNode, consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
-        if (copyConstructorAnnotations) {
-            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, ANNOTATION, false));
+        genericsSpec = createGenericsSpec(classNode.getUnresolvedSuperClass());
+        List<Expression> theArgs = buildParams(oldParams, newParams, genericsSpec, copyParameterAnnotations);
+        if (!isExisting(classNode, newParams)) {
+            ConstructorNode added = addGeneratedConstructor(classNode, ctorNode.getModifiers(), newParams, ctorNode.getExceptions(), block(ctorSuperS(args(theArgs))));
+            if (copyConstructorAnnotations) {
+                added.addAnnotations(copyAnnotatedNodeAnnotations(ctorNode, ANNOTATION, false));
+            }
         }
     }
 
@@ -116,11 +116,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         return theArgs;
     }
 
-    private static boolean isExisting(ClassNode classNode, Parameter[] params) {
-        return classNode.getDeclaredConstructors().stream().anyMatch(ctor -> matchingTypes(params, ctor.getParameters()));
-    }
-
-    private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
-        return ParameterUtils.parametersEqual(params, existingParams);
+    private static boolean isExisting(final ClassNode classNode, final Parameter[] params) {
+        return classNode.getDeclaredConstructors().stream().anyMatch(ctor -> parametersEqual(params, ctor.getParameters()));
     }
 }

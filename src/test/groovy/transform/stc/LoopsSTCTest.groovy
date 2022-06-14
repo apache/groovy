@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : loops.
  */
@@ -229,22 +231,41 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testShouldNotInferSoftReferenceAsComponentType() {
-        assertScript '''import java.lang.reflect.Field
-            import org.codehaus.groovy.ast.stmt.ForStatement
+    @NotYetImplemented // GROOVY-10651
+    void testForInLoopOnRawTypeIterable() {
+        assertScript '''
+            void test(groovy.transform.stc.TreeNode node) {
+                for (child in node) {
+                    test(child) // Cannot find matching method #test(java.lang.Object)
+                }
+            }
+        '''
+    }
 
+    @NotYetImplemented // GROOVY-10651
+    void testForInLoopOnUnboundedIterable() {
+        assertScript '''
+            void test(groovy.transform.stc.TreeNode<?> node) {
+                for (child in node) {
+                    test(child) // Cannot find matching method #test(java.lang.Object)
+                }
+            }
+        '''
+    }
+
+    void testShouldNotInferSoftReferenceAsElementType() {
+        assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def FIELD_ARRAY = make(Field).makeArray()
-                def forStmt = lookup('myLoop')[0]
-                assert forStmt instanceof ForStatement
-                def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-                assert collectionType == FIELD_ARRAY
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(java.lang.reflect.Field).makeArray()
             })
-            void forInTest() {
-                int i = 0;
-                myLoop:
+            void test() {
+                int i = 0
+                loop:
                 for (def field : String.class.declaredFields) {
-                    i++;
+                    i++
                 }
                 assert i > 0
             }
@@ -252,56 +273,53 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5640
-    void testShouldInferComponentTypeAsIterableOfNodes() {
-        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
-        class Node {}
-
-        interface Traverser {
-            Iterable<Node> nodes()
-        }
-
-        class MyTraverser implements Traverser {
-
-            Iterable<Node> nodes() {
-                []
+    void testShouldInferNodeElementTypeForIterableOfNodes() {
+        assertScript '''
+            class Node {
             }
-        }
-
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            def forStmt = lookup('loop')[0]
-            assert forStmt instanceof ForStatement
-            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-            assert collectionType == make(Iterable)
-            assert collectionType.isUsingGenerics()
-            assert collectionType.genericsTypes.length == 1
-            assert collectionType.genericsTypes[0].type.name == 'Node'
-        })
-        void test() {
-            loop:
-            for (def node : new MyTraverser().nodes()) {
-                println node.class.name
+            interface Traverser {
+                Iterable<Node> nodes()
             }
-        }
+            class MyTraverser implements Traverser {
+                Iterable<Node> nodes() {
+                    []
+                }
+            }
 
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(Iterable)
+                assert collectionType.isUsingGenerics()
+                assert collectionType.genericsTypes.length == 1
+                assert collectionType.genericsTypes[0].type.name == 'Node'
+            })
+            void test() {
+                loop:
+                for (def node : new MyTraverser().nodes()) {
+                    println node.class.name
+                }
+            }
         '''
     }
 
     // GROOVY-5641
     void testShouldInferLoopElementTypeWithUndeclaredType() {
-        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            def forStmt = lookup('loop')[0]
-            assert forStmt instanceof ForStatement
-            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-            assert collectionType == make(IntRange)
-        })
-        void foo() {
-            int[] perm = new int[10]
-            loop:
-            for (i in 0..<10) {
-              assert perm[i-0] == 0
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(IntRange)
+            })
+            void test() {
+                int[] ints = new int[10]
+                loop:
+                for (i in 0..<10) {
+                  assert ints[i-0] == 0
+                }
             }
-        }
         '''
     }
 }

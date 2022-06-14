@@ -23,7 +23,7 @@ import groovy.transform.stc.DefaultGroovyMethodsSTCTest
 /**
  * Unit tests for static compilation: default groovy methods.
  */
-class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
+final class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-10238
     void testMapWithDefault() {
@@ -35,7 +35,7 @@ class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements Static
                 @Canonical
                 @CompileStatic
                 static class Inner {
-                    Map<String,Object> map = [:].withDefault { new Object() } // NoSuchMethodError: java.util.Map.withDefault(Lgroovy/lang/Closure;)
+                    Map map = [:].withDefault { new Object() } // NoSuchMethodError: java.util.Map.withDefault(Lgroovy/lang/Closure;)
                 }
             }
 
