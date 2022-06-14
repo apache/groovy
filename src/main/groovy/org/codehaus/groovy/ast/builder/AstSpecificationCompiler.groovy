@@ -189,7 +189,7 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      *       the single closure argument used during invocation
      */
     private void makeNode(Class target, String typeAlias, List<Class<? super ASTNode>> ctorArgs, @DelegatesTo(AstSpecificationCompiler) Closure argBlock) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             target.newInstance(*enforceConstraints(typeAlias, ctorArgs))
         }
     }
@@ -253,14 +253,14 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      *       a type parameter
      */
     private void makeNodeWithClassParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Class type) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             expression.add(0, ClassHelper.make(type))
             target.newInstance(*enforceConstraints(alias, spec))
         }
     }
 
     private void makeNodeWithStringParameter(Class target, String alias, List<Class> spec, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, String text) {
-        captureAndCreateNode(target.class.simpleName, argBlock) {
+        captureAndCreateNode(target.simpleName, argBlock) {
             expression.add(0, text)
             target.newInstance(*enforceConstraints(alias, spec))
         }
