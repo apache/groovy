@@ -64,7 +64,8 @@ public class StackTraceUtils {
                             "java.," +
                             "javax.," +
                             "sun.," +
-                            "gjdk.groovy.,"
+                            "gjdk.groovy.," +
+                            "jdk.internal."
             ).split("(\\s|,)+");
 
     private static final List<Closure> tests = new ArrayList<Closure>();
