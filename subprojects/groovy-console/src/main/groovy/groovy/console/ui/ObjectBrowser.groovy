@@ -22,8 +22,10 @@ import groovy.inspect.Inspector
 import groovy.swing.table.TableSorter
 import groovy.swing.SwingBuilder
 
+import javax.swing.ListSelectionModel
 import javax.swing.WindowConstants
 import java.awt.FlowLayout
+import java.awt.event.*
 
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
@@ -33,6 +35,7 @@ import static groovy.inspect.Inspector.MEMBER_ORIGIN_IDX
 import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
 import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
 import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
+import static groovy.inspect.Inspector.MEMBER_RAW_VALUE_IDX
 
 /**
  * A little GUI to show some of the Inspector capabilities.
@@ -81,22 +84,67 @@ class ObjectBrowser {
                     label(classLabel)
                 }
                 tabbedPane(constraints: CENTER) {
+                    if (inspector.object?.class?.array) {
+                        scrollPane(name: ' Array data ') {
+                            def values
+                            itemTable = table {
+                                def list = Arrays.asList(inspector.object)
+                                int i = 0
+                                values = list
+                                def data = list.collect { val -> [i++, val] }
+                                tableModel(list: data) {
+                                    closureColumn(header: 'Index', read: { it[0] })
+                                    closureColumn(header: 'Value', read: { it[1] })
+                                }
+                            }
+                            itemTable.addMouseListener(new MouseAdapter() {
+                                public void mouseClicked(MouseEvent e) {
+                                    if (e.getClickCount() == 2) {
+                                        def selectedRow = itemTable.selectedRow
+                                        if (selectedRow != -1) {
+                                            def value = values[selectedRow]
+                                            if (value != null) {
+                                                ObjectBrowser.inspect(value)
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                    }
                     if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
+                            def values
                             itemTable = table {
                                 int i = 0
+                                values = inspector.object.collect { val -> val }
                                 def data = inspector.object.collect { val -> [i++, val] }
                                 tableModel(list: data) {
                                     closureColumn(header: 'Index', read: { it[0] })
                                     closureColumn(header: 'Value', read: { it[1] })
                                 }
                             }
+                            itemTable.addMouseListener(new MouseAdapter() {
+                                public void mouseClicked(MouseEvent e) {
+                                    if (e.getClickCount() == 2) {
+                                        def selectedRow = itemTable.selectedRow
+                                        if (selectedRow != -1) {
+                                            def value = values[selectedRow]
+                                            if (value != null) {
+                                                ObjectBrowser.inspect(value)
+                                            }
+                                        }
+                                    }
+                                }
+                            })
                         }
                     }
                     if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
+                            def values
                             itemTable = table {
                                 int i = 0
+                                values = inspector.object.collect { key, val -> val }
                                 def data = inspector.object.collect { key, val -> [i++, key, val] }
                                 tableModel(list: data) {
                                     closureColumn(header: 'Index', read: { it[0] })
@@ -104,11 +152,24 @@ class ObjectBrowser {
                                     closureColumn(header: 'Value', read: { it[2] })
                                 }
                             }
+                            itemTable.addMouseListener(new MouseAdapter() {
+                                public void mouseClicked(MouseEvent e) {
+                                    if (e.getClickCount() == 2) {
+                                        def selectedRow = itemTable.selectedRow
+                                        if (selectedRow != -1) {
+                                            def value = values[selectedRow]
+                                            if (value != null) {
+                                                ObjectBrowser.inspect(value)
+                                            }
+                                        }
+                                    }
+                                }
+                            })
                         }
                     }
                     scrollPane(name: ' Properties (includes public fields) ') {
+                        def data = Inspector.sortWithRawValue(inspector.propertyInfoWithRawValue.toList())
                         fieldTable = table {
-                            def data = Inspector.sort(inspector.propertyInfo.toList())
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
@@ -116,14 +177,31 @@ class ObjectBrowser {
                                 closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
                                 closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
                                 closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
+                                closureColumn(header: 'Raw Value', read: { it[MEMBER_RAW_VALUE_IDX] })
                             }
                         }
+                        fieldTable.getColumnModel().getColumn(6).setMinWidth(0);
+                        fieldTable.getColumnModel().getColumn(6).setMaxWidth(0);
+                        fieldTable.getColumnModel().getColumn(6).setWidth(0);
+                        fieldTable.addMouseListener(new MouseAdapter() {
+                            public void mouseClicked(MouseEvent e) {
+                                if (e.getClickCount() == 2) {
+                                    def selectedRow = fieldTable.selectedRow
+                                    if (selectedRow != -1) {
+                                        def value = fieldTable.getModel().getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
+                                        println value
+                                        if (value != null) {
+                                            ObjectBrowser.inspect(value)
+                                        }
+                                    }
+                                }
+                            }
+                        })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
                         methodTable = table {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
-
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Params', read: { it[MEMBER_PARAMS_IDX] })
