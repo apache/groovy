@@ -2549,7 +2549,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             r.bindings2['a'] = 'A'
             r.bindings2.put('b', 'B')
-
         '''
     }
     void testInferDiamondForAssignment() {
@@ -3655,30 +3654,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testReturnTypeInferenceWithClosure() {
         assertScript '''import org.codehaus.groovy.ast.expr.ClosureExpression
             class CTypeTest {
-              public static void test1(String[] args) {
-                // Cannot assign value of type java.lang.Object to variable of type CTypeTest
-                @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                    def cl = node.rightExpression.arguments[0]
-                    assert cl instanceof ClosureExpression
-                    def type = cl.getNodeMetaData(INFERRED_TYPE)
-                    assert type == make(Closure)
-                    assert type.isUsingGenerics()
-                    assert type.genericsTypes
-                    assert type.genericsTypes[0].type.name == 'CTypeTest'
+                static test(String[] args) {
+                    // Cannot assign value of type Object to variable of type CTypeTest
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        def cl = node.rightExpression.arguments[0]
+                        assert cl instanceof ClosureExpression
+                        def type = cl.getNodeMetaData(INFERRED_TYPE)
+                        assert type == make(Closure)
+                        assert type.isUsingGenerics()
+                        assert type.genericsTypes
+                        assert type.genericsTypes[0].type.name == 'CTypeTest'
 
-                    type = node.getNodeMetaData(INFERRED_TYPE)
-                    assert type.name == 'CTypeTest'
-                })
-                def s1 = cache  {
-                  return new CTypeTest();
+                        type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type.name == 'CTypeTest'
+                    })
+                    def s1 = cache {
+                        new CTypeTest()
+                    }
+                    CTypeTest s2 = cache {
+                        new CTypeTest()
+                    }
                 }
-                CTypeTest s2 = cache {
-                    new CTypeTest()
+                static <T> T cache(Closure<T> closure) {
+                    return closure.call();
                 }
-              }
-              static <T> T cache(Closure<T> closure) {
-                return closure.call();
-              }
             }
             1
         '''
@@ -3689,7 +3688,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import java.util.function.Function
             class C {
-                final <T> T m(Function<Reader,T> function)  {
+                def <T> T m(Function<Reader,T> function)  {
                     new StringReader("").withCloseable { reader ->
                         function.apply(reader)
                     }
@@ -3698,6 +3697,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Object result = new C().m { it.text.empty }
             //                          ^^ StringReader
             assert result == Boolean.TRUE
+        '''
+    }
+
+    // GROOVY-10436
+    void testReturnTypeInferenceWithClosure3() {
+        String method = '''import java.util.function.BiConsumer
+
+            def <T> BiConsumer<String, List<T>> m(BiConsumer<String, ? super T> consumer) {
+                return (String text, List<T> list) -> {
+                    for (T item : list) consumer.accept(text, item)
+                }
+            }
+        '''
+        assertScript method + '''
+            this.<Number>m { string, number -> number.toBigDecimal() }
+        '''
+        assertScript method + '''
+            // the only type witness for T is the closure parameter
+            m { string, Number number -> number.toBigDecimal() }
         '''
     }
 
@@ -4070,7 +4088,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //GROOVY-6723, GROOVY-6415
+    // GROOVY-6723, GROOVY-6415
     void testIndirectMethodLevelGenerics() {
         assertScript '''
             class C1<A> {
@@ -4138,10 +4156,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testConcreteTypeInsteadOfGenerifiedInterface() {
         assertScript '''
-            import groovy.transform.ASTTest
-            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.*
-            import static org.codehaus.groovy.ast.ClassHelper.*
-
             interface Converter<F, T> {
             T convertC(F from)
             }

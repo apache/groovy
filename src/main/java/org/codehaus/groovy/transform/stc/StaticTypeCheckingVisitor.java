@@ -2964,11 +2964,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // check for implicit type arguments
                     int i = -1; Parameter[] p = method.getParameters();
                     for (Expression argument : (ArgumentListExpression) arguments) { i += 1;
-                        if (argument instanceof ClosureExpression || isNullConstant(argument)) continue;
+                        if (isNullConstant(argument)) continue;
 
                         ClassNode pType = p[Math.min(i, p.length - 1)].getType();
                         Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
                         extractGenericsConnections(gc, wrapTypeIfNecessary(getType(argument)), pType);
+                        // GROOVY-10436: extract generics connections from closure parameter declaration(s)
+                        if (argument == expression || (argument instanceof ClosureExpression && isSAMType(pType))) {
+                            Parameter[] q = getParametersSafe((ClosureExpression) argument);
+                            ClassNode[] r = extractTypesFromParameters(q); // maybe typed
+                            ClassNode[] s = GenericsUtils.parameterizeSAM(pType).getV1();
+                            for (int j = 0; j < r.length && j < s.length; j += 1)
+                                if (!q[j].isDynamicTyped()) extractGenericsConnections(gc, r[j], s[j]);
+                        }
 
                         gc.forEach((key, gt) -> {
                             for (GenericsType tp : typeParameters) {
