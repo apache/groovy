@@ -28,6 +28,10 @@ new operators, and new features like closures, etc.
 This guide is not complete and only serves as a quick intro and a base for further guideline sections
 should you feel like contributing to the document and enhancing it.
 
+== Indention
+
+Indent with 4 spaces.
+
 == No semicolons
 
 When coming from a C / C++ / C# / Java background, we're so used to semicolons, that we put them everywhere.
