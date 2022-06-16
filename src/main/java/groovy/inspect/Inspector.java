@@ -229,14 +229,16 @@ public class Inspector {
         result[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
         result[MEMBER_TYPE_IDX] = shortName(pv.getType());
         result[MEMBER_NAME_IDX] = pv.getName();
+        Object rawValue = null;
         try {
             result[MEMBER_VALUE_IDX] = FormatHelper.inspect(pv.getValue());
-            result[MEMBER_RAW_VALUE_IDX] = pv.getValue();
+            rawValue = pv.getValue();
         } catch (Exception e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
-            result[MEMBER_RAW_VALUE_IDX] = null;
         }
-        return withoutNullsWithRawValue(result);
+        result = withoutNullsWithRawValue(result);
+        result[MEMBER_RAW_VALUE_IDX] = rawValue;
+        return result;
     }
 
     protected Class getClassUnderInspection() {
@@ -321,9 +323,7 @@ public class Inspector {
 
     protected Object[] withoutNullsWithRawValue(Object[] toNormalize) {
         for (int i = 0; i < toNormalize.length; i++) {
-            if (toNormalize[i] instanceof String) {
-            } else if (toNormalize[i] instanceof Object) {
-            } else if (toNormalize[i] == null) {
+            if (toNormalize[i] == null) {
                 toNormalize[i] = NOT_APPLICABLE;
             }
         }
