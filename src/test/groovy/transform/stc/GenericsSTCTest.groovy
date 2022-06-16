@@ -3269,6 +3269,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10436
+    void testReturnTypeInferenceWithClosure3() {
+        String method = '''import java.util.function.BiConsumer
+
+            def <T> void m(BiConsumer<String, ? super T> consumer) { }
+        '''
+        assertScript method + '''
+            this.<Number>m { string, number -> number.toBigDecimal() }
+        '''
+        assertScript method + '''
+            // the only type witness for T is the closure parameter
+            m { string, Number number -> number.toBigDecimal() }
+        '''
+    }
+
     // GROOVY-6129
     void testShouldNotThrowNPE() {
         assertScript '''
@@ -3706,10 +3721,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testConcreteTypeInsteadOfGenerifiedInterface() {
         assertScript '''
-            import groovy.transform.ASTTest
-            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.*
-            import static org.codehaus.groovy.ast.ClassHelper.*
-
             interface Converter<F, T> {
             T convertC(F from)
             }
