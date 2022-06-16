@@ -59,6 +59,7 @@ public class Inspector {
     public static final int MEMBER_PARAMS_IDX = 5;
     public static final int MEMBER_VALUE_IDX = 5;
     public static final int MEMBER_EXCEPTIONS_IDX = 6;
+    public static final int MEMBER_RAW_VALUE_IDX = 6;
 
     public static final String NOT_APPLICABLE = "n/a";
     public static final String GROOVY = "GROOVY";
@@ -209,6 +210,36 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    public Object[] getPropertyInfoWithRawValue() {
+        List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
+        Object[] result = new Object[props.size()];
+        int i = 0;
+        for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
+            PropertyValue pv = (PropertyValue) iter.next();
+            result[i] = fieldInfoWithRawValue(pv);
+        }
+        return result;
+    }
+
+    protected Object[] fieldInfoWithRawValue(PropertyValue pv) {
+        Object[] result = new Object[MEMBER_VALUE_IDX + 2];
+        result[MEMBER_ORIGIN_IDX] = GROOVY;
+        result[MEMBER_MODIFIER_IDX] = "public";
+        result[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
+        result[MEMBER_TYPE_IDX] = shortName(pv.getType());
+        result[MEMBER_NAME_IDX] = pv.getName();
+        Object rawValue = null;
+        try {
+            result[MEMBER_VALUE_IDX] = FormatHelper.inspect(pv.getValue());
+            rawValue = pv.getValue();
+        } catch (Exception e) {
+            result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+        }
+        result = withoutNullsWithRawValue(result);
+        result[MEMBER_RAW_VALUE_IDX] = rawValue;
+        return result;
+    }
+
     protected Class getClassUnderInspection() {
         return objectUnderInspection.getClass();
     }
@@ -289,6 +320,15 @@ public class Inspector {
         return toNormalize;
     }
 
+    protected Object[] withoutNullsWithRawValue(Object[] toNormalize) {
+        for (int i = 0; i < toNormalize.length; i++) {
+            if (toNormalize[i] == null) {
+                toNormalize[i] = NOT_APPLICABLE;
+            }
+        }
+        return toNormalize;
+    }
+
     public static void print(Object[] memberInfo) {
         print(System.out, memberInfo);
     }
@@ -326,6 +366,33 @@ public class Inspector {
             result = aStr[Inspector.MEMBER_MODIFIER_IDX].compareTo(bStr[Inspector.MEMBER_MODIFIER_IDX]);
             if (0 != result) return result;
             result = aStr[Inspector.MEMBER_ORIGIN_IDX].compareTo(bStr[Inspector.MEMBER_ORIGIN_IDX]);
+            return result;
+        }
+    }
+
+    public static Collection sortWithRawValue(List<Object> memberInfo) {
+        memberInfo.sort(new MemberComparatorWithRawValue());
+        return memberInfo;
+    }
+
+    public static class MemberComparatorWithRawValue implements Comparator<Object>, Serializable {
+        private static final long serialVersionUID = -7691851726606749542L;
+
+        @Override
+        public int compare(Object a, Object b) {
+            Object[] aStr = (Object[]) a;
+            Object[] bStr = (Object[]) b;
+            int result = ((String) aStr[Inspector.MEMBER_NAME_IDX]).compareTo((String) bStr[Inspector.MEMBER_NAME_IDX]);
+            if (0 != result) return result;
+            result = ((String) aStr[Inspector.MEMBER_TYPE_IDX]).compareTo((String) bStr[Inspector.MEMBER_TYPE_IDX]);
+            if (0 != result) return result;
+            result = ((String)aStr[Inspector.MEMBER_PARAMS_IDX]).compareTo((String) bStr[Inspector.MEMBER_PARAMS_IDX]);
+            if (0 != result) return result;
+            result =((String) aStr[Inspector.MEMBER_DECLARER_IDX]).compareTo((String) bStr[Inspector.MEMBER_DECLARER_IDX]);
+            if (0 != result) return result;
+            result = ((String)aStr[Inspector.MEMBER_MODIFIER_IDX]).compareTo((String) bStr[Inspector.MEMBER_MODIFIER_IDX]);
+            if (0 != result) return result;
+            result = ((String) aStr[Inspector.MEMBER_ORIGIN_IDX]).compareTo((String) bStr[Inspector.MEMBER_ORIGIN_IDX]);
             return result;
         }
     }
