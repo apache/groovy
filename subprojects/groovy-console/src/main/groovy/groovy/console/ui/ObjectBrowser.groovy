@@ -48,7 +48,7 @@ import static groovy.inspect.Inspector.MEMBER_RAW_VALUE_IDX
 class ObjectBrowser {
 
     def inspector
-    def swing, frame, fieldTable, methodTable, itemTable, mapTable
+    def swing, frame, fieldTable, methodTable, arrayTable, collectionTable, mapTable
 
     static void main(args) {
         inspect('some String')
@@ -86,23 +86,25 @@ class ObjectBrowser {
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            def values
-                            itemTable = table {
-                                def list = Arrays.asList(inspector.object)
+                            arrayTable = table {
                                 int i = 0
-                                values = list
+                                def list = Arrays.asList(inspector.object)
                                 def data = list.collect { val -> [i++, val] }
                                 tableModel(list: data) {
                                     closureColumn(header: 'Index', read: { it[0] })
                                     closureColumn(header: 'Value', read: { it[1] })
+                                    closureColumn(header: 'Raw Value', read: { it[1] }) // to support sorting
                                 }
                             }
-                            itemTable.addMouseListener(new MouseAdapter() {
+                            arrayTable.getColumnModel().getColumn(2).setMinWidth(0);
+                            arrayTable.getColumnModel().getColumn(2).setMaxWidth(0);
+                            arrayTable.getColumnModel().getColumn(2).setWidth(0);
+                            arrayTable.addMouseListener(new MouseAdapter() {
                                 public void mouseClicked(MouseEvent e) {
                                     if (e.getClickCount() == 2) {
-                                        def selectedRow = itemTable.selectedRow
+                                        def selectedRow = arrayTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = values[selectedRow]
+                                            def value = arrayTable.getModel().getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -114,22 +116,24 @@ class ObjectBrowser {
                     }
                     if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            def values
-                            itemTable = table {
+                            collectionTable = table {
                                 int i = 0
-                                values = inspector.object.collect { val -> val }
                                 def data = inspector.object.collect { val -> [i++, val] }
                                 tableModel(list: data) {
                                     closureColumn(header: 'Index', read: { it[0] })
                                     closureColumn(header: 'Value', read: { it[1] })
+                                    closureColumn(header: 'Raw Value', read: { it[1] }) // to support sorting
                                 }
                             }
-                            itemTable.addMouseListener(new MouseAdapter() {
+                            collectionTable.getColumnModel().getColumn(2).setMinWidth(0);
+                            collectionTable.getColumnModel().getColumn(2).setMaxWidth(0);
+                            collectionTable.getColumnModel().getColumn(2).setWidth(0);
+                            collectionTable.addMouseListener(new MouseAdapter() {
                                 public void mouseClicked(MouseEvent e) {
                                     if (e.getClickCount() == 2) {
-                                        def selectedRow = itemTable.selectedRow
+                                        def selectedRow = collectionTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = values[selectedRow]
+                                            def value = collectionTable.getModel().getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -141,23 +145,25 @@ class ObjectBrowser {
                     }
                     if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            def values
-                            itemTable = table {
+                            mapTable = table {
                                 int i = 0
-                                values = inspector.object.collect { key, val -> val }
                                 def data = inspector.object.collect { key, val -> [i++, key, val] }
                                 tableModel(list: data) {
                                     closureColumn(header: 'Index', read: { it[0] })
                                     closureColumn(header: 'Key', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[2] })
+                                    closureColumn(header: 'Raw Value', read: { it[2] }) // to support sorting
                                 }
                             }
-                            itemTable.addMouseListener(new MouseAdapter() {
+                            mapTable.getColumnModel().getColumn(3).setMinWidth(0);
+                            mapTable.getColumnModel().getColumn(3).setMaxWidth(0);
+                            mapTable.getColumnModel().getColumn(3).setWidth(0);
+                            mapTable.addMouseListener(new MouseAdapter() {
                                 public void mouseClicked(MouseEvent e) {
                                     if (e.getClickCount() == 2) {
-                                        def selectedRow = itemTable.selectedRow
+                                        def selectedRow = mapTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = values[selectedRow]
+                                            def value = mapTable.getModel().getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -180,7 +186,7 @@ class ObjectBrowser {
                                 closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
                                 closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
                                 closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
-                                closureColumn(header: 'Raw Value', read: { it[MEMBER_RAW_VALUE_IDX] })
+                                closureColumn(header: 'Raw Value', read: { it[MEMBER_RAW_VALUE_IDX] }) // to support sorting
                             }
                         }
                         fieldTable.getColumnModel().getColumn(6).setMinWidth(0);
@@ -221,7 +227,8 @@ class ObjectBrowser {
         }
 
         // Add a bit of formatting
-        addSorter(itemTable)
+        addSorter(arrayTable)
+        addSorter(collectionTable)
         addSorter(mapTable)
         addSorter(fieldTable)
         addSorter(methodTable)
