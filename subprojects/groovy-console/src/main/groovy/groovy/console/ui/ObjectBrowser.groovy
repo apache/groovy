@@ -22,10 +22,10 @@ import groovy.inspect.Inspector
 import groovy.swing.table.TableSorter
 import groovy.swing.SwingBuilder
 
-import javax.swing.ListSelectionModel
 import javax.swing.WindowConstants
 import java.awt.FlowLayout
-import java.awt.event.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
@@ -87,24 +87,23 @@ class ObjectBrowser {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
                             arrayTable = table {
-                                int i = 0
-                                def list = Arrays.asList(inspector.object)
-                                def data = list.collect { val -> [i++, val] }
-                                tableModel(list: data) {
-                                    closureColumn(header: 'Index', read: { it[0] })
-                                    closureColumn(header: 'Value', read: { it[1] })
-                                    closureColumn(header: 'Raw Value', read: { it[1] }) // to support sorting
+                                tableModel(list: inspector.object.toList().withIndex()) {
+                                    closureColumn(header: 'Index', read: { it[1] })
+                                    closureColumn(header: 'Value', read: { it[0] })
+                                    closureColumn(header: 'Raw Value', read: { it[0] }) // to support sorting
                                 }
                             }
-                            arrayTable.getColumnModel().getColumn(2).setMinWidth(0);
-                            arrayTable.getColumnModel().getColumn(2).setMaxWidth(0);
-                            arrayTable.getColumnModel().getColumn(2).setWidth(0);
+                            arrayTable.columnModel.getColumn(2).with {
+                                minWidth = 0
+                                maxWidth = 0
+                                width = 0
+                            }
                             arrayTable.addMouseListener(new MouseAdapter() {
-                                public void mouseClicked(MouseEvent e) {
-                                    if (e.getClickCount() == 2) {
+                                void mouseClicked(MouseEvent e) {
+                                    if (e.clickCount == 2) {
                                         def selectedRow = arrayTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = arrayTable.getModel().getValueAt(selectedRow, 2)
+                                            def value = arrayTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -113,27 +112,26 @@ class ObjectBrowser {
                                 }
                             })
                         }
-                    }
-                    if (inspector.object instanceof Collection) {
+                    } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
                             collectionTable = table {
-                                int i = 0
-                                def data = inspector.object.collect { val -> [i++, val] }
-                                tableModel(list: data) {
-                                    closureColumn(header: 'Index', read: { it[0] })
-                                    closureColumn(header: 'Value', read: { it[1] })
-                                    closureColumn(header: 'Raw Value', read: { it[1] }) // to support sorting
+                                tableModel(list: inspector.object.withIndex()) {
+                                    closureColumn(header: 'Index', read: { it[1] })
+                                    closureColumn(header: 'Value', read: { it[0] })
+                                    closureColumn(header: 'Raw Value', read: { it[0] }) // to support sorting
                                 }
                             }
-                            collectionTable.getColumnModel().getColumn(2).setMinWidth(0);
-                            collectionTable.getColumnModel().getColumn(2).setMaxWidth(0);
-                            collectionTable.getColumnModel().getColumn(2).setWidth(0);
+                            collectionTable.columnModel.getColumn(2).with {
+                                minWidth = 0
+                                maxWidth = 0
+                                width = 0
+                            }
                             collectionTable.addMouseListener(new MouseAdapter() {
-                                public void mouseClicked(MouseEvent e) {
-                                    if (e.getClickCount() == 2) {
+                                void mouseClicked(MouseEvent e) {
+                                    if (e.clickCount == 2) {
                                         def selectedRow = collectionTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = collectionTable.getModel().getValueAt(selectedRow, 2)
+                                            def value = collectionTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -142,28 +140,27 @@ class ObjectBrowser {
                                 }
                             })
                         }
-                    }
-                    if (inspector.object instanceof Map) {
+                    } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
                             mapTable = table {
-                                int i = 0
-                                def data = inspector.object.collect { key, val -> [i++, key, val] }
-                                tableModel(list: data) {
-                                    closureColumn(header: 'Index', read: { it[0] })
-                                    closureColumn(header: 'Key', read: { it[1] })
-                                    closureColumn(header: 'Value', read: { it[2] })
-                                    closureColumn(header: 'Raw Value', read: { it[2] }) // to support sorting
+                                tableModel(list: inspector.object.entrySet().withIndex()) {
+                                    closureColumn(header: 'Index', read: { it[1] })
+                                    closureColumn(header: 'Key', read: { it[0].key })
+                                    closureColumn(header: 'Value', read: { it[0].value })
+                                    closureColumn(header: 'Raw Value', read: { it[0].value }) // to support sorting
                                 }
                             }
-                            mapTable.getColumnModel().getColumn(3).setMinWidth(0);
-                            mapTable.getColumnModel().getColumn(3).setMaxWidth(0);
-                            mapTable.getColumnModel().getColumn(3).setWidth(0);
+                            mapTable.columnModel.getColumn(3).with {
+                                minWidth = 0
+                                maxWidth = 0
+                                width = 0
+                            }
                             mapTable.addMouseListener(new MouseAdapter() {
-                                public void mouseClicked(MouseEvent e) {
-                                    if (e.getClickCount() == 2) {
+                                void mouseClicked(MouseEvent e) {
+                                    if (e.clickCount == 2) {
                                         def selectedRow = mapTable.selectedRow
                                         if (selectedRow != -1) {
-                                            def value = mapTable.getModel().getValueAt(selectedRow, 2)
+                                            def value = mapTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
                                                 ObjectBrowser.inspect(value)
                                             }
@@ -189,16 +186,17 @@ class ObjectBrowser {
                                 closureColumn(header: 'Raw Value', read: { it[MEMBER_RAW_VALUE_IDX] }) // to support sorting
                             }
                         }
-                        fieldTable.getColumnModel().getColumn(6).setMinWidth(0);
-                        fieldTable.getColumnModel().getColumn(6).setMaxWidth(0);
-                        fieldTable.getColumnModel().getColumn(6).setWidth(0);
+                        fieldTable.columnModel.getColumn(6).with {
+                            minWidth = 0
+                            maxWidth = 0
+                            width = 0
+                        }
                         fieldTable.addMouseListener(new MouseAdapter() {
-                            public void mouseClicked(MouseEvent e) {
-                                if (e.getClickCount() == 2) {
+                            void mouseClicked(MouseEvent e) {
+                                if (e.clickCount == 2) {
                                     def selectedRow = fieldTable.selectedRow
                                     if (selectedRow != -1) {
-                                        def value = fieldTable.getModel().getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
-                                        println value
+                                        def value = fieldTable.model.getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
                                         if (value != null) {
                                             ObjectBrowser.inspect(value)
                                         }
