@@ -48,15 +48,23 @@ import static groovy.inspect.Inspector.MEMBER_RAW_VALUE_IDX
 class ObjectBrowser {
 
     def inspector
+    def path
     def swing, frame, fieldTable, methodTable, arrayTable, collectionTable, mapTable
 
     static void main(args) {
         inspect('some String')
     }
 
-    static void inspect(objectUnderInspection) {
-        def browser = new ObjectBrowser()
+    public ObjectBrowser(String path = '') {
+        this.path = (path == null ? '' : path)
+    }
+
+    static void inspect(objectUnderInspection, String path = '') {
+        def browser = new ObjectBrowser(path)
         browser.inspector = new Inspector(objectUnderInspection)
+        if (objectUnderInspection != null && browser.path == '') {
+            browser.path = "${objectUnderInspection.getClass().name} instance"
+        }
         browser.run()
     }
 
@@ -80,7 +88,7 @@ class ObjectBrowser {
                         constraints: NORTH) {
                     flowLayout(alignment: FlowLayout.LEFT)
                     def props = inspector.classProps
-                    def classLabel = '<html>' + props.join('<br>')
+                    def classLabel = '<html>' + props.join('<br>') + "<br><br>Path: ${path}"
                     label(classLabel)
                 }
                 tabbedPane(constraints: CENTER) {
@@ -105,7 +113,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = arrayTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                ObjectBrowser.inspect(value, path + "[${arrayTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
                                     }
@@ -133,7 +141,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = collectionTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                ObjectBrowser.inspect(value, path + "[${collectionTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
                                     }
@@ -162,7 +170,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = mapTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                ObjectBrowser.inspect(value, path + "[${mapTable.model.getValueAt(selectedRow, 1)}]")
                                             }
                                         }
                                     }
@@ -195,7 +203,7 @@ class ObjectBrowser {
                                     if (selectedRow != -1) {
                                         def value = fieldTable.model.getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
                                         if (value != null) {
-                                            ObjectBrowser.inspect(value)
+                                            ObjectBrowser.inspect(value, path + (path.length() === 0 ? '' : '.') + "${fieldTable.model.getValueAt(selectedRow, 0)}")
                                         }
                                     }
                                 }
