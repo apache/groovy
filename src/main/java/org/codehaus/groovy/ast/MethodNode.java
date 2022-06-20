@@ -292,18 +292,17 @@ public class MethodNode extends AnnotatedNode {
     public String getText() {
         int mask = this instanceof ConstructorNode ? Modifier.constructorModifiers() : Modifier.methodModifiers();
         String prettyName = getName().contains(" ") ? "\"" + getName() + "\"" : getName();
-        return new StringBuilder(AstToTextHelper.getModifiersText(getModifiers() & mask))
-            .append(' ')
-            .append(toGenericTypesString(getGenericsTypes()))
-            .append(AstToTextHelper.getClassText(getReturnType()))
-            .append(' ')
-            .append(prettyName)
-            .append('(')
-            .append(AstToTextHelper.getParametersText(getParameters()))
-            .append(')')
-            .append(AstToTextHelper.getThrowsClauseText(getExceptions()))
-            .append(" { ... }")
-            .toString();
+        return AstToTextHelper.getModifiersText(getModifiers() & mask) +
+                ' ' +
+                toGenericTypesString(getGenericsTypes()) +
+                AstToTextHelper.getClassText(getReturnType()) +
+                ' ' +
+                prettyName +
+                '(' +
+                AstToTextHelper.getParametersText(getParameters()) +
+                ')' +
+                AstToTextHelper.getThrowsClauseText(getExceptions()) +
+                " { ... }";
     }
 
     @Override
