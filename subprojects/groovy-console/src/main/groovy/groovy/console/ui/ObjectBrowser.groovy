@@ -27,6 +27,8 @@ import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 
+import static javax.swing.ListSelectionModel.SINGLE_SELECTION
+
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
 import static groovy.inspect.Inspector.MEMBER_MODIFIER_IDX
@@ -48,15 +50,23 @@ import static groovy.inspect.Inspector.MEMBER_RAW_VALUE_IDX
 class ObjectBrowser {
 
     def inspector
+    def path
     def swing, frame, fieldTable, methodTable, arrayTable, collectionTable, mapTable
 
     static void main(args) {
         inspect('some String')
     }
 
-    static void inspect(objectUnderInspection) {
-        def browser = new ObjectBrowser()
+    public ObjectBrowser(String path = '') {
+        this.path = (path == null ? '' : path)
+    }
+
+    static void inspect(objectUnderInspection, String path = '') {
+        def browser = new ObjectBrowser(path)
         browser.inspector = new Inspector(objectUnderInspection)
+        if (objectUnderInspection != null && browser.path == '') {
+            browser.path = "${objectUnderInspection.getClass().name} instance"
+        }
         browser.run()
     }
 
@@ -86,7 +96,7 @@ class ObjectBrowser {
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            arrayTable = table {
+                            arrayTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -105,7 +115,8 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = arrayTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                closeFrameIfAltDoubleClick(e)
+                                                ObjectBrowser.inspect(value, path + "[${arrayTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
                                     }
@@ -114,7 +125,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            collectionTable = table {
+                            collectionTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -133,7 +144,8 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = collectionTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                closeFrameIfAltDoubleClick(e)
+                                                ObjectBrowser.inspect(value, path + "[${collectionTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
                                     }
@@ -142,7 +154,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            mapTable = table {
+                            mapTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.entrySet().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
@@ -162,7 +174,8 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = mapTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
-                                                ObjectBrowser.inspect(value)
+                                                closeFrameIfAltDoubleClick(e)
+                                                ObjectBrowser.inspect(value, path + "[${mapTable.model.getValueAt(selectedRow, 1)}]")
                                             }
                                         }
                                     }
@@ -171,7 +184,7 @@ class ObjectBrowser {
                         }
                     }
                     scrollPane(name: ' Public Fields and Properties ') {
-                        fieldTable = table {
+                        fieldTable = table(selectionMode: SINGLE_SELECTION) {
                             def data = Inspector.sortWithRawValue(inspector.publicFieldsWithRawValue.toList())
                             data.addAll(Inspector.sortWithRawValue(inspector.propertyInfoWithRawValue.toList()))
                             tableModel(list: data) {
@@ -196,7 +209,8 @@ class ObjectBrowser {
                                     if (selectedRow != -1) {
                                         def value = fieldTable.model.getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
                                         if (value != null) {
-                                            ObjectBrowser.inspect(value)
+                                            closeFrameIfAltDoubleClick(e)
+                                            ObjectBrowser.inspect(value, path + (path.length() === 0 ? '' : '.') + "${fieldTable.model.getValueAt(selectedRow, 0)}")
                                         }
                                     }
                                 }
@@ -204,7 +218,7 @@ class ObjectBrowser {
                         })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
-                        methodTable = table {
+                        methodTable = table(selectionMode: SINGLE_SELECTION) {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
                             tableModel(list: data) {
@@ -218,6 +232,13 @@ class ObjectBrowser {
                             }
                         }
                     }
+                }
+                panel(name: 'Path',
+                        border: emptyBorder([5, 10, 5, 10]),
+                        constraints: SOUTH) {
+                    boxLayout(axis: 2)
+                    label('Path:  ')
+                    textField(editable: false, text: path)
                 }
             }
         }
@@ -237,6 +258,13 @@ class ObjectBrowser {
             def sorter = new TableSorter(table.model)
             table.model = sorter
             sorter.addMouseListenerToHeaderInTable(table)
+        }
+    }
+
+    void closeFrameIfAltDoubleClick(MouseEvent e) {
+        if (e.altDown) {
+            frame.visible = false;
+            frame.dispose();
         }
     }
 
