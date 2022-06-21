@@ -1603,53 +1603,39 @@ public abstract class StaticTypeCheckingSupport {
 
     static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
         if (connections == null || connections.isEmpty()) return;
-        int count = 0;
-        while (count++ < 10000) {
-            boolean checkForMorePlaceholders = false;
-            for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
-                // entry could be T=T, T=T extends U, T=V, T=String, T=? extends String, etc.
-                GenericsType oldValue = entry.getValue();
-                if (oldValue.isPlaceholder()) { // T=T or V, not T=String or ? ...
-                    GenericsTypeName name = new GenericsTypeName(oldValue.getName());
-                    GenericsType newValue = connections.get(name); // find "V" in T=V
-                    if (newValue == oldValue) continue;
-                    if (newValue == null) {
-                        newValue = connections.get(entry.getKey());
-                        if (newValue != null) { // GROOVY-10315, GROOVY-10317
-                            newValue = getCombinedGenericsType(oldValue, newValue);
-                        }
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+            // entry could be T=T, T=T extends U, T=V, T=String, T=? extends String, etc.
+            GenericsType oldValue = entry.getValue();
+            if (oldValue.isPlaceholder()) { // T=T or V, not T=String or ? ...
+                GenericsTypeName name = new GenericsTypeName(oldValue.getName());
+                GenericsType newValue = connections.get(name); // find "V" in T=V
+                if (newValue == oldValue) continue;
+                if (newValue == null) {
+                    newValue = connections.get(entry.getKey());
+                    if (newValue != null) { // GROOVY-10315, GROOVY-10317
+                        newValue = getCombinedGenericsType(oldValue, newValue);
                     }
-                    if (newValue == null) {
-                        entry.setValue(newValue = applyGenericsContext(connections, oldValue));
-                        if (!checkForMorePlaceholders) {
-                            checkForMorePlaceholders = !equalIncludingGenerics(oldValue, newValue);
-                        }
-                    } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
-                        // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
-                        // the original bounds are lost, which can result in accepting an incompatible type as an argument!
-                        ClassNode replacementType = extractType(newValue);
-                        ClassNode suitabilityType = !replacementType.isGenericsPlaceHolder()
-                                ? replacementType : Optional.ofNullable(replacementType.getGenericsTypes())
-                                        .map(gts -> extractType(gts[0])).orElse(replacementType.redirect());
+                }
+                if (newValue == null) {
+                    entry.setValue(newValue = applyGenericsContext(connections, oldValue));
+                } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
+                    // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
+                    // the original bounds are lost, which can result in accepting an incompatible type as an argument!
+                    ClassNode replacementType = extractType(newValue);
+                    ClassNode suitabilityType = !replacementType.isGenericsPlaceHolder()
+                            ? replacementType : Optional.ofNullable(replacementType.getGenericsTypes())
+                                    .map(gts -> extractType(gts[0])).orElse(replacementType.redirect());
 
-                        if (oldValue.isCompatibleWith(suitabilityType)) {
-                            if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
-                                // GROOVY-9998: apply upper/lower bound for unknown
-                                entry.setValue(replacementType.asGenericsType());
-                            } else {
-                                entry.setValue(newValue);
-                            }
-                            if (!checkForMorePlaceholders && newValue.isPlaceholder()) {
-                                checkForMorePlaceholders = !equalIncludingGenerics(oldValue, newValue);
-                            }
+                    if (oldValue.isCompatibleWith(suitabilityType)) {
+                        if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
+                            // GROOVY-9998: apply upper/lower bound for unknown
+                            entry.setValue(replacementType.asGenericsType());
+                        } else {
+                            entry.setValue(newValue);
                         }
                     }
                 }
             }
-            if (!checkForMorePlaceholders) break;
-        }
-        if (count >= 10000) {
-            throw new GroovyBugError("unable to handle generics in " + resolvedPlaceholders + " with connections " + connections);
         }
     }
 
