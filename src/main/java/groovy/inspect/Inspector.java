@@ -164,6 +164,16 @@ public class Inspector {
         return result;
     }
 
+    public Object[] getPublicFieldsWithRawValue() {
+        Field[] fields = getClassUnderInspection().getFields();
+        Object[] result = new Object[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            result[i] = fieldInfoWithRawValue(field);
+        }
+        return result;
+    }
+
     /**
      * Get info about Properties (Java and Groovy alike).
      *
@@ -176,6 +186,17 @@ public class Inspector {
         for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
             PropertyValue pv = (PropertyValue) iter.next();
             result[i] = fieldInfo(pv);
+        }
+        return result;
+    }
+
+    public Object[] getPropertyInfoWithRawValue() {
+        List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
+        Object[] result = new Object[props.size()];
+        int i = 0;
+        for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
+            PropertyValue pv = (PropertyValue) iter.next();
+            result[i] = fieldInfoWithRawValue(pv);
         }
         return result;
     }
@@ -195,6 +216,25 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    protected Object[] fieldInfoWithRawValue(Field field) {
+        Object[] result = new Object[MEMBER_RAW_VALUE_IDX + 1];
+        result[MEMBER_ORIGIN_IDX] = JAVA;
+        result[MEMBER_MODIFIER_IDX] = Modifier.toString(field.getModifiers());
+        result[MEMBER_DECLARER_IDX] = shortName(field.getDeclaringClass());
+        result[MEMBER_TYPE_IDX] = shortName(field.getType());
+        result[MEMBER_NAME_IDX] = field.getName();
+        Object rawValue = null;
+        try {
+            rawValue = field.get(objectUnderInspection);
+            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(rawValue);
+        } catch (IllegalAccessException e) {
+            result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+        }
+        result = withoutNullsWithRawValue(result);
+        result[MEMBER_RAW_VALUE_IDX] = rawValue;
+        return result;
+    }
+
     protected String[] fieldInfo(PropertyValue pv) {
         String[] result = new String[MEMBER_VALUE_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = GROOVY;
@@ -210,17 +250,6 @@ public class Inspector {
         return withoutNulls(result);
     }
 
-    public Object[] getPropertyInfoWithRawValue() {
-        List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
-        Object[] result = new Object[props.size()];
-        int i = 0;
-        for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
-            PropertyValue pv = (PropertyValue) iter.next();
-            result[i] = fieldInfoWithRawValue(pv);
-        }
-        return result;
-    }
-
     protected Object[] fieldInfoWithRawValue(PropertyValue pv) {
         Object[] result = new Object[MEMBER_VALUE_IDX + 2];
         result[MEMBER_ORIGIN_IDX] = GROOVY;
@@ -230,8 +259,8 @@ public class Inspector {
         result[MEMBER_NAME_IDX] = pv.getName();
         Object rawValue = null;
         try {
-            result[MEMBER_VALUE_IDX] = FormatHelper.inspect(pv.getValue());
             rawValue = pv.getValue();
+            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(rawValue);
         } catch (Exception e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
