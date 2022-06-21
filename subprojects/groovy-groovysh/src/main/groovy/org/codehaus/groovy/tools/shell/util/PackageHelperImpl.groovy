@@ -23,6 +23,7 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 
 import java.nio.file.InvalidPathException
+import java.nio.file.Paths
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.prefs.PreferenceChangeEvent
@@ -239,7 +240,7 @@ Files.walkFileTree(fs.getPath('modules'),
      * Returns all package names found at URL; accepts jar files and folders.
      */
     static Collection<String> getPackageNames(URL url) {
-        File urlFile = new File(URLDecoder.decode(url.file, 'UTF-8'))
+        File urlFile = Paths.get(url.toURI()).toFile()
 
         if (urlFile.isDirectory()) {
             return new HashSet<>().tap {

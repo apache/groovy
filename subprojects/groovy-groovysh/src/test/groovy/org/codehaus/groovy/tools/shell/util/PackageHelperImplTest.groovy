@@ -18,6 +18,12 @@
  */
 package org.codehaus.groovy.tools.shell.util
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
+
 /**
  * Unit tests for the {@link PackageHelperImpl} class.
  */
@@ -57,5 +63,65 @@ class PackageHelperImplTest
     void testLoadAndGetPackagesUnknown() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
         assert [] as Set<String> == helper.getContents('java.util.regex.tools')
+    }
+
+    void testGetPackageNamesFromPathWithSign() {
+        Path tempTestDirPath = Files.createTempDirectory(this.getClass().getName())
+        Path folderWithSign = tempTestDirPath.resolve('dummy+folder++1%23%%')
+
+        Path dummyFilePath = folderWithSign.resolve('dummypackage1').resolve('Dummy.class')
+        Files.createDirectories(dummyFilePath.getParent())
+        File dummyFile = dummyFilePath.toFile()
+        try (FileOutputStream fos = new FileOutputStream(dummyFile)) {
+            fos.write(0)
+        }
+        assert dummyFile.exists()
+
+        Path jarWithSignPath = folderWithSign.resolve("dummy+lib++1%23%%.jar")
+        try (FileOutputStream fos = new FileOutputStream(jarWithSignPath.toFile())
+             JarOutputStream jos = new JarOutputStream(fos, new Manifest())) {
+            JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
+            jos.putNextEntry(jarEntry)
+            jos.write(0)
+        }
+        assert jarWithSignPath.toFile().exists()
+
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+
+        Set<String> packageInFolder = helper.getPackageNames(folderWithSign.toUri().toURL())
+        assert packageInFolder.contains("dummypackage1")
+
+        Set<String> packageInJar = helper.getPackageNames(jarWithSignPath.toUri().toURL())
+        assert packageInJar.contains("dummypackage2")
+    }
+
+    void testGetPackageNamesFromPathWithSpace() {
+        Path tempTestDirPath = Files.createTempDirectory(this.getClass().getName())
+        Path folderWithSpacePath = Files.createTempDirectory(tempTestDirPath, 'dummy folder 1')
+
+        Path dummyFilePath = folderWithSpacePath.resolve('dummypackage1').resolve('Dummy.class')
+        Files.createDirectories(dummyFilePath.getParent())
+        File dummyFile = dummyFilePath.toFile()
+        try (FileOutputStream fos = new FileOutputStream(dummyFile)) {
+            fos.write(0)
+        }
+        assert dummyFile.exists()
+
+        Path jarWithSpacePath = folderWithSpacePath.resolve("dummy lib 2.jar")
+        try (FileOutputStream fos = new FileOutputStream(jarWithSpacePath.toFile())
+             JarOutputStream jos = new JarOutputStream(fos, new Manifest())) {
+            JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
+            jos.putNextEntry(jarEntry)
+            jos.write(0)
+        }
+        assert jarWithSpacePath.toFile().exists()
+
+        PackageHelperImpl helper = new PackageHelperImpl(null)
+
+        Set<String> packageInFolder = helper.getPackageNames(folderWithSpacePath.toUri().toURL())
+        assert packageInFolder.contains("dummypackage1")
+
+        Set<String> packageInJar = helper.getPackageNames(jarWithSpacePath.toUri().toURL())
+        assert packageInJar.contains("dummypackage2")
     }
 }
