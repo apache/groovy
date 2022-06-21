@@ -88,13 +88,13 @@ class ObjectBrowser {
                         constraints: NORTH) {
                     flowLayout(alignment: FlowLayout.LEFT)
                     def props = inspector.classProps
-                    def classLabel = '<html>' + props.join('<br>') + "<br><br>Path: ${path}"
+                    def classLabel = '<html>' + props.join('<br>')
                     label(classLabel)
                 }
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            arrayTable = table {
+                            arrayTable = table(selectionMode: 0) {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -122,7 +122,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            collectionTable = table {
+                            collectionTable = table(selectionMode: 0) {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -150,7 +150,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            mapTable = table {
+                            mapTable = table(selectionMode: 0) {
                                 tableModel(list: inspector.object.entrySet().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
@@ -180,7 +180,7 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Properties (includes public fields) ') {
                         def data = Inspector.sortWithRawValue(inspector.propertyInfoWithRawValue.toList())
-                        fieldTable = table {
+                        fieldTable = table(selectionMode: 0) {
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
@@ -211,7 +211,7 @@ class ObjectBrowser {
                         })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
-                        methodTable = table {
+                        methodTable = table(selectionMode: 0) {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
                             tableModel(list: data) {
@@ -225,6 +225,13 @@ class ObjectBrowser {
                             }
                         }
                     }
+                }
+                panel(name: 'Path',
+                        border: emptyBorder([5, 10, 5, 10]),
+                        constraints: SOUTH) {
+                    boxLayout(axis: 2)
+                    label('Path:  ')
+                    textField(editable: false, text: path)
                 }
             }
         }
