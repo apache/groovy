@@ -113,6 +113,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = arrayTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
+                                                closeFrameIfAltDoubleClick(e)
                                                 ObjectBrowser.inspect(value, path + "[${arrayTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
@@ -141,6 +142,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = collectionTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
+                                                closeFrameIfAltDoubleClick(e)
                                                 ObjectBrowser.inspect(value, path + "[${collectionTable.model.getValueAt(selectedRow, 0)}]")
                                             }
                                         }
@@ -170,6 +172,7 @@ class ObjectBrowser {
                                         if (selectedRow != -1) {
                                             def value = mapTable.model.getValueAt(selectedRow, 2)
                                             if (value != null) {
+                                                closeFrameIfAltDoubleClick(e)
                                                 ObjectBrowser.inspect(value, path + "[${mapTable.model.getValueAt(selectedRow, 1)}]")
                                             }
                                         }
@@ -203,6 +206,7 @@ class ObjectBrowser {
                                     if (selectedRow != -1) {
                                         def value = fieldTable.model.getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
                                         if (value != null) {
+                                            closeFrameIfAltDoubleClick(e)
                                             ObjectBrowser.inspect(value, path + (path.length() === 0 ? '' : '.') + "${fieldTable.model.getValueAt(selectedRow, 0)}")
                                         }
                                     }
@@ -251,6 +255,13 @@ class ObjectBrowser {
             def sorter = new TableSorter(table.model)
             table.model = sorter
             sorter.addMouseListenerToHeaderInTable(table)
+        }
+    }
+
+    void closeFrameIfAltDoubleClick(MouseEvent e) {
+        if ((e.modifiersEx & 512) == 512) {
+            frame.visible = false;
+            frame.dispose();
         }
     }
 
