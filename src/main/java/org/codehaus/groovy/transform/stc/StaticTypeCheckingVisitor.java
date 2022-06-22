@@ -363,16 +363,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
-    protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
-        @Override
-        public void returnStatementAdded(final ReturnStatement returnStatement) {
-            if (isNullConstant(returnStatement.getExpression())) return;
-            ClassNode returnType = checkReturnType(returnStatement);
-            if (typeCheckingContext.getEnclosingClosure() != null) {
-                addClosureReturnType(returnType);
-            } else if (typeCheckingContext.getEnclosingMethod() == null) {
-                throw new GroovyBugError("Unexpected return statement at " + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber() + " " + returnStatement.getText());
-            }
+    protected final ReturnAdder.ReturnStatementListener returnListener = returnStatement -> {
+        if (returnStatement.isReturningNullOrVoid()) return;
+        ClassNode returnType = checkReturnType(returnStatement);
+        if (this.typeCheckingContext.getEnclosingClosure() != null) {
+            addClosureReturnType(returnType);
+        } else if (this.typeCheckingContext.getEnclosingMethod() == null) {
+            throw new GroovyBugError("Unexpected return statement at " + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber() + " " + returnStatement.getText());
         }
     };
 
@@ -781,11 +778,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
 
-                    if (isFunctionalInterface(lType)) {
-                        processFunctionalInterfaceAssignment(lType, rightExpression);
-                    } else if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
-                        storeInferredReturnType(rightExpression, getCombinedBoundType(lType.getGenericsTypes()[0]));
-                    }
+                    applyTargetType(lType, rightExpression);
                 }
                 rightExpression.visit(this);
             }
@@ -950,15 +943,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void processFunctionalInterfaceAssignment(final ClassNode lhsType, final Expression rhsExpression) {
-        if (rhsExpression instanceof ClosureExpression) {
-            inferParameterAndReturnTypesOfClosureOnRHS(lhsType, (ClosureExpression) rhsExpression);
-        } else if (rhsExpression instanceof MethodReferenceExpression) {
-            LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lhsType);
+    private void applyTargetType(final ClassNode target, final Expression source) {
+        if (isFunctionalInterface(target)) {
+            if (source instanceof ClosureExpression) {
+                inferParameterAndReturnTypesOfClosureOnRHS(target, (ClosureExpression) source);
+            } else if (source instanceof MethodReferenceExpression) {
+                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target);
 
-            inferParameterAndReturnTypesOfClosureOnRHS(lhsType, lambdaExpression);
-            rhsExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
-            rhsExpression.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
+                inferParameterAndReturnTypesOfClosureOnRHS(target, lambdaExpression);
+                source.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
+                source.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
+            }
+        } else if (isClosureWithType(target)) {
+            if (source instanceof ClosureExpression) {
+                GenericsType returnType = target.getGenericsTypes()[0];
+                storeInferredReturnType(source, getCombinedBoundType(returnType));
+            }
         }
     }
 
@@ -1936,11 +1936,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void visitInitialExpression(final Expression value, final Expression target, final ASTNode position) {
         if (value != null) {
             ClassNode lType = target.getType();
-            if (isFunctionalInterface(lType)) { // GROOVY-9977
-                processFunctionalInterfaceAssignment(lType, value);
-            } else if (isClosureWithType(lType) && value instanceof ClosureExpression) {
-                storeInferredReturnType(value, getCombinedBoundType(lType.getGenericsTypes()[0]));
-            }
+            applyTargetType(lType, value); // GROOVY-9977
 
             typeCheckingContext.pushEnclosingBinaryExpression(assignX(target, value, position));
 
@@ -2210,6 +2206,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitReturnStatement(final ReturnStatement statement) {
+        if (typeCheckingContext.getEnclosingClosure() == null) {
+            MethodNode method = typeCheckingContext.getEnclosingMethod();
+            if (method != null && !method.isVoidMethod() && !method.isDynamicReturnType()) {
+                applyTargetType(method.getReturnType(), statement.getExpression()); // GROOVY-10660
+            }
+        }
         super.visitReturnStatement(statement);
         returnListener.returnStatementAdded(statement);
     }
@@ -2597,6 +2599,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         typeCheckingContext.pushEnclosingMethod(node);
+        final ClassNode returnType = node.getReturnType(); // GROOVY-10660: implicit return case
+        if (!isConstructor && (isClosureWithType(returnType) || isFunctionalInterface(returnType))) {
+            new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
+        }
         readClosureParameterAnnotation(node); // GROOVY-6603
         super.visitConstructorOrMethod(node, isConstructor);
         if (node.hasDefaultValue()) {
@@ -4130,18 +4136,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCastExpression(final CastExpression expression) {
-        ClassNode type = expression.getType();
+        ClassNode target = expression.getType();
         Expression source = expression.getExpression();
-        if (isFunctionalInterface(type)) { // GROOVY-9997
-            processFunctionalInterfaceAssignment(type, source);
-        } else if (isClosureWithType(type) && source instanceof ClosureExpression) {
-            storeInferredReturnType(source, getCombinedBoundType(type.getGenericsTypes()[0]));
-        }
+        applyTargetType(target, source); // GROOVY-9997
 
         source.visit(this);
 
-        if (!expression.isCoerce() && !checkCast(type, source)) {
-            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
+        if (!expression.isCoerce() && !checkCast(target, source)) {
+            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(target), expression);
         }
     }
 
