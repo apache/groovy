@@ -27,9 +27,7 @@ import java.util.jar.Manifest
 /**
  * Unit tests for the {@link PackageHelperImpl} class.
  */
-class PackageHelperImplTest
-    extends GroovyTestCase
-{
+class PackageHelperImplTest extends GroovyTestCase {
 
     void testLoadAndGetPackagesEmpty() {
         PackageHelperImpl helper = new PackageHelperImpl(null)
@@ -72,17 +70,18 @@ class PackageHelperImplTest
         Path dummyFilePath = folderWithSign.resolve('dummypackage1').resolve('Dummy.class')
         Files.createDirectories(dummyFilePath.getParent())
         File dummyFile = dummyFilePath.toFile()
-        try (FileOutputStream fos = new FileOutputStream(dummyFile)) {
+        dummyFile.withOutputStream { fos ->
             fos.write(0)
         }
         assert dummyFile.exists()
 
         Path jarWithSignPath = folderWithSign.resolve("dummy+lib++1%23%%.jar")
-        try (FileOutputStream fos = new FileOutputStream(jarWithSignPath.toFile())
-             JarOutputStream jos = new JarOutputStream(fos, new Manifest())) {
-            JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
-            jos.putNextEntry(jarEntry)
-            jos.write(0)
+        jarWithSignPath.toFile().withOutputStream { fos ->
+            new JarOutputStream(fos, new Manifest()).withStream { jos ->
+                JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
+                jos.putNextEntry(jarEntry)
+                jos.write(0)
+            }
         }
         assert jarWithSignPath.toFile().exists()
 
@@ -102,17 +101,18 @@ class PackageHelperImplTest
         Path dummyFilePath = folderWithSpacePath.resolve('dummypackage1').resolve('Dummy.class')
         Files.createDirectories(dummyFilePath.getParent())
         File dummyFile = dummyFilePath.toFile()
-        try (FileOutputStream fos = new FileOutputStream(dummyFile)) {
+        dummyFile.withOutputStream { fos ->
             fos.write(0)
         }
         assert dummyFile.exists()
 
         Path jarWithSpacePath = folderWithSpacePath.resolve("dummy lib 2.jar")
-        try (FileOutputStream fos = new FileOutputStream(jarWithSpacePath.toFile())
-             JarOutputStream jos = new JarOutputStream(fos, new Manifest())) {
-            JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
-            jos.putNextEntry(jarEntry)
-            jos.write(0)
+        jarWithSpacePath.toFile().withOutputStream { fos ->
+            new JarOutputStream(fos, new Manifest()).withStream { jos ->
+                JarEntry jarEntry = new JarEntry("dummypackage2/Dummy.class")
+                jos.putNextEntry(jarEntry)
+                jos.write(0)
+            }
         }
         assert jarWithSpacePath.toFile().exists()
 
