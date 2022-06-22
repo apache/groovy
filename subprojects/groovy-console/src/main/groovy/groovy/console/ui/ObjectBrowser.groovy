@@ -261,7 +261,7 @@ class ObjectBrowser {
     }
 
     void closeFrameIfAltDoubleClick(MouseEvent e) {
-        if (e.isAltDown()) {
+        if (e.altDown) {
             frame.visible = false;
             frame.dispose();
         }
