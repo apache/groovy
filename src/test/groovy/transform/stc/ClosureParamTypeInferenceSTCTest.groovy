@@ -1485,4 +1485,41 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    void testGroovy10660() {
+        assertScript '''import java.util.function.BiConsumer
+
+            <T> BiConsumer<String, List<T>> m(BiConsumer<String, ? super T> proc) {
+                // batch processor:
+                return { text, list ->
+                    for (item in list) proc.accept(text, item)
+                }
+            }
+
+            m { text, item -> }
+        '''
+
+        assertScript '''import java.util.function.BiConsumer
+
+            <T> BiConsumer<String, List<T>> m(BiConsumer<String, ? super T> proc) {
+                // batch processor:
+                return (text, list) -> {
+                    for (item in list) proc.accept(text, item)
+                }
+            }
+
+            m((text, item) -> { })
+        '''
+
+        assertScript '''import java.util.function.BiConsumer
+
+            <T> BiConsumer<String, List<T>> m(BiConsumer<String, ? super T> proc) {
+                /*implicit return*/ (text, list) -> {
+                    for (item in list) proc.accept(text, item)
+                }
+            }
+
+            m((text, item) -> { })
+        '''
+    }
 }
