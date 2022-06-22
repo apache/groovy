@@ -27,6 +27,8 @@ import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 
+import static javax.swing.ListSelectionModel.SINGLE_SELECTION
+
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
 import static groovy.inspect.Inspector.MEMBER_MODIFIER_IDX
@@ -94,7 +96,7 @@ class ObjectBrowser {
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            arrayTable = table(selectionMode: 0) {
+                            arrayTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -123,7 +125,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            collectionTable = table(selectionMode: 0) {
+                            collectionTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -152,7 +154,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            mapTable = table(selectionMode: 0) {
+                            mapTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.entrySet().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
@@ -183,7 +185,7 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Properties (includes public fields) ') {
                         def data = Inspector.sortWithRawValue(inspector.propertyInfoWithRawValue.toList())
-                        fieldTable = table(selectionMode: 0) {
+                        fieldTable = table(selectionMode: SINGLE_SELECTION) {
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
@@ -215,7 +217,7 @@ class ObjectBrowser {
                         })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
-                        methodTable = table(selectionMode: 0) {
+                        methodTable = table(selectionMode: SINGLE_SELECTION) {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
                             tableModel(list: data) {
@@ -259,7 +261,7 @@ class ObjectBrowser {
     }
 
     void closeFrameIfAltDoubleClick(MouseEvent e) {
-        if ((e.modifiersEx & 512) == 512) {
+        if (e.isAltDown()) {
             frame.visible = false;
             frame.dispose();
         }
