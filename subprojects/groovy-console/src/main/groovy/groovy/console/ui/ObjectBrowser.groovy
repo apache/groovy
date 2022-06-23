@@ -57,12 +57,8 @@ class ObjectBrowser {
         inspect('some String')
     }
 
-    public ObjectBrowser(String path = '') {
-        this.path = (path == null ? '' : path)
-    }
-
     static void inspect(objectUnderInspection, String path = '') {
-        def browser = new ObjectBrowser(path)
+        def browser = new ObjectBrowser(path: path ?: '')
         browser.inspector = new Inspector(objectUnderInspection)
         if (objectUnderInspection != null && browser.path == '') {
             browser.path = "${objectUnderInspection.getClass().name} instance"
@@ -108,19 +104,8 @@ class ObjectBrowser {
                                 maxWidth = 0
                                 width = 0
                             }
-                            arrayTable.addMouseListener(new MouseAdapter() {
-                                void mouseClicked(MouseEvent e) {
-                                    if (e.clickCount == 2) {
-                                        def selectedRow = arrayTable.selectedRow
-                                        if (selectedRow != -1) {
-                                            def value = arrayTable.model.getValueAt(selectedRow, 2)
-                                            if (value != null) {
-                                                closeFrameIfAltDoubleClick(e)
-                                                ObjectBrowser.inspect(value, path + "[${arrayTable.model.getValueAt(selectedRow, 0)}]")
-                                            }
-                                        }
-                                    }
-                                }
+                            arrayTable.addMouseListener(makeClickAdapter(arrayTable, 2) { row ->
+                                path + "[${arrayTable.model.getValueAt(row, 0)}]"
                             })
                         }
                     } else if (inspector.object instanceof Collection) {
@@ -137,19 +122,8 @@ class ObjectBrowser {
                                 maxWidth = 0
                                 width = 0
                             }
-                            collectionTable.addMouseListener(new MouseAdapter() {
-                                void mouseClicked(MouseEvent e) {
-                                    if (e.clickCount == 2) {
-                                        def selectedRow = collectionTable.selectedRow
-                                        if (selectedRow != -1) {
-                                            def value = collectionTable.model.getValueAt(selectedRow, 2)
-                                            if (value != null) {
-                                                closeFrameIfAltDoubleClick(e)
-                                                ObjectBrowser.inspect(value, path + "[${collectionTable.model.getValueAt(selectedRow, 0)}]")
-                                            }
-                                        }
-                                    }
-                                }
+                            collectionTable.addMouseListener(makeClickAdapter(collectionTable, 2) { row ->
+                                path + "[${collectionTable.model.getValueAt(row, 0)}]"
                             })
                         }
                     } else if (inspector.object instanceof Map) {
@@ -167,19 +141,8 @@ class ObjectBrowser {
                                 maxWidth = 0
                                 width = 0
                             }
-                            mapTable.addMouseListener(new MouseAdapter() {
-                                void mouseClicked(MouseEvent e) {
-                                    if (e.clickCount == 2) {
-                                        def selectedRow = mapTable.selectedRow
-                                        if (selectedRow != -1) {
-                                            def value = mapTable.model.getValueAt(selectedRow, 2)
-                                            if (value != null) {
-                                                closeFrameIfAltDoubleClick(e)
-                                                ObjectBrowser.inspect(value, path + "[${mapTable.model.getValueAt(selectedRow, 1)}]")
-                                            }
-                                        }
-                                    }
-                                }
+                            mapTable.addMouseListener(makeClickAdapter(mapTable, 2) { row ->
+                                path + "[${mapTable.model.getValueAt(row, 1)}]"
                             })
                         }
                     }
@@ -202,19 +165,8 @@ class ObjectBrowser {
                             maxWidth = 0
                             width = 0
                         }
-                        fieldTable.addMouseListener(new MouseAdapter() {
-                            void mouseClicked(MouseEvent e) {
-                                if (e.clickCount == 2) {
-                                    def selectedRow = fieldTable.selectedRow
-                                    if (selectedRow != -1) {
-                                        def value = fieldTable.model.getValueAt(selectedRow, MEMBER_RAW_VALUE_IDX)
-                                        if (value != null) {
-                                            closeFrameIfAltDoubleClick(e)
-                                            ObjectBrowser.inspect(value, path + (path.length() === 0 ? '' : '.') + "${fieldTable.model.getValueAt(selectedRow, 0)}")
-                                        }
-                                    }
-                                }
-                            }
+                        fieldTable.addMouseListener(makeClickAdapter(fieldTable, MEMBER_RAW_VALUE_IDX) { row ->
+                            path + (path.size() == 0 ? '' : '.') + "${fieldTable.model.getValueAt(row, 0)}"
                         })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
@@ -251,6 +203,23 @@ class ObjectBrowser {
         addSorter(methodTable)
 
         frame.toFront()
+    }
+
+    def makeClickAdapter(table, int valueCol, Closure pathClosure) {
+        new MouseAdapter() {
+            void mouseClicked(MouseEvent e) {
+                if (e.clickCount == 2) {
+                    def selectedRow = table.selectedRow
+                    if (selectedRow != -1) {
+                        def value = table.model.getValueAt(selectedRow, valueCol)
+                        if (value != null) {
+                            closeFrameIfAltDoubleClick(e)
+                            ObjectBrowser.inspect(value, pathClosure(selectedRow))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void addSorter(table) {
