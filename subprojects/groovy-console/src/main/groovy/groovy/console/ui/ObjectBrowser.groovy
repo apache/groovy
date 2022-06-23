@@ -37,7 +37,6 @@ import static groovy.inspect.Inspector.MEMBER_ORIGIN_IDX
 import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
 import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
 import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
-import static groovy.inspect.Inspector.MEMBER_RAW_VALUE_IDX
 
 /**
  * A little GUI to show some of the Inspector capabilities.
@@ -52,6 +51,7 @@ class ObjectBrowser {
     def inspector
     def path
     def swing, frame, fieldTable, methodTable, arrayTable, collectionTable, mapTable
+    private static final Comparator<Object> comparator = new Inspector.MemberComparatorWithValue()
 
     static void main(args) {
         inspect('some String')
@@ -96,7 +96,7 @@ class ObjectBrowser {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
-                                    closureColumn(header: 'Raw Value', read: { it[0] }) // to support sorting
+                                    closureColumn(header: 'Raw Value', read: { it[0] })
                                 }
                             }
                             arrayTable.columnModel.getColumn(2).with {
@@ -114,7 +114,7 @@ class ObjectBrowser {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
-                                    closureColumn(header: 'Raw Value', read: { it[0] }) // to support sorting
+                                    closureColumn(header: 'Raw Value', read: { it[0] })
                                 }
                             }
                             collectionTable.columnModel.getColumn(2).with {
@@ -133,7 +133,7 @@ class ObjectBrowser {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
                                     closureColumn(header: 'Value', read: { it[0].value })
-                                    closureColumn(header: 'Raw Value', read: { it[0].value }) // to support sorting
+                                    closureColumn(header: 'Raw Value', read: { it[0].value })
                                 }
                             }
                             mapTable.columnModel.getColumn(3).with {
@@ -148,16 +148,16 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Public Fields and Properties ') {
                         fieldTable = table(selectionMode: SINGLE_SELECTION) {
-                            def data = Inspector.sortWithRawValue(inspector.publicFieldsWithRawValue.toList())
-                            data.addAll(Inspector.sortWithRawValue(inspector.propertyInfoWithRawValue.toList()))
+                            def data = Inspector.sort(inspector.propertiesWithInfo.toList(), comparator)
+                            data.addAll(Inspector.sort(inspector.publicFieldsWithInfo.toList(), comparator))
                             tableModel(list: data) {
-                                closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
-                                closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
-                                closureColumn(header: 'Type', read: { it[MEMBER_TYPE_IDX] })
-                                closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
-                                closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
-                                closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
-                                closureColumn(header: 'Raw Value', read: { it[MEMBER_RAW_VALUE_IDX] }) // to support sorting
+                                closureColumn(header: 'Name', read: { it.v2[MEMBER_NAME_IDX] })
+                                closureColumn(header: 'Value', read: { it.v2[MEMBER_VALUE_IDX] })
+                                closureColumn(header: 'Type', read: { it.v2[MEMBER_TYPE_IDX] })
+                                closureColumn(header: 'Origin', read: { it.v2[MEMBER_ORIGIN_IDX] })
+                                closureColumn(header: 'Modifier', read: { it.v2[MEMBER_MODIFIER_IDX] })
+                                closureColumn(header: 'Declarer', read: { it.v2[MEMBER_DECLARER_IDX] })
+                                closureColumn(header: 'Raw Value', read: { it.v1 })
                             }
                         }
                         fieldTable.columnModel.getColumn(6).with {
@@ -165,7 +165,7 @@ class ObjectBrowser {
                             maxWidth = 0
                             width = 0
                         }
-                        fieldTable.addMouseListener(makeClickAdapter(fieldTable, MEMBER_RAW_VALUE_IDX) { row ->
+                        fieldTable.addMouseListener(makeClickAdapter(fieldTable, 6) { row ->
                             path + (path.size() == 0 ? '' : '.') + "${fieldTable.model.getValueAt(row, 0)}"
                         })
                     }

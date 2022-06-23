@@ -22,6 +22,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.PropertyValue;
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -59,7 +60,6 @@ public class Inspector {
     public static final int MEMBER_PARAMS_IDX = 5;
     public static final int MEMBER_VALUE_IDX = 5;
     public static final int MEMBER_EXCEPTIONS_IDX = 6;
-    public static final int MEMBER_RAW_VALUE_IDX = 6;
 
     public static final String NOT_APPLICABLE = "n/a";
     public static final String GROOVY = "GROOVY";
@@ -164,12 +164,12 @@ public class Inspector {
         return result;
     }
 
-    public Object[] getPublicFieldsWithRawValue() {
+    public Object[] getPublicFieldsWithInfo() {
         Field[] fields = getClassUnderInspection().getFields();
         Object[] result = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
-            result[i] = fieldInfoWithRawValue(field);
+            result[i] = fieldWithInfo(field);
         }
         return result;
     }
@@ -190,17 +190,6 @@ public class Inspector {
         return result;
     }
 
-    public Object[] getPropertyInfoWithRawValue() {
-        List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
-        Object[] result = new Object[props.size()];
-        int i = 0;
-        for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
-            PropertyValue pv = (PropertyValue) iter.next();
-            result[i] = fieldInfoWithRawValue(pv);
-        }
-        return result;
-    }
-
     protected String[] fieldInfo(Field field) {
         String[] result = new String[MEMBER_VALUE_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = JAVA;
@@ -216,23 +205,22 @@ public class Inspector {
         return withoutNulls(result);
     }
 
-    protected Object[] fieldInfoWithRawValue(Field field) {
-        Object[] result = new Object[MEMBER_RAW_VALUE_IDX + 1];
-        result[MEMBER_ORIGIN_IDX] = JAVA;
-        result[MEMBER_MODIFIER_IDX] = Modifier.toString(field.getModifiers());
-        result[MEMBER_DECLARER_IDX] = shortName(field.getDeclaringClass());
-        result[MEMBER_TYPE_IDX] = shortName(field.getType());
-        result[MEMBER_NAME_IDX] = field.getName();
+    protected Tuple2<Object, String[]> fieldWithInfo(Field field) {
+        String[] info = new String[MEMBER_VALUE_IDX + 1];
+        info[MEMBER_ORIGIN_IDX] = JAVA;
+        info[MEMBER_MODIFIER_IDX] = Modifier.toString(field.getModifiers());
+        info[MEMBER_DECLARER_IDX] = shortName(field.getDeclaringClass());
+        info[MEMBER_TYPE_IDX] = shortName(field.getType());
+        info[MEMBER_NAME_IDX] = field.getName();
+        info = withoutNulls(info);
         Object rawValue = null;
         try {
             rawValue = field.get(objectUnderInspection);
-            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(rawValue);
+            info[MEMBER_VALUE_IDX] = InvokerHelper.inspect(rawValue);
         } catch (IllegalAccessException e) {
-            result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+            info[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
-        result = withoutNullsWithRawValue(result);
-        result[MEMBER_RAW_VALUE_IDX] = rawValue;
-        return result;
+        return new Tuple2<>(rawValue, info);
     }
 
     protected String[] fieldInfo(PropertyValue pv) {
@@ -250,22 +238,31 @@ public class Inspector {
         return withoutNulls(result);
     }
 
-    protected Object[] fieldInfoWithRawValue(PropertyValue pv) {
-        Object[] result = new Object[MEMBER_VALUE_IDX + 2];
-        result[MEMBER_ORIGIN_IDX] = GROOVY;
-        result[MEMBER_MODIFIER_IDX] = "public";
-        result[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
-        result[MEMBER_TYPE_IDX] = shortName(pv.getType());
-        result[MEMBER_NAME_IDX] = pv.getName();
-        Object rawValue = null;
+    protected Tuple2<Object, String[]> fieldWithInfo(PropertyValue pv) {
+        String[] info = new String[MEMBER_VALUE_IDX + 1];
+        info[MEMBER_ORIGIN_IDX] = GROOVY;
+        info[MEMBER_MODIFIER_IDX] = "public";
+        info[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
+        info[MEMBER_TYPE_IDX] = shortName(pv.getType());
+        info[MEMBER_NAME_IDX] = pv.getName();
+        Object field = null;
         try {
-            rawValue = pv.getValue();
-            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(rawValue);
+            field = pv.getValue();
+            info[MEMBER_VALUE_IDX] = InvokerHelper.inspect(field);
         } catch (Exception e) {
-            result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+            info[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
-        result = withoutNullsWithRawValue(result);
-        result[MEMBER_RAW_VALUE_IDX] = rawValue;
+        info = withoutNulls(info);
+        return new Tuple2<>(field, info);
+    }
+
+    public Object[] getPropertiesWithInfo() {
+        List<PropertyValue> props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
+        Object[] result = new Object[props.size()];
+        int i = 0;
+        for (Iterator<PropertyValue> iter = props.iterator(); iter.hasNext(); i++) {
+            result[i] = fieldWithInfo(iter.next());
+        }
         return result;
     }
 
@@ -349,15 +346,6 @@ public class Inspector {
         return toNormalize;
     }
 
-    protected Object[] withoutNullsWithRawValue(Object[] toNormalize) {
-        for (int i = 0; i < toNormalize.length; i++) {
-            if (toNormalize[i] == null) {
-                toNormalize[i] = NOT_APPLICABLE;
-            }
-        }
-        return toNormalize;
-    }
-
     public static void print(Object[] memberInfo) {
         print(System.out, memberInfo);
     }
@@ -374,7 +362,11 @@ public class Inspector {
     }
 
     public static Collection sort(List<Object> memberInfo) {
-        memberInfo.sort(new MemberComparator());
+        return sort(memberInfo, new MemberComparator());
+    }
+
+    public static Collection sort(List<Object> memberInfo, Comparator<Object> comparator) {
+        memberInfo.sort(comparator);
         return memberInfo;
     }
 
@@ -399,30 +391,15 @@ public class Inspector {
         }
     }
 
-    public static Collection sortWithRawValue(List<Object> memberInfo) {
-        memberInfo.sort(new MemberComparatorWithRawValue());
-        return memberInfo;
-    }
-
-    public static class MemberComparatorWithRawValue implements Comparator<Object>, Serializable {
-        private static final long serialVersionUID = -7691851726606749542L;
+    public static class MemberComparatorWithValue implements Comparator<Object>, Serializable {
+        private static final long serialVersionUID = 294298614093394525L;
+        private static final MemberComparator delegate = new MemberComparator();
 
         @Override
         public int compare(Object a, Object b) {
-            Object[] aStr = (Object[]) a;
-            Object[] bStr = (Object[]) b;
-            int result = ((String) aStr[Inspector.MEMBER_NAME_IDX]).compareTo((String) bStr[Inspector.MEMBER_NAME_IDX]);
-            if (0 != result) return result;
-            result = ((String) aStr[Inspector.MEMBER_TYPE_IDX]).compareTo((String) bStr[Inspector.MEMBER_TYPE_IDX]);
-            if (0 != result) return result;
-            result = ((String)aStr[Inspector.MEMBER_PARAMS_IDX]).compareTo((String) bStr[Inspector.MEMBER_PARAMS_IDX]);
-            if (0 != result) return result;
-            result =((String) aStr[Inspector.MEMBER_DECLARER_IDX]).compareTo((String) bStr[Inspector.MEMBER_DECLARER_IDX]);
-            if (0 != result) return result;
-            result = ((String)aStr[Inspector.MEMBER_MODIFIER_IDX]).compareTo((String) bStr[Inspector.MEMBER_MODIFIER_IDX]);
-            if (0 != result) return result;
-            result = ((String) aStr[Inspector.MEMBER_ORIGIN_IDX]).compareTo((String) bStr[Inspector.MEMBER_ORIGIN_IDX]);
-            return result;
+            Tuple2<Object, String[]> aTuple = (Tuple2<Object, String[]>) a;
+            Tuple2<Object, String[]> bTuple = (Tuple2<Object, String[]>) b;
+            return delegate.compare(aTuple.getV2(), bTuple.getV2());
         }
     }
 }
