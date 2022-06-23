@@ -2935,6 +2935,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10153
+    void testCompatibleArgumentsForPlaceholders11() {
+        ['A', 'B', 'C'].each { T ->
+            assertScript """
+                class A {}
+                class B extends A {}
+                class C extends B {}
+                class Foo<T extends A> {}
+
+                Foo<? super C> foo = new Foo<$T>()
+                //  ^ lower bound is C (explicit); upper bound is A (implicit)
+            """
+        }
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }

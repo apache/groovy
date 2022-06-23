@@ -378,8 +378,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected boolean resolve(final ClassNode type, final boolean testModuleImports, final boolean testDefaultImports, final boolean testStaticInnerClasses) {
-        resolveGenericsTypes(type.getGenericsTypes());
-        if (type.isResolved() || type.isPrimaryClassNode()) return true;
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        resolveGenericsTypes(genericsTypes);
+
+        if (type.isPrimaryClassNode()) return true;
+        if (type.isResolved()) return true;
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element, testModuleImports, testDefaultImports, testStaticInnerClasses);
@@ -390,30 +393,33 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return resolved;
         }
 
-        // test if vanilla name is current class name
-        if (currentClass == type) return true;
-
         String typeName = type.getName();
 
-        GenericsType genericsType = genericParameterNames.get(new GenericsTypeName(typeName));
-        if (genericsType != null) {
-            type.setRedirect(genericsType.getType());
-            type.setGenericsTypes(new GenericsType[]{genericsType});
+        GenericsType typeParameter = genericParameterNames.get(new GenericsTypeName(typeName));
+        if (typeParameter != null) {
+            type.setRedirect(typeParameter.getType());
+            type.setGenericsTypes(new GenericsType[]{typeParameter});
             type.setGenericsPlaceHolder(true);
             return true;
         }
 
+        boolean resolved;
         if (currentClass.getNameWithoutPackage().equals(typeName)) {
             type.setRedirect(currentClass);
-            return true;
+            resolved = true;
+        } else {
+            resolved = (!type.hasPackageName() && resolveNestedClass(type))
+                    || resolveFromModule(type, testModuleImports)
+                    || resolveFromCompileUnit(type)
+                    || (testDefaultImports && !type.hasPackageName() && resolveFromDefaultImports(type))
+                    || resolveToOuter(type)
+                    || (testStaticInnerClasses && type.hasPackageName() && resolveFromStaticInnerClasses(type));
         }
-
-        return  (!type.hasPackageName() && resolveNestedClass(type)) ||
-                resolveFromModule(type, testModuleImports) ||
-                resolveFromCompileUnit(type) ||
-                (testDefaultImports && !type.hasPackageName() && resolveFromDefaultImports(type)) ||
-                resolveToOuter(type) ||
-                (testStaticInnerClasses && type.hasPackageName() && resolveFromStaticInnerClasses(type));
+        // GROOVY-10153: handle "C<? super T>"
+        if (resolved && genericsTypes != null) {
+            resolveWildcardBounding(genericsTypes, type);
+        }
+        return resolved;
     }
 
     protected boolean resolveNestedClass(final ClassNode type) {
@@ -1528,5 +1534,22 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             genericsType.setResolved(genericsType.getType().isResolved());
         }
         return genericsType.isResolved();
+    }
+
+    /**
+     * For cases like "Foo&lt;? super Bar> -> Foo&lt;T extends Baz>" there is an
+     * implicit upper bound on the wildcard type argument. It was unavailable at
+     * the time "? super Bar" was resolved but is present in type's redirect now.
+     */
+    private static void resolveWildcardBounding(final GenericsType[] typeArguments, final ClassNode type) {
+        for (int i = 0, n = typeArguments.length; i < n; i += 1) { GenericsType argument= typeArguments[i];
+            if (!argument.isWildcard() || argument.getUpperBounds() != null) continue;
+            GenericsType[] parameters = type.redirect().getGenericsTypes();
+            if (parameters != null && i < parameters.length) {
+                ClassNode implicitBound = parameters[i].getType();
+                if (!isObjectType(implicitBound))
+                    argument.getType().setRedirect(implicitBound);
+            }
+        }
     }
 }
