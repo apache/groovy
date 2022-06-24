@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  * @since 1.5
  */
 public class StackTraceUtils {
+    private StackTraceUtils() {}
 
     public static final String STACK_LOG_NAME = "StackTrace";
     private static final Logger STACK_LOG;
@@ -45,7 +46,7 @@ public class StackTraceUtils {
     static {
         outer:
         do {
-            Enumeration existingLogs = LogManager.getLogManager().getLoggerNames();
+            Enumeration<String> existingLogs = LogManager.getLogManager().getLoggerNames();
             while (existingLogs.hasMoreElements()) {
                 if (STACK_LOG_NAME.equals(existingLogs.nextElement())) {
                     STACK_LOG = Logger.getLogger(STACK_LOG_NAME);
@@ -65,10 +66,13 @@ public class StackTraceUtils {
                             "javax.," +
                             "sun.," +
                             "gjdk.groovy.," +
+                            "groovyjarjar," +
+                            "com.sun.," +
+                            "org.apache.groovy.," +
                             "jdk.internal."
-            ).split("(\\s|,)+");
+            ).split("[\\s,]+");
 
-    private static final List<Closure> tests = new ArrayList<Closure>();
+    private static final List<Closure> tests = new ArrayList<>();
 
     /**
      * Adds a groovy.lang.Closure to test whether the stack trace
@@ -103,7 +107,7 @@ public class StackTraceUtils {
         // Note that this getBoolean access may well be synced...
         if (!SystemUtil.getBooleanSafe("groovy.full.stacktrace")) {
             StackTraceElement[] trace = t.getStackTrace();
-            List<StackTraceElement> newTrace = new ArrayList<StackTraceElement>();
+            List<StackTraceElement> newTrace = new ArrayList<>();
             for (StackTraceElement stackTraceElement : trace) {
                 if (isApplicationClass(stackTraceElement.getClassName())) {
                     newTrace.add(stackTraceElement);
