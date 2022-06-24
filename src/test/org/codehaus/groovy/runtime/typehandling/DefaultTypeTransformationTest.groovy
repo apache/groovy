@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.typehandling
 
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class DefaultTypeTransformationTest {
@@ -116,6 +117,89 @@ final class DefaultTypeTransformationTest {
         assert result instanceof Set
         assert result[0] == 0
         assert result[1] == 1
+    }
+
+    @Test // GROOVY-10223
+    void testCastToType5() {
+        def err = shouldFail GroovyCastException, {
+            DefaultTypeTransformation.castToType(Optional.of('123'), Number[])
+        }
+        assert err =~ /Cannot cast object '123' with class 'java.lang.String' to class 'java.lang.Number'/
+
+        def nothing = Optional.empty(), something = Optional.of(12345.000)
+        def result
+
+        result = DefaultTypeTransformation.castToType(something, Number[])
+        assert result instanceof Number[]
+        assert result.length == 1
+        assert result[0] == 12345
+        result = DefaultTypeTransformation.castToType(nothing, Number[])
+        assert result instanceof Number[]
+        assert result.length == 0
+
+        result = DefaultTypeTransformation.castToType(something, int[])
+        assert result instanceof int[]
+        assert result.length == 1
+        assert result[0] == 12345
+        result = DefaultTypeTransformation.castToType(nothing, int[])
+        assert result instanceof int[]
+        assert result.length == 0
+
+        result = DefaultTypeTransformation.castToType(something, List)
+        assert result instanceof List
+        assert result.size() == 1
+        assert result[0] == 12345
+        result = DefaultTypeTransformation.castToType(nothing, List)
+        assert result instanceof List
+        assert result.isEmpty()
+
+        result = DefaultTypeTransformation.castToType(something, Set)
+        assert result instanceof Set
+        assert result.size() == 1
+        assert result[0] == 12345
+        result = DefaultTypeTransformation.castToType(nothing, Set)
+        assert result instanceof Set
+        assert result.isEmpty()
+    }
+
+    @Test // GROOVY-10223: interesting emergent properties
+    void testAsCollection() {
+        assertScript '''
+            def nothing = Optional.empty(), something = Optional.of('foo')
+
+            // array assignment
+            Object[] array = nothing
+            assert array.length == 0
+            array = something
+            assert array.length == 1
+            assert array[0] == 'foo'
+
+            // iterator() support
+            def iterator = nothing.iterator()
+            assert !iterator.hasNext()
+            iterator = something.iterator()
+            assert iterator.hasNext()
+            assert iterator.next() == 'foo'
+            assert !iterator.hasNext()
+
+            // for-each supported via iterator()
+            int values = 0
+            for (value in nothing) {
+                values += 1
+            }
+            assert values == 0
+            for (value in something) {
+                assert value == 'foo'
+                values += 1
+            }
+            assert values == 1
+        '''
+
+        shouldFail ''' // requires support in ScriptBytecodeAdapter#despreadList
+            def nothing = Optional.empty()
+            def list = [*nothing]
+            assert list.isEmpty()
+        '''
     }
 
     @Test

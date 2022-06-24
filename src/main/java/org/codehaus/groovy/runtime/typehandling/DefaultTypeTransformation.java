@@ -50,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 import java.util.stream.DoubleStream;
@@ -271,12 +272,6 @@ public class DefaultTypeTransformation {
             }
         };
 
-        if (object instanceof BaseStream) {
-            Collection answer = newCollection.get();
-            answer.addAll(asCollection(object));
-            return answer;
-        }
-
         if (object.getClass().isArray()) {
             Collection answer = newCollection.get();
             // we cannot just wrap in a List as we support primitive type arrays
@@ -284,6 +279,12 @@ public class DefaultTypeTransformation {
             for (int i = 0; i < length; i += 1) {
                 answer.add(Array.get(object, i));
             }
+            return answer;
+        }
+
+        if (object instanceof BaseStream || object instanceof Optional) {
+            Collection answer = newCollection.get();
+            answer.addAll(asCollection(object));
             return answer;
         }
 
@@ -484,22 +485,24 @@ public class DefaultTypeTransformation {
             return arrayAsCollection(value);
         } else if (value instanceof BaseStream) {
             return StreamGroovyMethods.toList((BaseStream) value);
-        } else if (value instanceof MethodClosure) {
-            MethodClosure method = (MethodClosure) value;
-            IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
-            method.call(adapter);
-            return adapter.asList();
         } else if (value instanceof String || value instanceof GString) {
             return StringGroovyMethods.toList((CharSequence) value);
+        } else if (value instanceof Optional) { // GROOVY-10223
+            return ((Optional<?>) value).map(Collections::singleton).orElseGet(Collections::emptySet);
+        } else if (value instanceof Class && ((Class) value).isEnum()) {
+            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
+            return Arrays.asList(values);
         } else if (value instanceof File) {
             try {
                 return ResourceGroovyMethods.readLines((File) value);
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        } else if (value instanceof Class && ((Class) value).isEnum()) {
-            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
-            return Arrays.asList(values);
+        } else if (value instanceof MethodClosure) {
+            MethodClosure method = (MethodClosure) value;
+            IteratorClosureAdapter<?> adapter = new IteratorClosureAdapter<>(method.getDelegate());
+            method.call(adapter);
+            return adapter.asList();
         } else {
             // let's assume it's a collection of 1
             return Collections.singletonList(value);
