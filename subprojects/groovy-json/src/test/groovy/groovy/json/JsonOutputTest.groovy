@@ -23,6 +23,7 @@ import org.junit.Test
 
 import static groovy.json.JsonOutput.toJson
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
 
 final class JsonOutputTest {
@@ -529,6 +530,7 @@ final class JsonOutputTest {
                 "chronology":{
                     "calendarType":"iso8601",
                     "id":"ISO"
+                    ''' + ((isAtLeastJdk("19.0")) ? ',"isoBased":true' : '' ) + '''
                 },
                 "dayOfMonth":1,
                 "dayOfWeek":"THURSDAY",
