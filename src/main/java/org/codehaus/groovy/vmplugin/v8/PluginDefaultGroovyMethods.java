@@ -279,7 +279,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
           case -1:
             return self.orElse(null);
           default:
-            throw new IndexOutOfBoundsException(index);
+            throw new IndexOutOfBoundsException("" + index);
         }
     }
 
