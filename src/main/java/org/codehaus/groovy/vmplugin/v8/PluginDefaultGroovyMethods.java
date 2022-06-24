@@ -46,10 +46,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 import java.util.function.DoublePredicate;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
+import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
@@ -120,7 +124,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // Future
 
     /**
-     * Returns a Future asynchronously returning a transformed result.
+     * Returns a {@code Future} asynchronously returning a transformed result.
+     *
      * <pre class="_temp_disabled_groovyTestCase">
      * import java.util.concurrent.*
      * def executor = Executors.newSingleThreadExecutor()
@@ -182,12 +187,12 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce an {@code Optional} instance to a {@code boolean} value.
+     *
      * <pre class="groovyTestCase">
      * assert !Optional.empty().asBoolean()
      * assert Optional.of(1234).asBoolean()
      * </pre>
      *
-     * @param optional the Optional
      * @return {@code true} if a value is present, otherwise {@code false}
      *
      * @since 2.5.0
@@ -199,6 +204,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalInt}, returns the value,
      * otherwise throws {@code NoSuchElementException}.
+     *
      * <pre class="groovyTestCase">
      * assert OptionalInt.of(1234).get() == 1234
      * </pre>
@@ -212,6 +218,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalLong}, returns the value,
      * otherwise throws {@code NoSuchElementException}.
+     *
      * <pre class="groovyTestCase">
      * assert OptionalLong.of(1234L).get() == 1234L
      * </pre>
@@ -225,6 +232,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalDouble}, returns the value,
      * otherwise throws {@code NoSuchElementException}.
+     *
      * <pre class="groovyTestCase">
      * assert OptionalDouble.of(Math.PI).get() == Math.PI
      * </pre>
@@ -236,21 +244,116 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If the optional contains a value, returns an optional containing the transformed value obtained using the <code>transform</code> closure
-     * or otherwise an empty optional.
+     * If a value is present in the {@code OptionalInt}, executes the specified
+     * {@code action} with the value as input and then returns {@code self}.
+     *
+     * <pre class="groovyTestCase">
+     * boolean called = false
+     * def opt = OptionalInt.empty()
+     * def out = opt.peek{ called = true }
+     * assert out === opt
+     * assert !called
+     *
+     * opt = OptionalInt.of(42)
+     * out = opt.peek{ assert it == 42; called = true }
+     * assert out === opt
+     * assert called
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static OptionalInt peek(final OptionalInt self, final IntConsumer action) {
+        self.ifPresent(action);
+        return self;
+    }
+
+    /**
+     * If a value is present in the {@code OptionalLong}, executes the specified
+     * {@code action} with the value as input and then returns {@code self}.
+     *
+     * <pre class="groovyTestCase">
+     * boolean called = false
+     * def opt = OptionalLong.empty()
+     * def out = opt.peek{ called = true }
+     * assert out === opt
+     * assert !called
+     *
+     * opt = OptionalLong.of(42L)
+     * out = opt.peek{ assert it == 42L; called = true }
+     * assert out === opt
+     * assert called
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static OptionalLong peek(final OptionalLong self, final LongConsumer action) {
+        self.ifPresent(action);
+        return self;
+    }
+
+    /**
+     * If a value is present in the {@code OptionalDouble}, executes the specified
+     * {@code action} with the value as input and then returns {@code self}.
+     *
+     * <pre class="groovyTestCase">
+     * boolean called = false
+     * def opt = OptionalDouble.empty()
+     * def out = opt.peek{ called = true }
+     * assert out === opt
+     * assert !called
+     *
+     * opt = OptionalDouble.of(Math.PI)
+     * out = opt.peek{ assert it == Math.PI; called = true }
+     * assert out === opt
+     * assert called
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static OptionalDouble peek(final OptionalDouble self, final DoubleConsumer action) {
+        self.ifPresent(action);
+        return self;
+    }
+
+    /**
+     * If a value is present in the {@code Optional}, executes the specified
+     * {@code action} with the value as input and then returns {@code self}.
+     *
+     * <pre class="groovyTestCase">
+     * boolean called = false
+     * def opt = Optional.empty()
+     * def out = opt.peek{ called = true }
+     * assert out === opt
+     * assert !called
+     *
+     * opt = Optional.of('x')
+     * out = opt.peek{ assert it == 'x'; called = true }
+     * assert out === opt
+     * assert called
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static <T> Optional<T> peek(final Optional<T> self, final Consumer<? super T> action) {
+        self.ifPresent(action);
+        return self;
+    }
+
+    /**
+     * If a value is present in the {@code Optional}, returns transformed value
+     * obtained using the {@code transform} closure or no value as an optional.
+     *
      * <pre class="groovyTestCase">
      * assert Optional.of("foobar").collect{ it.size() }.get() == 6
      * assert !Optional.empty().collect{ it.size() }.isPresent()
      * </pre>
      *
-     * @param self      an Optional
      * @param transform the closure used to transform the optional value if present
-     * @return an Optional containing the transformed value or empty if the optional is empty or the transform returns null
+     * @return an Optional containing the transformed value or empty if the input is empty or the transform returns null
      *
      * @since 3.0.0
      */
     public static <S,T> Optional<T> collect(final Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<T> transform) {
-        Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
         return self.map(transform::call);
     }
@@ -258,6 +361,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Tests given value against specified type and changes generics of result.
      * This is equivalent to: <code>self.filter(it -&gt; it instanceof Type).map(it -&gt; (Type) it)</code>
+     *
      * <pre class="groovyTestCase">
      * assert !Optional.empty().filter(Number).isPresent()
      * assert !Optional.of('x').filter(Number).isPresent()
