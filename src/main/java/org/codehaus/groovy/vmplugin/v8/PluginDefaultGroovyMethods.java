@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -193,7 +194,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert Optional.of(1234).asBoolean()
      * </pre>
      *
-     * @return {@code true} if a value is present, otherwise {@code false}
+     * @return {@code true} if a value is present, {@code false} otherwise
      *
      * @since 2.5.0
      */
@@ -202,12 +203,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalInt}, returns the value,
-     * otherwise throws {@code NoSuchElementException}.
+     * If a value is present in the {@code OptionalInt}, returns the value.
      *
      * <pre class="groovyTestCase">
      * assert OptionalInt.of(1234).get() == 1234
      * </pre>
+     *
+     * @throws NoSuchElementException if no value is present
      *
      * @since 3.0.0
      */
@@ -216,12 +218,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalLong}, returns the value,
-     * otherwise throws {@code NoSuchElementException}.
+     * If a value is present in the {@code OptionalLong}, returns the value.
      *
      * <pre class="groovyTestCase">
      * assert OptionalLong.of(1234L).get() == 1234L
      * </pre>
+     *
+     * @throws NoSuchElementException if no value is present
      *
      * @since 3.0.0
      */
@@ -230,17 +233,54 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalDouble}, returns the value,
-     * otherwise throws {@code NoSuchElementException}.
+     * If a value is present in the {@code OptionalDouble}, returns the value.
      *
      * <pre class="groovyTestCase">
      * assert OptionalDouble.of(Math.PI).get() == Math.PI
      * </pre>
      *
+     * @throws NoSuchElementException if no value is present
+     *
      * @since 3.0.0
      */
     public static double get(final OptionalDouble self) {
         return self.getAsDouble();
+    }
+
+    /**
+     * If a value is present in the {@code Optional}, returns the value or null.
+     *
+     * <pre class="groovyTestCase">
+     * def opt = Optional.empty()
+     * assert opt[-1] == null
+     * assert opt[0] == null
+     * opt = Optional.of('')
+     * assert opt[-1] == ''
+     * assert opt[0] == ''
+     *
+     * groovy.test.GroovyAssert.shouldFail(IndexOutOfBoundsException) { opt[1] }
+     *
+     * // use via destructuring
+     * opt = Optional.empty()
+     * def (String s) = opt
+     * assert s == null
+     * opt = Optional.of('')
+     * (s) = opt
+     * assert s == ''
+     * </pre>
+     *
+     * @throws IndexOutOfBoundsException if index is not 0 or -1
+     *
+     * @since 5.0.0
+     */
+    public static <T> T getAt(final Optional<T> self, final int index) {
+        switch (index) {
+          case  0:
+          case -1:
+            return self.orElse(null);
+          default:
+            throw new IndexOutOfBoundsException(index);
+        }
     }
 
     /**
