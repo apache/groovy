@@ -59,9 +59,10 @@ tasks.withType(Test).configureEach {
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
         if (targetJavaHome) {
             executable = "${targetJavaHome}/bin/java"
-            if (new File(executable).exists()) {
-                println "Using ${executable} to run tests"
+            if (!new File(executable).exists()) {
+                throw new GradleException("${executable} does not exist")
             }
+            println "Using ${executable} to run tests"
         }
     }
 
