@@ -110,7 +110,7 @@ public class MixinInMetaClass {
 
         ExpandoMetaClass mc = (ExpandoMetaClass) self;
 
-        List<MetaMethod> arr = new ArrayList<MetaMethod>();
+        List<MetaMethod> arr = new ArrayList<>();
         for (Class categoryClass : categoryClasses) {
 
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
@@ -152,8 +152,8 @@ public class MixinInMetaClass {
             }
         }
 
-        for (Object res : arr) {
-            final MetaMethod metaMethod = (MetaMethod) res;
+        for (MetaMethod res : arr) {
+            final MetaMethod metaMethod = res;
             if (metaMethod.getDeclaringClass().isAssignableFrom(selfClass))
                 mc.registerInstanceMethod(metaMethod);
             else {
