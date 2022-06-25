@@ -131,7 +131,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
-        return new ObjectOutputStream(new FileOutputStream(file));
+        return new ObjectOutputStream(Files.newOutputStream(file.toPath()));
     }
 
     /**
@@ -159,7 +159,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static ObjectInputStream newObjectInputStream(File file) throws IOException {
-        return new ObjectInputStream(new FileInputStream(file));
+        return new ObjectInputStream(Files.newInputStream(file.toPath()));
     }
 
     /**
@@ -172,7 +172,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
-        return IOGroovyMethods.newObjectInputStream(new FileInputStream(file), classLoader);
+        return IOGroovyMethods.newObjectInputStream(Files.newInputStream(file.toPath()), classLoader);
     }
 
     /**
@@ -685,7 +685,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.1
      */
     public static byte[] getBytes(File file) throws IOException {
-        return IOGroovyMethods.getBytes(new FileInputStream(file));
+        return IOGroovyMethods.getBytes(Files.newInputStream(file.toPath()));
     }
 
     /**
@@ -740,7 +740,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.1
      */
     public static void setBytes(File file, byte[] bytes) throws IOException {
-        IOGroovyMethods.setBytes(new FileOutputStream(file), bytes);
+        IOGroovyMethods.setBytes(Files.newOutputStream(file.toPath()), bytes);
     }
 
     /**
@@ -1875,7 +1875,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BufferedOutputStream newOutputStream(File file) throws IOException {
-        return new BufferedOutputStream(new FileOutputStream(file));
+        return new BufferedOutputStream(Files.newOutputStream(file.toPath()));
     }
 
     /**
@@ -1887,7 +1887,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static DataOutputStream newDataOutputStream(File file) throws IOException {
-        return new DataOutputStream(new FileOutputStream(file));
+        return new DataOutputStream(Files.newOutputStream(file.toPath()));
     }
 
     /**

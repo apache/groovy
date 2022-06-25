@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collection;
 
 /**
@@ -75,7 +76,7 @@ public class CharsetToolkit {
         this.file = file;
         this.defaultCharset = getDefaultSystemCharset();
         this.charset = null;
-        try (InputStream input = new FileInputStream(file)) {
+        try (InputStream input = Files.newInputStream(file.toPath())) {
             byte[] bytes = new byte[4096];
             int bytesRead = input.read(bytes);
             if (bytesRead == -1) {
