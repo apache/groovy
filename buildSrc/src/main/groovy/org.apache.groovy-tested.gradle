@@ -56,9 +56,10 @@ tasks.withType(Test).configureEach {
             'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
 
     if (rootProject.hasProperty('target.java.home')) {
-        String targetJavaHome = rootProject.property('target.java.home')
-        if (targetJavaHome?.trim()) {
+        String targetJavaHome = rootProject.property('target.java.home')?.trim()
+        if (targetJavaHome) {
             executable = "${targetJavaHome}/bin/java"
+            println "Using ${executable} to run tests"
         }
     }
 
