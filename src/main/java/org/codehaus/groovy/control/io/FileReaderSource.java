@@ -22,6 +22,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,7 +30,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 
 /**
  *  A ReaderSource for source files.
@@ -60,7 +60,7 @@ public class FileReaderSource extends AbstractReaderSource {
        // we want to remove the BOM windows adds from a file if the encoding is UTF-8
        // in other cases we depend on the charsets
        Charset cs = Charset.forName(configuration.getSourceEncoding());
-       InputStream in = new BufferedInputStream(Files.newInputStream(file.toPath()));
+       InputStream in = new BufferedInputStream(new FileInputStream(file));
        if (UTF8.name().equalsIgnoreCase(cs.name())) {
            in.mark(3);
            boolean hasBOM = true;

@@ -25,12 +25,11 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -136,7 +135,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             try (DataOutputStream out =
                          new DataOutputStream(
                                  new BufferedOutputStream(
-                                         Files.newOutputStream(Paths.get(file))))) {
+                                         new FileOutputStream(file)))) {
                 Map<String, Integer> classes = new LinkedHashMap<String, Integer>();
 
                 int nextClassId = 0;

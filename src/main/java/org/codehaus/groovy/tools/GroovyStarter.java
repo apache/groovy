@@ -18,10 +18,9 @@
  */
 package org.codehaus.groovy.tools;
 
+import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.PrivilegedAction;
 
 /**
@@ -91,7 +90,7 @@ public class GroovyStarter {
         // load configuration file
         if (conf!=null) {
             try {
-                lc.configure(Files.newInputStream(Paths.get(conf)));
+                lc.configure(new FileInputStream(conf));
             } catch (Exception e) {
                 System.err.println("exception while configuring main class loader:");
                 exit(e);
