@@ -24,6 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         java: [17]
+        # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
         jdk: ["https://download.java.net/java/early_access/jdk19/28/GPL/openjdk-19-ea+28_linux-x64_bin.tar.gz"]
     runs-on: ${{ matrix.os }}
     steps:
