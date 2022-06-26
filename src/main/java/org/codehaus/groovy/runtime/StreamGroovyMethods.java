@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.IntRange;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,6 +46,84 @@ public class StreamGroovyMethods {
 
     private StreamGroovyMethods() {
     }
+
+    /**
+     * Returns element at {@code index} or {@code null}.
+     * <p>
+     * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting terminal operation</a>.
+     *
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
+     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * shouldFail(IllegalArgumentException) { stream[-1] }
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[0] == 'foo'
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[1] == 'bar'
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[2] == 'baz'
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[3] === null
+     * </pre>
+     *
+     * @throws IllegalArgumentException if {@code index} is negative
+     *
+     * @since 5.0.0
+     */
+    public static <T> T getAt(final Stream<T> self, final int index) {
+        return self.skip(index).findFirst().orElse(null);
+    }
+
+    /**
+     * Returns element(s) in {@code range} or an empty list.
+     * <p>
+     * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting terminal operation</a>.
+     *
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
+     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * shouldFail(IllegalArgumentException) { stream[-1..0] }
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * shouldFail(IllegalArgumentException) { stream[0..-1] }
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[0..<1] == ['foo']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[1..<2] == ['bar']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[2..<3] == ['baz']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[3..<4] == []
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[0<..2] == ['bar','baz']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream[0..99] == ['foo','bar','baz']
+     * </pre>
+     *
+     * @throws IllegalArgumentException for negative index or reverse range
+     *
+     * @since 5.0.0
+     */
+    public static <T> List<T> getAt(final Stream<T> self, final IntRange range) {
+        if (range.isReverse()) throw new IllegalArgumentException("reverse range");
+        return self.skip(range.getFromInt()).limit(range.size()).collect(Collectors.toList());
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Returns a lazily concatenated stream whose elements are all the elements of this stream followed by all the elements of the {@link Collection} object.
