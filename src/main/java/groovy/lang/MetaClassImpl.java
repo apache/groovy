@@ -1166,14 +1166,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static class MethodHandleHolder {
         private static final MethodHandle CLONE_ARRAY_METHOD_HANDLE;
         static {
-            Optional<Method> methodOptional = Arrays.stream(ArrayUtil.class.getDeclaredMethods()).filter(m -> "cloneArray".equals(m.getName())).findFirst();
-            if (!methodOptional.isPresent()) {
-                throw new GroovyBugError("Failed to find `cloneArray` method in class `" + ArrayUtil.class.getName() + "`");
+            final Class<ArrayUtil> arrayUtilClass = ArrayUtil.class;
+            Method cloneArrayMethod;
+            try {
+                cloneArrayMethod = arrayUtilClass.getDeclaredMethod("cloneArray", Object[].class);
+            } catch (NoSuchMethodException e) {
+                throw new GroovyBugError("Failed to find `cloneArray` method in class `" + arrayUtilClass.getName() + "`", e);
             }
-            Method cloneArrayMethod = methodOptional.get();
 
             try {
-                CLONE_ARRAY_METHOD_HANDLE = MethodHandles.lookup().in(ArrayUtil.class).unreflect(cloneArrayMethod);
+                CLONE_ARRAY_METHOD_HANDLE = MethodHandles.lookup().in(arrayUtilClass).unreflect(cloneArrayMethod);
             } catch (IllegalAccessException e) {
                 throw new GroovyBugError("Failed to create method handle for " + cloneArrayMethod);
             }
