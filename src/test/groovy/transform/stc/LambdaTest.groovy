@@ -310,6 +310,38 @@ final class LambdaTest {
     }
 
     @Test
+    void testCollectors1() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
+            
+            @CompileStatic
+            def test() {
+                Set<String> set = ['a', 'b', 'c'] as Set
+                assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e))
+            }
+            
+            test()
+        '''
+    }
+
+    @Test
+    void testCollectors2() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
+            
+            @CompileStatic
+            def test() {
+                Set<String> set = ['a', 'b', 'c'] as Set
+                assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e, (o1, o2) -> o2))
+            }
+            
+            test()
+        '''
+    }
+
+    @Test
     void testFunctionWithLocalVariables() {
         assertScript '''
             import groovy.transform.CompileStatic
