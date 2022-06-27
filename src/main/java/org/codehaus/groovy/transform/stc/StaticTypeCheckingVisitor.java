@@ -2356,9 +2356,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return node;
     }
 
-    protected ClassNode[] getArgumentTypes(final ArgumentListExpression args) {
-        return args.getExpressions().stream().map(exp ->
-            isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getInferredTypeFromTempInfo(exp, getType(exp))
+    protected ClassNode[] getArgumentTypes(final ArgumentListExpression argumentList) {
+        return argumentList.getExpressions().stream().map(exp ->
+            isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getType(exp)
         ).toArray(ClassNode[]::new);
     }
 

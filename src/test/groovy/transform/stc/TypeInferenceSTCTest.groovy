@@ -91,25 +91,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInstanceOf() {
+    void testInstanceOf1() {
         assertScript '''
             Object o
             if (o instanceof String) o.toUpperCase()
         '''
     }
 
-    void testEmbeddedInstanceOf() {
-        assertScript '''
-            Object o
-            if (o instanceof Object) {
-                if (o instanceof String) {
-                    o.toUpperCase()
-                }
-            }
-        '''
-    }
-
-    void testEmbeddedInstanceOf2() {
+    void testInstanceOf2() {
         assertScript '''
             Object o
             if (o instanceof String) {
@@ -120,18 +109,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testEmbeddedInstanceOf3() {
-        shouldFailWithMessages '''
-            Object o
-            if (o instanceof String) {
-                if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
-                    o.toUpperCase()
-                }
-            }
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
-    }
-
-    void testInstanceOfAfterEach() {
+    void testInstanceOf3() {
         shouldFailWithMessages '''
             Object o
             if (o instanceof String) {
@@ -141,45 +119,32 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
-    void testInstanceOfInElseBranch() {
+    void testInstanceOf4() {
         shouldFailWithMessages '''
             Object o
             if (o instanceof String) {
                o.toUpperCase()
             } else {
-                o.toUpperCase() // ensure that type information is lost in else
+                o.toUpperCase() // ensure that type information is reset
             }
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
-    // GROOVY-9454
-    void testInstanceOfOnGenericProperty() {
+    void testInstanceOf5() {
         assertScript '''
-            interface Face {
+            class A {
+               int foo() { 1 }
             }
-            class Impl implements Face {
-                String something
+            class B {
+               int foo2() { 2 }
             }
-            class Task<R extends Face> implements java.util.concurrent.Callable<String> {
-                R request
-
-                @Override
-                String call() {
-                    if (request instanceof Impl) {
-                        def thing = request.something // No such property: something for class: R
-                        def lower = thing.toLowerCase()
-                    } else {
-                        // ...
-                        return null
-                    }
-                }
-            }
-            def task = new Task<Impl>(request: new Impl(something: 'Hello World'))
-            assert task.call() == 'hello world'
+            def o = new A()
+            int result = o instanceof A?o.foo():(o instanceof B?o.foo2():3)
         '''
     }
 
-    void testMultipleInstanceOf() {
+    void testInstanceOf6() {
         assertScript '''
             class A {
                void foo() { println 'ok' }
@@ -206,17 +171,75 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInstanceOfInTernaryOp() {
+    // GROOVY-9454
+    void testInstanceOf7() {
         assertScript '''
-            class A {
-               int foo() { 1 }
+            interface Face {
             }
-            class B {
-               int foo2() { 2 }
+            class Impl implements Face {
+                String something
             }
-            def o = new A()
-            int result = o instanceof A?o.foo():(o instanceof B?o.foo2():3)
+            class Task<R extends Face> implements java.util.concurrent.Callable<String> {
+                R request
+
+                @Override
+                String call() {
+                    if (request instanceof Impl) {
+                        def thing = request.something // No such property: something for class: R
+                        def lower = thing.toLowerCase()
+                    } else {
+                        // ...
+                        return null
+                    }
+                }
+            }
+            def task = new Task<Impl>(request: new Impl(something: 'Hello World'))
+            assert task.call() == 'hello world'
         '''
+    }
+
+    // GROOVY-10667
+    void testInstanceOf8() {
+        assertScript '''
+            trait Tagged {
+                String tag
+            }
+            class TaggedException extends Exception implements Tagged {
+            }
+
+            static void doSomething1(Exception e) {
+                if (e instanceof Tagged) {
+                    //println e.tag
+                    doSomething2(e) // Cannot find matching method #doSomething2(Tagged)
+                }
+            }
+            static void doSomething2(Exception e) {
+            }
+
+            doSomething1(new TaggedException(tag:'Test'))
+        '''
+    }
+
+    void testNestedInstanceOf1() {
+        assertScript '''
+            Object o
+            if (o instanceof Object) {
+                if (o instanceof String) {
+                    o.toUpperCase()
+                }
+            }
+        '''
+    }
+
+    void testNestedInstanceOf2() {
+        shouldFailWithMessages '''
+            Object o
+            if (o instanceof String) {
+                if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
+                    o.toUpperCase()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
     // GROOVY-8523
@@ -350,13 +373,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
-    }
-
-    void testShouldNotAllowDynamicVariable() {
-        shouldFailWithMessages '''
-            String name = 'Guillaume'
-            println naamme
-        ''', 'The variable [naamme] is undeclared'
     }
 
     void testInstanceOfInferenceWithImplicitIt() {
@@ -499,6 +515,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             test([1])
         '''
+    }
+
+    void testShouldNotAllowDynamicVariable() {
+        shouldFailWithMessages '''
+            String name = 'Guillaume'
+            println naamme
+        ''',
+        'The variable [naamme] is undeclared'
     }
 
     void testShouldNotFailWithWith() {
