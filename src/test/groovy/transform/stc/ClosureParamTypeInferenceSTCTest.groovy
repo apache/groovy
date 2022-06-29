@@ -1522,4 +1522,22 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             m((text, item) -> { })
         '''
     }
+
+    void testGroovy10673() {
+        assertScript '''import java.util.function.Consumer
+
+            void proc(Consumer<Number> action) {
+                action.accept(1.2345)
+            }
+
+            int i = 0
+            proc { n ->
+                def c = {
+                    i = n.intValue()
+                }
+                c()
+            }
+            assert i == 1
+        '''
+    }
 }
