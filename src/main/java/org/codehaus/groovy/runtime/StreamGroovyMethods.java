@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.EmptyRange;
 import groovy.lang.IntRange;
 
 import java.lang.reflect.Array;
@@ -121,6 +122,67 @@ public class StreamGroovyMethods {
     public static <T> List<T> getAt(final Stream<T> self, final IntRange range) {
         if (range.isReverse()) throw new IllegalArgumentException("reverse range");
         return self.skip(range.getFromInt()).limit(range.size()).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a (possibly empty) stream.
+     * <p>
+     * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting intermediate operation</a>.
+     *
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
+     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * shouldFail(IllegalArgumentException) { stream.from(-1..0) }
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * shouldFail(IllegalArgumentException) { stream.from(0..-1) }
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(0..<1).toList() == ['foo']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(1..<2).toList() == ['bar']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(2..<3).toList() == ['baz']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(3..<4).toList() == []
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(0<..2).toList() == ['bar','baz']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(0<..<2).toList() == ['bar']
+     *
+     * stream = ['foo','bar','baz'].stream()
+     * assert stream.from(0..99).toList() == ['foo','bar','baz']
+     * </pre>
+     *
+     * @throws IllegalArgumentException for negative index or reverse range
+     *
+     * @since 5.0.0
+     */
+    public static <T> Stream<T> from(final Stream<T> self, final IntRange range) {
+        if (range.isReverse()) throw new IllegalArgumentException("reverse range");
+        return self.skip(range.getFromInt()).limit(range.size());
+    }
+
+    /**
+     * Returns an empty stream.
+     * <p>
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * assert !stream.from(1..<1).findAny().isPresent()
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static <T> Stream<T> from(final Stream<T> self, final EmptyRange range) {
+        return Stream.empty();
     }
 
     //--------------------------------------------------------------------------
