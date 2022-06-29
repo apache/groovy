@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : closure parameter type inference.
  */
@@ -1487,6 +1489,7 @@ method()
         '''
     }
 
+    @NotYetImplemented
     void testGroovy10180() {
         assertScript '''
             void test(args) {

@@ -3776,19 +3776,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) { // GROOVY-10180, et al.
-                List<ClassNode> instanceofTypes = getTemporaryTypesForExpression(objectExpression);
-                if (instanceofTypes != null && !instanceofTypes.isEmpty()) {
-                    ClassNode instanceofType = instanceofTypes.size() == 1 ? instanceofTypes.get(0)
-                            : new UnionTypeClassNode(instanceofTypes.toArray(ClassNode.EMPTY_ARRAY));
-                    owners.add(Receiver.make(instanceofType));
-                }
-            }
-            if (typeCheckingContext.lastImplicitItType != null
-                    && objectExpression instanceof VariableExpression
-                    && ((Variable) objectExpression).getName().equals("it")) {
-                owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
-            }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
                 ClassNode staticType = receiver.getGenericsTypes()[0].getType();
                 owners.add(Receiver.make(staticType)); // Type from Class<Type>
@@ -3800,6 +3787,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addTraitType(receiver, owners);
                 if (receiver.redirect().isInterface()) {
                     owners.add(Receiver.make(OBJECT_TYPE));
+                }
+            }
+            if (typeCheckingContext.lastImplicitItType != null
+                    && objectExpression instanceof VariableExpression
+                    && ((Variable) objectExpression).getName().equals("it")) {
+                owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
+            }
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                List<ClassNode> instanceofTypes = getTemporaryTypesForExpression(objectExpression);
+                if (instanceofTypes != null && !instanceofTypes.isEmpty()) {
+                    ClassNode instanceofType = instanceofTypes.size() == 1 ? instanceofTypes.get(0)
+                            : new UnionTypeClassNode(instanceofTypes.toArray(ClassNode.EMPTY_ARRAY));
+                    owners.add(Receiver.make(instanceofType));
                 }
             }
         }
