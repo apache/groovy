@@ -4773,6 +4773,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10673
+    void testMockito() {
+        assertScript '''
+            @Grab('org.mockito:mockito-core:4.5.1')
+            import static org.mockito.Mockito.*
+
+            class C {
+                String string
+            }
+            interface I {
+                C f(String s)
+            }
+
+            def i = mock(I)
+            when(i.f(anyString())).thenAnswer { /*InvocationOnMock*/ iom ->
+              //new C(string: iom.arguments[0]) works
+                new C().tap {
+                    string = iom.arguments[0]
+                }
+            }
+            assert i.f('x') instanceof C
+        '''
+    }
+
     //--------------------------------------------------------------------------
 
     static class MyList

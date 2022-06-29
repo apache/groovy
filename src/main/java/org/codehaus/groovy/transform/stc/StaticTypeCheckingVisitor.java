@@ -3116,7 +3116,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    ClassNode declaredType = closureParam.getOriginType();
                     ClassNode inferredType = OBJECT_TYPE;
                     if (i < inferred.length - 1 || inferred.length == n) {
                         inferredType = inferred[i];
@@ -5036,9 +5035,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     type = typeCheckingContext.controlStructureVariables.get(parameter);
                 }
                 // now check for closure override
-                TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                if (type == null && enclosingClosure != null && temporaryTypesForExpression == null) {
-                    type = getTypeFromClosureArguments(parameter, enclosingClosure);
+                if (type == null && temporaryTypesForExpression == null) {
+                    type = getTypeFromClosureArguments(parameter);
                 }
                 if (type != null) {
                     storeType(vexp, type);
@@ -5117,25 +5115,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return ((Expression) node).getType();
     }
 
-    private ClassNode getTypeFromClosureArguments(final Parameter parameter, final TypeCheckingContext.EnclosingClosure enclosingClosure) {
-        ClosureExpression closureExpression = enclosingClosure.getClosureExpression();
-        ClassNode[] closureParamTypes = closureExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
-        if (closureParamTypes == null) return null;
-        Parameter[] parameters = closureExpression.getParameters();
-        String name = parameter.getName();
-
-        if (parameters != null) {
-            if (parameters.length == 0) {
-                return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
-            }
-
-            for (int index = 0; index < parameters.length; index++) {
-                if (name.equals(parameters[index].getName())) {
-                    return closureParamTypes.length > index ? closureParamTypes[index] : null;
+    private ClassNode getTypeFromClosureArguments(final Parameter parameter) {
+        for (TypeCheckingContext.EnclosingClosure enclosingClosure : typeCheckingContext.getEnclosingClosureStack()) {
+            ClosureExpression closureExpression = enclosingClosure.getClosureExpression();
+            ClassNode[] closureParamTypes = closureExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
+            if (closureParamTypes != null) {
+                Parameter[] parameters = closureExpression.getParameters();
+                if (parameters != null) {
+                    final int n = parameters.length;
+                    String parameterName = parameter.getName();
+                    if (n == 0 && parameterName.equals("it")) {
+                        return closureParamTypes.length > 0 ? closureParamTypes[0] : null;
+                    }
+                    for (int i = 0; i < n; i += 1) {
+                        if (parameterName.equals(parameters[i].getName())) {
+                            return closureParamTypes.length > i ? closureParamTypes[i] : null;
+                        }
+                    }
                 }
             }
         }
-
         return null;
     }
 
@@ -5973,8 +5972,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (inferredType == null) {
                 inferredType = typeCheckingContext.controlStructureVariables.get(parameter); // for/catch/closure
                 if (inferredType == null) {
-                    TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                    if (enclosingClosure != null) inferredType = getTypeFromClosureArguments(parameter, enclosingClosure);
+                    inferredType = getTypeFromClosureArguments(parameter); // @ClosureParams or SAM-type coercion
                 }
                 setNodeMetaData(INFERRED_TYPE, inferredType != null ? inferredType : parameter.getType()); // GROOVY-10651
             }
