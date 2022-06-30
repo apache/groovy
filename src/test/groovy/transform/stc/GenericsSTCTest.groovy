@@ -376,6 +376,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testReturnTypeInferenceWithMethodGenerics1x() {
+        assertScript '''
+            interface Handle {
+                int getCount()
+            }
+            class HandleContainer<H extends Handle> {
+                H handle
+            }
+            interface Input {
+                HandleContainer<? extends Handle> getResult(key)
+            }
+            interface State {
+                def <X extends Handle> HandleContainer<X> getResult(key)
+            }
+
+            void test(Input input, State state) {
+                def container = state.getResult('k') ?: input.getResult('k')
+                Handle handle = container.handle
+                Integer count = handle.count
+                assert count == 1
+            }
+
+            Handle h = {->1}
+            def c = new HandleContainer(handle: h)
+            test({k->c} as Input, {k->c} as State)
+        '''
+    }
+
     // GROOVY-10067
     void testReturnTypeInferenceWithMethodGenerics11() {
         assertScript '''
@@ -2491,6 +2519,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new C<Long>().m()
+        '''
+    }
+
+    // GROOVY-10373
+    void testAssignNullTypeParameterWithUpperBounds2() {
+        assertScript '''
+            class A<I, E extends I>  {
+                void bar(E y) { }
+            }
+            class B<T> {
+            }
+            class C<S extends B<Character>> {
+                A<S, ? extends S> foo() {
+                    (A<S, ? extends S>) null
+                }
+            }
+            class D<I extends B<Character>> {
+                void test() {
+                    C<I> x = (C<I>) null
+                    x?.foo()?.bar(null)
+                }
+            }
+            new D<B<Character>>().test()
         '''
     }
 
@@ -4770,6 +4821,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             test(1,[2,3])
+        '''
+    }
+
+    // GROOVY-10671
+    void testAssertJ() {
+        assertScript '''
+            @Grab('org.assertj:assertj-core:3.23.1')
+            import static org.assertj.core.api.Assertions.assertThat
+
+            def strings = (Collection<String>) ['a','b']
+            assertThat(strings).as('assertion description')
+                .containsExactlyInAnyOrderElementsOf(['a','b'])
         '''
     }
 
