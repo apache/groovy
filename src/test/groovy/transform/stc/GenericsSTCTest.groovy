@@ -4824,6 +4824,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10671
+    void testAssertJ() {
+        assertScript '''
+            @Grab('org.assertj:assertj-core:3.23.1')
+            import static org.assertj.core.api.Assertions.assertThat
+
+            def strings = (Collection<String>) ['a','b']
+            assertThat(strings).as('assertion description')
+                .containsExactlyInAnyOrderElementsOf(['a','b'])
+        '''
+    }
+
     //--------------------------------------------------------------------------
 
     static class MyList
