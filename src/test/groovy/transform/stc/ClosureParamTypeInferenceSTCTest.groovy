@@ -580,30 +580,30 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testInferenceForDGM_dropWhileOnIterable() {
         assertScript '''
-        assert (0..10).dropWhile { it<5 } == (5..10)
-        assert (0..10).dropWhile { int i -> i<5 } == (5..10)
+            assert (0..10).dropWhile { it<5 } == (5..10)
+            assert (0..10).dropWhile { int i -> i<5 } == (5..10)
         '''
     }
 
     void testInferenceForDGM_dropWhileOnList() {
         assertScript '''
-        assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { it<5 } == [5,6,7,8,9,10]
-        assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { int i -> i<5 } == [5,6,7,8,9,10]
+            assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { it<5 } == [5,6,7,8,9,10]
+            assert [0,1,2,3,4,5,6,7,8,9,10].dropWhile { int i -> i<5 } == [5,6,7,8,9,10]
         '''
     }
 
     void testInferenceForDGM_dropWhileOnIterator() {
         assertScript '''
-        assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
-        assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
+            assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
+            assert [0,1,2,3,4,5,6,7,8,9,10].iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
         '''
     }
 
     void testInferenceForDGM_dropWhileOnArray() {
         assertScript '''
-        Integer[] array = [0,1,2,3,4,5,6,7,8,9,10]
-        assert array.iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
-        assert array.iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
+            Integer[] array = [0,1,2,3,4,5,6,7,8,9,10]
+            assert array.iterator().dropWhile { it<5 } as List == [5,6,7,8,9,10]
+            assert array.iterator().dropWhile { int i -> i<5 } as List == [5,6,7,8,9,10]
         '''
     }
 
@@ -637,13 +637,15 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
     void testInferenceForDGM_eachWithIndexOnRecursiveIterable() { // GROOVY-10651
-        assertScript '''
-            void proc(groovy.transform.stc.TreeNode node) {
-                node.eachWithIndex { child, index ->
-                    proc(child) // recurse
+        ['', '<?>'].each { args ->
+            assertScript """
+                void proc(groovy.transform.stc.TreeNode$args node) {
+                    node.eachWithIndex { child, index ->
+                        proc(child) // recurse
+                    }
                 }
-            }
-        '''
+            """
+        }
     }
 
     void testInferenceForDGM_everyOnIterable() {
@@ -1049,18 +1051,16 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testDGM_sortOnMap() {
         assertScript '''
-        def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
-        assert map == [b:3, d:4, a:5, c:6]
+            def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
+            assert map == [b:3, d:4, a:5, c:6]
         '''
-
         assertScript '''
-        def map = [a:5, b:3, c:6, d:4].sort { a -> a.value }
-        assert map == [b:3, d:4, a:5, c:6]
+            def map = [a:5, b:3, c:6, d:4].sort { a -> a.value }
+            assert map == [b:3, d:4, a:5, c:6]
         '''
-
         assertScript '''
-        def map = [a:5, b:3, c:6, d:4].sort { it.value }
-        assert map == [b:3, d:4, a:5, c:6]
+            def map = [a:5, b:3, c:6, d:4].sort { it.value }
+            assert map == [b:3, d:4, a:5, c:6]
         '''
     }
 
@@ -1072,42 +1072,45 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testDGM_takeWhileOnIterable() {
         assertScript '''
-        class AbcIterable implements Iterable<String>  {
-           Iterator<String>  iterator() { "abc".iterator() }
-       }
-       def abc = new AbcIterable()
-       assert abc.takeWhile{ it < 'b' } == ['a']
-       assert abc.takeWhile{ it <= 'b' } == ['a', 'b']
-'''
+            class AbcIterable implements Iterable<String>  {
+                Iterator<String>  iterator() { "abc".iterator() }
+            }
+            def abc = new AbcIterable()
+            assert abc.takeWhile{ it < 'b' } == ['a']
+            assert abc.takeWhile{ it <= 'b' } == ['a', 'b']
+        '''
     }
     void testDGM_takeWhileOnIterator() {
         assertScript '''
-        class AbcIterable implements Iterable<String>  {
-           Iterator<String>  iterator() { "abc".iterator() }
-       }
-       def abc = new AbcIterable()
-       assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
-       assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']
-'''
+            class AbcIterable implements Iterable<String>  {
+                Iterator<String>  iterator() { "abc".iterator() }
+            }
+            def abc = new AbcIterable()
+            assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
+            assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']
+        '''
     }
     void testDGM_takeWhileOnList() {
         assertScript '''
-       def abc = ['a','b','c']
-       assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
-       assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']'''
+            def abc = ['a','b','c']
+            assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
+            assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']
+        '''
     }
     void testDGM_takeWhileOnArray() {
         assertScript '''
             String[] abc = ['a','b','c']
             assert abc.iterator().takeWhile{ it < 'b' }.collect() == ['a']
-            assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']'''
+            assert abc.iterator().takeWhile{ it <= 'b' }.collect() == ['a', 'b']
+        '''
     }
     void testDGM_takeWhileOnMap() {
         assertScript '''
             def shopping = [milk:1, bread:2, chocolate:3]
             assert shopping.takeWhile{ it.key.size() < 6 } == [milk:1, bread:2]
             assert shopping.takeWhile{ it.value % 2 } == [milk:1]
-            assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]'''
+            assert shopping.takeWhile{ k, v -> k.size() + v <= 7 } == [milk:1, bread:2]
+        '''
     }
 
     void testDGM_times() {
@@ -1121,35 +1124,41 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testDGM_unique() {
         assertScript '''
-       def orig = [1, 3, 4, 5]
-       def uniq = orig.unique(false) { it % 2 }
-       assert orig == [1, 3, 4, 5]
-       assert uniq == [1, 4]'''
-
-       assertScript '''def orig = [2, 3, 3, 4]
-       def uniq = orig.unique(false) { a, b -> a <=> b }
-       assert orig == [2, 3, 3, 4]
-       assert uniq == [2, 3, 4]'''
+            def orig = [1, 3, 4, 5]
+            def uniq = orig.unique(false) { it % 2 }
+            assert orig == [1, 3, 4, 5]
+            assert uniq == [1, 4]
+        '''
+        assertScript '''
+            def orig = [2, 3, 3, 4]
+            def uniq = orig.unique(false) { a, b -> a <=> b }
+            assert orig == [2, 3, 3, 4]
+            assert uniq == [2, 3, 4]
+        '''
     }
     void testDGM_uniqueOnCollection() {
         assertScript '''
-       def orig = [1, 3, 4, 5]
-       def uniq = orig.unique { it % 2 }
-       assert uniq == [1, 4]'''
-
-       assertScript '''def orig = [2, 3, 3, 4]
-       def uniq = orig.unique { a, b -> a <=> b }
-       assert uniq == [2, 3, 4]'''
+            def orig = [1, 3, 4, 5]
+            def uniq = orig.unique { it % 2 }
+            assert uniq == [1, 4]
+        '''
+        assertScript '''
+            def orig = [2, 3, 3, 4]
+            def uniq = orig.unique { a, b -> a <=> b }
+            assert uniq == [2, 3, 4]
+        '''
     }
     void testDGM_uniqueOnIterator() {
         assertScript '''
-       def orig = [1, 3, 4, 5].iterator()
-       def uniq = orig.unique { it % 2 }.collect()
-       assert uniq == [1, 4]'''
-
-       assertScript '''def orig = [2, 3, 3, 4].iterator()
-       def uniq = orig.unique { a, b -> a <=> b }.collect()
-       assert uniq == [2, 3, 4]'''
+            def orig = [1, 3, 4, 5].iterator()
+            def uniq = orig.unique { it % 2 }.collect()
+            assert uniq == [1, 4]
+        '''
+        assertScript '''
+            def orig = [2, 3, 3, 4].iterator()
+            def uniq = orig.unique { a, b -> a <=> b }.collect()
+            assert uniq == [2, 3, 4]
+        '''
     }
 
     void testDGM_anyOnMap() {

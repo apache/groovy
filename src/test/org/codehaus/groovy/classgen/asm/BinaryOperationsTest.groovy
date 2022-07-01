@@ -104,32 +104,45 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
 
     void testCharXor() {
         if (config.indyEnabled) return;
-        assert compile("""
-            int i = ('a' as char) ^ ('b' as char) 
-        """).hasStrictSequence ([
-            "IXOR"
+        assert compile('''
+            int i = ('a' as char) ^ ('b' as char)
+        ''').hasStrictSequence ([
+            'IXOR'
         ])
+    }
+
+    // GROOVY-10657
+    void testPutAtValue() {
+        def sequence = compile '''
+            class C {
+                void putAt(String key, Object value) {
+                }
+            }
+
+            def obj = new C()
+            obj['key'] = 'xx'
+        '''
     }
 
     void testPrimitiveOrAssign() {
         ['byte','int','short','long'].each { type ->
             assertScript """
-            $type[] b = new $type[1]
-            b[0] = 16
-            b[0] |= 2
-            assert b[0] == 18:"Failure for type $type"
+                $type[] array = new $type[1]
+                array[0] = 16
+                array[0] |= 2
+                assert array[0] == 18 : "Failure for type $type"
             """
-            }
+        }
     }
 
     void testPrimitiveAndAssign() {
         ['byte','int','short','long'].each { type ->
             assertScript """
-            $type[] b = new $type[1]
-            b[0] = 18
-            b[0] &= 2
-            assert b[0] == 2:"Failure for type $type"
+                $type[] array = new $type[1]
+                array[0] = 18
+                array[0] &= 2
+                assert array[0] == 2 : "Failure for type $type"
             """
-            }
+        }
     }
 }
