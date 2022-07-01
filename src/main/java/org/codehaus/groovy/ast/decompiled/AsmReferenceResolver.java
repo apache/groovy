@@ -35,12 +35,12 @@ public class AsmReferenceResolver {
     private final ClassNodeResolver resolver;
     private final CompilationUnit unit;
 
-    public AsmReferenceResolver(ClassNodeResolver resolver, CompilationUnit unit) {
+    public AsmReferenceResolver(final ClassNodeResolver resolver, final CompilationUnit unit) {
         this.resolver = resolver;
         this.unit = unit;
     }
 
-    public ClassNode resolveClass(String className) {
+    public ClassNode resolveClass(final String className) {
         ClassNode classNode = resolveClassNullable(className);
         if (classNode == null) {
             throw new NoClassDefFoundError(className);
@@ -48,20 +48,20 @@ public class AsmReferenceResolver {
         return classNode;
     }
 
-    public ClassNode resolveClassNullable(String className) {
+    public ClassNode resolveClassNullable(final String className) {
         ClassNode beingCompiled = unit.getAST().getClass(className);
         if (beingCompiled != null) {
             return beingCompiled;
         }
 
         ClassNodeResolver.LookupResult lookupResult = resolver.resolveName(className, unit);
-        return lookupResult == null ? null :lookupResult.getClassNode();
+        return lookupResult != null ? lookupResult.getClassNode() : null;
     }
 
-    public ClassNode resolveType(Type type) {
+    public ClassNode resolveType(final Type type) {
         if (type.getSort() == Type.ARRAY) {
             ClassNode result = resolveNonArrayType(type.getElementType());
-            for (int i = 0; i < type.getDimensions(); i++) {
+            for (int n = type.getDimensions(); n > 0; n -= 1) {
                 result = result.makeArray();
             }
             return result;
@@ -70,7 +70,7 @@ public class AsmReferenceResolver {
         return resolveNonArrayType(type);
     }
 
-    private ClassNode resolveNonArrayType(Type type) {
+    private ClassNode resolveNonArrayType(final Type type) {
         String className = type.getClassName();
         if (type.getSort() != Type.OBJECT) {
             return ClassHelper.make(className);
@@ -79,12 +79,11 @@ public class AsmReferenceResolver {
         return resolveClass(className);
     }
 
-    public Class resolveJvmClass(String name) {
+    public Class resolveJvmClass(final String name) {
         try {
             return unit.getClassLoader().loadClass(name, false, true);
         } catch (ClassNotFoundException e) {
             throw new GroovyBugError("JVM class can't be loaded for " + name, e);
         }
     }
-
 }

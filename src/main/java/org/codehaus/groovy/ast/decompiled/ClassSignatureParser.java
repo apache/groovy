@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
-import org.apache.groovy.util.ObjectHolder;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.RecordComponentNode;
@@ -31,81 +30,87 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 class ClassSignatureParser {
-    static void configureClass(ClassNode classNode, ClassStub stub, AsmReferenceResolver resolver) {
+
+    static void configureClass(final ClassNode classNode, final ClassStub stub, final AsmReferenceResolver resolver) {
         if (stub.signature != null) {
             parseClassSignature(classNode, stub.signature, resolver);
             return;
         }
 
         if (stub.superName != null) {
-            classNode.setSuperClass(resolver.resolveClass(AsmDecompiler.fromInternalName(stub.superName)));
+            ClassNode sc = resolver.resolveClass(AsmDecompiler.fromInternalName(stub.superName));
+            classNode.setSuperClass(sc);
         }
 
-        ClassNode[] interfaces = new ClassNode[stub.interfaceNames.length];
-        for (int i = 0; i < stub.interfaceNames.length; i++) {
-            interfaces[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(stub.interfaceNames[i]));
+        {
+            final int nInterfaces = stub.interfaceNames.length;
+            ClassNode[] interfaces = new ClassNode[nInterfaces];
+            for (int i = 0; i < nInterfaces; i += 1) { String name = stub.interfaceNames[i];
+                interfaces[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(name));
+            }
+            classNode.setInterfaces(interfaces);
         }
-        classNode.setInterfaces(interfaces);
+
         if (!stub.permittedSubclasses.isEmpty()) {
-            List<ClassNode> permittedSubclasses = classNode.getPermittedSubclasses();
+            List<ClassNode> permitted = classNode.getPermittedSubclasses(); // collector
             for (String name : stub.permittedSubclasses) {
-                permittedSubclasses.add(resolver.resolveClass(AsmDecompiler.fromInternalName(name)));
+                ClassNode ps = resolver.resolveClass(AsmDecompiler.fromInternalName(name));
+                permitted.add(ps);
             }
         }
 
         if (!stub.recordComponents.isEmpty()) {
-            classNode.setRecordComponents(stub.recordComponents.stream().map(r -> {
-                ClassNode type = resolver.resolveType(Type.getType(r.descriptor));
-                ObjectHolder<ClassNode> typeHolder = new ObjectHolder<>(type);
-                if (null != r.signature) {
-                    new SignatureReader(r.signature).accept(new TypeSignatureParser(resolver) {
+            classNode.setRecordComponents(stub.recordComponents.stream().map(rc -> {
+                ClassNode[] type = {resolver.resolveType(Type.getType(rc.descriptor))};
+                if (rc.signature != null) {
+                    new SignatureReader(rc.signature).accept(new TypeSignatureParser(resolver) {
                         @Override
                         void finished(final ClassNode result) {
-                            typeHolder.setObject(applyErasure(result, typeHolder.getObject()));
+                            type[0] = applyErasure(result, type[0]);
                         }
                     });
                 }
-                ClassNode cn = typeHolder.getObject();
-                Annotations.addTypeAnnotations(r, cn, resolver);
-                RecordComponentNode recordComponentNode = new RecordComponentNode(classNode, r.name, cn);
-                Annotations.addAnnotations(r, recordComponentNode, resolver);
-                return recordComponentNode;
+                ClassNode rcType = type[0];
+                Annotations.addTypeAnnotations(rc, rcType, resolver);
+
+                RecordComponentNode recordComponent = new RecordComponentNode(classNode, rc.name, rcType);
+                Annotations.addAnnotations(rc, recordComponent, resolver);
+                return recordComponent;
             }).collect(Collectors.toList()));
         }
     }
 
-    private static void parseClassSignature(final ClassNode classNode, String signature, final AsmReferenceResolver resolver) {
-        final List<ClassNode> interfaces = new ArrayList<ClassNode>();
-        FormalParameterParser v = new FormalParameterParser(resolver) {
+    private static void parseClassSignature(final ClassNode classNode, final String signature, final AsmReferenceResolver resolver) {
+        List<ClassNode> interfaces = new ArrayList<>();
 
+        FormalParameterParser parser = new FormalParameterParser(resolver) {
             @Override
             public SignatureVisitor visitSuperclass() {
                 flushTypeParameter();
                 return new TypeSignatureParser(resolver) {
                     @Override
-                    void finished(ClassNode result) {
-                        classNode.setSuperClass(result);
+                    void finished(final ClassNode superClass) {
+                        classNode.setSuperClass(superClass);
                     }
                 };
             }
-
             @Override
             public SignatureVisitor visitInterface() {
                 flushTypeParameter();
                 return new TypeSignatureParser(resolver) {
                     @Override
-                    void finished(ClassNode result) {
-                        interfaces.add(result);
+                    void finished(final ClassNode superInterface) {
+                        interfaces.add(superInterface);
                     }
                 };
             }
-
         };
-        new SignatureReader(signature).accept(v);
-        GenericsType[] typeParameters = v.getTypeParameters();
-        if (typeParameters.length > 0) {
-            classNode.setGenericsTypes(typeParameters);
-        }
-        classNode.setInterfaces(interfaces.toArray(ClassNode.EMPTY_ARRAY));
+        new SignatureReader(signature).accept(parser);
+
+        classNode.setInterfaces(interfaces.isEmpty() ? ClassNode.EMPTY_ARRAY :
+                                    interfaces.toArray(ClassNode.EMPTY_ARRAY));
+
+        GenericsType[] typeParameters = parser.getTypeParameters();
+        if (typeParameters.length > 0) classNode.setGenericsTypes(typeParameters);
     }
 }

@@ -29,31 +29,38 @@ import java.util.List;
 import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
 
 abstract class FormalParameterParser extends SignatureVisitor {
-    private final AsmReferenceResolver resolver;
-    private String currentTypeParameter;
-    private final List<ClassNode> parameterBounds = new ArrayList<ClassNode>();
-    private final List<GenericsType> typeParameters = new ArrayList<GenericsType>();
 
-    public FormalParameterParser(AsmReferenceResolver resolver) {
+    private String currentTypeParameter;
+    private final List<ClassNode> parameterBounds = new ArrayList<>();
+    private final List<GenericsType> typeParameters = new ArrayList<>();
+
+    private final AsmReferenceResolver resolver;
+
+    public FormalParameterParser(final AsmReferenceResolver resolver) {
         super(ASM_API_VERSION);
         this.resolver = resolver;
-    }
-
-    @Override
-    public void visitFormalTypeParameter(String name) {
-        flushTypeParameter();
-        currentTypeParameter = name;
     }
 
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
             ClassNode ref = Java8.configureTypeVariableReference(currentTypeParameter);
-            ClassNode[] boundNodes = parameterBounds.toArray(ClassNode.EMPTY_ARRAY);
-            typeParameters.add(Java8.configureTypeVariableDefinition(ref, boundNodes));
+            ClassNode[] theBoundTypes = parameterBounds.toArray(ClassNode.EMPTY_ARRAY);
+            typeParameters.add(Java8.configureTypeVariableDefinition(ref, theBoundTypes));
 
-            currentTypeParameter = null;
             parameterBounds.clear();
+            currentTypeParameter = null;
         }
+    }
+
+    public GenericsType[] getTypeParameters() {
+        flushTypeParameter();
+        return typeParameters.toArray(GenericsType.EMPTY_ARRAY);
+    }
+
+    @Override
+    public void visitFormalTypeParameter(final String name) {
+        flushTypeParameter();
+        currentTypeParameter = name;
     }
 
     @Override
@@ -69,10 +76,5 @@ abstract class FormalParameterParser extends SignatureVisitor {
     @Override
     public SignatureVisitor visitInterfaceBound() {
         return visitClassBound();
-    }
-
-    public GenericsType[] getTypeParameters() {
-        flushTypeParameter();
-        return typeParameters.toArray(GenericsType.EMPTY_ARRAY);
     }
 }
