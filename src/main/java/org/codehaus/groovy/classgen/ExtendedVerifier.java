@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -38,7 +37,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -49,15 +47,15 @@ import org.objectweb.asm.Opcodes;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
@@ -182,8 +180,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         checkForDuplicateAnnotations(node, nonSourceAnnotations);
     }
 
-    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> runtimeAnnotations) {
-        for (Map.Entry<String, List<AnnotationNode>> next : runtimeAnnotations.entrySet()) {
+    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> nonSourceAnnotations) {
+        for (Map.Entry<String, List<AnnotationNode>> next : nonSourceAnnotations.entrySet()) {
             if (next.getValue().size() > 1) {
                 ClassNode repeatable = null;
                 AnnotationNode repeatee = next.getValue().get(0);
@@ -272,32 +270,25 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private static boolean isOverrideMethod(MethodNode method) {
-        ClassNode cNode = method.getDeclaringClass();
-        ClassNode next = cNode;
+    private static boolean isOverrideMethod(final MethodNode method) {
+        ClassNode declaringClass = method.getDeclaringClass();
+        ClassNode next = declaringClass;
         outer:
         while (next != null) {
-            Map<String, ClassNode> genericsSpec = createGenericsSpec(next);
-            MethodNode mn = correctToGenericsSpec(genericsSpec, method);
-            if (next != cNode) {
-                ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
-                MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
-                if (found != null) break;
+            Map<String, ClassNode> nextSpec = createGenericsSpec(next);
+            MethodNode mn = correctToGenericsSpec(nextSpec, method);
+            if (next != declaringClass) {
+                if (getDeclaredMethodCorrected(nextSpec, mn, next) != null) break;
             }
-            List<ClassNode> ifaces = new ArrayList<ClassNode>(Arrays.asList(next.getInterfaces()));
-            while (!ifaces.isEmpty()) {
-                ClassNode origInterface = ifaces.remove(0);
-                if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
-                    genericsSpec = createGenericsSpec(origInterface, genericsSpec);
-                    ClassNode iNode = correctToGenericsSpecRecurse(genericsSpec, origInterface);
-                    MethodNode found2 = getDeclaredMethodCorrected(genericsSpec, mn, iNode);
-                    if (found2 != null) break outer;
-                    Collections.addAll(ifaces, iNode.getInterfaces());
-                }
+
+            for (ClassNode face : getInterfacesAndSuperInterfaces(next)) {
+                Map<String, ClassNode> faceSpec = createGenericsSpec(face, nextSpec);
+                if (getDeclaredMethodCorrected(faceSpec, mn, face) != null) break outer;
             }
+
             ClassNode superClass = next.getUnresolvedSuperClass();
             if (superClass != null) {
-                next = correctToGenericsSpecRecurse(genericsSpec, superClass);
+                next = correctToGenericsSpecRecurse(nextSpec, superClass);
             } else {
                 next = null;
             }
@@ -305,10 +296,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         return next != null;
     }
 
-    private static MethodNode getDeclaredMethodCorrected(Map<String, ClassNode> genericsSpec, MethodNode mn, ClassNode correctedNext) {
-        for (MethodNode declared : correctedNext.getDeclaredMethods(mn.getName())) {
+    private static MethodNode getDeclaredMethodCorrected(final Map<String, ClassNode> genericsSpec, final MethodNode mn, final ClassNode cn) {
+        for (MethodNode declared : cn.getDeclaredMethods(mn.getName())) {
             MethodNode corrected = correctToGenericsSpec(genericsSpec, declared);
-            if (ParameterUtils.parametersEqual(corrected.getParameters(), mn.getParameters())) {
+            if (parametersEqual(corrected.getParameters(), mn.getParameters())) {
                 return corrected;
             }
         }
