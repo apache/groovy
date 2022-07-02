@@ -1053,6 +1053,8 @@ options { baseContext = primary; }
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
+    |   list                                                                                #listPrmrAlt
+    |   map                                                                                 #mapPrmrAlt
     ;
 
 namedArgPrimary
