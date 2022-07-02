@@ -18,11 +18,16 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class OverrideTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class OverrideTest {
+
+    @Test
     void testHappyPath() {
-        assertScript """
+        assertScript '''
             abstract class Parent<T> {
                 abstract method()
                 void methodTakeT(T t) { }
@@ -47,11 +52,12 @@ class OverrideTest extends GroovyTestCase {
             }
 
             new OverrideAnnotationTest()
-        """
+        '''
     }
 
+    @Test
     void testUnhappyPath() {
-        def message = shouldFail """
+        def err = shouldFail '''
             abstract class Parent<T> {
                 abstract method()
                 void methodTakeT(T t) { }
@@ -76,27 +82,14 @@ class OverrideTest extends GroovyTestCase {
             }
 
             new OverrideAnnotationTest()
-        """
-        assert message.contains(/The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent/)
-        assert message.contains(/Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override./)
+        '''
+        assert err.message.contains(/The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent/)
+        assert err.message.contains(/Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override./)
     }
 
-    void testGroovy6654() {
-        assertScript '''
-class Base<T> {
-    void foo(T t) {}
-}
-
-class Derived extends Base<String> {
-    @Override
-    void foo(String s) {}
-}
-def d = new Derived()
-'''
-    }
-
+    @Test
     void testSpuriousMethod() {
-        def message = shouldFail """
+        def err = shouldFail '''
             interface Intf<U> {
                 def method()
             }
@@ -107,12 +100,13 @@ def d = new Derived()
                 @Override method() {}
                 @Override someOtherMethod() {}
             }
-        """
-        assert message.contains("Method 'someOtherMethod' from class 'HasSpuriousMethod' does not override method from its superclass or interfaces but is annotated with @Override.")
+        '''
+        assert err.message.contains("Method 'someOtherMethod' from class 'HasSpuriousMethod' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
+    @Test
     void testBadReturnType() {
-        def message = shouldFail """
+        def err = shouldFail '''
             interface Intf<U> {
                 def method()
                 U method6()
@@ -124,12 +118,13 @@ def d = new Derived()
                 @Override method() {}
                 @Override methodReturnsObject() {}
             }
-        """
-        assert message.contains("Method 'methodReturnsObject' from class 'HasMethodWithBadReturnType' does not override method from its superclass or interfaces but is annotated with @Override.")
+        '''
+        assert err.message.contains("Method 'methodReturnsObject' from class 'HasMethodWithBadReturnType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
-    void testBadArgType() {
-        def message = shouldFail """
+    @Test
+    void testBadParameterType() {
+        def err = shouldFail '''
             interface Intf<U> {
                 def method()
                 void method6(U u)
@@ -141,44 +136,46 @@ def d = new Derived()
                 @Override method() {}
                 @Override void methodTakesObject(arg) {}
             }
-        """
-        assert message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
+        '''
+        assert err.message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
-    void testOverrideOnMethodWithDefaultParameters() {
+    @Test // GROOVY-6654
+    void testCovariantParameterType1() {
         assertScript '''
-            interface TemplatedInterface {
-                String execute(Map argument)
+            class C<T> {
+                void proc(T t) {}
             }
 
-            class TemplatedInterfaceImplementation implements TemplatedInterface {
+            class D extends C<String> {
                 @Override
-                String execute(Map argument = [:]) {
-                    return null
-                }
+                void proc(String s) {}
             }
-            new TemplatedInterfaceImplementation()
+
+            def d = new D()
         '''
     }
 
-    void testOverrideOnMethodWithDefaultParametersVariant() {
+    @Test // GROOVY-10675
+    void testCovariantParameterType2() {
         assertScript '''
-            interface TemplatedInterface {
-                String execute(Map argument)
+            @FunctionalInterface
+            interface A<I, O> {
+                O apply(I in)
+            }
+            interface B<X, Y> extends A<X, Y> {
+            }
+            class C implements B<Number, String> {
+                @Override String apply(Number n) { 'x' }
             }
 
-            class TemplatedInterfaceImplementation implements TemplatedInterface {
-                @Override
-                String execute(Map argument, String foo = null) {
-                    return foo
-                }
-            }
-            new TemplatedInterfaceImplementation()
+            def result = new C().apply(42)
+            assert result == 'x'
         '''
     }
 
-    //GROOVY-7849
-    void testArrayReturnTypeCovariance() {
+    @Test // GROOVY-7849
+    void testCovariantArrayReturnType1() {
         assertScript '''
             interface Base {}
 
@@ -195,8 +192,8 @@ def d = new Derived()
         '''
     }
 
-    //GROOVY-7185
-    void testArrayReturnTypeCovarianceGenericsVariant() {
+    @Test // GROOVY-7185
+    void testCovariantArrayReturnType2() {
         assertScript '''
             interface A<T> {
                 T[] process();
@@ -216,6 +213,40 @@ def d = new Derived()
                 }
             }
             assert new C().process()[0] == 'foo'
+        '''
+    }
+
+    @Test
+    void testOverrideOnMethodWithDefaultParameters() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument = [:]) {
+                    return null
+                }
+            }
+            new TemplatedInterfaceImplementation()
+        '''
+    }
+
+    @Test
+    void testOverrideOnMethodWithDefaultParametersVariant() {
+        assertScript '''
+            interface TemplatedInterface {
+                String execute(Map argument)
+            }
+
+            class TemplatedInterfaceImplementation implements TemplatedInterface {
+                @Override
+                String execute(Map argument, String foo = null) {
+                    return foo
+                }
+            }
+            new TemplatedInterfaceImplementation()
         '''
     }
 }
