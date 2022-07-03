@@ -22,6 +22,7 @@ import groovy.lang.EmptyRange;
 import groovy.lang.IntRange;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -122,6 +123,21 @@ public class StreamGroovyMethods {
     public static <T> List<T> getAt(final Stream<T> self, final IntRange range) {
         if (range.isReverse()) throw new IllegalArgumentException("reverse range");
         return self.skip(range.getFromInt()).limit(range.size()).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns an empty list.
+     * <p>
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * assert stream[1..<1].isEmpty()
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static <T> List<T> getAt(final Stream<T> self, final EmptyRange range) {
+        return new ArrayList<>();
     }
 
     /**
