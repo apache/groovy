@@ -6229,7 +6229,6 @@ class GinqTest {
         assertGinqScript '''
             def r = GQ {
                 from n in [2, 1, 3]
-                join m in [2, 1, 3] on m == n
                 select n, (lag(n) over(orderby n)) as lagN
             }
             def expected = """
