@@ -283,6 +283,8 @@ public class SourceUnit extends ProcessingUnit {
                 if (column > 40) {
                     int start = column - 30 - 1;
                     int end = (column + 10 > text.length() ? text.length() : column + 10 - 1);
+                    if (start >= text.length() || end < start)
+                        return null; // can happen with CR only files GROOVY-10676
                     sample = "   " + text.substring(start, end) + Utilities.eol() + "   " +
                             marker.substring(start);
                 } else {
