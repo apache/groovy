@@ -49,8 +49,8 @@ class ShowCommand extends ComplexCommandSupport {
                     value = "method ${value.method}()"
                 }
 
-                io.out.println("  $key = ${FormatHelper.toString(value)}")
-            }
+                io.out.println("  $key = ${FormatHelper.toString(safe: true, maxSize: 2000, value)}")
+            }.collectEntries { k, v -> [k, k == '_' ? k : v] }
         }
     }
 
