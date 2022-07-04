@@ -254,7 +254,7 @@ and add it to the Groovy Shell environment.
 ----
 groovy:000> :grab 'com.google.guava:guava:19.0'
 groovy:000> import com.google.common.collect.BiMap
-===\> com.google.common.collect.BiMap
+===> com.google.common.collect.BiMap
 ----
 
 This command can be given at any time to add new dependencies.
@@ -265,7 +265,7 @@ This command can be given at any time to add new dependencies.
 Display the contents of the current buffer.
 
 This only displays the buffer of an incomplete expression. Once the
-expression is complete, the buffer is rest. The prompt will update to
+expression is complete, the buffer is reset. The prompt will update to
 show the size of the current buffer as well.
 
 [[GroovyShell-Example]]
@@ -430,9 +430,9 @@ Allows the use of typed variables (i.e. `def` or other type information):
 
 ----
 groovy:000> def x = 3
-===\> 3
+===> 3
 groovy:000> x
-===\> 3
+===> 3
 ----
 
 It's especially useful for copy&pasting code from tutorials etc. into the running session.
