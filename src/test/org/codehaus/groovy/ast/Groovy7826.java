@@ -19,23 +19,25 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyShell;
-import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.junit.Test;
 
-public class Groovy7826Bug extends GroovyTestCase {
-  public void testComplexTypeArguments() throws Exception {
-    String script = "def f(org.codehaus.groovy.ast.Groovy7826Bug.C1 c1) { }";
+public final class Groovy7826 {
 
-    CompilerConfiguration config = new CompilerConfiguration();
-    config.getOptimizationOptions().put("asmResolving", false);
+    @Test
+    public void testComplexTypeArguments() throws Exception {
+        String script = "def f(" + getClass().getName() + ".C1 c1) { }";
 
-    GroovyShell shell = new GroovyShell(config);
-    shell.evaluate(script, "bug7826.groovy");
-  }
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.getOptimizationOptions().put("asmResolving", false);
 
-  public static class C1<T2 extends C2<T2, T1>, T1 extends C1<T2, T1>> {
-  }
+        GroovyShell shell = new GroovyShell(config);
+        shell.evaluate(script, "bug7826.groovy");
+    }
 
-  public static class C2<T2 extends C2<T2, T1>, T1 extends C1<T2, T1>> {
-  }
+    public static class C1<T2 extends C2<T2, T1>, T1 extends C1<T2, T1>> {
+    }
+
+    public static class C2<T2 extends C2<T2, T1>, T1 extends C1<T2, T1>> {
+    }
 }
