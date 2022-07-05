@@ -32,7 +32,7 @@ jobs:
         run: wget -c ${{ matrix.jdk }} -O /tmp/openjdk.tar.gz
       - name: Set up JDK ${{ matrix.jdk }}
         run: mkdir -p /home/runner/openjdk && tar -xvf /tmp/openjdk.tar.gz -C /home/runner/openjdk && chmod -R 755 /home/runner/openjdk && mv /home/runner/openjdk/jdk*/* /home/runner/openjdk/
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
