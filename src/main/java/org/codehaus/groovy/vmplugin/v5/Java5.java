@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -309,6 +310,13 @@ public class Java5 implements VMPlugin {
 
         if (value instanceof Enum )
             return new PropertyExpression(new ClassExpression(ClassHelper.makeWithoutCaching(value.getClass())), value.toString());
+
+        if (value instanceof Annotation) { // GROOVY-9871
+            ClassNode type = ClassHelper.makeWithoutCaching(((Annotation) value).annotationType());
+            AnnotationNode node = new AnnotationNode(type);
+            configureAnnotation(node, (Annotation) value);
+            return new AnnotationConstantExpression(node);
+        }
 
         if (value.getClass().isArray()) {
             ListExpression values = new ListExpression();
