@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -291,40 +292,7 @@ public class Java8 implements VMPlugin {
         return gts;
     }
 
-    private void setAnnotationMetaData(final Annotation[] annotations, final AnnotatedNode an) {
-        for (Annotation annotation : annotations) {
-            AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-            configureAnnotation(node, annotation);
-            an.addAnnotation(node);
-        }
-    }
-
-    @Override
-    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
-        ClassNode type = definition.getClassNode();
-        final String typeName = type.getName();
-        if ("java.lang.annotation.Retention".equals(typeName)) {
-            Expression exp = definition.getMember("value");
-            if (!(exp instanceof PropertyExpression)) return;
-            PropertyExpression pe = (PropertyExpression) exp;
-            String name = pe.getPropertyAsString();
-            RetentionPolicy policy = RetentionPolicy.valueOf(name);
-            setRetentionPolicy(policy, root);
-        } else if ("java.lang.annotation.Target".equals(typeName)) {
-            Expression exp = definition.getMember("value");
-            if (!(exp instanceof ListExpression)) return;
-            ListExpression le = (ListExpression) exp;
-            int bitmap = 0;
-            for (Expression e : le.getExpressions()) {
-                if (!(e instanceof PropertyExpression)) return;
-                PropertyExpression element = (PropertyExpression) e;
-                String name = element.getPropertyAsString();
-                ElementType value = ElementType.valueOf(name);
-                bitmap |= getElementCode(value);
-            }
-            root.setAllowedTargets(bitmap);
-        }
-    }
+    //
 
     @Override
     public void configureAnnotation(final AnnotationNode node) {
@@ -367,35 +335,78 @@ public class Java8 implements VMPlugin {
             for (Method declaredMethod : declaredMethods) {
                 try {
                     Object value = declaredMethod.invoke(annotation);
-                    Expression valueExpression = annotationValueToExpression(value);
-                    if (valueExpression == null)
-                        continue;
-                    node.setMember(declaredMethod.getName(), valueExpression);
+                    Expression valueExpression = toAnnotationValueExpression(value);
+                    if (valueExpression != null) node.setMember(declaredMethod.getName(), valueExpression);
+
                 } catch (IllegalAccessException | InvocationTargetException ignore) {
                 }
             }
         }
     }
 
-    private Expression annotationValueToExpression(final Object value) {
+    private void setAnnotationMetaData(final Annotation[] annotations, final AnnotatedNode target) {
+        for (Annotation annotation : annotations) {
+            target.addAnnotation(toAnnotationNode(annotation));
+        }
+    }
+
+    private AnnotationNode toAnnotationNode(final Annotation annotation) {
+        ClassNode type = ClassHelper.make(annotation.annotationType());
+        AnnotationNode node = new AnnotationNode(type);
+        configureAnnotation(node, annotation);
+        return node;
+    }
+
+    private Expression toAnnotationValueExpression(final Object value) {
         if (value == null || value instanceof String || value instanceof Number || value instanceof Character || value instanceof Boolean)
             return new ConstantExpression(value);
 
         if (value instanceof Class)
             return new ClassExpression(ClassHelper.makeWithoutCaching((Class<?>)value));
 
+        if (value instanceof Annotation)
+            return new AnnotationConstantExpression(toAnnotationNode((Annotation)value));
+
         if (value instanceof Enum)
             return new PropertyExpression(new ClassExpression(ClassHelper.makeWithoutCaching(value.getClass())), value.toString());
 
         if (value.getClass().isArray()) {
-            ListExpression elementExprs = new ListExpression();
-            int len = Array.getLength(value);
-            for (int i = 0; i != len; i += 1)
-                elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
-            return elementExprs;
+            ListExpression list = new ListExpression();
+            for (int i = 0, n = Array.getLength(value); i < n; i += 1)
+                list.addExpression(toAnnotationValueExpression(Array.get(value, i)));
+            return list;
         }
 
         return null;
+    }
+
+    //
+
+    @Override
+    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
+        ClassNode type = definition.getClassNode();
+        final String typeName = type.getName();
+        if ("java.lang.annotation.Retention".equals(typeName)) {
+            Expression exp = definition.getMember("value");
+            if (!(exp instanceof PropertyExpression)) return;
+            PropertyExpression pe = (PropertyExpression) exp;
+            String name = pe.getPropertyAsString();
+            RetentionPolicy policy = RetentionPolicy.valueOf(name);
+            setRetentionPolicy(policy, root);
+        } else if ("java.lang.annotation.Target".equals(typeName)) {
+            Expression exp = definition.getMember("value");
+            if (!(exp instanceof ListExpression)) return;
+            ListExpression le = (ListExpression) exp;
+            int bitmap = 0;
+            for (Expression e : le.getExpressions()) {
+                if (!(e instanceof PropertyExpression)) return;
+                PropertyExpression element = (PropertyExpression) e;
+                String name = element.getPropertyAsString();
+                ElementType value = ElementType.valueOf(name);
+                bitmap |= getElementCode(value);
+            }
+            root.setAllowedTargets(bitmap);
+        }
     }
 
     @Override
