@@ -28,6 +28,7 @@ org {
                 MethodNode          = "MethodNode - \$expression.name"
                 FieldNode           = "FieldNode - \$expression.name : \$expression.type"
                 PropertyNode        = "PropertyNode - \${expression.field?.name} : \${expression.field?.type}"
+                RecordComponentNode = "RecordComponentNode - \$expression.name : \$expression.type"
                 AnnotationNode      = "AnnotationNode - \${expression.classNode?.name}"
                 Parameter           = "Parameter - \$expression.name"
                 DynamicVariable     = "DynamicVariable - \$expression.name"
