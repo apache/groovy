@@ -18,6 +18,7 @@
  */
 package gls.annotations
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -619,6 +620,42 @@ final class AnnotationTest {
         '''
     }
 
+    @Test // GROOVY-7252
+    void testAttributeValueConstants7() {
+        assertScript shell, '''
+            @interface A {
+                short value()
+            }
+
+            @A(12345)
+            def local
+        '''
+    }
+
+    @Test // GROOVY-9366
+    void testAttributeValueConstants8() {
+        assertScript shell, '''
+            @interface A {
+                byte value()
+            }
+
+            @A(0xFF)
+            def local
+        '''
+    }
+
+    @Test // GROOVY-9206
+    void testAttributeValueConstants9() {
+        assertScript shell, '''
+            @interface A {
+                char value()
+            }
+
+            @A( 'c' )
+            def local
+        '''
+    }
+
     @Test
     void testRuntimeRetentionAtAllLevels() {
         assertScript shell, '''
@@ -748,9 +785,9 @@ final class AnnotationTest {
                 int i1() default 0
                 int i2() default (int)1
                 short s1() default 2
-                short s2() default (byte)3
+                short s2() default (short)3
                 short s3() default (Short)4
-                short s4() default (int)5
+                short s4() default 5 as short
                 byte b() default 6
                 char c1() default 65
                 char c2() default 'B'
@@ -765,6 +802,7 @@ final class AnnotationTest {
                 double d3() default (double)2.2
                 double d4() default 2.3 as double
             }
+
             @Foo method() {}
             def string = getClass().getMethod('method').getAnnotation(Foo).toString()[5..-2].tokenize(', ').sort().join('|')
             assert string == 'b=6|c1=A|c2=B|c3=C|c4=D|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0|f2=1.1|f3=1.2|f4=1.3|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5' ||
@@ -772,6 +810,21 @@ final class AnnotationTest {
                    string == "b=6|c1='A'|c2='B'|c3='C'|c4='D'|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0f|f2=1.1f|f3=1.2f|f4=1.3f|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5" ||
                    // changed in some jdk14 versions
                    string == "b=(byte)0x06|c1='A'|c2='B'|c3='C'|c4='D'|d1=2.0|d2=2.1|d3=2.2|d4=2.3|f1=1.0f|f2=1.1f|f3=1.2f|f4=1.3f|i1=0|i2=1|s1=2|s2=3|s3=4|s4=5"
+        '''
+    }
+
+    @NotYetImplemented @Test // GROOVY-6025
+    void testAnnotationDefinitionDefaultValues2() {
+        assertScript shell, '''
+            @interface A {
+                short s1() default (byte)1
+                short s2() default (char)2
+                short s3() default (long)3
+            }
+
+            assert A.getMethod('s1').defaultValue == 1
+            assert A.getMethod('s2').defaultValue == 2
+            assert A.getMethod('s3').defaultValue == 3
         '''
     }
 
