@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.RecordComponentNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
@@ -312,6 +313,7 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
         collectMethodData(child, 'Methods', classNode)
         collectFieldData(child, 'Fields', classNode)
         collectPropertyData(child, 'Properties', classNode)
+        collectRecordComponentData(child, 'Record Components', classNode)
         collectAnnotationData(child, 'Annotations', classNode.annotations)
 
         if (showClosureClasses)  {
@@ -336,6 +338,7 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
             collectMethodData(child, 'Methods', innerClassNode)
             collectFieldData(child, 'Fields', innerClassNode)
             collectPropertyData(child, 'Properties', innerClassNode)
+            collectRecordComponentData(child, 'Record Components', classNode)
             collectAnnotationData(child, 'Annotations', innerClassNode.annotations)
         }
     }
@@ -359,6 +362,17 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
             collectTypeData(ggrandchild, 'Type', propertyNode.type)
             collectInitialValueData(ggrandchild, propertyNode.field?.initialValueExpression)
             collectAnnotationData(ggrandchild, 'Annotations', propertyNode.annotations)
+        }
+    }
+
+    private void collectRecordComponentData(parent, String name, ClassNode classNode) {
+        def allProperties = nodeMaker.makeNode(name)
+        if (classNode.properties) parent.add(allProperties)
+        classNode.recordComponents?.each { RecordComponentNode recordComponentNode ->
+            def ggrandchild = adapter.make(recordComponentNode)
+            allProperties.add(ggrandchild)
+            collectTypeData(ggrandchild, 'Type', recordComponentNode.type)
+            collectAnnotationData(ggrandchild, 'Annotations', recordComponentNode.annotations)
         }
     }
 
