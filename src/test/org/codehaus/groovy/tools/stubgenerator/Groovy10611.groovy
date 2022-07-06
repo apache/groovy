@@ -43,7 +43,7 @@ final class Groovy10611 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('C')
-        assert stub.contains('final long LONG = 123456;');
+        assert stub.contains('final long LONG = 123456L;');
         assert stub.contains('final float FLOAT = 78.9f;');
         assert stub.contains('final java.lang.String STRING = "xy";');
     }

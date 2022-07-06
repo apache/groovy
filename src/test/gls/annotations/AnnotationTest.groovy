@@ -828,6 +828,44 @@ final class AnnotationTest {
         '''
     }
 
+    @Test // GROOVY-9205
+    void testAnnotationDefinitionDefaultValues3() {
+        assertScript shell, '''
+            @interface A {
+                int i1() default (int) 42
+                int i2() default 42 as int
+                byte b1() default (byte) 42
+                byte b2() default 42 as byte
+                char c1() default (char) 42
+                char c2() default 42 as char
+                long l1() default (long) 42
+                long l2() default 42 as long
+                short s1() default (short) 42
+                short s2() default 42 as short
+            }
+
+            ['i1', 'i2', 'b1', 'b2', 'c1', 'c2', 'l1', 'l2', 's1', 's2'].each { name ->
+                assert A.getMethod(name).defaultValue == 42
+            }
+        '''
+    }
+
+    @Test // GROOVY-9205
+    void testAnnotationDefinitionDefaultValues4() {
+        assertScript shell, '''
+            @interface A {
+                float f1() default (float) 42
+                float f2() default 42 as float
+                double d1() default (double) 42
+                double d2() default 42 as double
+            }
+
+            ['f1', 'f2', 'd1', 'd2'].each { name ->
+                assert A.getMethod(name).defaultValue == 42.0
+            }
+        '''
+    }
+
     @Test // GROOVY-6093
     void testAnnotationOnEnumConstant() {
         assertScript shell, '''

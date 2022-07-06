@@ -133,48 +133,54 @@ public final class ExpressionUtils {
         } else if (isNumberOrArrayOfNumber(wrapperType, false)) {
             int type = be.getOperation().getType();
             if (Arrays.binarySearch(HANDLED_TYPES, type) >= 0) {
-                boolean isShift = (type >= LEFT_SHIFT && type <= RIGHT_SHIFT_UNSIGNED);
-                Expression leftX = transformInlineConstants(be.getLeftExpression(), targetType);
-                Expression rightX = transformInlineConstants(be.getRightExpression(), isShift ? ClassHelper.int_TYPE : targetType);
+                Expression leftX = be.getLeftExpression();
+                if (!(leftX instanceof ConstantExpression)) {
+                    leftX = transformInlineConstants(leftX, targetType);
+                }
+                Expression rightX = be.getRightExpression();
+                if (!(rightX instanceof ConstantExpression)) {
+                    boolean isShift = (type >= LEFT_SHIFT && type <= RIGHT_SHIFT_UNSIGNED); // GROOVY-9336
+                    rightX = transformInlineConstants(rightX, isShift ? ClassHelper.int_TYPE : targetType);
+                }
                 if (leftX instanceof ConstantExpression && rightX instanceof ConstantExpression) {
                     Number left  = safeNumber((ConstantExpression) leftX);
                     Number right = safeNumber((ConstantExpression) rightX);
                     if (left == null || right == null) return null;
                     Number result = null;
-                    switch(type) {
-                        case PLUS:
-                            result = NumberMath.add(left, right);
-                            break;
-                        case MINUS:
-                            result = NumberMath.subtract(left, right);
-                            break;
-                        case MULTIPLY:
-                            result = NumberMath.multiply(left, right);
-                            break;
-                        case DIVIDE:
-                            result = NumberMath.divide(left, right);
-                            break;
-                        case LEFT_SHIFT:
-                            result = NumberMath.leftShift(left, right);
-                            break;
-                        case RIGHT_SHIFT:
-                            result = NumberMath.rightShift(left, right);
-                            break;
-                        case RIGHT_SHIFT_UNSIGNED:
-                            result = NumberMath.rightShiftUnsigned(left, right);
-                            break;
-                        case BITWISE_AND:
-                            result = NumberMath.and(left, right);
-                            break;
-                        case BITWISE_OR:
-                            result = NumberMath.or(left, right);
-                            break;
-                        case BITWISE_XOR:
-                            result = NumberMath.xor(left, right);
-                            break;
-                        case POWER:
-                            result = DefaultGroovyMethods.power(left, right);
-                            break;
+                    switch (type) {
+                      case PLUS:
+                        result = NumberMath.add(left, right);
+                        break;
+                      case MINUS:
+                        result = NumberMath.subtract(left, right);
+                        break;
+                      case MULTIPLY:
+                        result = NumberMath.multiply(left, right);
+                        break;
+                      case DIVIDE:
+                        result = NumberMath.divide(left, right);
+                        break;
+                      case LEFT_SHIFT:
+                        result = NumberMath.leftShift(left, right);
+                        break;
+                      case RIGHT_SHIFT:
+                        result = NumberMath.rightShift(left, right);
+                        break;
+                      case RIGHT_SHIFT_UNSIGNED:
+                        result = NumberMath.rightShiftUnsigned(left, right);
+                        break;
+                      case BITWISE_AND:
+                        result = NumberMath.and(left, right);
+                        break;
+                      case BITWISE_OR:
+                        result = NumberMath.or(left, right);
+                        break;
+                      case BITWISE_XOR:
+                        result = NumberMath.xor(left, right);
+                        break;
+                      case POWER:
+                        result = DefaultGroovyMethods.power(left, right);
+                        break;
                     }
                     if (result != null) {
                         if (ClassHelper.isWrapperInteger(wrapperType)) {
@@ -319,8 +325,17 @@ public final class ExpressionUtils {
                 if (ClassHelper.isWrapperByte(targetType)) {
                     return configure(exp, new ConstantExpression(integer.byteValue(), true));
                 }
+                if (ClassHelper.isWrapperLong(targetType)) {
+                    return configure(exp, new ConstantExpression(integer.longValue(), true));
+                }
                 if (ClassHelper.isWrapperShort(targetType)) {
                     return configure(exp, new ConstantExpression(integer.shortValue(), true));
+                }
+                if (ClassHelper.isWrapperFloat(targetType)) {
+                    return configure(exp, new ConstantExpression(integer.floatValue(), true));
+                }
+                if (ClassHelper.isWrapperDouble(targetType)) {
+                    return configure(exp, new ConstantExpression(integer.doubleValue(), true));
                 }
                 if (ClassHelper.isWrapperCharacter(targetType)) {
                     return configure(exp, new ConstantExpression((char) integer.intValue(), true));
