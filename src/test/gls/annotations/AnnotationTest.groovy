@@ -604,6 +604,21 @@ final class AnnotationTest {
         '''
     }
 
+    @Test // GROOVY-10068
+    void testAttributeValueConstants6() {
+        assertScript shell, '''
+            @interface A {
+                short value()
+            }
+            class C {
+                public static final short ONE = 1
+            }
+
+            @A(C.ONE)
+            def local
+        '''
+    }
+
     @Test
     void testRuntimeRetentionAtAllLevels() {
         assertScript shell, '''

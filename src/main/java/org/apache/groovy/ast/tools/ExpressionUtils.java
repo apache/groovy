@@ -230,6 +230,11 @@ public final class ExpressionUtils {
                         && field.getInitialValueExpression() instanceof ConstantExpression) {
                     ConstantExpression value = (ConstantExpression) field.getInitialValueExpression();
                     value = new ConstantExpression(value.getValue());
+                    // GROOVY-10068, et al.: retain field's type
+                    if (!value.getType().equals(field.getType())
+                            && ClassHelper.isNumberType(field.getType()))
+                        value.setType(field.getType());
+                    // TODO: Boolean, Character, String
                     return configure(exp, value);
                 }
             }
