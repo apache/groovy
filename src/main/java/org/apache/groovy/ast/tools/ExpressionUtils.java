@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -33,17 +34,11 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
 import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
@@ -55,6 +50,7 @@ import static org.codehaus.groovy.syntax.Types.PLUS;
 import static org.codehaus.groovy.syntax.Types.POWER;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 
 public final class ExpressionUtils {
 
@@ -181,23 +177,26 @@ public final class ExpressionUtils {
                             break;
                     }
                     if (result != null) {
-                        if (isWrapperByte(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.byteValue(), true));
-                        }
-                        if (isWrapperShort(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.shortValue(), true));
-                        }
-                        if (isWrapperLong(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.longValue(), true));
-                        }
-                        if (isWrapperInteger(wrapperType) || isWrapperCharacter(wrapperType)) {
+                        if (ClassHelper.isWrapperInteger(wrapperType)) {
                             return configure(be, new ConstantExpression(result.intValue(), true));
                         }
-                        if (isWrapperFloat(wrapperType)) {
+                        if (ClassHelper.isWrapperByte(wrapperType)) {
+                            return configure(be, new ConstantExpression(result.byteValue(), true));
+                        }
+                        if (ClassHelper.isWrapperLong(wrapperType)) {
+                            return configure(be, new ConstantExpression(result.longValue(), true));
+                        }
+                        if (ClassHelper.isWrapperShort(wrapperType)) {
+                            return configure(be, new ConstantExpression(result.shortValue(), true));
+                        }
+                        if (ClassHelper.isWrapperFloat(wrapperType)) {
                             return configure(be, new ConstantExpression(result.floatValue(), true));
                         }
-                        if (isWrapperDouble(wrapperType)) {
+                        if (ClassHelper.isWrapperDouble(wrapperType)) {
                             return configure(be, new ConstantExpression(result.doubleValue(), true));
+                        }
+                        if (ClassHelper.isWrapperCharacter(wrapperType)) {
+                            return configure(be, new ConstantExpression((char) result.intValue(), true));
                         }
                         return configure(be, new ConstantExpression(result, true));
                     }
@@ -266,9 +265,10 @@ public final class ExpressionUtils {
      * Handles:
      * <ul>
      *     <li>Property expressions - referencing constants</li>
-     *     <li>Simple binary expressions - String concatenation and numeric +, -, /, *</li>
-     *     <li>List expressions - list of constants</li>
      *     <li>Variable expressions - referencing constants</li>
+     *     <li>Typecast expressions - referencing constants</li>
+     *     <li>Binary expressions - string concatenation and numeric +, -, /, *</li>
+     *     <li>List expressions - list of constants</li>
      * </ul>
      * @param exp the original expression
      * @param attrType the type that the final constant should be
@@ -311,6 +311,39 @@ public final class ExpressionUtils {
                     }
                 }
             }
+        } else if (exp instanceof ConstantExpression) {
+            Object value = ((ConstantExpression) exp).getValue();
+            ClassNode targetType = ClassHelper.getWrapper(attrType);
+            if (value instanceof Integer) {
+                Integer integer = (Integer) value;
+                if (ClassHelper.isWrapperByte(targetType)) {
+                    return configure(exp, new ConstantExpression(integer.byteValue(), true));
+                }
+                if (ClassHelper.isWrapperShort(targetType)) {
+                    return configure(exp, new ConstantExpression(integer.shortValue(), true));
+                }
+                if (ClassHelper.isWrapperCharacter(targetType)) {
+                    return configure(exp, new ConstantExpression((char) integer.intValue(), true));
+                }
+            } else if (value instanceof BigDecimal) {
+                BigDecimal decimal = (BigDecimal) value;
+                if (ClassHelper.isWrapperFloat(targetType)) {
+                    return configure(exp, new ConstantExpression(decimal.floatValue(), true));
+                }
+                if (ClassHelper.isWrapperDouble(targetType)) {
+                    return configure(exp, new ConstantExpression(decimal.doubleValue(), true));
+                }
+            } else if (value instanceof String) {
+                String string = (String) value;
+                if (ClassHelper.isWrapperCharacter(targetType) && string.length() == 1) {
+                    return configure(exp, new ConstantExpression(string.charAt(0), true));
+                }
+            }
+        } else if (exp instanceof CastExpression) {
+            Expression e = transformInlineConstants(((CastExpression) exp).getExpression(), exp.getType());
+            if (ClassHelper.getWrapper(e.getType()).isDerivedFrom(ClassHelper.getWrapper(attrType))) {
+                return e;
+            }
         } else if (exp instanceof BinaryExpression) {
             ConstantExpression ce = transformBinaryConstantExpression((BinaryExpression) exp, attrType);
             if (ce != null) {
@@ -329,8 +362,9 @@ public final class ExpressionUtils {
      * @param attrType the target type
      * @return the transformed list or the original if nothing was changed
      */
-    public static Expression transformListOfConstants(final ListExpression origList, final ClassNode attrType) {
+    public static Expression transformListOfConstants(final ListExpression origList, ClassNode attrType) {
         ListExpression newList = new ListExpression();
+        attrType = inferLoopElementType(attrType);
         boolean changed = false;
         for (Expression e : origList.getExpressions()) {
             try {

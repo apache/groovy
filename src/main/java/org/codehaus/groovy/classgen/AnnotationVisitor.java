@@ -35,16 +35,12 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
-import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 
 /**
  * An Annotation visitor responsible for:
@@ -55,23 +51,25 @@ import static org.codehaus.groovy.ast.ClassHelper.isStringType;
  * </ul>
  */
 public class AnnotationVisitor {
+
     private final SourceUnit source;
     private final ErrorCollector errorCollector;
+
     private AnnotationNode annotation;
     private ClassNode reportClass;
 
-    public AnnotationVisitor(SourceUnit source, ErrorCollector errorCollector) {
+    public AnnotationVisitor(final SourceUnit source, final ErrorCollector errorCollector) {
         this.source = source;
         this.errorCollector = errorCollector;
     }
 
-    public void setReportClass(ClassNode cn) {
-        reportClass = cn;
+    public void setReportClass(final ClassNode node) {
+        this.reportClass = node;
     }
 
-    public AnnotationNode visit(AnnotationNode node) {
+    public AnnotationNode visit(final AnnotationNode node) {
         this.annotation = node;
-        this.reportClass = node.getClassNode();
+        setReportClass(node.getClassNode());
 
         if (!isValidAnnotationClass(node.getClassNode())) {
             addError("class " + node.getClassNode().getName() + " is not an annotation");
@@ -88,8 +86,7 @@ public class AnnotationVisitor {
             return node;
         }
 
-        Map<String, Expression> attributes = node.getMembers();
-        for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
+        for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
             String attrName = entry.getKey();
             ClassNode attrType = getAttributeType(node, attrName);
             Expression attrExpr = transformInlineConstants(entry.getValue(), attrType);
@@ -100,7 +97,7 @@ public class AnnotationVisitor {
         return this.annotation;
     }
 
-    private boolean checkIfValidEnumConstsAreUsed(AnnotationNode node) {
+    private boolean checkIfValidEnumConstsAreUsed(final AnnotationNode node) {
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
             if (!validateEnumConstant(entry.getValue()))
@@ -109,7 +106,7 @@ public class AnnotationVisitor {
         return true;
     }
 
-    private boolean validateEnumConstant(Expression exp) {
+    private boolean validateEnumConstant(final Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
             String name = pe.getPropertyAsString();
@@ -134,14 +131,13 @@ public class AnnotationVisitor {
         return true;
     }
 
-    private boolean checkIfMandatoryAnnotationValuesPassed(AnnotationNode node) {
+    private boolean checkIfMandatoryAnnotationValuesPassed(final AnnotationNode node) {
         boolean ok = true;
-        Map attributes = node.getMembers();
         ClassNode classNode = node.getClassNode();
         for (MethodNode mn : classNode.getMethods()) {
             String methodName = mn.getName();
             // if the annotation attribute has a default, getCode() returns a ReturnStatement with the default value
-            if (mn.getCode() == null && !attributes.containsKey(methodName)) {
+            if (mn.getCode() == null && !node.getMembers().containsKey(methodName)) {
                 addError("No explicit/default value found for annotation attribute '" + methodName + "'", node);
                 ok = false;
             }
@@ -149,74 +145,71 @@ public class AnnotationVisitor {
         return ok;
     }
 
-    private ClassNode getAttributeType(AnnotationNode node, String attrName) {
+    private ClassNode getAttributeType(final AnnotationNode node, final String attrName) {
         ClassNode classNode = node.getClassNode();
-        List methods = classNode.getMethods(attrName);
+        List<MethodNode> methods = classNode.getMethods(attrName);
         // if size is >1, then the method was overwritten or something, we ignore that
         // if it is an error, we have to test it at another place. But size==0 is
         // an error, because it means that no such attribute exists.
         if (methods.isEmpty()) {
-            addError("'" + attrName + "'is not part of the annotation " + classNode.getNameWithoutPackage(), node);
+            addError("'" + attrName + "' is not part of the annotation " + classNode.getNameWithoutPackage(), node);
             return ClassHelper.OBJECT_TYPE;
         }
-        MethodNode method = (MethodNode) methods.get(0);
-        return method.getReturnType();
+        return methods.get(0).getReturnType();
     }
 
-    private static boolean isValidAnnotationClass(ClassNode node) {
-        return node.implementsInterface(ClassHelper.Annotation_TYPE);
+    private static boolean isValidAnnotationClass(final ClassNode type) {
+        return type.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
-    protected void visitExpression(String attrName, Expression attrExp, ClassNode attrType) {
+    protected void visitExpression(final String attrName, final Expression valueExpr, final ClassNode attrType) {
         if (attrType.isArray()) {
             // check needed as @Test(attr = {"elem"}) passes through the parser
-            if (attrExp instanceof ListExpression) {
-                ListExpression le = (ListExpression) attrExp;
+            if (valueExpr instanceof ListExpression) {
+                ListExpression le = (ListExpression) valueExpr;
                 visitListExpression(attrName, le, attrType.getComponentType());
-            } else if (attrExp instanceof ClosureExpression) {
-                addError("Annotation list attributes must use Groovy notation [el1, el2]", attrExp);
+            } else if (valueExpr instanceof ClosureExpression) {
+                addError("Annotation list attributes must use Groovy notation [el1, el2]", valueExpr);
             } else {
                 // treat like a singleton list as per Java
                 ListExpression listExp = new ListExpression();
-                listExp.addExpression(attrExp);
+                listExp.addExpression(valueExpr);
                 if (annotation != null) {
                     annotation.setMember(attrName, listExp);
                 }
                 visitExpression(attrName, listExp, attrType);
             }
-        } else if (ClassHelper.isPrimitiveType(attrType)) {
-            visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), ClassHelper.getWrapper(attrType));
-        } else if (isStringType(attrType)) {
-            visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), ClassHelper.STRING_TYPE);
-        } else if (isClassType(attrType)) {
-            if (!(attrExp instanceof ClassExpression || attrExp instanceof ClosureExpression)) {
-                addError("Only classes and closures can be used for attribute '" + attrName + "'", attrExp);
+        } else if (ClassHelper.isPrimitiveType(attrType) || ClassHelper.isStringType(attrType)) {
+            visitConstantExpression(attrName, getConstantExpression(valueExpr, attrType), ClassHelper.getWrapper(attrType));
+        } else if (ClassHelper.isClassType(attrType)) {
+            if (!(valueExpr instanceof ClassExpression || valueExpr instanceof ClosureExpression)) {
+                addError("Only classes and closures can be used for attribute '" + attrName + "'", valueExpr);
             }
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
-            if (attrExp instanceof PropertyExpression) {
-                visitEnumExpression(attrName, (PropertyExpression) attrExp, attrType);
-            } else if (attrExp instanceof ConstantExpression) {
-                visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), attrType);
+            if (valueExpr instanceof PropertyExpression) {
+                visitEnumExpression(attrName, (PropertyExpression) valueExpr, attrType);
+            } else if (valueExpr instanceof ConstantExpression) {
+                visitConstantExpression(attrName, getConstantExpression(valueExpr, attrType), attrType);
             } else {
-                addError("Expected enum value for attribute " + attrName, attrExp);
+                addError("Expected enum value for attribute " + attrName, valueExpr);
             }
         } else if (isValidAnnotationClass(attrType)) {
-            if (attrExp instanceof AnnotationConstantExpression) {
-                visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrExp, attrType);
+            if (valueExpr instanceof AnnotationConstantExpression) {
+                visitAnnotationExpression(attrName, (AnnotationConstantExpression) valueExpr, attrType);
             } else {
-                addError("Expected annotation of type '" + attrType.getName() + "' for attribute " + attrName, attrExp);
+                addError("Expected annotation of type '" + attrType.getName() + "' for attribute " + attrName, valueExpr);
             }
         } else {
-            addError("Unexpected type " + attrType.getName(), attrExp);
+            addError("Unexpected type " + attrType.getName(), valueExpr);
         }
     }
 
-    public void checkReturnType(ClassNode attrType, ASTNode node) {
+    public void checkReturnType(final ClassNode attrType, final ASTNode node) {
         if (attrType.isArray()) {
             checkReturnType(attrType.getComponentType(), node);
         } else if (ClassHelper.isPrimitiveType(attrType)) {
-        } else if (isStringType(attrType)) {
-        } else if (isClassType(attrType)) {
+        } else if (ClassHelper.isStringType(attrType)) {
+        } else if (ClassHelper.isClassType(attrType)) {
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
         } else if (isValidAnnotationClass(attrType)) {
         } else {
@@ -224,7 +217,7 @@ public class AnnotationVisitor {
         }
     }
 
-    private ConstantExpression getConstantExpression(Expression exp, ClassNode attrType) {
+    private ConstantExpression getConstantExpression(final Expression exp, final ClassNode attrType) {
         Expression result = exp;
         if (!(result instanceof ConstantExpression)) {
             result = transformInlineConstants(result, attrType);
@@ -232,6 +225,7 @@ public class AnnotationVisitor {
         if (result instanceof ConstantExpression) {
             return (ConstantExpression) result;
         }
+
         String base = "Expected '" + exp.getText() + "' to be an inline constant of type " + attrType.getName();
         if (exp instanceof PropertyExpression) {
             addError(base + " not a property expression", exp);
@@ -240,56 +234,48 @@ public class AnnotationVisitor {
         } else {
             addError(base, exp);
         }
+
         ConstantExpression ret = new ConstantExpression(null);
         ret.setSourcePosition(exp);
         return ret;
     }
 
-    protected void visitAnnotationExpression(String attrName, AnnotationConstantExpression expression, ClassNode attrType) {
-        AnnotationNode annotationNode = (AnnotationNode) expression.getValue();
-        AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
-        // TODO track Deprecated usage and give a warning?
-        visitor.visit(annotationNode);
-    }
-
-    protected void visitListExpression(String attrName, ListExpression listExpr, ClassNode elementType) {
+    protected void visitListExpression(final String attrName, final ListExpression listExpr, final ClassNode elementType) {
         for (Expression expression : listExpr.getExpressions()) {
             visitExpression(attrName, expression, elementType);
         }
     }
 
-    protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
-        ClassNode constType = constExpr.getType();
-        ClassNode wrapperType = ClassHelper.getWrapper(constType);
-        if (!hasCompatibleType(attrType, wrapperType)) {
-            addError("Attribute '" + attrName + "' should have type '" + attrType.getName()
-                    + "'; but found type '" + constType.getName() + "'", constExpr);
+    protected void visitEnumExpression(final String attrName, final PropertyExpression valueExpr, final ClassNode attrType) {
+        ClassNode valueType = valueExpr.getObjectExpression().getType();
+        if (!valueType.isDerivedFrom(attrType)) {
+            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "' (Enum), but found " + valueType.getName(), valueExpr);
         }
     }
 
-    private static boolean hasCompatibleType(ClassNode attrType, ClassNode wrapperType) {
-        return wrapperType.isDerivedFrom(ClassHelper.getWrapper(attrType));
-    }
-
-    protected void visitEnumExpression(String attrName, PropertyExpression propExpr, ClassNode attrType) {
-        if (!propExpr.getObjectExpression().getType().isDerivedFrom(attrType)) {
-            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "' (Enum), but found "
-                    + propExpr.getObjectExpression().getType().getName(),
-                    propExpr);
+    protected void visitConstantExpression(final String attrName, final ConstantExpression valueExpr, final ClassNode attrType) {
+        ClassNode valueType = valueExpr.getType();
+        if (!ClassHelper.getWrapper(valueType).isDerivedFrom(ClassHelper.getWrapper(attrType))) {
+            addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; but found type '" + valueType.getName() + "'", valueExpr);
         }
     }
 
-    protected void addError(String msg) {
+    protected void visitAnnotationExpression(final String attrName, final AnnotationConstantExpression valueExpr, final ClassNode attrType) {
+        AnnotationNode annotationNode = (AnnotationNode) valueExpr.getValue();
+        AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
+        // TODO: Track @Deprecated usage and give a warning?
+        visitor.visit(annotationNode);
+    }
+
+    protected void addError(final String msg) {
         addError(msg, this.annotation);
     }
 
-    protected void addError(String msg, ASTNode expr) {
-        this.errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + " in @" + this.reportClass.getName() + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
-        );
+    protected void addError(final String msg, final ASTNode node) {
+        this.errorCollector.addErrorAndContinue(msg + " in @" + this.reportClass.getName() + '\n', node, this.source);
     }
 
-    public void checkCircularReference(ClassNode searchClass, ClassNode attrType, Expression startExp) {
+    public void checkCircularReference(final ClassNode searchClass, final ClassNode attrType, final Expression startExp) {
         if (!isValidAnnotationClass(attrType)) return;
         if (!(startExp instanceof AnnotationConstantExpression)) {
             addError("Found '" + startExp.getText() + "' when expecting an Annotation Constant", startExp);
