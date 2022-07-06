@@ -19,7 +19,6 @@
 package org.codehaus.groovy.control;
 
 import groovy.lang.Tuple2;
-import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -44,7 +43,6 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -80,7 +78,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
@@ -427,7 +425,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode cn = currentClass;
         Set<ClassNode> cycleCheck = new HashSet<>();
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
-        for (; cn != null && cycleCheck.add(cn) && !isObjectType(cn); cn = cn.getSuperClass()) {
+        for (; cn != null && cycleCheck.add(cn) && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;
         }
 
@@ -1197,12 +1195,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformAnnotationConstantExpression(final AnnotationConstantExpression ace) {
-        AnnotationNode an = (AnnotationNode) ace.getValue();
-        ClassNode type = an.getClassNode();
-        resolveOrFail(type, " for annotation", an);
-        for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-            member.setValue(transform(member.getValue()));
-        }
+        visitAnnotation((AnnotationNode) ace.getValue());
         return ace;
     }
 
@@ -1234,40 +1227,25 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     @Override
     protected void visitAnnotation(final AnnotationNode node) {
         resolveOrFail(node.getClassNode(), " for annotation", node, true);
-
-        for (Map.Entry<String, Expression> member : node.getMembers().entrySet()) {
-            Expression value = transformInlineConstants(transform(member.getValue()));
+        // duplicates part of AnnotationVisitor because we cannot wait until later
+        for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
+            // resolve constant-looking expressions statically
+            // do it now since they get transformed away later
+            Expression value = transform(entry.getValue());
+            value = transformInlineConstants(value);
             checkAnnotationMemberValue(value);
-            member.setValue(value);
+            entry.setValue(value);
         }
     }
 
-    // resolve constant-looking expressions statically (do here as they get transformed away later)
-    private static Expression transformInlineConstants(final Expression exp) {
-        if (exp instanceof AnnotationConstantExpression) {
-            ConstantExpression ce = (ConstantExpression) exp;
-            if (ce.getValue() instanceof AnnotationNode) {
-                // replicate a little bit of AnnotationVisitor here
-                // because we can't wait until later to do this
-                AnnotationNode an = (AnnotationNode) ce.getValue();
-                for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                    member.setValue(transformInlineConstants(member.getValue()));
-                }
-            }
-        } else {
-            return ExpressionUtils.transformInlineConstants(exp);
-        }
-        return exp;
-    }
-
-    private void checkAnnotationMemberValue(final Expression newValue) {
-        if (newValue instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) newValue;
+    private void checkAnnotationMemberValue(final Expression value) {
+        if (value instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) value;
             if (!(pe.getObjectExpression() instanceof ClassExpression)) {
                 addError("unable to find class '" + pe.getText() + "' for annotation attribute constant", pe.getObjectExpression());
             }
-        } else if (newValue instanceof ListExpression) {
-            ListExpression le = (ListExpression) newValue;
+        } else if (value instanceof ListExpression) {
+            ListExpression le = (ListExpression) value;
             for (Expression e : le.getExpressions()) {
                 checkAnnotationMemberValue(e);
             }
@@ -1548,7 +1526,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             GenericsType[] parameters = type.redirect().getGenericsTypes();
             if (parameters != null && i < parameters.length) {
                 ClassNode implicitBound = parameters[i].getType();
-                if (!isObjectType(implicitBound))
+                if (!ClassHelper.isObjectType(implicitBound))
                     argument.getType().setRedirect(implicitBound);
             }
         }
