@@ -34,8 +34,9 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
 
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
@@ -57,20 +58,62 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
 public final class ExpressionUtils {
 
-    // NOTE: values are sorted in ascending order
+    public static boolean isNullConstant(final Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
+    }
+
+    public static boolean isThisExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
+    }
+
+    public static boolean isSuperExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
+    }
+
+    public static boolean isThisOrSuper(final Expression expression) {
+        return isThisExpression(expression) || isSuperExpression(expression);
+    }
+
+    /**
+     * Determines if a type matches another type (or array thereof).
+     *
+     * @param targetType the candidate type
+     * @param type the type we are checking against
+     * @param recurse true if we can have multi-dimension arrays; should be false for annotation member types
+     * @return true if the type equals the targetType or array thereof
+     */
+    public static boolean isTypeOrArrayOfType(final ClassNode targetType, final ClassNode type, final boolean recurse) {
+        if (targetType == null) return false;
+        if (type.equals(targetType)) return true;
+        return (targetType.isArray() && recurse ? isTypeOrArrayOfType(targetType.getComponentType(), type, recurse) : type.equals(targetType.getComponentType()));
+    }
+
+    /**
+     * Determines if a type is derived from Number (or array thereof).
+     *
+     * @param targetType the candidate type
+     * @param recurse true if we can have multi-dimension arrays; should be false for annotation member types
+     * @return true if the type equals the targetType or array thereof
+     */
+    public static boolean isNumberOrArrayOfNumber(final ClassNode targetType, final boolean recurse) {
+        if (targetType == null) return false;
+        if (targetType.isDerivedFrom(ClassHelper.Number_TYPE)) return true;
+        return (targetType.isArray() && recurse ? isNumberOrArrayOfNumber(targetType.getComponentType(), recurse) : targetType.isArray() && targetType.getComponentType().isDerivedFrom(ClassHelper.Number_TYPE));
+    }
+
+    //--------------------------------------------------------------------------
+
     private static final int[] HANDLED_TYPES = {
             PLUS, MINUS, MULTIPLY, DIVIDE, POWER,
-            LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED,
-            BITWISE_OR, BITWISE_AND, BITWISE_XOR
+            BITWISE_OR, BITWISE_AND, BITWISE_XOR,
+            LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED
     };
     static {
         Arrays.sort(HANDLED_TYPES);
     }
 
-    private ExpressionUtils() { }
-
     /**
-     * Turns expressions of the form ConstantExpression(40) + ConstantExpression(2)
+     * Converts expressions like ConstantExpression(40) + ConstantExpression(2)
      * into the simplified ConstantExpression(42) at compile time.
      *
      * @param be the binary expression
@@ -98,7 +141,7 @@ public final class ExpressionUtils {
                 Expression leftX = transformInlineConstants(be.getLeftExpression(), targetType);
                 Expression rightX = transformInlineConstants(be.getRightExpression(), isShift ? ClassHelper.int_TYPE : targetType);
                 if (leftX instanceof ConstantExpression && rightX instanceof ConstantExpression) {
-                    Number left = safeNumber((ConstantExpression) leftX);
+                    Number left  = safeNumber((ConstantExpression) leftX);
                     Number right = safeNumber((ConstantExpression) rightX);
                     if (left == null || right == null) return null;
                     Number result = null;
@@ -164,46 +207,53 @@ public final class ExpressionUtils {
         return null;
     }
 
-    private static Number safeNumber(final ConstantExpression constX) {
-        Object value = constX.getValue();
-        if (value instanceof Number) return (Number) value;
-        return null;
-    }
-
-    private static ConstantExpression configure(final Expression origX, final ConstantExpression newX) {
-        newX.setSourcePosition(origX);
-        return newX;
-    }
-
     /**
-     * Determine if a type matches another type (or array thereof).
+     * Transforms constants that would appear in annotations so they aren't lost.
+     * Subsequent processing determines whether they are valid, this retains the
+     * constant value as a constant expression.
+     * <p>
+     * The attribute values of annotations must be primitive, string, annotation
+     * or enumeration constants. In various places such constants can be seen
+     * during type resolution but won't be readily accessible in later phases,
+     * e.g. they might be embedded into constructor code.
      *
-     * @param targetType the candidate type
-     * @param type the type we are checking against
-     * @param recurse true if we can have multi-dimension arrays; should be false for annotation member types
-     * @return true if the type equals the targetType or array thereof
+     * @param exp the original expression
+     * @return original or transformed expression
      */
-    public static boolean isTypeOrArrayOfType(final ClassNode targetType, final ClassNode type, final boolean recurse) {
-        if (targetType == null) return false;
-        return type.equals(targetType) ||
-                (targetType.isArray() && recurse
-                ? isTypeOrArrayOfType(targetType.getComponentType(), type, recurse)
-                : type.equals(targetType.getComponentType()));
-    }
+    public static Expression transformInlineConstants(final Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) exp;
+            if (pe.getObjectExpression() instanceof ClassExpression) {
+                ClassNode clazz = pe.getObjectExpression().getType();
+                FieldNode field = ClassNodeUtils.getField(clazz, pe.getPropertyAsString());
+                if (field != null && field.isStatic() && field.isFinal() && !field.isEnum()
+                        && field.getInitialValueExpression() instanceof ConstantExpression) {
+                    ConstantExpression value = (ConstantExpression) field.getInitialValueExpression();
+                    value = new ConstantExpression(value.getValue());
+                    return configure(exp, value);
+                }
+            }
+        } else if (exp instanceof BinaryExpression) {
+            BinaryExpression be = (BinaryExpression) exp;
+            Expression lhs = transformInlineConstants(be.getLeftExpression());
+            Expression rhs = transformInlineConstants(be.getRightExpression());
+            if (be.getOperation().getType() == PLUS // GROOVY-9855: inline string concat
+                    && lhs instanceof ConstantExpression && rhs instanceof ConstantExpression
+                    && ClassHelper.isStringType(lhs.getType()) && ClassHelper.isStringType(rhs.getType())) {
+                return configure(exp, new ConstantExpression(lhs.getText() + rhs.getText()));
+            }
+            be.setLeftExpression(lhs);
+            be.setRightExpression(rhs);
 
-    /**
-     * Determine if a type is derived from Number (or array thereof).
-     *
-     * @param targetType the candidate type
-     * @param recurse true if we can have multi-dimension arrays; should be false for annotation member types
-     * @return true if the type equals the targetType or array thereof
-     */
-    public static boolean isNumberOrArrayOfNumber(final ClassNode targetType, final boolean recurse) {
-        if (targetType == null) return false;
-        return targetType.isDerivedFrom(ClassHelper.Number_TYPE) ||
-                (targetType.isArray() && recurse
-                ? isNumberOrArrayOfNumber(targetType.getComponentType(), recurse)
-                : targetType.isArray() && targetType.getComponentType().isDerivedFrom(ClassHelper.Number_TYPE));
+        } else if (exp instanceof ListExpression) {
+            List<Expression> list = ((ListExpression) exp).getExpressions();
+            for (ListIterator<Expression> it = list.listIterator(); it.hasNext();) {
+                Expression e = transformInlineConstants(it.next());
+                it.set(e);
+            }
+        }
+
+        return exp;
     }
 
     /**
@@ -222,30 +272,37 @@ public final class ExpressionUtils {
     public static Expression transformInlineConstants(final Expression exp, final ClassNode attrType) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
-            if (pe.getObjectExpression() instanceof ClassExpression) {
-                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
-                ClassNode type = ce.getType();
-                if (type.isEnum() || !(type.isResolved() || type.isPrimaryClassNode()))
-                    return exp;
-
+            ClassNode type = pe.getObjectExpression().getType();
+            if (pe.getObjectExpression() instanceof ClassExpression && !type.isEnum()) {
                 if (type.isPrimaryClassNode()) {
-                    FieldNode fn = type.redirect().getField(pe.getPropertyAsString());
+                    FieldNode fn = type.getField(pe.getPropertyAsString());
                     if (fn != null && fn.isStatic() && fn.isFinal()) {
-                        Expression ce2 = transformInlineConstants(fn.getInitialValueExpression(), attrType);
-                        if (ce2 != null) {
-                            return ce2;
+                        Expression e = transformInlineConstants(fn.getInitialValueExpression(), attrType);
+                        if (e != null) {
+                            return e;
                         }
                     }
-                } else {
+                } else if (type.isResolved()) {
                     try {
                         Field field = type.redirect().getTypeClass().getField(pe.getPropertyAsString());
                         if (field != null && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
-                            ConstantExpression ce3 = new ConstantExpression(field.get(null), true);
-                            configure(exp, ce3);
-                            return ce3;
+                            ConstantExpression ce = new ConstantExpression(field.get(null), true);
+                            configure(exp, ce);
+                            return ce;
                         }
                     } catch (Exception | LinkageError e) {
                         // ignore, leave property expression in place and we'll report later
+                    }
+                }
+            }
+        } else if (exp instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) exp;
+            if (ve.getAccessedVariable() instanceof FieldNode) {
+                FieldNode fn = (FieldNode) ve.getAccessedVariable();
+                if (fn.isStatic() && fn.isFinal()) {
+                    Expression e = transformInlineConstants(fn.getInitialValueExpression(), attrType);
+                    if (e != null) {
+                        return e;
                     }
                 }
             }
@@ -253,17 +310,6 @@ public final class ExpressionUtils {
             ConstantExpression ce = transformBinaryConstantExpression((BinaryExpression) exp, attrType);
             if (ce != null) {
                 return ce;
-            }
-        } else if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            if (ve.getAccessedVariable() instanceof FieldNode) {
-                FieldNode fn = (FieldNode) ve.getAccessedVariable();
-                if (fn.isStatic() && fn.isFinal()) {
-                    Expression ce = transformInlineConstants(fn.getInitialValueExpression(), attrType);
-                    if (ce != null) {
-                        return ce;
-                    }
-                }
             }
         } else if (exp instanceof ListExpression) {
             return transformListOfConstants((ListExpression) exp, attrType);
@@ -297,80 +343,19 @@ public final class ExpressionUtils {
         return origList;
     }
 
-    /**
-     * The attribute values of annotations must be primitive, String or Enum constants.
-     * In various places, such constants can be seen during type resolution but won't be
-     * readily accessible in later phases, e.g. they might be embedded into constructor code.
-     * This method transforms constants that would appear in annotations early so they aren't lost.
-     * Subsequent processing determines whether they are valid, this method simply retains
-     * the constant value as a constant expression.
-     *
-     * @param exp the original expression
-     * @return the converted expression
-     */
-    public static Expression transformInlineConstants(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) exp;
-            if (pe.getObjectExpression() instanceof ClassExpression) {
-                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
-                ClassNode type = ce.getType();
-                FieldNode field = ClassNodeUtils.getField(type, pe.getPropertyAsString());
-                if (type.isEnum() && field != null && field.isEnum()) return exp;
-                Expression constant = findConstant(field);
-                if (constant != null) return constant;
-            }
-        } else if (exp instanceof BinaryExpression) {
-            BinaryExpression be = (BinaryExpression) exp;
-            Expression lhs = transformInlineConstants(be.getLeftExpression());
-            Expression rhs = transformInlineConstants(be.getRightExpression());
-            if (be.getOperation().getType() == PLUS && lhs instanceof ConstantExpression && rhs instanceof ConstantExpression &&
-                    isStringType(lhs.getType()) && isStringType(rhs.getType())) {
-                // GROOVY-9855: inline string concat
-                return configure(be, new ConstantExpression(lhs.getText() + rhs.getText()));
-            }
-            be.setLeftExpression(lhs);
-            be.setRightExpression(rhs);
-            return be;
-        } else if (exp instanceof ListExpression) {
-            ListExpression origList = (ListExpression) exp;
-            ListExpression newList = new ListExpression();
-            boolean changed = false;
-            for (Expression e : origList.getExpressions()) {
-                Expression transformed = transformInlineConstants(e);
-                newList.addExpression(transformed);
-                if (transformed != e) changed = true;
-            }
-            if (changed) {
-                newList.setSourcePosition(origList);
-                return newList;
-            }
-            return origList;
-        }
+    //--------------------------------------------------------------------------
 
-        return exp;
+    private static ConstantExpression configure(final Expression origX, final ConstantExpression newX) {
+        newX.setSourcePosition(origX);
+        return newX;
     }
 
-    private static Expression findConstant(final FieldNode fn) {
-        if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()
-                && fn.getInitialValueExpression() instanceof ConstantExpression) {
-            return fn.getInitialValueExpression();
-        }
-        return null;
+    private static Number safeNumber(final ConstantExpression constX) {
+        Object value = constX.getValue();
+        return value instanceof Number ? (Number) value : null;
     }
 
-    public static boolean isNullConstant(final Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
-    }
-
-    public static boolean isThisExpression(final Expression expression) {
-        return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
-    }
-
-    public static boolean isSuperExpression(final Expression expression) {
-        return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
-    }
-
-    public static boolean isThisOrSuper(final Expression expression) {
-        return isThisExpression(expression) || isSuperExpression(expression);
+    private ExpressionUtils() {
+        assert false;
     }
 }
