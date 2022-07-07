@@ -32,7 +32,6 @@ import org.objectweb.asm.util.ASMifier
 import org.objectweb.asm.util.TraceClassVisitor
 
 import javax.swing.Action
-import javax.swing.JFrame
 import javax.swing.JSplitPane
 import javax.swing.KeyStroke
 import javax.swing.UIManager
@@ -43,10 +42,11 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
-import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
@@ -56,6 +56,7 @@ import static java.awt.GridBagConstraints.NONE
 import static java.awt.GridBagConstraints.NORTHEAST
 import static java.awt.GridBagConstraints.NORTHWEST
 import static java.awt.GridBagConstraints.WEST
+import static javax.swing.ListSelectionModel.SINGLE_SELECTION
 
 /**
  * This object is a GUI for looking at the AST that Groovy generates.
@@ -193,13 +194,23 @@ class AstBrowser {
                                     model: new DefaultTreeModel(new DefaultMutableTreeNode('Loading...'))) {}
                         },
                         rightComponent: scrollPane {
-                            propertyTable = table {
+                            propertyTable = table(selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: [[:]]) {
                                     propertyColumn(header: 'Name', propertyName: 'name')
-                                    propertyColumn(header: 'Value', propertyName: 'value')
+                                    propertyColumn(header: 'Value  (double-click to browse)', propertyName: 'value')
                                     propertyColumn(header: 'Type', propertyName: 'type')
+                                    propertyColumn(header: 'Raw', propertyName: 'raw')
                                 }
                             }
+                            propertyTable.columnModel.getColumn(3).with {
+                                minWidth = 0
+                                maxWidth = 0
+                                width = 0
+                            }
+                            propertyTable.addMouseListener(makeClickAdapter(propertyTable, 3) { row ->
+                                'Browsing ' + jTree.lastSelectedPathComponent.userObject + ": " + propertyTable.model.getValueAt(row, 0)
+                            })
+                            propertyTable.setDefaultEditor(Object, null)
                         }
                 ) {}
                 mainSplitter = splitPane(
@@ -225,51 +236,11 @@ class AstBrowser {
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
             propertyTable.model.rows.clear()
-            propertyTable.columnModel.getColumn(1).cellRenderer = new ButtonOrDefaultRenderer()
-            propertyTable.columnModel.getColumn(1).cellEditor = new ButtonOrTextEditor()
             TreeNode node = jTree.lastSelectedPathComponent
             if (node instanceof TreeNodeWithProperties) {
-                def titleSuffix = node.properties.find { it[0] == 'text' }?.get(1)
-                for (it in node.properties) {
-                    def propList = it
-                    if (propList[2] == "ListHashMap" && propList[1] != 'null' && propList[1] != '[:]') {
-                        //If the class is a ListHashMap, make it accessible in a new frame through a button
-                        def kvPairs = propList[1].substring(1, propList[1].length() - 1).tokenize(',')
-                        def kvFirst = kvPairs.get(0)
-                        def btnPanel = swing.button(
-                                text: "Key/value pairs: [" + kvFirst.substring(0, Math.min(25, kvFirst.size())) + "...]",
-                                actionPerformed: {
-                                    def mapTable
-                                    String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
-                                    def props = swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
-                                            show: true, locationRelativeTo: null) {
-                                        lookAndFeel 'system'
-                                        borderLayout(vgap: 5)
-                                        panel(constraints: BorderLayout.CENTER) {
-                                            borderLayout()
-                                            scrollPane {
-                                                mapTable = swing.table {
-                                                    tableModel(list: [[:]]) {
-                                                        propertyColumn(header: 'Name', propertyName: 'name')
-                                                        propertyColumn(header: 'Value', propertyName: 'value')
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    mapTable.model.rows.clear()
-                                    kvPairs.each {
-                                        def kv = it.tokenize(':')
-                                        if (kv)
-                                            mapTable.model.rows << ["name": kv[0], "value": kv[1]]
-                                    }
-                                    props.pack()
-                                })
-                        propertyTable.model.rows << ["name": propList[0], "value": btnPanel, "type": propList[2]]
-                        btnPanel.updateUI()
-                    } else {
-                        propertyTable.model.rows << ["name": it[0], "value": it[1], "type": it[2]]
-                    }
+                def titleSuffix = node.properties.find { list -> list[0] == 'text' }?.get(1)
+                for (list in node.properties) {
+                    propertyTable.model.rows << [name: list[0], value: list[1], type: list[2], raw: list[3]]
                 }
 
                 if (inputArea && rootElement) {
@@ -356,6 +327,22 @@ class AstBrowser {
         return sw.toString()
     }
 
+    def makeClickAdapter(table, int valueCol, Closure pathClosure) {
+        new MouseAdapter() {
+            void mouseClicked(MouseEvent e) {
+                if (e.clickCount == 2) {
+                    def selectedRow = table.selectedRow
+                    if (selectedRow != -1) {
+                        def value = table.model.getValueAt(selectedRow, valueCol)
+                        if (value != null) {
+                            ObjectBrowser.inspect(value, pathClosure(selectedRow))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void showSource(view, String source, boolean showOnlyMethodCode, boolean isMethodNameAndMethodDescriptorAvailable, getPatternStr) {
         swing.doLater {
             view.textEditor.text = source
@@ -401,7 +388,7 @@ class AstBrowser {
 
     void showAbout(EventObject evt) {
         def pane = swing.optionPane()
-        def version = GroovySystem.getVersion()
+        def version = GroovySystem.version
         pane.setMessage('An interactive GUI to explore AST capabilities\nVersion ' + version)
         def dialog = pane.createDialog(frame, 'About Groovy AST Browser')
         dialog.pack()
@@ -439,8 +426,7 @@ class AstBrowser {
     }
 
     void decompile(phaseId, source) {
-
-        decompiledSource.textEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
+        decompiledSource.textEditor.cursor = Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)
         decompiledSource.textEditor.text = 'Loading...'
 
         swing.doOutside {
@@ -449,14 +435,14 @@ class AstBrowser {
                 String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass, config)
                 swing.doLater {
                     decompiledSource.textEditor.text = result
-                    decompiledSource.textEditor.setCaretPosition(0)
-                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor)
+                    decompiledSource.textEditor.caretPosition = 0
+                    decompiledSource.textEditor.cursor = Cursor.defaultCursor
                 }
             } catch (Throwable t) {
                 swing.doLater {
                     decompiledSource.textEditor.text = t.getMessage()
-                    decompiledSource.textEditor.setCaretPosition(0)
-                    decompiledSource.textEditor.setCursor(Cursor.defaultCursor)
+                    decompiledSource.textEditor.caretPosition = 0
+                    decompiledSource.textEditor.cursor = Cursor.defaultCursor
                 }
                 throw t
             }
@@ -479,13 +465,13 @@ class AstBrowser {
                 classLoader.clearBytecodeTable()
                 def result = adapter.compile(script, compilePhase)
                 swing.doLater {
-                    model.setRoot(result)
+                    model.root = result
                     model.reload()
-                    jTree.setCursor(Cursor.defaultCursor)
+                    jTree.cursor = Cursor.defaultCursor
                 }
             } catch (Throwable t) {
                 swing.doLater {
-                    jTree.setCursor(Cursor.defaultCursor)
+                    jTree.cursor = Cursor.defaultCursor
                 }
                 throw t
             }
@@ -582,20 +568,20 @@ enum CompilePhaseAdapter {
 @CompileStatic
 class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
-    List<List<String>> properties
+    List<List<?>> properties
 
     /**
      * Creates a tree node and attaches properties to it.
      * @param userObject same as a DefaultMutableTreeNode requires
      * @param properties a list of String lists
      */
-    TreeNodeWithProperties(userObject, List<List<String>> properties) {
+    TreeNodeWithProperties(userObject, List<List<?>> properties) {
         super(userObject)
         this.properties = properties
     }
 
     String getPropertyValue(String name) {
-        def match = properties.find { n, v, t -> name == n }
+        def match = properties.find { List list -> name == list[0] }
         return match != null ? match[1] : null
     }
 
@@ -615,7 +601,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 interface AstBrowserNodeMaker<T> {
     T makeNode(Object userObject)
 
-    T makeNodeWithProperties(Object userObject, List<List<String>> properties)
+    T makeNodeWithProperties(Object userObject, List<List<?>> properties)
 }
 
 /**
@@ -627,7 +613,7 @@ class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> 
         new DefaultMutableTreeNode(userObject)
     }
 
-    DefaultMutableTreeNode makeNodeWithProperties(Object userObject, List<List<String>> properties) {
+    DefaultMutableTreeNode makeNodeWithProperties(Object userObject, List<List<?>> properties) {
         new TreeNodeWithProperties(userObject, properties)
     }
 }
