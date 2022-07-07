@@ -911,8 +911,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             if (result) return true;
         } else if (superOrInterface instanceof UnionTypeClassNode) {
-            UnionTypeClassNode union = (UnionTypeClassNode) superOrInterface;
-            for (ClassNode delegate : union.getDelegates()) {
+            for (ClassNode delegate : ((UnionTypeClassNode) superOrInterface).getDelegates()) {
                 if (implementsInterfaceOrIsSubclassOf(type, delegate)) return true;
             }
         }
@@ -1048,8 +1047,9 @@ public abstract class StaticTypeCheckingSupport {
 
         int bestDist = Integer.MAX_VALUE;
         List<MethodNode> bestChoices = new LinkedList<>();
+        boolean duckType = receiver instanceof UnionTypeClassNode; // GROOVY-8965: type disjunction
         boolean noCulling = methods.size() <= 1 || "<init>".equals(methods.iterator().next().getName());
-        Iterable<MethodNode> candidates = noCulling ? methods : removeCovariantsAndInterfaceEquivalents(methods);
+        Iterable<MethodNode> candidates = noCulling ? methods : removeCovariantsAndInterfaceEquivalents(methods, duckType);
 
         for (MethodNode candidate : candidates) {
             MethodNode safeNode = candidate;
@@ -1104,7 +1104,7 @@ public abstract class StaticTypeCheckingSupport {
                 }
             }
         }
-        if (bestChoices.size() > 1) {
+        if (bestChoices.size() > 1 && !duckType) {
             // GROOVY-6849: prefer extension method in case of ambiguity
             List<MethodNode> onlyExtensionMethods = new LinkedList<>();
             for (MethodNode choice : bestChoices) {
@@ -1203,9 +1203,8 @@ public abstract class StaticTypeCheckingSupport {
         return raw;
     }
 
-    private static List<MethodNode> removeCovariantsAndInterfaceEquivalents(final Collection<MethodNode> collection) {
-        List<MethodNode> toBeRemoved = new ArrayList<>();
-        List<MethodNode> list = new ArrayList<>(new LinkedHashSet<>(collection));
+    private static List<MethodNode> removeCovariantsAndInterfaceEquivalents(final Collection<MethodNode> collection, final boolean disjoint) {
+        List<MethodNode> list = new ArrayList<>(new LinkedHashSet<>(collection)), toBeRemoved = new ArrayList<>();
         for (int i = 0, n = list.size(); i < n - 1; i += 1) {
             MethodNode one = list.get(i);
             if (toBeRemoved.contains(one)) continue;
@@ -1236,11 +1235,9 @@ public abstract class StaticTypeCheckingSupport {
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
-                            if (twoDC.isInterface() ? oneDC.implementsInterface(twoDC)
-                                    : oneDC.isDerivedFrom(twoDC)) {
+                            if (twoDC.isInterface() ? oneDC.implementsInterface(twoDC) : oneDC.isDerivedFrom(twoDC)) {
                                 toBeRemoved.add(two);
-                            } else if (oneDC.isInterface() ? twoDC.isInterface()
-                                    : twoDC.isDerivedFrom(oneDC)) {
+                            } else if (oneDC.isInterface() ? (disjoint ? twoDC.implementsInterface(oneDC) : twoDC.isInterface()) : twoDC.isDerivedFrom(oneDC)) {
                                 toBeRemoved.add(one);
                             }
                         }

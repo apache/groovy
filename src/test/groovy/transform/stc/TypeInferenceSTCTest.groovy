@@ -365,7 +365,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     thing.addElement(2) // 'addElement' only in Stack
                 }
                 if (thing instanceof Deque || thing instanceof Stack) {
-                    assert thing.peek() in 1..2 // 'peek' in ArrayDeque and Stack but not LUB
+                    assert thing.peek() in 1..2 // 'peek' in Deque and Stack but not LUB
                 }
             }
             test(new Stack())

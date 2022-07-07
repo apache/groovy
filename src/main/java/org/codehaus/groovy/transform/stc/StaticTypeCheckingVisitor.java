@@ -3497,7 +3497,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (areCategoryMethodCalls(mn, name, args)) {
                         addCategoryMethodCallError(call);
                     }
-                    mn = disambiguateMethods(mn, chosenReceiver != null ? chosenReceiver.getType() : null, args, call);
+
+                    {
+                        ClassNode obj = chosenReceiver != null ? chosenReceiver.getType() : null;
+                        if (mn.size() > 1 && obj instanceof UnionTypeClassNode) { // GROOVY-8965: support duck-typing using dynamic resolution
+                            ClassNode returnType = mn.stream().map(MethodNode::getReturnType).reduce(WideningCategories::lowestUpperBound).get();
+                            call.putNodeMetaData(DYNAMIC_RESOLUTION, returnType);
+
+                            MethodNode tmp = new MethodNode(name, 0, returnType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                            tmp.setDeclaringClass(obj); // for storeTargetMethod
+                            mn = Collections.singletonList(tmp);
+                        } else {
+                            mn = disambiguateMethods(mn, obj, args, call);
+                        }
+                    }
 
                     if (mn.size() == 1) {
                         MethodNode targetMethodCandidate = mn.get(0);
@@ -3760,13 +3773,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-                if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
-                    for (ClassNode node : potentialReceiverType) {
-                        owners.add(Receiver.make(node));
-                    }
-                }
+            List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
+            int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
+            if (temporaryTypesCount > 0) { // GROOVY-8965, GROOVY-10180, GROOVY-10668
+                owners.add(Receiver.make(lowestUpperBound(temporaryTypes)));
             }
             if (typeCheckingContext.lastImplicitItType != null
                     && objectExpression instanceof VariableExpression
@@ -3789,6 +3799,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (!receiver.implementsInterface(in)) owners.add(Receiver.make(in));
                     }
                 }
+            }
+            if (temporaryTypesCount > 1 && !(objectExpression instanceof VariableExpression)) {
+                owners.add(Receiver.make(new UnionTypeClassNode(temporaryTypes.toArray(ClassNode.EMPTY_ARRAY))));
             }
         }
         return owners;
