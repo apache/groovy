@@ -641,8 +641,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitMethodCallExpression(MethodCallExpression expression) {
-
-        Expression objectExp = expression.getObjectExpression()
+        Expression objectExp = expression.objectExpression
         if (objectExp instanceof VariableExpression) {
             visitVariableExpression(objectExp, false)
         } else {
@@ -655,25 +654,23 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             print '?'
         }
         print '.'
-        Expression method = expression.getMethod()
+        Expression method = expression.method
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
         } else {
             method.visit(this)
         }
-        expression.getArguments().visit(this)
+        expression.arguments.visit(this)
     }
 
     @Override
     void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
         print expression?.ownerType?.name + '.' + expression?.method
-        if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
-            print '('
-            expression?.arguments?.visit this
-            print ')'
-        } else {
-            expression?.arguments?.visit this
-        }
+        boolean parens = expression?.arguments instanceof VariableExpression
+                    || expression?.arguments instanceof MethodCallExpression
+        if (parens) print '('
+        expression?.arguments?.visit this
+        if (parens) print ')'
     }
 
     @Override
@@ -1132,5 +1129,4 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         }
         return true
     }
-
 }

@@ -16,35 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     // GROOVY-8142
-    void testShouldNotProduceDeterministicBytecode() {
+    void testShouldProduceDeterministicBytecode() {
         100.times {
             assertScript '''
-            interface Project {
-                File file()
-            }
-            interface FileOperations {
-                File file()
-            }
-            interface ProjectInternal extends Project, FileOperations {
-            }
-
-            class Check {
-                void test(ProjectInternal p) {
-                    def f = p.file()
+                interface Project {
+                    File file()
                 }
-            }
+                interface FileOperations {
+                    File file()
+                }
+                interface ProjectInternal extends Project, FileOperations {
+                }
 
-            def c = new Check()
-        '''
+                class Check {
+                    void test(ProjectInternal p) {
+                        def f = p.file()
+                    }
+                }
+
+                def c = new Check()
+            '''
 
             assert astTrees['Check'][1].contains('INVOKEINTERFACE FileOperations.file ()Ljava/io/File;') : "Incorrect bytecode found in iteration $it"
         }
@@ -54,20 +53,20 @@ class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements Sta
     void testShouldAlwaysAddClosureSharedVariablesInSameOrder() {
         100.times {
             assertScript '''
-            class Check {
-                void test() {
-                    def xx = true
-                    def moot = "bar"
-                    def kr = [:]
-                    def zorg = []
-                    def cl = {
-                        def (x,y,z,t) = [xx, moot, kr , zorg]
+                class Check {
+                    void test() {
+                        def xx = true
+                        def moot = "bar"
+                        def kr = [:]
+                        def zorg = []
+                        def cl = {
+                            def (x,y,z,t) = [xx, moot, kr , zorg]
+                        }
                     }
                 }
-            }
 
-            def c = new Check()
-        '''
+                def c = new Check()
+            '''
 
             def bytecode = astTrees['Check$_test_closure1'][1]
             assertOrdered it, bytecode,
@@ -75,17 +74,15 @@ class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements Sta
                     'PUTFIELD Check$_test_closure1.moot',
                     'PUTFIELD Check$_test_closure1.kr',
                     'PUTFIELD Check$_test_closure1.zorg'
-
         }
     }
 
-
-    private static void assertOrdered(int iteration, String bytecode, String... elements) {
+    private static void assertOrdered(int iteration, String bytecode, String... strings) {
         int start = 0
-        elements.eachWithIndex { it, i ->
-            start = bytecode.indexOf(it, start)
+        strings.eachWithIndex { string, index ->
+            start = bytecode.indexOf(string, start)
             if (start == -1) {
-                throw new AssertionError("Iteration $iteration - Element [$it] not found in order (expected to find it at index $i)")
+                throw new AssertionError("Iteration $iteration - Element [$string] not found in order (expected to find it at index $index)")
             }
         }
     }
