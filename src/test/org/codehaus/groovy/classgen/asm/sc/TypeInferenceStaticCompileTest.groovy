@@ -26,33 +26,9 @@ import groovy.transform.stc.TypeInferenceSTCTest
  */
 class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
 
-    @Override @NotYetImplemented
+    @Override
+    @NotYetImplemented
     void testInstanceOf9() {
-        super.testInstanceOf9()
-    }
-
-    @Override @NotYetImplemented
-    void testMultipleInstanceOf1() {
-        super.testMultipleInstanceOf1()
-    }
-
-    @Override @NotYetImplemented
-    void testMultipleInstanceOf2() {
-        super.testMultipleInstanceOf2()
-    }
-
-    @Override @NotYetImplemented
-    void testMultipleInstanceOf3() {
-        super.testMultipleInstanceOf3()
-    }
-
-    @Override @NotYetImplemented
-    void testMultipleInstanceOf4() {
-        super.testMultipleInstanceOf4()
-    }
-
-    @Override @NotYetImplemented
-    void testMultipleInstanceOf5() {
-        super.testMultipleInstanceOf5()
+        super.testInstanceOf9() // GROOVY-7971
     }
 }

@@ -3503,7 +3503,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (areCategoryMethodCalls(mn, name, args)) {
                         addCategoryMethodCallError(call);
                     }
-                    mn = disambiguateMethods(mn, chosenReceiver != null ? chosenReceiver.getType() : null, args, call);
+
+                    {
+                        ClassNode obj = chosenReceiver != null ? chosenReceiver.getType() : null;
+                        if (mn.size() > 1 && obj instanceof UnionTypeClassNode) { // GROOVY-8965: support duck-typing using dynamic resolution
+                            ClassNode returnType = mn.stream().map(MethodNode::getReturnType).reduce(WideningCategories::lowestUpperBound).get();
+                            call.putNodeMetaData(DYNAMIC_RESOLUTION, returnType);
+
+                            MethodNode tmp = new MethodNode(name, 0, returnType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                            tmp.setDeclaringClass(obj); // for storeTargetMethod
+                            mn = Collections.singletonList(tmp);
+                        } else {
+                            mn = disambiguateMethods(mn, obj, args, call);
+                        }
+                    }
 
                     if (mn.size() == 1) {
                         MethodNode targetMethodCandidate = mn.get(0);
@@ -3752,7 +3765,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given an object expression (a receiver expression), generate the list of potential receiver types.
+     * Given an object expression (a message receiver expression), generate list
+     * of possible types.
      *
      * @param objectExpression the receiver expression
      * @return the list of types the receiver may be
@@ -3762,23 +3776,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Receiver<String>> owners = new ArrayList<>();
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
-                && ((VariableExpression) objectExpression).getName().equals("owner")
+                && ((Variable) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
             List<Receiver<String>> enclosingClass = Collections.singletonList(
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-                if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
-                    for (ClassNode node : potentialReceiverType) {
-                        owners.add(Receiver.make(node));
-                    }
-                }
+            List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
+            int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
+            if (temporaryTypesCount > 0) { // GROOVY-8965, GROOVY-10180, GROOVY-10668
+                owners.add(Receiver.make(lowestUpperBound(temporaryTypes)));
             }
             if (typeCheckingContext.lastImplicitItType != null
                     && objectExpression instanceof VariableExpression
-                    && ((VariableExpression) objectExpression).getName().equals("it")) {
+                    && ((Variable) objectExpression).getName().equals("it")) {
                 owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
             }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
@@ -3797,6 +3808,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (!receiver.implementsInterface(in)) owners.add(Receiver.make(in));
                     }
                 }
+            }
+            if (temporaryTypesCount > 1 && !(objectExpression instanceof VariableExpression)) {
+                owners.add(Receiver.make(new UnionTypeClassNode(temporaryTypes.toArray(ClassNode.EMPTY_ARRAY))));
             }
         }
         return owners;
@@ -4717,37 +4731,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final ClassNode receiver, final ClassNode[] argTypes, final Expression call) {
-        if (methods.size() > 1 && receiver != null && argTypes != null) {
+    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final ClassNode receiver, final ClassNode[] arguments, final Expression call) {
+        if (methods.size() > 1 && receiver != null && arguments != null) {
             List<MethodNode> filteredWithGenerics = new LinkedList<>();
-            for (MethodNode methodNode : methods) {
-                if (typeCheckMethodsWithGenerics(receiver, argTypes, methodNode)) {
-                    if ((methodNode.getModifiers() & Opcodes.ACC_BRIDGE) == 0) {
-                        filteredWithGenerics.add(methodNode);
-                    }
+            for (MethodNode method : methods) {
+                if (typeCheckMethodsWithGenerics(receiver, arguments, method)
+                        && (method.getModifiers() & Opcodes.ACC_BRIDGE) == 0) {
+                    filteredWithGenerics.add(method);
                 }
             }
             if (filteredWithGenerics.size() == 1) {
                 return filteredWithGenerics;
             }
+
             methods = extension.handleAmbiguousMethods(methods, call);
         }
 
-        if (methods.size() > 1) {
-            if (call instanceof MethodCall) {
-                List<MethodNode> methodNodeList = new LinkedList<>();
-
-                String methodName = ((MethodCall) call).getMethodAsString();
-
-                for (MethodNode methodNode : methods) {
-                    if (!methodNode.getName().equals(methodName)) {
-                        continue;
-                    }
-                    methodNodeList.add(methodNode);
-                }
-
-                methods = methodNodeList;
-            }
+        if (methods.size() > 1 && call instanceof MethodCall) {
+            String methodName = ((MethodCall) call).getMethodAsString();
+            methods = methods.stream().filter(m -> m.getName().equals(methodName)).collect(Collectors.toList());
         }
 
         return methods;
