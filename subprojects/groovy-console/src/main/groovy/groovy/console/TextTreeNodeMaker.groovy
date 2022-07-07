@@ -17,7 +17,7 @@
  *  under the License.
  */
 /**
- * A factory class for plain text nodes for use in the AST tree made by ASTBrowser
+ * A factory class for text nodes for use in the AST tree made by ASTBrowser
  */
 package groovy.console
 
@@ -30,7 +30,7 @@ class TextTreeNodeMaker implements AstBrowserNodeMaker<TextNode> {
         new TextNode(userObject)
     }
 
-    TextNode makeNodeWithProperties(Object userObject, List<List<String>> properties) {
+    TextNode makeNodeWithProperties(Object userObject, List<List<?>> properties) {
         new TextNode(userObject, properties)
     }
 }

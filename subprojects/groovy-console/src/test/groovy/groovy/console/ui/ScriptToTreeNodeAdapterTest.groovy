@@ -514,7 +514,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         def methods = classNodeTest.children().find { it.toString() == 'Methods' }
         def methodNodeTest = methods.children().find { it.toString() == 'MethodNode - test' }
 
-        assert methodNodeTest.properties.any { name, value, type -> name == 'descriptor' && value == '()V' && type == 'String' }
+        assert methodNodeTest.properties.any { name, value, type, _ -> name == 'descriptor' && value == '()V' && type == 'String' }
     }
 
     void testScriptWithAdapterThatLoadsGeneratedClosureClass() {

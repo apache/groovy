@@ -26,7 +26,7 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class TextNode {
     Object userObject
-    List<List<String>> properties
+    List<List<?>> properties
     TextNode parent
     List children
 
@@ -35,7 +35,7 @@ class TextNode {
         children = new ArrayList<TextNode>()
     }
 
-    TextNode(Object userObject, List<List<String>> properties) {
+    TextNode(Object userObject, List<List<?>> properties) {
         this(userObject)
         this.properties = properties
     }
