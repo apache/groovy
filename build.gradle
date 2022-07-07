@@ -132,13 +132,24 @@ dependencies {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 
+    testImplementation project(':groovy-ant')
+    testImplementation project(':groovy-xml')
+    testImplementation project(':groovy-json')
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-macro')
+    testImplementation project(':groovy-dateutil')
     testImplementation "jmock:jmock:${versions.jmock}"
     testImplementation "jmock:jmock-cglib:${versions.jmock}"
+    testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "ch.qos.logback:logback-classic:${versions.logback}"
     testImplementation "log4j:log4j:${versions.log4j}"
     testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+
+    testFixturesImplementation project(':groovy-xml')
+    testFixturesImplementation project(':groovy-test')
+    testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
@@ -151,16 +162,7 @@ dependencies {
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    testImplementation project(':groovy-ant')
-    testImplementation project(':groovy-xml')
-    testImplementation project(':groovy-dateutil')
-    testImplementation project(':groovy-test')
-    testImplementation project(':groovy-macro')
-    testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
-    testFixturesImplementation project(':groovy-test')
-    testFixturesImplementation project(':groovy-xml')
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
-    testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
 
     testRuntimeOnly(project(":")) {
         because "Tests are using Grapes"

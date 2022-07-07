@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -94,7 +95,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testInstanceOf1() {
         assertScript '''
             Object o
-            if (o instanceof String) o.toUpperCase()
+            if (o instanceof String) {
+                o.toUpperCase()
+            }
         '''
     }
 
@@ -115,8 +118,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             if (o instanceof String) {
                o.toUpperCase()
             }
-            o.toUpperCase() // ensure that type information is lost after if()
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+            o.toUpperCase() // ensure that type information is reset
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
     void testInstanceOf4() {
@@ -134,40 +138,41 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testInstanceOf5() {
         assertScript '''
             class A {
-               int foo() { 1 }
+                void bar() {
+                }
             }
             class B {
-               int foo2() { 2 }
+                void bar() {
+                }
             }
-            def o = new A()
-            int result = o instanceof A?o.foo():(o instanceof B?o.foo2():3)
+
+            void test(o) {
+                if (o instanceof A) {
+                    o.bar()
+                }
+                if (o instanceof B) {
+                    o.bar()
+                }
+            }
+            test(new A())
+            test(new B())
         '''
     }
 
+    // GROOVY-9953
     void testInstanceOf6() {
         assertScript '''
             class A {
-               void foo() { println 'ok' }
             }
-
-            class B {
-               void foo() { println 'ok' }
-               void foo2() { println 'ok 2' }
+            A test(Object x) {
+                if (x instanceof A) {
+                    def y = x
+                    return y
+                } else {
+                    new A()
+                }
             }
-
-            def o = new A()
-
-            if (o instanceof A) {
-               o.foo()
-            }
-
-            if (o instanceof B) {
-               o.foo()
-            }
-
-            if (o instanceof A || o instanceof B) {
-              o.foo()
-            }
+            new A().with { assert test(it) === it }
         '''
     }
 
@@ -220,6 +225,41 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7971
+    void testInstanceOf9() {
+        assertScript '''
+            import groovy.json.JsonOutput
+            def test(value) {
+                def out = new StringBuilder()
+                def isString = value.class == String
+                if (isString || value instanceof Map) {
+                    out.append(JsonOutput.toJson(value))
+                }
+                return out.toString()
+            }
+            def string = test('two')
+            assert string == '"two"'
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10096
+    void testInstanceOf10() {
+        shouldFailWithMessages '''
+            class Foo {
+                void foo() {
+                }
+            }
+            class Bar extends Foo {
+                void bar() {
+                }
+            }
+            static Bar baz(Foo foo) {
+                (false || foo instanceof Bar) ? foo : new Bar()
+            }
+        ''',
+        'Cannot return value of type Foo for method returning Bar'
+    }
+
     void testNestedInstanceOf1() {
         assertScript '''
             Object o
@@ -239,7 +279,119 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     o.toUpperCase()
                 }
             }
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    void testNestedInstanceOf3() {
+        assertScript '''
+            class A {
+               int foo() { 1 }
+            }
+            class B {
+               int foo2() { 2 }
+            }
+            def o = new A()
+            int result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+        '''
+    }
+
+    void testMultipleInstanceOf1() {
+        assertScript '''
+            class A {
+                void bar() {
+                }
+            }
+            class B {
+                void bar() {
+                }
+            }
+
+            void test(o) {
+                if (o instanceof A || o instanceof B) {
+                    o.bar()
+                }
+            }
+            test(new A())
+            test(new B())
+        '''
+    }
+
+    void testMultipleInstanceOf2() {
+        assertScript '''
+            int cardinality(o) {
+                (o instanceof List || o instanceof Map ? o.size() : 1)
+            }
+            assert cardinality('') == 1
+            assert cardinality(['foo','bar']) == 2
+            assert cardinality([foo:'',bar:'']) == 2
+        '''
+    }
+
+    void testMultipleInstanceOf3() {
+        assertScript '''
+            boolean empty(o) {
+                (o instanceof List || o instanceof Map) && o.isEmpty()
+            }
+            assert !empty('')
+            assert  empty([])
+            assert  empty([:])
+            assert !empty(['foo'])
+            assert !empty([foo:null])
+        '''
+    }
+
+    // GROOVY-8965
+    void testMultipleInstanceOf4() {
+        ['o', '((Number) o)'].each {
+            assertScript """
+                def foo(o) {
+                    if (o instanceof Integer || o instanceof Double) {
+                        ${it}.floatValue() // CCE: Double cannot be cast to Integer
+                    }
+                }
+                def bar = foo(1.1d)
+                assert bar == 1.1f
+            """
+        }
+    }
+
+    void testMultipleInstanceOf5() {
+        assertScript '''
+            void test(thing) {
+                if (thing instanceof Deque) {
+                    thing.addFirst(1) // 'addFirst' only in Deque
+                } else if (thing instanceof Stack) {
+                    thing.addElement(2) // 'addElement' only in Stack
+                }
+                if (thing instanceof Deque || thing instanceof Stack) {
+                    assert thing.peek() in 1..2 // 'peek' in ArrayDeque and Stack but not LUB
+                }
+            }
+            test(new Stack())
+            test(new ArrayDeque())
+        '''
+    }
+
+    // GROOVY-10668
+    void testMultipleInstanceOf6() {
+        ['(value as String)', 'value.toString()'].each { string ->
+            assertScript """
+                def toArray(Object value) {
+                    def array
+                    if (value instanceof List)
+                        array = value.toArray()
+                    else if (value instanceof String || value instanceof GString)
+                        array = ${string}.split(',')
+                    else
+                        throw new Exception('not supported')
+
+                    return array
+                }
+                toArray([1,2,3])
+                toArray('1,2,3')
+            """
+        }
     }
 
     // GROOVY-8523
@@ -375,6 +527,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    // GROOVY-10217
+    void testInstanceOfThenSubscriptOperator() {
+        assertScript '''
+            void test(Object o) {
+                if (o instanceof List) {
+                    assert o[0] == 1
+                    def x = (List) o
+                    assert x[0] == 1
+                }
+            }
+            test([1])
+        '''
+    }
+
     void testInstanceOfInferenceWithImplicitIt() {
         assertScript '''
         ['a', 'b', 'c'].each {
@@ -483,37 +649,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert scenario4(new B()) == 'foo'
             assert scenario4a(new A()) == 'bar'
             assert scenario4a(new B()) == 'foo'
-        '''
-    }
-
-    // GROOVY-9953
-    void testInstanceOfPropagatesToLocalVariable() {
-        assertScript '''
-            class A {
-            }
-            A test(Object x) {
-                if (x instanceof A) {
-                    def y = x
-                    return y
-                } else {
-                    new A()
-                }
-            }
-            new A().with { assert test(it) === it }
-        '''
-    }
-
-    // GROOVY-10217
-    void testInstanceOfThenSubscriptOperator() {
-        assertScript '''
-            void test(Object o) {
-                if (o instanceof List) {
-                    assert o[0] == 1
-                    def x = (List) o
-                    assert x[0] == 1
-                }
-            }
-            test([1])
         '''
     }
 
