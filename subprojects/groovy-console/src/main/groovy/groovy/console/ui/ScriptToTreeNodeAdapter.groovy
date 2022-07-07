@@ -195,45 +195,51 @@ class ScriptToTreeNodeAdapter {
     }
 
     def make(node) {
-        nodeMaker.makeNodeWithProperties(getStringForm(node), getPropertyTable(node))
+        makeWithTable(node, getPropertyTable(node))
     }
 
     def make(MethodNode node) {
         def table = getPropertyTable(node)
         extendMethodNodePropertyTable(table, node)
+        makeWithTable(node, table)
+    }
 
+    private makeWithTable(node, List<List<?>> table) {
         nodeMaker.makeNodeWithProperties(getStringForm(node), table)
     }
 
     /**
      * Extends the method node property table by adding custom properties.
      */
-    void extendMethodNodePropertyTable(List<List<String>> table, MethodNode node) {
-        table << ['descriptor', BytecodeHelper.getMethodDescriptor(node), 'String']
+    void extendMethodNodePropertyTable(List<List<?>> table, MethodNode node) {
+        def descriptor = BytecodeHelper.getMethodDescriptor(node)
+        table << ['descriptor', descriptor, 'String', descriptor]
     }
 
     /**
      * Creates the property table for the node so that the properties view can display nicely.
      */
-    private List<List<String>> getPropertyTable(node) {
+    private List<List<?>> getPropertyTable(node) {
         node.metaClass.properties.findResults { mp ->
             if (mp instanceof MetaBeanProperty && mp.getter) {
                 String name = mp.name, type = mp.type.simpleName
+                Object valueAsString = null
                 Object value = null
                 try {
                     // multiple assignment statements cannot be cast to VariableExpression so
                     // instead reference the value through the leftExpression property, which is the same
                     if (node instanceof DeclarationExpression && (name == 'variableExpression' || name == 'tupleExpression')) {
-                        value = toString(node.leftExpression)
+                        value = node.leftExpression
                     } else {
-                        value = toString(mp.getProperty(node))
+                        value = mp.getProperty(node)
                     }
+                    valueAsString = toString(value)
                 } catch (GroovyBugError ignore) {
                     // compiler throws error if it thinks a field is being accessed
                     // before it is set under certain conditions. It wasn't designed
                     // to be walked reflectively like this.
                 }
-                [name, value, type]
+                [name, valueAsString, type, value]
             }
         }.sort { list -> list[0] } // sort by name
     }
