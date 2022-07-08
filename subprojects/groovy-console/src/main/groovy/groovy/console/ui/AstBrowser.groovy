@@ -202,10 +202,18 @@ class AstBrowser {
                                     propertyColumn(header: 'Raw', propertyName: 'raw')
                                 }
                             }
-                            propertyTable.columnModel.getColumn(3).with {
-                                minWidth = 0
-                                maxWidth = 0
-                                width = 0
+                            propertyTable.columnModel.with {
+                                // raw column hidden
+                                getColumn(3).with {
+                                    minWidth = 0
+                                    maxWidth = 0
+                                    width = 0
+                                    preferredWidth = 0
+                                }
+                                // allow more space for value column
+                                getColumn(0).preferredWidth = 100
+                                getColumn(1).preferredWidth = 400
+                                getColumn(2).preferredWidth = 100
                             }
                             propertyTable.addMouseListener(makeClickAdapter(propertyTable, 3) { row ->
                                 'Browsing ' + jTree.lastSelectedPathComponent.userObject + ": " + propertyTable.model.getValueAt(row, 0)
