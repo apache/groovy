@@ -4074,6 +4074,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
+        Expression expression = statement.getExpression();
+        if (expression instanceof ClosureExpression) { // GROOVY-9854: propagate the switch type
+            SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
+            ClassNode inf = switchStatement.getExpression().getNodeMetaData(TYPE);
+            expression.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{inf});
+        }
         super.visitCaseStatement(statement);
         restoreTypeBeforeConditional();
     }
