@@ -4075,6 +4075,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
+        Expression expression = statement.getExpression();
+        if (expression instanceof ClosureExpression) { // GROOVY-9854: propagate the switch type
+            SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
+            ClassNode inf = switchStatement.getExpression().getNodeMetaData(TYPE);
+            expression.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{inf});
+
+            Parameter[] params = ((ClosureExpression) expression).getParameters();
+            if (params != null && params.length == 1) {
+                boolean lambda = (expression instanceof LambdaExpression);
+                checkParamType(params[0], wrapTypeIfNecessary(inf), false, lambda);
+            } else if (params == null || params.length > 1) {
+                int paramCount = (params != null ? params.length : 0);
+                addError("Incorrect number of parameters. Expected 1 but found " + paramCount, expression);
+            }
+        }
         super.visitCaseStatement(statement);
         restoreTypeBeforeConditional();
     }

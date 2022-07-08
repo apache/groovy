@@ -1462,6 +1462,32 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testGroovy9854() {
+        assertScript '''
+            def result = switch (42) {
+                case { i -> i > 0 } -> 'positive'
+                case { it < 0 } -> 'negative'
+                default -> 'zero'
+            }
+            assert result == 'positive'
+        '''
+
+        shouldFailWithMessages '''
+            switch (42) { case { -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 0'
+
+        shouldFailWithMessages '''
+            switch (42) { case { i, j -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+
+        shouldFailWithMessages '''
+            switch (42) { case { String s -> }: break; }
+        ''',
+        'Expected type java.lang.Integer for closure parameter: s'
+    }
+
     void testGroovy9968() {
         assertScript '''
             import groovy.transform.*
