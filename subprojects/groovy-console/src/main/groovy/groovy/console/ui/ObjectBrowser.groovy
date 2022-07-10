@@ -26,6 +26,7 @@ import javax.swing.WindowConstants
 import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.ToolTipManager
 
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION
 
@@ -92,7 +93,7 @@ class ObjectBrowser {
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            arrayTable = table(selectionMode: SINGLE_SELECTION) {
+                            arrayTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -110,7 +111,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            collectionTable = table(selectionMode: SINGLE_SELECTION) {
+                            collectionTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -128,7 +129,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            mapTable = table(selectionMode: SINGLE_SELECTION) {
+                            mapTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.entrySet().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
@@ -136,6 +137,7 @@ class ObjectBrowser {
                                     closureColumn(header: 'Raw Value', read: { it[0].value })
                                 }
                             }
+                            ToolTipManager.sharedInstance().registerComponent(mapTable)
                             mapTable.columnModel.getColumn(3).with {
                                 minWidth = 0
                                 maxWidth = 0
@@ -148,7 +150,7 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Properties (includes public fields) ') {
                         def data = Inspector.sort(inspector.propertiesWithInfo.toList(), comparator)
-                        fieldTable = table(selectionMode: SINGLE_SELECTION) {
+                        fieldTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it.v2[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it.v2[MEMBER_VALUE_IDX] })
