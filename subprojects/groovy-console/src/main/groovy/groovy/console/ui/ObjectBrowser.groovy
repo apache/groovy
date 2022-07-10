@@ -24,8 +24,13 @@ import groovy.swing.SwingBuilder
 
 import javax.swing.WindowConstants
 import java.awt.FlowLayout
+import java.awt.Toolkit
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.datatransfer.StringSelection
+
+import javax.swing.JTable
+import javax.swing.ToolTipManager
 
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION
 
@@ -66,6 +71,17 @@ class ObjectBrowser {
         browser.run()
     }
 
+    static class ToolTipJTable extends JTable {
+        public String getToolTipText(MouseEvent me) {
+            int viewRowIndex = rowAtPoint(me.point)
+            int viewColumnIndex = columnAtPoint(me.point)
+
+            def value = getValueAt(viewRowIndex, viewColumnIndex)
+
+            return (value != null ? String.valueOf(value) : null)
+        }
+    }
+
     void run() {
         swing = new SwingBuilder()
 
@@ -92,7 +108,7 @@ class ObjectBrowser {
                 tabbedPane(constraints: CENTER) {
                     if (inspector.object?.class?.array) {
                         scrollPane(name: ' Array data ') {
-                            arrayTable = table(selectionMode: SINGLE_SELECTION) {
+                            arrayTable = table(new ToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.toList().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -110,7 +126,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
-                            collectionTable = table(selectionMode: SINGLE_SELECTION) {
+                            collectionTable = table(new ToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Value', read: { it[0] })
@@ -128,7 +144,7 @@ class ObjectBrowser {
                         }
                     } else if (inspector.object instanceof Map) {
                         scrollPane(name: ' Map data ') {
-                            mapTable = table(selectionMode: SINGLE_SELECTION) {
+                            mapTable = table(new ToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: inspector.object.entrySet().withIndex()) {
                                     closureColumn(header: 'Index', read: { it[1] })
                                     closureColumn(header: 'Key', read: { it[0].key })
@@ -136,6 +152,7 @@ class ObjectBrowser {
                                     closureColumn(header: 'Raw Value', read: { it[0].value })
                                 }
                             }
+                            ToolTipManager.sharedInstance().registerComponent(mapTable)
                             mapTable.columnModel.getColumn(3).with {
                                 minWidth = 0
                                 maxWidth = 0
@@ -148,7 +165,7 @@ class ObjectBrowser {
                     }
                     scrollPane(name: ' Properties (includes public fields) ') {
                         def data = Inspector.sort(inspector.propertiesWithInfo.toList(), comparator)
-                        fieldTable = table(selectionMode: SINGLE_SELECTION) {
+                        fieldTable = table(new ToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it.v2[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it.v2[MEMBER_VALUE_IDX] })
@@ -207,7 +224,14 @@ class ObjectBrowser {
     def makeClickAdapter(table, int valueCol, Closure pathClosure) {
         new MouseAdapter() {
             void mouseClicked(MouseEvent e) {
-                if (e.clickCount == 2) {
+                if (e.clickCount == 1) {
+                    if (e.button == MouseEvent.BUTTON3 && e.controlDown) {
+                        def toolTipText = table.getToolTipText(e);
+                        if (toolTipText) {
+                            Toolkit.defaultToolkit.systemClipboard.setContents(new StringSelection(toolTipText), null)
+                        }
+                    }
+                } else if (e.clickCount == 2) {
                     def selectedRow = table.selectedRow
                     if (selectedRow != -1) {
                         def value = table.model.getValueAt(selectedRow, valueCol)
