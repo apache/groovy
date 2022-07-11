@@ -347,11 +347,13 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assertScript """
                 def foo(o) {
                     if (o instanceof Integer || o instanceof Double) {
-                        ${it}.floatValue() // CCE: Double cannot be cast to Integer
+                        ${it}.floatValue() // ClassCastException
                     }
                 }
                 def bar = foo(1.1d)
                 assert bar == 1.1f
+                def baz = foo(1)
+                assert baz == 1
             """
         }
     }

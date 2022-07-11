@@ -109,7 +109,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     void testDoubleFloatWithBoxedTypes() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
             })
             def y = true?new Double(1d):new Float(1f)
         '''
@@ -118,7 +118,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     void testDoubleFloatWithOneBoxedType1() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
             })
             def y = true?1d:new Float(1f)
         '''
@@ -127,7 +127,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     void testDoubleFloatWithOneBoxedType2() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
             })
             def y = true?new Double(1d):1f
         '''

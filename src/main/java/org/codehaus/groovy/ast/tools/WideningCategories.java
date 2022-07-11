@@ -40,12 +40,10 @@ import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
-import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
-import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
@@ -172,8 +170,10 @@ public class WideningCategories {
      * @return first common supertype
      */
     public static ClassNode lowestUpperBound(final List<ClassNode> nodes) {
-        if (nodes.size() == 1) return nodes.get(0);
-        return lowestUpperBound(nodes.get(0), lowestUpperBound(nodes.subList(1, nodes.size())));
+        int n = nodes.size();
+        if (n == 1) return nodes.get(0);
+        if (n == 2) return lowestUpperBound(nodes.get(0), nodes.get(1));
+        return lowestUpperBound(nodes.get(0), lowestUpperBound(nodes.subList(1, n)));
     }
 
     /**
@@ -339,20 +339,10 @@ public class WideningCategories {
         if (isPrimitiveA && isPrimitiveB) {
             Integer pa = NUMBER_TYPES_PRECEDENCE.get(a);
             Integer pb = NUMBER_TYPES_PRECEDENCE.get(b);
-            if (pa!=null && pb!=null) {
-                if (pa<=pb) return a;
-                return b;
-            }
-            return a.equals(b)?a:lowestUpperBound(getWrapper(a), getWrapper(b), null, null);
-        }
-        if (isNumberType(a.redirect()) && isNumberType(b.redirect())) {
-            ClassNode ua = getUnwrapper(a);
-            ClassNode ub = getUnwrapper(b);
-            Integer pa = NUMBER_TYPES_PRECEDENCE.get(ua);
-            Integer pb = NUMBER_TYPES_PRECEDENCE.get(ub);
             if (pa != null && pb != null) {
-                return pa <= pb ? a : b;
+                return (pa <= pb ? a : b);
             }
+            return a.equals(b) ? a : lowestUpperBound(getWrapper(a), getWrapper(b), null, null);
         }
 
         // handle interfaces

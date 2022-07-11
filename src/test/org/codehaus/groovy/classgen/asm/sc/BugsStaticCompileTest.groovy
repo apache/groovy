@@ -1310,21 +1310,21 @@ println someInt
 
     void testStaticMethodFromInnerClassConstructor() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        private class Inner extends Parent {
-           static String a = 'ok'
-           Inner() { super(getA()) }
-        }
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                private class Inner extends Parent {
+                   static String a = 'ok'
+                   Inner() { super(getA()) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer()
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer()
+            assert o.test() == 'ok'
+        '''
     }
 
     // GROOVY-6876
@@ -1338,7 +1338,7 @@ println someInt
                 }
             }
             assert new Foo().method() == -1L
-            '''
+        '''
 
         assertScript '''
             class Foo {
@@ -1355,7 +1355,7 @@ println someInt
             class Foo {
                 long rankOrderingOrId
                 void setRankOrderingOrId(long rankOrderingOrId) {
-                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1 : rankOrderingOrId
+                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1L : rankOrderingOrId
                 }
             }
             def f = new Foo()
