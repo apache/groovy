@@ -152,6 +152,20 @@ class GroovyshTest extends GroovyTestCase {
         assert mockOut.toString().contains('true')
     }
 
+    void testIncompleteMultilineSingleQuoteString() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute("hw = '''Hello")
+        groovysh.execute("World!'''")
+        assert mockOut.toString().contains('lo\nWo')
+    }
+
+    void testIncompleteMultilineDoubleQuoteString() {
+        Groovysh groovysh = createGroovysh()
+        groovysh.execute('hw = """Hello')
+        groovysh.execute('World!"""')
+        assert mockOut.toString().contains('lo\nWo')
+    }
+
     void testMissingPropertyExpr() {
         Groovysh groovysh = createGroovysh()
         // this is a special case, e.g. happens for Gradle DefaultExtraPropertiesExtension
