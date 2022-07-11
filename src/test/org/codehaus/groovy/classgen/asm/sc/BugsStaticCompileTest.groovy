@@ -1355,7 +1355,7 @@ println someInt
             class Foo {
                 long rankOrderingOrId
                 void setRankOrderingOrId(long rankOrderingOrId) {
-                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1L : rankOrderingOrId
+                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1 : rankOrderingOrId
                 }
             }
             def f = new Foo()
