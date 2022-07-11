@@ -247,10 +247,10 @@ class Groovysh extends Shell {
     private boolean isIncompleteCaseOfAntlr4(MultipleCompilationErrorsException t) {
         // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
         (
-                t.message.contains('Unexpected input:') && !(
-                            t.message.contains('Unexpected input: \'}\'')
-                        || t.message.contains('Unexpected input: \')\'')
-                        || t.message.contains('Unexpected input: \']\'')
+                (t.message.contains('Unexpected input: ') || t.message.contains('Unexpected character: ')) && !(
+                            t.message.contains("Unexpected input: '}'")
+                        || t.message.contains("Unexpected input: ')'")
+                        || t.message.contains("Unexpected input: ']'")
                 )
         )
     }
