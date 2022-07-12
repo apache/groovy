@@ -134,6 +134,25 @@ public class Inspector {
     }
 
     /**
+     * Get info about usual Java instance and class Methods as well as Constructors.
+     */
+    public Tuple2[] getMethodsWithInfo() {
+        Method[] methods = getClassUnderInspection().getMethods();
+        Constructor[] ctors = getClassUnderInspection().getConstructors();
+        Tuple2[] result = new Tuple2[methods.length + ctors.length];
+        int resultIndex = 0;
+        for (; resultIndex < methods.length; resultIndex++) {
+            Method method = methods[resultIndex];
+            result[resultIndex] = Tuple2.tuple(method, methodInfo(method));
+        }
+        for (int i = 0; i < ctors.length; i++, resultIndex++) {
+            Constructor ctor = ctors[i];
+            result[resultIndex] = Tuple2.tuple(ctor, methodInfo(ctor));
+        }
+        return result;
+    }
+
+    /**
      * Get info about instance and class Methods that are dynamically added through Groovy.
      *
      * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
@@ -146,6 +165,21 @@ public class Inspector {
         for (Iterator iter = metaMethods.iterator(); iter.hasNext(); i++) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
             result[i] = methodInfo(metaMethod);
+        }
+        return result;
+    }
+
+    /**
+     * Get info about instance and class Methods that are dynamically added through Groovy.
+     */
+    public Tuple2[] getMetaMethodsWithInfo() {
+        MetaClass metaClass = InvokerHelper.getMetaClass(objectUnderInspection);
+        List<MetaMethod> metaMethods = metaClass.getMetaMethods();
+        Tuple2[] result = new Tuple2[metaMethods.size()];
+        int i = 0;
+        for (Iterator<MetaMethod> iter = metaMethods.iterator(); iter.hasNext(); i++) {
+            MetaMethod metaMethod = (MetaMethod) iter.next();
+            result[i] = Tuple2.tuple(metaMethod, methodInfo(metaMethod));
         }
         return result;
     }
