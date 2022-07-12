@@ -196,22 +196,25 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         collectionExpression.visit(controller.getAcg());
 
-        int enumIdx = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
+        int enumeration = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
+
+        mv.visitVarInsn(ALOAD, enumeration);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, enumIdx);
-        ENUMERATION_HASMORE_METHOD.call(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
 
-        mv.visitVarInsn(ALOAD, enumIdx);
+        mv.visitVarInsn(ALOAD, enumeration);
+        ENUMERATION_HASMORE_METHOD.call(mv);
+        mv.visitJumpInsn(IFEQ, breakLabel); // jump if zero (aka false)
+
+        mv.visitVarInsn(ALOAD, enumeration);
         ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
         loop.getLoopBlock().visit(controller.getAcg());
-
         mv.visitJumpInsn(GOTO, continueLabel);
+
         mv.visitLabel(breakLabel);
     }
 
@@ -227,6 +230,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
             MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
             call.setImplicitThis(false);
             call.setMethodTarget(iterator);
+            call.setSafe(true);//GROOVY-8643
             call.visit(controller.getAcg());
         } else {
             collectionExpression.visit(controller.getAcg());
