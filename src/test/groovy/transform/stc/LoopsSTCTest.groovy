@@ -172,7 +172,27 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8643
+    void testForInLoopOnList() {
+        assertScript '''
+            List<String> list = null
+            for (item in list) {
+                item.toUpperCase()
+            }
+        '''
+    }
+
+    // GROOVY-8643
     void testForInLoopOnArray() {
+        assertScript '''
+            String[] strings = null
+            for (string in strings) {
+                string.toUpperCase()
+            }
+        '''
+    }
+
+    void testForInLoopOnArray2() {
         assertScript '''
             String[] strings = ['a','b','c']
             for (string in strings) {
@@ -182,7 +202,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10579
-    void testForInLoopOnArray2() {
+    void testForInLoopOnArray3() {
         assertScript '''
             int[] numbers = [1,2,3,4,5]
             int sum = 0
@@ -210,7 +230,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             Vector<String> v = new Vector<>()
             v.add('ooo')
-            def en = v.elements()
+            Enumeration<String> en = v.elements()
             for (e in en) {
                 assert e.toUpperCase() == 'OOO'
             }
@@ -225,6 +245,11 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
             for (e in en) {
                 assert e.toUpperCase() in ['OOO','GROOVY']
                 if (e=='ooo') continue
+            }
+
+            en = null
+            for (e in en) {
+                e.toUpperCase()
             }
         '''
     }

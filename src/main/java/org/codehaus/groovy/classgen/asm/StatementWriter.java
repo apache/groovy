@@ -123,28 +123,29 @@ public class StatementWriter {
         BytecodeVariable variable = compileStack.defineVariable(statement.getVariable(), false);
 
         // get the iterator and generate the loop control
-        int iteratorIndex = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
-        Label continueLabel = compileStack.getContinueLabel();
-        Label breakLabel = compileStack.getBreakLabel();
+        int iterator = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
+        Label breakLabel = compileStack.getBreakLabel(), continueLabel = compileStack.getContinueLabel();
+
+        mv.visitVarInsn(ALOAD, iterator);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, iteratorIndex);
-        writeIteratorHasNext(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
 
-        mv.visitVarInsn(ALOAD, iteratorIndex);
+        mv.visitVarInsn(ALOAD, iterator);
+        writeIteratorHasNext(mv);
+        mv.visitJumpInsn(IFEQ, breakLabel); // jump if zero (aka false)
+
+        mv.visitVarInsn(ALOAD, iterator);
         writeIteratorNext(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
         // generate the loop body
         statement.getLoopBlock().visit(controller.getAcg());
-
         mv.visitJumpInsn(GOTO, continueLabel);
-        mv.visitLabel(breakLabel);
 
-        compileStack.removeVar(iteratorIndex);
+        mv.visitLabel(breakLabel);
+        compileStack.removeVar(iterator);
     }
 
     protected void writeIteratorHasNext(final MethodVisitor mv) {
