@@ -100,10 +100,15 @@ class ObjectBrowser {
                                     closureColumn(header: 'Raw Value', read: { it[0] })
                                 }
                             }
-                            arrayTable.columnModel.getColumn(2).with {
-                                minWidth = 0
-                                maxWidth = 0
-                                width = 0
+                            arrayTable.columnModel.with {
+                                getColumn(2).with {
+                                    minWidth = 0
+                                    maxWidth = 0
+                                    width = 0
+                                    preferredWidth = 0
+                                }
+                                getColumn(0).preferredWidth = 50
+                                getColumn(1).preferredWidth = 400
                             }
                             arrayTable.addMouseListener(makeClickAdapter(arrayTable, 2) { row ->
                                 path + "[${arrayTable.model.getValueAt(row, 0)}]"
@@ -118,10 +123,15 @@ class ObjectBrowser {
                                     closureColumn(header: 'Raw Value', read: { it[0] })
                                 }
                             }
-                            collectionTable.columnModel.getColumn(2).with {
-                                minWidth = 0
-                                maxWidth = 0
-                                width = 0
+                            collectionTable.columnModel.with {
+                                getColumn(2).with {
+                                    minWidth = 0
+                                    maxWidth = 0
+                                    width = 0
+                                    preferredWidth = 0
+                                }
+                                getColumn(0).preferredWidth = 50
+                                getColumn(1).preferredWidth = 400
                             }
                             collectionTable.addMouseListener(makeClickAdapter(collectionTable, 2) { row ->
                                 path + "[${collectionTable.model.getValueAt(row, 0)}]"
@@ -138,10 +148,16 @@ class ObjectBrowser {
                                 }
                             }
                             ToolTipManager.sharedInstance().registerComponent(mapTable)
-                            mapTable.columnModel.getColumn(3).with {
-                                minWidth = 0
-                                maxWidth = 0
-                                width = 0
+                            mapTable.columnModel.with {
+                                getColumn(3).with {
+                                    minWidth = 0
+                                    maxWidth = 0
+                                    width = 0
+                                    preferredWidth = 0
+                                }
+                                getColumn(0).preferredWidth = 50
+                                getColumn(1).preferredWidth = 200
+                                getColumn(2).preferredWidth = 400
                             }
                             mapTable.addMouseListener(makeClickAdapter(mapTable, 2) { row ->
                                 path + "[${mapTable.model.getValueAt(row, 1)}]"
@@ -171,19 +187,28 @@ class ObjectBrowser {
                         })
                     }
                     scrollPane(name: ' (Meta) Methods ') {
-                        methodTable = table(selectionMode: SINGLE_SELECTION) {
-                            def data = Inspector.sort(inspector.methods.toList())
-                            data.addAll(Inspector.sort(inspector.metaMethods.toList()))
+                        methodTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
+                            def data = Inspector.sort(inspector.methodsWithInfo.toList(), comparator)
+                            data.addAll(Inspector.sort(inspector.metaMethodsWithInfo.toList(), comparator))
                             tableModel(list: data) {
-                                closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
-                                closureColumn(header: 'Params', read: { it[MEMBER_PARAMS_IDX] })
-                                closureColumn(header: 'Type', read: { it[MEMBER_TYPE_IDX] })
-                                closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
-                                closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
-                                closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
-                                closureColumn(header: 'Exceptions', read: { it[MEMBER_EXCEPTIONS_IDX] })
+                                closureColumn(header: 'Name', read: { it.v2[MEMBER_NAME_IDX] })
+                                closureColumn(header: 'Params', read: { it.v2[MEMBER_PARAMS_IDX] })
+                                closureColumn(header: 'Type', read: { it.v2[MEMBER_TYPE_IDX] })
+                                closureColumn(header: 'Origin', read: { it.v2[MEMBER_ORIGIN_IDX] })
+                                closureColumn(header: 'Modifier', read: { it.v2[MEMBER_MODIFIER_IDX] })
+                                closureColumn(header: 'Declarer', read: { it.v2[MEMBER_DECLARER_IDX] })
+                                closureColumn(header: 'Exceptions', read: { it.v2[MEMBER_EXCEPTIONS_IDX] })
+                                closureColumn(header: 'Raw Value', read: { it.v1 })
                             }
                         }
+                        methodTable.columnModel.getColumn(7).with {
+                            minWidth = 0
+                            maxWidth = 0
+                            width = 0
+                        }
+                        methodTable.addMouseListener(makeClickAdapter(methodTable, 7) { row ->
+                            path + (path.size() == 0 ? '' : ".method['") + "${methodTable.model.getValueAt(row, 0)}']"
+                        })
                     }
                 }
                 panel(name: 'Path',
