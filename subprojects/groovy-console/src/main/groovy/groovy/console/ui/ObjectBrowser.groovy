@@ -96,6 +96,7 @@ class ObjectBrowser {
                     menuItem { action(name: path.toString(), enabled: bind{ tracker.current != idx }, closure: this.&switchCard.curry(idx)) }
                 }
                 menu(text: 'Help') {
+                    menuItem { action(name: 'Usage', closure: this.&showUsage) }
                     menuItem { action(name: 'About', closure: this.&showAbout) }
                 }
             }
@@ -293,6 +294,19 @@ class ObjectBrowser {
         tracker.current = idx
         cards.layout.show(cards, 'path' + idx)
         cards.revalidate()
+    }
+
+    void showUsage(EventObject evt) {
+        def pane = swing.optionPane()
+        // work around GROOVY-1048
+        pane.setMessage(
+            'Double-click on a row to drill-down into the child level.\n' +
+            'A new card is created for the child level. The cards can\n' +
+            'be selected using menu items in the Path menu.\n' +
+            'Shift-double-click on a row to launch new Object Browser\n' +
+            'window.')
+        def dialog = pane.createDialog(frame, 'Object Browser Usage')
+        dialog.show()
     }
 
     void showAbout(EventObject evt) {
