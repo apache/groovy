@@ -194,7 +194,7 @@ class AstBrowser {
                                     model: new DefaultTreeModel(new DefaultMutableTreeNode('Loading...'))) {}
                         },
                         rightComponent: scrollPane {
-                            propertyTable = table(selectionMode: SINGLE_SELECTION) {
+                            propertyTable = table(new CellValueToolTipJTable(), selectionMode: SINGLE_SELECTION) {
                                 tableModel(list: [[:]]) {
                                     propertyColumn(header: 'Name', propertyName: 'name')
                                     propertyColumn(header: 'Value  (double-click to browse)', propertyName: 'value')
