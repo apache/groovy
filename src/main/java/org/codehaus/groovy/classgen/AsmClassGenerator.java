@@ -325,7 +325,6 @@ public class AsmClassGenerator extends ClassGenerator {
             );
             classVisitor.visitSource(sourceFile, null);
             if (classNode instanceof InnerClassNode) {
-                makeInnerClassEntry(classNode.getOuterClass()); // GROOVY-9842
                 makeInnerClassEntry(classNode); // GROOVY-4649, et al.
 
                 MethodNode enclosingMethod = classNode.getEnclosingMethod();
@@ -379,11 +378,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 makeInnerClassEntry(it.next());
             }
             if (sealedNative(classNode)) {
-                for (ClassNode sub: classNode.getPermittedSubclasses()) {
+                for (ClassNode sub : classNode.getPermittedSubclasses()) {
                     classVisitor.visitPermittedSubclass(BytecodeHelper.getClassInternalName(sub));
                 }
             }
-
             if (classNode.isRecord()) {
                 visitRecordComponents(classNode);
             }
@@ -400,45 +398,48 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitRecordComponents(final ClassNode classNode) {
-        List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponents();
-        if (null == recordComponentNodeList) return;
+        for (RecordComponentNode recordComponent : classNode.getRecordComponents()) {
+            ClassNode type = recordComponent.getType();
+            RecordComponentVisitor visitor = classVisitor.visitRecordComponent(
+                    recordComponent.getName(),
+                    BytecodeHelper.getTypeDescription(type),
+                    BytecodeHelper.getTypeGenericsSignature(type));
 
-        for (RecordComponentNode recordComponentNode : recordComponentNodeList) {
-            final ClassNode type = recordComponentNode.getType();
-            RecordComponentVisitor rcv =
-                    classVisitor.visitRecordComponent(recordComponentNode.getName(),
-                            BytecodeHelper.getTypeDescription(type),
-                            BytecodeHelper.getTypeGenericsSignature(type));
-
-            visitAnnotations(recordComponentNode, rcv);
+            visitAnnotations(recordComponent, visitor);
 
             // the int encoded value of the type reference is ALWAYS `318767104`
             // TODO Get the magic number `318767104` via `TypeReference.newXXX()`
             TypeReference typeRef = new TypeReference(318767104);
 
-            visitTypeAnnotations(recordComponentNode.getType(), rcv, typeRef, "", true);
-            rcv.visitEnd();
+            visitTypeAnnotations(type, visitor, typeRef, "", true);
+
+            visitor.visitEnd();
         }
     }
 
-    private void makeInnerClassEntry(final ClassNode cn) {
-        if (!(cn instanceof InnerClassNode)) return;
-        InnerClassNode innerClass = (InnerClassNode) cn;
+    private void maybeInnerClassEntry(final ClassNode classNode) {
+        if (classNode.getOuterClass() != null) makeInnerClassEntry(classNode);
+    }
+
+    private void makeInnerClassEntry(final ClassNode innerClass) {
+        ClassNode outerClass = innerClass.getOuterClass();
+        maybeInnerClassEntry(outerClass); // GROOVY-9842
+
         String innerClassName = innerClass.getName();
         String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
         {
             int index = innerClassName.lastIndexOf('$');
             if (index >= 0) innerClassName = innerClassName.substring(index + 1);
         }
-        String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
-        MethodNode enclosingMethod = innerClass.getEnclosingMethod();
-        if (enclosingMethod != null) {
-            // local inner classes do not specify the outer class name
-            outerClassName = null;
-            if (innerClass.isAnonymous()) innerClassName = null;
+        String outerClassInternalName = BytecodeHelper.getClassInternalName(outerClass.getName());
+
+        if (innerClass.getEnclosingMethod() != null) {
+            outerClassInternalName = null; // local inner classes don't specify the outer class name
+            if (innerClass instanceof InnerClassNode && ((InnerClassNode) innerClass).isAnonymous()) innerClassName = null;
         }
-        int modifiers = adjustedClassModifiersForInnerClassTable(cn);
-        classVisitor.visitInnerClass(innerClassInternalName, outerClassName, innerClassName, modifiers);
+
+        int modifiers = adjustedClassModifiersForInnerClassTable(innerClass);
+        classVisitor.visitInnerClass(innerClassInternalName, outerClassInternalName, innerClassName, modifiers);
     }
 
     /*
@@ -447,10 +448,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * or the class itself
      */
     private static int adjustedClassModifiersForInnerClassTable(final ClassNode classNode) {
-        int modifiers = classNode.getModifiers();
-        modifiers = modifiers & ~ACC_SUPER;
-        modifiers = fixInterfaceModifiers(classNode, modifiers);
-        return modifiers;
+        return fixInterfaceModifiers(classNode, classNode.getModifiers()) & ~ACC_SUPER;
     }
 
     private static int fixInterfaceModifiers(final ClassNode classNode, int modifiers) {
@@ -530,7 +528,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         if (node.getExceptions() != null) {
             for (int i = 0, n = node.getExceptions().length; i < n; i += 1) {
-                visitTypeAnnotations(node.getExceptions()[i], mv, newExceptionReference(i), "", true);
+                visitType(node.getExceptions()[i], mv, newExceptionReference(i), "", true);
             }
         }
 
@@ -739,11 +737,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitCatchStatement(final CatchStatement statement) {
-        statement.getCode().visit(this);
-    }
-
-    @Override
     public void visitBlockStatement(final BlockStatement statement) {
         controller.getStatementWriter().writeBlockStatement(statement);
     }
@@ -776,6 +769,12 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         controller.getStatementWriter().writeTryCatchFinally(statement);
+    }
+
+    @Override
+    public void visitCatchStatement(final CatchStatement statement) {
+        maybeInnerClassEntry(statement.getExceptionType());
+        statement.getCode().visit(this);
     }
 
     @Override
@@ -932,10 +931,13 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitCastExpression(final CastExpression castExpression) {
-        ClassNode type = castExpression.getType();
         Expression subExpression = castExpression.getExpression();
         subExpression.visit(this);
+
+        ClassNode type = castExpression.getType();
         if (isObjectType(type)) return;
+        maybeInnerClassEntry(type);
+
         OperandStack operandStack = controller.getOperandStack();
         if (castExpression.isCoerce()) {
             operandStack.doAsType(type);
@@ -981,6 +983,7 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(call, "visitStaticMethodCallExpression: \"" + call.getMethod() + "\":");
         controller.getInvocationWriter().writeInvokeStaticMethod(call);
         controller.getAssertionWriter().record(call);
+        maybeInnerClassEntry(call.getOwnerType());
     }
 
     @Override
@@ -992,6 +995,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         controller.getInvocationWriter().writeInvokeConstructor(call);
         controller.getAssertionWriter().record(call);
+        maybeInnerClassEntry(call.getType());
     }
 
     private static String makeFieldClassName(final ClassNode type) {
@@ -1525,11 +1529,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (BytecodeHelper.isClassLiteralPossible(interfaceClassLoadingClass)) {
                     BytecodeHelper.visitClassLiteral(mv, interfaceClassLoadingClass);
                     operandStack.push(ClassHelper.CLASS_Type);
+                    maybeInnerClassEntry(type);
                     return;
                 }
             } else {
                 BytecodeHelper.visitClassLiteral(mv, type);
                 operandStack.push(ClassHelper.CLASS_Type);
+                maybeInnerClassEntry(type);
                 return;
             }
         }
@@ -1687,6 +1693,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitIntInsn(NEWARRAY, primType);
             } else {
                 mv.visitTypeInsn(ANEWARRAY, BytecodeHelper.getClassInternalName(elementType));
+                maybeInnerClassEntry(elementType);
             }
         } else {
             mv.visitMultiANewArrayInsn(BytecodeHelper.getTypeDescription(arrayType), dimensions);
@@ -2000,6 +2007,8 @@ public class AsmClassGenerator extends ClassGenerator {
             if (an.hasSourceRetention()) continue;
             if (an.getClassNode().getName().equals(Sealed.class.getName()) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
 
+            maybeInnerClassEntry(an.getClassNode());
+
             AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
             visitAnnotationAttributes(an, av);
             av.visitEnd();
@@ -2095,6 +2104,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitType(final ClassNode classNode, final Object visitor, final TypeReference typeRef, final String typePath, boolean typeUse) {
+        maybeInnerClassEntry(classNode); // GROOVY-8863
         visitTypeAnnotations(classNode, visitor, typeRef, typePath, typeUse);
         visitGenericsTypeAnnotations(classNode, visitor, typeRef, typePath, typeUse);
     }
