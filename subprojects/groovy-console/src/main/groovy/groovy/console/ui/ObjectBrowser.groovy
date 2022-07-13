@@ -20,16 +20,16 @@ package groovy.console.ui
 
 import groovy.beans.Bindable
 import groovy.inspect.Inspector
-import groovy.swing.table.TableSorter
 import groovy.swing.SwingBuilder
+import groovy.swing.table.TableSorter
 
+import javax.swing.ToolTipManager
 import javax.swing.WindowConstants
 import java.awt.FlowLayout
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.ToolTipManager
-
-import static javax.swing.ListSelectionModel.SINGLE_SELECTION
 
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
@@ -39,6 +39,7 @@ import static groovy.inspect.Inspector.MEMBER_ORIGIN_IDX
 import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
 import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
 import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
+import static javax.swing.ListSelectionModel.SINGLE_SELECTION
 
 /**
  * A little GUI to show some of the Inspector capabilities.
@@ -77,7 +78,7 @@ class ObjectBrowser {
         cards.add(makeCard(swing, new Inspector(objectUnderInspection), path), pathId)
         cards.layout.show(cards, pathId)
         cards.revalidate()
-        pathMenu.add(swing.menuItem { action(name: path, enabled: bind{ tracker.current != idx }, closure: this.&switchCard.curry(idx)) })
+        pathMenu.add(swing.menuItem { action(name: path, enabled: bind{ tracker.current != idx }, closure: this.&showAction.curry(idx)) })
         mb.revalidate()
     }
 
@@ -93,11 +94,15 @@ class ObjectBrowser {
             mb = menuBar {
                 pathMenu = menu(text: 'Path') {
                     int idx = pathCount++
-                    menuItem { action(name: path.toString(), enabled: bind{ tracker.current != idx }, closure: this.&switchCard.curry(idx)) }
+                    menuItem { action(name: path.toString(), enabled: bind{ tracker.current != idx }, closure: this.&showAction.curry(idx)) }
                 }
                 menu(text: 'Help') {
-                    menuItem { action(name: 'Usage', closure: this.&showUsage) }
-                    menuItem { action(name: 'About', closure: this.&showAbout) }
+                    menuItem { action(name: 'Usage', closure: this.&usageAction) }
+                    menuItem { action(
+                            name: 'About',
+                            smallIcon: imageIcon(resource: 'icons/information.png', class: this),
+                            closure: this.&aboutAction)
+                    }
                 }
             }
             cards = panel {
@@ -152,7 +157,7 @@ class ObjectBrowser {
                             getColumn(1).preferredWidth = 400
                         }
 
-                        arrayTable.addMouseListener(makeClickAdapter(arrayTable, 2) { row ->
+                        arrayTable.addMouseListener(mouseListener(2) { row ->
                             path + "[${arrayTable.model.getValueAt(row, 0)}]"
                         })
                     }
@@ -175,7 +180,7 @@ class ObjectBrowser {
                             getColumn(0).preferredWidth = 50
                             getColumn(1).preferredWidth = 400
                         }
-                        collectionTable.addMouseListener(makeClickAdapter(collectionTable, 2) { row ->
+                        collectionTable.addMouseListener(mouseListener(2) { row ->
                             path + "[${collectionTable.model.getValueAt(row, 0)}]"
                         })
                     }
@@ -201,7 +206,7 @@ class ObjectBrowser {
                             getColumn(1).preferredWidth = 200
                             getColumn(2).preferredWidth = 400
                         }
-                        mapTable.addMouseListener(makeClickAdapter(mapTable, 2) { row ->
+                        mapTable.addMouseListener(mouseListener(2) { row ->
                             path + "[${mapTable.model.getValueAt(row, 1)}]"
                         })
                     }
@@ -224,7 +229,7 @@ class ObjectBrowser {
                         maxWidth = 0
                         width = 0
                     }
-                    fieldTable.addMouseListener(makeClickAdapter(fieldTable, 6) { row ->
+                    fieldTable.addMouseListener(mouseListener(6) { row ->
                         path + (path.size() == 0 ? '' : '.') + "${fieldTable.model.getValueAt(row, 0)}"
                     })
                 }
@@ -248,7 +253,7 @@ class ObjectBrowser {
                         maxWidth = 0
                         width = 0
                     }
-                    methodTable.addMouseListener(makeClickAdapter(methodTable, 7) { row ->
+                    methodTable.addMouseListener(mouseListener(7) { row ->
                         path + (path.size() == 0 ? '' : ".method['") + "${methodTable.model.getValueAt(row, 0)}']"
                     })
                 }
@@ -263,21 +268,63 @@ class ObjectBrowser {
         }
     }
 
-    def makeClickAdapter(table, int valueCol, Closure pathClosure) {
+    def mouseListener(int valueCol, Closure pathClosure) {
+        def outer = this
         new MouseAdapter() {
             void mouseClicked(MouseEvent e) {
                 if (e.clickCount == 2) {
-                    def selectedRow = table.selectedRow
-                    if (selectedRow != -1) {
-                        def value = table.model.getValueAt(selectedRow, valueCol)
-                        if (value != null) {
-                            if (e.shiftDown)
-                                ObjectBrowser.inspect(value, pathClosure(selectedRow))
-                            else
-                                inspectAlso(value, pathClosure(selectedRow))
-                        }
-                    }
+                    launch(e.source, valueCol, e.shiftDown, pathClosure)
                 }
+            }
+
+            void mouseReleased(MouseEvent e) {
+                def table = e.source
+                int r = table.rowAtPoint(e.point)
+                if (r >= 0 && r < table.rowCount) {
+                    table.setRowSelectionInterval(r, r)
+                } else {
+                    table.clearSelection()
+                }
+
+                if (table.selectedRow < 0) return
+                if (e.isPopupTrigger()) {
+                    def popup = swing.popupMenu {
+                        menuItem(action(
+                                name: 'Copy',
+                                closure: outer.&copyAction.curry(table, e),
+                                mnemonic: 'C',
+                                accelerator: shortcut('C'),
+                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                shortDescription: 'Copy'
+                        ))
+                        menuItem(action(
+                                name: 'Browse',
+                                closure: outer.&launchAction.curry(table, valueCol, false, pathClosure),
+                                smallIcon: imageIcon(resource: 'icons/page_white_stack.png', class: this),
+                                shortDescription: 'Browse'
+                        ))
+                        menuItem(action(
+                                name: 'Browse in new window',
+                                closure: outer.&launchAction.curry(table, valueCol, true, pathClosure),
+                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                shortDescription: 'Browse window'
+                        ))
+                    }
+                    popup.show(e.component, e.x, e.y)
+                }
+            }
+        }
+    }
+
+    void launch(table, valueCol, boolean newWindow, pathClosure) {
+        def selectedRow = table.selectedRow
+        if (selectedRow != -1) {
+            def value = table.model.getValueAt(selectedRow, valueCol)
+            if (value != null) {
+                if (newWindow)
+                    ObjectBrowser.inspect(value, pathClosure(selectedRow))
+                else
+                    inspectAlso(value, pathClosure(selectedRow))
             }
         }
     }
@@ -290,13 +337,13 @@ class ObjectBrowser {
         }
     }
 
-    void switchCard(int idx, EventObject evt) {
+    void showAction(int idx, EventObject evt) {
         tracker.current = idx
         cards.layout.show(cards, 'path' + idx)
         cards.revalidate()
     }
 
-    void showUsage(EventObject evt) {
+    void usageAction(EventObject evt) {
         def pane = swing.optionPane()
         // work around GROOVY-1048
         pane.setMessage(
@@ -309,7 +356,18 @@ class ObjectBrowser {
         dialog.show()
     }
 
-    void showAbout(EventObject evt) {
+    void launchAction(table, valueCol, boolean newWindow, pathClosure, EventObject evt) {
+        launch(table, valueCol, newWindow, pathClosure)
+    }
+
+    void copyAction(table, MouseEvent me, EventObject evt) {
+        def toolTipText = table.getToolTipText(me)
+        if (toolTipText) {
+            Toolkit.defaultToolkit.systemClipboard.setContents(new StringSelection(toolTipText), null)
+        }
+    }
+
+    void aboutAction(EventObject evt) {
         def pane = swing.optionPane()
         // work around GROOVY-1048
         def version = GroovySystem.version
