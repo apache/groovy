@@ -68,6 +68,7 @@ printAction = action(
         name: 'Print...',
         closure: controller.&print,
         mnemonic: 'P',
+        smallIcon: imageIcon(resource: 'icons/printer.png', class: this),
         accelerator: shortcut('P')
 )
 
@@ -77,7 +78,7 @@ exitAction = action(
         mnemonic: 'X'
 // whether or not application exit should have an
 // accelerator is debatable in usability circles
-// at the very least a confirm dialog should dhow up
+// at the very least a confirm dialog should show up
 //accelerator: shortcut('Q')
 )
 
@@ -162,6 +163,7 @@ selectAllAction = action(
         name: 'Select All',
         closure: controller.&selectAll,
         mnemonic: 'A',
+        smallIcon: imageIcon(resource: 'icons/page_white_select.png', class: this),
         accelerator: shortcut('A')
 )
 
@@ -209,6 +211,7 @@ runJavaAction = action(
         closure: controller.&runJava,
         mnemonic: 'J',
         accelerator: shortcut('alt R'),
+        smallIcon: imageIcon(resource: 'icons/cup_go.png', class: this),
         shortDescription: 'Execute Java Code'
 )
 
@@ -235,12 +238,14 @@ runJavaSelectionAction = action(
 addClasspathJar = action(
         name: 'Add Jar(s) to ClassPath',
         closure: controller.&addClasspathJar,
+        smallIcon: imageIcon(resource: 'icons/package_add.png', class: this),
         mnemonic: 'J',
 )
 
 addClasspathDir = action(
         name: 'Add Directory to ClassPath',
         closure: controller.&addClasspathDir,
+        smallIcon: imageIcon(resource: 'icons/folder_add.png', class: this),
         mnemonic: 'D',
 )
 
@@ -252,6 +257,7 @@ listClasspath = action(
 clearClassloader = action(
         name: 'Clear Script Context',
         closure: controller.&clearContext,
+        smallIcon: imageIcon(resource: 'icons/script_lightning.png', class: this),
         mnemonic: 'C',
 )
 
@@ -379,6 +385,7 @@ largerFontAction = action(
         name: 'Larger Font',
         closure: controller.&largerFont,
         mnemonic: 'L',
+        smallIcon: imageIcon(resource: 'icons/font_up.png', class: this),
         accelerator: shortcut('shift L')
 )
 
@@ -386,6 +393,7 @@ smallerFontAction = action(
         name: 'Smaller Font',
         closure: controller.&smallerFont,
         mnemonic: 'S',
+        smallIcon: imageIcon(resource: 'icons/font_down.png', class: this),
         accelerator: shortcut('shift S')
 )
 
@@ -396,7 +404,8 @@ smartHighlighterAction = action(
 
 aboutAction = action(
         name: 'About',
-        closure: controller.&showAbout,
+        closure: controller.&aboutAction,
+        smallIcon: imageIcon(resource: 'icons/information.png', class: this),
         mnemonic: 'A'
 )
 

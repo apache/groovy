@@ -154,15 +154,25 @@ class AstBrowser {
                         action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))
                     }
                     menuItem {
-                        refreshAction = action(name: 'Refresh', closure: {
-                            decompile(phasePicker.selectedItem.phaseId, script())
-                            compile(jTree, script(), phasePicker.selectedItem.phaseId)
-                            initAuxViews()
-                        }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
+                        refreshAction = action(
+                                name: 'Refresh',
+                                closure: {
+                                    decompile(phasePicker.selectedItem.phaseId, script())
+                                    compile(jTree, script(), phasePicker.selectedItem.phaseId)
+                                    initAuxViews()
+                                },
+                                mnemonic: 'R',
+                                smallIcon: imageIcon(resource: 'icons/page_refresh.png', class: this),
+                                accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
                     }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
-                    menuItem { action(name: 'About', closure: this.&showAbout, mnemonic: 'A') }
+                    menuItem { action(
+                            name: 'About',
+                            closure: this.&showAbout,
+                            smallIcon: imageIcon(resource: 'icons/information.png', class: this),
+                            mnemonic: 'A')
+                    }
                 }
             }
             panel {
