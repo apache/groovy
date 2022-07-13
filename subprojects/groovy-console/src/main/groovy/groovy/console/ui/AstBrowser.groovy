@@ -44,6 +44,8 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
 import java.awt.Cursor
 import java.awt.Font
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -148,10 +150,19 @@ class AstBrowser {
                 }
                 menu(text: 'View', mnemonic: 'V') {
                     menuItem {
-                        action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))
+                        action(
+                                name: 'Larger Font',
+                                closure: this.&largerFont,
+                                mnemonic: 'L',
+                                smallIcon: imageIcon(resource: 'icons/font_up.png', class: this),
+                                accelerator: shortcut('shift L'))
                     }
                     menuItem {
-                        action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))
+                        action(name: 'Smaller Font',
+                                closure: this.&smallerFont,
+                                mnemonic: 'S',
+                                smallIcon: imageIcon(resource: 'icons/font_down.png', class: this),
+                                accelerator: shortcut('shift S'))
                     }
                     menuItem {
                         refreshAction = action(
@@ -169,7 +180,7 @@ class AstBrowser {
                 menu(text: 'Help', mnemonic: 'H') {
                     menuItem { action(
                             name: 'About',
-                            closure: this.&showAbout,
+                            closure: this.&aboutAction,
                             smallIcon: imageIcon(resource: 'icons/information.png', class: this),
                             mnemonic: 'A')
                     }
@@ -225,7 +236,7 @@ class AstBrowser {
                                 getColumn(1).preferredWidth = 400
                                 getColumn(2).preferredWidth = 100
                             }
-                            propertyTable.addMouseListener(makeClickAdapter(propertyTable, 3) { row ->
+                            propertyTable.addMouseListener(mouseListener(3) { row ->
                                 'Browsing ' + jTree.lastSelectedPathComponent.userObject + ": " + propertyTable.model.getValueAt(row, 0)
                             })
                             propertyTable.setDefaultEditor(Object, null)
@@ -345,17 +356,44 @@ class AstBrowser {
         return sw.toString()
     }
 
-    def makeClickAdapter(table, int valueCol, Closure pathClosure) {
+    def mouseListener(int valueCol, Closure pathClosure) {
+        def outer = this
         new MouseAdapter() {
             void mouseClicked(MouseEvent e) {
+                def table = e.source
                 if (e.clickCount == 2) {
-                    def selectedRow = table.selectedRow
-                    if (selectedRow != -1) {
-                        def value = table.model.getValueAt(selectedRow, valueCol)
-                        if (value != null) {
-                            ObjectBrowser.inspect(value, pathClosure(selectedRow))
-                        }
+                    launch(table, valueCol, pathClosure)
+                }
+            }
+
+            void mouseReleased(MouseEvent e) {
+                def table = e.source
+                int r = table.rowAtPoint(e.point)
+                if (r >= 0 && r < table.rowCount) {
+                    table.setRowSelectionInterval(r, r)
+                } else {
+                    table.clearSelection()
+                }
+
+                if (table.selectedRow < 0) return
+                if (e.isPopupTrigger()) {
+                    def popup = swing.popupMenu {
+                        menuItem(action(
+                                name: 'Copy',
+                                closure: outer.&copyAction.curry(table, e),
+                                mnemonic: 'C',
+                                accelerator: shortcut('C'),
+                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                shortDescription: 'Copy'
+                        ))
+                        menuItem(action(
+                                name: 'Browse',
+                                closure: outer.&launchAction.curry(table, valueCol, pathClosure),
+                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                shortDescription: 'Browse'
+                        ))
                     }
+                    popup.show(e.component, e.x, e.y)
                 }
             }
         }
@@ -404,7 +442,28 @@ class AstBrowser {
         propertyTable.rowHeight = newFontSize + 2
     }
 
-    void showAbout(EventObject evt) {
+    void launch(table, valueCol, pathClosure) {
+        def selectedRow = table.selectedRow
+        if (selectedRow != -1) {
+            def value = table.model.getValueAt(selectedRow, valueCol)
+            if (value != null) {
+                ObjectBrowser.inspect(value, pathClosure(selectedRow))
+            }
+        }
+    }
+
+    void launchAction(table, valueCol, pathClosure, EventObject evt) {
+        launch(table, valueCol, pathClosure)
+    }
+
+    void copyAction(table, MouseEvent me, EventObject evt) {
+        def toolTipText = table.getToolTipText(me)
+        if (toolTipText) {
+            Toolkit.defaultToolkit.systemClipboard.setContents(new StringSelection(toolTipText), null)
+        }
+    }
+
+    void aboutAction(EventObject evt) {
         def pane = swing.optionPane()
         def version = GroovySystem.version
         pane.setMessage('An interactive GUI to explore AST capabilities\nVersion ' + version)
