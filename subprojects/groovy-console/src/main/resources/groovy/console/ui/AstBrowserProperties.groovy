@@ -36,7 +36,7 @@ org {
                     BlockStatement      = "BlockStatement - (\${expression.statements ? expression.statements.size() : 0})"
                     ExpressionStatement = "ExpressionStatement - \${expression?.expression.getClass().simpleName}"
                     ReturnStatement     = "ReturnStatement - \$expression.text"
-                    TryCatchStatement   = "TryCatchStatement - \${expression.catchStatements?.size ?: 0} catch, \${expression.finallyStatement ? 1 : 0} finally"
+                    TryCatchStatement   = "TryCatchStatement - \${expression.catchStatements?.size() ?: 0} catch, \${expression.finallyStatement ? 1 : 0} finally"
                     CatchStatement      = "CatchStatement - \$expression.exceptionType]"
                 }
                 expr {
