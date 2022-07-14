@@ -47,6 +47,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -273,7 +274,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
         this.currentClass.setAnnotated(true);
         Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<>();
-        for (AnnotationNode unvisited : annotations) {
+        boolean skippable = node.getNodeMetaData("_SKIPPABLE_ANNOTATIONS") != null;
+        Iterator<AnnotationNode> iterator = annotations.iterator();
+        while (iterator.hasNext()) {
+            AnnotationNode unvisited = iterator.next();
             AnnotationNode visited;
             {
                 ErrorCollector errorCollector = new ErrorCollector(source.getConfiguration());
@@ -283,7 +287,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
 
             String name = visited.getClassNode().getName();
-            boolean skip = currentClass.isRecord() && skippableRecordAnnotation(node, visited);
+            if (skippable && shouldSkip(node, visited)) {
+                iterator.remove();
+                continue;
+            }
             if (!visited.hasSourceRetention()) {
                 List<AnnotationNode> seen = nonSourceAnnotations.get(name);
                 if (seen == null) {
@@ -292,15 +299,13 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                     addError("Cannot specify duplicate annotation on the same member : " + name, visited);
                 }
                 seen.add(visited);
-                if (!skip) {
-                    nonSourceAnnotations.put(name, seen);
-                }
+                nonSourceAnnotations.put(name, seen);
             }
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
             boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
-            if (!isTargetAnnotation && !skip && !visited.isTargetAllowed(target) && !isTypeUseScenario(visited, target)) {
+            if (!isTargetAnnotation && !visited.isTargetAllowed(target) && !isTypeUseScenario(visited, target)) {
                 addError("Annotation @" + name + " is not allowed on element " + AnnotationNode.targetToName(target), visited);
             }
             visitDeprecation(node, visited);
@@ -309,9 +314,13 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         processDuplicateAnnotationContainers(node, nonSourceAnnotations);
     }
 
-    private boolean skippableRecordAnnotation(AnnotatedNode node, AnnotationNode visited) {
+    private boolean shouldSkip(AnnotatedNode node, AnnotationNode visited) {
         return (node instanceof ClassNode && !visited.isTargetAllowed(TYPE_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET) && visited.isTargetAllowed(CONSTRUCTOR_TARGET))
-                || (node instanceof FieldNode && !visited.isTargetAllowed(FIELD_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET));
+                || (node instanceof ConstructorNode && !visited.isTargetAllowed(CONSTRUCTOR_TARGET) && visited.isTargetAllowed(TYPE_TARGET))
+                || (node instanceof FieldNode && !visited.isTargetAllowed(FIELD_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET))
+                || (node instanceof Parameter && !visited.isTargetAllowed(PARAMETER_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET))
+                || (node instanceof MethodNode && !(node instanceof ConstructorNode) && !visited.isTargetAllowed(METHOD_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET))
+                || (node instanceof RecordComponentNode && !visited.isTargetAllowed(RECORD_COMPONENT_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET));
     }
 
     private boolean isRepeatable(final AnnotationNode annoNode) {

@@ -557,4 +557,23 @@ final class RecordTest {
             test()
         '''
     }
+
+    @Test // GROOVY-10679
+    void testAnnotationPropogation() {
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Target([ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.PARAMETER])
+            @Retention(RetentionPolicy.RUNTIME)
+            public @interface MyAnno { }
+
+            @MyAnno
+            record Car(String make, @MyAnno String model) { }
+
+            assert !Car.getAnnotation(MyAnno)
+            assert Car.getMethod('model').getAnnotation(MyAnno)
+            assert Car.getConstructor(String, String).getAnnotation(MyAnno)
+            assert Car.getConstructor(String, String).getParameterAnnotations()[1][0].annotationType() == MyAnno
+        '''
+    }
 }

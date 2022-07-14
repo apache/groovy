@@ -93,6 +93,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -150,6 +151,9 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     }
 
     private void doProcessRecordType(ClassNode cNode, PropertyHandler handler) {
+        if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
+            cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+        }
         List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
         AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
         RecordTypeMode mode = getMode(options, "mode");
@@ -176,7 +180,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 cNode.setRecordComponents(new ArrayList<>());
             }
             for (PropertyNode pNode : pList) {
-                cNode.getRecordComponents().add(new RecordComponentNode(cNode, pNode.getName(), pNode.getOriginType(), pNode.getAnnotations()));
+                ClassNode pType = pNode.getOriginType();
+                ClassNode type = pType.getPlainNodeReference();
+                type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
+                type.setGenericsTypes(pType.getGenericsTypes());
+                RecordComponentNode rec = new RecordComponentNode(cNode, pNode.getName(), type, pNode.getAnnotations());
+                rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+                cNode.getRecordComponents().add(rec);
             }
         } else if (mode == RecordTypeMode.NATIVE) {
             addError(message + " when attempting to create a native record", cNode);
@@ -332,9 +342,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         for (PropertyNode pNode : pList) {
             String name = pNode.getName();
             args.addExpression(ternaryX(callX(mapArg, "containsKey", args(constX(name))), propX(mapArg, name), thisPropX(true, name)));
+            ClassNode pType = pNode.getType();
+            ClassNode type = pType.getPlainNodeReference();
+            type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
+            type.setGenericsTypes(pType.getGenericsTypes());
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
             namedParam.addMember("value", constX(name));
-            namedParam.addMember("type", classX(pNode.getType()));
+            namedParam.addMember("type", classX(type));
             namedParam.addMember("required", constX(false, true));
             mapParam.addAnnotation(namedParam);
         }
