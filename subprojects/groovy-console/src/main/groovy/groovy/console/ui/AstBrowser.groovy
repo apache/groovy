@@ -388,6 +388,7 @@ class AstBrowser {
                         ))
                         menuItem(action(
                                 name: 'Browse',
+                                enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, pathClosure),
                                 smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
                                 shortDescription: 'Browse'
