@@ -26,6 +26,7 @@ import groovy.swing.table.TableSorter
 import javax.swing.ToolTipManager
 import javax.swing.WindowConstants
 import java.awt.FlowLayout
+import java.awt.Insets
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
@@ -132,7 +133,11 @@ class ObjectBrowser {
                     border: emptyBorder([5, 10, 5, 10]),
                     constraints: NORTH) {
                 flowLayout(alignment: FlowLayout.LEFT)
-                def props = inspector.classProps
+                def props = inspector.classProps.findAll{ it != 'implements ' }
+                try {
+                    def module = inspector.object.class.module.name
+                    if (module) props.add(0, 'module ' + module)
+                } catch(Exception ignore) {}
                 def classLabel = '<html>' + props.join('<br>')
                 label(classLabel)
             }
@@ -262,8 +267,17 @@ class ObjectBrowser {
                     border: emptyBorder([5, 10, 5, 10]),
                     constraints: SOUTH) {
                 boxLayout(axis: 2)
+                button(icon: imageIcon(resource: 'icons/resultset_previous.png', class: this),
+                        margin: [5, 5, 5, 5] as Insets,
+                        actionPerformed: { tracker.current--; show() },
+                        enabled: bind { tracker.current > 0 })
                 label('Path:  ')
                 textField(editable: false, text: path)
+                button(icon: imageIcon(resource: 'icons/resultset_next.png', class: this),
+                        margin: [5, 5, 5, 5] as Insets,
+                        actionPerformed: { tracker.current++; show() },
+                        enabled: bind { tracker.current < pathCount - 1 }
+                )
             }
         }
     }
@@ -299,12 +313,14 @@ class ObjectBrowser {
                         ))
                         menuItem(action(
                                 name: 'Browse',
+                                enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, false, pathClosure),
                                 smallIcon: imageIcon(resource: 'icons/page_white_stack.png', class: this),
                                 shortDescription: 'Browse'
                         ))
                         menuItem(action(
                                 name: 'Browse in new window',
+                                enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, true, pathClosure),
                                 smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
                                 shortDescription: 'Browse window'
@@ -339,7 +355,11 @@ class ObjectBrowser {
 
     void showAction(int idx, EventObject evt) {
         tracker.current = idx
-        cards.layout.show(cards, 'path' + idx)
+        show()
+    }
+
+    void show() {
+        cards.layout.show(cards, 'path' + tracker.current)
         cards.revalidate()
     }
 
