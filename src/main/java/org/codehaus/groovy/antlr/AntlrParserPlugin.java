@@ -339,40 +339,39 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
      */
     protected void convertGroovy(AST node) {
         while (node != null) {
-            int type = node.getType();
-            switch (type) {
-                case PACKAGE_DEF:
-                    packageDef(node);
-                    break;
+            switch (node.getType()) {
+              case PACKAGE_DEF:
+                packageDef(node);
+                break;
 
-                case STATIC_IMPORT:
-                case IMPORT:
-                    importDef(node);
-                    break;
+              case STATIC_IMPORT:
+              case IMPORT:
+                importDef(node);
+                break;
 
-                case TRAIT_DEF:
-                case CLASS_DEF:
-                    classDef(node);
-                    break;
+              case TRAIT_DEF:
+              case CLASS_DEF:
+                classDef(node);
+                break;
 
-                case INTERFACE_DEF:
-                    interfaceDef(node);
-                    break;
+              case INTERFACE_DEF:
+                interfaceDef(node);
+                break;
 
-                case METHOD_DEF:
-                    methodDef(node);
-                    break;
+              case METHOD_DEF:
+                methodDef(node);
+                break;
 
-                case ENUM_DEF:
-                    enumDef(node);
-                    break;
+              case ENUM_DEF:
+                enumDef(node);
+                break;
 
-                case ANNOTATION_DEF:
-                    annotationDef(node);
-                    break;
+              case ANNOTATION_DEF:
+                annotationDef(node);
+                break;
 
-                default:
-                    output.addStatement(statement(node));
+              default:
+                output.addStatement(statement(node));
             }
             node = node.getNextSibling();
         }
@@ -605,8 +604,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression anonymousInnerClassDef(AST node) {
-        ClassNode oldNode = classNode;
-        ClassNode outerClass = getClassOrScript(oldNode);
+        ClassNode otherClass = classNode;
+        ClassNode outerClass = getClassOrScript(otherClass);
         String innerClassName = outerClass.getName() + "$" + (anonymousClassCount(outerClass) + 1);
         if (enumConstantBeingDef) {
             classNode = new EnumConstantClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
@@ -623,7 +622,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AnonymousInnerClassCarrier ret = new AnonymousInnerClassCarrier();
         ret.innerClass = classNode;
-        classNode = oldNode;
+        classNode = otherClass;
         return ret;
     }
 
@@ -697,52 +696,51 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected void objectBlock(AST objectBlock) {
         for (AST node = objectBlock.getFirstChild(); node != null; node = node.getNextSibling()) {
-            int type = node.getType();
-            switch (type) {
-                case OBJBLOCK:
-                    objectBlock(node);
-                    break;
+            switch (node.getType()) {
+              case OBJBLOCK:
+                objectBlock(node);
+                break;
 
-                case ANNOTATION_FIELD_DEF:
-                case METHOD_DEF:
-                    methodDef(node);
-                    break;
+              case ANNOTATION_FIELD_DEF:
+              case METHOD_DEF:
+                methodDef(node);
+                break;
 
-                case CTOR_IDENT:
-                    constructorDef(node);
-                    break;
+              case CTOR_IDENT:
+                constructorDef(node);
+                break;
 
-                case VARIABLE_DEF:
-                    fieldDef(node);
-                    break;
+              case VARIABLE_DEF:
+                fieldDef(node);
+                break;
 
-                case STATIC_INIT:
-                    staticInit(node);
-                    break;
+              case STATIC_INIT:
+                staticInit(node);
+                break;
 
-                case INSTANCE_INIT:
-                    objectInit(node);
-                    break;
+              case INSTANCE_INIT:
+                objectInit(node);
+                break;
 
-                case ENUM_DEF:
-                    enumDef(node);
-                    break;
+              case ENUM_DEF:
+                enumDef(node);
+                break;
 
-                case ENUM_CONSTANT_DEF:
-                    enumConstantDef(node);
-                    break;
+              case ENUM_CONSTANT_DEF:
+                enumConstantDef(node);
+                break;
 
-                case TRAIT_DEF:
-                case CLASS_DEF:
-                    innerClassDef(node);
-                    break;
+              case TRAIT_DEF:
+              case CLASS_DEF:
+                innerClassDef(node);
+                break;
 
-                case INTERFACE_DEF:
-                    innerInterfaceDef(node);
-                    break;
+              case INTERFACE_DEF:
+                innerInterfaceDef(node);
+                break;
 
-                default:
-                    unknownAST(node);
+              default:
+                unknownAST(node);
             }
         }
     }
@@ -1022,7 +1020,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
         }
-
         if (classNode.isInterface()) {
             modifiers |= Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
             if ((modifiers & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) == 0) {
@@ -1184,9 +1181,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 throw new ASTRuntimeException(node, "Cannot specify default value for method parameter '" + name + " = " + rightExpression.getText() + "' inside an interface");
             }
             parameter = new Parameter(type, name, rightExpression);
-        } else
+        } else {
             parameter = new Parameter(type, name);
-
+        }
         if (firstParam) firstParamIsVarArg = variableParameterDef;
 
         configureAST(parameter, paramNode);
@@ -1202,68 +1199,64 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         int answer = 0;
 
         for (AST node = modifierNode.getFirstChild(); node != null; node = node.getNextSibling()) {
-            int type = node.getType();
-            switch (type) {
-                case STATIC_IMPORT:
-                    // ignore
-                    break;
+            switch (node.getType()) {
+              case STATIC_IMPORT:
+                // ignore
+                break;
 
-                // annotations
-                case ANNOTATION:
-                    annotations.add(annotation(node));
-                    break;
+              case ANNOTATION:
+                annotations.add(annotation(node));
+                break;
 
-                // core access scope modifiers
-                case LITERAL_private:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_PRIVATE);
-                    access = setAccessTrue(node, access);
-                    break;
+              case LITERAL_private:
+                answer = setModifierBit(node, answer, Opcodes.ACC_PRIVATE);
+                access = setAccessTrue(node, access);
+                break;
 
-                case LITERAL_protected:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_PROTECTED);
-                    access = setAccessTrue(node, access);
-                    break;
+              case LITERAL_protected:
+                answer = setModifierBit(node, answer, Opcodes.ACC_PROTECTED);
+                access = setAccessTrue(node, access);
+                break;
 
-                case LITERAL_public:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_PUBLIC);
-                    access = setAccessTrue(node, access);
-                    break;
+              case LITERAL_public:
+                answer = setModifierBit(node, answer, Opcodes.ACC_PUBLIC);
+                access = setAccessTrue(node, access);
+                break;
 
-                // other modifiers
-                case ABSTRACT:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_ABSTRACT);
-                    break;
+              case ABSTRACT:
+                answer = setModifierBit(node, answer, Opcodes.ACC_ABSTRACT);
+                break;
 
-                case FINAL:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_FINAL);
-                    break;
+              case FINAL:
+                answer = setModifierBit(node, answer, Opcodes.ACC_FINAL);
+                break;
 
-                case LITERAL_native:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_NATIVE);
-                    break;
+              case LITERAL_native:
+                answer = setModifierBit(node, answer, Opcodes.ACC_NATIVE);
+                break;
 
-                case LITERAL_static:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_STATIC);
-                    break;
+              case LITERAL_static:
+                answer = setModifierBit(node, answer, Opcodes.ACC_STATIC);
+                break;
 
-                case STRICTFP:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_STRICT);
-                    break;
+              case STRICTFP:
+                answer = setModifierBit(node, answer, Opcodes.ACC_STRICT);
+                break;
 
-                case LITERAL_synchronized:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_SYNCHRONIZED);
-                    break;
+              case LITERAL_synchronized:
+                answer = setModifierBit(node, answer, Opcodes.ACC_SYNCHRONIZED);
+                break;
 
-                case LITERAL_transient:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_TRANSIENT);
-                    break;
+              case LITERAL_transient:
+                answer = setModifierBit(node, answer, Opcodes.ACC_TRANSIENT);
+                break;
 
-                case LITERAL_volatile:
-                    answer = setModifierBit(node, answer, Opcodes.ACC_VOLATILE);
-                    break;
+              case LITERAL_volatile:
+                answer = setModifierBit(node, answer, Opcodes.ACC_VOLATILE);
+                break;
 
-                default:
-                    unknownAST(node);
+              default:
+                unknownAST(node);
             }
         }
         if (!access) {
@@ -1317,70 +1310,69 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Statement statement(AST node) {
         Statement statement = null;
-        int type = node.getType();
-        switch (type) {
-            case SLIST:
-            case LITERAL_finally:
-                statement = statementList(node);
-                break;
+        switch (node.getType()) {
+          case SLIST:
+          case LITERAL_finally:
+            statement = statementList(node);
+            break;
 
-            case METHOD_CALL:
-                statement = methodCall(node);
-                break;
+          case METHOD_CALL:
+            statement = methodCall(node);
+            break;
 
-            case VARIABLE_DEF:
-                statement = variableDef(node);
-                break;
+          case VARIABLE_DEF:
+            statement = variableDef(node);
+            break;
 
-            case LABELED_STAT:
-                return labelledStatement(node);
+          case LABELED_STAT:
+            return labelledStatement(node);
 
-            case LITERAL_assert:
-                statement = assertStatement(node);
-                break;
+          case LITERAL_assert:
+            statement = assertStatement(node);
+            break;
 
-            case LITERAL_break:
-                statement = breakStatement(node);
-                break;
+          case LITERAL_break:
+            statement = breakStatement(node);
+            break;
 
-            case LITERAL_continue:
-                statement = continueStatement(node);
-                break;
+          case LITERAL_continue:
+            statement = continueStatement(node);
+            break;
 
-            case LITERAL_if:
-                statement = ifStatement(node);
-                break;
+          case LITERAL_if:
+            statement = ifStatement(node);
+            break;
 
-            case LITERAL_for:
-                statement = forStatement(node);
-                break;
+          case LITERAL_for:
+            statement = forStatement(node);
+            break;
 
-            case LITERAL_return:
-                statement = returnStatement(node);
-                break;
+          case LITERAL_return:
+            statement = returnStatement(node);
+            break;
 
-            case LITERAL_synchronized:
-                statement = synchronizedStatement(node);
-                break;
+          case LITERAL_synchronized:
+            statement = synchronizedStatement(node);
+            break;
 
-            case LITERAL_switch:
-                statement = switchStatement(node);
-                break;
+          case LITERAL_switch:
+            statement = switchStatement(node);
+            break;
 
-            case LITERAL_try:
-                statement = tryStatement(node);
-                break;
+          case LITERAL_try:
+            statement = tryStatement(node);
+            break;
 
-            case LITERAL_throw:
-                statement = throwStatement(node);
-                break;
+          case LITERAL_throw:
+            statement = throwStatement(node);
+            break;
 
-            case LITERAL_while:
-                statement = whileStatement(node);
-                break;
+          case LITERAL_while:
+            statement = whileStatement(node);
+            break;
 
-            default:
-                statement = new ExpressionStatement(expression(node));
+          default:
+            statement = new ExpressionStatement(expression(node));
         }
         if (statement != null) {
             configureAST(statement, node);
@@ -1459,7 +1451,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             AST variableNode = inNode.getFirstChild();
             AST collectionNode = variableNode.getNextSibling();
 
-            ClassNode type = ClassHelper.OBJECT_TYPE;
+            ClassNode type = ClassHelper.DYNAMIC_TYPE;
             if (isType(VARIABLE_DEF, variableNode)) {
                 AST node = variableNode.getFirstChild();
                 // skip the final modifier if it's present
@@ -1795,289 +1787,284 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression expressionSwitch(AST node) {
-        int type = node.getType();
-        switch (type) {
-            case EXPR:
-                Expression expression = expression(node.getFirstChild());
-                return expression;
+        switch (node.getType()) {
+          case EXPR:
+            Expression expression = expression(node.getFirstChild());
+            return expression;
 
-            case ELIST:
-                return expressionList(node);
+          case ELIST:
+            return expressionList(node);
 
-            case SLIST:
-                return blockExpression(node);
+          case SLIST:
+            return blockExpression(node);
 
-            case CLOSABLE_BLOCK:
-                return closureExpression(node);
+          case CLOSABLE_BLOCK:
+            return closureExpression(node);
 
-            case SUPER_CTOR_CALL:
-                return specialConstructorCallExpression(node, ClassNode.SUPER);
+          case SUPER_CTOR_CALL:
+            return specialConstructorCallExpression(node, ClassNode.SUPER);
 
-            case METHOD_CALL:
-                return methodCallExpression(node);
+        case METHOD_CALL:
+            return methodCallExpression(node);
 
-            case LITERAL_new:
-                return constructorCallExpression(node);
+          case LITERAL_new:
+            return constructorCallExpression(node);
 
-            case CTOR_CALL:
-                return specialConstructorCallExpression(node, ClassNode.THIS);
+          case CTOR_CALL:
+            return specialConstructorCallExpression(node, ClassNode.THIS);
 
-            case QUESTION:
-            case ELVIS_OPERATOR:
-                return ternaryExpression(node);
+          case QUESTION:
+          case ELVIS_OPERATOR:
+            return ternaryExpression(node);
 
-            case OPTIONAL_DOT:
-            case SPREAD_DOT:
-            case DOT:
-                return dotExpression(node);
+          case OPTIONAL_DOT:
+          case SPREAD_DOT:
+          case DOT:
+            return dotExpression(node);
 
-            case IDENT:
-            case LITERAL_boolean:
-            case LITERAL_byte:
-            case LITERAL_char:
-            case LITERAL_double:
-            case LITERAL_float:
-            case LITERAL_int:
-            case LITERAL_long:
-            case LITERAL_short:
-            case LITERAL_void:
-            case LITERAL_this:
-            case LITERAL_super:
-                return variableExpression(node);
+          case IDENT:
+          case LITERAL_boolean:
+          case LITERAL_byte:
+          case LITERAL_char:
+          case LITERAL_double:
+          case LITERAL_float:
+          case LITERAL_int:
+          case LITERAL_long:
+          case LITERAL_short:
+          case LITERAL_void:
+          case LITERAL_this:
+          case LITERAL_super:
+            return variableExpression(node);
 
-            case LIST_CONSTRUCTOR:
-                return listExpression(node);
+          case LIST_CONSTRUCTOR:
+            return listExpression(node);
 
-            case MAP_CONSTRUCTOR:
-                return mapExpression(node);
+          case MAP_CONSTRUCTOR:
+            return mapExpression(node);
 
-            case LABELED_ARG:
-                return mapEntryExpression(node);
+          case LABELED_ARG:
+            return mapEntryExpression(node);
 
-            case SPREAD_ARG:
-                return spreadExpression(node);
+          case SPREAD_ARG:
+            return spreadExpression(node);
 
-            case SPREAD_MAP_ARG:
-                return spreadMapExpression(node);
+          case SPREAD_MAP_ARG:
+            return spreadMapExpression(node);
 
-            case MEMBER_POINTER:
-                return methodPointerExpression(node);
+          case MEMBER_POINTER:
+            return methodPointerExpression(node);
 
-            case INDEX_OP:
-                return indexExpression(node);
+          case INDEX_OP:
+            return indexExpression(node);
 
-            case LITERAL_instanceof:
-                return instanceofExpression(node);
+          case LITERAL_instanceof:
+            return instanceofExpression(node);
 
-            case LITERAL_as:
-                return asExpression(node);
+          case LITERAL_as:
+            return asExpression(node);
 
-            case TYPECAST:
-                return castExpression(node);
+          case TYPECAST:
+            return castExpression(node);
 
-            case LITERAL_true:
-                return literalExpression(node, Boolean.TRUE);
+          case LITERAL_true:
+            return literalExpression(node, Boolean.TRUE);
 
-            case LITERAL_false:
-                return literalExpression(node, Boolean.FALSE);
+          case LITERAL_false:
+            return literalExpression(node, Boolean.FALSE);
 
-            case LITERAL_null:
-                return literalExpression(node, null);
+          case LITERAL_null:
+            return literalExpression(node, null);
 
-            case STRING_LITERAL:
-                return literalExpression(node, node.getText());
+          case STRING_LITERAL:
+            return literalExpression(node, node.getText());
 
-            case STRING_CONSTRUCTOR:
-                return gstring(node);
+          case STRING_CONSTRUCTOR:
+            return gstring(node);
 
-            case NUM_DOUBLE:
-            case NUM_FLOAT:
-            case NUM_BIG_DECIMAL:
-                return decimalExpression(node);
+          case NUM_DOUBLE:
+          case NUM_FLOAT:
+          case NUM_BIG_DECIMAL:
+            return decimalExpression(node);
 
-            case NUM_BIG_INT:
-            case NUM_INT:
-            case NUM_LONG:
-                return integerExpression(node);
+          case NUM_BIG_INT:
+          case NUM_INT:
+          case NUM_LONG:
+            return integerExpression(node);
 
-            // Unary expressions
-            case LNOT:
-                NotExpression notExpression = new NotExpression(expression(node.getFirstChild()));
-                configureAST(notExpression, node);
-                return notExpression;
+          case LNOT:
+            NotExpression notExpression = new NotExpression(expression(node.getFirstChild()));
+            configureAST(notExpression, node);
+            return notExpression;
 
-            case UNARY_MINUS:
-                return unaryMinusExpression(node);
+          case UNARY_MINUS:
+            return unaryMinusExpression(node);
 
-            case BNOT:
-                BitwiseNegationExpression bitwiseNegationExpression = new BitwiseNegationExpression(expression(node.getFirstChild()));
-                configureAST(bitwiseNegationExpression, node);
-                return bitwiseNegationExpression;
+          case BNOT:
+            BitwiseNegationExpression bitwiseNegationExpression = new BitwiseNegationExpression(expression(node.getFirstChild()));
+            configureAST(bitwiseNegationExpression, node);
+            return bitwiseNegationExpression;
 
-            case UNARY_PLUS:
-                return unaryPlusExpression(node);
+          case UNARY_PLUS:
+            return unaryPlusExpression(node);
 
-            case INC:
-                return prefixExpression(node, Types.PLUS_PLUS);
+          case INC:
+            return prefixExpression(node, Types.PLUS_PLUS);
 
-            case DEC:
-                return prefixExpression(node, Types.MINUS_MINUS);
+          case DEC:
+            return prefixExpression(node, Types.MINUS_MINUS);
 
-            case POST_INC:
-                return postfixExpression(node, Types.PLUS_PLUS);
+          case POST_INC:
+            return postfixExpression(node, Types.PLUS_PLUS);
 
-            case POST_DEC:
-                return postfixExpression(node, Types.MINUS_MINUS);
+          case POST_DEC:
+            return postfixExpression(node, Types.MINUS_MINUS);
 
-            // Binary expressions
-            case ASSIGN:
-                return binaryExpression(Types.ASSIGN, node);
+          case ASSIGN:
+            return binaryExpression(Types.ASSIGN, node);
 
-            case EQUAL:
-                return binaryExpression(Types.COMPARE_EQUAL, node);
+          case EQUAL:
+            return binaryExpression(Types.COMPARE_EQUAL, node);
 
-            case IDENTICAL:
-                return binaryExpression(Types.COMPARE_IDENTICAL, node);
+          case IDENTICAL:
+            return binaryExpression(Types.COMPARE_IDENTICAL, node);
 
-            case NOT_EQUAL:
-                return binaryExpression(Types.COMPARE_NOT_EQUAL, node);
+          case NOT_EQUAL:
+            return binaryExpression(Types.COMPARE_NOT_EQUAL, node);
 
-            case NOT_IDENTICAL:
-                return binaryExpression(Types.COMPARE_NOT_IDENTICAL, node);
+          case NOT_IDENTICAL:
+            return binaryExpression(Types.COMPARE_NOT_IDENTICAL, node);
 
-            case COMPARE_TO:
-                return binaryExpression(Types.COMPARE_TO, node);
+          case COMPARE_TO:
+            return binaryExpression(Types.COMPARE_TO, node);
 
-            case LE:
-                return binaryExpression(Types.COMPARE_LESS_THAN_EQUAL, node);
+          case LE:
+            return binaryExpression(Types.COMPARE_LESS_THAN_EQUAL, node);
 
-            case LT:
-                return binaryExpression(Types.COMPARE_LESS_THAN, node);
+          case LT:
+            return binaryExpression(Types.COMPARE_LESS_THAN, node);
 
-            case GT:
-                return binaryExpression(Types.COMPARE_GREATER_THAN, node);
+          case GT:
+            return binaryExpression(Types.COMPARE_GREATER_THAN, node);
 
-            case GE:
-                return binaryExpression(Types.COMPARE_GREATER_THAN_EQUAL, node);
+          case GE:
+            return binaryExpression(Types.COMPARE_GREATER_THAN_EQUAL, node);
 
-            case LAND:
-                return binaryExpression(Types.LOGICAL_AND, node);
+          case LAND:
+            return binaryExpression(Types.LOGICAL_AND, node);
 
-            case LOR:
-                return binaryExpression(Types.LOGICAL_OR, node);
+          case LOR:
+            return binaryExpression(Types.LOGICAL_OR, node);
 
-            case BAND:
-                return binaryExpression(Types.BITWISE_AND, node);
+          case BAND:
+            return binaryExpression(Types.BITWISE_AND, node);
 
-            case BAND_ASSIGN:
-                return binaryExpression(Types.BITWISE_AND_EQUAL, node);
+          case BAND_ASSIGN:
+            return binaryExpression(Types.BITWISE_AND_EQUAL, node);
 
-            case BOR:
-                return binaryExpression(Types.BITWISE_OR, node);
+          case BOR:
+            return binaryExpression(Types.BITWISE_OR, node);
 
-            case BOR_ASSIGN:
-                return binaryExpression(Types.BITWISE_OR_EQUAL, node);
+          case BOR_ASSIGN:
+            return binaryExpression(Types.BITWISE_OR_EQUAL, node);
 
-            case BXOR:
-                return binaryExpression(Types.BITWISE_XOR, node);
+          case BXOR:
+            return binaryExpression(Types.BITWISE_XOR, node);
 
-            case BXOR_ASSIGN:
-                return binaryExpression(Types.BITWISE_XOR_EQUAL, node);
+          case BXOR_ASSIGN:
+            return binaryExpression(Types.BITWISE_XOR_EQUAL, node);
 
-            case PLUS:
-                return binaryExpression(Types.PLUS, node);
+          case PLUS:
+            return binaryExpression(Types.PLUS, node);
 
-            case PLUS_ASSIGN:
-                return binaryExpression(Types.PLUS_EQUAL, node);
+          case PLUS_ASSIGN:
+            return binaryExpression(Types.PLUS_EQUAL, node);
 
-            case MINUS:
-                return binaryExpression(Types.MINUS, node);
+          case MINUS:
+            return binaryExpression(Types.MINUS, node);
 
-            case MINUS_ASSIGN:
-                return binaryExpression(Types.MINUS_EQUAL, node);
+          case MINUS_ASSIGN:
+            return binaryExpression(Types.MINUS_EQUAL, node);
 
-            case STAR:
-                return binaryExpression(Types.MULTIPLY, node);
+          case STAR:
+            return binaryExpression(Types.MULTIPLY, node);
 
-            case STAR_ASSIGN:
-                return binaryExpression(Types.MULTIPLY_EQUAL, node);
+          case STAR_ASSIGN:
+            return binaryExpression(Types.MULTIPLY_EQUAL, node);
 
-            case STAR_STAR:
-                return binaryExpression(Types.POWER, node);
+          case STAR_STAR:
+            return binaryExpression(Types.POWER, node);
 
-            case STAR_STAR_ASSIGN:
-                return binaryExpression(Types.POWER_EQUAL, node);
+          case STAR_STAR_ASSIGN:
+            return binaryExpression(Types.POWER_EQUAL, node);
 
-            case DIV:
-                return binaryExpression(Types.DIVIDE, node);
+          case DIV:
+            return binaryExpression(Types.DIVIDE, node);
 
-            case DIV_ASSIGN:
-                return binaryExpression(Types.DIVIDE_EQUAL, node);
+          case DIV_ASSIGN:
+            return binaryExpression(Types.DIVIDE_EQUAL, node);
 
-            case MOD:
-                return binaryExpression(Types.MOD, node);
+          case MOD:
+            return binaryExpression(Types.MOD, node);
 
-            case MOD_ASSIGN:
-                return binaryExpression(Types.MOD_EQUAL, node);
+          case MOD_ASSIGN:
+            return binaryExpression(Types.MOD_EQUAL, node);
 
-            case SL:
-                return binaryExpression(Types.LEFT_SHIFT, node);
+          case SL:
+            return binaryExpression(Types.LEFT_SHIFT, node);
 
-            case SL_ASSIGN:
-                return binaryExpression(Types.LEFT_SHIFT_EQUAL, node);
+          case SL_ASSIGN:
+            return binaryExpression(Types.LEFT_SHIFT_EQUAL, node);
 
-            case SR:
-                return binaryExpression(Types.RIGHT_SHIFT, node);
+          case SR:
+            return binaryExpression(Types.RIGHT_SHIFT, node);
 
-            case SR_ASSIGN:
-                return binaryExpression(Types.RIGHT_SHIFT_EQUAL, node);
+          case SR_ASSIGN:
+            return binaryExpression(Types.RIGHT_SHIFT_EQUAL, node);
 
-            case BSR:
-                return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED, node);
+          case BSR:
+            return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED, node);
 
-            case BSR_ASSIGN:
-                return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED_EQUAL, node);
+          case BSR_ASSIGN:
+            return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED_EQUAL, node);
 
-            case VARIABLE_DEF:
-                return declarationExpression(node);
+          case VARIABLE_DEF:
+            return declarationExpression(node);
 
-            // Regex
-            case REGEX_FIND:
-                return binaryExpression(Types.FIND_REGEX, node);
+          case REGEX_FIND:
+            return binaryExpression(Types.FIND_REGEX, node);
 
-            case REGEX_MATCH:
-                return binaryExpression(Types.MATCH_REGEX, node);
+          case REGEX_MATCH:
+            return binaryExpression(Types.MATCH_REGEX, node);
 
-            // Ranges
-            case RANGE_INCLUSIVE:
-                return rangeExpression(node, true);
+          case RANGE_INCLUSIVE:
+            return rangeExpression(node, true);
 
-            case RANGE_EXCLUSIVE:
-                return rangeExpression(node, false);
+          case RANGE_EXCLUSIVE:
+            return rangeExpression(node, false);
 
-            case DYNAMIC_MEMBER:
-                return dynamicMemberExpression(node);
+          case DYNAMIC_MEMBER:
+            return dynamicMemberExpression(node);
 
-            case LITERAL_in:
-                return binaryExpression(Types.KEYWORD_IN, node);
+          case LITERAL_in:
+            return binaryExpression(Types.KEYWORD_IN, node);
 
-            case ANNOTATION:
-                expression = new AnnotationConstantExpression(annotation(node));
-                configureAST(expression, node);
-                return expression;
+          case ANNOTATION:
+            expression = new AnnotationConstantExpression(annotation(node));
+            configureAST(expression, node);
+            return expression;
 
-            case CLOSURE_LIST:
-                return closureListExpression(node);
+          case CLOSURE_LIST:
+            return closureListExpression(node);
 
-            case LBRACK:
-            case LPAREN:
-                return tupleExpression(node);
+          case LBRACK:
+          case LPAREN:
+            return tupleExpression(node);
 
-            case OBJBLOCK:
-                return anonymousInnerClassDef(node);
+          case OBJBLOCK:
+            return anonymousInnerClassDef(node);
 
-            default:
-                unknownAST(node);
+          default:
+            unknownAST(node);
         }
         return null;
     }
@@ -2160,7 +2147,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected ConstantExpression literalExpression(AST node, Object value) {
-        ConstantExpression constantExpression = new ConstantExpression(value, value instanceof Boolean);
+        ConstantExpression constantExpression = new ConstantExpression(value, true);
         configureAST(constantExpression, node);
         return constantExpression;
     }
@@ -2215,12 +2202,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
             // check for stray labeled arguments:
             switch (node.getType()) {
-                case LABELED_ARG:
-                    assertNodeType(COMMA, node);
-                    break;  // helpful error?
-                case SPREAD_MAP_ARG:
-                    assertNodeType(SPREAD_ARG, node);
-                    break;  // helpful error
+              case LABELED_ARG:
+                assertNodeType(COMMA, node);
+                break;  // helpful error?
+              case SPREAD_MAP_ARG:
+                assertNodeType(SPREAD_ARG, node);
+                break;  // helpful error
             }
             expressions.add(expression(node));
         }
@@ -2236,15 +2223,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             assertNodeType(ELIST, elist);
             for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
                 switch (node.getType()) {
-                    case LABELED_ARG:
-                    case SPREAD_MAP_ARG:
-                        break;  // legal cases
-                    case SPREAD_ARG:
-                        assertNodeType(SPREAD_MAP_ARG, node);
-                        break;
-                    default:
-                        assertNodeType(LABELED_ARG, node);
-                        break;
+                  case LABELED_ARG:
+                  case SPREAD_MAP_ARG:
+                    break;  // legal cases
+                  case SPREAD_ARG:
+                    assertNodeType(SPREAD_MAP_ARG, node);
+                    break;
+                  default:
+                    assertNodeType(LABELED_ARG, node);
                 }
                 entryExpressions.add(mapEntryExpression(node));
             }
@@ -2772,24 +2758,24 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // as the negation operator on MIN_INT causes rounding to a long
         String text = node.getText();
         switch (node.getType()) {
-            case NUM_DOUBLE:
-            case NUM_FLOAT:
-            case NUM_BIG_DECIMAL:
-                ConstantExpression constantExpression = new ConstantExpression(Numbers.parseDecimal("-" + text));
-                configureAST(constantExpression, unaryMinusExpr);
-                return constantExpression;
+          case NUM_DOUBLE:
+          case NUM_FLOAT:
+          case NUM_BIG_DECIMAL:
+            ConstantExpression constantExpression = new ConstantExpression(Numbers.parseDecimal("-" + text), true);
+            configureAST(constantExpression, unaryMinusExpr);
+            return constantExpression;
 
-            case NUM_BIG_INT:
-            case NUM_INT:
-            case NUM_LONG:
-                ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger(unaryMinusExpr,"-" + text));
-                configureAST(constantLongExpression, unaryMinusExpr);
-                return constantLongExpression;
+          case NUM_BIG_INT:
+          case NUM_INT:
+          case NUM_LONG:
+            ConstantExpression constantLongExpression = new ConstantExpression(Numbers.parseInteger(unaryMinusExpr,"-" + text), true);
+            configureAST(constantLongExpression, unaryMinusExpr);
+            return constantLongExpression;
 
-            default:
-                UnaryMinusExpression unaryMinusExpression = new UnaryMinusExpression(expression(node));
-                configureAST(unaryMinusExpression, unaryMinusExpr);
-                return unaryMinusExpression;
+          default:
+            UnaryMinusExpression unaryMinusExpression = new UnaryMinusExpression(expression(node));
+            configureAST(unaryMinusExpression, unaryMinusExpr);
+            return unaryMinusExpression;
         }
     }
 
@@ -2798,33 +2784,29 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         UnaryPlusExpression unaryPlusExpression = new UnaryPlusExpression(expression(node));
         configureAST(unaryPlusExpression, unaryPlusExpr);
         switch (node.getType()) {
-            case NUM_DOUBLE:
-            case NUM_FLOAT:
-            case NUM_BIG_DECIMAL:
-            case NUM_BIG_INT:
-            case NUM_INT:
-            case NUM_LONG:
-                return unaryPlusExpression.getExpression();
+          case NUM_DOUBLE:
+          case NUM_FLOAT:
+          case NUM_BIG_DECIMAL:
+          case NUM_BIG_INT:
+          case NUM_INT:
+          case NUM_LONG:
+            return unaryPlusExpression.getExpression();
 
-            default:
-                return unaryPlusExpression;
+          default:
+            return unaryPlusExpression;
         }
     }
 
     protected ConstantExpression decimalExpression(AST node) {
-        String text = node.getText();
-        Object number = Numbers.parseDecimal(text);
-        ConstantExpression constantExpression = new ConstantExpression(number,
-                number instanceof Double || number instanceof Float);
+        Object number = Numbers.parseDecimal(node.getText());
+        ConstantExpression constantExpression = new ConstantExpression(number, true);
         configureAST(constantExpression, node);
         return constantExpression;
     }
 
     protected ConstantExpression integerExpression(AST node) {
-        String text = node.getText();
-        Object number = Numbers.parseInteger(node, text);
-        boolean keepPrimitive = number instanceof Integer || number instanceof Long;
-        ConstantExpression constantExpression = new ConstantExpression(number, keepPrimitive);
+        Object number = Numbers.parseInteger(node, node.getText());
+        ConstantExpression constantExpression = new ConstantExpression(number, true);
         configureAST(constantExpression, node);
         return constantExpression;
     }
@@ -2839,28 +2821,23 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         for (AST node = gstringNode.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
-            String text = null;
             switch (type) {
-
-                case STRING_LITERAL:
-                    if (isPrevString) assertNodeType(IDENT, node);  // parser bug
-                    isPrevString = true;
-                    text = node.getText();
-                    ConstantExpression constantExpression = new ConstantExpression(text);
-                    configureAST(constantExpression, node);
-                    strings.add(constantExpression);
-                    buffer.append(text);
-                    break;
-
-                default: {
-                    if (!isPrevString) assertNodeType(IDENT, node);  // parser bug
-                    isPrevString = false;
-                    Expression expression = expression(node);
-                    values.add(expression);
-                    buffer.append("$");
-                    buffer.append(expression.getText());
-                }
+              case STRING_LITERAL:
+                if (isPrevString) assertNodeType(IDENT, node); // parser bug
+                isPrevString = true;
+                String text = node.getText();
+                ConstantExpression constantExpression = new ConstantExpression(text);
+                configureAST(constantExpression, node);
+                strings.add(constantExpression);
+                buffer.append(text);
                 break;
+              default:
+                if (!isPrevString) assertNodeType(IDENT, node); // parser bug
+                isPrevString = false;
+                Expression expression = expression(node);
+                values.add(expression);
+                buffer.append("$");
+                buffer.append(expression.getText());
             }
         }
         GStringExpression gStringExpression = new GStringExpression(buffer.toString(), strings, values);
@@ -3061,20 +3038,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected boolean isPrimitiveTypeLiteral(AST node) {
-        int type = node.getType();
-        switch (type) {
-            case LITERAL_boolean:
-            case LITERAL_byte:
-            case LITERAL_char:
-            case LITERAL_double:
-            case LITERAL_float:
-            case LITERAL_int:
-            case LITERAL_long:
-            case LITERAL_short:
-                return true;
+        switch (node.getType()) {
+          case LITERAL_boolean:
+          case LITERAL_byte:
+          case LITERAL_char:
+          case LITERAL_double:
+          case LITERAL_float:
+          case LITERAL_int:
+          case LITERAL_long:
+          case LITERAL_short:
+            return true;
 
-            default:
-                return false;
+          default:
+            return false;
         }
     }
 

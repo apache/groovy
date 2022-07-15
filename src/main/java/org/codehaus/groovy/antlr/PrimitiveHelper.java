@@ -18,40 +18,51 @@
  */
 package org.codehaus.groovy.antlr;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+
 public class PrimitiveHelper {
+
     private PrimitiveHelper() {
     }
 
-    public static Expression getDefaultValueForPrimitive(ClassNode type) {
-        if (type == ClassHelper.int_TYPE) {
-            return new ConstantExpression(0);
+    public static Expression getDefaultValueForPrimitive(final ClassNode type) {
+        if (type == int_TYPE) {
+            return new ConstantExpression(0, true);
         }
-        if (type == ClassHelper.long_TYPE) {
-            return new ConstantExpression(0L);
+        if (type == long_TYPE) {
+            return new ConstantExpression(0L, true);
         }
-        if (type == ClassHelper.double_TYPE) {
-            return new ConstantExpression(0.0);
+        if (type == double_TYPE) {
+            return new ConstantExpression(0.0, true);
         }
-        if (type == ClassHelper.float_TYPE) {
-            return new ConstantExpression(0.0F);
+        if (type == boolean_TYPE) {
+            return new ConstantExpression(Boolean.FALSE, true);
         }
-        if (type == ClassHelper.boolean_TYPE) {
-            return ConstantExpression.FALSE;
+
+        if (type == byte_TYPE) {
+            return new ConstantExpression((byte) 0, true);
         }
-        if (type == ClassHelper.short_TYPE) {
-            return new ConstantExpression((short) 0);
+        if (type == char_TYPE) {
+            return new ConstantExpression((char) 0, true);
         }
-        if (type == ClassHelper.byte_TYPE) {
-            return new ConstantExpression((byte) 0);
+        if (type == float_TYPE) {
+            return new ConstantExpression((float) 0, true);
         }
-        if (type == ClassHelper.char_TYPE) {
-            return new ConstantExpression((char) 0);
+        if (type == short_TYPE) {
+            return new ConstantExpression((short) 0, true);
         }
+
         return null;
     }
 }
