@@ -608,7 +608,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode outerClass = getClassOrScript(otherClass);
         String innerClassName = outerClass.getName() + "$" + (anonymousClassCount(outerClass) + 1);
         if (enumConstantBeingDef) {
-            classNode = new EnumConstantClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+            classNode = new EnumConstantClassNode(outerClass, innerClassName, Opcodes.ACC_ENUM | Opcodes.ACC_FINAL, ClassHelper.OBJECT_TYPE);
         } else {
             classNode = new InnerClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         }
@@ -810,7 +810,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // we have to handle an enum constant with a class overriding
                 // a method in which case we need to configure the inner class
                 innerClass.setSuperClass(classNode.getPlainNodeReference());
-                innerClass.setModifiers(classNode.getModifiers() | Opcodes.ACC_FINAL);
                 // we use a ClassExpression for transportation to EnumVisitor
                 Expression inner = new ClassExpression(innerClass);
                 if (init == null) {
