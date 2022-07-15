@@ -129,30 +129,11 @@ public class GenericsUtils {
     }
 
     /**
-     * Generates a wildcard generic type with implicit upper and optional lower
-     * bounds. The result provides "?" or "? super T" (no "extends") semantics.
-     */
-    private static GenericsType boundWildcardType(final ClassNode implicit, final ClassNode lower) {
-        ClassNode base = ClassHelper.makeWithoutCaching("?");
-        base.setGenericsPlaceHolder(true);
-        base.setRedirect(implicit);
-
-        GenericsType gt = new GenericsType(base, null, lower);
-        gt.setPlaceholder(false);
-        gt.setWildcard(true);
-        return gt;
-    }
-
-    /**
      * Generates a wildcard generic type in order to be used for checks against
      * class nodes. See {@link GenericsType#isCompatibleWith(ClassNode)}.
-     *
-     * @param types the type(s) to be used as the wildcard's upper bound
      */
-    public static GenericsType buildWildcardType(final ClassNode... types) {
-        ClassNode base = ClassHelper.makeWithoutCaching("?");
-
-        GenericsType gt = new GenericsType(base, types, null);
+    public static GenericsType buildWildcardType(final ClassNode... upperBounds) {
+        GenericsType gt = new GenericsType(ClassHelper.makeWithoutCaching("?"), upperBounds, null);
         gt.setWildcard(true);
         return gt;
     }
@@ -209,12 +190,6 @@ public class GenericsUtils {
             if (rgt.isPlaceholder()) { // type parameter
                 GenericsType typeArgument = genericsTypes[i];
                 placeholders.computeIfAbsent(new GenericsType.GenericsTypeName(rgt.getName()), x -> {
-                    if (typeArgument.isWildcard() && typeArgument.getUpperBounds() == null) {
-                        ClassNode[] implicitBounds = rgt.getUpperBounds();//GROOVY-10651,GROOVY-10671
-                        if (implicitBounds != null && !ClassHelper.isObjectType(implicitBounds[0])) {
-                            return boundWildcardType(implicitBounds[0],typeArgument.getLowerBound());
-                        }
-                    }
                     typeArguments.add(typeArgument);
                     return typeArgument;
                 });
