@@ -384,6 +384,7 @@ smartHighlighterAction = action(
 aboutAction = action(
         name: 'About',
         closure: controller.&showAbout,
+        smallIcon: imageIcon(resource: 'icons/information.png', class: this),
         mnemonic: 'A'
 )
 

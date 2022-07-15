@@ -47,6 +47,8 @@ import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
@@ -58,10 +60,10 @@ import static java.awt.GridBagConstraints.NORTHWEST
 import static java.awt.GridBagConstraints.WEST
 
 /**
- * This object is a GUI for looking at the AST that Groovy generates. 
+ * This object is a GUI for looking at the AST that Groovy generates.
  *
  * Usage: java groovy.console.ui.AstBrowser [filename]
- *         where [filename] is an existing Groovy script. 
+ *         where [filename] is an existing Groovy script.
  */
 class AstBrowser {
 
@@ -361,6 +363,50 @@ class AstBrowser {
         return sw.toString()
     }
 
+    def mouseListener(int valueCol, Closure pathClosure) {
+        def outer = this
+        new MouseAdapter() {
+            void mouseClicked(MouseEvent e) {
+                def table = e.source
+                if (e.clickCount == 2) {
+                    launch(table, valueCol, pathClosure)
+                }
+            }
+
+            void mouseReleased(MouseEvent e) {
+                def table = e.source
+                int r = table.rowAtPoint(e.point)
+                if (r >= 0 && r < table.rowCount) {
+                    table.setRowSelectionInterval(r, r)
+                } else {
+                    table.clearSelection()
+                }
+
+                if (table.selectedRow < 0) return
+                if (e.isPopupTrigger()) {
+                    def popup = swing.popupMenu {
+                        menuItem(action(
+                                name: 'Copy',
+                                closure: outer.&copyAction.curry(table, e),
+                                mnemonic: 'C',
+                                accelerator: shortcut('C'),
+                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                shortDescription: 'Copy'
+                        ))
+                        menuItem(action(
+                                name: 'Browse',
+                                enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
+                                closure: outer.&launchAction.curry(table, valueCol, pathClosure),
+                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                shortDescription: 'Browse'
+                        ))
+                    }
+                    popup.show(e.component, e.x, e.y)
+                }
+            }
+        }
+    }
+
     private void showSource(view, String source, boolean showOnlyMethodCode, boolean isMethodNameAndMethodDescriptorAvailable, getPatternStr) {
         swing.doLater {
             view.textEditor.text = source
@@ -637,7 +683,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 }
 
 /**
- * This interface is used to create tree nodes of various types 
+ * This interface is used to create tree nodes of various types
  */
 @CompileStatic
 interface AstBrowserNodeMaker<T> {
@@ -647,7 +693,7 @@ interface AstBrowserNodeMaker<T> {
 }
 
 /**
- * Creates tree nodes for swing UI  
+ * Creates tree nodes for swing UI
  */
 @CompileStatic
 class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {

@@ -22,6 +22,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.PropertyValue;
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -132,6 +133,25 @@ public class Inspector {
     }
 
     /**
+     * Get info about usual Java instance and class Methods as well as Constructors.
+     */
+    public Tuple2[] getMethodsWithInfo() {
+        Method[] methods = getClassUnderInspection().getMethods();
+        Constructor[] ctors = getClassUnderInspection().getConstructors();
+        Tuple2[] result = new Tuple2[methods.length + ctors.length];
+        int resultIndex = 0;
+        for (; resultIndex < methods.length; resultIndex++) {
+            Method method = methods[resultIndex];
+            result[resultIndex] = Tuple2.tuple(method, methodInfo(method));
+        }
+        for (int i = 0; i < ctors.length; i++, resultIndex++) {
+            Constructor ctor = ctors[i];
+            result[resultIndex] = Tuple2.tuple(ctor, methodInfo(ctor));
+        }
+        return result;
+    }
+
+    /**
      * Get info about instance and class Methods that are dynamically added through Groovy.
      *
      * @return Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
@@ -144,6 +164,21 @@ public class Inspector {
         for (Iterator iter = metaMethods.iterator(); iter.hasNext(); i++) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
             result[i] = methodInfo(metaMethod);
+        }
+        return result;
+    }
+
+    /**
+     * Get info about instance and class Methods that are dynamically added through Groovy.
+     */
+    public Tuple2[] getMetaMethodsWithInfo() {
+        MetaClass metaClass = InvokerHelper.getMetaClass(objectUnderInspection);
+        List<MetaMethod> metaMethods = metaClass.getMetaMethods();
+        Tuple2[] result = new Tuple2[metaMethods.size()];
+        int i = 0;
+        for (Iterator<MetaMethod> iter = metaMethods.iterator(); iter.hasNext(); i++) {
+            MetaMethod metaMethod = (MetaMethod) iter.next();
+            result[i] = Tuple2.tuple(metaMethod, methodInfo(metaMethod));
         }
         return result;
     }
@@ -195,18 +230,35 @@ public class Inspector {
     }
 
     protected String[] fieldInfo(PropertyValue pv) {
-        String[] result = new String[MEMBER_VALUE_IDX + 1];
-        result[MEMBER_ORIGIN_IDX] = GROOVY;
-        result[MEMBER_MODIFIER_IDX] = "public";
-        result[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
-        result[MEMBER_TYPE_IDX] = shortName(pv.getType());
-        result[MEMBER_NAME_IDX] = pv.getName();
-        try {
-            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(pv.getValue());
-        } catch (Exception e) {
-            result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+        return fieldWithInfo(pv).getV2();
+    }
+
+    public Object[] getPropertiesWithInfo() {
+        List<PropertyValue> props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
+        Object[] result = new Object[props.size()];
+        int i = 0;
+        for (Iterator<PropertyValue> iter = props.iterator(); iter.hasNext(); i++) {
+            result[i] = fieldWithInfo(iter.next());
         }
-        return withoutNulls(result);
+        return result;
+    }
+
+    protected Tuple2<Object, String[]> fieldWithInfo(PropertyValue pv) {
+        String[] info = new String[MEMBER_VALUE_IDX + 1];
+        info[MEMBER_ORIGIN_IDX] = GROOVY;
+        info[MEMBER_MODIFIER_IDX] = "public";
+        info[MEMBER_DECLARER_IDX] = NOT_APPLICABLE;
+        info[MEMBER_TYPE_IDX] = shortName(pv.getType());
+        info[MEMBER_NAME_IDX] = pv.getName();
+        Object field = null;
+        try {
+            field = pv.getValue();
+            info[MEMBER_VALUE_IDX] = InvokerHelper.inspect(field);
+        } catch (Exception e) {
+            info[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
+        }
+        info = withoutNulls(info);
+        return new Tuple2<>(field, info);
     }
 
     protected Class getClassUnderInspection() {
@@ -305,13 +357,18 @@ public class Inspector {
     }
 
     public static Collection sort(List<Object> memberInfo) {
-        memberInfo.sort(new MemberComparator());
+        return sort(memberInfo, new MemberComparator());
+    }
+
+    public static Collection sort(List<Object> memberInfo, Comparator<Object> comparator) {
+        memberInfo.sort(comparator);
         return memberInfo;
     }
 
     public static class MemberComparator implements Comparator<Object>, Serializable {
         private static final long serialVersionUID = -7691851726606749541L;
 
+        @Override
         public int compare(Object a, Object b) {
             String[] aStr = (String[]) a;
             String[] bStr = (String[]) b;
@@ -327,6 +384,18 @@ public class Inspector {
             if (0 != result) return result;
             result = aStr[Inspector.MEMBER_ORIGIN_IDX].compareTo(bStr[Inspector.MEMBER_ORIGIN_IDX]);
             return result;
+        }
+    }
+
+    public static class MemberComparatorWithValue implements Comparator<Object>, Serializable {
+        private static final long serialVersionUID = 294298614093394525L;
+        private static final MemberComparator delegate = new MemberComparator();
+
+        @Override
+        public int compare(Object a, Object b) {
+            Tuple2<Object, String[]> aTuple = (Tuple2<Object, String[]>) a;
+            Tuple2<Object, String[]> bTuple = (Tuple2<Object, String[]>) b;
+            return delegate.compare(aTuple.getV2(), bTuple.getV2());
         }
     }
 }
