@@ -70,7 +70,7 @@ class AsciiTableMaker {
      * @since 4.0.0
      */
     static String makeAsciiTable(List<String[]> table, int maxWidth, boolean leftJustifiedRows) {
-        StringBuilder result = new StringBuilder()
+        StringBuilder result = new StringBuilder(512)
 
         if (0 == maxWidth) maxWidth = DEFAULT_MAX_WIDTH
 
@@ -140,13 +140,14 @@ class AsciiTableMaker {
 
         // Print table
         result.append(line)
+        final fmt = formatString.toString()
         Arrays.stream(finalTable)
                 .limit(1)
-                .forEach(a -> result.append(String.format(formatString.toString(), (Object[]) a)))
+                .forEach(a -> result.append(String.format(fmt, (Object[]) a)))
         result.append(line)
 
         range(1, finalTable.length)
-                .forEach(i -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
+                .forEach(i -> result.append(String.format(fmt, (Object[]) finalTable[i])))
         result.append(line)
 
         return result.toString()
