@@ -291,13 +291,13 @@ public class MethodNode extends AnnotatedNode {
     @Override
     public String getText() {
         int mask = this instanceof ConstructorNode ? Modifier.constructorModifiers() : Modifier.methodModifiers();
-        String prettyName = getName().contains(" ") ? "\"" + getName() + "\"" : getName();
+        String name = getName(); if (name.indexOf(' ') != -1) name = "\"" + name + "\""; // GROOVY-10417
         return AstToTextHelper.getModifiersText(getModifiers() & mask) +
                 ' ' +
                 toGenericTypesString(getGenericsTypes()) +
                 AstToTextHelper.getClassText(getReturnType()) +
                 ' ' +
-                prettyName +
+                name +
                 '(' +
                 AstToTextHelper.getParametersText(getParameters()) +
                 ')' +

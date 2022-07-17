@@ -1370,6 +1370,7 @@ public class ClassNode extends AnnotatedNode {
      * record-like classes currently being compiled.
      *
      * @return {@code true} if the instance represents a native {@code record}
+     *
      * @since 4.0.0
      */
     @Incubating
@@ -1381,6 +1382,7 @@ public class ClassNode extends AnnotatedNode {
      * Gets the record components of record type.
      *
      * @return {@code RecordComponentNode} instances
+     *
      * @since 4.0.0
      */
     @Incubating
@@ -1421,6 +1423,7 @@ public class ClassNode extends AnnotatedNode {
 
     /**
      * @return {@code true} for native and emulated (annotation based) sealed classes
+     *
      * @since 4.0.0
      */
     @Incubating
