@@ -142,12 +142,8 @@ public class ASTNode {
      *                        data under that key
      */
     public void setNodeMetaData(Object key, Object value) {
-        if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
-        if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
-        }
-        Object old = metaDataMap.put(key,value);
-        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
+        Object old = putNodeMetaData(key,value);
+        if (old != null) throw new GroovyBugError("Tried to replace existing meta data on " + this + ".");
     }
 
     /**

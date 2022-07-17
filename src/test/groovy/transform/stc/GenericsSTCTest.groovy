@@ -2949,7 +2949,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10673
     void testMockito() {
         assertScript '''
-            @Grab('org.mockito:mockito-core:4.5.1')
+            @Grab('org.mockito:mockito-all:1.10.19')
             import static org.mockito.Mockito.*
 
             class C {

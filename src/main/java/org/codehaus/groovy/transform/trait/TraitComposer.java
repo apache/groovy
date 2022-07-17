@@ -71,7 +71,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -500,8 +499,7 @@ public abstract class TraitComposer {
             if (targetNode.getDeclaredMethod(forwarderName, superForwarderParams) == null) {
                 ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
                 Statement delegate = next == null ? createSuperFallback(forwarderMethod, returnType) : createDelegatingForwarder(forwarderMethod, next);
-                MethodNode methodNode = targetNode.addMethod(forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
-                markAsGenerated(targetNode, methodNode);
+                MethodNode methodNode = addGeneratedMethod(targetNode, forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
                 methodNode.setGenericsTypes(forwarderMethod.getGenericsTypes());
             }
         }

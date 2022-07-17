@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
@@ -53,20 +52,25 @@ trait StaticCompilationTestSupport {
     void extraSetup() {
         astTrees = [:]
         config = new CompilerConfiguration()
-        def imports = new ImportCustomizer()
-        imports.addImports(
-                'groovy.transform.ASTTest', 'org.codehaus.groovy.transform.stc.StaticTypesMarker',
-                'org.codehaus.groovy.ast.ClassHelper'
+        config.addCompilationCustomizers(
+                new ImportCustomizer().tap {
+                    addImports(
+                            'groovy.transform.ASTTest',
+                            'groovy.transform.stc.ClosureParams',
+                            'org.codehaus.groovy.ast.ClassHelper',
+                            'org.codehaus.groovy.transform.stc.StaticTypesMarker')
+                    addStaticStars(
+                            'org.codehaus.groovy.ast.ClassHelper',
+                            'org.codehaus.groovy.control.CompilePhase',
+                            'org.codehaus.groovy.transform.stc.StaticTypesMarker')
+                },
+                new ASTTransformationCustomizer(groovy.transform.CompileStatic),
+                new ASTTreeCollector(this)
         )
-        imports.addStaticStars('org.codehaus.groovy.control.CompilePhase')
-        imports.addStaticStars('org.codehaus.groovy.transform.stc.StaticTypesMarker')
-        imports.addStaticStars('org.codehaus.groovy.ast.ClassHelper')
-        config.addCompilationCustomizers(imports,new ASTTransformationCustomizer(CompileStatic), new ASTTreeCollector(this))
         configure()
-        shell = new GroovyShell(config)
-        // trick because GroovyShell doesn't allow to provide our own GroovyClassLoader
-        // to be fixed when this will be possible
-        shell.loader = new CompilationUnitAwareGroovyClassLoader(this.getClass().classLoader, config, this)
+
+        GroovyClassLoader loader = new CompilationUnitAwareGroovyClassLoader(this.class.classLoader, config, this)
+        shell = new GroovyShell(loader, config)
     }
 
     void tearDown() {
@@ -106,7 +110,6 @@ trait StaticCompilationTestSupport {
         CustomCompilationUnit(final CompilerConfiguration configuration, final CodeSource security, final GroovyClassLoader loader) {
             super(configuration, security, loader)
         }
-
     }
 
     static class ASTTreeCollector extends CompilationCustomizer {
@@ -135,5 +138,4 @@ trait StaticCompilationTestSupport {
             }
         }
     }
-
 }

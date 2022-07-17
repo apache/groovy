@@ -63,11 +63,11 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
 
     @Override
     public Expression transform(final Expression exp) {
-        if (exp instanceof MethodCallExpression) {
-            return transformMethodCallExpression((MethodCallExpression)exp);
-        }
         if (exp instanceof BinaryExpression) {
             return transformBinaryExpression((BinaryExpression) exp);
+        }
+        if (exp instanceof MethodCallExpression) {
+            return transformMethodCallExpression((MethodCallExpression) exp);
         }
         return super.transform(exp);
     }
@@ -86,8 +86,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 }
                 if (traitReceiver!=null) {
                     // A.super.foo = ...
-                    TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
-                    ClassNode helper = helpers.getHelper();
+                    ClassNode helper = getHelper(traitReceiver);
                     String setterName = MetaProperty.getSetterName(leftPropertyExpression.getPropertyAsString());
                     List<MethodNode> methods = helper.getMethods(setterName);
                     for (MethodNode method : methods) {
@@ -167,8 +166,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             traitReceiver.redirect().setNodeMetaData(UNRESOLVED_HELPER_CLASS, ret);
             return ret;
         } else {
-            TraitHelpersTuple helpers = Traits.findHelpers(traitReceiver);
-            return helpers.getHelper();
+            return Traits.findHelper(traitReceiver);
         }
     }
 
@@ -176,7 +174,8 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         return !traitReceiver.redirect().getInnerClasses().hasNext()
                 && this.unit.getAST().getClasses().contains(traitReceiver.redirect());
     }
-    private boolean isTraitSuperPropertyExpression(Expression exp) {
+
+    private boolean isTraitSuperPropertyExpression(final Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
             Expression objectExpression = pexp.getObjectExpression();

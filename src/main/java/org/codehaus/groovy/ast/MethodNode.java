@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -198,7 +199,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return "MethodNode@" + hashCode() + "[" + getDeclaringClass().getName() + "#" + getTypeDescriptor() + "]";
+        ClassNode declaringClass = getDeclaringClass();
+        return super.toString() + "[" + getTypeDescriptor() + (declaringClass == null ? "" : " from " + ClassNodeUtils.formatTypeName(declaringClass)) + "]";
     }
 
     public void setReturnType(ClassNode returnType) {

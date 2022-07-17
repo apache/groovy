@@ -54,8 +54,8 @@ public class DeclarationExpression extends BinaryExpression {
      * @param right
      *      the right hand side of a declaration
      */
-    public DeclarationExpression(VariableExpression left, Token operation, Expression right) {
-        super(left,operation,right);
+    public DeclarationExpression(final VariableExpression left, final Token operation, final Expression right) {
+        this((Expression) left, operation, right);
     }
 
     /**
@@ -68,8 +68,8 @@ public class DeclarationExpression extends BinaryExpression {
      * @param right
      *       the right hand side of a declaration
      */
-    public DeclarationExpression(Expression left, Token operation, Expression right) {
-        super(left,operation,right);
+    public DeclarationExpression(final Expression left, final Token operation, final Expression right) {
+        super(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), right);
         check(left);
     }
 
