@@ -1082,6 +1082,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 inferredType = type;
             }
+            if (inferredType.isGenericsPlaceHolder()) // GROOVY-10344: "T t = new C<>()"
+                inferredType = getCombinedBoundType(inferredType.getGenericsTypes()[0]);
 
             adjustGenerics(inferredType, cceType);
             storeType(cce, cceType);
@@ -3137,10 +3139,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             dummyMN.setDeclaringClass(orig.getDeclaringClass());
             dummyMN.setGenericsTypes(orig.getGenericsTypes());
         }
-        ClassNode classNode = inferReturnTypeGenerics(receiver, dummyMN, arguments);
-        ClassNode[] inferred = new ClassNode[classNode.getGenericsTypes().length];
-        for (int i = 0; i < classNode.getGenericsTypes().length; i++) {
-            GenericsType genericsType = classNode.getGenericsTypes()[i];
+        ClassNode returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments);
+        GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
+        ClassNode[] inferred = new ClassNode[returnTypeGenerics.length];
+        for (int i = 0, n = returnTypeGenerics.length; i < n; i += 1) {
+            GenericsType genericsType = returnTypeGenerics[i];
             ClassNode value = createUsableClassNodeFromGenericsType(genericsType);
             inferred[i] = value;
         }
@@ -5337,9 +5340,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * argument is {@code List<T>} without explicit type arguments. Knowning the
      * method target of "m", {@code T} could be resolved.
      */
-    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
-        for (int i = 0, n = actuals.length; i < n; i += 1) {
+    private void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
+        int np = parameterArray.length;
+        for (int i = 0, n = actuals.length; i < n && np > 0; i += 1) {
             Expression a = argumentList.getExpression(i);
+            Parameter p = parameterArray[Math.min(i, np - 1)];
+
+            ClassNode at = actuals[i], pt = p.getOriginType();
+            if (!isUsingGenericsOrIsArrayUsingGenerics(pt)) continue;
+            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+
+            if (a instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-10086, GROOVY-10316
+            }
+
             // check for method call without type arguments, with a known target
             if (!(a instanceof MethodCall) || (a instanceof MethodCallExpression
                     && ((MethodCallExpression) a).isUsingGenerics())) continue;
@@ -5347,14 +5361,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (aNode == null || aNode.getGenericsTypes() == null) continue;
 
             // and unknown generics
-            ClassNode at = actuals[i];
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
 
-            int np = parameterArray.length;
-            Parameter p = parameterArray[Math.min(i, np - 1)];
-
-            ClassNode pt = p.getOriginType();
-            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+            while (!at.equals(pt) && !at.equals(OBJECT_TYPE)) {
+                ClassNode sc = GenericsUtils.getSuperClass(at, pt);
+                at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), sc);
+            }
 
             // try to resolve placeholder(s) in argument type using parameter type
 
