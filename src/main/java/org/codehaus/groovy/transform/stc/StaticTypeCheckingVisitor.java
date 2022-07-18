@@ -1058,19 +1058,39 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
-        ClassNode cceType = cce.getType();
+        ClassNode cceType = cce.getType(), inferredType = lType;
         // check if constructor call expression makes use of the diamond operator
         if (cceType.getGenericsTypes() != null && cceType.getGenericsTypes().length == 0) {
-            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
-            if (argumentListExpression.getExpressions().isEmpty()) {
-                adjustGenerics(lType, cceType);
-            } else {
-                ClassNode type = getType(argumentListExpression.getExpression(0));
+            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(cce.getArguments());
+            ConstructorNode constructor = cce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+            if (constructor != null && !argumentList.getExpressions().isEmpty()) {
+                ClassNode type = GenericsUtils.parameterizeType(cceType, cceType);
+                type = inferReturnTypeGenerics(type, constructor, argumentList);
                 if (type.isUsingGenerics()) {
-                    adjustGenerics(type, cceType);
+                    // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
+                    if (checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
+                        // allow covariance of each type parameter, but maintain semantics for nested generics
+
+                        ClassNode pType = GenericsUtils.parameterizeType(lType, type);
+                        GenericsType[] lhs = pType.getGenericsTypes(), rhs = type.getGenericsTypes();
+                        if (lhs == null || rhs == null || lhs.length != rhs.length) throw new GroovyBugError(
+                                "Parameterization failed: " + prettyPrintType(pType) + " ~ " + prettyPrintType(type));
+
+                        boolean allMatch = true;
+                        for (int i = 0, n = lhs.length; i < n && allMatch; i += 1) {
+                            if (!GenericsUtils.buildWildcardType(getCombinedBoundType(lhs[i])).isCompatibleWith(getCombinedBoundType(rhs[i]))) {
+                                allMatch = false;
+                            }
+                        }
+                        if (allMatch) type = pType; // lType proved to be a viable type witness
+                    }
+                    inferredType = type;
                 }
             }
-            // store inferred type on CCE
+            if (inferredType.isGenericsPlaceHolder()) // GROOVY-10344: "T t = new C<>()"
+                inferredType = getCombinedBoundType(inferredType.getGenericsTypes()[0]);
+
+            adjustGenerics(inferredType, cceType);
             storeType(cce, cceType);
         }
     }
@@ -5209,9 +5229,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * argument is {@code List<T>} without explicit type arguments. Knowning the
      * method target of "m", {@code T} could be resolved.
      */
-    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
-        for (int i = 0, n = actuals.length; i < n; i += 1) {
+    private void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
+        int np = parameterArray.length;
+        for (int i = 0, n = actuals.length; i < n && np > 0; i += 1) {
             Expression a = argumentList.getExpression(i);
+            Parameter p = parameterArray[Math.min(i, np - 1)];
+
+            ClassNode at = actuals[i], pt = p.getOriginType();
+            if (!isUsingGenericsOrIsArrayUsingGenerics(pt)) continue;
+            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+
+            if (a instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-10086, GROOVY-10316
+            }
+
             // check for method call without type arguments, with a known target
             if (!(a instanceof MethodCall) || (a instanceof MethodCallExpression
                     && ((MethodCallExpression) a).isUsingGenerics())) continue;
@@ -5219,14 +5250,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (aNode == null || aNode.getGenericsTypes() == null) continue;
 
             // and unknown generics
-            ClassNode at = actuals[i];
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
 
-            int np = parameterArray.length;
-            Parameter p = parameterArray[Math.min(i, np - 1)];
-
-            ClassNode pt = p.getOriginType();
-            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+            while (!at.equals(pt) && !at.equals(OBJECT_TYPE)) {
+                ClassNode sc = GenericsUtils.getSuperClass(at, pt);
+                at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), sc);
+            }
 
             // try to resolve placeholder(s) in argument type using parameter type
 

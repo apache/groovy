@@ -173,12 +173,8 @@ public class GenericsType extends ASTNode {
     //--------------------------------------------------------------------------
 
     /**
-     * Compares this generics type with the provided class node. If the provided
-     * class node is compatible with the generics specification, returns true.
-     * Otherwise, returns false. The check is complete, meaning that nested
-     * generics are also checked.
-     *
-     * @return if {@code classNode} is or is not compatible with this generics specification
+     * Determines if the provided type is compatible with this specification.
+     * The check is complete, meaning that nested generics are also checked.
      */
     public boolean isCompatibleWith(final ClassNode classNode) {
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
@@ -196,21 +192,24 @@ public class GenericsType extends ASTNode {
                 return name0.equals(getName());
             }
             if (getLowerBound() != null) {
+                // check for "? super T" vs "T"
                 if (name0.equals(getLowerBound().getUnresolvedName())) {
                     return true;
                 }
             } else if (getUpperBounds() != null) {
+                // check for "? extends T" vs "T"
                 if (name0.equals(getUpperBounds()[0].getUnresolvedName())) {
                     return true;
                 }
             }
+            // check for "? extends/super X" vs "T extends/super X"
             return checkGenerics(classNode);
         }
         if (isWildcard() || isPlaceholder()) {
             // if the generics spec is a wildcard or a placeholder then check the bounds
             ClassNode lowerBound = getLowerBound();
             if (lowerBound != null) {
-                // for a lower bound, perform the upper bound checks with reversed arguments
+                // test bound and type in reverse for lower bound vs upper bound
                 if (!implementsInterfaceOrIsSubclassOf(lowerBound, classNode)) {
                     return false;
                 }
@@ -224,19 +223,16 @@ public class GenericsType extends ASTNode {
                         return false;
                     }
                 }
-                // if the provided classnode is a subclass of the upper bound
-                // then check that the generic types supplied by the class node are compatible with
-                // this generics specification
-                // for example, we could have the spec saying List<String> but provided classnode
-                // saying List<Integer>
+                // if the provided type is a subclass of the upper bound(s) then
+                // check that the generic types supplied are compatible with this
+                // for example, this spec could be "Type<X>" but type is "Type<Y>"
                 return checkGenerics(classNode);
             }
-            // if there are no bounds, the generic type is basically Object, and everything is compatible
+            // if there are no bounds, the generic type is basically Object and everything is compatible
             return true;
         }
-        // last, we could have the spec saying List<String> and a classnode saying List<Integer> so
-        // we must check that generics are compatible
-        return getType().equals(classNode) && compareGenericsWithBound(classNode, type);
+        // not placeholder or wildcard; no covariance allowed for type or bound(s)
+        return classNode.equals(getType()) && compareGenericsWithBound(classNode, getType());
     }
 
     private static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
@@ -294,13 +290,12 @@ public class GenericsType extends ASTNode {
      * @return true if generics are compatible
      */
     private static boolean compareGenericsWithBound(final ClassNode classNode, final ClassNode bound) {
-        if (classNode == null) {
-            return false;
-        }
-        if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
-            // if the bound is not using generics or the class node is a raw type, there's nothing to compare with
+        if (classNode == null) return false;
+        if (bound.getGenericsTypes() == null
+                || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null))
+            // if the bound is not using generics or the class node is a raw type, there's nothing to compare
             return true;
-        }
+
         if (!classNode.equals(bound)) {
              // the class nodes are on different types
             // in this situation, we must choose the correct execution path : either the bound
@@ -316,8 +311,10 @@ public class GenericsType extends ASTNode {
                         // class node are not parameterized. This means that we must create a
                         // new class node with the parameterized types that the current class node
                         // has defined.
-                        ClassNode node = GenericsUtils.parameterizeType(classNode, face);
-                        return compareGenericsWithBound(node, bound);
+                        if (face.getGenericsTypes() != null) {
+                            face = GenericsUtils.parameterizeType(classNode, face);
+                        }
+                        return compareGenericsWithBound(face, bound);
                     }
                 }
             }
@@ -333,7 +330,16 @@ public class GenericsType extends ASTNode {
                     if (success) return true;
                 }
             }
-            return compareGenericsWithBound(getParameterizedSuperClass(classNode), bound);
+            if (classNode.equals(ClassHelper.OBJECT_TYPE)) {
+                return false;
+            }
+            ClassNode superClass = classNode.getUnresolvedSuperClass();
+            if (superClass == null) {
+                superClass = ClassHelper.OBJECT_TYPE;
+            } else if (superClass.getGenericsTypes() != null) {
+                superClass = GenericsUtils.parameterizeType(classNode, superClass);
+            }
+            return compareGenericsWithBound(superClass, bound);
         }
 
         GenericsType[] cnTypes = classNode.getGenericsTypes();
@@ -341,7 +347,7 @@ public class GenericsType extends ASTNode {
             cnTypes = classNode.redirect().getGenericsTypes();
         }
         if (cnTypes == null) {
-            // may happen if generic type is Foo<T extends Foo> and classnode is Foo -> Foo
+            // may happen if generic type is Foo<T extends Foo> and ClassNode is Foo -> Foo
             return true;
         }
 
@@ -450,46 +456,6 @@ public class GenericsType extends ASTNode {
             }
         }
         return match;
-    }
-
-    /**
-     * If you have a class which extends a class using generics, returns the superclass with parameterized types. For
-     * example, if you have:
-     * <code>class MyList&lt;T&gt; extends LinkedList&lt;T&gt;
-     * def list = new MyList&lt;String&gt;
-     * </code>
-     * then the parameterized superclass for MyList&lt;String&gt; is LinkedList&lt;String&gt;
-     * @param classNode the class for which we want to return the parameterized superclass
-     * @return the parameterized superclass
-     */
-    private static ClassNode getParameterizedSuperClass(final ClassNode classNode) {
-        if (ClassHelper.OBJECT_TYPE.equals(classNode)) return null;
-        ClassNode superClass = classNode.getUnresolvedSuperClass();
-        if (superClass == null) return ClassHelper.OBJECT_TYPE;
-
-        if (!classNode.isUsingGenerics() || !superClass.isUsingGenerics()) {
-            return superClass;
-        }
-
-        GenericsType[] genericsTypes = classNode.getGenericsTypes();
-        GenericsType[] redirectGenericTypes = classNode.redirect().getGenericsTypes();
-        superClass = superClass.getPlainNodeReference();
-        if (genericsTypes == null || redirectGenericTypes == null || superClass.getGenericsTypes() == null) {
-            return superClass;
-        }
-        for (int i = 0, genericsTypesLength = genericsTypes.length; i < genericsTypesLength; i += 1) {
-            if (redirectGenericTypes[i].isPlaceholder()) {
-                GenericsType genericsType = genericsTypes[i];
-                GenericsType[] superGenericTypes = superClass.getGenericsTypes();
-                for (int j = 0, superGenericTypesLength = superGenericTypes.length; j < superGenericTypesLength; j += 1) {
-                    GenericsType superGenericType = superGenericTypes[j];
-                    if (superGenericType.isPlaceholder() && superGenericType.getName().equals(redirectGenericTypes[i].getName())) {
-                        superGenericTypes[j] = genericsType;
-                    }
-                }
-            }
-        }
-        return superClass;
     }
 
     //--------------------------------------------------------------------------

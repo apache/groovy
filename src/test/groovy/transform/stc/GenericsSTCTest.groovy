@@ -41,21 +41,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testDeclaration3() {
         shouldFailWithMessages '''
             Map<String,String> obj = new HashMap<String,Integer>()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <String, String>'
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <String, String>'
     }
 
     // GROOVY-10010: check beyond first wildcard
     void testDeclaration4() {
         shouldFailWithMessages '''
             Map<? extends CharSequence,String> obj = new HashMap<String,Integer>()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <? extends java.lang.CharSequence, String>'
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <? extends java.lang.CharSequence, String>'
     }
 
     void testAddOnList() {
         shouldFailWithMessages '''
             List<String> list = []
             list.add(1)
-        ''', "[Static type checking] - Cannot find matching method java.util.List#add(int)"
+        ''',
+        'Cannot find matching method java.util.List#add(int)'
     }
 
     void testAddOnList2() {
@@ -81,7 +84,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', 'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
+        ''',
+        'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -129,14 +133,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
-        ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
+        ''',
+        'Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
     void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', 'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
+        ''',
+        'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -281,26 +287,114 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
-            Set< Long > s2 = new HashSet<>()
-        '''
-    }
-
-    void testDiamondInferrenceFromConstructorWithoutAssignment() {
-        assertScript '''
-            new HashSet<>(Arrays.asList(0L,0L));
+            class Foo<U> {
+                U method() { }
+            }
+            Foo<Integer> foo = new Foo<>()
+            Integer result = foo.method()
         '''
     }
 
     void testDiamondInferrenceFromConstructor2() {
-        shouldFailWithMessages '''
-            Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
-        ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
+        assertScript '''
+            Set<Long> set = new HashSet<>()
+        '''
     }
 
     void testDiamondInferrenceFromConstructor3() {
         assertScript '''
-            Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
+            new HashSet<>(Arrays.asList(0L))
         '''
+
+        assertScript '''
+            Set<Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+
+        // not diamond inference, but tests compatible assignment
+        assertScript '''
+            Set<Number> set = new HashSet<Number>(Arrays.asList(0L))
+        '''
+
+        assertScript '''
+            Set<? super Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+
+        assertScript '''
+            Set<? extends Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+    }
+
+    // GROOVY-7419
+    void testDiamondInferrenceFromConstructor4() {
+        assertScript '''
+            Map<Thread.State, Object> map = new EnumMap<>(Thread.State)
+            assert map.size() == 0
+            assert map.isEmpty()
+        '''
+    }
+
+    // GROOVY-9956
+    void testDiamondInferrenceFromConstructor8() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            C<I> ci = new C<I>(new D())
+            ci = new C<>(new D()) // infers C<D> on RHS
+        '''
+    }
+
+    void testDiamondInferrenceFromConstructor9() {
+        assertScript '''
+            abstract class A<X> { }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> extends A<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            A<I> ai = new C<>(new D())
+        '''
+
+        shouldFailWithMessages '''
+            abstract class A<X> { }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> extends A<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            A<String> ax = new C<>(new D())
+        ''',
+        'Incompatible generic argument types. Cannot assign C <D> to: A <String>'
+
+        shouldFailWithMessages '''
+            Set<List<String>> strings = new HashSet<>([new ArrayList<Number>()])
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
+    }
+
+    // GROOVY-10086
+    void testDiamondInferrenceFromConstructor12() {
+        shouldFailWithMessages '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+            }
+            void m(int i, C<D>... zeroOrMore) {
+                D d = zeroOrMore[0].p
+            }
+            m(0, new C<>(1))
+        ''',
+        'Cannot call', 'm(int, C <D>[]) with arguments [int, C <java.lang.Integer>]'
     }
 
     // GROOVY-10324
@@ -312,6 +406,86 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             List<String> x = m(new C<>())
         '''
+    }
+
+    // GROOVY-10310
+    void testDiamondInferrenceFromConstructor21() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class A<T> {
+                T f
+            }
+            class B<T> {
+            }
+            def <T> A<T> m(T t, B<? extends T> b_of_t) {
+                new A<>(t)
+            }
+            def x = 'x'
+            m(x, new B<>()) // Cannot call m(T,B<? extends T>) with arguments...
+        '''
+    }
+
+    // GROOVY-10344
+    void testDiamondInferrenceFromConstructor22() {
+        assertScript '''
+            class C<X,Y> {
+            }
+            def <T extends C<? extends Number, ? extends Number>> T m(T t) {
+                return t
+            }
+            def x = m(new C<>())
+            assert x instanceof C
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10230
+    void testDiamondInferrenceFromConstructor23() {
+        assertScript '''
+            class A {
+                def <T extends C<Number,Number>> T m(T t) {
+                    return t
+                }
+            }
+            class B extends A {
+                @Override
+                def <T extends C<Number,Number>> T m(T t) {
+                    T x = null; super.m(true ? t : x)
+                }
+            }
+            class C<X,Y> {
+            }
+            def x = new B().m(new C<>())
+            assert x instanceof C
+        '''
+    }
+
+    // GROOVY-10351
+    void testDiamondInferrenceFromConstructor24() {
+        assertScript '''
+            class C<T> {
+                C(T one, D<T,? extends T> two) {
+                }
+            }
+            class D<U,V> {
+            }
+            D<Integer,? extends Integer> d_of_i_and_i = null
+            C<Integer> c_of_i = new C<>(1,d_of_i_and_i) // 3 witnesses for T
+        '''
+    }
+
+    // GROOVY-10368
+    void testDiamondInferrenceFromConstructor25() {
+        ['T', 'T extends Number', 'T extends Object'].each {
+            assertScript """
+                class C<$it> {
+                    C(p) {
+                    }
+                }
+                void m(C<Integer> c) {
+                }
+                m(new C<>(null)) // Cannot call m(C<Integer>) with arguments [C<# extends Number>]
+            """
+        }
     }
 
     // GROOVY-10367
@@ -2053,17 +2227,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<>()
             map.put(1, 'foo')
             map.put('bar', new Date())
-        '''
-    }
-
-    // GROOVY-6232
-    void testDiamond() {
-        assertScript '''
-            class Foo<T>{  Foo(T a, T b){} }
-            def bar() {
-                Foo<Object> f = new Foo<>("a",new Object())
-            }
-            bar()
         '''
     }
 
