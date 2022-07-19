@@ -2027,8 +2027,113 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5893
-    @NotYetImplemented
+    // GROOVY-10166
+    void testShouldFindMethodEvenWithRepeatNames1() {
+        assertScript '''
+            abstract class A<T extends C> {
+                T getC() {
+                }
+                Map toMap() {
+                    c.getMap(this)
+                }
+            }
+
+            class C<T extends A> {
+                Map getMap(T a) {
+                }
+            }
+
+            new C()
+        '''
+    }
+
+    // GROOVY-10166
+    void testShouldFindMethodEvenWithRepeatNames2() {
+        assertScript '''
+            abstract class A<T extends C> {
+                T getC() {
+                }
+            }
+
+            class C<T extends A> {
+                T get() {
+                    A a = null
+                    a.c.get(1)
+                }
+                T get(int i) {
+                }
+            }
+
+            new C()
+        '''
+    }
+
+    // GROOVY-10196
+    void testShouldFindMethodEvenWithRepeatNames3() {
+        assertScript '''
+            interface M<K,V> {
+            }
+            interface MM<K,V> extends M<K,List<V>> {
+                void add(K key, V val)
+            }
+            class MMA<K,V> implements MM<K,V> {
+                @Override
+                void add(K key, V val) {
+                }
+            }
+            class LMM<K,V> extends MMA<K,V> {
+            }
+
+            MM<String,String> map = new LMM<>()
+            map.add('foo','bar')
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10322
+    void testShouldFindMethodEvenWithRepeatNames4() {
+        assertScript '''
+            class C<T> {
+                def <T> T m(T t) { // this T hides T from C<T>
+                    return t
+                }
+            }
+            int x = new C<String>().m(1) // no error, param and return types are `int` not `String`
+            assert x == 1
+        '''
+    }
+
+    // GROOVY-10337
+    void testShouldFindMethodEvenWithRepeatNames5() {
+        assertScript '''
+            class C<X,Y> {
+                C(C<Y,? extends Y> that) {
+                }
+            }
+            def <T> void test() {
+                new C<Number,T>((C<T,T>)null) // cannot call ctor with argument C<T,T>
+            }
+        '''
+    }
+
+    // GROOVY-10282
+    void testShouldFindMethodEvenWithRepeatNames6() {
+        assertScript '''
+            interface BiFunction<T,U,R> {
+                R apply(T t, U u);
+            }
+            interface BinaryOperator<T> extends BiFunction<T,T,T> {
+            }
+            interface Stream<T> {
+                def <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner);
+            }
+
+            void test(Stream<Integer> stream) {
+                stream.reduce('', { s, i  -> s + '-' }, String.&concat)
+            }
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-5893
     void testPlusInClosure() {
         assertScript '''
         def list = [1, 2, 3]

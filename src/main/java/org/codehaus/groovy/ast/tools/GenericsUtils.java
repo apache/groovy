@@ -20,7 +20,6 @@ package org.codehaus.groovy.ast.tools;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
-import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
 import org.apache.groovy.internal.util.Predicate;
 import org.apache.groovy.util.SystemUtil;
@@ -556,19 +555,11 @@ public class GenericsUtils {
         }
     }
 
-    public static ClassNode getSuperClass(ClassNode type, ClassNode target) {
-        ClassNode superClass = ClassHelper.getNextSuperClass(type, target);
-
-        if (superClass == null) {
-            if (ClassHelper.isPrimitiveType(type)) {
-                superClass = ClassHelper.getNextSuperClass(ClassHelper.getWrapper(type), target);
-            }
-        }
-
-        return superClass;
+    public static ClassNode getSuperClass(final ClassNode type, final ClassNode target) {
+        return ClassHelper.getNextSuperClass(ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type, target);
     }
 
-    private static void extractSuperClassGenerics(GenericsType[] usage, GenericsType[] declaration, Map<String, ClassNode> spec) {
+    private static void extractSuperClassGenerics(final GenericsType[] usage, final GenericsType[] declaration, final Map<String, ClassNode> spec) {
         // if declaration does not provide generics, there is no connection to make
         if (declaration == null || declaration.length == 0) return;
 
@@ -739,32 +730,6 @@ public class GenericsUtils {
         return newTypes;
     }
 
-    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.enable.parameterized.type.cache", "true"));
-
-    /**
-     * Try to get the parameterized type from the cache.
-     * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
-     */
-    public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
-        return findParameterizedType(genericsClass, actualType, false);
-    }
-
-    // Backported from 3.0.0
-    private static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType, final boolean tryToFindExactType) {
-        if (!PARAMETERIZED_TYPE_CACHE_ENABLED) {
-            return findParameterizedType(genericsClass, actualType, tryToFindExactType);
-        }
-
-        SoftReference<ClassNode> sr = PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), new EvictableCache.ValueProvider<ParameterizedTypeCacheKey, SoftReference<ClassNode>>() {
-            @Override
-            public SoftReference<ClassNode> provide(ParameterizedTypeCacheKey key) {
-                return new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType(), tryToFindExactType));
-            }
-        });
-
-        return null == sr ? null : sr.get();
-    }
-
     /**
      * Get the parameterized type by search the whole class hierarchy according to generics class and actual receiver.
      * {@link #findParameterizedTypeFromCache(ClassNode, ClassNode)} is strongly recommended for better performance.
@@ -848,16 +813,6 @@ public class GenericsUtils {
         return false;
     }
 
-    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(64);
-
-    /**
-     * Clear the parameterized type cache
-     * It is useful to IDE as the type being compiled are continuously being edited/altered, see GROOVY-8675
-     */
-    public static void clearParameterizedTypeCache() {
-        PARAMETERIZED_TYPE_CACHE.clearAll();
-    }
-
     /**
      * map declaring generics type to actual generics type, e.g. GROOVY-7204:
      * declaring generics types:      T,      S extends Serializable
@@ -871,8 +826,8 @@ public class GenericsUtils {
      * The resolved types can not help us to choose methods correctly if the argument is a string:  T: Object, S: Serializable
      * so we need actual types:  T: String, S: Long
      */
-    public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver) {
-        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false).getFirst();
+    public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver) {
+        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false);
     }
 
     /**
@@ -885,71 +840,38 @@ public class GenericsUtils {
      * @param declaringClass the generics class node declaring the generics types
      * @param actualReceiver the sub-class class node
      * @return the placeholder-to-actualtype mapping
+     *
      * @since 2.5.9
      */
-    public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(ClassNode declaringClass, ClassNode actualReceiver) {
-        List<ClassNode> parameterizedTypeList = new LinkedList<>();
-
-        Map<GenericsType, GenericsType> result = makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClass, actualReceiver, parameterizedTypeList);
-
-        return connectGenericsTypes(result);
+    public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(final ClassNode declaringClass, final ClassNode actualReceiver) {
+        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, true);
     }
 
-    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(ClassNode declaringClass, ClassNode actualReceiver, List<ClassNode> parameterizedTypeList) {
-        Tuple2<Map<GenericsType, GenericsType>, ClassNode> resultAndParameterizedTypeTuple = doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, true);
-        ClassNode parameterizedType = resultAndParameterizedTypeTuple.getSecond();
-        Map<GenericsType, GenericsType> result = resultAndParameterizedTypeTuple.getFirst();
-
-        if (hasPlaceHolders(parameterizedType) && !parameterizedTypeList.contains(parameterizedType)) {
-            parameterizedTypeList.add(parameterizedType);
-            result.putAll(makeDeclaringAndActualGenericsTypeMapOfExactType(parameterizedType, actualReceiver, parameterizedTypeList));
-        }
-
-        return connectGenericsTypes(result);
-    }
-
-    private static Tuple2<Map<GenericsType, GenericsType>, ClassNode> doMakeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver, boolean tryToFindExactType) {
+    private static Map<GenericsType, GenericsType> doMakeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
+        Map<GenericsType, GenericsType> map = Collections.<GenericsType, GenericsType>emptyMap();
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
-
-        if (parameterizedType == null) {
-            return new Tuple2<>(Collections.<GenericsType,GenericsType>emptyMap(), parameterizedType);
-        }
-
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-        result.putAll(makePlaceholderAndParameterizedTypeMap(declaringClass));
-        result.putAll(makePlaceholderAndParameterizedTypeMap(parameterizedType));
-
-        result = connectGenericsTypes(result);
-
-        return new Tuple2<>(result, parameterizedType);
-    }
-
-    private static Map<GenericsType, GenericsType> connectGenericsTypes(Map<GenericsType, GenericsType> genericsTypeMap) {
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-
-        outer:
-        for (Map.Entry<GenericsType, GenericsType> entry : genericsTypeMap.entrySet()) {
-            GenericsType key = entry.getKey();
-            GenericsType value = entry.getValue();
-
-            if (value.isPlaceholder()) {
-                for (Map.Entry<GenericsType, GenericsType> genericsTypeMapEntry : genericsTypeMap.entrySet()) {
-                    GenericsType genericsTypeMapEntryValue = genericsTypeMapEntry.getValue();
-                    if (!genericsTypeMapEntryValue.isPlaceholder() && (genericsTypeMapEntry.getKey().getName().equals(value.getName()))) {
-                        result.put(key, genericsTypeMapEntryValue); // connected to actual type
-                        continue outer;
-                    }
+        if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
+            // declaringClass may be "List<T> -> List<E>" and parameterizedType may be "List<String> -> List<E>" or "List<> -> List<E>"
+            GenericsType[] targetGenericsTypes = parameterizedType.redirect().getGenericsTypes();
+            if (targetGenericsTypes != null) {
+                GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
+                if (sourceGenericsTypes == null) sourceGenericsTypes = EMPTY_GENERICS_ARRAY;
+                map = new LinkedHashMap<GenericsType, GenericsType>();
+                for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
+                    map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
                 }
             }
-
-            result.put(key, value);
         }
-
-        return result;
+        return map;
     }
 
-    public static boolean hasPlaceHolders(ClassNode parameterizedType) {
-        return checkPlaceHolders(parameterizedType, new Predicate<GenericsType>() {
+    /**
+     * Checks if the type has any placeholder (aka unresolved) generics.
+     *
+     * @since 2.5.10
+     */
+    public static boolean hasPlaceHolders(final ClassNode type) {
+        return checkPlaceHolders(type, new Predicate<GenericsType>() {
             @Override
             public boolean test(GenericsType genericsType) {
                 return genericsType.isPlaceholder();
@@ -957,48 +879,28 @@ public class GenericsUtils {
         });
     }
 
-    private static boolean checkPlaceHolders(ClassNode parameterizedType, Predicate<GenericsType> p) {
-        if (parameterizedType == null) return false;
-
-        GenericsType[] genericsTypes = parameterizedType.getGenericsTypes();
-
-        if (genericsTypes == null) return false;
-
-        for (GenericsType genericsType : genericsTypes) {
-            if (p.test(genericsType)) {
-                return true;
+    private static boolean checkPlaceHolders(final ClassNode type, final Predicate<GenericsType> p) {
+        if (type != null) {
+            GenericsType[] genericsTypes = type.getGenericsTypes();
+            if (genericsTypes != null) {
+                for (GenericsType genericsType : genericsTypes) {
+                    if (p.test(genericsType)) {
+                        return true;
+                    }
+                }
             }
         }
-
         return false;
     }
 
-    private static Map<GenericsType, GenericsType> makePlaceholderAndParameterizedTypeMap(ClassNode declaringClass) {
-        if (declaringClass == null) {
-            return Collections.emptyMap();
-        }
-
-        ClassNode redirectDeclaringClass = declaringClass.redirect();
-        GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
-        GenericsType[] redirectDeclaringGenericsTypes = redirectDeclaringClass.getGenericsTypes();
-
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-        if (declaringGenericsTypes != null && redirectDeclaringGenericsTypes != null) {
-            for (int i = 0, n = declaringGenericsTypes.length; i < n; i += 1) {
-                result.put(redirectDeclaringGenericsTypes[i], declaringGenericsTypes[i]);
-            }
-        }
-        return result;
-    }
-
     /**
-     * Get the actual type according to the placeholder name
+     * Gets the actual type according to the placeholder name.
      *
-     * @param placeholderName the placeholder name, e.g. T, E
+     * @param placeholderName the placeholder name (i.e. "T", "E", etc.)
      * @param genericsPlaceholderAndTypeMap the result of {@link #makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode)}
      * @return the actual type
      */
-    public static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
+    public static ClassNode findActualTypeByGenericsPlaceholderName(final String placeholderName, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
         for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
             if (placeholderName.equals(entry.getKey().getName())) {
                 GenericsType gt = entry.getValue();
@@ -1015,6 +917,44 @@ public class GenericsUtils {
         }
         return null;
     }
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * Clears the parameterized type cache.
+     * <p>
+     * It is useful to IDE as the type being compiled are continuously being edited/altered, see GROOVY-8675
+     */
+    public static void clearParameterizedTypeCache() {
+        PARAMETERIZED_TYPE_CACHE.clearAll();
+    }
+
+    /**
+     * Try to get the parameterized type from the cache. If no cached item found,
+     * cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
+     */
+    public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
+        return findParameterizedType(genericsClass, actualType, false);
+    }
+
+    private static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType, final boolean tryToFindExactType) {
+        if (!PARAMETERIZED_TYPE_CACHE_ENABLED) {
+            return findParameterizedType(genericsClass, actualType, tryToFindExactType);
+        }
+
+        SoftReference<ClassNode> sr = PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), new EvictableCache.ValueProvider<ParameterizedTypeCacheKey, SoftReference<ClassNode>>() {
+            @Override
+            public SoftReference<ClassNode> provide(ParameterizedTypeCacheKey key) {
+                return new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType(), tryToFindExactType));
+            }
+        });
+
+        return sr == null ? null : sr.get();
+    }
+
+    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(64);
+
+    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.enable.parameterized.type.cache", "true"));
 
     private static class ParameterizedTypeCacheKey {
         private ClassNode genericsClass;
