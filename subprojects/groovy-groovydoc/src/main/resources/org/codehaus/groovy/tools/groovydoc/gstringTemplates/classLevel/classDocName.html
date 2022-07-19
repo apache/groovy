@@ -79,7 +79,7 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + (param.vararg()?'... ':' ') + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, '<br>')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + (param.vararg()?'... ':' ') + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def rawType = { n -> def g = n.indexOf("<"); g >= 0 ? n.substring(0, g) : n }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> rawType(param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName()) }.join(', ') + ')' }
     def nameFromJavaParams = { n -> n.getName() + '(' + n.parameterTypes.collect{ param -> param.getName() }.join(', ') + ')' }
@@ -585,7 +585,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <a name="${field.name()}"><!-- --></a>
                         <ul class="blockListLast">
                             <li class="blockList">
-                                <h4>${annotations(field, '\n') + modifiersWithOptions(field, false, false) + linkable(field.type())} <strong>${field.name()}</strong></h4>
+                                <h4>${annotations(field, '<br>') + modifiersWithOptions(field, false, false) + linkable(field.type())} <strong>${field.name()}</strong></h4>
                                 <p>${field.commentText()}</p>
                             </li>
                         </ul>
@@ -605,7 +605,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <a name="${prop.name()}"><!-- --></a>
                         <ul class="blockListLast">
                             <li class="blockList">
-                                <h4>${annotations(prop, '\n') + modifiers(prop) + linkable(prop.type())} <strong>${prop.name()}</strong></h4>
+                                <h4>${annotations(prop, '<br>') + modifiers(prop) + linkable(prop.type())} <strong>${prop.name()}</strong></h4>
                                 <p>${prop.commentText()}</p>
                             </li>
                         </ul>
@@ -645,7 +645,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <a name="${nameFromParams(constructor)}"><!-- --></a>
                         <ul class="blockListLast">
                             <li class="blockList">
-                                <h4>${annotations(constructor, '\n') + modifiers(constructor)}<strong>${constructor.name()}</strong>(${paramsOf(constructor, false)})</h4>
+                                <h4>${annotations(constructor, '<br>') + modifiers(constructor)}<strong>${constructor.name()}</strong>(${paramsOf(constructor, false)})</h4>
                                 <p>${constructor.commentText()}</p>
                             </li>
                         </ul>
@@ -667,7 +667,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <ul class="blockListLast">
                             <li class="blockList">
                                 <h4>${method.typeParameters() ?
-                                    org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(method.typeParameters()) + ' ' : ''}${annotations(method, '\n') + modifiers(method)}${linkable(method.returnType())} <strong>${method.name()}</strong>(${paramsOf(method, false)})</h4>
+                                    org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(method.typeParameters()) + ' ' : ''}${annotations(method, '<br>') + modifiers(method)}${linkable(method.returnType())} <strong>${method.name()}</strong>(${paramsOf(method, false)})</h4>
                                 <p>${method.commentText()}</p>
                             </li>
                         </ul>

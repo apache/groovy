@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -45,25 +46,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void setUp() {
         plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
-        xmlTool = new GroovyDocTool(
-                new FileSystemResourceManager("src"), // template storage
-                new String[] {"src/main/java", "../../src/main/java", "src/test/groovy"}, // source file dirs
-                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
-                new ArrayList<LinkArgument>(),
-                new Properties()
-        );
-
-        xmlToolForTests = new GroovyDocTool(
-                new FileSystemResourceManager("src"), // template storage
-                new String[] {"src/test/groovy", "src/test/resources", "../../src/test"}, // source file dirs
-                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
-                new ArrayList<LinkArgument>(),
-                new Properties()
-        );
+        xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), new Properties());
+        xmlToolForTests = makeXmlTool(new ArrayList<LinkArgument>(), new Properties(), new String[] {"src/test/groovy", "src/test/resources", "../../src/test"});
 
         ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
         LinkArgument link = new LinkArgument();
@@ -72,6 +56,22 @@ public class GroovyDocToolTest extends GroovyTestCase {
         links.add(link);
 
         htmlTool = makeHtmltool(links, new Properties());
+    }
+
+    private GroovyDocTool makeXmlTool(ArrayList<LinkArgument> links, Properties props) {
+        return makeXmlTool(links, props, new String[] {"src/main/java", "../../src/main/java", "src/test/groovy"});
+    }
+
+    private GroovyDocTool makeXmlTool(ArrayList<LinkArgument> links, Properties props, String[] sources) {
+        return new GroovyDocTool(
+                new FileSystemResourceManager("src"), // template storage
+                sources, // source file dirs
+                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
+                links,
+                props
+        );
     }
 
     private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, Properties props) {
@@ -610,14 +610,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
         GroovyClassDoc classDocDescendantE = getGroovyClassDocByName(root, "DescendantE");
         assertNotNull("Expecting to find DescendantE", classDocDescendantE);
         GroovyClassDoc base = root.classNamed(classDocDescendantE, "Base");
-        // TODO reinstate next two lines or justify why they should be removed
-//        assertNotNull("Expecting to find Base in: " + Arrays.stream(root.classes()).map(GroovyClassDoc::getFullPathName).collect(Collectors.joining(", ")), base);
-//        assertEquals(fullPathBaseC, base.getFullPathName());
+        assertNotNull("Expecting to find Base in: " + Arrays.stream(root.classes()).map(GroovyClassDoc::getFullPathName).collect(Collectors.joining(", ")), base);
+        assertEquals(fullPathBaseC, base.getFullPathName());
 
         GroovyClassDoc classDocDescendantF = getGroovyClassDocByName(root, "DescendantF");
-        assertNotNull("Expecting to find DescendantF", classDocDescendantF);
-        // TODO reinstate next line or justify why it should be removed
-//        assertEquals(fullPathBaseC, root.classNamed(classDocDescendantF, "Base").getFullPathName());
+        assertNotNull("Expecting to find DescendantF in: " + Arrays.stream(root.classes()).map(GroovyClassDoc::getFullPathName).collect(Collectors.joining(", ")), classDocDescendantF);
+        assertEquals(fullPathBaseC, root.classNamed(classDocDescendantF, "Base").getFullPathName());
     }
 
     // GROOVY-5939
@@ -736,7 +734,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // and that should link to api/Foo.html, not to lib/Foo.html.
         final Matcher interfacesAndTraits = Pattern.compile(
                 "<dt>All Implemented Interfaces and Traits:</dt>\\s*" +
-                "<dd><a href='[./]*/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo\\.html'>(Foo|FooImpl)</a></dd>"
+                "<dd><a href='[./]*/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo\\.html'>(Foo|FooImpl)</a>"
         ).matcher(fooAdapterDoc);
 
         // Constructor is actually "FooAdapter(FooImpl foo)",
@@ -985,22 +983,24 @@ public class GroovyDocToolTest extends GroovyTestCase {
             "<pre>" +
             "(public )?class (ClassWithMethodComment|DocumentedClass)\n" +
             "extends " + object +
+            "(\nimplements groovy.lang.GroovyObject)?" +
             "</pre>");
         final Pattern derivedClass = Pattern.compile(
             "<pre>" +
             "(public )?abstract class (Java|Groovy)ClassWithMultipleInterfaces\n" +
             "extends " + object + "\n" +
             "implements " + interfaces +
+            "(, groovy.lang.GroovyObject)?" +
             "</pre>");
 
         assertTrue("The Java base interface declaration header should match", baseInterface.matcher(javaBaseInterface).find());
         assertTrue("The Groovy base interface declaration header should match", baseInterface.matcher(groovyBaseInterface).find());
         assertTrue("The Java derived interface declaration header should match", derivedInterface.matcher(javaDerivedInterface).find());
         assertTrue("The Groovy derived interface declaration header should match", derivedInterface.matcher(groovyDerivedInterface).find());
-        assertTrue("The Java base class declaration header should match", baseClass.matcher(javaBaseClass).find());
-        assertTrue("The Groovy base class declaration header should match", baseClass.matcher(groovyBaseClass).find());
-        assertTrue("The Java derived class declaration header should match", derivedClass.matcher(javaDerivedClass).find());
-        assertTrue("The Groovy derived class declaration header should match", derivedClass.matcher(groovyDerivedClass).find());
+        assertTrue("The Java base class declaration header should match in:\n" + javaBaseClass, baseClass.matcher(javaBaseClass).find());
+        assertTrue("The Groovy base class declaration header should match in:\n" + groovyBaseClass, baseClass.matcher(groovyBaseClass).find());
+        assertTrue("The Java derived class declaration header should match in:\n" + javaDerivedClass, derivedClass.matcher(javaDerivedClass).find());
+        assertTrue("The Groovy derived class declaration header should match in:\n" + groovyDerivedClass, derivedClass.matcher(groovyDerivedClass).find());
     }
 
     public void testJavaGenericsTitle() throws Exception {
@@ -1033,12 +1033,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
 
-        final Matcher title = Pattern.compile(Pattern.quote(
-                "<h2 title=\"[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;\" class=\"title\">"+
-                        "[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;</h2>"
-        )).matcher(groovydoc);
+        final Matcher title = Pattern.compile(
+                "<h2 title=\"\\[Groovy] Trait Groovy&lt;N extends (java.lang.)?Number & (java.lang.)?Comparable&lt;\\? extends (java.lang.)?Number&gt;&gt;\" class=\"title\">"+
+                        "\\[Groovy] Trait Groovy&lt;N extends (java.lang.)?Number & (java.lang.)?Comparable&lt;\\? extends (java.lang.)?Number&gt;&gt;</h2>"
+        ).matcher(groovydoc);
 
-        assertTrue("The title should have the generics information", title.find());
+        assertTrue("The title should have the generics information in:\n" + groovydoc, title.find());
     }
 
     public void testParamTagForTypeParams() throws Exception {
@@ -1058,13 +1058,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 "<DL><DT><B>Type Parameters:</B></DT><DD><code>N</code> -  Doc.</DD></DL>"
         );
         final Pattern methodTypeParams = Pattern.compile(
-                "<DL><DT><B>Type Parameters:</B></DT><DD><code>A</code> -  Doc.</DD><DD><code>B</code> -  Doc.</DD></DL>"
+                "<DL><DT><B>Type Parameters:</B></DT><DD><code>C</code> -  Doc.</DD><DD><code>D</code> -  Doc.</DD></DL>"
         );
 
-        assertTrue("The Java class doc should have type parameters definitions", classTypeParams.matcher(javadoc).find());
-        assertTrue("The Groovy class doc should have type parameters definitions", classTypeParams.matcher(groovydoc).find());
-        assertTrue("The Java method doc should have type parameters definitions", methodTypeParams.matcher(javadoc).find());
-        assertTrue("The Groovy method doc should have type parameters definitions", methodTypeParams.matcher(groovydoc).find());
+        assertTrue("The Java class doc should have type parameters definitions in:\n" + javadoc, classTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy class doc should have type parameters definitions in:\n" + groovydoc, classTypeParams.matcher(groovydoc).find());
+        assertTrue("The Java method doc should have type parameters definitions in:\n" + javadoc, methodTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method doc should have type parameters definitions in:\n" + groovydoc, methodTypeParams.matcher(groovydoc).find());
     }
 
     public void testMethodTypeParams() throws Exception {
@@ -1081,16 +1081,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
 
         final Pattern methodSummaryTypeParams = Pattern.compile(
-                "<td class=\"colFirst\"><code>&lt;A, B&gt;</code></td>"
+                "<td class=\"colFirst\"><code>&lt;C, D&gt;</code></td>"
         );
         final Pattern methodDetailsTypeParams = Pattern.compile(
-                "<h4>&lt;A, B&gt; (public&nbsp;)?static&nbsp;int <strong>compare</strong>"
+                "<h4>&lt;C, D&gt; .*int <strong>compare</strong>\\("
         );
 
         assertTrue("The Java method summary should have type parameters", methodSummaryTypeParams.matcher(javadoc).find());
         assertTrue("The Groovy method summary should have type parameters", methodSummaryTypeParams.matcher(groovydoc).find());
         assertTrue("The Java method details should have type parameters", methodDetailsTypeParams.matcher(javadoc).find());
-        assertTrue("The Groovy method details should have type parameters", methodDetailsTypeParams.matcher(groovydoc).find());
+        assertTrue("The Groovy method details should have type parameters in:\n" + groovydoc, methodDetailsTypeParams.matcher(groovydoc).find());
     }
 
     public void testMethodParamTypeParams() throws Exception {
@@ -1106,31 +1106,31 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
 
-        final Pattern methodSummary = Pattern.compile(Pattern.quote(
-                "<code><strong><a href=\"#compare(Class, Class)\">compare</a></strong>"
-                        + "("
-                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, "
-                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b"
-                        + ")"
+        final Pattern methodSummary = Pattern.compile(
+                "<code><strong><a href=\"#compare\\((java.lang.)?Class, (java.lang.)?Class\\)\">compare</a></strong>"
+                        + "\\("
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;C&gt; c, "
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;D&gt; d"
+                        + "\\)"
                         + "</code>"
-        ));
-        final Pattern methodDetailAnchor = Pattern.compile(Pattern.quote(
-                "<a name=\"compare(Class, Class)\"><!-- --></a>"
-        ));
+        );
+        final Pattern methodDetailAnchor = Pattern.compile(
+                "<a name=\"compare\\((java.lang.)?Class, (java.lang.)?Class\\)\"><!-- --></a>"
+        );
         final Pattern methodDetailTitle = Pattern.compile(Pattern.quote(
                 "<strong>compare</strong>" +
                         "(" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, " +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b" +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;C&gt; c, " +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;D&gt; d" +
                         ")"
         ));
 
-        assertTrue("The Java method summary should include type parameters", methodSummary.matcher(javadoc).find());
-        assertTrue("The Java method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(javadoc).find());
-        assertTrue("The Java method detail title should include type parameters", methodDetailTitle.matcher(javadoc).find());
-        assertTrue("The Groovy method summary should include type parameters", methodSummary.matcher(groovydoc).find());
-        assertTrue("The Groovy method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(groovydoc).find());
-        assertTrue("The Groovy method detail title should include type parameters", methodDetailTitle.matcher(groovydoc).find());
+        assertTrue("The Java method summary should include type parameters in:\n" + javadoc, methodSummary.matcher(javadoc).find());
+        assertTrue("The Java method detail anchor should NOT include type parameters in:\n" + javadoc, methodDetailAnchor.matcher(javadoc).find());
+        assertTrue("The Java method detail title should include type parameters in:\n" + javadoc, methodDetailTitle.matcher(javadoc).find());
+        assertTrue("The Groovy method summary should include type parameters in:\n" + groovydoc, methodSummary.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail anchor should NOT include type parameters in:\n" + groovydoc, methodDetailAnchor.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail title should include type parameters in:\n" + groovydoc, methodDetailTitle.matcher(groovydoc).find());
     }
 
     public void testAnnotations() throws Exception {
@@ -1146,62 +1146,75 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
         final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
 
-        assertTrue("The Groovy class declaration header should have the annotation", Pattern.compile(Pattern.quote(
+        assertTrue("The Groovy class declaration header should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
                 "<pre>@groovy.transform.EqualsAndHashCode(cache: true)\n" +
                         "class Groovy"
         )).matcher(groovydoc).find());
 
-        assertTrue("The Java class declaration header should have the annotation", Pattern.compile(Pattern.quote(
+        assertTrue("The Java class declaration header should have the annotation in:\n" + javadoc, Pattern.compile(Pattern.quote(
                 "<pre>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
                         "@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html' title='SuppressWarnings'>SuppressWarnings</a>(\"foo\")\n" +
                         "public class Java"
         )).matcher(javadoc).find());
 
-        assertTrue("The Groovy field details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@groovy.transform.Internal\n" +
+        assertTrue("The Groovy field details should have the annotation in:" + groovydoc, Pattern.compile(Pattern.quote(
+                "<h4>@groovy.transform.Internal<br>" +
                         "public&nbsp;<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> " +
                         "<strong>annotatedField</strong></h4>"
         )).matcher(groovydoc).find());
 
         assertTrue("The Java field details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
+                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
                         "public&nbsp;<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> " +
                         "<strong>annotatedField</strong></h4>"
         )).matcher(javadoc).find());
 
         assertTrue("The Groovy property details should have the annotation", Pattern.compile(Pattern.quote(
-            "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
+            "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
                 "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a> <strong>annotatedProperty</strong></h4>"
         )).matcher(groovydoc).find());
 
         // Java doesn't have properties section
 
-        assertTrue("The Groovy ctor details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@groovy.transform.NamedVariant\n" +
+        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+                "<h4>@groovy.transform.NamedVariant<br>" +
                         "<strong>Groovy</strong>(" +
-                        "@groovy.transform.NamedParam " +
                         "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a> ctorParam" +
+                        ")</h4>"
+        )).matcher(groovydoc).find());
+        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+                "<h4>@groovy.transform.Generated<br>" +
+                        "<strong>Groovy</strong>(" +
+                        "@groovy.transform.NamedParam(value: ctorParam, type: java.util.List)<br>" +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a> namedArgs" +
                         ")</h4>"
         )).matcher(groovydoc).find());
 
         assertTrue("The Java ctor details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
+                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
                         "public&nbsp;<strong>Java</strong>()</h4>"
         )).matcher(javadoc).find());
 
         // Note also the param annotation
-        assertTrue("The Groovy method details should have the annotations", Pattern.compile(Pattern.quote(
-                "<h4>@groovy.transform.NamedVariant\n" +
+        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+                "<h4>@groovy.transform.NamedVariant<br>" +
                         "void <strong>annotatedMethod</strong>(" +
-                        "@groovy.transform.NamedParam(required: true) " +
                         "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> methodParam" +
                         ")</h4>"
         )).matcher(groovydoc).find());
+        // Note also the param annotation
+        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+                "<h4>@groovy.transform.Generated<br>" +
+                        "void <strong>annotatedMethod</strong>(" +
+                        "@groovy.transform.NamedParam(required: true, value: methodParam, type: java.lang.String)<br>" +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a> namedArgs" +
+                        ")</h4>"
+        )).matcher(groovydoc).find());
 
-        assertTrue("The Java method details should have the annotations", Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
+        assertTrue("The Java method details should have the annotations in:\n" + javadoc, Pattern.compile(Pattern.quote(
+                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
                         "public&nbsp;void <strong>annotatedMethod</strong>(" +
-                        "@CommandLine.Parameters(hidden = true) " +
+                        "@CommandLine.Parameters(hidden = true)<br>" +
                         "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> annotatedParam" +
                         ")</h4>"
         )).matcher(javadoc).find());
@@ -1337,8 +1350,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
-        xmlTool.add(srcList);
 
+        Properties props = new Properties();
+        props.put("packageScope", "true");
+        xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), props);
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
@@ -1349,7 +1365,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("There should be a reference to method sayGoodbye", containsTagWithName(scriptDoc, "method", "sayGoodbye"));
         assertTrue("Expecting bid farewell in:\n" + scriptDoc, scriptDoc.contains("Use this to bid farewell"));
 
-        assertTrue("There should be a reference to property instanceProp in:\n" + scriptDoc, containsTagWithName(scriptDoc, "property", "instanceProp"));
+        assertTrue("There should be a reference to property instanceProp in:\n" + scriptDoc, containsTagWithName(scriptDoc, "field", "instanceProp"));
 
         assertTrue("There should be a reference to field staticField", containsTagWithName(scriptDoc, "field", "staticField"));
 

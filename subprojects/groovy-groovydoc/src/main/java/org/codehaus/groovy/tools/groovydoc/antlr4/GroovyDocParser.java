@@ -83,10 +83,29 @@ public class GroovyDocParser implements GroovyDocParserI {
         CompilationUnit compUnit = new CompilationUnit(config);
         SourceUnit unit = new SourceUnit(file, src, config, null, new ErrorCollector(config));
         compUnit.addSource(unit);
-        compUnit.compile(Phases.CONVERSION);
+        int phase = Phases.CLASS_GENERATION;
+        if (properties.containsKey("phaseOverride")) {
+            String raw = properties.getProperty("phaseOverride");
+            try {
+                phase = Integer.parseInt(raw);
+            } catch(NumberFormatException ignore) {
+                raw = raw.toUpperCase();
+                switch(raw) {
+                    // some dup here but kept simple since we may swap Phases to an enum
+                    case "CONVERSION": phase = 3; break;
+                    case "SEMANTIC_ANALYSIS": phase = 4; break;
+                    case "CANONICALIZATION": phase = 5; break;
+                    case "INSTRUCTION_SELECTION": phase = 6; break;
+                    case "CLASS_GENERATION": phase = 7; break;
+                    default:
+                        System.err.println("Ignoring unrecognised or unsuitable phase and keeping default");
+                }
+            }
+        }
+        compUnit.compile(phase);
         ModuleNode root = unit.getAST();
         GroovydocVisitor visitor = new GroovydocVisitor(unit, packagePath, links, properties);
-        visitor.visitClass(root.getClasses().get(0));
+        root.getClasses().stream().forEach(clazz -> visitor.visitClass(clazz));
         return visitor.getGroovyClassDocs();
     }
 

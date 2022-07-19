@@ -175,6 +175,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
 
     private static void revertVisibility(FieldNode fNode) {
         fNode.setModifiers(fNode.getModifiers() & ~ACC_PRIVATE);
+        fNode.setSynthetic(false);
     }
 
     private static void revertVisibility(MethodNode mNode) {

@@ -26,7 +26,7 @@ package org.codehaus.groovy.tools.groovydoc.testfiles.generics
 trait Groovy<N extends Number & Comparable<? extends Number>> {
 
     /**
-     * Generic method.
+     * Generic static method.
      *
      * @param <A> Doc.
      * @param <B> Doc.
@@ -34,7 +34,20 @@ trait Groovy<N extends Number & Comparable<? extends Number>> {
      * @param b Doc.
      * @return Doc.
      */
-    static <A, B> int compare(Class<A> a, Class<B> b) {
+    static <A, B> int compareS(Class<A> a, Class<B> b) {
+        0
+    }
+
+    /**
+     * Generic instance method.
+     *
+     * @param <C> Doc.
+     * @param <D> Doc.
+     * @param c Doc.
+     * @param d Doc.
+     * @return Doc.
+     */
+    <C, D> int compare(Class<C> c, Class<D> d) {
         0
     }
 }
