@@ -468,6 +468,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     buffer.append("=");
                     try {
                         buffer.append(FormatHelper.toString(field.get(self)));
+                    } catch (IllegalAccessException e) {
+                        buffer.append("inaccessible");
                     } catch (Exception e) {
                         buffer.append(e);
                     }
