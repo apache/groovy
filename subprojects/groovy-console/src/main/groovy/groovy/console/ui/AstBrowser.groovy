@@ -362,7 +362,7 @@ class AstBrowser {
             void mouseClicked(MouseEvent e) {
                 def table = e.source
                 if (e.clickCount == 2) {
-                    launch(table, valueCol, pathClosure)
+                    outer.launch(table, valueCol, pathClosure)
                 }
             }
 
