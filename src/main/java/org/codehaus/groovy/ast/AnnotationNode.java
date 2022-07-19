@@ -19,11 +19,15 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -213,7 +217,15 @@ public class AnnotationNode extends ASTNode {
                 } else {
                     memberText.append(", ");
                 }
-                memberText.append(next.getKey()).append(": ").append(next.getValue().getText());
+                Expression value = next.getValue();
+                String text;
+                if (value instanceof ListExpression) {
+                    List result = ((ListExpression) value).getExpressions().stream().map(exp -> { return exp instanceof AnnotationConstantExpression ? ((ASTNode)((AnnotationConstantExpression)exp).getValue()).getText() : exp.getText(); }).collect(Collectors.toList());
+                    text = result.toString();
+                } else {
+                    text = value.getText();
+                }
+                memberText.append(next.getKey()).append(": ").append(text);
             }
         }
         return "@" + classNode.getText() + "(" + memberText + ")";

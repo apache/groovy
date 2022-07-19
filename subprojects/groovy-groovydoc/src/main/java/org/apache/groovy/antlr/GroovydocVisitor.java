@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
@@ -116,6 +117,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         currentClassDoc = new SimpleGroovyClassDoc(withDefaultImports(imports), aliases, name, links);
         if (node.isEnum()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
+        } else if (node.isRecord()) {
+            currentClassDoc.setTokenType(SimpleGroovyDoc.RECORD_DEF);
         } else if (node.isAnnotationDefinition()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ANNOTATION_DEF);
         } else if (isTrait(node)) {
@@ -203,6 +206,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructor(ConstructorNode node) {
+        if (node.isSynthetic()) return;
         SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(currentClassDoc.simpleTypeName(), currentClassDoc);
         setConstructorOrMethodCommon(node, cons);
         currentClassDoc.add(cons);
@@ -213,6 +217,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     public void visitMethod(MethodNode node) {
         if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
             return;
+        if (node.isSynthetic()) return;
         if ("false".equals(properties.getProperty("includeMainForScripts", "true"))
                 && currentClassDoc.isScript() && "main".equals(node.getName()) && node.isStatic() && node.getParameters().length == 1)
             return;
@@ -251,6 +256,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             return;
         }
 
+        for (GroovyFieldDoc field : currentClassDoc.properties()) {
+            if (propName.equals(field.name())) return;
+        }
         SimpleGroovyClassDoc classDoc = currentClassDoc;
         // TODO: not sure why but groovy.ui.view.BasicContentPane#buildOutputArea classDoc is null
         if (classDoc == null) {
@@ -347,21 +355,22 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         } else {
             if (Modifier.isPublic(mods)) {
                 element.setPublic(true);
-            }
-            if (Modifier.isProtected(mods)) {
+            } else if (Modifier.isProtected(mods)) {
                 element.setProtected(true);
-            }
-            if (Modifier.isPrivate(mods)) {
+            } else if (Modifier.isPrivate(mods)) {
                 element.setPrivate(true);
+            } else {
+                element.setPackagePrivate(true);
             }
-            if (Modifier.isFinal(mods)) {
-                element.setFinal(true);
-            }
+        }
+        if (Modifier.isFinal(mods)) {
+            element.setFinal(true);
         }
     }
 
     @Override
     public void visitField(FieldNode node) {
+        if (node.isSynthetic()) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));

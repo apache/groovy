@@ -33,6 +33,8 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
     public static final int CLASS_DEF = 13;
     public static final int TRAIT_DEF = 15;
     public static final int INTERFACE_DEF = 14;
+
+    public static final int RECORD_DEF = 16;
     public static final int ANNOTATION_DEF = 64;
     public static final int ENUM_DEF = 61;
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
@@ -174,8 +176,14 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
         return definitionType == ENUM_DEF;
     }
 
+    @Override
+    public boolean isRecord() {
+        return definitionType == RECORD_DEF;
+    }
+
     public String getTypeDescription() {
         if (isInterface()) return "Interface";
+        if (isRecord()) return "Record";
         if (isTrait()) return "Trait";
         if (isAnnotationType()) return "Annotation Type";
         if (isEnum()) return "Enum";
@@ -185,6 +193,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
 
     public String getTypeSourceDescription() {
         if (isInterface()) return "interface";
+        if (isRecord()) return "record";
         if (isTrait()) return "trait";
         if (isAnnotationType()) return "@interface";
         if (isEnum()) return "enum";

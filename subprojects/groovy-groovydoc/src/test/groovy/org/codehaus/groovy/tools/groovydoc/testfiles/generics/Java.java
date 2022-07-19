@@ -25,7 +25,7 @@ package org.codehaus.groovy.tools.groovydoc.testfiles.generics;
  */
 public abstract class Java<N extends Number & Comparable<? extends Number>> {
     /**
-     * Generic method.
+     * Generic static method.
      *
      * @param <A> Doc.
      * @param <B> Doc.
@@ -33,7 +33,21 @@ public abstract class Java<N extends Number & Comparable<? extends Number>> {
      * @param b Doc.
      * @return Doc.
      */
-    public static <A, B> int compare(Class<A> a, Class<B> b) {
+    public static <A, B> int compareS(Class<A> a, Class<B> b) {
         return 0;
     }
+
+    /**
+     * Generic instance method.
+     *
+     * @param <C> Doc.
+     * @param <D> Doc.
+     * @param c Doc.
+     * @param d Doc.
+     * @return Doc.
+     */
+    public <C, D> int compare(Class<C> c, Class<D> d) {
+        return 0;
+    }
+
 }
