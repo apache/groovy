@@ -169,6 +169,9 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
                 currentClassDoc.setSuperClassName(fullName(et));
             }
         });
+        if (!n.isInterface() && currentClassDoc.getSuperClassName() == null && currentClassDoc.superclass() == null) {
+            currentClassDoc.setSuperClassName("Object");
+        }
         currentClassDoc.setNameWithTypeArgs(currentClassDoc.name() + genericTypesAsString(n.getTypeParameters()));
         n.getImplementedTypes().forEach(classOrInterfaceType ->
                 currentClassDoc.addInterfaceName(fullName(classOrInterfaceType)));
