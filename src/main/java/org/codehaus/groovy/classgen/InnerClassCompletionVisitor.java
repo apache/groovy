@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.transform.CompileStatic;
+import groovy.transform.stc.POJO;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -37,6 +40,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
@@ -101,7 +105,11 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
         if (innerClass == null) return;
         super.visitClass(node);
-        addMopMethods(innerClass);
+        boolean innerPojo = hasAnnotation(innerClass, ClassHelper.make(POJO.class))
+                && hasAnnotation(innerClass, ClassHelper.make(CompileStatic.class));
+        if (!innerPojo) {
+            addMopMethods(innerClass);
+        }
     }
 
     @Override

@@ -42,4 +42,30 @@ class POJOTest extends GroovyTestCase {
             assert !(foo instanceof GroovyObject)
         '''
     }
+
+    // GROOVY-10691
+    void testInnerClassWithPOJO() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.stc.POJO
+
+            @CompileStatic @POJO
+            class Outer {
+              static String prop = 'SomeProp'
+              @CompileStatic @POJO
+              static class Inner {
+                  String lowerProp() {
+                      prop.toLowerCase()
+                  }
+              }
+              static main(args) {
+                  def inner = new Inner()
+                  assert inner.lowerProp() == 'someprop'
+                  assert inner !instanceof GroovyObject
+                  assert Inner.superclass == Object
+                  assert Inner.methods.size() == 1 + Object.methods.size()
+              }
+            }
+        '''
+    }
 }
