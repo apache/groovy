@@ -325,6 +325,11 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     @Override
+    public boolean isRecord() {
+        return false;
+    }
+
+    @Override
     public boolean isEnumConstant() {
         return false;
     }

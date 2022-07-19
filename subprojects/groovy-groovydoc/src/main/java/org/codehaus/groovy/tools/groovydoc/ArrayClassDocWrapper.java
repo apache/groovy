@@ -305,6 +305,11 @@ public class ArrayClassDocWrapper implements GroovyClassDoc {
     }
 
     @Override
+    public boolean isRecord() {
+        return delegate.isRecord();
+    }
+
+    @Override
     public boolean isException() {
         return delegate.isException();
     }

@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.groovydoc
 
 import groovy.cli.internal.CliBuilderInternal
 import groovy.io.FileType
+import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -200,6 +201,9 @@ class Main {
         properties.put("timestamp", (!noTimestamp).toString())
         properties.put("versionStamp", (!noVersionStamp).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
+        String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override")
+        if (phaseOverride) properties.put("phaseOverride", phaseOverride)
+
 
         def links = new ArrayList<LinkArgument>();
         collectSourceFileNames(remainingArgs, sourcepath, exclusions)

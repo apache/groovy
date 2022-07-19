@@ -36,6 +36,8 @@ public interface GroovyDoc extends Comparable<GroovyDoc> {
 
     boolean isEnum();
 
+    boolean isRecord();
+
     boolean isEnumConstant();
 
     boolean isError();

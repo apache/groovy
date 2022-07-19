@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ant;
 
+import org.apache.groovy.util.SystemUtil;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
@@ -450,6 +451,8 @@ public class Groovydoc extends Task {
         properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
         properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
         properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
+        String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override");
+        if (phaseOverride != null) properties.put("phaseOverride", phaseOverride);
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);

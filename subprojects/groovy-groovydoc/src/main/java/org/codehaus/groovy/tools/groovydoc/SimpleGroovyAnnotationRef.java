@@ -21,40 +21,32 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-
 public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
     private GroovyClassDoc type;
     private final String desc;
     private String name;
-
     public SimpleGroovyAnnotationRef(String name, String desc) {
         this.name = name;
         final String params = StringGroovyMethods.minus(desc, "@" + name);
         this.desc = "()".equals(params) ? "" : params;
     }
-
     public void setType(GroovyClassDoc type) {
         this.type = type;
     }
-
     @Override
     public GroovyClassDoc type() {
         return type;
     }
-
     public boolean isTypeAvailable() {
-        return !(type == null);
+        return type != null;
     }
-
     @Override
     public String name() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
-
     @Override
     public String description() {
         return desc;
