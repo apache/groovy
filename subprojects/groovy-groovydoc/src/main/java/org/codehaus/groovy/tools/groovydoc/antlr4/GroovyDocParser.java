@@ -83,7 +83,7 @@ public class GroovyDocParser implements GroovyDocParserI {
         CompilationUnit compUnit = new CompilationUnit(config);
         SourceUnit unit = new SourceUnit(file, src, config, null, new ErrorCollector(config));
         compUnit.addSource(unit);
-        int phase = Phases.CLASS_GENERATION;
+        int phase = Phases.CONVERSION;
         if (properties.containsKey("phaseOverride")) {
             String raw = properties.getProperty("phaseOverride");
             try {
