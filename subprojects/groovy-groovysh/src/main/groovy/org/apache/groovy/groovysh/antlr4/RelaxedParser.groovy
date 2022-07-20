@@ -27,6 +27,7 @@ import org.apache.groovy.groovysh.ParseStatus
 import org.apache.groovy.groovysh.Parser
 import org.apache.groovy.groovysh.Parsing
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
+import org.apache.groovy.parser.antlr4.GroovySyntaxError
 import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
@@ -50,24 +51,16 @@ final class RelaxedParser implements Parsing {
             tokenStream.fill()
 
             log.debug('Parse complete')
-
             return new ParseStatus(ParseCode.COMPLETE)
-        }
-        catch (e) {
-            log.debug(e)
-            switch (e.getClass()) {
-                // TODO determine appropriate antlr4 exceptions or detect EOF earlier at end of stream
-//                case TokenStreamException:
-//                case RecognitionException:
-//                    log.debug("Parse incomplete: $e (${e.getClass().name})")
-//
-//                    return new ParseStatus(ParseCode.INCOMPLETE)
-
-                default:
-                    log.debug("Parse error: $e (${e.getClass().name})")
-
-                    return new ParseStatus(e)
-            }
+        } catch (GroovySyntaxError e) {
+            if ((e.message.contains('Unexpected input: ') || e.message.contains('Unexpected character: ')) && !(
+                    e.message.contains("Unexpected input: '}'")
+                            || e.message.contains("Unexpected input: ')'")
+                            || e.message.contains("Unexpected input: ']'")))
+                return new ParseStatus(ParseCode.INCOMPLETE)
+        } catch (Exception e) {
+            log.debug("Parse error: $e (${e.getClass().name})")
+            return new ParseStatus(e)
         }
     }
 }
