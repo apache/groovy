@@ -386,12 +386,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void testVisibilityPackage() throws Exception {
         Properties props = new Properties();
         props.put("packageScope", "true");
+        props.put("phaseOverride", "7");
         testVisibility(props, true, true, true, false);
     }
 
     public void testVisibilityPrivate() throws Exception {
         Properties props = new Properties();
         props.put("privateScope", "true");
+        props.put("phaseOverride", "7");
         testVisibility(props, true, true, true, true);
     }
 
@@ -1135,6 +1137,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testAnnotations() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/anno";
+        Properties props = new Properties();
+        props.put("phaseOverride", "7");
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
         htmlTool.add(Arrays.asList(
                 base + "/Groovy.groovy",
                 base + "/Java.java"
@@ -1151,73 +1156,73 @@ public class GroovyDocToolTest extends GroovyTestCase {
                         "class Groovy"
         )).matcher(groovydoc).find());
 
-        assertTrue("The Java class declaration header should have the annotation in:\n" + javadoc, Pattern.compile(Pattern.quote(
-                "<pre>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
-                        "@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html' title='SuppressWarnings'>SuppressWarnings</a>(\"foo\")\n" +
+        assertTrue("The Java class declaration header should have the annotation in:\n" + javadoc, Pattern.compile(
+                "<pre>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)\n" +
+                        "@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html' title='SuppressWarnings'>SuppressWarnings</a>|java.lang.SuppressWarnings)\\(\"foo\"\\)\n" +
                         "public class Java"
-        )).matcher(javadoc).find());
+        ).matcher(javadoc).find());
 
-        assertTrue("The Groovy field details should have the annotation in:" + groovydoc, Pattern.compile(Pattern.quote(
+        assertTrue("The Groovy field details should have the annotation in:" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.Internal<br>" +
-                        "public&nbsp;<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> " +
+                        "public&nbsp;(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) " +
                         "<strong>annotatedField</strong></h4>"
-        )).matcher(groovydoc).find());
+        ).matcher(groovydoc).find());
 
-        assertTrue("The Java field details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
-                        "public&nbsp;<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> " +
+        assertTrue("The Java field details should have the annotation", Pattern.compile(
+                "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
+                        "public&nbsp;(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) " +
                         "<strong>annotatedField</strong></h4>"
-        )).matcher(javadoc).find());
+        ).matcher(javadoc).find());
 
-        assertTrue("The Groovy property details should have the annotation", Pattern.compile(Pattern.quote(
-            "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
-                "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a> <strong>annotatedProperty</strong></h4>"
-        )).matcher(groovydoc).find());
+        assertTrue("The Groovy property details should have the annotation", Pattern.compile(
+            "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
+                "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a>|java.util.List) <strong>annotatedProperty</strong></h4>"
+        ).matcher(groovydoc).find());
 
         // Java doesn't have properties section
 
-        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.NamedVariant<br>" +
-                        "<strong>Groovy</strong>(" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a> ctorParam" +
-                        ")</h4>"
-        )).matcher(groovydoc).find());
-        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+                        "<strong>Groovy</strong>\\(" +
+                        "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a>|java.util.List) ctorParam" +
+                        "\\)</h4>"
+        ).matcher(groovydoc).find());
+        assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.Generated<br>" +
-                        "<strong>Groovy</strong>(" +
-                        "@groovy.transform.NamedParam(value: ctorParam, type: java.util.List)<br>" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a> namedArgs" +
-                        ")</h4>"
-        )).matcher(groovydoc).find());
+                        "<strong>Groovy</strong>\\(" +
+                        "@groovy.transform.NamedParam\\(value: ctorParam, type: java.util.List\\)<br>" +
+                        "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a>|java.util.Map) namedArgs" +
+                        "\\)</h4>"
+        ).matcher(groovydoc).find());
 
-        assertTrue("The Java ctor details should have the annotation", Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
-                        "public&nbsp;<strong>Java</strong>()</h4>"
-        )).matcher(javadoc).find());
+        assertTrue("The Java ctor details should have the annotation in:\n" + javadoc, Pattern.compile(
+                "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
+                        "public&nbsp;<strong>Java</strong>\\(\\)</h4>"
+        ).matcher(javadoc).find());
 
         // Note also the param annotation
-        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.NamedVariant<br>" +
-                        "void <strong>annotatedMethod</strong>(" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> methodParam" +
-                        ")</h4>"
-        )).matcher(groovydoc).find());
+                        "void <strong>annotatedMethod</strong>\\(" +
+                        "(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) methodParam" +
+                        "\\)</h4>"
+        ).matcher(groovydoc).find());
         // Note also the param annotation
-        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(Pattern.quote(
+        assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.Generated<br>" +
-                        "void <strong>annotatedMethod</strong>(" +
-                        "@groovy.transform.NamedParam(required: true, value: methodParam, type: java.lang.String)<br>" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a> namedArgs" +
-                        ")</h4>"
-        )).matcher(groovydoc).find());
+                        "void <strong>annotatedMethod</strong>\\(" +
+                        "@groovy.transform.NamedParam\\(required: true, value: methodParam, type: java.lang.String\\)<br>" +
+                        "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a>|java.util.Map) namedArgs" +
+                        "\\)</h4>"
+        ).matcher(groovydoc).find());
 
-        assertTrue("The Java method details should have the annotations in:\n" + javadoc, Pattern.compile(Pattern.quote(
-                "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a><br>" +
-                        "public&nbsp;void <strong>annotatedMethod</strong>(" +
-                        "@CommandLine.Parameters(hidden = true)<br>" +
-                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a> annotatedParam" +
-                        ")</h4>"
-        )).matcher(javadoc).find());
+        assertTrue("The Java method details should have the annotations in:\n" + javadoc, Pattern.compile(
+                "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
+                        "public&nbsp;void <strong>annotatedMethod</strong>\\(" +
+                        "@CommandLine.Parameters\\(hidden = true\\)<br>" +
+                        "(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) annotatedParam" +
+                        "\\)</h4>"
+        ).matcher(javadoc).find());
     }
 
     public void testAbstractMethods() throws Exception {
@@ -1353,6 +1358,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         Properties props = new Properties();
         props.put("packageScope", "true");
+        props.put("phaseOverride", "7");
         xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), props);
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
