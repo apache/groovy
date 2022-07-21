@@ -16,40 +16,38 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
-class Groovy10659 {
+final class Groovy10659 {
     @Test
     void test() {
         assertScript '''
             def fun = { arg ->
                 return arg
             }
-            
+
             def r = fun (
                 x: 1,
                 [a: 1]: '2'
             )
             assert '[x:1, [a:1]:2]' == r.toString()
-            
+
             r = fun ([
                 x: 1,
                 [a: 1]: '2'
-            ]) 
+            ])
             assert '[x:1, [a:1]:2]' == r.toString()
-            
+
             r = fun (
                 x: 1,
                 [1, 2]: '2'
             )
             assert '[x:1, [1, 2]:2]' == r.toString()
-            
+
             r = fun (
                 x: 1,
                 [a: 1]: '2',

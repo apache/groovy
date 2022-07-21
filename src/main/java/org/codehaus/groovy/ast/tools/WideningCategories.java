@@ -20,7 +20,6 @@ package org.codehaus.groovy.ast.tools;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.MethodNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -564,10 +563,6 @@ public class WideningCategories {
             for (ClassNode anInterface : interfaces) {
                 usesGenerics |= anInterface.isUsingGenerics();
                 genericsTypesList.add(anInterface.getGenericsTypes());
-                for (MethodNode methodNode : anInterface.getMethods()) {
-                    MethodNode method = addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
-                    method.setDeclaringClass(anInterface); // important for static compilation!
-                }
             }
             setUsingGenerics(usesGenerics);
             if (usesGenerics) {
