@@ -38,7 +38,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.ArrayList;
@@ -49,6 +49,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.MethodCallUtils.appendS;
+import static org.apache.groovy.ast.tools.MethodCallUtils.maybeNullToStringX;
 import static org.apache.groovy.ast.tools.MethodCallUtils.toStringX;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
@@ -82,7 +83,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
-    private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
+    private static final ClassNode FORMAT_TYPE = make(FormatHelper.class);
     private static final ClassNode POJO_TYPE = make(POJO.class);
     private static final String TO_STRING = "toString";
     private static final String UNDER_TO_STRING = "_toString";
@@ -272,7 +273,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first, delims);
         appendPrefix(thenBlock, result, name, includeNames, delims);
-        Expression toString = pojo ? toStringX(value) : callX(INVOKER_TYPE, TO_STRING, value);
+        Expression toString = pojo ? maybeNullToStringX(value) : callX(FORMAT_TYPE, TO_STRING, value);
         if (canBeSelf) {
             thenBlock.addStatement(ifElseS(
                     sameX(value, varX("this")),

@@ -23,7 +23,10 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 
 /**
  * Utility class for commonly called methods
@@ -42,5 +45,9 @@ public class MethodCallUtils {
         MethodCallExpression toString = callX(object, "toString");
         toString.setImplicitThis(false);
         return toString;
+    }
+
+    public static Expression maybeNullToStringX(final Expression object) {
+        return ternaryX(isNullX(object), constX("null"), toStringX(object));
     }
 }
