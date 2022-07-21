@@ -4760,13 +4760,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         List<MethodNode> methods = receiver.getMethods(name);
-        if (receiver.isAbstract()) {
-            collectAllInterfaceMethodsByName(receiver, name, methods);
-        } else { // GROOVY-9890: always search for default methods
-            List<MethodNode> interfaceMethods = new ArrayList<>();
-            collectAllInterfaceMethodsByName(receiver, name, interfaceMethods);
-            interfaceMethods.stream().filter(MethodNode::isDefault).forEach(methods::add);
+
+        // GROOVY-5166, GROOVY-9890, GROOVY-10700: non-static interface/trait methods
+        Set<ClassNode> done = new HashSet<>();
+        for (ClassNode next = receiver; next != null; next = next.getSuperClass()) {
+            done.add(next);
+            for (ClassNode face : next.getAllInterfaces()) {
+                if (done.add(face)) {
+                    for (MethodNode mn : face.getDeclaredMethods(name)) {
+                        if (mn.isPublic() && !mn.isStatic()) methods.add(mn);
+                    }
+                }
+            }
         }
+
         if (receiver.isInterface()) {
             methods.addAll(OBJECT_TYPE.getMethods(name));
         }
