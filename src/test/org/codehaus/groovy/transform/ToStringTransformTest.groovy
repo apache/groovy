@@ -514,4 +514,19 @@ class ToStringTransformTest extends GroovyShellTestCase {
         """
     }
 
+    // GROOVY-10697
+    void testToStringOnPojoWithNullField() {
+        assertScript '''
+            import groovy.transform.*
+
+            @ToString(pojo=true)
+            @CompileStatic
+            class Clazz {
+                String field = null
+            }
+
+            assert new Clazz().toString() == 'Clazz(null)'
+        '''
+    }
+
 }

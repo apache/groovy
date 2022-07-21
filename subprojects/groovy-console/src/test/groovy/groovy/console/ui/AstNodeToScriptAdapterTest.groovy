@@ -579,7 +579,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         // we had problems with the ast transform passing a VariableExpression as StaticMethodCallExpression arguments
-        assert result.contains("_result.append(org.codehaus.groovy.runtime.InvokerHelper.toString(this.getWhen())")
+        assert result.contains("_result.append(org.codehaus.groovy.runtime.FormatHelper.toString(this.getWhen())")
     }
 
     void testAtImmutableClassWithProperties() {
