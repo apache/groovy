@@ -4787,9 +4787,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /**
      * Returns methods defined for the specified receiver and adds "non-existing"
      * methods that will be generated afterwards by the compiler; for example if
-     * a method is using default values and the class node isn't compiled yet.
+     * a method is using default values and the class node is not compiled yet.
      *
-     * @param receiver the receiver where to find methods
+     * @param receiver the type to search for methods
      * @param name     the name of the methods to return
      * @return the methods that are defined on the receiver completed with stubs for future methods
      */
@@ -4806,24 +4806,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         List<MethodNode> methods = receiver.getMethods(name);
-        if (receiver.isAbstract()) {
-            collectAllInterfaceMethodsByName(receiver, name, methods);
-        } else { // GROOVY-9890: always search for default methods
-            List<MethodNode> interfaceMethods = new ArrayList<>();
-            collectAllInterfaceMethodsByName(receiver, name, interfaceMethods);
-            interfaceMethods.stream().filter(mn -> mn.isDefault() || (mn.isPublic()
-                && !mn.isStatic() && !mn.isAbstract() && Traits.isTrait(mn.getDeclaringClass()))
-            ).forEach(methods::add);
+
+        // GROOVY-5166, GROOVY-9890, GROOVY-10700: non-static interface/trait methods
+        Set<ClassNode> done = new HashSet<>();
+        for (ClassNode next = receiver; next != null; next = next.getSuperClass()) {
+            done.add(next);
+            for (ClassNode face : next.getAllInterfaces()) {
+                if (done.add(face)) {
+                    for (MethodNode mn : face.getDeclaredMethods(name)) {
+                        if (mn.isPublic() && !mn.isStatic()) methods.add(mn);
+                    }
+                }
+            }
         }
 
         if (receiver.isInterface()) {
             methods.addAll(OBJECT_TYPE.getMethods(name));
         }
 
-        if (methods.isEmpty() || receiver.isResolved()) {
-            return methods;
+        if (!receiver.isResolved() && !methods.isEmpty()) {
+            methods = addGeneratedMethods(receiver, methods);
         }
-        return addGeneratedMethods(receiver, methods);
+
+        return methods;
     }
 
     private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<MethodNode> methods) {
@@ -5026,18 +5031,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (result.equals(capitalize(propertyName))) return propertyName;
         }
         return null;
-    }
-
-    private static void collectAllInterfaceMethodsByName(final ClassNode type, final String name, final List<MethodNode> methods) {
-        Set<ClassNode> done = new LinkedHashSet<>();
-        for (ClassNode next = type; next != null; next = next.getSuperClass()) {
-            done.add(next);
-            for (ClassNode face : next.getAllInterfaces()) {
-                if (done.add(face)) {
-                    methods.addAll(face.getDeclaredMethods(name));
-                }
-            }
-        }
     }
 
     protected ClassNode getType(final ASTNode node) {

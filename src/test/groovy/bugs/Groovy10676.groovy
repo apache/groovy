@@ -16,18 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
 import org.codehaus.groovy.tools.ErrorReporter
 import org.junit.Test
 
-class Groovy10676 {
+final class Groovy10676 {
     @Test
     void test() {
         try {
             // error should be at column > 40, first line should be short
             new GroovyShell().parse('/*\r * some comment\r */\r           class class {}\r')
-        } catch(e) {
+        } catch (e) {
             Writer data = new StringWriter()
             new ErrorReporter(e, false).write(new PrintWriter(data))
             assert data.toString().contains("Unexpected input: 'class'")

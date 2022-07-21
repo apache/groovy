@@ -16,15 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
-class Groovy10612 {
+final class Groovy10612 {
+
     @Test
     void testStringConcatenationWithPlus() {
         assertScript '''
@@ -34,10 +33,10 @@ class Groovy10612 {
     }
 
     @Test
-    void testStringConcatenationWithPlus_CS() {
+    void testStringConcatenationWithPlusCS() {
         assertScript '''
             @groovy.transform.CompileStatic
-            def m() {
+            void m() {
                 assert '[a:1] is a map' == [a:1] + ' is a map'
                 assert '[a:1] is a map' == [a:1] + " is ${'a'} map"
             }
