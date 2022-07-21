@@ -64,6 +64,8 @@ import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
+import org.codehaus.groovy.runtime.callsite.BooleanClosurePredicate;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -4995,17 +4997,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.2
      */
     public static <T> boolean removeAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        Iterator iter = InvokerHelper.asIterator(self);
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        boolean result = false;
-        while (iter.hasNext()) {
-            Object value = iter.next();
-            if (bcw.call(value)) {
-                iter.remove();
-                result = true;
-            }
-        }
-        return result;
+        return self.removeIf(new BooleanClosurePredicate<>(condition));
     }
 
     /**
@@ -5027,17 +5019,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <K, V> boolean removeAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure condition) {
-        Iterator<Map.Entry<K, V>> iter = self.entrySet().iterator();
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        boolean result = false;
-        while (iter.hasNext()) {
-            Map.Entry<K, V> entry = iter.next();
-            if (bcw.callForMap(entry)) {
-                iter.remove();
-                result = true;
-            }
-        }
-        return result;
+        return self.entrySet().removeIf(new BooleanClosureForMapPredicate<>(condition));
     }
 
     /**
