@@ -2295,8 +2295,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ctor = findMethodOrFail(call, receiver, "<init>", argumentTypes);
                 if (ctor != null) {
                     Parameter[] parameters = ctor.getParameters();
-                    if (asBoolean(receiver.getGenericsTypes())) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, GROOVY-10624, et al.
-                        Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, ctor, argumentList);
+                    if (asBoolean(receiver.getGenericsTypes())) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, GROOVY-10624
+                        Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(receiver, ctor.getDeclaringClass());
                         parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                     }
                     resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
@@ -2653,8 +2653,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
-        // TypeChecked$TypeCheckingInfo can not be applied on constructors
-        if (node instanceof ConstructorNode) return;
+        // TypeChecked$TypeCheckingInfo cannot be applied on constructors
+        if (node.isConstructor()) return;
 
         // if a returned inferred type is available and no @TypeCheckingInfo is on node, then add an
         // annotation to the method node
@@ -2944,23 +2944,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 doInferClosureParameterTypes(receiver, arguments, expression, method, value, conflictResolver, options);
             }
         } else if (isSAMType(target.getOriginType())) { // SAM-type coercion
-            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
-            GenericsType[] typeParameters = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
+            boolean isConstructor = method.isConstructor();
+            boolean hasTypeArguments = asBoolean(receiver.getGenericsTypes());
+            Map<GenericsTypeName, GenericsType> context = isConstructor && !hasTypeArguments ? new HashMap<>() // GROOVY-10699
+                                                        : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
+            GenericsType[] typeParameters = isConstructor ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
             if (typeParameters != null) {
                 boolean typeParametersResolved = false;
                 // first check for explicit type arguments
-                Expression emc = typeCheckingContext.getEnclosingMethodCall();
-                if (emc instanceof MethodCallExpression) {
-                    MethodCallExpression mce = (MethodCallExpression) emc;
-                    if (mce.getArguments() == arguments) {
-                        GenericsType[] typeArguments = mce.getGenericsTypes();
-                        if (typeArguments != null) {
-                            int n = typeParameters.length;
-                            if (n == typeArguments.length) {
-                                typeParametersResolved = true;
-                                for (int i = 0; i < n; i += 1) {
-                                    context.put(new GenericsTypeName(typeParameters[i].getName()), typeArguments[i]);
+                if (isConstructor) {
+                    typeParametersResolved = hasTypeArguments;
+                } else {
+                    Expression emc = typeCheckingContext.getEnclosingMethodCall();
+                    if (emc instanceof MethodCallExpression) {
+                        MethodCallExpression mce = (MethodCallExpression) emc;
+                        if (mce.getArguments() == arguments) {
+                            GenericsType[] typeArguments = mce.getGenericsTypes();
+                            if (typeArguments != null) {
+                                int n = typeParameters.length;
+                                if (n == typeArguments.length) {
+                                    typeParametersResolved = true;
+                                    for (int i = 0; i < n; i += 1) {
+                                        context.put(new GenericsTypeName(typeParameters[i].getName()), typeArguments[i]);
+                                    }
                                 }
                             }
                         }
@@ -3149,26 +3156,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
         returnType.setGenericsTypes(Arrays.stream(signature).map(ClassNode::asGenericsType).toArray(GenericsType[]::new));
 
-        MethodNode dummyMN = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
-        dummyMN = new MethodNode(dummyMN.getName(), dummyMN.getModifiers(), returnType, dummyMN.getParameters(), dummyMN.getExceptions(), null);
-        dummyMN.setDeclaringClass(selectedMethod.getDeclaringClass());
-        dummyMN.setGenericsTypes(selectedMethod.getGenericsTypes());
+        MethodNode methodNode = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
+        methodNode = new MethodNode("$$", methodNode.getModifiers(), returnType, methodNode.getParameters(), methodNode.getExceptions(), null);
+        methodNode.setDeclaringClass(selectedMethod.getDeclaringClass());
+        methodNode.setGenericsTypes(selectedMethod.getGenericsTypes());
         if (selectedMethod instanceof ExtensionMethodNode) {
-            dummyMN = new ExtensionMethodNode(
-                    dummyMN,
-                    dummyMN.getName(),
-                    dummyMN.getModifiers(),
+            methodNode = new ExtensionMethodNode(
+                    methodNode,
+                    methodNode.getName(),
+                    methodNode.getModifiers(),
                     returnType,
                     selectedMethod.getParameters(),
                     selectedMethod.getExceptions(),
                     null,
                     ((ExtensionMethodNode) selectedMethod).isStaticExtension()
             );
-            dummyMN.setDeclaringClass(selectedMethod.getDeclaringClass());
-            dummyMN.setGenericsTypes(selectedMethod.getGenericsTypes());
+            methodNode.setDeclaringClass(selectedMethod.getDeclaringClass());
+            methodNode.setGenericsTypes(selectedMethod.getGenericsTypes());
         }
 
-        returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments);
+        returnType = inferReturnTypeGenerics(receiver, methodNode, arguments);
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         for (int i = 0, n = returnTypeGenerics.length; i < n; i += 1) {
             GenericsType gt = returnTypeGenerics[i];
@@ -4866,14 +4873,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 MethodNode stubbed;
-                if ("<init>".equals(method.getName())) {
+                if (method.isConstructor()) {
                     stubbed = new ConstructorNode(
                             method.getModifiers(),
                             newParams,
                             method.getExceptions(),
                             GENERATED_EMPTY_STATEMENT
                     );
-
                 } else {
                     stubbed = new MethodNode(
                             method.getName(),
@@ -4973,8 +4979,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (!"<init>".equals(name) && !"<clinit>".equals(name)) {
-            // lookup in DGM methods too
+        if (!name.endsWith("init>")) { // also search for extension methods
             findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
         }
         methods = filterMethodsByVisibility(methods, typeCheckingContext.getEnclosingClassNode());
@@ -5330,7 +5335,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param explicitTypeHints type arguments (optional), for example {@code Collections.<String>emptyList()}
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
-        ClassNode returnType = method instanceof ConstructorNode ? method.getDeclaringClass() : method.getReturnType();
+        ClassNode returnType = method.isConstructor() ? method.getDeclaringClass() : method.getReturnType();
         if (!GenericsUtils.hasUnresolvedGenerics(returnType)) {
             // GROOVY-7538: replace "Type<?>" with "Type<? extends/super X>" for any "Type<T extends/super X>"
             if (getGenericsWithoutArray(returnType) != null) returnType = boundUnboundedWildcards(returnType);
@@ -5344,9 +5349,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
-        Map<GenericsTypeName, GenericsType> context = method.isStatic() || method instanceof ConstructorNode
+        Map<GenericsTypeName, GenericsType> context = method.isStatic() || method.isConstructor()
                                             ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
-        GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
+        GenericsType[] methodGenericTypes = method.isConstructor() ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
         // 1) resolve type parameters of method
 
@@ -5690,8 +5695,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             todo = new ClassNode[] {!isPrimitiveType(declaringClass) ? wrapTypeIfNecessary(receiver) : receiver};
         }
         for (ClassNode type : todo) {
-            ClassNode current = type;
-            while (current != null) {
+            for (ClassNode current = type; current != null; ) {
                 Map<GenericsTypeName, GenericsType> placeHolders = new HashMap<>();
                 if (current.isGenericsPlaceHolder())
                     // GROOVY-10622: type param bound "T extends Set<Type>"
@@ -5749,8 +5753,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             result = new HashMap<>();
         } else {
             ClassNode declaring = method.getDeclaringClass();
-            if (argument instanceof ArgumentListExpression) { // resolve extension method class
-                List<Expression> arguments = ((ArgumentListExpression) argument).getExpressions();
+            if (argument instanceof TupleExpression) { // resolve extension method class
+                List<Expression> arguments = ((TupleExpression) argument).getExpressions();
                 if (!arguments.isEmpty()) {
                     ClassNode cn = arguments.get(0).getNodeMetaData(ExtensionMethodDeclaringClass.class);
                     if (cn != null)
