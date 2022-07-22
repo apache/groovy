@@ -197,6 +197,24 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10701
+    void testFunctionalInterfaceTarget3() {
+        for (type in ['Function<T,T>', 'UnaryOperator<T>']) {
+            assertScript """import java.util.function.*
+
+                def <T> T m1($type x) {
+                    x.apply(null)
+                }
+                double m2(double d) {
+                    Math.PI
+                }
+
+                def result = m1(true ? (Double d) -> 42.0d : this::m2)
+                assert result == 42.0d
+            """
+        }
+    }
+
     // GROOVY-10357
     void testAbstractMethodDefault() {
         assertScript '''

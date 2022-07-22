@@ -1072,7 +1072,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static boolean isClosureWithType(final ClassNode type) {
-        return type.equals(CLOSURE_TYPE) && Optional.ofNullable(type.getGenericsTypes()).filter(gts -> gts != null && gts.length == 1).isPresent();
+        return CLOSURE_TYPE.equals(type) && Optional.ofNullable(type.getGenericsTypes()).filter(gts -> gts != null && gts.length == 1).isPresent();
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
@@ -4265,11 +4265,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
+        MethodCall enclosingMethodCall = (MethodCall)typeCheckingContext.getEnclosingMethodCall();
         BinaryExpression enclosingExpression = typeCheckingContext.getEnclosingBinaryExpression();
         if (enclosingExpression != null
                 && isAssignment(enclosingExpression.getOperation().getType())
                 && isTypeSource(expr, enclosingExpression.getRightExpression())) {
             targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
+        } else if (enclosingMethodCall != null
+                && InvocationWriter.makeArgumentList(enclosingMethodCall.getArguments())
+                        .getExpressions().stream().anyMatch(arg -> isTypeSource(expr, arg))) {
+            // TODO: locate method target parameter
         } else if (enclosingMethod != null
                 && !enclosingMethod.isAbstract()
                 && !enclosingMethod.isVoidMethod()
