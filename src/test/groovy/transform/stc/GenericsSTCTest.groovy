@@ -3774,6 +3774,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10699
+    void testReturnTypeInferenceWithClosure4() {
+        for (type in ['Function<T,T>', 'UnaryOperator<T>']) {
+            assertScript """import java.util.function.*
+
+                <T> T m($type x) {
+                    x.apply(null)
+                }
+
+                void test() {
+                    // the only type witness for T is the lambda parameter
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+                    })
+                    def x = m( (Double d) -> d ) // Expected type Object for lambda parameter: d
+                }
+                test()
+            """
+        }
+    }
+
     // GROOVY-6129
     void testShouldNotThrowNPE() {
         assertScript '''
