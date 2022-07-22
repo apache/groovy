@@ -1154,7 +1154,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
                 T2 t
                 B(T2 t) {
-                    this.t  = t
+                    this.t  = t // Cannot assign value of type A<C,? extends T1> to variable of type T2
                 }
             }
             class C {
@@ -1419,6 +1419,54 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 new A<>(x, '').f.m((T) null)
             }
             test()
+        '''
+    }
+
+    // GROOVY-10699
+    void testDiamondInferrenceFromConstructor33() {
+        assertScript '''
+            class A<T> {
+                A(B<T> b_of_t) {
+                }
+            }
+            class B<T> {
+                B(T t) {
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>(new B<>('str'))
+        '''
+
+        assertScript '''import java.util.function.Consumer
+            class C<T> {
+                C(Consumer<T> consumer_of_t) {
+                    consumer_of_t.accept(null)
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'C<java.lang.Object>' // TODO: String
+            })
+            def y = new C<>((String s) -> { print(s); }) // error: Expected type Object for lambda parameter: s
+        '''
+
+        assertScript '''import java.util.function.Supplier
+            class D<T> {
+                D(Supplier<T> supplier_of_t) {
+                    T t = supplier_of_t.get()
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'D<java.lang.String>'
+            })
+            def z = new D<>(() -> 'str')
         '''
     }
 
