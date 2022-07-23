@@ -1070,15 +1070,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode getOriginalDeclarationType(final Expression lhs) {
-        if (lhs instanceof VariableExpression) {
-            Variable var = findTargetVariable((VariableExpression) lhs);
-            if (!(var instanceof DynamicVariable || var instanceof PropertyNode)) {
-                return var.getOriginType();
-            }
-        } else if (lhs instanceof FieldExpression) {
-            return ((FieldExpression) lhs).getField().getOriginType();
+        Variable var = null;
+        if (lhs instanceof FieldExpression) {
+            var = ((FieldExpression) lhs).getField();
+        } else if (lhs instanceof VariableExpression) {
+            var = findTargetVariable((VariableExpression) lhs);
         }
-        return getType(lhs);
+        return var != null && !(var instanceof DynamicVariable) ? var.getOriginType() : getType(lhs);
     }
 
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
@@ -1513,7 +1511,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode rawType = objectExpressionType.getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
         }
-        List<ClassNode> enclosingTypes = typeCheckingContext.getEnclosingClassNodes();
+        // enclosing excludes classes that skip STC
+        Set<ClassNode> enclosingTypes = new LinkedHashSet<>();
+        enclosingTypes.add(typeCheckingContext.getEnclosingClassNode());
+        enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if (staticOnlyAccess && "this".equals(propertyName)) {
@@ -1728,15 +1729,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return foundGetterOrSetter;
     }
 
-    private static boolean hasAccessToField(final ClassNode accessor, final FieldNode field) {
-        if (field.isPublic() || accessor.equals(field.getDeclaringClass())) {
+    private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {
+        if (Modifier.isPublic(modifiers)
+                || accessor.equals(receiver)
+                || accessor.getOuterClasses().contains(receiver)) {
             return true;
         }
-        if (field.isProtected()) {
-            return accessor.isDerivedFrom(field.getDeclaringClass());
-        } else {
-            return !field.isPrivate() && Objects.equals(accessor.getPackageName(), field.getDeclaringClass().getPackageName());
+        if (!Modifier.isPrivate(modifiers) && Objects.equals(accessor.getPackageName(), receiver.getPackageName())) {
+            return true;
         }
+        return Modifier.isProtected(modifiers) && accessor.isDerivedFrom(receiver);
     }
 
     private static MethodNode findGetter(final ClassNode current, String name, final boolean searchOuterClasses) {
@@ -1854,7 +1856,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        boolean accessible = hasAccessToField(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field);
+        boolean accessible = hasAccessToMember(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field.getDeclaringClass(), field.getModifiers());
 
         if (expressionToStoreOn instanceof AttributeExpression) { // TODO: expand to include PropertyExpression
             if (!accessible) {
@@ -2819,14 +2821,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
-                        ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments);
-                        returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
-                        callArgsVisited = true;
+                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate); callArgsVisited = true;
+                        ClassNode rt = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
+                        if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
+                            returnType = rt;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
-
                 } else {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 }
@@ -3847,7 +3848,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given an object expression (a receiver expression), generate the list of potential receiver types.
+     * Given an object expression (a message receiver expression), generate list
+     * of possible types.
      *
      * @param objectExpression the receiver expression
      * @return the list of types the receiver may be
@@ -4321,11 +4323,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode sourceType = type;
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
+        MethodCall enclosingMethodCall = (MethodCall)typeCheckingContext.getEnclosingMethodCall();
         BinaryExpression enclosingExpression = typeCheckingContext.getEnclosingBinaryExpression();
         if (enclosingExpression != null
                 && isAssignment(enclosingExpression.getOperation().getType())
                 && isTypeSource(expr, enclosingExpression.getRightExpression())) {
             targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
+        } else if (enclosingMethodCall != null
+                && InvocationWriter.makeArgumentList(enclosingMethodCall.getArguments())
+                        .getExpressions().stream().anyMatch(arg -> isTypeSource(expr, arg))) {
+            // TODO: locate method target parameter
         } else if (enclosingMethod != null
                 && !enclosingMethod.isAbstract()
                 && !enclosingMethod.isVoidMethod()
@@ -4743,37 +4750,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final ClassNode receiver, final ClassNode[] argTypes, final Expression call) {
-        if (methods.size() > 1 && receiver != null && argTypes != null) {
+    private List<MethodNode> disambiguateMethods(List<MethodNode> methods, final ClassNode receiver, final ClassNode[] arguments, final Expression call) {
+        if (methods.size() > 1 && receiver != null && arguments != null) {
             List<MethodNode> filteredWithGenerics = new LinkedList<>();
-            for (MethodNode methodNode : methods) {
-                if (typeCheckMethodsWithGenerics(receiver, argTypes, methodNode)) {
-                    if ((methodNode.getModifiers() & Opcodes.ACC_BRIDGE) == 0) {
-                        filteredWithGenerics.add(methodNode);
-                    }
+            for (MethodNode method : methods) {
+                if (typeCheckMethodsWithGenerics(receiver, arguments, method)
+                        && (method.getModifiers() & Opcodes.ACC_BRIDGE) == 0) {
+                    filteredWithGenerics.add(method);
                 }
             }
             if (filteredWithGenerics.size() == 1) {
                 return filteredWithGenerics;
             }
+
             methods = extension.handleAmbiguousMethods(methods, call);
         }
 
-        if (methods.size() > 1) {
-            if (call instanceof MethodCall) {
-                List<MethodNode> methodNodeList = new LinkedList<>();
-
-                String methodName = ((MethodCall) call).getMethodAsString();
-
-                for (MethodNode methodNode : methods) {
-                    if (!methodNode.getName().equals(methodName)) {
-                        continue;
-                    }
-                    methodNodeList.add(methodNode);
-                }
-
-                methods = methodNodeList;
-            }
+        if (methods.size() > 1 && call instanceof MethodCall) {
+            String methodName = ((MethodCall) call).getMethodAsString();
+            methods = methods.stream().filter(m -> m.getName().equals(methodName)).collect(Collectors.toList());
         }
 
         return methods;

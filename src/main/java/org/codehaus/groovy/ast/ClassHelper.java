@@ -438,7 +438,7 @@ public class ClassHelper {
      * @return the method node if type is a SAM type, null otherwise
      */
     public static MethodNode findSAM(final ClassNode type) {
-        if (!Modifier.isAbstract(type.getModifiers())) return null;
+        if (type == null || !type.isAbstract()) return null;
         if (type.isInterface()) {
             List<MethodNode> methods;
             if (type.isInterface()) {
