@@ -2275,9 +2275,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             && parameters.length == argumentTypes.length - 1) {
                         ctor = typeCheckMapConstructor(call, receiver, arguments);
                     } else {
-                        if (asBoolean(receiver.getGenericsTypes())) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, GROOVY-10624
-                            Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(receiver, ctor.getDeclaringClass());
-                            parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
+                        GenericsType[] typeParameters = ctor.getDeclaringClass().getGenericsTypes();
+                        if (typeParameters != null) { // GROOVY-10283, GROOVY-10316, GROOVY-10482, GROOVY-10624, GROOVY-10698
+                            Map<GenericsTypeName, GenericsType> context = extractGenericsConnectionsFromArguments(typeParameters, parameters, argumentList, receiver.getGenericsTypes());
+                            if (!context.isEmpty()) parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                         }
                         resolvePlaceholdersFromImplicitTypeHints(argumentTypes, argumentList, parameters);
                         typeCheckMethodsWithGenericsOrFail(receiver, argumentTypes, ctor, call);
@@ -5362,7 +5363,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private Map<GenericsTypeName, GenericsType> extractGenericsConnectionsFromArguments(final GenericsType[] methodGenericTypes, final Parameter[] parameters, final Expression arguments, final GenericsType[] explicitTypeHints) {
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
 
-        if (explicitTypeHints != null) { // resolve type parameters from type arguments
+        if (asBoolean(explicitTypeHints)) { // resolve type parameters from type arguments
             int n = methodGenericTypes.length;
             if (n == explicitTypeHints.length) {
                 for (int i = 0; i < n; i += 1) {

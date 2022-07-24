@@ -1470,6 +1470,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10698
+    void testDiamondInferrenceFromConstructor34() {
+        assertScript '''
+            class A<T> {
+                A(T t, B<T> b_of_t) {
+                }
+            }
+            class B<U> {
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>('witness', new B<>()) // Cannot call A#<init>(Object,B<Object>) with arguments [String, B<T>]
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
