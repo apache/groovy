@@ -1488,6 +1488,41 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10674
+    void testDiamondInferrenceFromConstructor35() {
+        assertScript '''
+            class Foo<BB extends Bar<Byte>, X extends BB> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number> {
+            }
+
+            class Baz {
+                static Foo<Bar<Byte>, ? super Bar<Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
+        '''
+
+        assertScript '''
+            class Foo<BBQ extends Bar<Byte, ? extends Byte>, X extends BBQ> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number, S extends T> {
+            }
+
+            class Baz {
+                Foo<Bar<Byte,Byte>, ? super Bar<Byte,Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
