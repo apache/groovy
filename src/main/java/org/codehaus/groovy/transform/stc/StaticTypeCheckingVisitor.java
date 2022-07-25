@@ -841,33 +841,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
 
-                if (lType.isUsingGenerics()
-                        && missesGenericsTypes(resultType)
-                        // GROOVY-10324, GROOVY-10342, et al.
-                        && !resultType.isGenericsPlaceHolder()) {
-                    // unchecked assignment
-                    // List<Type> list = new LinkedList()
-                    // Iterable<Type> iter = new LinkedList()
-                    // Collection<Type> coll = Collections.emptyList()
-                    // Collection<Type> view = ConcurrentHashMap.newKeySet()
-
-                    // the inferred type of the binary expression is the type of the RHS
-                    // "completed" with generics type information available from the LHS
-                    if (lType.equals(resultType)) {
-                        // GROOVY-6126, GROOVY-6558, GROOVY-6564, et al.
-                        if (!lType.isGenericsPlaceHolder()) resultType = lType;
-                    } else {
-                        // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, et al.
-                        Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
-                        extractGenericsConnections(gt, resultType, resultType.redirect());
-                        ClassNode sc = resultType;
-                        do { sc = getNextSuperClass(sc, lType);
-                        } while (sc != null && !sc.equals(lType));
-                        extractGenericsConnections(gt, lType, sc);
-
-                        resultType = applyGenericsContext(gt, resultType.redirect());
-                    }
-                }
+                // handle unchecked assignment: List<Type> list = []
+                resultType = adjustForTargetType(resultType, lType);
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
@@ -4294,25 +4269,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return isSAMType(targetType) ? targetType : type;
         }
 
-        ClassNode sourceType = Optional.ofNullable(getInferredReturnType(expr)).orElse(type);
+        if (targetType == null)
+            targetType = type.getPlainNodeReference();
+        if (type == UNKNOWN_PARAMETER_TYPE) return targetType;
 
-        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
-            // GROOVY-10114: type parameter(s) could be inferred from call arguments
-            if (targetType == null) targetType = sourceType.getPlainNodeReference();
+        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983, GROOVY-10114
             inferDiamondType((ConstructorCallExpression) expr, targetType);
-            return sourceType;
         }
 
-        if (targetType == null) return sourceType;
+        return adjustForTargetType(type, targetType);
+    }
 
-        if (!isPrimitiveType(getUnwrapper(targetType)) && !isObjectType(targetType)
-                && !sourceType.isGenericsPlaceHolder() && missesGenericsTypes(sourceType)) {
-            // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
-            // the inferred type is the RHS type "completed" with generics information from LHS
-            return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
+    private static ClassNode adjustForTargetType(final ClassNode resultType, final ClassNode targetType) {
+        if (targetType.isUsingGenerics()
+                && missesGenericsTypes(resultType)
+                // GROOVY-10324, GROOVY-10342, et al.
+                && !resultType.isGenericsPlaceHolder()) {
+            // unchecked assignment
+            // List<Type> list = new LinkedList()
+            // Iterable<Type> iter = new LinkedList()
+            // Collection<Type> col1 = Collections.emptyList()
+            // Collection<Type> col2 = Collections.emptyList() ?: []
+            // Collection<Type> view = ConcurrentHashMap.newKeySet()
+
+            // the inferred type of the binary expression is the type of the RHS
+            // "completed" with generics type information available from the LHS
+            if (targetType.equals(resultType)) {
+                // GROOVY-6126, GROOVY-6558, GROOVY-6564, et al.
+                if (!targetType.isGenericsPlaceHolder()) return targetType;
+            } else {
+                // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, GROOVY-10688, et al.
+                Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
+                extractGenericsConnections(gt, resultType, resultType.redirect());
+                ClassNode sc = resultType;
+                do { sc = getNextSuperClass(sc, targetType);
+                } while (sc != null && !sc.equals(targetType));
+                extractGenericsConnections(gt, targetType, sc);
+
+                return applyGenericsContext(gt, resultType.redirect());
+            }
         }
 
-        return sourceType != UNKNOWN_PARAMETER_TYPE ? sourceType : targetType;
+        return resultType;
     }
 
     private static boolean isTypeSource(final Expression expr, final Expression right) {

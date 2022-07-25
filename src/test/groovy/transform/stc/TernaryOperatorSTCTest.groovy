@@ -166,6 +166,20 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10688
+    void testTypeParameterTypeParameter3() {
+        assertScript '''
+            class A<T,U> {
+            }
+            <T> void test(
+                A<Double, ? extends T> x) {
+                A<Double, ? extends T> y = x
+                A<Double, ? extends T> z = true ? y : x
+            }
+            test(null)
+        '''
+    }
+
     // GROOVY-10271
     void testFunctionalInterfaceTarget1() {
         ['true', 'false'].each { flag ->
@@ -271,6 +285,12 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
                 true ? x : y // Cannot return value of type GroovyObject for method returning I
             }
             test(null, null)
+        '''
+    }
+
+    void testCommonInterface3() {
+        assertScript '''import static java.util.concurrent.ConcurrentHashMap.*
+            Set<Integer> integers = false ? new HashSet<>() : newKeySet()
         '''
     }
 
