@@ -66,6 +66,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -130,7 +131,7 @@ public abstract class TraitComposer {
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
+        for (MethodNode methodNode : new TreeMap<>(helperClassNode.getDeclaredMethodsMap()).values()) {
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             int nParams = helperMethodParams.length;
