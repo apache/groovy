@@ -35,8 +35,8 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -156,7 +156,7 @@ public class ClassNodeUtils {
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
         if (parent == null) {
-            return new HashMap<>();
+            return new LinkedHashMap<>();
         }
         return parent.getDeclaredMethodsMap();
     }
@@ -187,8 +187,8 @@ public class ClassNodeUtils {
      * @param cNode The ClassNode
      * @return A map of methods
      */
-    public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(ClassNode cNode) {
-        Map<String, MethodNode> methodsMap = new HashMap<>();
+    public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(final ClassNode cNode) {
+        Map<String, MethodNode> methodsMap = new LinkedHashMap<>();
         addDeclaredMethodsFromInterfaces(cNode, methodsMap);
         return methodsMap;
     }
