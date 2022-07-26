@@ -22,70 +22,60 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * @deprecated static mixins have been deprecated in favour of traits (trait keyword).
  */
 @Deprecated
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation
 public class MixinASTTransformation extends AbstractASTTransformation {
-    @SuppressWarnings("deprecation")
-    private static final ClassNode MY_TYPE = make(groovy.lang.Mixin.class);
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotationNode node = (AnnotationNode) nodes[0];
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        if (!MY_TYPE.equals(node.getClassNode()))
+        AnnotatedNode target = (AnnotatedNode) nodes[1];
+        if (!node.getClassNode().getName().equals("groovy.lang.Mixin"))
             return;
 
-        final Expression expr = node.getMember("value");
-        if (expr == null) {
+        Expression value = node.getMember("value");
+        if (value == null) {
             return;
         }
 
         Expression useClasses = null;
-        if (expr instanceof ClassExpression) {
-            useClasses = expr;
-        } else if (expr instanceof ListExpression) {
-            ListExpression listExpression = (ListExpression) expr;
+        if (value instanceof ClassExpression) {
+            useClasses = value;
+        } else if (value instanceof ListExpression) {
+            ListExpression listExpression = (ListExpression) value;
             for (Expression ex : listExpression.getExpressions()) {
                 if (!(ex instanceof ClassExpression))
                     return;
             }
-            useClasses = expr;
+            useClasses = value;
+        }
+        if (useClasses == null) {
+            return;
         }
 
-        if (useClasses == null)
-            return;
+        if (target instanceof ClassNode) {
+            ClassNode targetClass = (ClassNode) target;
 
-        if (parent instanceof ClassNode) {
-            ClassNode annotatedClass = (ClassNode) parent;
-
-            final Parameter[] noparams = Parameter.EMPTY_ARRAY;
-            MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", noparams);
+            MethodNode clinit = targetClass.getDeclaredMethod("<clinit>", Parameter.EMPTY_ARRAY);
             if (clinit == null) {
-                clinit = annotatedClass.addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, noparams, null, new BlockStatement());
-                clinit.setSynthetic(true);
+                clinit = targetClass.addSyntheticMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, null, new BlockStatement());
             }
 
-            final BlockStatement code = (BlockStatement) clinit.getCode();
-            code.addStatement(
-                    stmt(callX(propX(classX(annotatedClass), "metaClass"), "mixin", useClasses))
+            ((BlockStatement) clinit.getCode()).addStatement(
+                    stmt(callX(callX(targetClass, "getMetaClass"), "mixin", useClasses))
             );
         }
     }
