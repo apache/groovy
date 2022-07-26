@@ -297,6 +297,20 @@ class ToStringTransformTest extends GroovyShellTestCase {
             new SportsPerson(first: 'John', last: 'Smith', title: 'Mr').toString()
         ''')
         assert toString == "SportsPerson(title:Mr, golfer:false, adult:true, cyclist:true)"
+        assertScript '''
+            class Base {
+                String getA() { 'base a' }
+                String getC() { 'base c' }
+            }
+
+            @groovy.transform.ToString(includeSuperProperties=true, allProperties=true)
+            class Child extends Base {
+                String getA() { 'child a' }
+                String getB() { 'child b' }
+            }
+
+            assert new Child().toString() == 'Child(child a, child b, base c)'
+        '''
     }
 
     void testSelfReference() {
