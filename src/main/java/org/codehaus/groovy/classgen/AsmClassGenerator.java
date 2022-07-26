@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Sealed;
-import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -134,7 +133,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
-import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
@@ -943,7 +943,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (castExpression.isCoerce()) {
             operandStack.doAsType(type);
         } else {
-            if (ExpressionUtils.isNullConstant(subExpression) && !isPrimitiveType(type)) {
+            if (isNullConstant(subExpression) && !isPrimitiveType(type)) {
                 operandStack.replace(type);
             } else {
                 ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
@@ -1159,16 +1159,26 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isGroovyObject(final Expression objectExpression) {
-        if (isThisOrSuper(objectExpression)) return true; //GROOVY-8693
         if (objectExpression instanceof ClassExpression) return false;
+        if (isThisOrSuper(objectExpression)) return true;//GROOVY-8693
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
         if (isObjectType(objectExpressionType)) objectExpressionType = objectExpression.getType();
-        return implementsGroovyObject(objectExpressionType);
+        return objectExpressionType.isDerivedFromGroovyObject();
     }
 
-    private static boolean implementsGroovyObject(final ClassNode cn) {
-        return cn.isDerivedFromGroovyObject(); // GROOVY-10540: added before classgen
+    private boolean isThisExpression(final Expression expression) {
+        return org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression(expression)
+            // GROOVY-10695: "Type.name" within body of Type should get explicit-this treatment
+            || (expression instanceof ClassExpression && expression.getType().equals(controller.getClassNode()));
+    }
+
+    private boolean isThisOrSuper(final Expression expression) {
+        return isThisExpression(expression) || isSuperExpression(expression);
+    }
+
+    private boolean isStatic(final Expression expression) { // Type, this or super
+        return expression instanceof ClassExpression || controller.isStaticContext();
     }
 
     @Override
@@ -1184,7 +1194,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 FieldNode fieldNode = null;
                 ClassNode classNode = controller.getClassNode();
 
-                if (ExpressionUtils.isThisExpression(objectExpression)) {
+                if (isThisExpression(objectExpression)) {
                     if (controller.isInGeneratedFunction()) { // params are stored as fields
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
                     } else {
@@ -1193,6 +1203,10 @@ public class AsmClassGenerator extends ClassGenerator {
                         if (fieldNode != null && !expression.isImplicitThis()
                                 && (fieldNode.getModifiers() & ACC_SYNTHETIC) != 0
                                 && fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE)) {
+                            fieldNode = null;
+                        }
+                        // GROOVY-10695: "this.name" or "Type.name" where "name" is non-static
+                        if (fieldNode != null && !fieldNode.isStatic() && isStatic(objectExpression)) {
                             fieldNode = null;
                         }
                         // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
@@ -1219,9 +1233,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? setPropertyOnSuper : useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
+                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? getPropertyOnSuper : useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
+                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1244,8 +1258,8 @@ public class AsmClassGenerator extends ClassGenerator {
             String name = expression.getPropertyAsString();
             if (name != null) {
                 ClassNode classNode = controller.getClassNode();
-                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, ExpressionUtils.isSuperExpression(objectExpression));
-                if (fieldNode != null) {
+                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
+                if (fieldNode != null && (fieldNode.isStatic() || !isStatic(objectExpression))) {
                     fieldX(fieldNode).visit(this);
                     visited = true;
                 }
@@ -1255,9 +1269,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
+                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
             } else {
-                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
+                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -2319,21 +2333,6 @@ public class AsmClassGenerator extends ClassGenerator {
         if (callback != null) callback.accept(controller);
     }
 
-    @Deprecated
-    public static boolean isThisExpression(final Expression expression) {
-        return ExpressionUtils.isThisExpression(expression);
-    }
-
-    @Deprecated
-    public static boolean isSuperExpression(final Expression expression) {
-        return ExpressionUtils.isSuperExpression(expression);
-    }
-
-    @Deprecated
-    public static boolean isNullConstant(final Expression expression) {
-        return ExpressionUtils.isNullConstant(expression);
-    }
-
     private void loadThis(final VariableExpression thisOrSuper) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
@@ -2352,11 +2351,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void loadWrapper(final Expression argument) {
+    public void loadWrapper(final Expression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode goalClass = argument.getType();
+        ClassNode goalClass = expression.getType();
         visitClassExpression(classX(goalClass));
-        if (implementsGroovyObject(goalClass)) {
+        if (goalClass.isDerivedFromGroovyObject()) {
             createGroovyObjectWrapperMethod.call(mv);
         } else {
             createPojoWrapperMethod.call(mv);

@@ -347,6 +347,24 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10695
+    void testStaticPropertyOfSelfType() {
+        for (qual in ['', 'this.', 'C.']) {
+            assertScript """
+                class C {
+                    private static Object value
+                    static Object getValue() {
+                        ${qual}value
+                    }
+                    static void setValue(v) {
+                        ${qual}value = v
+                    }
+                }
+                C.setValue(null) // StackOverflowError
+            """
+        }
+    }
+
     void testDateProperties() {
         assertScript '''
             Date d = new Date()
