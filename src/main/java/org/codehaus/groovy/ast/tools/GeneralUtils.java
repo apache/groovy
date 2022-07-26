@@ -535,7 +535,7 @@ public class GeneralUtils {
                 }
             }
             if (includePseudoGetters || includePseudoSetters) {
-                BeanUtils.addPseudoProperties(origType, cNode, result, names, includeStatic, includePseudoGetters, includePseudoSetters);
+                BeanUtils.addPseudoProperties(origType, cNode, result, names, includeStatic, includePseudoGetters, includePseudoSetters, traverseSuperClasses);
             }
         }
         if (includeFields) {
