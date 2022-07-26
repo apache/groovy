@@ -78,7 +78,7 @@ public class BeanUtils {
             result.addAll(getAllProperties(origType, type.getSuperClass(), names, includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst));
         }
         addExplicitProperties(type, result, names, includeStatic);
-        addPseudoProperties(origType, type, result, names, includeStatic, includePseudoGetters, includePseudoSetters);
+        addPseudoProperties(origType, type, result, names, includeStatic, includePseudoGetters, includePseudoSetters, includeSuperProperties);
         if (!superFirst && includeSuperProperties) {
             result.addAll(getAllProperties(origType, type.getSuperClass(), names, includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst));
         }
@@ -97,8 +97,14 @@ public class BeanUtils {
     }
 
     public static void addPseudoProperties(ClassNode origType, ClassNode cNode, List<PropertyNode> result, Set<String> names, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters) {
+        addPseudoProperties(origType, cNode, result, names, includeStatic, includePseudoGetters, includePseudoSetters, true);
+    }
+
+    public static void addPseudoProperties(ClassNode origType, ClassNode cNode, List<PropertyNode> result, Set<String> names, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses) {
         if (!includePseudoGetters && !includePseudoSetters) return;
-        List<MethodNode> methods = cNode.getAllDeclaredMethods();
+        List<MethodNode> methods = traverseSuperClasses ?
+                cNode.getAllDeclaredMethods() :
+                cNode.getMethods();
         for (MethodNode mNode : methods) {
             if (!includeStatic && mNode.isStatic()) continue;
             if (hasAnnotation(mNode, INTERNAL_TYPE)) continue;
