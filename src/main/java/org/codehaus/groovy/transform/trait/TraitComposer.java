@@ -183,9 +183,10 @@ public abstract class TraitComposer {
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
             List<MethodNode> declaredMethods = new LinkedList<>();
+            int pos = 0; // keep direct getters at start but in declaration order
             for (MethodNode declaredMethod : fieldHelperClassNode.getAllDeclaredMethods()) {
                 if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
-                    declaredMethods.add(0, declaredMethod);
+                    declaredMethods.add(pos++, declaredMethod);
                 } else {
                     declaredMethods.add(declaredMethod);
                 }
@@ -194,7 +195,7 @@ public abstract class TraitComposer {
             if (staticFieldHelperClassNode != null) {
                 for (MethodNode declaredMethod : staticFieldHelperClassNode.getAllDeclaredMethods()) {
                     if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
-                        declaredMethods.add(0, declaredMethod);
+                        declaredMethods.add(pos++, declaredMethod);
                     } else {
                         declaredMethods.add(declaredMethod);
                     }
