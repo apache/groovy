@@ -219,23 +219,27 @@ public class StaticTypesStatementWriter extends StatementWriter {
     }
 
     private void writeIteratorBasedForEachLoop(final ForStatement loop, final Expression collectionExpression, final ClassNode collectionType) {
-        // GROOVY-10476: BaseStream provides an iterator() but does not implement Iterable
-        MethodNode iterator = collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY);
-        if (iterator == null) {
-            iterator = GeneralUtils.getInterfacesAndSuperInterfaces(collectionType).stream()
-                    .map(in -> in.getMethod("iterator", Parameter.EMPTY_ARRAY))
-                    .filter(Objects::nonNull).findFirst().orElse(null);
-        }
-        if (iterator != null && GeneralUtils.isOrImplements(iterator.getReturnType(), ClassHelper.Iterator_TYPE)) {
-            MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
-            call.setImplicitThis(false);
-            call.setMethodTarget(iterator);
-            call.setSafe(true);//GROOVY-8643
-            call.visit(controller.getAcg());
+        if (GeneralUtils.isOrImplements(collectionType, ClassHelper.Iterator_TYPE)) {
+            collectionExpression.visit(controller.getAcg()); // GROOVY-8487: iterator supplied
         } else {
-            collectionExpression.visit(controller.getAcg());
-            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
-            controller.getOperandStack().replace(ClassHelper.Iterator_TYPE);
+            // GROOVY-10476: BaseStream provides an iterator() but does not implement Iterable
+            MethodNode iterator = collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY);
+            if (iterator == null) {
+                iterator = GeneralUtils.getInterfacesAndSuperInterfaces(collectionType).stream()
+                        .map(in -> in.getMethod("iterator", Parameter.EMPTY_ARRAY))
+                        .filter(Objects::nonNull).findFirst().orElse(null);
+            }
+            if (iterator != null && GeneralUtils.isOrImplements(iterator.getReturnType(), ClassHelper.Iterator_TYPE)) {
+                MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
+                call.setImplicitThis(false);
+                call.setMethodTarget(iterator);
+                call.setSafe(true);//GROOVY-8643
+                call.visit(controller.getAcg());
+            } else {
+                collectionExpression.visit(controller.getAcg());
+                controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
+                controller.getOperandStack().replace(ClassHelper.Iterator_TYPE);
+            }
         }
         writeForInLoopControlAndBlock(loop);
     }

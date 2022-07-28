@@ -213,6 +213,17 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10476
+    void testForInLoopOnStream() {
+        assertScript '''
+            def list = []
+            for (item in ['a','b','c'].stream()) {
+                list.add(item.toUpperCase())
+            }
+            assert list == ['A','B','C']
+        '''
+    }
+
     // GROOVY-8882
     void testForInLoopOnString() {
         assertScript '''
@@ -222,6 +233,17 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             for (char c in 'abc') assert c instanceof Character
             for (Character c in 'abc') assert c instanceof Character
+        '''
+    }
+
+    // GROOVY-8487
+    void testForInLoopOnIterator() {
+        assertScript '''
+            def list = []
+            for (item in ['a','b','c'].iterator()) {
+                list.add(item)
+            }
+            assert list.join('') == 'abc'
         '''
     }
 

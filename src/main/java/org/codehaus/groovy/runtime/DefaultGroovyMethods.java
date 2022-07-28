@@ -18115,7 +18115,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
      * @since 1.0
      */
-    public static Iterator iterator(Object o) {
+    public static Iterator iterator(final Object o) {
+        if (o instanceof Iterator) return (Iterator)o;
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
