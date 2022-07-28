@@ -1196,17 +1196,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with '
     }
 
-    // GROOVY-10476
-    void testForInLoop() {
-        assertScript '''
-            def list = []
-            for (item in ['a','b','c'].stream()) {
-                list.add(item.toUpperCase())
-            }
-            assert list == ['A', 'B', 'C']
-        '''
-    }
-
     void testBoxingShouldCostMore() {
         assertScript '''
             int foo(int x) { 1 }
