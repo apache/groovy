@@ -18,65 +18,91 @@
  */
 package gls.statements
 
-import gls.CompilableTestSupport
+import org.junit.Test
 
-class MultipleAssignmentTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class MultipleAssignmentTest {
+
+    @Test
     void testList() {
-        def list = [1, 2]
-        def a, b
+        assertScript '''
+            def list = [1, 2]
+            def a, b
 
-        (a, b) = list
-        assert a == 1
-        assert b == 2
+            (a, b) = list
+            assert a == 1
+            assert b == 2
 
-        (a, b) = [3, 4]
-        assert a == 3
-        assert b == 4
+            (a, b) = [3, 4]
+            assert a == 3
+            assert b == 4
+        '''
     }
 
+    @Test
     void testArray() {
-        def array = [1, 2] as int[]
-        def a, b
+        assertScript '''
+            def array = [1, 2] as int[]
+            def a, b
 
-        (a, b) = array
-        assert a == 1
-        assert b == 2
+            (a, b) = array
+            assert a == 1
+            assert b == 2
+        '''
     }
 
-    def foo() {[1, 2]}
-
+    @Test
     void testMethod() {
-        def a, b
+        assertScript '''
+            def foo() {[1, 2]}
 
-        (a, b) = foo()
-        assert a == 1
-        assert b == 2
+            def a, b
+
+            (a, b) = foo()
+            assert a == 1
+            assert b == 2
+        '''
     }
 
+    @Test
     void testMethodOverflow() {
-        def a, b = 3
+        assertScript '''
+            def foo() {[1, 2]}
 
-        (a) = foo()
-        assert a == 1
-        assert b == 3
+            def a, b = 3
+
+            (a) = foo()
+            assert a == 1
+            assert b == 3
+        '''
     }
 
+    @Test
     void testMethodUnderflow() {
-        def a, b, c = 4
+        assertScript '''
+            def foo() {[1, 2]}
 
-        (a, b, c) = foo()
-        assert a == 1
-        assert b == 2
-        assert c == null
+            def a, b, c = 4
+
+            (a, b, c) = foo()
+            assert a == 1
+            assert b == 2
+            assert c == null
+        '''
     }
 
+    @Test
     void testChainedMultiAssignment() {
-        def a, b, c, d
-        (c, d) = (a, b) = [1, 2]
-        assert [a, b] == [1, 2]
-        assert [c, d] == [1, 2]
-        (c, d) = a = (a, b) = [3, 4]
-        assert [c, d] == [3, 4]
+        assertScript '''
+            def a, b, c, d
+
+            (c, d) = (a, b) = [1, 2]
+            assert [a, b] == [1, 2]
+            assert [c, d] == [1, 2]
+
+            (c, d) = a = (a, b) = [3, 4]
+            assert [c, d] == [3, 4]
+        '''
     }
 }
