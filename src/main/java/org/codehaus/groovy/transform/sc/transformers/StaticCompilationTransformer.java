@@ -71,12 +71,12 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
 
     // various helpers in order to avoid a potential very big class
     private final StaticMethodCallExpressionTransformer staticMethodCallExpressionTransformer = new StaticMethodCallExpressionTransformer(this);
-    private final ConstructorCallTransformer constructorCallTransformer = new ConstructorCallTransformer(this);
     private final MethodCallExpressionTransformer methodCallExpressionTransformer = new MethodCallExpressionTransformer(this);
-    private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
+    private final ConstructorCallTransformer constructorCallTransformer = new ConstructorCallTransformer(this);
+    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
     private final ClosureExpressionTransformer closureExpressionTransformer = new ClosureExpressionTransformer(this);
     private final BooleanExpressionTransformer booleanExpressionTransformer = new BooleanExpressionTransformer(this);
-    private final VariableExpressionTransformer variableExpressionTransformer = new VariableExpressionTransformer();
+    private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
     private final RangeExpressionTransformer rangeExpressionTransformer = new RangeExpressionTransformer(this);
     private final ListExpressionTransformer listExpressionTransformer = new ListExpressionTransformer(this);
     private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
@@ -105,36 +105,36 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     }
 
     @Override
-    public Expression transform(Expression expr) {
+    public Expression transform(final Expression expr) {
         if (expr instanceof StaticMethodCallExpression) {
             return staticMethodCallExpressionTransformer.transformStaticMethodCallExpression((StaticMethodCallExpression) expr);
-        }
-        if (expr instanceof BinaryExpression) {
-            return binaryExpressionTransformer.transformBinaryExpression((BinaryExpression)expr);
         }
         if (expr instanceof MethodCallExpression) {
             return methodCallExpressionTransformer.transformMethodCallExpression((MethodCallExpression) expr);
         }
-        if (expr instanceof ClosureExpression) {
-            return closureExpressionTransformer.transformClosureExpression((ClosureExpression) expr);
-        }
         if (expr instanceof ConstructorCallExpression) {
             return constructorCallTransformer.transformConstructorCall((ConstructorCallExpression) expr);
         }
-        if (expr instanceof BooleanExpression) {
-            return booleanExpressionTransformer.transformBooleanExpression((BooleanExpression)expr);
-        }
         if (expr instanceof VariableExpression) {
-            return variableExpressionTransformer.transformVariableExpression((VariableExpression)expr);
+            return variableExpressionTransformer.transformVariableExpression((VariableExpression) expr);
+        }
+        if (expr instanceof ClosureExpression) {
+            return closureExpressionTransformer.transformClosureExpression((ClosureExpression) expr);
+        }
+        if (expr instanceof BooleanExpression) {
+            return booleanExpressionTransformer.transformBooleanExpression((BooleanExpression) expr);
+        }
+        if (expr instanceof BinaryExpression) {
+            return binaryExpressionTransformer.transformBinaryExpression((BinaryExpression) expr);
         }
         if (expr instanceof RangeExpression) {
-            return rangeExpressionTransformer.transformRangeExpression(((RangeExpression)expr));
+            return rangeExpressionTransformer.transformRangeExpression((RangeExpression) expr);
         }
         if (expr instanceof ListExpression) {
             return listExpressionTransformer.transformListExpression((ListExpression) expr);
         }
         if (expr instanceof CastExpression) {
-            return castExpressionTransformer.transformCastExpression(((CastExpression)expr));
+            return castExpressionTransformer.transformCastExpression((CastExpression) expr);
         }
         return super.transform(expr);
     }
@@ -142,7 +142,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     /**
      * Called by helpers when super.transform() is needed.
      */
-    final Expression superTransform(Expression expr) {
+    final Expression superTransform(final Expression expr) {
         return super.transform(expr);
     }
 

@@ -19,45 +19,22 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 /**
  * Unit tests for static compilation: null test optimizations.
  */
-class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase {
-    void testShouldUseIfNonNull() {
-        def bytecode = compile(method:'m', '''
-            @groovy.transform.CompileStatic
-            void m(Object o) {
-                o == null
-            }
-        ''')
-        assert bytecode.hasStrictSequence([
-                'IFNONNULL'
-        ])
-    }
-    void testShouldUseIfNull() {
+final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase {
+
+    void testShouldUseIfNull1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
             void m(Object o) {
                 o != null
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'IFNULL'
-        ])
-    }
-
-    void testShouldUseIfNonNull2() {
-        def bytecode = compile(method:'m', '''
-            @groovy.transform.CompileStatic
-            void m(Object o) {
-                null == o
-            }
-        ''')
-        assert bytecode.hasStrictSequence([
-                'IFNONNULL'
-        ])
+        assert bytecode.hasStrictSequence(['IFNULL'])
     }
 
     void testShouldUseIfNull2() {
@@ -67,23 +44,37 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 null != o
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'IFNULL'
-        ])
+        assert bytecode.hasStrictSequence(['IFNULL'])
     }
 
-    void testPrimitiveWithNullShouldBeOptimized() {
+    void testShouldUseIfNonNull1() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(Object o) {
+                o == null
+            }
+        ''')
+        assert bytecode.hasStrictSequence(['IFNONNULL'])
+    }
+
+    void testShouldUseIfNonNull2() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(Object o) {
+                null == o
+            }
+        ''')
+        assert bytecode.hasStrictSequence(['IFNONNULL'])
+    }
+
+    void testPrimitiveWithNullShouldBeOptimized1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
             void m(int x) {
                 null == x
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'ICONST_0',
-                'POP'
-        ])
-
+        assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
     }
 
     void testPrimitiveWithNullShouldBeOptimized2() {
@@ -93,185 +84,225 @@ class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase 
                 x == null
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'ICONST_0',
-                'POP'
-        ])
+        assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
     }
 
-
-    void testOptimizeGroovyTruthForPrimitiveBoolean() {
+    void testOptimizeGroovyTruthForPrimitiveBoolean1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
             void m(boolean x) {
                 if (x) {
-                    println 'ok'
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence(['ILOAD 1', 'IFEQ'])
+        assert bytecode.hasSequence([
+            'ILOAD 1',
+            'IFEQ L1',
+            'L1',
+            'RETURN'
+        ])
     }
 
-    void testOptimizeGroovyTruthForBoxedBoolean() {
+    void testOptimizeGroovyTruthForPrimitiveBoolean2() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(boolean x) {
+                if (!x) {
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'ILOAD 1',
+            'IFNE L1',
+            'ICONST_1',
+            'GOTO L2',
+            'L1',
+            'ICONST_0',
+            'L2',
+            'IFEQ L3',
+            'L3',
+            'RETURN'
+        ])
+    }
+
+    void testOptimizeGroovyTruthForPrimitiveBoolean3() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(boolean x) {
+                if (!!x) {
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'ILOAD 1',
+            'IFEQ L1',
+            'L1',
+            'RETURN'
+        ])
+    }
+
+    void testOptimizeGroovyTruthForNonPrimitiveBoolean() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
             void m(Boolean x) {
                 if (x) {
-                    println 'ok'
                 }
             }
         ''')
-        if (config.indyEnabled) {
-            return
-        }
-        assert  bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1',                'INVOKEVIRTUAL', 'L2',                'IFEQ']) ||
-                bytecode.hasStrictSequence(['ALOAD 1', 'DUP', 'IFNONNULL', 'POP', 'ICONST_0', 'GOTO', 'L1', 'FRAME SAME1', 'INVOKEVIRTUAL', 'L2', 'FRAME SAME1', 'IFEQ']) // bytecode with stack map frame
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            'DUP',
+            'IFNONNULL',
+            'POP',
+            'ICONST_0',
+            'GOTO',
+            'L1',
+            'INVOKEVIRTUAL',
+            'L2',
+            'IFEQ'
+        ])
     }
 
-    void testOptimizeGroovyTruthWithStringShouldNotBeTriggered() {
+    void testOptimizeGroovyTruthForPrimitiveNumberType() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
-            void m(String x) {
+            void m(int x) {
                 if (x) {
-                    println 'ok'
                 }
             }
         ''')
-        if (config.indyEnabled) {
-            assert bytecode.hasStrictSequence([
-                'ALOAD 1',
-                'INVOKEDYNAMIC cast(Ljava/lang/String;)Z',
-                '',
-                '',
-                '',
-                '',
-                '',
-                ']',
-                'IFEQ'
-            ])
-        } else {
-            assert bytecode.hasStrictSequence([
-                    'ALOAD 1',
-                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
-                    'IFEQ'
-            ])
-        }
+        assert bytecode.hasSequence([
+            'ILOAD 1',
+            'IFEQ L1',
+            'ICONST_1',
+            'GOTO L2',
+            'L1',
+            'ICONST_0',
+            'L2',
+            'IFEQ L3',
+            'L3',
+            'RETURN'
+        ])
     }
 
-    void testGroovyTruthOptimizationWithObjectShouldNotBeTriggered() {
+    void testNoGroovyTruthOptimizationForObject() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
             void m(Object x) {
                 if (x) {
-                    println 'ok'
                 }
             }
         ''')
-        if (config.indyEnabled) {
-            assert bytecode.hasStrictSequence([
-                'ALOAD 1',
-                'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z',
-                '',
-                '',
-                '',
-                '',
-                '',
-                ']',
-                'IFEQ'
-            ])
-        } else {
-            assert bytecode.hasStrictSequence([
-                    'ALOAD 1',
-                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
-                    'IFEQ'
-            ])
-        }
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            config.indyEnabled ? 'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
+        ])
     }
 
-    void testGroovyTruthOptimizationWithFinalClass() {
+    void testGroovyTruthOptimizationForFinalClass() {
         def bytecode = compile(method:'m', '''
-            final class A {}
+            final class A {
+            }
             @groovy.transform.CompileStatic
             void m(A x) {
                 if (x) {
-                    println 'ok'
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'ALOAD 1',
-                'IFNULL',
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            'IFNULL L1',
+            'ICONST_1',
+            'GOTO L2',
+            'L1',
+            'ICONST_0',
+            'L2',
+            'IFEQ L3'
         ])
+        if (config.indyEnabled)
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA$B;)Z'])
     }
 
-    void testGroovyTruthOptimizationWithPrivateInnerClass() {
+    void testGroovyTruthOptimizationForPrivateInnerClass() {
         def bytecode = compile(method:'m', '''
             class A {
-                private static class B {}
+                private static class B {
+                }
                 @groovy.transform.CompileStatic
                 void m(B x) {
                     if (x) {
-                        println 'ok'
                     }
                 }
             }
         ''')
-        assert bytecode.hasStrictSequence([
-                'ALOAD 1',
-                'IFNULL',
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            'IFNULL L1',
+            'ICONST_1',
+            'GOTO L2',
+            'L1',
+            'ICONST_0',
+            'L2',
+            'IFEQ L3'
         ])
+        if (config.indyEnabled)
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA$B;)Z'])
     }
 
-    void testGroovyTruthOptimizationWithPublicInnerClass() {
+    void testNoGroovyTruthOptimizationForPublicInnerClass() {
         def bytecode = compile(method:'m', '''
             class A {
-                public static class B {}
+                public static class B {
+                }
                 @groovy.transform.CompileStatic
                 void m(B x) {
                     if (x) {
-                        println 'ok'
                     }
                 }
             }
         ''')
-        if (config.indyEnabled) {
-            assert bytecode.hasStrictSequence([
-                'ALOAD 1',
-                'INVOKEDYNAMIC cast(LA$B;)Z',
-                '',
-                '',
-                '',
-                '',
-                '',
-                ']',
-                'IFEQ'
-            ])
-        } else {
-            assert bytecode.hasStrictSequence([
-                    'ALOAD 1',
-                    'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z',
-                    'IFEQ'
-            ])
-        }
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            config.indyEnabled ? 'INVOKEDYNAMIC cast(LA$B;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
+        ])
+    }
+
+    // GROOVY-10711
+    void testNoGroovyTruthOptimizationIfProvidesAsBoolean() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.Immutable
+            class C {
+                boolean asBoolean() {
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            void m(C x) {
+                if (!x) {
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            config.indyEnabled ? 'INVOKEDYNAMIC cast(LC;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
+        ])
     }
 
     void testCompare() {
-        def bytecode=compile(method:'stat', '''
-            class Doc {}
-
+        assertScript '''
+            class Pogo {
+            }
             @groovy.transform.CompileStatic
-            class A {
-                static void foo() {
-                    Doc doc = null
-                    def cl = { if (doc) { 1 } else { 0 } }
-                    assert cl() == 0
+            class C {
+                static test() {
+                    Pogo pogo = null
+                    def check = { -> if (pogo) { 1 } else { 0 } }
+                    assert check() == 0
                 }
             }
 
-            A.foo()
-
-        ''')
-        clazz.main()
+            C.test()
+        '''
     }
-
 }

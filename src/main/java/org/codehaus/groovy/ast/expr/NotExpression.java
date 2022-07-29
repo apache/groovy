@@ -26,6 +26,7 @@ public class NotExpression extends BooleanExpression {
         super(expression);
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitNotExpression(this);
     }
@@ -34,6 +35,7 @@ public class NotExpression extends BooleanExpression {
         return false;
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new NotExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);

@@ -29,9 +29,14 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
-public class CompareToNullExpression extends BinaryExpression implements Opcodes {
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
+import static org.objectweb.asm.Opcodes.IFNULL;
+
+public class CompareToNullExpression extends BinaryExpression {
     private final boolean equalsNull;
 
     public CompareToNullExpression(final Expression expression, final boolean equalsNull) {
@@ -69,32 +74,31 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
 
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
-        if (visitor instanceof AsmClassGenerator) {
-            AsmClassGenerator acg = (AsmClassGenerator) visitor;
-            WriterController controller = acg.getController();
-            MethodVisitor mv = controller.getMethodVisitor();
-
-            getObjectExpression().visit(acg);
-
-            if (ClassHelper.isPrimitiveType(controller.getOperandStack().getTopOperand())) {
-                controller.getOperandStack().pop();
-                mv.visitInsn(equalsNull ? ICONST_0 : ICONST_1);
-
-                controller.getOperandStack().push(ClassHelper.boolean_TYPE);
-            } else {
-                Label zero = new Label();
-                mv.visitJumpInsn(equalsNull ? IFNONNULL : IFNULL, zero);
-                mv.visitInsn(ICONST_1);
-                Label end = new Label();
-                mv.visitJumpInsn(GOTO, end);
-                mv.visitLabel(zero);
-                mv.visitInsn(ICONST_0);
-                mv.visitLabel(end);
-
-                controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
-            }
-        } else {
+        if (!(visitor instanceof AsmClassGenerator)) {
             super.visit(visitor);
+            return;
+        }
+
+        WriterController controller = ((AsmClassGenerator) visitor).getController();
+        MethodVisitor mv = controller.getMethodVisitor();
+
+        getObjectExpression().visit(visitor);
+
+        if (ClassHelper.isPrimitiveType(controller.getOperandStack().getTopOperand())) {
+            controller.getOperandStack().pop();
+            mv.visitInsn(equalsNull ? ICONST_0 : ICONST_1);
+            controller.getOperandStack().push(ClassHelper.boolean_TYPE);
+        } else {
+            Label no = new Label(), yes = new Label();
+
+            mv.visitJumpInsn(equalsNull ? IFNONNULL : IFNULL, no);
+            mv.visitInsn(ICONST_1);
+            mv.visitJumpInsn(GOTO, yes);
+            mv.visitLabel(no);
+            mv.visitInsn(ICONST_0);
+            mv.visitLabel(yes);
+
+            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
         }
     }
 }
