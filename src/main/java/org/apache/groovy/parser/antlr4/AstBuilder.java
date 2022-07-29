@@ -35,7 +35,6 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.groovy.parser.antlr4.GroovyParser.*;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
@@ -149,34 +148,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static groovy.lang.Tuple.tuple;
-import static org.apache.groovy.parser.antlr4.GroovyParser.ADD;
-import static org.apache.groovy.parser.antlr4.GroovyParser.ARROW;
-import static org.apache.groovy.parser.antlr4.GroovyParser.AS;
-import static org.apache.groovy.parser.antlr4.GroovyParser.CASE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.DEC;
-import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
-import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
-import static org.apache.groovy.parser.antlr4.GroovyParser.GE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.GT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.IN;
-import static org.apache.groovy.parser.antlr4.GroovyParser.INC;
-import static org.apache.groovy.parser.antlr4.GroovyParser.INSTANCEOF;
-import static org.apache.groovy.parser.antlr4.GroovyParser.LE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.NON_SEALED;
-import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_IN;
-import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_INSTANCEOF;
-import static org.apache.groovy.parser.antlr4.GroovyParser.PRIVATE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_FULL;
-import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_LEFT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_RIGHT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_INCLUSIVE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.SAFE_INDEX;
-import static org.apache.groovy.parser.antlr4.GroovyParser.SEALED;
-import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
-import static org.apache.groovy.parser.antlr4.GroovyParser.SUB;
-import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
+import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -429,6 +401,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         // TODO: shared instances
         return node;
     }
+
     // statement { -------------------------------------------------------------
 
     @Override
@@ -1274,11 +1247,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         boolean isRecord = asBoolean(ctx.RECORD());
         boolean hasRecordHeader = asBoolean(ctx.formalParameters());
         if (isRecord) {
-            if (asBoolean(ctx.EXTENDS())) {
-                throw createParsingFailedException("No extends clause allowed for record declaration", ctx.EXTENDS());
-            }
             if (!hasRecordHeader) {
                 throw createParsingFailedException("header declaration of record is expected", ctx.identifier());
+            }
+            if (asBoolean(ctx.EXTENDS())) {
+                throw createParsingFailedException("No extends clause allowed for record declaration", ctx.EXTENDS());
             }
             if (isSealed) {
                 throw createParsingFailedException("`sealed` is not allowed for record declaration", sealedModifier.get());
@@ -4166,7 +4139,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (!asBoolean(ctx.type())) {
                 GenericsType genericsType = new GenericsType(baseType);
                 genericsType.setWildcard(true);
-                genericsType.setName(QUESTION_STR);
 
                 return configureAST(genericsType, ctx);
             }

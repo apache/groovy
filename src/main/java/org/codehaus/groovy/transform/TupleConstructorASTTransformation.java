@@ -88,7 +88,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.makeImmutable;
 import static org.codehaus.groovy.transform.NamedVariantASTTransformation.processImplicitNamedParam;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * Handles generation of code for the @TupleConstructor annotation.
@@ -250,8 +249,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             Parameter nextParam = createParam(fNode, name, defaultsMode, xform, makeImmutable);
             if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
                 nextParam.addAnnotations(pNode.getAnnotations());
-                nextParam.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
-                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+                nextParam.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             }
             params.add(nextParam);
         }
@@ -275,11 +274,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
-        int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
+        int modifiers = getVisibility(anno, cNode, ConstructorNode.class, org.objectweb.asm.Opcodes.ACC_PUBLIC);
         ConstructorNode consNode = addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
         if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
             consNode.addAnnotations(cNode.getAnnotations());
-            consNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+            consNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
         if (namedVariant) {
             BlockStatement inner = new BlockStatement();

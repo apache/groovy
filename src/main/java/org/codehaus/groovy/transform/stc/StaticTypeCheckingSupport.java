@@ -260,6 +260,10 @@ public abstract class StaticTypeCheckingSupport {
         EXTENSION_METHOD_CACHE.cache.clearAll();
     }
 
+    public static void clearExtensionMethodCache(final ClassLoader loader) {
+        EXTENSION_METHOD_CACHE.cache.remove(loader);
+    }
+
     /**
      * Returns true for expressions of the form x[...]
      *

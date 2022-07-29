@@ -110,6 +110,7 @@ public abstract class ProcessingUnit {
             return new GroovyClassLoader(parent, getConfiguration());
         });
     }
+
     /**
      * Errors found during the compilation should be reported through the ErrorCollector.
      */

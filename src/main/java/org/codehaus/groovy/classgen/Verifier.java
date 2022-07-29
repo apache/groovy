@@ -839,7 +839,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static void copyAnnotations(final PropertyNode node, final MethodNode accessor) {
         accessor.addAnnotations(node.getAnnotations());
-        accessor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+        accessor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
     }
 
     protected void addPropertyMethod(final MethodNode method) {

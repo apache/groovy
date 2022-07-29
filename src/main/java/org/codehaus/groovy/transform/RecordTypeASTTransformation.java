@@ -93,7 +93,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -152,7 +151,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
     private void doProcessRecordType(ClassNode cNode, PropertyHandler handler) {
         if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
-            cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+            cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
         List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
         AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
@@ -185,7 +184,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
                 type.setGenericsTypes(pType.getGenericsTypes());
                 RecordComponentNode rec = new RecordComponentNode(cNode, pNode.getName(), type, pNode.getAnnotations());
-                rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+                rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
                 cNode.getRecordComponents().add(rec);
             }
         } else if (mode == RecordTypeMode.NATIVE) {

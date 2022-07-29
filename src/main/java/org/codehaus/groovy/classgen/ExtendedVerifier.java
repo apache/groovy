@@ -275,9 +275,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
         this.currentClass.setAnnotated(true);
         Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<>();
-        boolean skippable = node.getNodeMetaData("_SKIPPABLE_ANNOTATIONS") != null;
-        Iterator<AnnotationNode> iterator = annotations.iterator();
-        while (iterator.hasNext()) {
+        boolean skippable = Boolean.TRUE.equals(node.getNodeMetaData("_SKIPPABLE_ANNOTATIONS"));
+        for (Iterator<AnnotationNode> iterator = annotations.iterator(); iterator.hasNext(); ) {
             AnnotationNode unvisited = iterator.next();
             AnnotationNode visited;
             {

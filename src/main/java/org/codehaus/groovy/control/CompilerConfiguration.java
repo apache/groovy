@@ -482,10 +482,9 @@ public class CompilerConfiguration {
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
 
-        boolean memStubEnabled = Boolean.parseBoolean(getSystemPropertySafe("groovy.mem.stub", "false"));
-        if (memStubEnabled) {
+        if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
-            jointCompilationOptions.put(MEM_STUB, memStubEnabled);
+            jointCompilationOptions.put(MEM_STUB, Boolean.TRUE);
         }
     }
 
@@ -512,7 +511,7 @@ public class CompilerConfiguration {
     public CompilerConfiguration(final CompilerConfiguration configuration) {
         setWarningLevel(configuration.getWarningLevel());
         setTargetDirectory(configuration.getTargetDirectory());
-        setClasspathList(new LinkedList<>(configuration.getClasspath()));
+        setClasspathList(configuration.getClasspath());
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setParameters(configuration.getParameters());
@@ -832,7 +831,6 @@ public class CompilerConfiguration {
         }
     }
 
-
     /**
      * Gets the currently configured warning level. See {@link WarningMessage}
      * for level details.
@@ -1096,9 +1094,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns the ASM bytecode version
+     * Returns the ASM bytecode version.
      *
-     * @return ASM bytecode version
      * @since 4.0.0
      */
     public int getBytecodeVersion() {
@@ -1117,9 +1114,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns the default target bytecode compatibility level
+     * Returns the default target bytecode compatibility level.
      *
-     * @return the default target bytecode compatibility level
      * @since 4.0.0
      */
     private static String defaultTargetBytecode() {
@@ -1149,9 +1145,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns whether logging class generation is enabled
+     * Returns whether logging class generation is enabled.
      *
-     * @return whether logging class generation is enabled
      * @since 4.0.0
      */
     public boolean isLogClassgen() {
@@ -1159,9 +1154,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets whether logging class generation is enabled
+     * Sets whether logging class generation is enabled.
      *
-     * @param logClassgen whether to enable logging class generation
      * @since 4.0.0
      */
     public void setLogClassgen(boolean logClassgen) {
@@ -1169,9 +1163,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns stack trace max depth of logging class generation
+     * Returns stack trace max depth of logging class generation.
      *
-     * @return stack trace max depth of logging class generation
      * @since 4.0.0
      */
     public int getLogClassgenStackTraceMaxDepth() {
@@ -1179,9 +1172,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets stack trace max depth of logging class generation
+     * Sets stack trace max depth of logging class generation.
      *
-     * @param logClassgenStackTraceMaxDepth stack trace max depth of logging class generation
      * @since 4.0.0
      */
     public void setLogClassgenStackTraceMaxDepth(int logClassgenStackTraceMaxDepth) {
@@ -1284,23 +1276,20 @@ public class CompilerConfiguration {
      * Checks if invoke dynamic is enabled.
      */
     public boolean isIndyEnabled() {
-        Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.TRUE);
+        return !Boolean.FALSE.equals(getOptimizationOptions().get(INVOKEDYNAMIC));
     }
 
     /**
      * Checks if groovydoc is enabled.
      */
     public boolean isGroovydocEnabled() {
-        Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(GROOVYDOC));
     }
 
     /**
      * Checks if runtime groovydoc is enabled.
      */
     public boolean isRuntimeGroovydocEnabled() {
-        Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(RUNTIME_GROOVYDOC));
     }
 }
