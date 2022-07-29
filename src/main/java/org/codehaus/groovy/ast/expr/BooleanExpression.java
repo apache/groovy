@@ -31,22 +31,25 @@ public class BooleanExpression extends Expression {
         this.expression = expression;
         setType(ClassHelper.boolean_TYPE); // for consistency with AsmClassGenerator. see AsmClassGenerator.visitBooleanExpression.
     }
-    
+
     public Expression getExpression() {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBooleanExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BooleanExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
-    
+
+    @Override
     public String getText() {
         return expression.getText();
     }
