@@ -295,6 +295,34 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    // GROOVY-10711
+    void testNoGroovyTruthOptimizationIfProvidesAsBoolean() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.Immutable
+            class C {
+                boolean asBoolean() {
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            void m(C x) {
+                if (!x) {
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
+            'ICONST_0',
+            'GOTO L2',
+            'L1',
+            'INVOKEDYNAMIC cast(LC;)Z'
+        ])
+    }
+
     void testCompare() {
         assertScript '''
             class Pogo {

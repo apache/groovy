@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -163,14 +164,16 @@ class BooleanExpressionTransformer {
 
         /**
          * Inline an "expr != null" check instead of boolean conversion iff:
-         * (1) the class doesn't define an asBoolean method (already tested)
-         * (2) no subclass defines an asBoolean method
+         * (1) the class doesn't define an {@code asBoolean()} method
+         * (2) no subclass defines an {@code asBoolean()} method
          * For (2), check that we are in one of these cases:
          *   (a) a final class
          *   (b) an effectively-final inner class
          */
         private static boolean replaceAsBooleanWithCompareToNull(final ClassNode type, final ClassLoader dgmProvider) {
-            if (Modifier.isFinal(type.getModifiers()) || isEffectivelyFinal(type)) {
+            if (type.getMethod("asBoolean", Parameter.EMPTY_ARRAY) != null) {
+                // GROOVY-10711
+            } else if (Modifier.isFinal(type.getModifiers()) || isEffectivelyFinal(type)) {
                 List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(dgmProvider, type, "asBoolean", ClassNode.EMPTY_ARRAY);
                 if (asBoolean.size() == 1) {
                     MethodNode theAsBoolean = asBoolean.get(0);
