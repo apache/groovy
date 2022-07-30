@@ -21,24 +21,23 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.StatementWriter;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Enumeration;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARRAYLENGTH;
@@ -59,7 +58,7 @@ import static org.objectweb.asm.Opcodes.LALOAD;
 import static org.objectweb.asm.Opcodes.SALOAD;
 
 /**
- * A class to write out the optimized statements
+ * A class to write out the optimized statements.
  */
 public class StaticTypesStatementWriter extends StatementWriter {
 
@@ -68,61 +67,55 @@ public class StaticTypesStatementWriter extends StatementWriter {
     private static final MethodCaller ENUMERATION_NEXT_METHOD = MethodCaller.newInterface(Enumeration.class, "nextElement");
     private static final MethodCaller ENUMERATION_HASMORE_METHOD = MethodCaller.newInterface(Enumeration.class, "hasMoreElements");
 
-    private final StaticTypesWriterController controller;
-
-    public StaticTypesStatementWriter(StaticTypesWriterController controller) {
+    public StaticTypesStatementWriter(final StaticTypesWriterController controller) {
         super(controller);
-        this.controller = controller;
     }
-    
+
     @Override
-    public void writeBlockStatement(BlockStatement statement) {
+    public void writeBlockStatement(final BlockStatement statement) {
         controller.switchToFastPath();
         super.writeBlockStatement(statement);
         controller.switchToSlowPath();
     }
 
+    //--------------------------------------------------------------------------
+
     @Override
     protected void writeForInLoop(final ForStatement loop) {
-        controller.getAcg().onLineNumber(loop,"visitForLoop");
+        controller.getAcg().onLineNumber(loop, "visitForLoop");
         writeStatementLabel(loop);
 
         CompileStack compileStack = controller.getCompileStack();
-        MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
         compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabels());
 
-        // Identify type of collection
-        TypeChooser typeChooser = controller.getTypeChooser();
+        // identify type of collection
         Expression collectionExpression = loop.getCollectionExpression();
-        ClassNode collectionType = typeChooser.resolveType(collectionExpression, controller.getClassNode());
+        ClassNode collectionType = controller.getTypeChooser().resolveType(collectionExpression, controller.getClassNode());
+
+        int mark = operandStack.getStackLength();
         Parameter loopVariable = loop.getVariable();
-        int size = operandStack.getStackLength();
         if (collectionType.isArray() && loopVariable.getType().equals(collectionType.getComponentType())) {
-            writeOptimizedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
-        } else if (ENUMERATION_CLASSNODE.equals(collectionType)) {
-            writeEnumerationBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+            writeOptimizedForEachLoop(loop, loopVariable, collectionExpression, collectionType);
+        } else if (GeneralUtils.isOrImplements(collectionType, ENUMERATION_CLASSNODE)) {
+            writeEnumerationBasedForEachLoop(loop, collectionExpression, collectionType);
         } else {
-            writeIteratorBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+            writeIteratorBasedForEachLoop(loop, collectionExpression, collectionType);
         }
-        operandStack.popDownTo(size);
+        operandStack.popDownTo(mark);
         compileStack.pop();
     }
 
-    private void writeOptimizedForEachLoop(
-            CompileStack compileStack,
-            OperandStack operandStack,
-            MethodVisitor mv,
-            ForStatement loop,
-            Expression arrayExpression,
-            ClassNode arrayType,
-            Parameter loopVariable) {
+    private void writeOptimizedForEachLoop(final ForStatement loop, final Parameter loopVariable, final Expression arrayExpression, final ClassNode arrayType) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        AsmClassGenerator acg = controller.getAcg();
+
         BytecodeVariable variable = compileStack.defineVariable(loopVariable, arrayType.getComponentType(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
-
-        AsmClassGenerator acg = controller.getAcg();
 
         // load array on stack
         arrayExpression.visit(acg);
@@ -148,9 +141,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitJumpInsn(IF_ICMPGE, breakLabel);
 
         // get array element
-        loadFromArray(mv, variable, array, loopIdx);
+        loadFromArray(mv, operandStack, variable, array, loopIdx);
 
-        // $idx++
+        // $idx += 1
         mv.visitIincInsn(loopIdx, 1);
 
         // loop body
@@ -165,39 +158,24 @@ public class StaticTypesStatementWriter extends StatementWriter {
         compileStack.removeVar(array);
     }
 
-    private void loadFromArray(MethodVisitor mv, BytecodeVariable variable, int array, int iteratorIdx) {
-        OperandStack os = controller.getOperandStack();
+    private static void loadFromArray(final MethodVisitor mv, final OperandStack os, final BytecodeVariable variable, final int array, final int index) {
         mv.visitVarInsn(ALOAD, array);
-        mv.visitVarInsn(ILOAD, iteratorIdx);
-
+        mv.visitVarInsn(ILOAD, index);
         ClassNode varType = variable.getType();
-        boolean primitiveType = ClassHelper.isPrimitiveType(varType);
-        boolean isByte = ClassHelper.byte_TYPE.equals(varType);
-        boolean isShort = ClassHelper.short_TYPE.equals(varType);
-        boolean isInt = ClassHelper.int_TYPE.equals(varType);
-        boolean isLong = ClassHelper.long_TYPE.equals(varType);
-        boolean isFloat = ClassHelper.float_TYPE.equals(varType);
-        boolean isDouble = ClassHelper.double_TYPE.equals(varType);
-        boolean isChar = ClassHelper.char_TYPE.equals(varType);
-        boolean isBoolean = ClassHelper.boolean_TYPE.equals(varType);
-
-        if (primitiveType) {
-            if (isByte) {
-                mv.visitInsn(BALOAD);
-            }
-            if (isShort) {
-                mv.visitInsn(SALOAD);
-            }
-            if (isInt || isChar || isBoolean) {
-                mv.visitInsn(isChar ? CALOAD : isBoolean ? BALOAD : IALOAD);
-            }
-            if (isLong) {
+        if (ClassHelper.isPrimitiveType(varType)) {
+            if (varType.equals(ClassHelper.int_TYPE)) {
+                mv.visitInsn(IALOAD);
+            } else if (varType.equals(ClassHelper.long_TYPE)) {
                 mv.visitInsn(LALOAD);
-            }
-            if (isFloat) {
+            } else if (varType.equals(ClassHelper.byte_TYPE) || varType.equals(ClassHelper.boolean_TYPE)) {
+                mv.visitInsn(BALOAD);
+            } else if (varType.equals(ClassHelper.char_TYPE)) {
+                mv.visitInsn(CALOAD);
+            } else if (varType.equals(ClassHelper.short_TYPE)) {
+                mv.visitInsn(SALOAD);
+            } else if (varType.equals(ClassHelper.float_TYPE)) {
                 mv.visitInsn(FALOAD);
-            }
-            if (isDouble) {
+            } else if (varType.equals(ClassHelper.double_TYPE)) {
                 mv.visitInsn(DALOAD);
             }
         } else {
@@ -207,89 +185,51 @@ public class StaticTypesStatementWriter extends StatementWriter {
         os.storeVar(variable);
     }
 
-    private void writeIteratorBasedForEachLoop(
-            CompileStack compileStack,
-            OperandStack operandStack,
-            MethodVisitor mv,
-            ForStatement loop,
-            Expression collectionExpression,
-            ClassNode collectionType,
-            Parameter loopVariable) {
-        // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+    private void writeEnumerationBasedForEachLoop(final ForStatement loop, final Expression collectionExpression, final ClassNode collectionType) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
 
-        if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_CLASSNODE)) {
-            MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
-            iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
-            iterator.setImplicitThis(false);
-            iterator.visit(controller.getAcg());
-        } else {
-            collectionExpression.visit(controller.getAcg());
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
-            operandStack.replace(ClassHelper.Iterator_TYPE);
-        }
-
-        // Then get the iterator and generate the loop control
-
-        int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
-
+        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
-
-        mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, iteratorIdx);
-        writeIteratorHasNext(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
-
-        mv.visitVarInsn(ALOAD, iteratorIdx);
-        writeIteratorNext(mv);
-        operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(variable);
-
-        // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
-
-        mv.visitJumpInsn(GOTO, continueLabel);
-        mv.visitLabel(breakLabel);
-        compileStack.removeVar(iteratorIdx);
-    }
-
-    private void writeEnumerationBasedForEachLoop(
-            CompileStack compileStack,
-            OperandStack operandStack,
-            MethodVisitor mv,
-            ForStatement loop,
-            Expression collectionExpression,
-            ClassNode collectionType,
-            Parameter loopVariable) {
-        // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
 
         collectionExpression.visit(controller.getAcg());
 
-        // Then get the iterator and generate the loop control
+        int enumeration = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
 
-        int enumIdx = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
-
-        Label continueLabel = compileStack.getContinueLabel();
-        Label breakLabel = compileStack.getBreakLabel();
+        mv.visitVarInsn(ALOAD, enumeration);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, enumIdx);
-        ENUMERATION_HASMORE_METHOD.call(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
 
-        mv.visitVarInsn(ALOAD, enumIdx);
+        mv.visitVarInsn(ALOAD, enumeration);
+        ENUMERATION_HASMORE_METHOD.call(mv);
+        mv.visitJumpInsn(IFEQ, breakLabel); // jump if zero (aka false)
+
+        mv.visitVarInsn(ALOAD, enumeration);
         ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
-        // Generate the loop body
         loop.getLoopBlock().visit(controller.getAcg());
-
         mv.visitJumpInsn(GOTO, continueLabel);
+
         mv.visitLabel(breakLabel);
+    }
+
+    private void writeIteratorBasedForEachLoop(final ForStatement loop, final Expression collectionExpression, final ClassNode collectionType) {
+        if (implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_CLASSNODE)) {
+            MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
+            call.setMethodTarget(collectionType.getMethod("iterator",Parameter.EMPTY_ARRAY));
+            call.setImplicitThis(false);
+            call.setSafe(true);//GROOVY-8643
+            call.visit(controller.getAcg());
+        } else {
+            collectionExpression.visit(controller.getAcg());
+            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
+            controller.getOperandStack().replace(ClassHelper.Iterator_TYPE);
+        }
+        writeForInLoopControlAndBlock(loop);
     }
 }

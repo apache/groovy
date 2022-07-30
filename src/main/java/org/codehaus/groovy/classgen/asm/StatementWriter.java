@@ -59,6 +59,7 @@ import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.MONITORENTER;
 import static org.objectweb.asm.Opcodes.MONITOREXIT;
 import static org.objectweb.asm.Opcodes.NOP;
@@ -69,12 +70,13 @@ public class StatementWriter {
     private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
     private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
 
-    public StatementWriter(WriterController controller) {
+    protected final WriterController controller;
+
+    public StatementWriter(final WriterController controller) {
         this.controller = controller;
     }
-    private final WriterController controller;
 
-    protected void writeStatementLabel(Statement statement) {
+    protected void writeStatementLabel(final Statement statement) {
         String name = statement.getStatementLabel();
         if (name != null) {
             Label label = controller.getCompileStack().createLocalLabel(name);
@@ -82,7 +84,7 @@ public class StatementWriter {
         }
     }
 
-    public void writeBlockStatement(BlockStatement block) {
+    public void writeBlockStatement(final BlockStatement block) {
         writeStatementLabel(block);
 
         int mark = controller.getOperandStack().getStackLength();
@@ -103,88 +105,90 @@ public class StatementWriter {
         controller.getOperandStack().popDownTo(mark);
     }
 
-    private boolean isMethodOrConstructorNonEmptyBlock(BlockStatement block) {
+    private boolean isMethodOrConstructorNonEmptyBlock(final BlockStatement block) {
         MethodNode methodNode = controller.getMethodNode();
-        if (null == methodNode) {
+        if (methodNode == null) {
             methodNode = controller.getConstructorNode();
         }
-
-        if (null == methodNode || block != methodNode.getCode()) { // check if the block is method/constructor's code
-            return false;
-        }
-
-        return !block.getStatements().isEmpty();
+        return (methodNode != null && methodNode.getCode() == block && !block.isEmpty());
     }
 
-    public void writeForStatement(ForStatement loop) {
-        Parameter loopVar = loop.getVariable();
-        if (loopVar == ForStatement.FOR_LOOP_DUMMY) {
-            writeForLoopWithClosureList(loop);
+    public void writeForStatement(final ForStatement statement) {
+        if (statement.getVariable() == ForStatement.FOR_LOOP_DUMMY) {
+            writeForLoopWithClosureList(statement);
         } else {
-            writeForInLoop(loop);
+            writeForInLoop(statement);
         }
     }
 
-    protected void writeIteratorHasNext(MethodVisitor mv) {
-        iteratorHasNextMethod.call(mv);
-    }
-
-    protected void writeIteratorNext(MethodVisitor mv) {
-        iteratorNextMethod.call(mv);
-    }
-
-    protected void writeForInLoop(ForStatement loop) {
-        controller.getAcg().onLineNumber(loop, "visitForLoop");
-        writeStatementLabel(loop);
+    protected void writeForInLoop(final ForStatement statement) {
+        controller.getAcg().onLineNumber(statement, "visitForLoop");
+        writeStatementLabel(statement);
 
         CompileStack compileStack = controller.getCompileStack();
-        MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
-        compileStack.pushLoop(loop.getVariableScope(), loop.getStatementLabels());
+        compileStack.pushLoop(statement.getVariableScope(), statement.getStatementLabels());
 
-        // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
-
-        // Then get the iterator and generate the loop control
-        MethodCallExpression iterator = new MethodCallExpression(loop.getCollectionExpression(), "iterator", new ArgumentListExpression());
+        // then get the iterator and generate the loop control
+        MethodCallExpression iterator = new MethodCallExpression(statement.getCollectionExpression(), "iterator", new ArgumentListExpression());
         iterator.visit(controller.getAcg());
         operandStack.doGroovyCast(ClassHelper.Iterator_TYPE);
 
-        final int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
+        writeForInLoopControlAndBlock(statement);
+        compileStack.pop();
+    }
 
-        Label continueLabel = compileStack.getContinueLabel();
-        Label breakLabel = compileStack.getBreakLabel();
+    protected void writeForInLoopControlAndBlock(final ForStatement statement) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+
+        // declare the loop counter
+        BytecodeVariable variable = compileStack.defineVariable(statement.getVariable(), false);
+
+        // get the iterator and generate the loop control
+        int iterator = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
+        Label breakLabel = compileStack.getBreakLabel(), continueLabel = compileStack.getContinueLabel();
+
+        mv.visitVarInsn(ALOAD, iterator);
+        mv.visitJumpInsn(IFNULL, breakLabel);
 
         mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, iteratorIdx);
-        writeIteratorHasNext(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
 
-        mv.visitVarInsn(ALOAD, iteratorIdx);
+        mv.visitVarInsn(ALOAD, iterator);
+        writeIteratorHasNext(mv);
+        mv.visitJumpInsn(IFEQ, breakLabel); // jump if zero (aka false)
+
+        mv.visitVarInsn(ALOAD, iterator);
         writeIteratorNext(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
-        // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
-
+        // generate the loop body
+        statement.getLoopBlock().visit(controller.getAcg());
         mv.visitJumpInsn(GOTO, continueLabel);
-        mv.visitLabel(breakLabel);
 
-        compileStack.removeVar(iteratorIdx);
-        compileStack.pop();
+        mv.visitLabel(breakLabel);
+        compileStack.removeVar(iterator);
     }
 
-    protected void writeForLoopWithClosureList(ForStatement loop) {
-        controller.getAcg().onLineNumber(loop, "visitForLoop");
-        writeStatementLabel(loop);
+    protected void writeIteratorHasNext(final MethodVisitor mv) {
+        iteratorHasNextMethod.call(mv);
+    }
+
+    protected void writeIteratorNext(final MethodVisitor mv) {
+        iteratorNextMethod.call(mv);
+    }
+
+    protected void writeForLoopWithClosureList(final ForStatement statement) {
+        controller.getAcg().onLineNumber(statement, "visitForLoop");
+        writeStatementLabel(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
-        controller.getCompileStack().pushLoop(loop.getVariableScope(), loop.getStatementLabels());
+        controller.getCompileStack().pushLoop(statement.getVariableScope(), statement.getStatementLabels());
 
-        ClosureListExpression clExpr = (ClosureListExpression) loop.getCollectionExpression();
+        ClosureListExpression clExpr = (ClosureListExpression) statement.getCollectionExpression();
         controller.getCompileStack().pushVariableScope(clExpr.getVariableScope());
 
         List<Expression> expressions = clExpr.getExpressions();
@@ -205,8 +209,8 @@ public class StatementWriter {
         mv.visitLabel(cond);
         // visit condition leave boolean on stack
         {
-            Expression condExpr = expressions.get(condIndex);
             int mark = controller.getOperandStack().getStackLength();
+            Expression condExpr = expressions.get(condIndex);
             condExpr.visit(controller.getAcg());
             controller.getOperandStack().castToBool(mark, true);
         }
@@ -215,7 +219,7 @@ public class StatementWriter {
         controller.getOperandStack().jump(IFEQ, breakLabel);
 
         // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
+        statement.getLoopBlock().visit(controller.getAcg());
 
         // visit increment
         mv.visitLabel(continueLabel);
@@ -245,18 +249,18 @@ public class StatementWriter {
         }
     }
 
-    public void writeWhileLoop(WhileStatement loop) {
-        controller.getAcg().onLineNumber(loop, "visitWhileLoop");
-        writeStatementLabel(loop);
+    public void writeWhileLoop(final WhileStatement statement) {
+        controller.getAcg().onLineNumber(statement, "visitWhileLoop");
+        writeStatementLabel(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        controller.getCompileStack().pushLoop(loop.getStatementLabels());
+        controller.getCompileStack().pushLoop(statement.getStatementLabels());
         Label continueLabel = controller.getCompileStack().getContinueLabel();
         Label breakLabel = controller.getCompileStack().getBreakLabel();
 
         mv.visitLabel(continueLabel);
-        BooleanExpression bool = loop.getBooleanExpression();
+        BooleanExpression bool = statement.getBooleanExpression();
         boolean boolHandled = false;
         if (bool.getExpression() instanceof ConstantExpression) {
             ConstantExpression constant = (ConstantExpression) bool.getExpression();
@@ -274,7 +278,7 @@ public class StatementWriter {
             controller.getOperandStack().jump(IFEQ, breakLabel);
         }
 
-        loop.getLoopBlock().visit(controller.getAcg());
+        statement.getLoopBlock().visit(controller.getAcg());
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
@@ -282,7 +286,7 @@ public class StatementWriter {
         controller.getCompileStack().pop();
     }
 
-    public void writeDoWhileLoop(DoWhileStatement loop) {
+    public void writeDoWhileLoop(final DoWhileStatement loop) {
         controller.getAcg().onLineNumber(loop, "visitDoWhileLoop");
         writeStatementLabel(loop);
 
@@ -302,22 +306,22 @@ public class StatementWriter {
         controller.getCompileStack().pop();
     }
 
-    public void writeIfElse(IfStatement ifElse) {
-        controller.getAcg().onLineNumber(ifElse, "visitIfElse");
-        writeStatementLabel(ifElse);
+    public void writeIfElse(final IfStatement statement) {
+        controller.getAcg().onLineNumber(statement, "visitIfElse");
+        writeStatementLabel(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        ifElse.getBooleanExpression().visit(controller.getAcg());
+        statement.getBooleanExpression().visit(controller.getAcg());
         Label l0 = controller.getOperandStack().jump(IFEQ);
 
         // if-else is here handled as a special version
         // of a boolean expression
         controller.getCompileStack().pushBooleanExpression();
-        ifElse.getIfBlock().visit(controller.getAcg());
+        statement.getIfBlock().visit(controller.getAcg());
         controller.getCompileStack().pop();
 
-        if (ifElse.getElseBlock() instanceof EmptyStatement) {
+        if (statement.getElseBlock() instanceof EmptyStatement) {
             mv.visitLabel(l0);
         } else {
             Label l1 = new Label();
@@ -325,14 +329,14 @@ public class StatementWriter {
             mv.visitLabel(l0);
 
             controller.getCompileStack().pushBooleanExpression();
-            ifElse.getElseBlock().visit(controller.getAcg());
+            statement.getElseBlock().visit(controller.getAcg());
             controller.getCompileStack().pop();
 
             mv.visitLabel(l1);
         }
     }
 
-    public void writeTryCatchFinally(TryCatchStatement statement) {
+    public void writeTryCatchFinally(final TryCatchStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitTryCatchFinally");
         writeStatementLabel(statement);
 
@@ -449,7 +453,7 @@ public class StatementWriter {
         return block;
     }
 
-    public void writeSwitch(SwitchStatement statement) {
+    public void writeSwitch(final SwitchStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSwitch");
         writeStatementLabel(statement);
 
@@ -481,9 +485,7 @@ public class StatementWriter {
         controller.getCompileStack().pop();
     }
 
-    protected void writeCaseStatement(
-            CaseStatement statement, int switchVariableIndex,
-            Label thisLabel, Label nextLabel) {
+    protected void writeCaseStatement(final CaseStatement statement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
         controller.getAcg().onLineNumber(statement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
@@ -501,8 +503,7 @@ public class StatementWriter {
 
         statement.getCode().visit(controller.getAcg());
 
-        // now if we don't finish with a break we need to jump past
-        // the next comparison
+        // now if we don't finish with a break we need to jump past the next comparison
         if (nextLabel != null) {
             mv.visitJumpInsn(GOTO, nextLabel);
         }
@@ -510,7 +511,7 @@ public class StatementWriter {
         mv.visitLabel(l0);
     }
 
-    public void writeBreak(BreakStatement statement) {
+    public void writeBreak(final BreakStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitBreakStatement");
         writeStatementLabel(statement);
 
@@ -521,7 +522,7 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, breakLabel);
     }
 
-    public void writeContinue(ContinueStatement statement) {
+    public void writeContinue(final ContinueStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitContinueStatement");
         writeStatementLabel(statement);
 
@@ -532,7 +533,7 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, continueLabel);
     }
 
-    public void writeSynchronized(SynchronizedStatement statement) {
+    public void writeSynchronized(final SynchronizedStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSynchronizedStatement");
         writeStatementLabel(statement);
         final MethodVisitor mv = controller.getMethodVisitor();
@@ -579,13 +580,13 @@ public class StatementWriter {
         compileStack.removeVar(index);
     }
 
-    public void writeAssert(AssertStatement statement) {
+    public void writeAssert(final AssertStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitAssertStatement");
         writeStatementLabel(statement);
         controller.getAssertionWriter().writeAssertStatement(statement);
     }
 
-    public void writeThrow(ThrowStatement statement) {
+    public void writeThrow(final ThrowStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitThrowStatement");
         writeStatementLabel(statement);
         MethodVisitor mv = controller.getMethodVisitor();
@@ -599,7 +600,7 @@ public class StatementWriter {
         controller.getOperandStack().remove(1);
     }
 
-    public void writeReturn(ReturnStatement statement) {
+    public void writeReturn(final ReturnStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitReturnStatement");
         writeStatementLabel(statement);
         MethodVisitor mv = controller.getMethodVisitor();
@@ -633,13 +634,12 @@ public class StatementWriter {
         operandStack.remove(1);
     }
 
-    public void writeExpressionStatement(ExpressionStatement statement) {
+    public void writeExpressionStatement(final ExpressionStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + statement.getExpression().getClass().getName());
         writeStatementLabel(statement);
 
-        Expression expression = statement.getExpression();
-
         int mark = controller.getOperandStack().getStackLength();
+        Expression expression = statement.getExpression();
         expression.visit(controller.getAcg());
         controller.getOperandStack().popDownTo(mark);
     }

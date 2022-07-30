@@ -24,23 +24,15 @@ package groovy.transform.stc
 class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
     void testMethodCallInLoop() {
-        assertScript '''
-            int foo(int x) { x+1 }
-            int x = 0
-            for (int i=0;i<10;i++) {
-                x = foo(x)
-            }
-        '''
-    }
-
-    void testMethodCallInLoopAndDef() {
-        assertScript '''
-            int foo(int x) { x+1 }
-            def x = 0
-            for (int i=0;i<10;i++) {
-                x = foo(x)
-            }
-        '''
+        for (type in ['int', 'def']) {
+            assertScript """
+                int foo(int x) { x+1 }
+                $type x = 0
+                for (int i=0;i<10;i++) {
+                    x = foo(x)
+                }
+            """
+        }
     }
 
     void testMethodCallWithEachAndDefAndTwoFooMethods() {
@@ -52,7 +44,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethods() {
@@ -64,7 +57,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadType() {
@@ -77,7 +71,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
@@ -91,7 +86,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = y
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallWithEachAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
@@ -105,7 +101,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = y
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     // GROOVY-5587
@@ -175,7 +172,27 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8643
+    void testForInLoopOnList() {
+        assertScript '''
+            List<String> list = null
+            for (item in list) {
+                item.toUpperCase()
+            }
+        '''
+    }
+
+    // GROOVY-8643
     void testForInLoopOnArray() {
+        assertScript '''
+            String[] strings = null
+            for (string in strings) {
+                string.toUpperCase()
+            }
+        '''
+    }
+
+    void testForInLoopOnArray2() {
         assertScript '''
             String[] strings = ['a','b','c']
             for (string in strings) {
@@ -185,7 +202,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10579
-    void testForInLoopOnArray2() {
+    void testForInLoopOnArray3() {
         assertScript '''
             int[] numbers = [1,2,3,4,5]
             int sum = 0
@@ -213,7 +230,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             Vector<String> v = new Vector<>()
             v.add('ooo')
-            def en = v.elements()
+            Enumeration<String> en = v.elements()
             for (e in en) {
                 assert e.toUpperCase() == 'OOO'
             }
@@ -229,25 +246,27 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 assert e.toUpperCase() in ['OOO','GROOVY']
                 if (e=='ooo') continue
             }
+
+            en = null
+            for (e in en) {
+                e.toUpperCase()
+            }
         '''
     }
 
-    void testShouldNotInferSoftReferenceAsComponentType() {
-        assertScript '''import java.lang.reflect.Field
-            import org.codehaus.groovy.ast.stmt.ForStatement
-
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                def FIELD_ARRAY = make(Field).makeArray()
-                def forStmt = lookup('myLoop')[0]
-                assert forStmt instanceof ForStatement
-                def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-                assert collectionType == FIELD_ARRAY
+    void testShouldNotInferSoftReferenceAsElementType() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(java.lang.reflect.Field).makeArray()
             })
-            void forInTest() {
-                int i = 0;
-                myLoop:
+            void test() {
+                int i = 0
+                loop:
                 for (def field : String.class.declaredFields) {
-                    i++;
+                    i++
                 }
                 assert i > 0
             }
@@ -255,56 +274,53 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5640
-    void testShouldInferComponentTypeAsIterableOfNodes() {
-        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
-        class Node {}
-
-        interface Traverser {
-            Iterable<Node> nodes()
-        }
-
-        class MyTraverser implements Traverser {
-
-            Iterable<Node> nodes() {
-                []
+    void testShouldInferNodeElementTypeForIterableOfNodes() {
+        assertScript '''
+            class Node {
             }
-        }
-
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            def forStmt = lookup('loop')[0]
-            assert forStmt instanceof ForStatement
-            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-            assert collectionType == make(Iterable)
-            assert collectionType.isUsingGenerics()
-            assert collectionType.genericsTypes.length == 1
-            assert collectionType.genericsTypes[0].type.name == 'Node'
-        })
-        void test() {
-            loop:
-            for (def node : new MyTraverser().nodes()) {
-                println node.class.name
+            interface Traverser {
+                Iterable<Node> nodes()
             }
-        }
+            class MyTraverser implements Traverser {
+                Iterable<Node> nodes() {
+                    []
+                }
+            }
 
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(Iterable)
+                assert collectionType.isUsingGenerics()
+                assert collectionType.genericsTypes.length == 1
+                assert collectionType.genericsTypes[0].type.name == 'Node'
+            })
+            void test() {
+                loop:
+                for (def node : new MyTraverser().nodes()) {
+                    println node.class.name
+                }
+            }
         '''
     }
 
     // GROOVY-5641
     void testShouldInferLoopElementTypeWithUndeclaredType() {
-        assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            def forStmt = lookup('loop')[0]
-            assert forStmt instanceof ForStatement
-            def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)
-            assert collectionType == make(IntRange)
-        })
-        void foo() {
-            int[] perm = new int[10]
-            loop:
-            for (i in 0..<10) {
-              assert perm[i-0] == 0
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == make(IntRange)
+            })
+            void test() {
+                int[] ints = new int[10]
+                loop:
+                for (i in 0..<10) {
+                  assert ints[i-0] == 0
+                }
             }
-        }
         '''
     }
 }
