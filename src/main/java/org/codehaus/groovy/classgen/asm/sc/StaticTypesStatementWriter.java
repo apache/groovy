@@ -190,33 +190,31 @@ public class StaticTypesStatementWriter extends StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        // Declare the loop counter.
         BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
-
-        collectionExpression.visit(controller.getAcg());
-
-        // Then get the iterator and generate the loop control
-
-        int enumIdx = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
-
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
 
-        mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, enumIdx);
-        ENUMERATION_HASMORE_METHOD.call(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
+        collectionExpression.visit(controller.getAcg());
 
-        mv.visitVarInsn(ALOAD, enumIdx);
+        int enumeration = compileStack.defineTemporaryVariable("$enum", ENUMERATION_CLASSNODE, true);
+
+        mv.visitVarInsn(ALOAD, enumeration);
+        mv.visitJumpInsn(IFNULL, breakLabel);
+
+        mv.visitLabel(continueLabel);
+
+        mv.visitVarInsn(ALOAD, enumeration);
+        ENUMERATION_HASMORE_METHOD.call(mv);
+        mv.visitJumpInsn(IFEQ, breakLabel); // jump if zero (aka false)
+
+        mv.visitVarInsn(ALOAD, enumeration);
         ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(variable);
 
-        // Generate the loop body
         loop.getLoopBlock().visit(controller.getAcg());
-
         mv.visitJumpInsn(GOTO, continueLabel);
+
         mv.visitLabel(breakLabel);
     }
 
@@ -225,6 +223,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
             MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
             call.setMethodTarget(collectionType.getMethod("iterator",Parameter.EMPTY_ARRAY));
             call.setImplicitThis(false);
+            call.setSafe(true);//GROOVY-8643
             call.visit(controller.getAcg());
         } else {
             collectionExpression.visit(controller.getAcg());
