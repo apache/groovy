@@ -91,26 +91,26 @@ public class StreamGroovyMethods {
      * import java.util.stream.Stream
      * import static groovy.test.GroovyAssert.shouldFail
      *
-     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
      * shouldFail(IllegalArgumentException) { stream[-1..0] }
      *
      * stream = ['foo','bar','baz'].stream()
      * shouldFail(IllegalArgumentException) { stream[0..-1] }
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream[0..<1] == ['foo']
+     * assert stream[0..&lt;1] == ['foo']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream[1..<2] == ['bar']
+     * assert stream[1..&lt;2] == ['bar']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream[2..<3] == ['baz']
+     * assert stream[2..&lt;3] == ['baz']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream[3..<4] == []
+     * assert stream[3..&lt;4] == []
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream[0<..2] == ['bar','baz']
+     * assert stream[0&lt;..2] == ['bar','baz']
      *
      * stream = ['foo','bar','baz'].stream()
      * assert stream[0..99] == ['foo','bar','baz']
@@ -130,8 +130,8 @@ public class StreamGroovyMethods {
      * <p>
      * <pre class="groovyTestCase">
      * import java.util.stream.Stream
-     * Stream<String> stream = ['foo','bar','baz'].stream()
-     * assert stream[1..<1].isEmpty()
+     * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
+     * assert stream[1..&lt;1].isEmpty()
      * </pre>
      *
      * @since 5.0.0
@@ -149,29 +149,29 @@ public class StreamGroovyMethods {
      * import java.util.stream.Stream
      * import static groovy.test.GroovyAssert.shouldFail
      *
-     * Stream<String> stream = ['foo','bar','baz'].stream()
+     * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
      * shouldFail(IllegalArgumentException) { stream.from(-1..0) }
      *
      * stream = ['foo','bar','baz'].stream()
      * shouldFail(IllegalArgumentException) { stream.from(0..-1) }
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(0..<1).toList() == ['foo']
+     * assert stream.from(0..&lt;1).toList() == ['foo']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(1..<2).toList() == ['bar']
+     * assert stream.from(1..&lt;2).toList() == ['bar']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(2..<3).toList() == ['baz']
+     * assert stream.from(2..&lt;3).toList() == ['baz']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(3..<4).toList() == []
+     * assert stream.from(3..&lt;4).toList() == []
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(0<..2).toList() == ['bar','baz']
+     * assert stream.from(0&lt;..2).toList() == ['bar','baz']
      *
      * stream = ['foo','bar','baz'].stream()
-     * assert stream.from(0<..<2).toList() == ['bar']
+     * assert stream.from(0&lt;..&lt;2).toList() == ['bar']
      *
      * stream = ['foo','bar','baz'].stream()
      * assert stream.from(0..99).toList() == ['foo','bar','baz']
@@ -191,8 +191,8 @@ public class StreamGroovyMethods {
      * <p>
      * <pre class="groovyTestCase">
      * import java.util.stream.Stream
-     * Stream<String> stream = ['foo','bar','baz'].stream()
-     * assert !stream.from(1..<1).findAny().isPresent()
+     * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
+     * assert !stream.from(1..&lt;1).findAny().isPresent()
      * </pre>
      *
      * @since 5.0.0
