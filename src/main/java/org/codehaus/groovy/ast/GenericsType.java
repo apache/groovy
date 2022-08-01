@@ -125,7 +125,9 @@ public class GenericsType extends ASTNode {
             if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
                 sb.append(parentClassNodeName);
             } else {
-                sb.append(genericsBounds(theType.getOuterClass(), new HashSet<>()));
+                ClassNode outerClass = theType.getNodeMetaData("outer.class");
+                if (outerClass == null) outerClass = theType.getOuterClass();
+                sb.append(genericsBounds(outerClass, new HashSet<>()));
             }
             sb.append('.');
             sb.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
