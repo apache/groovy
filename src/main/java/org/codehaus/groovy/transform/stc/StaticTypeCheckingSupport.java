@@ -1297,7 +1297,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Returns true if a class node makes use of generic types. If the class node represents an
+     * Returns true if a class makes use of generic types. If node represents an
      * array type, then checks if the component type is using generics.
      *
      * @param cn a class node for which to check if it is using generics
@@ -1307,7 +1307,17 @@ public abstract class StaticTypeCheckingSupport {
         if (cn.isArray()) {
             return isUsingGenericsOrIsArrayUsingGenerics(cn.getComponentType());
         }
-        return (cn.isUsingGenerics() && cn.getGenericsTypes() != null);
+        if (cn.isUsingGenerics()) {
+            if (cn.getGenericsTypes() != null) {
+                return true;
+            }
+            ClassNode oc = cn.getOuterClass();
+            if (oc != null && oc.getGenericsTypes() != null
+                    && (cn.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1728,10 +1738,11 @@ public abstract class StaticTypeCheckingSupport {
         } else if (type.equals(CLOSURE_TYPE) && isSAMType(target)) {
             // GROOVY-9974, GROOVY-10052: Lambda, Closure, Pointer or Reference for SAM-type receiver
             ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(GenericsUtils.parameterizeSAM(target).getV2());
-            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[]{returnType.asGenericsType()});
+            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[]{ returnType.asGenericsType() });
 
         } else if (type.equals(target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
+            extractGenericsConnections(connections, type.getNodeMetaData("outer.class"), target.getOuterClass()); //GROOVY-10646
 
         } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
             ClassNode goal = GenericsUtils.parameterizeType(type, target);
@@ -1807,32 +1818,44 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
+        ClassNode type = gt.getType();
+
         if (gt.isPlaceholder()) {
             GenericsTypeName name = new GenericsTypeName(gt.getName());
             GenericsType specType = spec.get(name);
             if (specType != null) return specType;
             if (hasNonTrivialBounds(gt)) {
-                GenericsType newGT = new GenericsType(gt.getType(), applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
+                GenericsType newGT = new GenericsType(type, applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
                 newGT.setPlaceholder(true);
                 return newGT;
             }
             return gt;
-        } else if (gt.isWildcard()) {
-            GenericsType newGT = new GenericsType(gt.getType(), applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
+        }
+
+        if (gt.isWildcard()) {
+            GenericsType newGT = new GenericsType(type, applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
             newGT.setWildcard(true);
             return newGT;
         }
-        ClassNode type = gt.getType();
+
         ClassNode newType;
         if (type.isArray()) {
             newType = applyGenericsContext(spec, type.getComponentType()).makeArray();
+        } else if (type.getGenericsTypes() == null//type.isGenericsPlaceHolder()
+                && type.getOuterClass() == null) {
+            return gt;
         } else {
-            if (type.getGenericsTypes() == null) {
-                return gt;
-            }
             newType = type.getPlainNodeReference();
             newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
             newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
+
+            // GROOVY-10646: non-static inner class + outer class type parameter
+            if ((type.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                Optional.ofNullable(type.getOuterClass())
+                    .filter(oc -> oc.getGenericsTypes()!=null)
+                    .map(oc -> applyGenericsContext(spec, oc))
+                    .ifPresent(oc -> newType.putNodeMetaData("outer.class", oc));
+            }
         }
         return new GenericsType(newType);
     }

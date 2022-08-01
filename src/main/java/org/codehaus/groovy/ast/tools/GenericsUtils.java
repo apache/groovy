@@ -483,9 +483,9 @@ public class GenericsUtils {
         // class C<T extends Number> extends A<T,Object,String> { }
         // the type "A<T,Object,String> -> A<X,Y,Z>" will produce [X:Number,Y:Object,Z:String]
 
+        ClassNode oc = type.getNodeMetaData("outer.class"); // GROOVY-10646: outer class type parameters
+        Map<String, ClassNode> newSpec = oc != null ? createGenericsSpec(oc, oldSpec) : new HashMap<>();
         GenericsType[] gt = type.getGenericsTypes(), rgt = type.redirect().getGenericsTypes();
-
-        Map<String, ClassNode> newSpec = new HashMap<>();
         if (gt != null && rgt != null) {
             for (int i = 0, n = gt.length; i < n; i += 1) {
                 newSpec.put(rgt[i].getName(), correctToGenericsSpec(oldSpec, gt[i]));
