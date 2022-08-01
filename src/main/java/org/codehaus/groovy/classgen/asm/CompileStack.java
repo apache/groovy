@@ -235,9 +235,12 @@ public class CompileStack {
         inSpecialConstructorCall = element.inSpecialConstructorCall;
     }
 
-    public void removeVar(final int tempIndex) {
+    /**
+     * Indicates that the specified temporary variable is no longer used.
+     */
+    public void removeVar(final int variableIndex) {
         BytecodeVariable head = temporaryVariables.removeFirst();
-        if (head.getIndex() != tempIndex) {
+        if (head.getIndex() != variableIndex) {
             temporaryVariables.addFirst(head);
             MethodNode methodNode = controller.getMethodNode();
             if (methodNode == null) {
@@ -246,7 +249,7 @@ public class CompileStack {
             throw new GroovyBugError(
                     "In method "+ (methodNode!=null?methodNode.getText():"<unknown>") + ", " +
                     "CompileStack#removeVar: tried to remove a temporary " +
-                    "variable with index "+ tempIndex + " in wrong order. " +
+                    "variable with index " + variableIndex + " in wrong order. " +
                     "Current temporary variables=" + temporaryVariables);
         }
     }
@@ -266,9 +269,9 @@ public class CompileStack {
     }
 
     /**
-     * creates a temporary variable.
+     * Creates a temporary variable.
      *
-     * @param var defines type and name
+     * @param var specifies name and type
      * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
      */
@@ -276,7 +279,7 @@ public class CompileStack {
         return defineTemporaryVariable(var.getName(), var.getType(),store);
     }
 
-    public BytecodeVariable getVariable(final String variableName ) {
+    public BytecodeVariable getVariable(final String variableName) {
         return getVariable(variableName, true);
     }
 
@@ -627,7 +630,7 @@ public class CompileStack {
         nextVariableIndex = localVariableOffset;
     }
 
-    private void createReference(final BytecodeVariable reference) {
+    void createReference(final BytecodeVariable reference) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitTypeInsn(NEW, "groovy/lang/Reference");
         mv.visitInsn(DUP_X1);

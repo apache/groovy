@@ -34,26 +34,32 @@ public class BytecodeVariable {
     private ClassNode type;
     private String name;
     private final int prevCurrent;
+    private boolean dynamicTyped;
     private boolean holder;
 
     // br for setting on the LocalVariableTable in the class file
     // these fields should probably go to jvm Operand class
-    private Label startLabel = null;
-    private Label endLabel = null;
-    private boolean dynamicTyped;
+    private Label startLabel;
+    private Label endLabel;
 
-    private BytecodeVariable(){
+    private BytecodeVariable() {
+        index = 0;
+        prevCurrent = 0;
         dynamicTyped = true;
-        index=0;
-        holder=false;
-        prevCurrent=0;
     }
 
-    public BytecodeVariable(int index, ClassNode type, String name, int prevCurrent) {
+    public BytecodeVariable(final int index, final ClassNode type, final String name, final int prevCurrent) {
         this.index = index;
         this.type = type;
         this.name = name;
         this.prevCurrent = prevCurrent;
+    }
+
+    /**
+     * @return the stack index for this variable
+     */
+    public int getIndex() {
+        return index;
     }
 
     public String getName() {
@@ -64,11 +70,21 @@ public class BytecodeVariable {
         return type;
     }
 
-    /**
-     * @return the stack index for this variable
-     */
-    public int getIndex() {
-        return index;
+    public void setType(final ClassNode type) {
+        this.type = type;
+        dynamicTyped = dynamicTyped || ClassHelper.isDynamicTyped(type);
+    }
+
+    public int getPrevIndex() {
+        return prevCurrent;
+    }
+
+    public boolean isDynamicTyped() {
+        return dynamicTyped;
+    }
+
+    public void setDynamicTyped(final boolean b) {
+        dynamicTyped = b;
     }
 
     /**
@@ -78,7 +94,7 @@ public class BytecodeVariable {
         return holder;
     }
 
-    public void setHolder(boolean holder) {
+    public void setHolder(final boolean holder) {
         this.holder = holder;
     }
 
@@ -86,7 +102,7 @@ public class BytecodeVariable {
         return startLabel;
     }
 
-    public void setStartLabel(Label startLabel) {
+    public void setStartLabel(final Label startLabel) {
         this.startLabel = startLabel;
     }
 
@@ -94,29 +110,12 @@ public class BytecodeVariable {
         return endLabel;
     }
 
-    public void setEndLabel(Label endLabel) {
+    public void setEndLabel(final Label endLabel) {
         this.endLabel = endLabel;
     }
 
     @Override
     public String toString() {
         return name + "(index=" + index + ",type=" + type + ",holder="+holder+")";
-    }
-
-    public void setType(ClassNode type) {
-        this.type = type;
-        dynamicTyped |= ClassHelper.isDynamicTyped(type);
-    }
-
-    public void setDynamicTyped(boolean b) {
-        dynamicTyped = b;
-    }
-
-    public boolean isDynamicTyped() {
-        return dynamicTyped;
-    }
-
-    public int getPrevIndex() {
-        return prevCurrent;
     }
 }
