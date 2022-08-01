@@ -18,7 +18,6 @@
  */
 package gls.statements
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -79,10 +78,10 @@ final class MultipleAssignmentDeclarationTest {
     }
 
     @Test
-    void testNestedScope() {
+    void testNestedScope1() {
         assertScript '''import static groovy.test.GroovyAssert.shouldFail
 
-            def c = {
+            def c = { ->
                 def (i,j) = [1,2]
                 assert i == 1
                 assert j == 2
@@ -108,6 +107,33 @@ final class MultipleAssignmentDeclarationTest {
     }
 
     @Test
+    void testNestedScope2() {
+        assertScript '''
+            class C {
+                int m() {
+                    def (i,j) = [1,2]
+                    assert i == 1
+                    assert j == 2
+
+                    def x = { ->
+                        assert i == 1
+                        assert j == 2
+
+                        i = 3
+                        assert i == 3
+                    }
+                    x()
+
+                    assert i == 3
+                    return j
+                }
+            }
+            int n = new C().m()
+            assert n == 2
+        '''
+    }
+
+    @Test
     void testMultiAssignChain() {
         assertScript '''
             def a,b
@@ -117,7 +143,24 @@ final class MultipleAssignmentDeclarationTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-5744
+    @Test
+    void testMultiAssignFromObject() {
+        shouldFail MissingMethodException, '''
+            def obj = new Object()
+            def (x) = obj
+        '''
+    }
+
+    @Test
+    void testMultiAssignFromCalendar() {
+        assertScript '''
+            def (_, y, m) = Calendar.instance
+            assert y >= 2022
+            assert m in 0..11
+        '''
+    }
+
+    @Test // GROOVY-5744
     void testMultiAssignFromIterator() {
         assertScript '''
             def list = [1,2,3]
@@ -129,7 +172,7 @@ final class MultipleAssignmentDeclarationTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-10666
+    @Test // GROOVY-10666
     void testMultiAssignFromIterable() {
         assertScript '''
             class MySet {
@@ -172,7 +215,7 @@ final class MultipleAssignmentDeclarationTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-10666
+    @Test // GROOVY-10666
     void testMultiAssignFromJavaStream() {
         assertScript '''import java.util.stream.Stream
 
