@@ -81,6 +81,7 @@ public class GroovyObjectHelper {
 
     private static Lookup doLookup(GroovyObject groovyObject) {
         MethodHandles.Lookup lookup;
+        if (groovyObject.getMetaClass().respondsTo(groovyObject, "$getLookup").isEmpty()) return null;
         try {
             final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
             if (groovyObjectClass.isAnonymousClass() ||
