@@ -2467,10 +2467,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (!candidates.isEmpty()) {
+                int nParameters = candidates.stream().mapToInt(m -> m.getParameters().length).reduce((i,j) -> i == j ? i : -1).getAsInt();
                 Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
                 candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
-                            storeType(expression, wrapClosureType(returnType));
+                            ClassNode closureType = wrapClosureType(returnType);
+                            closureType.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters); // GROOVY-10714
+                            storeType(expression, closureType);
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
             } else if (!(expression instanceof MethodReferenceExpression)) {
