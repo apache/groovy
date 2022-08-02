@@ -18,8 +18,10 @@
  */
 package groovy.text
 
-import org.junit.Test
 import org.junit.Before
+import org.junit.Test
+
+import java.util.concurrent.ConcurrentHashMap
 
 class StreamingTemplateEngineTest {
   TemplateEngine engine
@@ -459,4 +461,65 @@ class StreamingTemplateEngineTest {
     assert "Hi Alice" == result
   }
 
+  @Test
+  void reuseClassLoader1() {
+    final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
+    System.setProperty(reuseOption, 'true')
+
+    try {
+      // reload class to initialize static field from the beginning
+      def steClass = reloadClass('groovy.text.StreamingTemplateEngine')
+
+      GroovyClassLoader gcl = new GroovyClassLoader()
+      def engine = steClass.newInstance(gcl)
+      assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+      assert gcl.loadedClasses.length > 0
+      def cloned = gcl.loadedClasses.clone()
+      assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+      assert cloned == gcl.loadedClasses
+    } finally {
+      System.clearProperty(reuseOption)
+    }
+  }
+
+  @Test
+  void reuseClassLoader2() {
+    final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
+    System.setProperty(reuseOption, 'true')
+
+    try {
+      // reload class to initialize static field from the beginning
+      def steClass = reloadClass('groovy.text.StreamingTemplateEngine')
+
+      GroovyClassLoader gcl = new GroovyClassLoader()
+      def engine = steClass.newInstance(gcl)
+      assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+      assert gcl.loadedClasses.length > 0
+      def cloned = gcl.loadedClasses.clone()
+      engine = steClass.newInstance(gcl)
+      assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+      assert cloned == gcl.loadedClasses
+    } finally {
+      System.clearProperty(reuseOption)
+    }
+  }
+
+  private static Class reloadClass(String className) {
+    def clazz =
+            new GroovyClassLoader() {
+              private final Map<String, Class> loadedClasses = new ConcurrentHashMap<String, Class>()
+
+              @Override
+              Class loadClass(String name) {
+                if (name ==~ ('^' + className + '([$].+)?$')) {
+                  return loadedClasses.computeIfAbsent(name, n -> {
+                    def clazz = defineClass(n, GroovyClassLoader.class.getResourceAsStream('/' + n.replace('.', '/') + '.class').bytes)
+                    return clazz
+                  })
+                }
+                return super.loadClass(name)
+              }
+            }.loadClass(className)
+    return clazz
+  }
 }
