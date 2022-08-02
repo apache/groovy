@@ -25,6 +25,7 @@ import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -148,6 +149,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StreamingTemplateEngine extends TemplateEngine {
     private static final String TEMPLATE_SCRIPT_PREFIX = "StreamingTemplateScript";
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
+
+    private static final boolean REUSE_CLASS_LOADER = SystemUtil.getBooleanSafe("groovy.StreamingTemplateEngine.reuseClassLoader");
+
     private final ClassLoader parentLoader;
 
     /**
@@ -594,13 +598,15 @@ public class StreamingTemplateEngine extends TemplateEngine {
         }
 
         private Closure createTemplateClosure(List<StringSection> sections, final ClassLoader parentLoader, StringBuilder target) throws ClassNotFoundException {
-            final GroovyClassLoader loader = createClassLoader(parentLoader);
+            final GroovyClassLoader loader =
+                    REUSE_CLASS_LOADER && parentLoader instanceof GroovyClassLoader
+                            ? (GroovyClassLoader) parentLoader
+                            : createClassLoader(parentLoader);
             final Class<?> groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x"));
             } catch (MultipleCompilationErrorsException e) {
                 throw mangleMultipleCompilationErrorsException(e, sections);
-
             } catch (Exception e) {
                 throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
             }
