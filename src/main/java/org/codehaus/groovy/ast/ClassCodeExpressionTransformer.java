@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -29,7 +30,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
@@ -43,93 +43,105 @@ import java.util.Map;
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
 
     @Override
-    public Expression transform(Expression expr) {
+    public Expression transform(final Expression expr) {
         if (expr == null) return null;
         return expr.transformExpression(this);
     }
 
     @Override
-    protected void visitAnnotation(AnnotationNode node) {
+    protected void visitAnnotation(final AnnotationNode node) {
         for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
             entry.setValue(transform(entry.getValue()));
         }
     }
 
     @Override
-    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         for (Parameter p : node.getParameters()) {
-            if (p.hasInitialExpression()) {
-                Expression init = p.getInitialExpression();
-                p.setInitialExpression(transform(init));
-            }
+            Expression init = p.getInitialExpression();
+            if (init != null) p.setInitialExpression(transform(init));
         }
         super.visitConstructorOrMethod(node, isConstructor);
     }
 
     @Override
-    public void visitField(FieldNode node) {
-        visitAnnotations(node);
-        Expression init = node.getInitialExpression();
-        node.setInitialValueExpression(transform(init));
+    public void visitClosureExpression(final ClosureExpression expr) {
+        if (expr.isParameterSpecified()) {
+            for (Parameter p : expr.getParameters()) {
+                Expression init = p.getInitialExpression();
+                if (init != null) p.setInitialExpression(transform(init));
+            }
+        }
+        super.visitClosureExpression(expr);
     }
 
     @Override
-    public void visitProperty(PropertyNode node) {
+    public void visitField(final FieldNode node) {
         visitAnnotations(node);
-        Statement statement = node.getGetterBlock();
-        visitClassCodeContainer(statement);
+        Expression init = node.getInitialExpression();
+        if (init != null) node.setInitialValueExpression(transform(init));
+    }
 
-        statement = node.getSetterBlock();
-        visitClassCodeContainer(statement);
+    @Override
+    public void visitProperty(final PropertyNode node) {
+        visitAnnotations(node);
+        visitClassCodeContainer(node.getGetterBlock());
+        visitClassCodeContainer(node.getSetterBlock());
     }
 
     // statements:
 
     @Override
-    public void visitAssertStatement(AssertStatement stmt) {
+    public void visitAssertStatement(final AssertStatement stmt) {
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
         stmt.setMessageExpression(transform(stmt.getMessageExpression()));
     }
 
     @Override
-    public void visitCaseStatement(CaseStatement stmt) {
+    public void visitCaseStatement(final CaseStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
         stmt.getCode().visit(this);
     }
 
     @Override
-    public void visitDoWhileLoop(DoWhileStatement stmt) {
+    public void visitDoWhileLoop(final DoWhileStatement stmt) {
+        stmt.getLoopBlock().visit(this);
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
-        super.visitDoWhileLoop(stmt);
     }
 
     @Override
-    public void visitExpressionStatement(ExpressionStatement stmt) {
+    public void visitExpressionStatement(final ExpressionStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
     }
 
     @Override
-    public void visitForLoop(ForStatement stmt) {
+    public void visitForLoop(final ForStatement stmt) {
+        Parameter variable = stmt.getVariable();
+        visitAnnotations(variable);
+        Expression init = variable.getInitialExpression();
+        if (init != null) variable.setInitialExpression(transform(init));
+
         stmt.setCollectionExpression(transform(stmt.getCollectionExpression()));
-        super.visitForLoop(stmt);
+        stmt.getLoopBlock().visit(this);
     }
 
     @Override
-    public void visitIfElse(IfStatement stmt) {
+    public void visitIfElse(final IfStatement stmt) {
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
         stmt.getIfBlock().visit(this);
         stmt.getElseBlock().visit(this);
     }
 
     @Override
-    public void visitReturnStatement(ReturnStatement stmt) {
+    public void visitReturnStatement(final ReturnStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
     }
 
     @Override
-    public void visitSwitch(SwitchStatement stmt) {
-        Expression exp = stmt.getExpression();
-        stmt.setExpression(transform(exp));
+    public void visitSwitch(final SwitchStatement stmt) {
+        stmt.setExpression(transform(stmt.getExpression()));
+        afterSwitchConditionExpressionVisited(stmt);
+
         for (CaseStatement caseStatement : stmt.getCaseStatements()) {
             caseStatement.visit(this);
         }
@@ -137,32 +149,32 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
 
     @Override
-    public void visitSynchronizedStatement(SynchronizedStatement stmt) {
+    public void visitSynchronizedStatement(final SynchronizedStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
-        super.visitSynchronizedStatement(stmt);
+        stmt.getCode().visit(this);
     }
 
     @Override
-    public void visitThrowStatement(ThrowStatement stmt) {
+    public void visitThrowStatement(final ThrowStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
     }
 
     @Override
-    public void visitWhileLoop(WhileStatement stmt) {
+    public void visitWhileLoop(final WhileStatement stmt) {
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
-        super.visitWhileLoop(stmt);
+        stmt.getLoopBlock().visit(this);
     }
 
     /**
-     * Set the source position of toSet including its property expression if it has one.
+     * Transfers the source position to target including its property expression if it has one.
      *
-     * @param toSet resulting node
-     * @param origNode original node
+     * @param target resulting node
+     * @param source original node
      */
-    protected static void setSourcePosition(Expression toSet, Expression origNode) {
-        toSet.setSourcePosition(origNode);
-        if (toSet instanceof PropertyExpression) {
-            ((PropertyExpression) toSet).getProperty().setSourcePosition(origNode);
+    protected static void setSourcePosition(final Expression target, final Expression source) {
+        target.setSourcePosition(source);
+        if (target instanceof PropertyExpression) {
+            ((PropertyExpression) target).getProperty().setSourcePosition(source);
         }
     }
 }

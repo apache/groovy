@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -112,10 +113,10 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         visitAnnotations(node);
-        visitClassCodeContainer(node.getCode());
-        for (Parameter param : node.getParameters()) {
-            visitAnnotations(param);
+        for (Parameter parameter : node.getParameters()) {
+            visitAnnotations(parameter);
         }
+        visitClassCodeContainer(node.getCode());
     }
 
     @Override
@@ -128,14 +129,11 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitProperty(PropertyNode node) {
         visitAnnotations(node);
-        Statement statement = node.getGetterBlock();
-        visitClassCodeContainer(statement);
-
-        statement = node.getSetterBlock();
-        visitClassCodeContainer(statement);
-
         Expression init = node.getInitialExpression();
         if (init != null) init.visit(this);
+
+        visitClassCodeContainer(node.getGetterBlock());
+        visitClassCodeContainer(node.getSetterBlock());
     }
 
     protected void visitClassCodeContainer(Statement code) {
@@ -146,6 +144,16 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         for (Statement statement : node.getObjectInitializerStatements()) {
             statement.visit(this);
         }
+    }
+
+    @Override
+    public void visitClosureExpression(ClosureExpression expression) {
+        if (expression.isParameterSpecified()) {
+            for (Parameter parameter : expression.getParameters()) {
+                visitAnnotations(parameter);
+            }
+        }
+        super.visitClosureExpression(expression);
     }
 
     @Override
@@ -207,8 +215,8 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitForLoop(ForStatement statement) {
         visitStatement(statement);
-        super.visitForLoop(statement);
         visitAnnotations(statement.getVariable());
+        super.visitForLoop(statement);
     }
 
     @Override

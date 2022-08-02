@@ -81,103 +81,110 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     @Override
-    public void visitBlockStatement(BlockStatement block) {
+    public void visitBlockStatement(final BlockStatement block) {
         for (Statement statement : block.getStatements()) {
             statement.visit(this);
         }
     }
 
     @Override
-    public void visitForLoop(ForStatement forLoop) {
-        forLoop.getCollectionExpression().visit(this);
-        forLoop.getLoopBlock().visit(this);
+    public void visitForLoop(final ForStatement statement) {
+        statement.getCollectionExpression().visit(this);
+        statement.getLoopBlock().visit(this);
     }
 
     @Override
-    public void visitWhileLoop(WhileStatement loop) {
-        loop.getBooleanExpression().visit(this);
-        loop.getLoopBlock().visit(this);
+    public void visitWhileLoop(final WhileStatement statement) {
+        statement.getBooleanExpression().visit(this);
+        statement.getLoopBlock().visit(this);
     }
 
     @Override
-    public void visitDoWhileLoop(DoWhileStatement loop) {
-        loop.getLoopBlock().visit(this);
-        loop.getBooleanExpression().visit(this);
+    public void visitDoWhileLoop(final DoWhileStatement statement) {
+        statement.getLoopBlock().visit(this);
+        statement.getBooleanExpression().visit(this);
     }
 
     @Override
-    public void visitIfElse(IfStatement ifElse) {
-        ifElse.getBooleanExpression().visit(this);
-        ifElse.getIfBlock().visit(this);
-        ifElse.getElseBlock().visit(this);
+    public void visitIfElse(final IfStatement statement) {
+        statement.getBooleanExpression().visit(this);
+        statement.getIfBlock().visit(this);
+        statement.getElseBlock().visit(this);
     }
 
     @Override
-    public void visitExpressionStatement(ExpressionStatement statement) {
+    public void visitExpressionStatement(final ExpressionStatement statement) {
         statement.getExpression().visit(this);
     }
 
     @Override
-    public void visitReturnStatement(ReturnStatement statement) {
+    public void visitReturnStatement(final ReturnStatement statement) {
         statement.getExpression().visit(this);
     }
 
     @Override
-    public void visitAssertStatement(AssertStatement statement) {
+    public void visitAssertStatement(final AssertStatement statement) {
         statement.getBooleanExpression().visit(this);
         statement.getMessageExpression().visit(this);
     }
 
     @Override
-    public void visitTryCatchFinally(TryCatchStatement statement) {
+    public void visitTryCatchFinally(final TryCatchStatement statement) {
+        for (Statement resource : statement.getResourceStatements()) {
+            resource.visit(this);
+        }
         statement.getTryStatement().visit(this);
-        for (CatchStatement catchStatement : statement.getCatchStatements()) {
+        for (Statement catchStatement : statement.getCatchStatements()) {
             catchStatement.visit(this);
         }
         statement.getFinallyStatement().visit(this);
     }
 
     @Override
-    public void visitEmptyStatement(EmptyStatement statement) {
+    public void visitEmptyStatement(final EmptyStatement statement) {
         // noop
     }
 
     @Override
-    public void visitSwitch(SwitchStatement statement) {
+    public void visitSwitch(final SwitchStatement statement) {
         statement.getExpression().visit(this);
         afterSwitchConditionExpressionVisited(statement);
-        for (CaseStatement caseStatement : statement.getCaseStatements()) {
+        for (Statement caseStatement : statement.getCaseStatements()) {
             caseStatement.visit(this);
         }
         statement.getDefaultStatement().visit(this);
     }
 
-    protected void afterSwitchConditionExpressionVisited(SwitchStatement statement) {}
+    protected void afterSwitchConditionExpressionVisited(final SwitchStatement statement) {
+        // hook for subclass to do something after switch condition, but before case(s)
+    }
 
     @Override
-    public void visitCaseStatement(CaseStatement statement) {
+    public void visitCaseStatement(final CaseStatement statement) {
         statement.getExpression().visit(this);
         statement.getCode().visit(this);
     }
 
     @Override
-    public void visitBreakStatement(BreakStatement statement) {
+    public void visitBreakStatement(final BreakStatement statement) {
     }
 
     @Override
-    public void visitContinueStatement(ContinueStatement statement) {
+    public void visitContinueStatement(final ContinueStatement statement) {
     }
 
     @Override
-    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+    public void visitSynchronizedStatement(final SynchronizedStatement statement) {
         statement.getExpression().visit(this);
         statement.getCode().visit(this);
     }
 
     @Override
-    public void visitThrowStatement(ThrowStatement statement) {
+    public void visitThrowStatement(final ThrowStatement statement) {
         statement.getExpression().visit(this);
     }
+
+    //--------------------------------------------------------------------------
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
