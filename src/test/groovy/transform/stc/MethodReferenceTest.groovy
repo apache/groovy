@@ -827,6 +827,38 @@ final class MethodReferenceTest {
         assert err.message.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
     }
 
+    @Test // GROOVY-10714
+    void testMethodSelection() {
+        assertScript shell, '''
+            class C {
+                String which
+                void m(int i) { which = 'int' }
+                void m(Number n) { which = 'Number' }
+            }
+            interface I {
+                I andThen(Consumer<? super Number> c)
+                I andThen(BiConsumer<? super Number, ?> bc)
+            }
+            @CompileStatic
+            void test(I i, C c) {
+                i = i.andThen(c::m) // "andThen" is ambiguous unless parameters of "m" overloads are taken into account
+            }
+
+            C x= new C()
+            test(new I() {
+                I andThen(Consumer<? super Number> c) {
+                    c.accept(42)
+                    return this
+                }
+                I andThen(BiConsumer<? super Number, ?> bc) {
+                    bc.accept(42, null)
+                    return this
+                }
+            }, x)
+            assert x.which == 'Number'
+        '''
+    }
+
     @Test // GROOVY-10269
     void testNotFunctionalInterface() {
         def err = shouldFail shell, '''
