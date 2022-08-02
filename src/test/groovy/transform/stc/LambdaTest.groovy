@@ -18,111 +18,86 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class LambdaTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        ast(groovy.transform.CompileStatic)
+        imports {
+            normal 'java.util.stream.Collectors'
+            star 'java.util.function'
+            star 'java.util.stream'
+        }
+    }
 
     @Test
     void testFunction() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
+        assertScript shell, '''
             def f() {
                 [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList())
             }
-
             assert f() == [2, 3, 4]
         '''
     }
 
     @Test
     void testFunction2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
+        assertScript shell, '''
             def f() {
                 [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
             }
-
             assert f() == [2, 3, 4]
         '''
     }
 
     @Test
     void testFunctionWithTypeArgument() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
+        assertScript shell, '''
             List<String> f() {
                 [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
             }
-
             assert f() == [null, null, null]
         '''
     }
 
     @Test
     void testBinaryOperator() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
-            @CompileStatic
+        assertScript shell, '''
             int f() {
                 [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e)
             }
-
             assert f() == 13
         '''
     }
 
     @Test // GROOVY-8917
     void testBinaryOperatorWithoutExplicitTypes() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
-            @CompileStatic
+        assertScript shell, '''
             int f() {
                 [1, 2, 3].stream().reduce(7, (r, e) -> r + e)
             }
-
             assert f() == 13
         '''
     }
 
     @Test
     void testBinaryOperatorWithoutExplicitTypes2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.function.BinaryOperator
-
-            @CompileStatic
+        assertScript shell, '''
             int f() {
                 BinaryOperator<Integer> accumulator = (r, e) -> r + e
                 return [1, 2, 3].stream().reduce(7, accumulator)
             }
-
             assert f() == 13
         '''
     }
 
     @Test // GROOVY-10282
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.IntStream
-
-            @CompileStatic
+        assertScript shell, '''
             def f() {
                 IntStream.range(0, 10).boxed().reduce('', (s, i) -> s + '-', String::concat)
             }
@@ -132,17 +107,13 @@ final class LambdaTest {
 
     @Test
     void testBiFunctionAndVariadicMethod() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.function.BiFunction
-
+        assertScript shell, '''
             class C {
                 List m(... args) {
                     [this,*args]
                 }
             }
 
-            @CompileStatic
             void test(C c) {
                 BiFunction<Integer, Integer, List> f = (i, j) -> c.m(i, j)
                 def list = f.apply(1,2)
@@ -157,20 +128,15 @@ final class LambdaTest {
 
     @Test
     void testPredicate() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     def list = ['ab', 'bc', 'de']
-                    list.removeIf(e -> e.startsWith("a"))
+                    list.removeIf(e -> e.startsWith('a'))
                     assert ['bc', 'de'] == list
                 }
             }
@@ -179,22 +145,15 @@ final class LambdaTest {
 
     @Test
     void testPredicateWithoutExplicitTypeDef() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-            import java.util.function.Predicate
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
-                public static void p() {
-                    List<String> myList = Arrays.asList("a1", "a2", "b2", "b1", "c2", "c1")
-                    Predicate<String> predicate = s -> s.startsWith("b")
+                static void p() {
+                    List<String> myList = Arrays.asList('a1', 'a2', 'b2', 'b1', 'c2', 'c1')
+                    Predicate<String> predicate = s -> s.startsWith('b')
                     Function<String, String> mapper = s -> s.toUpperCase()
 
                     List<String> result =
@@ -213,18 +172,13 @@ final class LambdaTest {
 
     @Test
     void testUnaryOperator() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     def list = [1, 2, 3]
                     list.replaceAll(e -> e + 10)
                     assert [11, 12, 13] == list
@@ -235,20 +189,15 @@ final class LambdaTest {
 
     @Test
     void testBiConsumer() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     def map = [a: 1, b: 2, c: 3]
-                    map.forEach((k, v) -> System.out.println(k + ":" + v));
+                    map.forEach((k, v) -> System.out.println(k + ':' + v));
                 }
             }
         '''
@@ -256,8 +205,8 @@ final class LambdaTest {
 
     @Test
     void testComparator() {
-        assertScript '''
-            @groovy.transform.CompileStatic class T {
+        assertScript shell, '''
+            class T {
                 Comparator<Integer> c = (Integer a, Integer b) -> Integer.compare(a, b)
             }
             def t = new T()
@@ -267,8 +216,8 @@ final class LambdaTest {
 
     @Test // GROOVY-10372
     void testComparator2() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic class T {
+        def err = shouldFail shell, '''
+            class T {
                 Comparator<Integer> c = (int a, String b) -> 42
             }
         '''
@@ -277,8 +226,7 @@ final class LambdaTest {
 
     @Test // GROOVY-9977
     void testComparator3() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class T {
                 Comparator<Integer> c = (a, b) -> Integer.compare(a, b)
 
@@ -311,51 +259,30 @@ final class LambdaTest {
 
     @Test
     void testCollectors1() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            
-            @CompileStatic
-            def test() {
-                Set<String> set = ['a', 'b', 'c'] as Set
-                assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e))
-            }
-            
-            test()
+        assertScript shell, '''
+            Set<String> set = ['a', 'b', 'c'] as Set
+            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e))
         '''
     }
 
     @Test
     void testCollectors2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            
-            @CompileStatic
-            def test() {
-                Set<String> set = ['a', 'b', 'c'] as Set
-                assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e, (o1, o2) -> o2))
-            }
-            
-            test()
+        assertScript shell, '''
+            Set<String> set = ['a', 'b', 'c'] as Set
+            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e, (o1, o2) -> o2))
         '''
     }
 
     @Test
     void testFunctionWithLocalVariables() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
-                    String x = "#"
+                static void p() {
+                    String x = '#'
                     assert ['#1', '#2', '#3'] == [1, 2, 3].stream().map(e -> x + e).collect(Collectors.toList());
                 }
             }
@@ -364,19 +291,14 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithLocalVariables2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    new Test1().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
-                    String x = "#"
+                void p() {
+                    String x = '#'
                     Integer y = 23
                     assert ['23#1', '23#2', '23#3'] == [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList())
                 }
@@ -386,21 +308,16 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithLocalVariables3() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
-                    String x = "x";
-                    StringBuilder y = new StringBuilder("y");
-                    assert ['yx1', 'yx2', 'yx3'] == [1, 2, 3].stream().map(e -> y + x + e).collect(Collectors.toList());
+                void p() {
+                    String x = 'x'
+                    StringBuilder y = new StringBuilder('y')
+                    assert ['yx1', 'yx2', 'yx3'] == [1, 2, 3].stream().map(e -> y + x + e).collect(Collectors.toList())
                 }
             }
         '''
@@ -408,21 +325,15 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithLocalVariables4() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    Function<Integer, String> f = p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    Function<Integer, String> f = p()
                     assert '#1' == f(1)
                 }
 
                 static Function<Integer, String> p() {
-                    String x = "#"
+                    String x = '#'
                     Function<Integer, String> f = (Integer e) -> x + e
                     return f
                 }
@@ -432,21 +343,15 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithLocalVariables5() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     Function<Integer, String> f = new Test1().p();
                     assert '#1' == f(1)
                 }
 
                 Function<Integer, String> p() {
-                    String x = "#"
+                    String x = '#'
                     Function<Integer, String> f = (Integer e) -> x + e
                     return f
                 }
@@ -456,25 +361,20 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithStaticMethodCall() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
-                    String x = "x";
-                    StringBuilder y = new StringBuilder("y");
-                    assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> hello() + y + x + e).collect(Collectors.toList());
+                static void p() {
+                    String x = 'x'
+                    StringBuilder y = new StringBuilder('y')
+                    assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> hello() + y + x + e).collect(Collectors.toList())
                 }
 
-                public static String hello() {
-                    return "Hello ";
+                static String hello() {
+                    return 'Hello '
                 }
             }
         '''
@@ -482,25 +382,20 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithStaticMethodCall2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
-                    String x = "x";
-                    StringBuilder y = new StringBuilder("y");
-                    assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> Test4.hello() + y + x + e).collect(Collectors.toList());
+                static void p() {
+                    String x = 'x'
+                    StringBuilder y = new StringBuilder('y')
+                    assert ['Hello yx1', 'Hello yx2', 'Hello yx3'] == [1, 2, 3].stream().map(e -> Test1.hello() + y + x + e).collect(Collectors.toList())
                 }
 
-                public static String hello() {
-                    return "Hello ";
+                static String hello() {
+                    return 'Hello '
                 }
             }
         '''
@@ -508,23 +403,18 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithInstanceMethodCall() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
-                    assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello() + e).collect(Collectors.toList());
+                void p() {
+                    assert ['Hello Jochen', 'Hello Daniel'] == ['Jochen', 'Daniel'].stream().map(e -> hello() + e).collect(Collectors.toList())
                 }
 
-                public String hello() {
-                    return "Hello ";
+                String hello() {
+                    return 'Hello '
                 }
             }
         '''
@@ -532,23 +422,18 @@ final class LambdaTest {
 
     @Test
     void testFunctionInConstructor() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1()
                 }
 
-                public Test4() {
-                    assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello() + e).collect(Collectors.toList());
+                Test1() {
+                    assert ['Hello Jochen', 'Hello Daniel'] == ['Jochen', 'Daniel'].stream().map(e -> hello() + e).collect(Collectors.toList())
                 }
 
-                public String hello() {
-                    return "Hello ";
+                String hello() {
+                    return 'Hello '
                 }
             }
         '''
@@ -556,23 +441,18 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithInstanceMethodCall2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
-                    assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> this.hello() + e).collect(Collectors.toList());
+                void p() {
+                    assert ['Hello Jochen', 'Hello Daniel'] == ['Jochen', 'Daniel'].stream().map(e -> this.hello() + e).collect(Collectors.toList())
                 }
 
-                public String hello() {
-                    return "Hello ";
+                String hello() {
+                    return 'Hello '
                 }
             }
         '''
@@ -580,23 +460,18 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithInstanceMethodCall3() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
-                    assert ['Hello Jochen', 'Hello Daniel'] == ["Jochen", "Daniel"].stream().map(e -> hello(e)).collect(Collectors.toList());
+                void p() {
+                    assert ['Hello Jochen', 'Hello Daniel'] == ['Jochen', 'Daniel'].stream().map(e -> hello(e)).collect(Collectors.toList())
                 }
 
-                public String hello(String name) {
-                    return "Hello $name";
+                String hello(String name) {
+                    return "Hello $name"
                 }
             }
         '''
@@ -604,19 +479,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionCall() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
                     assert 2 == f(1)
                 }
@@ -626,19 +495,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionCallWithoutExplicitTypeDef() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     Function<Integer, Integer> f = e -> e + 1
                     assert 2 == f(1)
                 }
@@ -648,19 +511,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionCall2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    new Test1().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
+                void p() {
                     Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
                     assert 2 == f(1)
                 }
@@ -670,19 +527,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionCall3() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
                     assert 2 == f.apply(1)
                 }
@@ -692,50 +543,37 @@ final class LambdaTest {
 
     @Test
     void testConsumer1() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void m() {
-                int a = 1
-                java.util.function.Consumer<Integer> c = i -> { a += i }
-                c.accept(2)
-                assert a == 3
-            }
-            m()
+        assertScript shell, '''
+            int a = 1
+            Consumer<Integer> c = i -> { a += i }
+            c.accept(2)
+            assert a == 3
         '''
     }
 
     @Test
     void testConsumer2() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void m() {
-                int a = 1
-                java.util.function.Consumer<Integer> c = (i) -> { a += i }
-                c.accept(2)
-                assert a == 3
-            }
-            m()
+        assertScript shell, '''
+            int a = 1
+            Consumer<Integer> c = (i) -> { a += i }
+            c.accept(2)
+            assert a == 3
         '''
     }
 
     @Test
     void testConsumer3() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void m() {
-                int a = 1
-                java.util.function.Consumer<Integer> c = (Integer i) -> { a += i }
-                c.accept(2)
-                assert a == 3
-            }
-            m()
+        assertScript shell, '''
+            int a = 1
+            Consumer<Integer> c = (Integer i) -> { a += i }
+            c.accept(2)
+            assert a == 3
         '''
     }
 
     @Test
     void testConsumer4() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static main(args) {
                     p()
@@ -743,7 +581,7 @@ final class LambdaTest {
 
                 static void p() {
                     int a = 1
-                    java.util.function.Consumer<Integer> c = e -> { a += e }
+                    Consumer<Integer> c = e -> { a += e }
                     c.accept(2)
                     assert a == 3
                 }
@@ -753,8 +591,7 @@ final class LambdaTest {
 
     @Test
     void testConsumer5() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static main(args) {
                     new Test1().p()
@@ -762,7 +599,7 @@ final class LambdaTest {
 
                 void p() {
                     int a = 1
-                    java.util.function.Consumer<Integer> c = (Integer e) -> { a += e }
+                    Consumer<Integer> c = (Integer e) -> { a += e }
                     c.accept(2)
                     assert a == 3
                 }
@@ -772,8 +609,7 @@ final class LambdaTest {
 
     @Test
     void testConsumer6() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static main(args) {
                     p()
@@ -781,7 +617,7 @@ final class LambdaTest {
 
                 static void p() {
                     int a = 1
-                    java.util.function.Consumer<Integer> c = (Integer e) -> { a += e }
+                    Consumer<Integer> c = (Integer e) -> { a += e }
                     c(2)
                     assert a == 3
                 }
@@ -791,11 +627,10 @@ final class LambdaTest {
 
     @Test // GROOVY-9347
     void testConsumer7() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             void test() {
                 int sum = 0
-                java.util.function.Consumer<? super Integer> add = i -> sum += i
+                Consumer<? super Integer> add = i -> sum += i
 
                 [1, 2, 3].forEach(add)
                 assert sum == 6
@@ -806,15 +641,14 @@ final class LambdaTest {
 
     @Test // GROOVY-9340
     void testConsumer8() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static main(args) {
                     p()
                 }
 
                 static void p() {
-                    java.util.function.Consumer<Test1> c = t -> null
+                    Consumer<Test1> c = t -> null
                     c.accept(this.newInstance())
                 }
             }
@@ -823,8 +657,7 @@ final class LambdaTest {
 
     @Test
     void testConsumer9() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static main(args) {
                     p()
@@ -858,87 +691,67 @@ final class LambdaTest {
 
     @Test
     void testFunctionalInterface1() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     SamCallable c = (int e) -> e
                     assert 1 == c(1)
                 }
             }
 
-            @CompileStatic
             interface SamCallable {
-                int call(int p);
+                int call(int p)
             }
         '''
     }
 
     @Test
     void testFunctionalInterface2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     SamCallable c = e -> e
                     assert 1 == c(1)
                 }
             }
 
-            @CompileStatic
             interface SamCallable {
-                int call(int p);
+                int call(int p)
             }
         '''
     }
 
     @Test
     void testFunctionalInterface3() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     SamCallable c = (int e) -> e // This is actually a closure(not a native lambda), because "Functional interface SamCallable is not an interface"
                     assert 1 == c(1)
                 }
             }
 
-            @CompileStatic
             abstract class SamCallable {
-                abstract int call(int p);
+                abstract int call(int p)
             }
         '''
     }
 
     @Test // GROOVY-9881
     void testFunctionalInterface4() {
-        assertScript '''
-            import java.util.function.*
-
+        assertScript shell, '''
             class Value<V> {
                 final V val
                 Value(V v) {
@@ -955,45 +768,32 @@ final class LambdaTest {
                 }
             }
 
-            @groovy.transform.CompileStatic
-            void test() {
-                assert new Value<>(123).replace(() -> 'foo').toString() == 'foo'
-                assert new Value<>(123).replace((Integer v) -> 'bar').toString() == 'bar'
-            }
-            test()
+            assert new Value<>(123).replace(() -> 'foo').toString() == 'foo'
+            assert new Value<>(123).replace((Integer v) -> 'bar').toString() == 'bar'
         '''
     }
 
     @Test // GROOVY-10372
     void testFunctionalInterface5() {
-        def err = shouldFail '''
+        def err = shouldFail shell, '''
             interface I {
                 def m(List<String> strings)
             }
 
-            @groovy.transform.CompileStatic
-            void test() {
-                I face = (List<Object> list) -> null
-            }
-            test()
+            I face = (List<Object> list) -> null
         '''
         assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
     }
 
     @Test
     void testFunctionWithUpdatingLocalVariable() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
+                static void p() {
                     int i = 1
                     assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
                     assert 7 == i
@@ -1004,18 +804,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithUpdatingLocalVariable2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    new Test1().p();
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
                 }
 
-                public void p() {
+                void p() {
                     int i = 1
                     assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
                     assert 7 == i
@@ -1026,15 +821,9 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithVariableDeclaration() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
@@ -1048,20 +837,14 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithMixingVariableDeclarationAndMethodInvocation() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
-                public static void p() {
-                    String x = "#"
+                static void p() {
+                    String x = '#'
                     Integer y = 23
                     assert ['23#1', '23#2', '23#3'] == [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList())
 
@@ -1076,18 +859,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithNestedLambda() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
-                public static void p() {
+                static void p() {
                     [1, 2].stream().forEach(e -> {
                         def list = ['a', 'b'].stream().map(f -> f + e).toList()
                         if (1 == e) {
@@ -1103,18 +881,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithNestedLambda2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
-                public static void p() {
+                static void p() {
                     def list = ['a', 'b'].stream()
                     .map(e -> {
                         [1, 2].stream().map(f -> e + f).toList()
@@ -1129,19 +902,13 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithNestedLambda3() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
+        assertScript shell, '''
+            class Test1 {
+                static main(args) {
                     p()
                 }
 
-                public static void p() {
+                static void p() {
                     def list = ['a', 'b'].stream()
                     .map(e -> {
                         Function<Integer, String> x = (Integer f) -> e + f
@@ -1157,26 +924,16 @@ final class LambdaTest {
 
     @Test
     void testMixingLambdaAndMethodReference() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
-                assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
-                assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-            }
-
-            p()
+        assertScript shell, '''
+            assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
+            assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
+            assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
         '''
     }
 
     @Test
     void testInitializeBlocks() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static sl
                 def il
@@ -1194,8 +951,7 @@ final class LambdaTest {
 
     @Test
     void testNestedLambdaAccessingInstanceFields() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 private List<String> strList = ['a', 'e', 'f']
                 private Map<String, List<String>> strListHolder = ['strList': strList]
@@ -1215,8 +971,7 @@ final class LambdaTest {
 
     @Test // GROOVY-9332
     void testStaticInitializeBlocks1() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static list
                 static final int one = 1
@@ -1229,57 +984,56 @@ final class LambdaTest {
 
     @Test // GROOVY-9347
     void testStaticInitializeBlocks2() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static int acc = 1
                 static { [1, 2, 3].forEach(e -> acc += e) }
             }
+
             assert Test1.acc == 7
         '''
     }
 
     @Test // GROOVY-9342
     void testStaticInitializeBlocks3() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class Test1 {
                 static int acc = 1
                 static { [1, 2, 3].forEach((Integer i) -> acc += i) }
             }
+
             assert Test1.acc == 7
         '''
     }
 
     @Test
     void testAccessingThis1() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class ThisTest {
                 private final ThisTest that = this
 
                 void m() {
-                    java.util.function.Predicate<ThisTest> p = (ThisTest t) -> {
+                    Predicate<ThisTest> p = (ThisTest t) -> {
                         assert this === t
                     }
                     p.test(that)
                     p.test(this)
                 }
             }
+
             new ThisTest().m()
         '''
     }
 
     @Test
     void testAccessingThis2() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class ThisTest {
                 private final ThisTest that = this
 
                 void m() {
-                    java.util.function.Predicate<ThisTest> p1 = (ThisTest t1) -> {
-                        java.util.function.Predicate<ThisTest> p2 = (ThisTest t2) -> {
+                    Predicate<ThisTest> p1 = (ThisTest t1) -> {
+                        Predicate<ThisTest> p2 = (ThisTest t2) -> {
                             assert this === t1 && this === t2
                         }
                         p2.test(t1)
@@ -1288,14 +1042,14 @@ final class LambdaTest {
                     p1.test(this)
                 }
             }
+
             new ThisTest().m()
         '''
     }
 
     @Test
     void testAccessingThis3() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class ThisTest {
                 String p = 'a'
 
@@ -1304,14 +1058,14 @@ final class LambdaTest {
                     assert list == ['a1', 'a2']
                 }
             }
+
             new ThisTest().m()
         '''
     }
 
     @Test
     void testAccessingThis4() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class ThisTest {
                 String getP() { 'a' }
 
@@ -1320,17 +1074,17 @@ final class LambdaTest {
                     assert list == ['a1', 'a2']
                 }
             }
+
             new ThisTest().m()
         '''
     }
 
     @Test
     void testSerialize1() {
-        assertScript '''
-            interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+        assertScript shell, '''
+            interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
             }
 
-            @groovy.transform.CompileStatic
             byte[] test() {
                 try (def out = new ByteArrayOutputStream()) {
                     out.withObjectOutputStream {
@@ -1347,10 +1101,7 @@ final class LambdaTest {
 
     @Test
     void testSerialize2() {
-        def err = shouldFail NotSerializableException, '''
-            import java.util.function.Function
-
-            @groovy.transform.CompileStatic
+        def err = shouldFail shell, NotSerializableException, '''
             byte[] test() {
                 try (def out = new ByteArrayOutputStream()) {
                     out.withObjectOutputStream {
@@ -1369,10 +1120,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize1() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1390,7 +1140,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1398,10 +1148,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize2() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C implements Serializable {
                 private static final long serialVersionUID = -1L
                 String s = 'a'
@@ -1426,7 +1175,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1434,10 +1183,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize3() {
-        def err = shouldFail NotSerializableException, '''
+        def err = shouldFail shell, NotSerializableException, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 String s = 'a'
                 SerializableFunction<Integer, String> f
@@ -1458,7 +1206,7 @@ final class LambdaTest {
                     this.newInstance().test()
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1467,8 +1215,7 @@ final class LambdaTest {
 
     @Test
     void testDeserialize4() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             class C {
                 static byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1486,7 +1233,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1494,10 +1241,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize5() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1516,7 +1262,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1524,10 +1270,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize6() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1546,7 +1291,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1554,10 +1299,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize7() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 static byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1576,7 +1320,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1584,10 +1328,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize8() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C implements Serializable {
                 private static final long serialVersionUID = -1L;
                 private String s = 'a'
@@ -1608,7 +1351,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1616,10 +1359,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize9() {
-        def err = shouldFail NotSerializableException, '''
+        def err = shouldFail shell, NotSerializableException, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 private String s = 'a'
 
@@ -1639,7 +1381,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1649,10 +1391,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize10() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C implements Serializable {
                 private static final long serialVersionUID = -1L;
                 private String getS() { 'a' }
@@ -1673,7 +1414,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1681,10 +1422,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize11() {
-        def err = shouldFail NotSerializableException, '''
+        def err = shouldFail shell, NotSerializableException, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 private String getS() { 'a' }
 
@@ -1704,7 +1444,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1714,10 +1454,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize12() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 private static final String s = 'a'
                 static byte[] test() {
@@ -1736,7 +1475,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1744,10 +1483,9 @@ final class LambdaTest {
 
     @Test
     void testDeserialize13() {
-        assertScript '''
+        assertScript shell, '''
             package tests.lambda
 
-            @groovy.transform.CompileStatic
             class C {
                 private static String getS() { 'a' }
                 static byte[] test() {
@@ -1766,7 +1504,7 @@ final class LambdaTest {
                     }
                 }
 
-                interface SerializableFunction<I,O> extends Serializable, java.util.function.Function<I,O> {
+                interface SerializableFunction<I,O> extends Serializable, Function<I,O> {
                 }
             }
         '''
@@ -1990,10 +1728,9 @@ final class LambdaTest {
 
     @Test // GROOVY-9146
     void testScriptWithExistingMainCS() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript shell, '''
             static void main(args) {
-                java.util.function.Function<String, String> lower = String::toLowerCase
+                Function<String, String> lower = String::toLowerCase
                 assert lower.toString().contains('$$Lambda$')
             }
         '''
