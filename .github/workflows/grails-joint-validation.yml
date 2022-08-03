@@ -45,6 +45,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java }}
+      - uses: gradle/gradle-build-action@v2
       - name: env
         run: env
 

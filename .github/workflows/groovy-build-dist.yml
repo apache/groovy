@@ -36,6 +36,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
+      - uses: gradle/gradle-build-action@v2
       - name: Install graphviz
         run: sudo apt-get install -y graphviz
       - name: Build and package
