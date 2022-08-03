@@ -39,7 +39,6 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ErrorCollecting;
 
@@ -191,6 +190,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitCatchStatement(CatchStatement statement) {
         visitStatement(statement);
+        visitAnnotations(statement.getVariable());
         super.visitCatchStatement(statement);
     }
 
@@ -269,10 +269,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     protected abstract SourceUnit getSourceUnit();
 
     @Override
-    public void addError(String error, ASTNode node) {
-        SourceUnit source = getSourceUnit();
-        source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(error + '\n', node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()), source)
-        );
+    public void addError(final String error, final ASTNode node) {
+        getSourceUnit().addErrorAndContinue(new SyntaxException(error + '\n', node));
     }
 }

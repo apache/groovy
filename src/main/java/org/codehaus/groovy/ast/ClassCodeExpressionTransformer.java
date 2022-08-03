@@ -116,11 +116,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitForLoop(final ForStatement stmt) {
-        Parameter variable = stmt.getVariable();
-        visitAnnotations(variable);
-        Expression init = variable.getInitialExpression();
-        if (init != null) variable.setInitialExpression(transform(init));
-
+        visitAnnotations(stmt.getVariable()); // "for(T x : y)" or "for(x in y)"
         stmt.setCollectionExpression(transform(stmt.getCollectionExpression()));
         stmt.getLoopBlock().visit(this);
     }
@@ -140,8 +136,6 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     @Override
     public void visitSwitch(final SwitchStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
-        afterSwitchConditionExpressionVisited(stmt);
-
         for (CaseStatement caseStatement : stmt.getCaseStatements()) {
             caseStatement.visit(this);
         }

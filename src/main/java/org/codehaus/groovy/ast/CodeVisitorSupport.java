@@ -141,8 +141,8 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     @Override
-    public void visitEmptyStatement(final EmptyStatement statement) {
-        // noop
+    public void visitCatchStatement(CatchStatement statement) {
+        statement.getCode().visit(this);
     }
 
     @Override
@@ -182,6 +182,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     @Override
     public void visitThrowStatement(final ThrowStatement statement) {
         statement.getExpression().visit(this);
+    }
+
+    @Override
+    public void visitEmptyStatement(final EmptyStatement statement) {
     }
 
     //--------------------------------------------------------------------------
@@ -362,11 +366,6 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitGStringExpression(GStringExpression expression) {
         visitListOfExpressions(expression.getStrings());
         visitListOfExpressions(expression.getValues());
-    }
-
-    @Override
-    public void visitCatchStatement(CatchStatement statement) {
-        statement.getCode().visit(this);
     }
 
     @Override

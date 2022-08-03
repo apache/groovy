@@ -122,7 +122,9 @@ public interface GroovyCodeVisitor {
     }
 
     default void visit(final Statement statement) {
-        if (statement != null) statement.visit(this);
+        if (statement != null) {
+            statement.visit(this);
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -206,10 +208,16 @@ public interface GroovyCodeVisitor {
     }
 
     default void visitListOfExpressions(final List<? extends Expression> list) {
-        if (list != null) list.forEach(expr -> expr.visit(this));
+        if (list != null) {
+            for (Expression expr: list) {
+                expr.visit(this);
+            }
+        }
     }
 
     default void visit(final Expression expression) {
-        if (expression != null) expression.visit(this);
+        if (expression != null) {
+            expression.visit(this);
+        }
     }
 }
