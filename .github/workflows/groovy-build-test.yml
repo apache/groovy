@@ -36,6 +36,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
+      - uses: gradle/gradle-build-action@v2
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
