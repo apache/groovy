@@ -21,8 +21,8 @@ plugins {
 }
 
 dependencies {
-    implementation rootProject
-    implementation project(':groovy-macro')
+    api rootProject
+    api project(':groovy-macro')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-json')
     testImplementation project(':groovy-console')
