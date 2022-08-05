@@ -43,11 +43,11 @@ public class GroovyObjectHelper {
      * @since 4.0.0
      */
     public static Optional<Lookup> lookup(GroovyObject groovyObject) {
-        AtomicReference<Lookup> lookupAtomicRef = LOOKUP_MAP.get(groovyObject.getClass());
+        final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
+        final AtomicReference<Lookup> lookupAtomicRef = LOOKUP_MAP.get(groovyObjectClass);
         Lookup lookup = lookupAtomicRef.get();
         if (null != lookup) return Optional.of(lookup);
 
-        final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
         if (groovyObjectClass.isMemberClass() && Modifier.isStatic(groovyObjectClass.getModifiers())) {
             List<Class<?>> classList = new ArrayList<>(3);
             for (Class<?> clazz = groovyObjectClass; null != clazz; clazz = clazz.getEnclosingClass()) {
@@ -80,8 +80,9 @@ public class GroovyObjectHelper {
     }
 
     private static Lookup doLookup(GroovyObject groovyObject) {
-        MethodHandles.Lookup lookup;
         if (groovyObject.getMetaClass().respondsTo(groovyObject, "$getLookup").isEmpty()) return null;
+
+        MethodHandles.Lookup lookup;
         try {
             final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
             if (groovyObjectClass.isAnonymousClass() ||
