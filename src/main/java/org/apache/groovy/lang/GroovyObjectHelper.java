@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 4.0.0
  */
 public class GroovyObjectHelper {
+    private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
+
     /**
      * Get the {@link Lookup} instance of the {@link GroovyObject} instance
      *
@@ -80,7 +82,7 @@ public class GroovyObjectHelper {
     }
 
     private static Lookup doLookup(GroovyObject groovyObject) {
-        if (groovyObject.getMetaClass().respondsTo(groovyObject, "$getLookup").isEmpty()) return null;
+        if (groovyObject.getMetaClass().respondsTo(groovyObject, GET_LOOKUP_METHOD_NAME).isEmpty()) return null;
 
         MethodHandles.Lookup lookup;
         try {
@@ -116,7 +118,7 @@ public class GroovyObjectHelper {
     }
 
     private static Method findGetLookupMethod(Class<?> groovyObjectClass) throws NoSuchMethodException {
-        return groovyObjectClass.getDeclaredMethod("$getLookup");
+        return groovyObjectClass.getDeclaredMethod(GET_LOOKUP_METHOD_NAME);
     }
 
     private GroovyObjectHelper() {}
