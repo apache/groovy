@@ -22,7 +22,7 @@ permissions:
 jobs:
   validation:
     name: "Validation"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b #v1.0.3
