@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class GroovyObjectHelper {
     private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
+    private static final Lookup LOOKUP = MethodHandles.lookup();
 
     /**
      * Get the {@link Lookup} instance of the {@link GroovyObject} instance
@@ -59,7 +60,7 @@ public class GroovyObjectHelper {
                 classList.add(clazz);
             }
 
-            Lookup caller = MethodHandles.lookup();
+            Lookup caller = LOOKUP;
             for (int i = classList.size() - 1; i >= 0; i--) {
                 Class<?> c = classList.get(i);
                 caller = doLookup(c, caller);
@@ -89,7 +90,7 @@ public class GroovyObjectHelper {
             final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
             if (groovyObjectClass.isAnonymousClass() ||
                     (isNonStaticInnerClass(groovyObjectClass))) {
-                lookup = (MethodHandles.Lookup) MethodHandles.lookup()
+                lookup = (MethodHandles.Lookup) LOOKUP
                         .unreflect(findGetLookupMethod(groovyObjectClass))
                         .bindTo(groovyObject)
                         .invokeExact();
@@ -104,7 +105,7 @@ public class GroovyObjectHelper {
     }
 
     private static Lookup doLookup(Class<?> groovyObjectClass) {
-        return doLookup(groovyObjectClass, MethodHandles.lookup());
+        return doLookup(groovyObjectClass, LOOKUP);
     }
 
     private static Lookup doLookup(Class<?> groovyObjectClass, Lookup caller) {
