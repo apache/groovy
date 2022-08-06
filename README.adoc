@@ -28,7 +28,7 @@ The Groovy development team
 :noheader:
 :groovy-www: https://groovy-lang.org/
 :groovy-ci: https://ci.groovy-lang.org?guest=1
-:travis-ci: https://travis-ci.com/apache/groovy
+:github-ci: https://github.com/apache/groovy/actions?query=branch%3Amaster+
 :sonarcloud: https://sonarcloud.io/dashboard?id=apache_groovy
 :jdk: https://www.oracle.com/technetwork/java/javase/downloads
 //:bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
@@ -50,7 +50,7 @@ image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
 image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
 image:{build-icon}[teamcity build status, link={groovy-ci}]
-image:{github-build-icon}[github build status, link={travis-ci}]
+image:{github-build-icon}[github build status, link={github-ci}]
 image:{sonarcloud-icon}[maintainability rating, link={sonarcloud}]
 //image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
 image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
