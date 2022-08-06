@@ -156,10 +156,9 @@ class ObjectBrowser {
                                     VOCABULARY.getLiteralName(it)?.replace("'", '')
                                 }.grep { it } + ['module', 'true', 'false'])) {
                     content = content.replaceAll(/\b(${ln})\b/, '<b>$1</b>')
-                                        .replace(',', '<b>,</b>')
-                                        .replace(':', '<b>:</b>')
                 }
-                def classLabel = "<html>${content.replace('\n', '<br/>')}</html>"
+                content = content.replace('\n', '<br/>').replace(',', '<b>,</b>').replace(':', '<b>:</b>')
+                def classLabel = "<html>${content}</html>"
                 label(classLabel)
             }
             tabbedPane(constraints: CENTER) {
