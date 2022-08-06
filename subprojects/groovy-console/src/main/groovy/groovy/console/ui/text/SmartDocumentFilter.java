@@ -123,6 +123,12 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.YIELD;
  * @since 3.0.0
  */
 public class SmartDocumentFilter extends DocumentFilter {
+    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST = Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
+            VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
+            ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
+            NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
+            RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
+            THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, YIELD, NullLiteral, BooleanLiteral);
     private static final String MONOSPACED = "Monospaced";
     private final DefaultStyledDocument styledDocument;
     private final StyleContext styleContext;
@@ -381,12 +387,7 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         // reserved keywords, null literals, boolean literals
-        for (int t : Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
-                VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
-                ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
-                NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
-                RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
-                THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, YIELD, NullLiteral, BooleanLiteral)) {
+        for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
             Style style = createDefaultStyleByTokenType(t);
             StyleConstants.setBold(style, true);
             StyleConstants.setForeground(style, Color.BLUE.darker().darker());

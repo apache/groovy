@@ -32,6 +32,7 @@ import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 
+import static groovy.console.ui.text.SmartDocumentFilter.HIGHLIGHTED_TOKEN_TYPE_LIST
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
 import static groovy.inspect.Inspector.MEMBER_MODIFIER_IDX
@@ -41,7 +42,7 @@ import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
 import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
 import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
 import static javax.swing.ListSelectionModel.SINGLE_SELECTION
-
+import static org.apache.groovy.parser.antlr4.GroovyLexer.VOCABULARY
 /**
  * A little GUI to show some of the Inspector capabilities.
  * Starting this script opens the ObjectBrowser on "some String".
@@ -130,15 +131,35 @@ class ObjectBrowser {
         builder.panel {
             borderLayout()
             panel(name: 'Class Info',
-                    border: emptyBorder([5, 10, 5, 10]),
+                    border: titledBorder('Class Info'),
                     constraints: NORTH) {
                 flowLayout(alignment: FlowLayout.LEFT)
-                def props = inspector.classProps.findAll{ it != 'implements ' }
+                def props = inspector.classProps.findAll { it != 'implements ' }
                 try {
                     def module = inspector.object.class.module.name
-                    if (module) props.add(0, 'module ' + module)
+                    if (module) props.add(0, "module ${module}")
                 } catch(Exception ignore) {}
-                def classLabel = '<html>' + props.join('<br>')
+
+                final implementsPrefix = 'implements '
+                def content = props.collect {
+                    String p = it.trim()
+                    if (p.startsWith(implementsPrefix)) {
+                        return "${implementsPrefix}${p.substring(implementsPrefix.length()).replace(' ', ', ')}"
+                    }
+                    if (p.startsWith('is ')) {
+                        return "(${p})"
+                    }
+                    return p
+                }.join('\n').trim()
+
+                for (def ln in (HIGHLIGHTED_TOKEN_TYPE_LIST.collect {
+                                    VOCABULARY.getLiteralName(it)?.replace("'", '')
+                                }.grep { it } + ['module', 'true', 'false'])) {
+                    content = content.replaceAll(/\b(${ln})\b/, '<b>$1</b>')
+                                        .replace(',', '<b>,</b>')
+                                        .replace(':', '<b>:</b>')
+                }
+                def classLabel = "<html>${content.replace('\n', '<br/>')}</html>"
                 label(classLabel)
             }
             tabbedPane(constraints: CENTER) {
