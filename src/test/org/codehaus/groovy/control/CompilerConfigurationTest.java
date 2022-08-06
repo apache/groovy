@@ -25,9 +25,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -113,7 +115,7 @@ public final class CompilerConfigurationTest {
         init.setMinimumRecompilationInterval(234);
         init.setScriptBaseClass("blarg.foo.WhatSit");
         init.setSourceEncoding("LEAD-123");
-        init.setTargetBytecode(CompilerConfiguration.JDK5);
+        init.setTargetBytecode(CompilerConfiguration.JDK17);
         init.setRecompileGroovySource(true);
         init.setClasspath("File1" + File.pathSeparator + "Somewhere");
         File targetDirectory = new File("A wandering path");
@@ -134,7 +136,7 @@ public final class CompilerConfigurationTest {
         assertEquals(234, init.getMinimumRecompilationInterval());
         assertEquals("blarg.foo.WhatSit", init.getScriptBaseClass());
         assertEquals("LEAD-123", init.getSourceEncoding());
-        assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
+        assertEquals(CompilerConfiguration.JDK17, init.getTargetBytecode());
         assertTrue(init.getRecompileGroovySource());
         assertEquals("File1", init.getClasspath().get(0));
         assertEquals("Somewhere", init.getClasspath().get(1));
@@ -158,7 +160,7 @@ public final class CompilerConfigurationTest {
         assertEquals(234, config.getMinimumRecompilationInterval());
         assertEquals("blarg.foo.WhatSit", config.getScriptBaseClass());
         assertEquals("LEAD-123", config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.JDK5, config.getTargetBytecode());
+        assertEquals(CompilerConfiguration.JDK17, config.getTargetBytecode());
         assertTrue(config.getRecompileGroovySource());
         assertEquals("File1", config.getClasspath().get(0));
         assertEquals("Somewhere", config.getClasspath().get(1));
@@ -184,7 +186,7 @@ public final class CompilerConfigurationTest {
         init.setMinimumRecompilationInterval(975);
         init.setScriptBaseClass("");
         init.setSourceEncoding("Gutenberg");
-        init.setTargetBytecode(CompilerConfiguration.JDK5);
+        init.setTargetBytecode(CompilerConfiguration.JDK17);
         init.setRecompileGroovySource(false);
         init.setClasspath("");
         File targetDirectory = new File("A wandering path");
@@ -203,7 +205,7 @@ public final class CompilerConfigurationTest {
         assertEquals(975, init.getMinimumRecompilationInterval());
         assertEquals("", init.getScriptBaseClass());
         assertEquals("Gutenberg", init.getSourceEncoding());
-        assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
+        assertEquals(CompilerConfiguration.JDK17, init.getTargetBytecode());
         assertFalse(init.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), init.getClasspath());
         assertEquals(targetDirectory, init.getTargetDirectory());
@@ -224,7 +226,7 @@ public final class CompilerConfigurationTest {
         assertEquals(975, config.getMinimumRecompilationInterval());
         assertEquals("", config.getScriptBaseClass());
         assertEquals("Gutenberg", config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.JDK5, config.getTargetBytecode());
+        assertEquals(CompilerConfiguration.JDK17, config.getTargetBytecode());
         assertFalse(config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(targetDirectory, config.getTargetDirectory());
@@ -276,7 +278,7 @@ public final class CompilerConfigurationTest {
             config.setSourceEncoding("Gutenberg");
         });
         assertThrows(UnsupportedOperationException.class, () -> {
-            config.setTargetBytecode(CompilerConfiguration.JDK5);
+            config.setTargetBytecode("11");
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setTargetDirectory(new File("path"));
@@ -290,5 +292,13 @@ public final class CompilerConfigurationTest {
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         });
+    }
+
+    @Test // GROOVY-10278
+    public void testTargetVersion() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5" , "6" , "7" , "8" , "9" , "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"};
+        String[] expect = {"11" , "11" , "11" , "11" , "11" , "11" , "11" , "11", "11", "11", "11", "11", "11" , "11", "11", "12", "13", "14", "15", "16", "17", "18", "19"};
+        assertArrayEquals(expect, Arrays.stream(inputs).map(v -> { config.setTargetBytecode(v); return config.getTargetBytecode(); }).toArray(String[]::new));
     }
 }
