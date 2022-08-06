@@ -19,6 +19,7 @@
 package org.apache.groovy.lang;
 
 import groovy.lang.GroovyObject;
+import org.codehaus.groovy.GroovyBugError;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -132,6 +133,13 @@ public class GroovyObjectHelper {
     private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
     private static final Lookup LOOKUP = MethodHandles.lookup();
     private static final Lookup NULL_LOOKUP = MethodHandles.lookup();
+
+    static {
+        if (NULL_LOOKUP == LOOKUP) {
+            // should never happen
+            throw new GroovyBugError("`MethodHandles.lookup()` returns the same `Lookup` instance");
+        }
+    }
 
     private static final ClassValue<AtomicReference<Lookup>> LOOKUP_MAP = new ClassValue<AtomicReference<Lookup>>() {
         @Override
