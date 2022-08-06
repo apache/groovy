@@ -46,10 +46,17 @@ public class GroovyObjectHelper {
         final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
         final AtomicReference<Lookup> lookupAtomicRef = LOOKUP_MAP.get(groovyObjectClass);
         Lookup lookup = lookupAtomicRef.get();
-        if (null != lookup) return Optional.of(lookup);
+        if (null != lookup) {
+            if (NULL_LOOKUP == lookup)
+                return Optional.empty();
 
-        if (groovyObject.getMetaClass().respondsTo(groovyObject, GET_LOOKUP_METHOD_NAME).isEmpty())
+            return Optional.of(lookup);
+        }
+
+        if (groovyObject.getMetaClass().respondsTo(groovyObject, GET_LOOKUP_METHOD_NAME).isEmpty()) {
+            lookupAtomicRef.set(NULL_LOOKUP);
             return Optional.empty();
+        }
 
         if (groovyObjectClass.isMemberClass() && Modifier.isStatic(groovyObjectClass.getModifiers())) {
             List<Class<?>> classList = new ArrayList<>(3);
@@ -124,6 +131,8 @@ public class GroovyObjectHelper {
 
     private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
     private static final Lookup LOOKUP = MethodHandles.lookup();
+    private static final Lookup NULL_LOOKUP = MethodHandles.lookup();
+
     private static final ClassValue<AtomicReference<Lookup>> LOOKUP_MAP = new ClassValue<AtomicReference<Lookup>>() {
         @Override
         protected AtomicReference<Lookup> computeValue(Class<?> type) {
