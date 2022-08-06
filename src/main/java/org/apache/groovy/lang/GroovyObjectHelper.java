@@ -35,9 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 4.0.0
  */
 public class GroovyObjectHelper {
-    private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
-    private static final Lookup LOOKUP = MethodHandles.lookup();
-
     /**
      * Get the {@link Lookup} instance of the {@link GroovyObject} instance
      *
@@ -123,6 +120,9 @@ public class GroovyObjectHelper {
     }
 
     private GroovyObjectHelper() {}
+
+    private static final String GET_LOOKUP_METHOD_NAME = "$getLookup";
+    private static final Lookup LOOKUP = MethodHandles.lookup();
     private static final ClassValue<AtomicReference<Lookup>> LOOKUP_MAP = new ClassValue<AtomicReference<Lookup>>() {
         @Override
         protected AtomicReference<Lookup> computeValue(Class<?> type) {
