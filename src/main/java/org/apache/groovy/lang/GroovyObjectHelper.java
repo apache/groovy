@@ -48,6 +48,9 @@ public class GroovyObjectHelper {
         Lookup lookup = lookupAtomicRef.get();
         if (null != lookup) return Optional.of(lookup);
 
+        if (groovyObject.getMetaClass().respondsTo(groovyObject, GET_LOOKUP_METHOD_NAME).isEmpty())
+            return Optional.empty();
+
         if (groovyObjectClass.isMemberClass() && Modifier.isStatic(groovyObjectClass.getModifiers())) {
             List<Class<?>> classList = new ArrayList<>(3);
             for (Class<?> clazz = groovyObjectClass; null != clazz; clazz = clazz.getEnclosingClass()) {
@@ -80,8 +83,6 @@ public class GroovyObjectHelper {
     }
 
     private static Lookup doLookup(GroovyObject groovyObject) {
-        if (groovyObject.getMetaClass().respondsTo(groovyObject, GET_LOOKUP_METHOD_NAME).isEmpty()) return null;
-
         MethodHandles.Lookup lookup;
         try {
             final Class<? extends GroovyObject> groovyObjectClass = groovyObject.getClass();
