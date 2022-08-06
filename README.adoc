@@ -28,7 +28,7 @@ The Groovy development team
 :noheader:
 :groovy-www: https://groovy-lang.org/
 :groovy-ci: https://ci.groovy-lang.org?guest=1
-:github-ci: https://github.com/apache/groovy/actions?query=branch%3Amaster+
+:github-ci: https://github.com/apache/groovy/actions?query=branch%3Amaster
 :sonarcloud: https://sonarcloud.io/dashboard?id=apache_groovy
 :jdk: https://www.oracle.com/technetwork/java/javase/downloads
 //:bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
