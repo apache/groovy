@@ -63,12 +63,15 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -566,7 +569,12 @@ public class ClassHelper {
             for (MethodNode mn : type.getAbstractMethods()) {
                 // ignore methods that will have an implementation
                 if (Traits.hasDefaultImplementation(mn)) continue;
-                if (OBJECT_TYPE.getDeclaredMethod(mn.getName(), mn.getParameters()) != null) continue;
+
+                final String name = mn.getName();
+                if (OBJECT_METHOD_NAME_SET.contains(name)) {
+                    // Avoid unnecessary checking for `Object` methods as possible as we could
+                    if (OBJECT_TYPE.getDeclaredMethod(name, mn.getParameters()) != null) continue;
+                }
 
                 // we have two methods, so no SAM
                 if (sam != null) return null;
@@ -629,4 +637,7 @@ public class ClassHelper {
 
         return source.getUnresolvedSuperClass();
     }
+
+    private static final Set<String> OBJECT_METHOD_NAME_SET =
+            Collections.unmodifiableSet(Arrays.stream(Object.class.getMethods()).map(m -> m.getName()).collect(Collectors.toSet()));
 }
