@@ -1489,6 +1489,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10720
+    void testOverloadedMethodWithArray() {
+        assertScript '''
+            Double[] array = new Double[1]
+            def stream = Arrays.stream(array) // stream(T[])
+            assert stream.map(d -> 'string').findFirst().get() == 'string'
+        '''
+    }
+
     // GROOVY-5883, GROOVY-6270
     void testClosureUpperBound() {
         assertScript '''

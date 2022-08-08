@@ -472,8 +472,9 @@ public abstract class StaticTypeCheckingSupport {
         if (NUMBER_TYPES.containsKey(type.redirect()) && NUMBER_TYPES.containsKey(toBeAssignedTo.redirect())) {
             return NUMBER_TYPES.get(type.redirect()) <= NUMBER_TYPES.get(toBeAssignedTo.redirect());
         }
-        if (type.isArray() && toBeAssignedTo.isArray()) {
-            return isAssignableTo(type.getComponentType(), toBeAssignedTo.getComponentType());
+        if (type.isArray() && toBeAssignedTo.isArray()) { // GROOVY-10720: check primitive to/from non-primitive
+            ClassNode sourceComponent = type.getComponentType(), targetComponent = toBeAssignedTo.getComponentType();
+            return (isPrimitiveType(sourceComponent) == isPrimitiveType(targetComponent)) && isAssignableTo(sourceComponent, targetComponent);
         }
         if (type.isDerivedFrom(GSTRING_TYPE) && isStringType(toBeAssignedTo)) {
             return true;
@@ -676,7 +677,10 @@ public abstract class StaticTypeCheckingSupport {
 
         if (left.isArray()) {
             if (right.isArray()) {
-                return checkCompatibleAssignmentTypes(left.getComponentType(), right.getComponentType(), rightExpression, false);
+                ClassNode leftComponent = left.getComponentType();
+                ClassNode rightComponent = right.getComponentType();
+                if (isPrimitiveType(leftComponent) != isPrimitiveType(rightComponent)) return false;
+                return checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
             }
             if (GeneralUtils.isOrImplements(right, Collection_TYPE) && !(rightExpression instanceof ListExpression)) {
                 GenericsType elementType = GenericsUtils.parameterizeType(right, Collection_TYPE).getGenericsTypes()[0];
