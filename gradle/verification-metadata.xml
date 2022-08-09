@@ -618,6 +618,11 @@
             <pgp value="517b94f8d0a46317a28d8ab30da8a5ec02d11ead"/>
          </artifact>
       </component>
+      <component group="net.sf.jopt-simple" name="jopt-simple" version="5.0.4">
+         <artifact name="jopt-simple-5.0.4.jar">
+            <pgp value="517b94f8d0a46317a28d8ab30da8a5ec02d11ead"/>
+         </artifact>
+      </component>
       <component group="net.sf.saxon" name="Saxon-HE" version="10.6">
          <artifact name="Saxon-HE-10.6.jar">
             <pgp value="4c5f68d09d42ba7fac888df9a929ea2321fdbf8f"/>
