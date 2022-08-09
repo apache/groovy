@@ -21,13 +21,10 @@ plugins {
 }
 
 performanceTests {
-    versions '1.8.9',
-            '2.0.8',
-            '2.1.9',
-            '2.2.2',
-            '2.3.10',
-            '2.3.11',
-            '2.4.7',
+    versions '2.4.21',
+            '2.5.18',
+            '3.0.12',
+            '4.0.4',
             'current'
 
     testFiles project.files("src/files")

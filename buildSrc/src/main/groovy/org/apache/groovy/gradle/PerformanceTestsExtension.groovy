@@ -83,12 +83,12 @@ class PerformanceTestsExtension {
                 it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
                 it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
             }
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : "org.codehaus.groovy:groovy:$v"))
+            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : (v.startsWith('4') ? "org.apache.groovy:groovy:$v" : "org.codehaus.groovy:groovy:$v")))
         }
         def outputFile = layout.buildDirectory.file("compilation-stats-${version}.csv")
         def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) {
             it.group = "Performance tests"
-            it.main = 'org.apache.groovy.perf.CompilerPerformanceTest'
+            it.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
             it.classpath(groovyConf, sourceSets.getByName('test').output)
             it.jvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxPermSize=512m']
             it.outputs.file(outputFile)
