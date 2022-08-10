@@ -44,7 +44,7 @@ public class CompilerPerformanceTest {
             if ("-cp".equals(arg)) {
                 isCp = true;
             } else if (isCp) {
-                for (String s : arg.split(":")) {
+                for (String s : arg.split(File.pathSeparator)) {
                     classpath.add(new File(s).toURI().toURL());
                 }
                 isCp = false;
