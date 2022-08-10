@@ -33,6 +33,46 @@ import static groovy.test.GroovyAssert.shouldFail
 final class InnerClassTest {
 
     @Test
+    void testAIC() {
+        assertScript '''
+            class C {
+            }
+
+            def c = new C() {
+                def m() { 1 }
+            }
+            assert c.m() == 1
+        '''
+    }
+
+    @Test // GROOVY-7370
+    void testVargsAIC() {
+        String pogo = '''
+            class C {
+                C(String... args) {
+                    strings = args
+                }
+                public String[] strings
+            }
+        '''
+
+        assertScript pogo + '''
+            def c = new C() { }
+            assert c.strings.length == 0
+        '''
+
+        assertScript pogo + '''
+            def c = new C('x') { }
+            assert c.strings.length == 1
+        '''
+
+        assertScript pogo + '''
+            def c = new C('x','y') { }
+            assert c.strings.length == 2
+        '''
+    }
+
+    @Test
     void testTimerAIC() {
         assertScript '''
             import java.util.concurrent.CountDownLatch
@@ -399,18 +439,6 @@ final class InnerClassTest {
 
             A a = new A()
             a.foo()
-        '''
-    }
-
-    @Test
-    void testAnonymousInnerClass() {
-        assertScript '''
-            class Foo {}
-
-            def x = new Foo(){
-                def bar() { 1 }
-            }
-            assert x.bar() == 1
         '''
     }
 
