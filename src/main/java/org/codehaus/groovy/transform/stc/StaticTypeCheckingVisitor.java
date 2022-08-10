@@ -1020,6 +1020,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 ClassNode lType = setterType.apply(setter);
                 ClassNode rType = getDeclaredOrInferredType(valueExpression);
+                if (lType.isArray() && valueExpression instanceof ListExpression) {
+                    rType = inferLoopElementType(rType).makeArray(); // GROOVY-7506
+                }
                 if (checkCompatibleAssignmentTypes(lType, rType, valueExpression, false)) {
                     methodTarget = setterCall.apply(castX(lType, valueExpression));
                     if (methodTarget != null) {

@@ -36,7 +36,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testArrayElementTypeInference() {
         shouldFailWithMessages '''
             String[] strings = ['a','b','c']
-            int str = strings[0]
+            int i = strings[0]
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
@@ -87,67 +87,67 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     void testAssignValueInArrayWithCorrectType() {
         assertScript '''
-            int[] arr2 = [1, 2, 3]
-            arr2[1] = 4
+            int[] array = [1, 2, 3]
+            array[1] = 4
         '''
     }
 
     void testAssignValueInArrayWithWrongType() {
         shouldFailWithMessages '''
-            int[] arr2 = [1, 2, 3]
-            arr2[1] = "One"
+            int[] array = [1, 2, 3]
+            array[1] = "One"
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testBidimensionalArray() {
         assertScript '''
-            int[][] arr2 = new int[1][]
-            arr2[0] = [1,2]
+            int[][] array = new int[1][]
+            array[0] = [1,2]
         '''
     }
 
     void testBidimensionalArrayWithInitializer() {
         shouldFailWithMessages '''
-            int[][] arr2 = new Object[1][]
+            int[][] array = new Object[1][]
         ''',
         'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
     }
 
     void testBidimensionalArrayWithWrongSubArrayType() {
         shouldFailWithMessages '''
-            int[][] arr2 = new int[1][]
-            arr2[0] = ['1']
+            int[][] array = new int[1][]
+            array[0] = ['1']
         ''',
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
     void testForLoopWithArrayAndUntypedVariable() {
         assertScript '''
-            String[] arr = ['1','2','3']
-            for (i in arr) { }
+            String[] array = ['1','2','3']
+            for (i in array) { }
         '''
     }
 
     void testForLoopWithArrayAndWrongVariableType() {
         shouldFailWithMessages '''
-            String[] arr = ['1','2','3']
-            for (int i in arr) { }
+            String[] array = ['1','2','3']
+            for (int i in array) { }
         ''',
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
 
     void testJava5StyleForLoopWithArray() {
         assertScript '''
-            String[] arr = ['1','2','3']
-            for (String i : arr) { }
+            String[] array = ['1','2','3']
+            for (String i : array) { }
         '''
     }
 
     void testJava5StyleForLoopWithArrayAndIncompatibleType() {
         shouldFailWithMessages '''
-            String[] arr = ['1','2','3']
-            for (int i : arr) { }
+            String[] array = ['1','2','3']
+            for (int i : array) { }
         ''',
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
@@ -180,7 +180,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<Integer> a = [1, 3, 5]
 
-            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
                 assert type == make(List)
                 assert type.genericsTypes.length == 1
@@ -201,7 +201,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
             def sc = new SpecialCollection()
 
-            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
                 assert type == make(List)
                 assert type.genericsTypes.length == 1
@@ -283,26 +283,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
             Map map = ['a':1, 'b':2]
-        '''
-    }
-
-    void testAmbiguousCallWithVargs() {
-        assertScript '''
-            int sum(int x) { 1 }
-            int sum(int... args) {
-                0
-            }
-            assert sum(1) == 1
-        '''
-    }
-
-    void testAmbiguousCallWithVargs2() {
-        assertScript '''
-            int sum(int x) { 1 }
-            int sum(int y, int... args) {
-                0
-            }
-            assert sum(1) == 1
         '''
     }
 
@@ -592,6 +572,38 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7506
+    void testShouldAllowArrayAssignment6() {
+        String pogo = '''
+            class C {
+                public String[] strings
+                void setP(String[] strings) {
+                    this.strings = strings
+                }
+            }
+        '''
+
+        assertScript pogo + '''
+            def list = ['foo','bar']
+
+            def c = new C()
+            c.p = list // implicit conversion
+            assert c.strings == ['foo','bar']
+        '''
+
+        assertScript pogo + '''
+            def c = new C()
+            c.p = ['foo','bar']
+            assert c.strings == ['foo','bar']
+        '''
+
+        assertScript pogo + '''
+            def c = new C()
+            c.p = ['foo', 123 ]
+            assert c.strings == ['foo','123']
+        '''
+    }
+
     void testListPlusEquals() {
         assertScript '''
             List<String> list = ['a','b']
@@ -707,7 +719,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             })
             Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it%2 == 0 }
 
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
             Integer i = list.find { int it -> it % 2 == 0 }
