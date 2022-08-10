@@ -27,5 +27,8 @@ performanceTests {
             '4.0.4',
             'current'
 
-    testFiles project.files("src/files")
+    testFiles project.files("src/files") +
+            project.files('src/jmh/groovy/org/apache/groovy/bench/Ackermann.groovy') +
+            project.files('src/jmh/groovy/org/apache/groovy/bench/Ary.groovy') +
+            project.files('src/jmh/groovy/org/apache/groovy/bench/Fibo.groovy')
 }
