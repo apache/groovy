@@ -48,7 +48,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -236,50 +235,47 @@ public class InvocationWriter {
         return isThis[0];
     }
 
-    private boolean lastIsArray(final List<Expression> argumentList, final int pos) {
-        Expression last = argumentList.get(pos);
-        ClassNode type = controller.getTypeChooser().resolveType(last, controller.getClassNode());
+    private boolean isArray(final Expression expression) {
+        if (isNullConstant(expression)) return true; // null is an array argument for variadic parameter
+        ClassNode type = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
         return type.isArray();
     }
 
-    // load arguments
-    protected void loadArguments(final List<Expression> argumentList, final Parameter[] para) {
-        if (para.length == 0) return;
-        ClassNode lastParaType = para[para.length - 1].getOriginType();
+    protected void loadArguments(final List<Expression> arguments, final Parameter[] parameters) {
+        if (parameters.length == 0) return;
+        int nthParameter = parameters.length - 1;
+        ClassNode lastType = parameters[nthParameter].getOriginType();
+
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        if (lastParaType.isArray() && (argumentList.size() > para.length
-                || argumentList.size() == para.length - 1 || !lastIsArray(argumentList, para.length - 1))) {
-            int stackLen = operandStack.getStackLength() + argumentList.size();
-            MethodVisitor mv = controller.getMethodVisitor();
-            controller.setMethodVisitor(mv);
-            // varg call
-            // first parameters as usual
-            for (int i = 0, n = para.length - 1; i < n; i += 1) {
-                argumentList.get(i).visit(acg);
-                operandStack.doGroovyCast(para[i].getType());
+        int stackLen = operandStack.getStackLength() + arguments.size();
+        boolean varg = lastType.isArray() && (
+                arguments.size() > parameters.length
+                || arguments.size() == parameters.length - 1
+                || !isArray(arguments.get(arguments.size() - 1)));
+
+        for (int i = 0, n = varg ? nthParameter : arguments.size(); i < n; i += 1) {
+            Expression argument = arguments.get(i);
+            argument.visit(acg);
+            if (!isNullConstant(argument)) {
+                operandStack.doGroovyCast(parameters[i].getType());
             }
-            // last parameters wrapped in an array
-            List<Expression> lastParams = new LinkedList<>();
-            for (int i = para.length - 1, n = argumentList.size(); i < n; i += 1) {
-                lastParams.add(argumentList.get(i));
+        }
+
+        if (varg) {
+            // last arguments wrapped in an array
+            List<Expression> lastArgs = new ArrayList<>();
+            for (int i = nthParameter, n = arguments.size(); i < n; i += 1) {
+                lastArgs.add(arguments.get(i));
             }
-            ArrayExpression array = new ArrayExpression(
-                    lastParaType.getComponentType(),
-                    lastParams
-            );
-            array.visit(acg);
+            new ArrayExpression(lastType.getComponentType(), lastArgs).visit(acg);
+
             // adjust stack length
             while (operandStack.getStackLength() < stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
-            if (argumentList.size() == para.length - 1) {
+            if (arguments.size() == nthParameter) {
                 operandStack.remove(1);
-            }
-        } else {
-            for (int i = 0, n = argumentList.size(); i < n; i += 1) {
-                argumentList.get(i).visit(acg);
-                operandStack.doGroovyCast(para[i].getType());
             }
         }
     }
@@ -621,23 +617,23 @@ public class InvocationWriter {
 
     public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
         controller.getCompileStack().pushInSpecialConstructorCall();
-        visitSpecialConstructorCall(call);
+
+        if (!controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) {
+            ClassNode callType = controller.getClassNode();
+            if (call.isSuperCall()) callType = callType.getSuperClass();
+            List<ConstructorNode> constructors = sortConstructors(call, callType);
+
+            if (!makeDirectConstructorCall(constructors, call, callType)) {
+                makeMOPBasedConstructorCall(constructors, call, callType);
+            }
+        }
+
         controller.getCompileStack().pop();
     }
 
-    private void visitSpecialConstructorCall(final ConstructorCallExpression call) {
-        if (controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) return;
-        ClassNode callNode = controller.getClassNode();
-        if (call.isSuperCall()) callNode = callNode.getSuperClass();
-        List<ConstructorNode> constructors = sortConstructors(call, callNode);
-        if (!makeDirectConstructorCall(constructors, call, callNode)) {
-            makeMOPBasedConstructorCall(constructors, call, callNode);
-        }
-    }
-
-    private static List<ConstructorNode> sortConstructors(final ConstructorCallExpression call, final ClassNode callNode) {
+    private static List<ConstructorNode> sortConstructors(final ConstructorCallExpression call, final ClassNode callType) {
         // sort in a new list to prevent side effects
-        List<ConstructorNode> constructors = new ArrayList<>(callNode.getDeclaredConstructors());
+        List<ConstructorNode> constructors = new ArrayList<>(callType.getDeclaredConstructors());
         constructors.sort((c0, c1) -> {
             String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
             String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
@@ -646,7 +642,7 @@ public class InvocationWriter {
         return constructors;
     }
 
-    private boolean makeDirectConstructorCall(final List<ConstructorNode> constructors, final ConstructorCallExpression call, final ClassNode callNode) {
+    private boolean makeDirectConstructorCall(final List<ConstructorNode> constructors, final ConstructorCallExpression call, final ClassNode callType) {
         if (!controller.isConstructor()) return false;
 
         Expression arguments = call.getArguments();
@@ -657,27 +653,22 @@ public class InvocationWriter {
             argumentList = new ArrayList<>();
             argumentList.add(arguments);
         }
-        for (Expression expression : argumentList) {
-            if (expression instanceof SpreadExpression) return false;
+        for (Expression argument : argumentList) {
+            if (argument instanceof SpreadExpression) return false;
         }
 
-        ConstructorNode cn = getMatchingConstructor(constructors, argumentList);
-        if (cn == null) return false;
+        ConstructorNode ctor = getMatchingConstructor(constructors, argumentList);
+        if (ctor == null) return false;
+
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        Parameter[] params = cn.getParameters();
 
         mv.visitVarInsn(ALOAD, 0);
-        for (int i = 0, n = params.length; i < n; i += 1) {
-            Expression expression = argumentList.get(i);
-            expression.visit(controller.getAcg());
-            if (!isNullConstant(expression)) {
-                operandStack.doGroovyCast(params[i].getType());
-            }
-            operandStack.remove(1);
-        }
-        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
-        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
+        int mark = operandStack.getStackLength();
+        loadArguments(argumentList, ctor.getParameters());
+        operandStack.remove(operandStack.getStackLength() - mark);
+        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, ctor.getParameters());
+        mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callType), "<init>", descriptor, false);
 
         return true;
     }
