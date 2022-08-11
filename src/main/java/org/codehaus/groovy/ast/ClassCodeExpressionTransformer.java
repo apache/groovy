@@ -42,6 +42,29 @@ import java.util.Map;
  */
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
 
+    /**
+     * <strong>GOTCHA</strong>: This method does not visit Expressions within Closures, for historical
+     * reason.  If you want those Expressions to be visited, you can do this:
+     * <pre>
+     * {@code
+     * public class YourTransformer extends ClassCodeExpressionTransformer {
+     *  ...
+     *
+     *  @Override
+     *  public Expression transform(final Expression expr) {
+     *    if (expr instanceof ClosureExpression) {
+     *      expr.visit(this);
+     *
+     *      return expr;
+     *    }
+     *
+     *    // ... your custom instanceof + expression transformation
+     *    // ...
+     *  }
+     * }
+     * }
+     * </pre>
+     */
     @Override
     public Expression transform(final Expression expr) {
         if (expr == null) return null;
