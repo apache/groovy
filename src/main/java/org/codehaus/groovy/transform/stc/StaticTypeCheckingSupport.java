@@ -1226,19 +1226,20 @@ public abstract class StaticTypeCheckingSupport {
                             // equivalent, for example String#compareTo(Object) and
                             // String#compareTo(String) -- in that case, the Object
                             // version is marked as synthetic
-                            if (one.isSynthetic() && !two.isSynthetic()) {
+                            if (isSynthetic(one, two)) {
                                 toBeRemoved.add(one);
-                            } else if (two.isSynthetic() && !one.isSynthetic()) {
+                            } else if (isSynthetic(two, one)) {
                                 toBeRemoved.add(two);
                             }
                         }
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
+                            // GROOVY-8638, GROOVY-10120: unless bridge method (synthetic variant) overrides
                             if (twoDC.isInterface() ? oneDC.implementsInterface(twoDC) : oneDC.isDerivedFrom(twoDC)) {
-                                toBeRemoved.add(two);
+                                toBeRemoved.add(isSynthetic(one, two) ? one : two);
                             } else if (oneDC.isInterface() ? (disjoint ? twoDC.implementsInterface(oneDC) : twoDC.isInterface()) : twoDC.isDerivedFrom(oneDC)) {
-                                toBeRemoved.add(one);
+                                toBeRemoved.add(isSynthetic(two, one) ? two : one);
                             }
                         }
                     }
@@ -1257,6 +1258,11 @@ public abstract class StaticTypeCheckingSupport {
             return isCovariant(one.getComponentType(), two.getComponentType());
         }
         return (one.isDerivedFrom(two) || one.implementsInterface(two));
+    }
+
+    private static boolean isSynthetic(final MethodNode one, final MethodNode two) {
+        return ((one.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)
+            && ((two.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0);
     }
 
     /**
