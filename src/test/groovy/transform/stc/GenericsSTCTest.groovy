@@ -323,6 +323,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8638, GROOVY-10120
+    void testReturnTypeInferenceWithMethodGenerics18() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        String guava = '''
+            @Grab('com.google.guava:guava:31.1-jre')
+            import com.google.common.collect.*
+        '''
+
+        assertScript guava + '''
+            ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
+
+            Map<String, Collection<Integer>> map = mmap.asMap()
+            Set<Map.Entry<String, Collection<Integer>>> set = map.entrySet()
+            Iterator<Map.Entry<String, Collection<Integer>>> it = set.iterator()
+            while (it.hasNext()) { Map.Entry<String, Collection<Integer>> entry = it.next()
+                Collection<Integer> values = entry.value
+            }
+        '''
+
+        shouldFailWithMessages guava + '''
+            ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
+            Map<String, Set<Integer>> map = mmap.asMap() // ArrayListMultimap#asMap() is bridge and lacks generics
+        ''',
+        'Cannot assign java.util.Map <String, java.util.Collection> to: java.util.Map <String, Set>'
+    }
+
     @NotYetImplemented // GROOVY-10339
     void testReturnTypeInferenceWithMethodGenerics21() {
         for (type in ['Character', 'Integer']) {
