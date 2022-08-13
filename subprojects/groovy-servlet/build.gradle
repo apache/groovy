@@ -27,14 +27,14 @@ dependencies {
     }
 
     api rootProject  // ServletBinding extends Binding...
-    implementation project(':groovy-xml') // needed for MarkupBuilder
-    implementation project(':groovy-templates') // needed by TemplateServlet
+    implementation projects.groovyXml // needed for MarkupBuilder
+    implementation projects.groovyTemplates // needed by TemplateServlet
 
     testImplementation("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
     testImplementation("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
         transitive = false
     }
     testImplementation "jmock:jmock:${versions.jmock}"
-    testImplementation project(':groovy-json')
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyJson
+    testImplementation projects.groovyTest
 }

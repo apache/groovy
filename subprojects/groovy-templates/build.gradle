@@ -22,8 +22,8 @@ plugins {
 
 dependencies {
     api rootProject // Template uses Writable...
-    implementation project(':groovy-xml')
-    testImplementation project(':groovy-test')
+    implementation projects.groovyXml
+    testImplementation projects.groovyTest
     testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }

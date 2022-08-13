@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    stressTestImplementation project(':groovy-test')
+    stressTestImplementation projects.groovyTest
 }
 
 sonarqube {

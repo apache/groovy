@@ -23,8 +23,8 @@ plugins {
 dependencies {
     api rootProject // ASTMatcher uses ASTNode
 
-    testImplementation project(':groovy-test')
-    testImplementation project(':groovy-templates')
+    testImplementation projects.groovyTest
+    testImplementation projects.groovyTemplates
     testImplementation("org.spockframework:spock-junit4:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }

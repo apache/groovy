@@ -22,10 +22,10 @@ plugins {
 
 dependencies {
     implementation rootProject
-    implementation project(':groovy-console')
-    implementation project(':groovy-templates')
-    implementation project(':groovy-xml')
-    testImplementation project(':groovy-test')
+    implementation projects.groovyConsole
+    implementation projects.groovyTemplates
+    implementation projects.groovyXml
+    testImplementation projects.groovyTest
     implementation("jline:jline:${versions.jline}") {
         exclude(group: 'junit', module: 'junit')
     }

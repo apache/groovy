@@ -25,13 +25,13 @@ dependencies {
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation "org.abego.treelayout:org.abego.treelayout.core:${versions.treelayout}"
-    implementation project(':groovy-swing')
-    implementation project(':groovy-templates')
+    implementation projects.groovySwing
+    implementation projects.groovyTemplates
     implementation ("org.apache.ivy:ivy:${versions.ivy}") {
         transitive = false
     }
-    testImplementation project(':groovy-test')
-    testImplementation testFixtures(project(':groovy-swing'))
+    testImplementation projects.groovyTest
+    testImplementation testFixtures(projects.groovySwing)
 
     groovyCompilerClasspath(project(":")) {
         capabilities {

@@ -22,7 +22,7 @@ plugins {
 
 dependencies {
     api rootProject // ASTMatcher use ASTNode...
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyTest
 }
 
 groovyLibrary {

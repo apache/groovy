@@ -24,7 +24,7 @@ plugins {
 
 dependencies {
     implementation rootProject
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyTest
 }
 
 tasks.withType(Test).configureEach {
