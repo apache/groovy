@@ -36,7 +36,7 @@ dependencies {
     testImplementation 'net.jqwik:jqwik:1.6.5'
     testRuntimeOnly "org.junit.platform:junit-platform-engine:${versions.junit5Platform}"
     testRuntimeOnly "org.junit.platform:junit-platform-runner:${versions.junit5Platform}"
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyTest
 }
 
 tasks.named('test') {

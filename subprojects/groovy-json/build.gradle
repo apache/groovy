@@ -23,8 +23,8 @@ plugins {
 dependencies {
     api rootProject // JsonBuilder extends GroovyObjectSupport...
 
-    testImplementation project(':groovy-test')
-    testImplementation project(':groovy-dateutil')
+    testImplementation projects.groovyTest
+    testImplementation projects.groovyDateutil
     testImplementation 'net.javacrumbs.json-unit:json-unit:2.35.0'
 
     testRuntimeOnly project(':'), {
@@ -33,7 +33,7 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
-    testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
+    testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
     testRuntimeOnly 'com.google.code.gson:gson:2.9.0' // json-unit requires gson, jackson1 or jackson2
 }
 

@@ -107,15 +107,15 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-logging'
         }
     }
-    doc project(":groovy-all")
-    docgeneratorTool project(":groovy-docgenerator")
+    doc projects.groovyAll
+    docgeneratorTool projects.groovyDocgenerator
 }
 
 def docGDK = tasks.register('docGDK', DocGDK) {
     classpath.from configurations.docgeneratorTool
     classes.set(distributionExtension.docgeneratorClasses)
-    resources.from project(':groovy-docgenerator').file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    resources.from project(':groovy-docgenerator').file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
+    resources.from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
+    resources.from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
 }
 
 def distBin = tasks.register('distBin', Zip) {

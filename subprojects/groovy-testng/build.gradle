@@ -29,7 +29,7 @@ dependencies {
         exclude(group: 'org.apache.ant', module: 'ant')
         exclude(group: 'org.yaml', module: 'snakeyaml')
     }
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyTest
 }
 
 groovyLibrary {
