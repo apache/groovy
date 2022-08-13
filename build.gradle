@@ -111,12 +111,12 @@ dependencies {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 
-    testImplementation project(':groovy-ant')
-    testImplementation project(':groovy-xml')
-    testImplementation project(':groovy-json')
-    testImplementation project(':groovy-test')
-    testImplementation project(':groovy-macro')
-    testImplementation project(':groovy-dateutil')
+    testImplementation projects.groovyAnt
+    testImplementation projects.groovyXml
+    testImplementation projects.groovyJson
+    testImplementation projects.groovyTest
+    testImplementation projects.groovyMacro
+    testImplementation projects.groovyDateutil
     testImplementation "jmock:jmock:${versions.jmock}"
     testImplementation "jmock:jmock-cglib:${versions.jmock}"
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
@@ -126,8 +126,8 @@ dependencies {
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    testFixturesImplementation project(':groovy-xml')
-    testFixturesImplementation project(':groovy-test')
+    testFixturesImplementation projects.groovyXml
+    testFixturesImplementation projects.groovyTest
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"

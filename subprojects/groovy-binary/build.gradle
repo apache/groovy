@@ -96,7 +96,7 @@ distribution {
                 fileMode = 0755
                 exclude 'groovy.icns'
             }
-            from project(':groovy-docgenerator').file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
+            from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
         }
         into('licenses') {
             from rootProject.file('licenses')

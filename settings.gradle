@@ -37,6 +37,8 @@ gradleEnterprise {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 def subprojects = [
         'groovy-all',
         'groovy-ant',

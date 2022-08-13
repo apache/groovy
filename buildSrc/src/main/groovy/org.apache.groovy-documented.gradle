@@ -38,8 +38,8 @@ configurations {
 }
 
 dependencies {
-    groovydocClasspath project(":groovy-groovydoc")
-    groovydocClasspath project(":groovy-ant")
+    groovydocClasspath projects.groovyGroovydoc
+    groovydocClasspath projects.groovyAnt
 }
 
 tasks.withType(Javadoc).configureEach {

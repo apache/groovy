@@ -22,10 +22,10 @@ plugins {
 
 dependencies {
     implementation rootProject
-    implementation project(':groovy-templates')
+    implementation projects.groovyTemplates
     implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    testImplementation project(':groovy-test')
+    testImplementation projects.groovyTest
 }
 
 plugins.withId('eclipse') {
