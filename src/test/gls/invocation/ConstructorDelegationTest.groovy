@@ -18,12 +18,17 @@
  */
 package gls.invocation
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.control.CompilationFailedException
+import org.junit.Test
 
-class ConstructorDelegationTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ConstructorDelegationTest {
+
+    @Test
     void testThisCallWithParameter() {
-        assertScript """
+        assertScript '''
             class A {
                 def foo
                 A(String x){foo=x}
@@ -31,11 +36,12 @@ class ConstructorDelegationTest extends CompilableTestSupport {
             }
             def a = new A()
             assert a.foo == "bar"
-        """
+        '''
     }
 
+    @Test
     void testThisCallWithoutParameter() {
-        assertScript """
+        assertScript '''
             class A {
                 def foo
                 A(String x){this(); foo=x}
@@ -43,11 +49,12 @@ class ConstructorDelegationTest extends CompilableTestSupport {
             }
             def a = new A("foo")
             assert a.foo == "foo"
-        """
+        '''
     }
 
+    @Test
     void testThisConstructorCallNotOnFirstStmt() {
-        shouldNotCompile """
+        shouldFail CompilationFailedException, '''
             class ThisConstructorCall {
                 public ThisConstructorCall() {
                     println 'dummy first statement'
@@ -58,11 +65,12 @@ class ConstructorDelegationTest extends CompilableTestSupport {
                 }
             }
             1
-        """
+        '''
     }
 
+    @Test
     void testSuperConstructorCallNotOnFirstStmt() {
-        shouldNotCompile """
+        shouldFail CompilationFailedException, '''
             class SuperConstructorCall {
                 public SuperConstructorCall() {
                     println 'dummy first statement'
@@ -70,33 +78,32 @@ class ConstructorDelegationTest extends CompilableTestSupport {
                 }
             }
             1
-        """
+        '''
     }
 
+    @Test
     void testConstructorDelegationWithThisOrSuperInArgs() {
-        def scriptStr
         // all 4 cases below were compiling earlier but giving VerifyError at runtime
-        scriptStr = """
+
+        shouldFail CompilationFailedException, '''
             class MyClosure3128V1 extends Closure {
                 MyClosure3128V1() {
                     super(this)
                 }
                 void run() { println 'running' }
             }
-        """
-        shouldNotCompile(scriptStr)
+        '''
 
-        scriptStr = """
+        shouldFail CompilationFailedException, '''
             class MyClosure3128V2 extends Closure {
                 MyClosure3128V2() {
                     super(super)
                 }
                 void run() { println 'running' }
             }
-        """
-        shouldNotCompile(scriptStr)
+        '''
 
-        scriptStr = """
+        shouldFail CompilationFailedException, '''
             class MyClosure3128V3 extends Closure {
                 MyClosure3128V3() {
                     this(this)
@@ -104,10 +111,9 @@ class ConstructorDelegationTest extends CompilableTestSupport {
                 MyClosure3128V3(owner) {}
                 void run() { println 'running' }
             }
-        """
-        shouldNotCompile(scriptStr)
+        '''
 
-        scriptStr = """
+        shouldFail CompilationFailedException, '''
             class MyClosure3128V4 extends Closure {
                 MyClosure3128V4() {
                     this(super)
@@ -115,12 +121,11 @@ class ConstructorDelegationTest extends CompilableTestSupport {
                 MyClosure3128V4(owner) {}
                 void run() { println 'running' }
             }
-        """
-        shouldNotCompile(scriptStr)
+        '''
     }
 
-    // GROOVY-6618
-    void testVarsConstructor() {
+    @Test // GROOVY-6618
+    void testVariadicConstructor() {
         assertScript '''
             class Foo {
                 public info
@@ -129,6 +134,7 @@ class ConstructorDelegationTest extends CompilableTestSupport {
             }
             assert new Foo().info == [1]
         '''
+
         assertScript '''
             class Foo {
                 public info
@@ -137,6 +143,7 @@ class ConstructorDelegationTest extends CompilableTestSupport {
             }
             assert new Foo().info == null
         '''
+
         assertScript '''
             class Foo {
                 public info
@@ -145,6 +152,16 @@ class ConstructorDelegationTest extends CompilableTestSupport {
             }
             assert new Foo().info == [1,2,3]
         '''
+
+        assertScript '''
+            class Foo {
+                public info
+                Foo(String s,Integer[] a){info=a}
+                Foo() {this("foo",new Integer[]{1,2,3})}
+            }
+            assert new Foo().info == [1,2,3]
+        '''
+
         assertScript '''
             class Foo {
                 public info

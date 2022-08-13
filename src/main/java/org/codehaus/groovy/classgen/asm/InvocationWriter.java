@@ -60,6 +60,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -514,34 +515,42 @@ public class InvocationWriter {
         makeCall(call, receiver, messageName, call.getArguments(), InvocationWriter.invokeStaticMethod, false, false, false);
     }
 
+    //--------------------------------------------------------------------------
+
+    public void writeInvokeConstructor(final ConstructorCallExpression call) {
+        if (writeDirectConstructorCall(call)) return;
+        if (writeAICCall              (call)) return;
+        writeNormalConstructorCall(call);
+    }
+
     private boolean writeDirectConstructorCall(final ConstructorCallExpression call) {
         if (!controller.isFastPath()) return false;
 
         OptimizingStatementWriter.StatementMeta meta = call.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
-        ConstructorNode cn = null;
-        if (meta != null) cn = (ConstructorNode) meta.target;
-        if (cn == null) return false;
+        ConstructorNode ctor = meta != null ? (ConstructorNode) meta.target : null;
+        if (ctor == null) return false;
 
-        String ownerDescriptor = prepareConstructorCall(cn);
-        TupleExpression args = makeArgumentList(call.getArguments());
-        loadArguments(args.getExpressions(), cn.getParameters());
-        finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
+        List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
+
+        loadArguments(args, ctor.getParameters());
+        String ownerDescriptor = prepareConstructorCall(ctor);
+        finnishConstructorCall(ctor, ownerDescriptor, args.size());
 
         return true;
     }
 
     protected String prepareConstructorCall(final ConstructorNode cn) {
-        String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
+        String type = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitTypeInsn(NEW, owner);
+        mv.visitTypeInsn(NEW, type);
         mv.visitInsn(DUP);
-        return owner;
+        return type;
     }
 
-    protected void finnishConstructorCall(final ConstructorNode cn, final String ownerDescriptor, final int argsToRemove) {
-        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+    protected void   finnishConstructorCall(final ConstructorNode cn, final String ownerDescriptor, final int argsToRemove) {
+        String signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc, false);
+        mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", signature, false);
 
         controller.getOperandStack().remove(argsToRemove);
         controller.getOperandStack().push(cn.getDeclaringClass());
@@ -561,21 +570,14 @@ public class InvocationWriter {
         controller.getCallSiteWriter().makeCallSite(receiver, CallSiteWriter.CONSTRUCTOR, arguments, false, false, false, false);
     }
 
-    public void writeInvokeConstructor(final ConstructorCallExpression call) {
-        if (writeDirectConstructorCall(call)) return;
-        if (writeAICCall(call)) return;
-        writeNormalConstructorCall(call);
-    }
-
     protected boolean writeAICCall(final ConstructorCallExpression call) {
         if (!call.isUsingAnonymousInnerClass()) return false;
-        ConstructorNode cn = call.getType().getDeclaredConstructors().get(0);
-        OperandStack os = controller.getOperandStack();
 
-        String ownerDescriptor = prepareConstructorCall(cn);
+        ConstructorNode ctor = call.getType().getDeclaredConstructors().get(0);
+
+        String ownerDescriptor = prepareConstructorCall(ctor);
 
         List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
-        Parameter[] params = cn.getParameters();
         // if a this appears as parameter here, then it should be
         // not static, unless we are in a static method. But since
         // ACG#visitVariableExpression does the opposite for this case, we
@@ -583,19 +585,19 @@ public class InvocationWriter {
         // sine visiting a method call or property with implicit this will push
         // a new value for this again.
         controller.getCompileStack().pushImplicitThis(true);
-        for (int i = 0, n = params.length; i < n; i += 1) {
-            Parameter p = params[i];
-            Expression arg = args.get(i);
+        int i = 0; Parameter[] params = ctor.getParameters();
+        for (Expression arg : args) {
+            Parameter p = params[Math.min(i++, params.length)];
             if (arg instanceof VariableExpression) {
                 VariableExpression var = (VariableExpression) arg;
                 loadVariableWithReference(var);
             } else {
                 arg.visit(controller.getAcg());
             }
-            os.doGroovyCast(p.getType());
+            controller.getOperandStack().doGroovyCast(p.getType());
         }
         controller.getCompileStack().popImplicitThis();
-        finnishConstructorCall(cn, ownerDescriptor, args.size());
+        finnishConstructorCall(ctor, ownerDescriptor, args.size());
         return true;
     }
 
@@ -606,6 +608,8 @@ public class InvocationWriter {
             ClosureWriter.loadReference(var.getName(), controller);
         }
     }
+
+    //--------------------------------------------------------------------------
 
     public final void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
         makeSingleArgumentCall(receiver, message, arguments, false);
@@ -657,7 +661,21 @@ public class InvocationWriter {
             if (argument instanceof SpreadExpression) return false;
         }
 
-        ConstructorNode ctor = getMatchingConstructor(constructors, argumentList);
+        ConstructorNode ctor = null;
+        ConstructorNode varg = null;
+        int nArguments = argumentList.size();
+        for (ConstructorNode constructor : constructors) {
+            int nParameters = constructor.getParameters().length;
+            if (nArguments == nParameters) {
+                if (ctor == null) ctor = constructor;
+                else return false; // ambiguous match
+            } else if (isVargs(constructor.getParameters())
+                    && (nArguments == nParameters - 1 || nArguments > nParameters)) {
+                if (varg == null) varg = constructor;
+                else return false; // ambiguous match
+            }
+        }
+        if (ctor == null) ctor = varg;
         if (ctor == null) return false;
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -810,23 +828,6 @@ public class InvocationWriter {
         operandStack.doGroovyCast(type);
         operandStack.swap();
         operandStack.remove(2);
-    }
-
-    // we match only on the number of arguments, not anything else
-    private static ConstructorNode getMatchingConstructor(final List<ConstructorNode> constructors, final List<Expression> argumentList) {
-        ConstructorNode lastMatch = null;
-        for (ConstructorNode cn : constructors) {
-            Parameter[] params = cn.getParameters();
-            // if number of parameters does not match we have no match
-            if (argumentList.size() != params.length) continue;
-            if (lastMatch == null) {
-                lastMatch = cn;
-            } else {
-                // we already had a match so we don't make a direct call at all
-                return null;
-            }
-        }
-        return lastMatch;
     }
 
     /**
