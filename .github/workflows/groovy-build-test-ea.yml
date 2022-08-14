@@ -43,5 +43,3 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk
         timeout-minutes: 60
-        env:
-          GRADLE_SCANS_ACCEPT: yes
