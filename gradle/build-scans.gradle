@@ -19,7 +19,7 @@
 
 def acceptFile = new File(gradle.gradleUserHomeDir, "gradle-scans-license-agree.txt")
 def env = System.getenv()
-boolean isCI = env.CI || env.TRAVIS || env.TEAMCITY_VERSION
+boolean isCI = env.CI || env.TRAVIS || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
 boolean hasAccepted = isCI || env.GRADLE_SCANS_ACCEPT=='yes' || acceptFile.exists() && acceptFile.text.trim() == 'yes'
 boolean hasRefused = env.GRADLE_SCANS_ACCEPT=='no' || acceptFile.exists() && acceptFile.text.trim() == 'no'
 
