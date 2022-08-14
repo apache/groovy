@@ -318,6 +318,28 @@ final class DefaultTypeTransformationTest {
         assert      G == N
     }
 
+    @Test
+    void testPrimitiveArrayToUnmodifiableList() {
+        int[] nums = [1, 3, 3, 5]
+        def numList = DefaultTypeTransformation.primitiveArrayToUnmodifiableList(nums)
+        assert numList.get(1) == 3
+        assert numList.contains(1)
+        assert numList.contains(3)
+        assert numList.contains(5)
+        assert !numList.contains(2)
+        assert numList.indexOf(1) == 0
+        assert numList.indexOf(3) == 1
+        assert numList.indexOf(5) == 3
+        assert numList.indexOf(2) == -1
+        assert numList.lastIndexOf(2) == -1
+        assert numList.lastIndexOf(3) == 2
+        assert numList.containsAll([5,3,1])
+        assert !numList.containsAll([5,3,2])
+        assert !numList.containsAll([4,3,1])
+        assert !numList.isEmpty()
+        assert numList.size() == 4
+    }
+
     //--------------------------------------------------------------------------
 
     private static void checkCompareToSymmetricSmallerThan(a, b) {
