@@ -14932,7 +14932,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Byte> toSet(byte[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -14945,7 +14945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Boolean> toSet(boolean[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -14958,7 +14958,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Character> toSet(char[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -14971,7 +14971,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Short> toSet(short[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -14984,7 +14984,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Integer> toSet(int[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -14997,7 +14997,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Long> toSet(long[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -15010,7 +15010,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Float> toSet(float[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
@@ -15023,7 +15023,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static Set<Double> toSet(double[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToList(array));
+        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
     }
 
     /**
