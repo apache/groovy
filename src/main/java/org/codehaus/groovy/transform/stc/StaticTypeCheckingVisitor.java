@@ -4519,15 +4519,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (isArrayOp(op)) {
-            // using getPNR() to ignore generics at this point
-            // and a different binary expression not to pollute the AST
-            BinaryExpression newExpr = binX(leftExpression, expr.getOperation(), rightExpression);
-            newExpr.setSourcePosition(expr);
-            MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
-            if (method != null && implementsInterfaceOrIsSubclassOf(right, RANGE_TYPE)) {
+            Expression copy = binX(leftExpression, expr.getOperation(), rightExpression);
+            copy.setSourcePosition(expr); // do not propagate BINARY_EXP_TARGET, etc.
+            MethodNode method = findMethodOrFail(copy, left, "getAt", rightRedirect);
+            if (method != null && !isNumberCategory(getWrapper(rightRedirect))) {
                 return inferReturnTypeGenerics(left, method, rightExpression);
             }
-            return method != null ? inferComponentType(left, right) : null;
+            return inferComponentType(left, right);
         }
 
         String operationName = getOperationName(op);

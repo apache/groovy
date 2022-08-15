@@ -934,6 +934,17 @@ Printer
         '''
     }
 
+    // GROOVY-9415
+    void testStaticGetAtAndSquareBracketIndexing() {
+        assertScript '''
+            class C9415 {
+                static <T> T getAt(T t) { t }
+            }
+            def result = C9415[1] // Cannot find matching method Class#getAt(int)
+            assert result == 1
+        '''
+    }
+
     // GROOVY-9463
     void testMethodPointerUnknownReference() {
         shouldFailWithMessages '''

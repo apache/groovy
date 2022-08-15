@@ -74,6 +74,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
@@ -92,7 +93,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -604,7 +604,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 "this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
-    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType, boolean safe) {
+    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, final ClassNode rType, final ClassNode aType, final boolean safe) {
         if (getWrapper(rType).isDerivedFrom(Number_TYPE)
                 && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
             if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
@@ -627,9 +627,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 return true;
             } else {
                 // check if a getAt method can be found on the receiver
-                ClassNode current = rType;
+                ClassNode current = isClassClassNodeWrappingConcreteType(rType) ? rType.getGenericsTypes()[0].getType() : rType;
                 MethodNode getAtNode = null;
-                while (current != null && getAtNode == null) {
+                while (current != null && !isObjectType(current) && getAtNode == null) {
                     getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
                     if (getAtNode == null) {
                         getAtNode = getCompatibleMethod(current, "getAt", aType);
@@ -657,18 +657,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     return true;
                 }
 
-                // make sure Map#getAt() and List#getAt handled with the bracket syntax are properly compiled
+                // make sure Map#getAt and List#getAt handled with the bracket syntax are properly compiled
                 ClassNode[] args = {aType};
-                boolean acceptAnyMethod =
-                        MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
-                        || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
                 List<MethodNode> nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
-                if (nodes.isEmpty()) {
-                    // retry with raw types
-                    rType = rType.getPlainNodeReference();
-                    nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
-                }
-                if (nodes.size() == 1 || (nodes.size() > 1 && acceptAnyMethod)) {
+                if (nodes.size() == 1 || (nodes.size() > 1 && (isOrImplements(rType, MAP_TYPE) || isOrImplements(rType, LIST_TYPE)))) {
                     MethodCallExpression call = callX(receiver, message, arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(nodes.get(0));
@@ -677,7 +669,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     call.visit(controller.getAcg());
                     return true;
                 }
-                if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
+                if (isOrImplements(rType, MAP_TYPE)) {
                     // fallback to Map#get
                     MethodCallExpression call = callX(receiver, "get", arguments);
                     call.setImplicitThis(false);
