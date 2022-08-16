@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 /**
  * This class node type is very special and should only be used by the static type checker
@@ -57,18 +58,17 @@ import java.util.Set;
 class UnionTypeClassNode extends ClassNode {
     private final ClassNode[] delegates;
 
-    public UnionTypeClassNode(ClassNode... classNodes) {
-        super("<UnionType:" + asArrayDescriptor(classNodes) + ">", 0, ClassHelper.OBJECT_TYPE);
+    UnionTypeClassNode(final ClassNode... classNodes) {
+        super(makeName(classNodes), 0, ClassHelper.OBJECT_TYPE);
         delegates = classNodes == null ? ClassNode.EMPTY_ARRAY : classNodes;
     }
 
-    private static String asArrayDescriptor(ClassNode... nodes) {
-        StringBuilder sb = new StringBuilder();
+    private static String makeName(final ClassNode[] nodes) {
+        StringJoiner sj = new StringJoiner("+", "<UnionType:", ">");
         for (ClassNode node : nodes) {
-            if (sb.length() > 0) sb.append("+");
-            sb.append(node.getText());
+            sj.add(node.getText());
         }
-        return sb.toString();
+        return sj.toString();
     }
 
     public ClassNode[] getDelegates() {
@@ -304,6 +304,15 @@ class UnionTypeClassNode extends ClassNode {
             if (methods != null) nodes.addAll(methods);
         }
         return nodes;
+    }
+
+    @Override
+    public ClassNode getPlainNodeReference(final boolean skipPrimitives) {
+        int n = delegates.length; ClassNode[] plainNodes = new ClassNode[n];
+        for (int i = 0; i < n; i += 1) {
+            plainNodes[i] = delegates[i].getPlainNodeReference(skipPrimitives);
+        }
+        return new UnionTypeClassNode(plainNodes);
     }
 
     @Override
