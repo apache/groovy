@@ -396,6 +396,22 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-8828
+    void testMultipleInstanceOf7() {
+        assertScript '''
+            interface Foo { }
+            interface Bar { String name() }
+
+            Map<String, Foo> map = [:]
+            map.values().each { foo ->
+                if (foo instanceof Bar) {
+                    String name = foo.name() // method available through Bar
+                    map.put(name, foo)       // second parameter expects Foo
+                }
+            }
+        '''
+    }
+
     // GROOVY-8523
     void testNotInstanceof1() {
         assertScript '''

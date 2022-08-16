@@ -893,30 +893,25 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
-        boolean result = (type.equals(superOrInterface)
+        if (type.isArray() && superOrInterface.isArray()) {
+            return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
+        }
+        if (type == UNKNOWN_PARAMETER_TYPE // aka null
                 || type.isDerivedFrom(superOrInterface)
-                || type.implementsInterface(superOrInterface)
-                || type == UNKNOWN_PARAMETER_TYPE);
-        if (result) {
+                || type.implementsInterface(superOrInterface)) {
             return true;
         }
         if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
-            WideningCategories.LowestUpperBoundClassNode cn = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
-            result = implementsInterfaceOrIsSubclassOf(type, cn.getSuperClass());
-            if (result) {
-                for (ClassNode interfaceNode : cn.getInterfaces()) {
-                    result = type.implementsInterface(interfaceNode);
-                    if (!result) break;
-                }
+            if (implementsInterfaceOrIsSubclassOf(type, superOrInterface.getSuperClass())
+                    && Arrays.stream(superOrInterface.getInterfaces()).allMatch(type::implementsInterface)) {
+                return true;
             }
-            if (result) return true;
         } else if (superOrInterface instanceof UnionTypeClassNode) {
             for (ClassNode delegate : ((UnionTypeClassNode) superOrInterface).getDelegates()) {
-                if (implementsInterfaceOrIsSubclassOf(type, delegate)) return true;
+                if (implementsInterfaceOrIsSubclassOf(type, delegate)) {
+                    return true;
+                }
             }
-        }
-        if (type.isArray() && superOrInterface.isArray()) {
-            return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
         }
         if (isGroovyObjectType(superOrInterface) && isBeingCompiled(type) && !type.isInterface()) {//TODO: !POJO !Trait
             return true;
