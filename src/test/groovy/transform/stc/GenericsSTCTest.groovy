@@ -2024,8 +2024,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>). Please check if the declared type is correct and if the method exists.',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
+        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>)',
+        'Cannot assign java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>> to: java.util.Map<java.lang.String, java.util.List<java.lang.String>>'
     }
 
     void testPutAtWithWrongValueType3() {

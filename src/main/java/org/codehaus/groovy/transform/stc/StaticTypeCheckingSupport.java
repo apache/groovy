@@ -1084,8 +1084,9 @@ public abstract class StaticTypeCheckingSupport {
             Parameter[] params = makeRawTypes(safeNode.getParameters(), spec);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
-                dist += getClassDistance(declaringClass, actualReceiver);
-                dist += getExtensionDistance(isExtensionMethod);
+                if (!isExtensionMethod) { // GROOVY-6849, GROOVY-8788, et al.
+                    dist += (1 + getClassDistance(declaringClass, actualReceiver));
+                }
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestChoices.clear();
@@ -1102,6 +1103,21 @@ public abstract class StaticTypeCheckingSupport {
                 if (choice instanceof ExtensionMethodNode) {
                     onlyExtensionMethods.add(choice);
                 }
+            }
+            if (onlyExtensionMethods.size() > 1) {
+                // GROOVY-8788: prefer closer parameter match over closer self-type match
+                bestDist = Integer.MAX_VALUE; List<MethodNode> bestExtensions = new LinkedList<>();
+                for (MethodNode extension : onlyExtensionMethods) { // exclude self-type from distance checking
+                    int dist = measureParametersAndArgumentsDistance(extension.getParameters(), argumentTypes);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestExtensions.clear();
+                        bestExtensions.add(extension);
+                    } else if (dist == bestDist) {
+                        bestExtensions.add(extension);
+                    }
+                }
+                onlyExtensionMethods = bestExtensions;
             }
             if (onlyExtensionMethods.size() == 1) {
                 return onlyExtensionMethods;
@@ -1167,10 +1183,6 @@ public abstract class StaticTypeCheckingSupport {
             return 0;
         }
         return getDistance(actualReceiverForDistance, declaringClassForDistance);
-    }
-
-    private static int getExtensionDistance(final boolean isExtensionMethodNode) {
-        return isExtensionMethodNode ? 0 : 1;
     }
 
     private static Parameter[] makeRawTypes(final Parameter[] parameters, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {

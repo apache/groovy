@@ -8290,8 +8290,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a Map.
-     * <pre class="groovyTestCase">def map = [a:10]
-     * assert map["a"] == 10</pre>
+     * <pre class="groovyTestCase">
+     * def map = [:]
+     * map.put(1,10)
+     * assert map[1] == 10
+     * </pre>
      *
      * @param self a Map
      * @param key  an Object as a key for the map
@@ -8299,6 +8302,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <K,V> V getAt(Map<K,V> self, Object key) {
+        return self.get(key);
+    }
+
+    /**
+     * Prevent {@link #getAt(Object,String)} for Map.
+     * <pre class="groovyTestCase">
+     * def map = [a:10]
+     * assert map["a"] == 10
+     *
+     * class HM extends HashMap {
+     *   String a = 'x'
+     * }
+     * map = new HM()
+     * map.put("a",1)
+     * assert map["a"] == 1 // not 'x'
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static <K,V> V getAt(Map<K,V> self, String key) {
         return self.get(key);
     }
 
