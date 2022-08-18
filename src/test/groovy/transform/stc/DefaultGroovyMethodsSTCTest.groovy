@@ -367,4 +367,46 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             test()
         '''
     }
+
+    // GROOVY-6668, GROOVY-8212
+    void testMapGetAtVsObjectGetAt2() {
+        assertScript '''
+            Map<String, String> map = [key:'val']
+
+            // no value type inference
+            assert map.getAt('key') == 'val'
+            assert map.getAt("${'key'}") == 'val'
+
+            // yes value type inference
+            assert map['key'].toUpperCase() == 'VAL'
+            assert map["${'key'}"].toUpperCase() == 'VAL'
+
+            assert map.get('key').toUpperCase() == 'VAL'
+            assert map.get("${'key'}")?.toUpperCase() == null // get(Object); no coerce
+        '''
+    }
+
+    // GROOVY-6668, GROOVY-8212
+    void testMapPutAtVsObjectPutAt() {
+        assertScript '''
+            Map<String, String> map = [:]
+
+            map['key'] = 'val'
+            assert map.remove('key') == 'val'
+
+            map["${'key'}"] = 'val'
+            assert map.remove('key') == 'val'
+
+            map.putAt('key','val')
+            assert map.remove('key') == 'val'
+
+            map.putAt("${'key'}",'val')
+            assert map.remove('key') == 'val'
+        '''
+        shouldFailWithMessages '''
+            Map<String, String> map = [:]
+            map.put("${'key'}",'val')
+        ''',
+        'Cannot call java.util.LinkedHashMap#put(java.lang.String, java.lang.String) with arguments [groovy.lang.GString, java.lang.String]'
+    }
 }

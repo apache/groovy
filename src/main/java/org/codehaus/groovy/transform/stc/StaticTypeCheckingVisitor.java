@@ -4545,7 +4545,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (isArrayOp(op)) {
-            if (isOrImplements(left, MAP_TYPE) && isStringType(right)) { // GROOVY-5700, GROOVY-8788
+            if (isOrImplements(left, MAP_TYPE) && (isStringType(right) || isGStringOrGStringStringLUB(right))) { // GROOVY-5700, GROOVY-6668, GROOVY-8212, GROOVY-8788
                 PropertyExpression prop = propX(leftExpression, rightExpression); // m['xx'] -> m.xx
                 return existsProperty(prop, !typeCheckingContext.isTargetOfEnclosingAssignment(expr))
                             ? getType(prop) : getTypeForMapPropertyExpression(left, prop);
