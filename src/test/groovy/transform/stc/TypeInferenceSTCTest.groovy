@@ -813,7 +813,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List values = [x:1,y:2,z:3]*.value
             values*.toUpperCase()
-        ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
 
     void testStarOperatorOnMap3() {
@@ -827,7 +828,38 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             def values = [x:1,y:2,z:3]*.value
             values*.toUpperCase()
-        ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Integer#toUpperCase()'
+    }
+
+    // GROOVY-7247
+    void testStarOperatorOnMapKey() {
+        assertScript '''
+            Map<String, Integer> map = [*:[A:1], *:[B:2]]
+            assert map == [A:1, B:2]
+        '''
+
+        assertScript '''
+            Map<String, Integer> one = [A:1]
+            Map<String, Integer> two = [B:2]
+            def map = [*:one, *:two]
+            assert map == [A:1, B:2]
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].type == STRING_TYPE
+                assert type.genericsTypes[1].type != Integer_TYPE
+                assert type.genericsTypes[1].type.isDerivedFrom(Number_TYPE)
+            })
+            def map = [*:[A:1], *:[B:2.3]]
+        '''
+
+        shouldFailWithMessages '''
+            Map<String, Integer> map = [*:[A:1], *:[B:2.3]]
+        ''',
+        'Cannot assign java.util.LinkedHashMap <java.lang.String, java.lang.Number> to: java.util.Map <String, Integer>'
     }
 
     void testFlowTypingWithStringVariable() {
