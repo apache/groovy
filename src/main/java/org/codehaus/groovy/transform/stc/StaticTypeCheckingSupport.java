@@ -923,6 +923,9 @@ public abstract class StaticTypeCheckingSupport {
         if (receiver.isArray() && compare.isArray()) {
             return getDistance(receiver.getComponentType(), compare.getComponentType());
         }
+        if (isGStringOrGStringStringLUB(receiver) && isStringType(compare)) {
+            return 3; // GROOVY-6668: closer than Object and GroovyObjectSupport
+        }
         int dist = 0;
         ClassNode unwrapReceiver = getUnwrapper(receiver);
         ClassNode unwrapCompare = getUnwrapper(compare);

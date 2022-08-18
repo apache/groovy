@@ -338,4 +338,19 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             test()
         '''
     }
+
+    // GROOVY-6668
+    void testMapGetAtVsObjectGetAt2() {
+        assertScript '''
+            Map<String, String> map = [key:'val']
+
+            assert map.get('key')  .toUpperCase() == 'VAL'
+            assert map.getAt('key').toUpperCase() == 'VAL'
+            assert map['key']      .toUpperCase() == 'VAL'
+
+            assert map.get("${'key'}")  ?.toUpperCase() == null  // get(Object); no coerce
+            assert map.getAt("${'key'}")?.toUpperCase() == 'VAL'
+            assert map["${'key'}"]      ?.toUpperCase() == 'VAL'
+        '''
+    }
 }
