@@ -79,6 +79,7 @@ import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -5300,16 +5301,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (genericsTypes == null
                 || genericsTypes.length < 2
                 || (genericsTypes.length == 2 && isObjectType(genericsTypes[0].getType()) && isObjectType(genericsTypes[1].getType()))) {
+            ClassNode keyType;
+            ClassNode valueType;
             List<ClassNode> keyTypes = new ArrayList<>(nExpressions);
             List<ClassNode> valueTypes = new ArrayList<>(nExpressions);
             for (MapEntryExpression entryExpression : entryExpressions) {
-                keyTypes.add(getType(entryExpression.getKeyExpression()));
-                valueTypes.add(getType(entryExpression.getValueExpression()));
+                valueType = getType(entryExpression.getValueExpression());
+                if (!(entryExpression.getKeyExpression() instanceof SpreadMapExpression)) {
+                    keyType = getType(entryExpression.getKeyExpression());
+                } else { // GROOVY-7247
+                    valueType = GenericsUtils.parameterizeType(valueType, MAP_TYPE);
+                    keyType = getCombinedBoundType(valueType.getGenericsTypes()[0]);
+                    valueType = getCombinedBoundType(valueType.getGenericsTypes()[1]);
+                }
+                keyTypes.add(keyType);
+                valueTypes.add(valueType);
             }
-            ClassNode keyType = lowestUpperBound(keyTypes);
-            ClassNode valueType = lowestUpperBound(valueTypes);
+            keyType = lowestUpperBound(keyTypes);
+            valueType = lowestUpperBound(valueTypes);
             if (!isObjectType(keyType) || !isObjectType(valueType)) {
-                mapType = mapType.getPlainNodeReference();
                 mapType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(keyType)), new GenericsType(wrapTypeIfNecessary(valueType))});
             }
         }
