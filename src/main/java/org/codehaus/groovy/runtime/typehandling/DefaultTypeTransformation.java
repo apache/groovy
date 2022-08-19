@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 import java.util.stream.DoubleStream;
