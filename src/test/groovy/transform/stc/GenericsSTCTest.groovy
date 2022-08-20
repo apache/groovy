@@ -1193,6 +1193,158 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8409, GROOVY-9915
+    void testShouldUseMethodGenericType10() {
+        assertScript '''
+            interface OngoingStubbing<T> /*extends IOngoingStubbing*/ {
+                // type parameter from enclosing type in signature:
+                OngoingStubbing<T> thenReturn(T value)
+            }
+            static <T> OngoingStubbing<T> when(T methodCall) {
+                [thenReturn: { T value -> null }] as OngoingStubbing<T>
+            }
+            Optional<String> foo() {
+            }
+
+            when(foo()).thenReturn(Optional.empty())
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-8409, GROOVY-9902
+    void testShouldUseMethodGenericType11() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'Main.groovy')
+            a.write '''
+                def obj = new Pojo()
+                Foo raw = obj.getFoo('')
+                raw.bar = raw.baz // Cannot assign value of type Object to variable of type R
+            '''
+            def b = new File(parentDir, 'Pojo.java')
+            b.write '''
+                public class Pojo {
+                    public <R extends I> Foo<R> getFoo(String key) {
+                        return new Foo<>();
+                    }
+                }
+            '''
+            def c = new File(parentDir, 'Types.groovy')
+            c.write '''
+                interface I {
+                }
+                class Foo<T extends I> {
+                    T bar
+                    T baz
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
+    // GROOVY-10088
+    void testShouldUseMethodGenericType12() {
+        shouldFailWithMessages '''
+            class C<T> {
+                void setP(T t) { }
+            }
+            class D<X> extends C<X> {
+            }
+
+            new D<Number>().p = 'x'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type T'
+    }
+
+    // GROOVY-10225
+    void testShouldUseMethodGenericType13() {
+        assertScript '''
+            def <T> T m(T t) {
+                assert t == null
+            }
+            def <N extends Number, X extends N> void test() {
+                X x = (X) null
+                m(false ? x : (X) null) // was NPE
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-10315
+    void testShouldUseMethodGenericType14() {
+        for (args in ['m2(), c.m()'/*, 'c.m(), m2()'*/]) {
+            assertScript """
+                class C<T> {
+                    def T m() {
+                    }
+                }
+                def <X> X m2() {
+                }
+                def <Y> void m3(Y y1, Y y2) {
+                }
+                def <Z> void test(C<Z> c) {
+                    m3($args)
+                }
+                test(new C<String>())
+            """
+        }
+    }
+
+    // GROOVY-10364
+    void testShouldUseMethodGenericType15() {
+        assertScript '''
+            class A<T> {
+            }
+            class B<T> {
+                void m(A<T> a_of_t, T t) {
+                }
+            }
+            class C<X, Y extends X> {
+                void test() {
+                    B<Y> b_of_y = new B<Y>()
+                    b_of_y.m(new A<Y>(), (Y) null) // Cannot call B#m(A<Y extends X>, Y) with arguments [A<Y>, Y]
+                }
+            }
+            new C<Number,Integer>().test()
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10648
+    void testShouldUseMethodGenericType16() {
+        assertScript '''
+            def <T extends Number> Set<T> test(Iterable<T> iterable) {
+                final Set<T> result = new HashSet<>()
+                iterable.forEach { result.add(it) }
+                return result
+            }
+            def set = test([1,2.3])
+            assert set.size() == 2
+            assert 1 in set
+        '''
+    }
+
+    // GROOVY-10725
+    void testShouldUseMethodGenericType17() {
+        assertScript '''
+            List<String> list = ['foo','bar']
+            Set<Map<String,String>> set_of_maps = []
+            set_of_maps.addAll(list.collectEntries { [it, it.toUpperCase()] })
+            assert set_of_maps.first() == [foo: 'FOO', bar: 'BAR']
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
