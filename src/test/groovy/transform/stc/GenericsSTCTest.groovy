@@ -2481,6 +2481,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10725
+    void testShouldUseMethodGenericType17() {
+        assertScript '''
+            List<String> list = ['foo','bar']
+            Set<Map<String,String>> set_of_maps = []
+            set_of_maps.addAll(list.collectEntries { [it, it.toUpperCase()] })
+            assert set_of_maps.first() == [foo: 'FOO', bar: 'BAR']
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
