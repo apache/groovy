@@ -5376,7 +5376,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // and unknown generics
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
 
-            while (!at.equals(pt) && !at.equals(OBJECT_TYPE)) {
+            while (!at.equals(pt)
+                    && !at.equals(OBJECT_TYPE)
+                    && !isGenericsPlaceHolderOrArrayOf(at)
+                    && !isGenericsPlaceHolderOrArrayOf(pt)) {
                 ClassNode sc = GenericsUtils.getSuperClass(at, pt);
                 at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), sc);
             }

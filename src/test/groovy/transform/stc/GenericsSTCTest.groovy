@@ -2228,7 +2228,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-8409, GROOVY-9915
+    // GROOVY-8409, GROOVY-9915
     void testShouldUseMethodGenericType10() {
         assertScript '''
             interface OngoingStubbing<T> /*extends IOngoingStubbing*/ {
@@ -2367,6 +2367,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def set = test([1,2.3])
             assert set.size() == 2
             assert 1 in set
+        '''
+    }
+
+    // GROOVY-10725
+    void testShouldUseMethodGenericType17() {
+        assertScript '''
+            List<String> list = ['foo','bar']
+            Set<Map<String,String>> set_of_maps = []
+            set_of_maps.addAll(list.collectEntries { [it, it.toUpperCase()] })
+            assert set_of_maps.first() == [foo: 'FOO', bar: 'BAR']
         '''
     }
 
