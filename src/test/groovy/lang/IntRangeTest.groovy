@@ -62,6 +62,18 @@ final class IntRangeTest extends GroovyTestCase {
         assert new IntRange(false, false, 0, 1).size() == 0
     }
 
+    void testSubListBorders() {
+        // reminder: RangeInfo stores "to+1" for direct use in places like List#subList and CharSequence#subSequence
+        new IntRange(true, true, 1, 5).subListBorders(-1).with{ assert it.from == 1 && it.to == 6 && !it.reverse }
+        new IntRange(false, true, 1, 5).subListBorders(-1).with{ assert it.from == 2 && it.to == 6 && !it.reverse }
+        new IntRange(true, false, 1, 5).subListBorders(-1).with{ assert it.from == 1 && it.to == 5 && !it.reverse }
+        new IntRange(false, false, 1, 5).subListBorders(-1).with{ assert it.from == 2 && it.to == 5 && !it.reverse }
+        new IntRange(true, true, 5, 1).subListBorders(-1).with{ assert it.from == 1 && it.to == 6 && it.reverse }
+        new IntRange(false, true, 5, 1).subListBorders(-1).with{ assert it.from == 1 && it.to == 5 && it.reverse }
+        new IntRange(true, false, 5, 1).subListBorders(-1).with{ assert it.from == 2 && it.to == 6 && it.reverse }
+        new IntRange(false, false, 5, 1).subListBorders(-1).with{ assert it.from == 2 && it.to == 5 && it.reverse }
+    }
+
     /**
      * Tests getting the to and from values as <code>int</code>s.
      */
