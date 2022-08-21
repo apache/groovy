@@ -1203,6 +1203,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             static <T> OngoingStubbing<T> when(T methodCall) {
                 [thenReturn: { T value -> null }] as OngoingStubbing<T>
             }
+            final class Optional<T> {
+                static<T> Optional<T> empty() {
+                }
+            }
             Optional<String> foo() {
             }
 
