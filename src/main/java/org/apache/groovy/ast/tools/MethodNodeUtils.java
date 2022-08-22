@@ -31,8 +31,7 @@ import static org.apache.groovy.util.BeanUtils.decapitalize;
  */
 public class MethodNodeUtils {
 
-    private MethodNodeUtils() {
-    }
+    private MethodNodeUtils() { }
 
     /**
      * Return the method node's descriptor including its
@@ -58,17 +57,20 @@ public class MethodNodeUtils {
      * @return the method node's descriptor
      */
     public static String methodDescriptor(final MethodNode mNode) {
-        StringBuilder sb = new StringBuilder(mNode.getName().length() + mNode.getParameters().length * 10);
-        sb.append(mNode.getReturnType().getName());
+        String name = mNode.getName();
+        Parameter[] parameters = mNode.getParameters();
+        int nParameters = parameters == null ? 0 : parameters.length;
+
+        StringBuilder sb = new StringBuilder(name.length() * 2 + nParameters * 10);
+        sb.append(ClassNodeUtils.formatTypeName(mNode.getReturnType()));
         sb.append(' ');
-        sb.append(mNode.getName());
+        sb.append(name);
         sb.append('(');
-        for (int i = 0; i < mNode.getParameters().length; i++) {
+        for (int i = 0; i < nParameters; i += 1) {
             if (i > 0) {
                 sb.append(", ");
             }
-            Parameter p = mNode.getParameters()[i];
-            sb.append(ClassNodeUtils.formatTypeName(p.getType()));
+            sb.append(ClassNodeUtils.formatTypeName(parameters[i].getType()));
         }
         sb.append(')');
         return sb.toString();
@@ -85,21 +87,21 @@ public class MethodNodeUtils {
         final int nameLength = name.length();
         if (nameLength > 2) {
             switch (name.charAt(0)) {
-                case 'g':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
-                        return decapitalize(name.substring(3));
-                    }
-                    break;
-                case 's':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
-                        return decapitalize(name.substring(3));
-                    }
-                    break;
-                case 'i':
-                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
-                        return decapitalize(name.substring(2));
-                    }
-                    break;
+              case 'g':
+                if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
+                    return decapitalize(name.substring(3));
+                }
+                break;
+              case 's':
+                if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
+                    return decapitalize(name.substring(3));
+                }
+                break;
+              case 'i':
+                if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
+                    return decapitalize(name.substring(2));
+                }
+                break;
             }
         }
         return null;
@@ -112,11 +114,11 @@ public class MethodNodeUtils {
      * Otherwise the existing block statement will be returned.
      * The original {@code node} is not modified.
      *
-     * @param node the method (or constructor) node
+     * @param mNode the method (or constructor) node
      * @return the found or created block statement
      */
-    public static BlockStatement getCodeAsBlock(final MethodNode node) {
-        Statement code = node.getCode();
+    public static BlockStatement getCodeAsBlock(final MethodNode mNode) {
+        Statement code = mNode.getCode();
         BlockStatement block;
         if (code == null) {
             block = new BlockStatement();
