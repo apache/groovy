@@ -52,7 +52,7 @@ final class MethodNodeTest {
         result = new MethodNode('foo', 0, ClassHelper.STRING_TYPE.makeArray(), params, null, null).tap {
             declaringClass = ClassHelper.OBJECT_TYPE
         }
-        assert result.endsWith('[Ljava.lang.String; foo(int, [I) from java.lang.Object]')
+        assert result.endsWith('java.lang.String[] foo(int, int[]) from java.lang.Object]')
     }
 
     @Test

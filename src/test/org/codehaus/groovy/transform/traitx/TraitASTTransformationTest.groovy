@@ -2994,6 +2994,45 @@ final class TraitASTTransformationTest {
         }
     }
 
+    trait T10521 {
+        def m(Class<?> clazz, Object... array) {
+            clazz.name + array
+        }
+    }
+
+    @Test // GROOVY-10521
+    void testVariadicMethodOfPrecompiledTrait() {
+        assertScript shell, """import org.codehaus.groovy.ast.*
+            class CT implements ${T10521.name} {
+                def n(Class<?> clazz, Object... array) {
+                }
+            }
+
+            def cn = new ClassNode(${T10521.name})
+            def mn = cn.getMethods('m')[0]
+            def td = mn.typeDescriptor
+
+            assert td == 'java.lang.Object m(java.lang.Class, java.lang.Object[])'
+        """
+
+        assertScript shell, """
+            @Grab('org.spockframework:spock-core:2.2-M3-groovy-4.0')
+            @GrabExclude('org.apache.groovy:*')
+            import spock.lang.Specification
+
+            class C extends Specification implements ${T10521.name} {
+                void test() {
+                  when:
+                    String result = m(Object,'x')
+                  then:
+                    result == 'java.lang.Object[x]'
+                }
+            }
+
+            org.junit.runner.JUnitCore.runClasses(C)
+        """
+    }
+
     @Test // GROOVY-7287
     void testTraitWithMethodLevelGenericsShadowing1() {
         assertScript shell, '''
