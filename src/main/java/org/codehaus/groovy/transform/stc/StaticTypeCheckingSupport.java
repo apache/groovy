@@ -1031,47 +1031,38 @@ public abstract class StaticTypeCheckingSupport {
      *
      * @return zero or more results
      */
-    public static List<MethodNode> chooseBestMethod(final ClassNode receiver, final Collection<MethodNode> methods, final ClassNode... argumentTypes) {
+    public static List<MethodNode> chooseBestMethod(final ClassNode receiver, Collection<MethodNode> methods, final ClassNode... argumentTypes) {
         if (!asBoolean(methods)) {
             return Collections.emptyList();
         }
 
+        // GROOVY-8965: type disjunction
+        boolean duckType = receiver instanceof UnionTypeClassNode;
+        if (methods.size() > 1 && !methods.iterator().next().isConstructor())
+            methods = removeCovariantsAndInterfaceEquivalents(methods, duckType);
+
+        Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
+        for (ClassNode rcvr : duckType ? ((UnionTypeClassNode) receiver).getDelegates() : new ClassNode[]{receiver}) {
+            bestMethods.addAll(chooseBestMethods(rcvr, methods, argumentTypes));
+        }
+        return new LinkedList<>(bestMethods); // assumes caller wants remove to be inexpensive
+    }
+
+    private static List<MethodNode> chooseBestMethods(final ClassNode receiver, Collection<MethodNode> methods, final ClassNode[] argumentTypes) {
         int bestDist = Integer.MAX_VALUE;
-        List<MethodNode> bestChoices = new LinkedList<>();
-        boolean duckType = receiver instanceof UnionTypeClassNode; // GROOVY-8965: type disjunction
-        boolean noCulling = methods.size() <= 1 || "<init>".equals(methods.iterator().next().getName());
-        Iterable<MethodNode> candidates = noCulling ? methods : removeCovariantsAndInterfaceEquivalents(methods, duckType);
+        List<MethodNode> bestMethods = new ArrayList<>();
 
-        for (MethodNode candidate : candidates) {
-            MethodNode safeNode = candidate;
-            ClassNode[] safeArgs = argumentTypes;
-            boolean isExtensionMethod = candidate instanceof ExtensionMethodNode;
-            if (isExtensionMethod) {
-                int nArgs = argumentTypes.length;
-                safeArgs = new ClassNode[nArgs + 1];
-                System.arraycopy(argumentTypes, 0, safeArgs, 1, nArgs);
-                safeArgs[0] = receiver; // prepend self-type as first argument
-                safeNode = ((ExtensionMethodNode) candidate).getExtensionMethodNode();
-            }
-
-            /* TODO: corner case
-                class B extends A {}
-                Animal foo(A a) {}
-                Person foo(B b) {}
-
-                B b = new B()
-                Person p = foo(b)
-            */
-
-            ClassNode declaringClass = candidate.getDeclaringClass();
+        // phase 1: argument-parameter distance classifier
+        for (MethodNode method : methods) {
+            ClassNode declaringClass = method.getDeclaringClass();
             ClassNode actualReceiver = receiver != null ? receiver : declaringClass;
 
             Map<GenericsType, GenericsType> spec;
-            if (candidate.isStatic()) {
+            if (method.isStatic()) {
                 spec = Collections.emptyMap(); // none visible
             } else {
                 spec = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClass, actualReceiver);
-                GenericsType[] methodGenerics = candidate.getGenericsTypes();
+                GenericsType[] methodGenerics = method.getGenericsTypes();
                 if (methodGenerics != null) { // GROOVY-10322: remove hidden type parameters
                     for (int i = 0, n = methodGenerics.length; i < n && !spec.isEmpty(); i += 1) {
                         for (Iterator<GenericsType> it = spec.keySet().iterator(); it.hasNext(); ) {
@@ -1080,34 +1071,49 @@ public abstract class StaticTypeCheckingSupport {
                     }
                 }
             }
+            Parameter[] parameters = makeRawTypes(method.getParameters(), spec);
 
-            Parameter[] params = makeRawTypes(safeNode.getParameters(), spec);
-            int dist = measureParametersAndArgumentsDistance(params, safeArgs);
-            if (dist >= 0) {
-                dist += getClassDistance(declaringClass, actualReceiver);
-                dist += getExtensionDistance(isExtensionMethod);
+            int dist = measureParametersAndArgumentsDistance(parameters, argumentTypes);
+            if (dist >= 0 && dist <= bestDist) {
                 if (dist < bestDist) {
                     bestDist = dist;
-                    bestChoices.clear();
-                    bestChoices.add(candidate);
-                } else if (dist == bestDist) {
-                    bestChoices.add(candidate);
+                    bestMethods.clear();
+                }
+                bestMethods.add(method);
+            }
+        }
+
+        // phase 2: receiver-provider distance classifier
+        if (bestMethods.size() > 1 && receiver != null) {
+            methods = bestMethods;
+            bestDist = Integer.MAX_VALUE;
+            bestMethods = new ArrayList<>();
+            for (MethodNode method : methods) {
+                int dist = getClassDistance(method.getDeclaringClass(), receiver);
+                if (dist <= bestDist) {
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestMethods.clear();
+                    }
+                    bestMethods.add(method);
                 }
             }
         }
-        if (bestChoices.size() > 1 && !duckType) {
-            // GROOVY-6849: prefer extension method in case of ambiguity
-            List<MethodNode> onlyExtensionMethods = new LinkedList<>();
-            for (MethodNode choice : bestChoices) {
-                if (choice instanceof ExtensionMethodNode) {
-                    onlyExtensionMethods.add(choice);
+
+        // phase 3: prefer extension method in case of tie
+        if (bestMethods.size() > 1) {
+            List<MethodNode> extensionMethods = new ArrayList<>();
+            for (MethodNode method : bestMethods) {
+                if (method instanceof ExtensionMethodNode) {
+                    extensionMethods.add(method);
                 }
             }
-            if (onlyExtensionMethods.size() == 1) {
-                return onlyExtensionMethods;
+            if (extensionMethods.size() == 1) {
+                bestMethods = extensionMethods;
             }
         }
-        return bestChoices;
+
+        return bestMethods;
     }
 
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
@@ -1166,10 +1172,6 @@ public abstract class StaticTypeCheckingSupport {
             return 0;
         }
         return getDistance(actualReceiverForDistance, declaringClassForDistance);
-    }
-
-    private static int getExtensionDistance(final boolean isExtensionMethodNode) {
-        return isExtensionMethodNode ? 0 : 1;
     }
 
     private static Parameter[] makeRawTypes(final Parameter[] parameters, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {

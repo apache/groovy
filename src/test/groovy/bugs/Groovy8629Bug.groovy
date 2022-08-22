@@ -62,8 +62,8 @@ public class Groovy8629Bug extends GroovyTestCase {
                 @Override
                 IntegerPair next() {
                     String key = keyIterator.next()
-                    IntegerPair comp = new IntegerPair(m1[key], m2[key])
-                    return comp
+                    IntegerPair pair = new IntegerPair(m1.get(key), m2.get(key))
+                    return pair
                 }
 
                 @Override
@@ -87,5 +87,4 @@ public class Groovy8629Bug extends GroovyTestCase {
 
         '''
     }
-
 }

@@ -1241,21 +1241,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 void setProperty(String name, value) {
                     if (value instanceof File) {
                         value = new File(value, 'bar.txt')
-                    }
-                    else if (value instanceof URL) {
+                    } else if (value instanceof URL) {
                         value = value.toURI()
-                    }
-                    else if (value instanceof InputStream) {
+                    } else if (value instanceof InputStream) {
                         value = new BufferedInputStream(value)
-                    }
-                    else if (value instanceof GString) {
+                    } else if (value instanceof GString) {
                         value = value.toString()
                     }
-                    if (mvm[name]) {
-                        mvm[name].add value
-                    } else {
-                        mvm.put(name, [value])
-                    }
+                    mvm.computeIfAbsent(name, k -> []).add(value)
                 }
             }
             new M().setProperty('foo', 'bar')

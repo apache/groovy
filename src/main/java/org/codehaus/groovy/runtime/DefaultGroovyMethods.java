@@ -8290,8 +8290,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a Map.
-     * <pre class="groovyTestCase">def map = [a:10]
-     * assert map["a"] == 10</pre>
+     * <pre class="groovyTestCase">def map = [1:10]
+     * assert map[1] == 10</pre>
      *
      * @param self a Map
      * @param key  an Object as a key for the map

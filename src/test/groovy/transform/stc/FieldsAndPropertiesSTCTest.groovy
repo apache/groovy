@@ -133,16 +133,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method C#setX(<unknown parameter type>).'
     }
 
-    void testMapDotPropertySyntax() {
-        assertScript '''
-            HashMap map = [:]
-            map['a'] = 1
-            map.b = 2
-            assert map.get('a') == 1
-            assert map.get('b') == 2
-        '''
-    }
-
     void testInferenceFromFieldType() {
         assertScript '''
             class A {
@@ -576,33 +566,73 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5001, GROOVY-5491, GROOVY-6144, GROOVY-8788
+    void testReadMapProperty() {
+        assertScript '''
+            class A { }
+            class B { }
+            class HM extends HashMap<String,A> {
+                B b = new B()
+            }
+
+            def map = new HM()
+            map.put('a', new A())
+            assert map.get('a') != null
+            assert map.get('b') == null
+
+            A a = map.a
+            B b = map.b
+            a = map['a']
+            b = map['b']
+            assert a instanceof A
+            assert b instanceof B
+        '''
+    }
+
+    void testWriteMapProperty() {
+        assertScript '''
+            def map = [:]
+            map['a'] = 1
+            map.b = 2
+            assert map.get('a') == 1
+            assert map.get('b') == 2
+        '''
+    }
+
+    // GROOVY-5700, GROOVY-8788
+    void testInferenceOfMapSubProperty() {
+        assertScript '''
+            def map = [key: 123]
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def val = map['key']
+            assert val == 123
+        '''
+    }
+
     // GROOVY-5700
     void testInferenceOfMapDotProperty() {
         assertScript '''
-            def m = [retries: 10]
+            def map = [key: 123]
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
-            def r1 = m['retries']
-
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-            })
-            def r2 = m.retries
+            def val = map.key
+            assert val == 123
         '''
     }
 
     void testInferenceOfListDotProperty() {
-        assertScript '''class Foo { int x }
-            def list = [new Foo(x:1), new Foo(x:2)]
+        assertScript '''
+            class C { int x }
+            def list = [new C(x:1), new C(x:2)]
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def iType = node.getNodeMetaData(INFERRED_TYPE)
-                assert iType == make(List)
-                assert iType.isUsingGenerics()
-                assert iType.genericsTypes[0].type == Integer_TYPE
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.Integer>'
             })
-            def r2 = list.x
-            assert r2 == [ 1,2 ]
+            def x = list.x
+            assert x == [1,2]
         '''
     }
 

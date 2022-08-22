@@ -16,43 +16,42 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testGenericIdentityWithClosure() {
         assertScript '''
-public static <T> T identity(T self) { self }
+            static <T> T itself(T self) { self }
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    assert node.rightExpression.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-})
-Integer i = identity(2)
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                assert node.rightExpression.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            Integer i = itself(2)
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    assert node.rightExpression.getNodeMetaData(INFERRED_TYPE) == CLOSURE_TYPE
-})
-Closure c = identity {'foo'}
-'''
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                assert node.rightExpression.getNodeMetaData(INFERRED_TYPE) == CLOSURE_TYPE
+            })
+            Closure c = itself {'foo'}
+        '''
     }
 
     void testShouldNotThrowIllegalAccessToProtectedData() {
-        shouldFailWithMessages('''
+        shouldFailWithMessages '''
             class Test {
-              final Set<String> HISTORY = [] as HashSet
+                final Set<String> HISTORY = [] as HashSet
 
-              Set<String> getHistory() {
-                return HISTORY.clone() as HashSet<String>
-              }
+                Set<String> getHistory() {
+                    return HISTORY.clone() as HashSet<String>
+                }
             }
 
             Test test = new Test()
             println test.history
-        ''', 'Method clone is protected in java.lang.Object')
+        ''',
+        'Method clone is protected in java.lang.Object'
     }
 }
