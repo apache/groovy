@@ -25,33 +25,29 @@ import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doI
  */
 class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 
+    /**
+     * @see org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
+     */
     void testStaticExtensionMethod() {
         assertScript '''
             assert String.answer() == 42
         '''
     }
 
+    /**
+     * @see org.codehaus.groovy.runtime.m12n.TestStringExtension
+     */
     void testNonStaticExtensionMethod() {
         assertScript '''
             def str = 'This is a string'
-            // reverseToUpperCase is a usnit test extension method
             assert str.reverseToUpperCase() == str.toUpperCase().reverse()
         '''
     }
 
-    // GROOVY-7953
-    void testExtensionPropertyWithPrimitiveReceiver() {
-        assertScript '''
-            assert 4.even
-        '''
-    }
-
-    void testExtensionMethodWithGenericsAndPrimitiveReceiver() {
-        assertScript '''
-            assert 2d.groovy6496(2d) == 2d
-        '''
-    }
-
+    /**
+     * @see org.codehaus.groovy.runtime.m12n.TestStringExtension
+     * @see org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
+     */
     void testShouldFindExtensionMethodWithGrab() {
         doInFork 'groovy.transform.stc.StaticTypeCheckingTestCase', '''
             def impl = new MetaClassImpl(String)
@@ -78,5 +74,138 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
                 assert String.answer2() == 42
             """
         '''
+    }
+
+    /**
+     * GROOVY-7953
+     *
+     * @see org.codehaus.groovy.runtime.m12n.TestPrimitiveWrapperExtension
+     */
+    void testExtensionPropertyWithPrimitiveReceiver() {
+        assertScript '''
+            assert 4.even
+            assert 4.isEven()
+            assert !5.isEven()
+        '''
+    }
+
+    /**
+     * GROOVY-6496
+     *
+     * @see org.codehaus.groovy.runtime.m12n.Groovy6496Extension
+     */
+    void testExtensionMethodWithGenericsAndPrimitiveReceiver() {
+        assertScript '''
+            assert 2d.groovy6496(2d) == 2d
+        '''
+    }
+
+    //--------------------------------------------------------------------------
+
+    static class Groovy8788 {
+        static class A {
+            def m1(Object o) {1}
+            def m2(String s) {1}
+            def m4(String s) {4}
+            def m5(String s) {4}
+            def m6(String s) {4}
+        }
+        static class B extends A {
+            def m1(String s) {2}
+            def m2(Object o) {2}
+        }
+        static class C extends B {
+        }
+
+        static m3(A self, String s) {1}
+        static m3(B self, Object o) {2}
+        static m3(B self, String s) {3}
+
+        static m4(A self, String s) {1}
+        static m4(B self, Object o) {2}
+
+        static m5(A self, String s) {1}
+        static m5(B self, Object o) {2}
+
+        static m6(B self, Object o) {2}
+    }
+
+    // GROOVY-8788
+    void testMethodSelection1() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m1(new Object()) == 1
+            assert a.m1(new String()) == 1
+            def b = new B()
+            assert b.m1(new Object()) == 1
+            assert b.m1(new String()) == 2
+        """
+    }
+
+    // GROOVY-8788
+    void testMethodSelection2() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m2(new String()) == 1
+            def b = new B()
+            assert b.m2(new Object()) == 2
+            assert b.m2(new String()) == 1
+        """
+
+        shouldFailWithMessages """import ${Groovy8788.name}.*
+            def a = new A()
+            a.m2(new Object())
+        """,
+        'Cannot find matching method','A#m2(java.lang.Object)'
+    }
+
+    // GROOVY-8788
+    void testMethodSelection3() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m3(new String()) == 1
+            def b = new B()
+            assert b.m3(new Object()) == 2
+            assert b.m3(new String()) == 3
+        """
+    }
+
+    // GROOVY-8788
+    void testMethodSelection4() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m4(new String()) == 1
+            def b = new B()
+            assert b.m4(new Object()) == 2
+            assert b.m4(new String()) == 1
+        """
+    }
+
+    // GROOVY-8788
+    void testMethodSelection5() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m5(new String()) == 1
+            def b = new B()
+            assert b.m5(new Object()) == 2
+            assert b.m5(new String()) == 1
+            def c = new C()
+            assert c.m5(new Object()) == 2
+            assert c.m5(new String()) == 1
+        """
+    }
+
+    // GROOVY-8788
+    void testMethodSelection6() {
+        assertScript """import ${Groovy8788.name}.*
+            def a = new A()
+            assert a.m6(new String()) == 4
+            def b = new B()
+            assert b.m6(new Object()) == 2
+            assert b.m6(new String()) == 4
+            def c = new C()
+            assert c.m6(new Object()) == 2
+            assert c.m6(new String()) == 4
+        """
     }
 }

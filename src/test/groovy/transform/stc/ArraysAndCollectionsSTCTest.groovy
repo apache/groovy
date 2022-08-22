@@ -803,14 +803,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6131
-    void testArraySetShouldGenerateBytecode() {
+    void testCollectionPutAt() {
         shouldFailWithMessages '''
-            void addToCollection(Collection coll, int index, val) {
-                coll[index] = val
+            void addToCollection(Collection coll, int index, value) {
+                coll[index] = value
             }
-            def list = ['a']
-            addToCollection(list, 0, 'b')
-            assert list == ['b']
+            addToCollection(['a'], 0, 'b')
         ''',
         'Cannot find matching method java.util.Collection#putAt(int, java.lang.Object)'
     }
@@ -818,7 +816,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6266
     void testMapKeyGenerics() {
         assertScript '''
-            HashMap<String,List<List>> map = new HashMap<String,List<List>>()
+            Map<String,List<List>> map = new HashMap<String,List<List>>()
             map.get('key',[['val1'],['val2']])
             assert map.'key'[0] == ['val1']
         '''

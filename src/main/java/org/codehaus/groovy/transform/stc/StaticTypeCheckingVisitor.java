@@ -827,11 +827,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         enclosingExpressionRHS.visit(this);
                     }
                     ClassNode[] arguments = {rType, getType(enclosingExpressionRHS)};
-                    List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
-                    if (nodes.size() == 1) {
-                        typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingExpressionRHS);
-                    } else if (nodes.isEmpty()) {
+                    List<MethodNode> methods = findMethod(lType, "putAt", arguments);
+                    if (methods.isEmpty()) {
                         addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
+                    } else if (methods.size() == 1) {
+                        typeCheckMethodsWithGenericsOrFail(lType, arguments, methods.get(0), enclosingExpressionRHS);
                     }
                 }
             }
@@ -4520,6 +4520,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (isArrayOp(op)) {
+            if (isOrImplements(left, MAP_TYPE) && isStringType(right)) { // GROOVY-5700, GROOVY-8788
+                PropertyExpression prop = propX(leftExpression, rightExpression); // m['xx'] -> m.xx
+                return existsProperty(prop, !typeCheckingContext.isTargetOfEnclosingAssignment(expr))
+                            ? getType(prop) : getTypeForMapPropertyExpression(left, prop);
+            }
             Expression copy = binX(leftExpression, expr.getOperation(), rightExpression);
             copy.setSourcePosition(expr); // do not propagate BINARY_EXP_TARGET, etc.
             MethodNode method = findMethodOrFail(copy, left, "getAt", rightRedirect);

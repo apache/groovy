@@ -2005,17 +2005,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testPutAtWithWrongValueType() {
         shouldFailWithMessages '''
-            def map = new HashMap<String, Integer>()
-            map['hello'] = new Object()
+            def map = new HashMap<Integer, Integer>()
+            map[123] = new Object()
         ''',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.String, java.lang.Integer>, java.lang.String, java.lang.Object]'
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.Integer, java.lang.Integer>, int, java.lang.Object]'
+    }
+
+    // GROOVY-8788
+    void testPutAtWithWrongValueType2() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map['x'] = new Object()
+        ''',
+        'Cannot assign value of type java.lang.Object to variable of type java.lang.Integer'
     }
 
     // GROOVY-9069
-    void testPutAtWithWrongValueType2() {
+    void testPutAtWithWrongValueType3() {
         shouldFailWithMessages '''
-            class ConfigAttribute {
-            }
+            class ConfigAttribute { }
             void test(Map<String, Map<String, List<String>>> maps) {
                 maps.each { String key, Map<String, List<String>> map ->
                     Map<String, List<ConfigAttribute>> value = [:]
@@ -2024,18 +2032,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>). Please check if the declared type is correct and if the method exists.',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
-    }
+        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>)',
+        'Cannot assign java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>> to: java.util.Map<java.lang.String, java.util.List<java.lang.String>>'
 
-    void testPutAtWithWrongValueType3() {
         assertScript '''
             void test(Map<String, Map<String, List<String>>> maps) {
                 maps.each { String key, Map<String, List<String>> map ->
                     Map<String, List<String>> value = [:]
-                    // populate value
-                    maps[key] = value
                     maps.put(key, value)
+                    maps[key] = value
                 }
             }
         '''
@@ -2802,9 +2807,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert type.genericsTypes[1].type == DATE
             })
             Map<Date, Date> map = new HashMap<>()
-            map.put('foo', new Date())
+            map.put(123, new Date())
         ''',
-        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.util.Date). Please check if the declared type is correct and if the method exists.'
+        'Cannot find matching method java.util.HashMap#put(int, java.util.Date). Please check if the declared type is correct and if the method exists.'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalKeyUsingSquareBracket() {
         shouldFailWithMessages '''
@@ -2822,9 +2827,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert type.genericsTypes[1].type == DATE
             })
             Map<Date, Date> map = new HashMap<>()
-            map['foo'] = new Date()
+            map[123] = new Date()
         ''',
-        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.util.Date, java.util.Date>, java.lang.String, java.util.Date]'
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.util.Date, java.util.Date>, int, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
         shouldFailWithMessages '''
