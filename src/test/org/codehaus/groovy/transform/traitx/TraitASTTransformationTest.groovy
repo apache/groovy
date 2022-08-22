@@ -3002,9 +3002,22 @@ final class TraitASTTransformationTest {
 
     @Test // GROOVY-10521
     void testVariadicMethodOfPrecompiledTrait() {
+        assertScript shell, """import org.codehaus.groovy.ast.*
+            class CT implements ${T10521.name} {
+                def n(Class<?> clazz, Object... array) {
+                }
+            }
+
+            def cn = new ClassNode(${T10521.name})
+            def mn = cn.getMethods('m')[0]
+            def td = mn.typeDescriptor
+
+            assert td == 'java.lang.Object m(java.lang.Class, java.lang.Object[])'
+        """
+
         System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
         assertScript shell, """
-            @Grab('org.spockframework:spock-core:2.2-M1-groovy-4.0')
+            @Grab('org.spockframework:spock-core:2.2-M3-groovy-4.0')
             @GrabExclude('org.apache.groovy:*')
             import spock.lang.Specification
 
