@@ -1117,15 +1117,14 @@ public abstract class StaticTypeCheckingSupport {
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = -1;
         if (parameters.length == argumentTypes.length) {
-            int allMatch = allParametersAndArgumentsMatch(parameters, argumentTypes);
-            int endMatch = -1;
+            dist = allParametersAndArgumentsMatch(parameters, argumentTypes);
             if (isVargs(parameters) && firstParametersAndArgumentsMatch(parameters, argumentTypes) >= 0) {
-                endMatch = lastArgMatchesVarg(parameters, argumentTypes);
-                if (endMatch >= 0) {
-                    endMatch += getVarargsDistance(parameters);
+                int endDist = lastArgMatchesVarg(parameters, argumentTypes);
+                if (endDist >= 0) {
+                    endDist += getVarargsDistance(parameters);
+                    dist = (dist < 0 ? endDist : Math.min(dist, endDist)); // GROOVY-8737
                 }
             }
-            dist = (allMatch >= 0 ? Math.max(allMatch, endMatch) : endMatch);
         } else if (isVargs(parameters)) {
             dist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
             if (dist >= 0) {

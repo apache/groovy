@@ -1235,7 +1235,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testVargsSelection() {
+    void testVargsSelection1() {
         assertScript '''
             int foo(int x, Object... args) { 1 }
             int foo(Object... args) { 2 }
@@ -1262,6 +1262,96 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 0
             }
             assert sum(1) == 1
+        '''
+    }
+
+    // GROOVY-6147
+    void testVargsSelection4() {
+        assertScript '''
+            int select(Object a, String s) { 1 }
+            int select(Object a, String s, Object[] args) { 2 }
+            def o = new Date()
+            def s = 'String'
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert method.name == 'select'
+                assert method.parameters.length==2
+            })
+            def result = select(o,s)
+            assert result == 1
+        '''
+    }
+
+    // GROOVY-6195
+    void testVargsSelection5() {
+        assertScript '''
+            def list = ['a', 'b', 'c']
+            Object[] arr = list.toArray()
+            println arr
+        '''
+    }
+
+    // GROOVY-6235
+    void testVargsSelection6() {
+        assertScript '''import org.codehaus.groovy.classgen.asm.sc.support.Groovy6235SupportSub as Support
+            def b = new Support()
+            assert b.overload() == 1
+            assert b.overload('a') == 1
+            assert b.overload('a','b') == 2
+        '''
+    }
+
+    // GROOVY-6646
+    void testVargsSelection7() {
+        assertScript '''
+            def foo(Class... cs) { "Classes" }
+            def foo(String... ss) { "Strings" }
+
+            assert foo(List, Map) == "Classes"
+            assert foo("2","1") == "Strings"
+        '''
+        assertScript '''
+            def foo(Class<?>... cs) { "Classes" }
+            def foo(String... ss) { "Strings" }
+
+            assert foo(List, Map) == "Classes"
+            assert foo("2","1") == "Strings"
+        '''
+    }
+
+    // GROOVY-8737
+    void testVargsSelection8() {
+        String methods = '''
+            String m(String key, Object[] args) {
+                "key=$key, args=$args"
+            }
+            String m(String key, Object[] args, Object[] parts) {
+                "key=$key, args=$args, parts=$parts"
+            }
+            String m(String key, Object[] args, String[] names) {
+                "key=$key, args=$args, names=$names"
+            }
+        '''
+        assertScript methods + '''
+            String result = m( 'hello', new Object[]{'world'} ) // exact match for m(String,Object[])
+            assert result == 'key=hello, args=[world]'
+        '''
+        assertScript methods + '''
+            String result = m( 'hello', new String[]{'world'} )
+            assert result == 'key=hello, args=[world]'
+        '''
+        assertScript methods + '''
+            String result = m( "${'hello'}", 'world' )
+            assert result == 'key=hello, args=[world]'
+        '''
+        assertScript methods + '''
+            String result = m( 'hello', 'world' )
+            assert result == 'key=hello, args=[world]'
+        '''
+
+        assertScript methods + '''
+            String result = m( 'hello', new String[]{'there'}, 'Steve' )
+            assert result == 'key=hello, args=[there], names=[Steve]'
         '''
     }
 
@@ -1474,41 +1564,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-6147
-    void testVargsCallWithOverloadedMethod() {
-        assertScript '''
-            int select(Object a, String s) { 1 }
-            int select(Object a, String s, Object[] args) { 2 }
-            def o = new Date()
-            def s = 'String'
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-                assert method.name == 'select'
-                assert method.parameters.length==2
-            })
-            def result = select(o,s)
-            assert result == 1
-        '''
-    }
-
-    // GROOVY-6195
-    void testShouldNotThrowAmbiguousVargs() {
-        assertScript '''
-            def list = ['a', 'b', 'c']
-            Object[] arr = list.toArray()
-            println arr
-        '''
-    }
-
-    void testOverloadedMethodWithVargs() {
-        assertScript '''import org.codehaus.groovy.classgen.asm.sc.support.Groovy6235SupportSub as Support
-            def b = new Support()
-            assert b.overload() == 1
-            assert b.overload('a') == 1
-            assert b.overload('a','b') == 2
-        '''
-    }
-
     // GROOVY-10720
     void testOverloadedMethodWithArray() {
         assertScript '''
@@ -1550,24 +1605,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String.doSomething()
         ''', 'Cannot find matching method java.lang.String#doSomething()'
-    }
-
-    // GROOVY-6646
-    void testNPlusVargsCallInOverloadSituation() {
-        assertScript '''
-            def foo(Class... cs) { "Classes" }
-            def foo(String... ss) { "Strings" }
-
-            assert foo(List, Map) == "Classes"
-            assert foo("2","1") == "Strings"
-        '''
-        assertScript '''
-            def foo(Class<?>... cs) { "Classes" }
-            def foo(String... ss) { "Strings" }
-
-            assert foo(List, Map) == "Classes"
-            assert foo("2","1") == "Strings"
-        '''
     }
 
     // GROOVY-6776
