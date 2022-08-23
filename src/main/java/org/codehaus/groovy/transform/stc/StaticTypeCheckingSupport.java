@@ -1144,34 +1144,35 @@ public abstract class StaticTypeCheckingSupport {
         return bestChoices;
     }
 
-    private static int measureParametersAndArgumentsDistance(Parameter[] params, ClassNode[] args) {
+    private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = -1;
-        if (params.length == args.length) {
-            int allPMatch = allParametersAndArgumentsMatch(params, args);
-            int firstParamDist = firstParametersAndArgumentsMatch(params, args);
-            int lastArgMatch = isVargs(params) && firstParamDist >= 0 ? lastArgMatchesVarg(params, args) : -1;
-            if (lastArgMatch >= 0) {
-                lastArgMatch += getVarargsDistance(params);
+        if (parameters.length == argumentTypes.length) {
+            dist = allParametersAndArgumentsMatch(parameters, argumentTypes);
+            if (isVargs(parameters) && firstParametersAndArgumentsMatch(parameters, argumentTypes) >= 0) {
+                int endDist = lastArgMatchesVarg(parameters, argumentTypes);
+                if (endDist >= 0) {
+                    endDist += getVarargsDistance(parameters);
+                    dist = (dist < 0 ? endDist : Math.min(dist, endDist)); // GROOVY-8737
+                }
             }
-            dist = allPMatch >= 0 ? Math.max(allPMatch, lastArgMatch) : lastArgMatch;
-        } else if (isVargs(params)) {
-            dist = firstParametersAndArgumentsMatch(params, args);
+        } else if (isVargs(parameters)) {
+            dist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
             if (dist >= 0) {
                 // varargs methods must not be preferred to methods without varargs
                 // for example :
                 // int sum(int x) should be preferred to int sum(int x, int... y)
-                dist += getVarargsDistance(params);
+                dist += getVarargsDistance(parameters);
                 // there are three case for vargs
                 // (1) varg part is left out (there's one less argument than there are parameters)
                 // (2) last argument is put in the vargs array
                 //     that case is handled above already when params and args have the same length
-                if (params.length < args.length) {
+                if (parameters.length < argumentTypes.length) {
                     // (3) there is more than one argument for the vargs array
-                    int excessArgumentsDistance = excessArgumentsMatchesVargsParameter(params, args);
-                    if (excessArgumentsDistance < 0) {
-                        dist = -1;
-                    } else {
+                    int excessArgumentsDistance = excessArgumentsMatchesVargsParameter(parameters, argumentTypes);
+                    if (excessArgumentsDistance >= 0) {
                         dist += excessArgumentsDistance;
+                    } else {
+                        dist = -1;
                     }
                 }
             }
