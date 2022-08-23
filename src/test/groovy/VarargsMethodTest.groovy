@@ -18,65 +18,121 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
 /**
- * VarargsMethodTest.groovy
- *
- *   1) Test to fix the Jira issues GROOVY-1023 and GROOVY-1026.
- *   2) Test the feature that the length of arguments can be variable
- *      when invoking methods with or without parameters.
+ * Tests the feature that the length of arguments can be variable when invoking
+ * methods with or without parameters.
  */
-class VarargsMethodTest extends GroovyTestCase {
+final class VarargsMethodTest {
 
-    void testVarargsOnly() {  
-        assertEquals 1, varargsOnlyMethod('')
-        assertEquals 1, varargsOnlyMethod(1)
-        assertEquals 2, varargsOnlyMethod('','')
-        assertEquals 1, varargsOnlyMethod( ['',''] )
-        assertEquals 2, varargsOnlyMethod( ['',''] as Object[])
-        assertEquals 2, varargsOnlyMethod( *['',''] )
+    Object nullProperty = null
 
-        // GROOVY-1023
-        assertEquals 0, varargsOnlyMethod()
-
-        // GROOVY-1026
-        assertEquals(-1, varargsOnlyMethod(null))
-        assertEquals(2, varargsOnlyMethod(null, null))
+    int varargsOnlyMethod(Object[] args) {
+        // GROOVY-1023 (Java 5 feature)
+        //     If this method having varargs is invoked with no parameter,
+        //     then args is not null, but an array of length 0.
+        // GROOVY-1026 (Java 5 feature)
+        //     If this method having varargs is invoked with one parameter
+        //     null, then args is null, and so -1 is returned here.
+        args == null ? -1 : args.length
     }
 
-     Integer varargsOnlyMethod(Object[] args) {
-         // GROOVY-1023 (Java 5 feature)
-         //     If this method having varargs is invoked with no parameter,
-         //     then args is not null, but an array of length 0.
-         // GROOVY-1026 (Java 5 feature)
-         //     If this method having varargs is invoked with one parameter
-         //     null, then args is null, and so -1 is returned here.
-         if (args == null)
-               return -1
-         return args.size()
-     }
-
-     void testVarargsLast() {
-         assertEquals 0, varargsLastMethod('')
-         assertEquals 0, varargsLastMethod(1)
-         assertEquals 1, varargsLastMethod('','')
-         assertEquals 2, varargsLastMethod('','','')
-         assertEquals 1, varargsLastMethod('', ['',''] )
-         assertEquals 2, varargsLastMethod('', ['',''] as Object[])
-         assertEquals 2, varargsLastMethod('', *['',''] )
-
-        // GROOVY-1026
-        assertEquals(-1, varargsLastMethod('', null))
-        assertEquals(2, varargsLastMethod('', null, null))
-    }
-
-    Integer varargsLastMethod(Object first, Object[] args) {
+    int varargsLastMethod(arg, Object[] args) {
         // GROOVY-1026 (Java 5 feature)
         //     If this method having varargs is invoked with two parameters
         //     1 and null, then args is null, and so -1 is returned here.
-        if (args == null)
-            return -1
-        return args.size()
+        args == null ? -1 : args.length
     }
-}  
+
+    def varargsOverloads1(arg) {
+        '1'
+    }
+    def varargsOverloads1(arg, Object[] args) {
+        "1+${args?.length}".toString()
+    }
+
+    def varargsOverloads2(String key, Object[] args) {
+        "key=$key, args=$args".toString()
+    }
+    def varargsOverloads2(String key, Object[] args, Object[] parts) {
+        "key=$key, args=$args, parts=$parts".toString()
+    }
+    def varargsOverloads2(String key, Object[] args, String[] names) {
+        "key=$key, args=$args, names=$names".toString()
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Test
+    void testVarargsOnly() {
+        assert varargsOnlyMethod('') == 1
+        assert varargsOnlyMethod(11) == 1
+        assert varargsOnlyMethod('','') == 2
+        assert varargsOnlyMethod(['','']) == 1
+        assert varargsOnlyMethod(*['','']) == 2
+        assert varargsOnlyMethod(['',''] as Object[]) == 2
+
+        // GROOVY-1023
+        assert varargsOnlyMethod() == 0
+
+        // GROOVY-1026
+        assert varargsOnlyMethod(null) == -1
+        assert varargsOnlyMethod(null, null) == 2
+
+        // GROOVY-6146
+        assert varargsOnlyMethod((Object[])null) == -1
+        assert varargsOnlyMethod(null as Object[]) == -1
+        assert varargsOnlyMethod((Object)null) == -1 // TODO: 1
+        assert varargsOnlyMethod(null as Object) == -1 // TODO: 1
+
+        // GROOVY-10099
+        Object[] array = null
+        assert varargsOnlyMethod(array) == -1
+        Object value = null
+        assert varargsOnlyMethod(value) == -1 // TODO: 1
+        // non-array POGO property == null
+        assert varargsOnlyMethod(nullProperty) == -1 // TODO: 1
+        // non-array POJO property (ie: via getter) returns null
+        assert varargsOnlyMethod(URI.create('http://example.com').query) == -1 // TODO: 1
+        // non-array returning method returns null
+        assert varargsOnlyMethod(Objects.toString(null, null)) == -1 // TODO: 1
+    }
+
+    @Test
+    void testVarargsLast() {
+        assert varargsLastMethod('') == 0
+        assert varargsLastMethod(1) == 0
+        assert varargsLastMethod('','') == 1
+        assert varargsLastMethod('','','') == 2
+        assert varargsLastMethod('',['',''] ) == 1
+        assert varargsLastMethod('',['',''] as Object[]) == 2
+        assert varargsLastMethod('',*['',''] ) == 2
+
+        // GROOVY-1026
+        assert varargsLastMethod('',null) == -1
+        assert varargsLastMethod('',null, null) == 2
+    }
+
+    @Test
+    void testVarargsSelection1() {
+        assert varargsOverloads1('') == '1'
+        assert varargsOverloads1('','') == '1+1'
+        assert varargsOverloads1('',null) == '1+null'
+        assert varargsOverloads1('','',null) == '1+2'
+        assert varargsOverloads1('',new Object[0]) == '1+0'
+    }
+
+    @Test // GROOVY-8737
+    void testVarargsSelection2() {
+        assert varargsOverloads2('hello', new Object[]{'world'}) == 'key=hello, args=[world]'
+
+        assert varargsOverloads2('hello', new String[]{'world'}) == 'key=hello, args=[world]'
+
+        assert varargsOverloads2("${'hello'}", 'world') == 'key=hello, args=[world]'
+
+        assert varargsOverloads2('hello', 'world') == 'key=hello, args=[world]'
+
+        assert varargsOverloads2('hello', new String[]{'there'}, 'Steve') == 'key=hello, args=[there], names=[Steve]'
+    }
+}
