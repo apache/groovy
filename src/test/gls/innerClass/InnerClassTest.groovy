@@ -1851,6 +1851,36 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8762
+    void testReferenceToPrivateFieldInConstructor() {
+        assertScript '''
+            class Outer {
+                static class Inner extends Closure {
+                    private int x, y
+                    Inner(int i) {
+                        super(null, null)
+                        x = i
+                        this.y = i // NullPointerException
+                    }
+                    def doCall(... args) {
+                        return 42
+                    }
+                    int getMaximumNumberOfParameters() {
+                        throw new UnsupportedOperationException()
+                    }
+                    Class[] getParameterTypes() {
+                        throw new UnsupportedOperationException()
+                    }
+                }
+                def makeCallable() {
+                    new Inner(1)
+                }
+            }
+            Number result = new Outer().makeCallable().call()
+            assert result == 42
+        '''
+    }
+
     @Test // GROOVY-7609
     void testReferenceToInitializedThis1() {
         assertScript '''

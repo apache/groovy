@@ -335,7 +335,7 @@ public class WriterController {
 
     public boolean isInClosure() {
         return classNode.getOuterClass() != null
-            && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE);
+            && classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type);
     }
 
     public boolean isInClosureConstructor() {
