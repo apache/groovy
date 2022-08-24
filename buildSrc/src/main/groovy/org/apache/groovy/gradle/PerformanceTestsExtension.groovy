@@ -84,6 +84,10 @@ class PerformanceTestsExtension {
                 it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
             }
             it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : (v.startsWith('4') ? "org.apache.groovy:groovy:$v" : "org.codehaus.groovy:groovy:$v")))
+            if (!v.startsWith('2.4')) {
+                it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-dateutil']) : (v.startsWith('4') ? "org.apache.groovy:groovy-dateutil:$v" : "org.codehaus.groovy:groovy-dateutil:$v")))
+                it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-datetime']) : (v.startsWith('4') ? "org.apache.groovy:groovy-datetime:$v" : "org.codehaus.groovy:groovy-datetime:$v")))
+            }
             it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-swing']) : (v.startsWith('4') ? "org.apache.groovy:groovy-swing:$v" : "org.codehaus.groovy:groovy-swing:$v")))
             it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-sql']) : (v.startsWith('4') ? "org.apache.groovy:groovy-sql:$v" : "org.codehaus.groovy:groovy-sql:$v")))
             it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-xml']) : (v.startsWith('4') ? "org.apache.groovy:groovy-xml:$v" : "org.codehaus.groovy:groovy-xml:$v")))
