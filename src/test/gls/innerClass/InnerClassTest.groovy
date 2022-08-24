@@ -203,6 +203,48 @@ final class InnerClassTest {
         '''
     }
 
+    @NotYetImplemented @Test // GROOVY-8423
+    void testPrivateInnerClassHasPrivateModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                private class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert isPrivate(modifiers)
+        '''
+    }
+
+    @NotYetImplemented @Test // GROOVY-8423
+    void testProtectedInnerClassHasProtectedModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                protected class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert isProtected(modifiers)
+        '''
+    }
+
+    @Test // GROOVY-8423
+    void testPackagePrivateInnerClassHasNoAccessModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                @groovy.transform.PackageScope class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert !isPrivate(modifiers) && !isProtected(modifiers) && !isPublic(modifiers)
+        '''
+    }
+
     @Test
     void testStaticInnerClass() {
         assertScript '''
@@ -641,6 +683,19 @@ final class InnerClassTest {
         assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
     }
 
+    @Test // GROOVY-8050
+    void testUsageOfOuterField13() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            assert i.p == 1
+        '''
+    }
+
     @Test
     void testUsageOfOuterSuperField() {
         assertScript '''
@@ -691,6 +746,29 @@ final class InnerClassTest {
             }
             def x = new A.B().test()
             assert x == 'value'
+        '''
+    }
+
+    @Test // GROOVY-9905
+    void testUsageOfOuterSuperField3() {
+        assertScript '''
+            abstract class A {
+                protected final f = 'foo'
+                abstract static class B {}
+            }
+
+            class C extends A {
+                private class D extends A.B { // B is static inner
+                    String toString() {
+                        f + 'bar' // No such property: f for class: A
+                    }
+                }
+                def m() {
+                    new D().toString()
+                }
+            }
+
+            assert new C().m() == 'foobar'
         '''
     }
 
@@ -1170,8 +1248,21 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-5754
+    void testResolveInnerOfSuperType() {
+        assertScript '''
+            interface I { class C { } }
+
+            class Outer implements I {
+                static class Inner extends C {}
+            }
+
+            print I.C
+        '''
+    }
+
     @Test // GROOVY-5989
-    void testResolveInnerOfSuperType1() {
+    void testResolveInnerOfSuperType2() {
         assertScript '''
             interface I { class C { } }
 
@@ -1181,19 +1272,6 @@ final class InnerClassTest {
 
             new Outer()
             new Outer.Inner()
-        '''
-    }
-
-    @Test // GROOVY-5754
-    void testResolveInnerOfSuperType2() {
-        assertScript '''
-            interface I { class C { } }
-
-            class Outer implements I {
-                static class Inner extends C {}
-            }
-
-            print I.C
         '''
     }
 
@@ -1483,13 +1561,12 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9151
+    @Test // GROOVY-5681, GROOVY-9151
     void testEnclosingMethodIsSet2() {
         assertScript '''
             import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
@@ -1516,7 +1593,6 @@ final class InnerClassTest {
             import org.codehaus.groovy.ast.expr.*
             import org.codehaus.groovy.ast.stmt.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
@@ -1684,6 +1760,30 @@ final class InnerClassTest {
                 }
             }
             new Outer().obj.toString()
+        '''
+    }
+
+    @NotYetImplemented @Test // GROOVY-8274
+    void testMissingMethodHandling() {
+        assertScript '''
+            class A {
+                class B {
+                    def methodMissing(String name, args) {
+                        return name
+                    }
+                }
+
+                def test(Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = new B()
+                    c.call()
+                }
+            }
+
+            def x = new A().test { ->
+                hello() // missing
+            }
+            assert x == 'hello'
         '''
     }
 

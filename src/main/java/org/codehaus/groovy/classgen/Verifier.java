@@ -408,7 +408,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
-        if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
+        if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.GROOVY_OBJECT_TYPE);
         FieldNode metaClassField = getMetaClassField(node);
 
         boolean shouldAnnotate = classNode.getModule().getContext() != null;
