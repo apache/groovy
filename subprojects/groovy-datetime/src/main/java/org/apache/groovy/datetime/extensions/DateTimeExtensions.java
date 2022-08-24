@@ -2092,7 +2092,7 @@ public final class DateTimeExtensions {
         return ZoneOffset.ofTotalSeconds(offsetMillis / 1000);
     }
 
-    /* duplicated with DateUtilExtensions.toCalendar() but we don't want modulkes to depend on one another */
+    /* duplicated with DateUtilExtensions.toCalendar() but we don't want modules to depend on one another */
     private static Calendar toCalendar(Date self) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(self);
