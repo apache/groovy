@@ -37,6 +37,12 @@ println 'Today is day ' + cal.get(Calendar.DAY_OF_YEAR) + ' of the current year.
 //     http://joda-time.sourceforge.net/
 // there is a special Grails (grails.org) time DSL (see below)
 //----------------------------------------------------------------------------------
+import static java.util.Calendar.*
+import java.time.*
+println "Today is day ${cal[DAY_OF_YEAR]} of the current year."
+println LocalDateTime.now()
+// => 2022-08-24T17:59:41.359654800
+println "Today is day ${LocalDateTime.now().dayOfYear} of the current year."
 
 // @@PLEAC@@_3.1
 //----------------------------------------------------------------------------------
@@ -47,6 +53,9 @@ D = cal.get(Calendar.DATE)
 println "The current date is $Y $M $D"
 // => The current date is 2006 04 28
 //----------------------------------------------------------------------------------
+(_E, Y, M, _WY, _WM, D) = Calendar.instance
+println "The current date is $Y $M $D"
+// => The current date is 2022 07 24
 
 // @@PLEAC@@_3.2
 //----------------------------------------------------------------------------------
@@ -200,7 +209,7 @@ input = new BufferedReader(new InputStreamReader(System.in)).readLine()
 after = System.currentTimeMillis()
 elapsed = (after - before) / 1000
 println "You took $elapsed seconds."
-// => You took2.313 seconds.
+// => You took 2.313 seconds.
 
 // take mean sorting time
 size = 500; number = 100; total = 0
