@@ -7794,7 +7794,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<T> answer = new ArrayList<>(indices.size());
         for (Object value : indices) {
             if (value instanceof Collection) {
-                answer.addAll((List<T>)InvokerHelper.invokeMethod(self, "getAt", value));
+                answer.addAll(getAt(self, (Collection) value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
                 answer.add(getAt(self, idx));
