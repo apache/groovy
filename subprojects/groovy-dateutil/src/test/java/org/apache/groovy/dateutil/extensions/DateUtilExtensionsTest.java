@@ -24,10 +24,13 @@ import org.junit.Test;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DateUtilExtensionsTest {
     @Test
@@ -60,5 +63,14 @@ public class DateUtilExtensionsTest {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(sdf.parse("20180101"));
         assertEquals("20171231", sdf.format(DateUtilExtensions.previous(calendar).getTime()));
+    }
+
+    @Test
+    public void calendarCollectGetAt() {
+        Calendar calendar = Calendar.getInstance();
+        List<Integer> result = DateUtilExtensions.getAt(calendar, Arrays.asList(Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH));
+        assertTrue("Year", result.get(0) >= 2022);
+        assertTrue("Month", result.get(1) <= 11);
+        assertTrue("Day", result.get(2) <= 31);
     }
 }

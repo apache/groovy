@@ -20,13 +20,17 @@ package org.apache.groovy.dateutil.extensions;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -35,6 +39,7 @@ import java.util.TimeZone;
  * Date and Calendar classes inside the Groovy environment.
  */
 public class DateUtilExtensions {
+    private DateUtilExtensions() {}
 
     /**
      * Support the subscript operator for a Date.
@@ -48,7 +53,22 @@ public class DateUtilExtensions {
     public static int getAt(Date self, int field) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(self);
-        return cal.get(field);
+        return getAt(cal, field);
+    }
+
+    /**
+     * Support the subscript operator for a Date with a collection of indices.
+     *
+     * @param self   a Date
+     * @param fields a collection of Calendar fields, e.g. [YEAR, MONTH]
+     * @return the value for the given field, e.g. [2022, FEBRUARY]
+     * @see java.util.Calendar
+     * @since 4.0.5
+     */
+    public static List<Integer> getAt(Date self, Collection fields) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        return getAt(cal, fields);
     }
 
     /**
@@ -75,6 +95,28 @@ public class DateUtilExtensions {
      */
     public static int getAt(Calendar self, int field) {
         return self.get(field);
+    }
+
+    /**
+     * Support the subscript operator for a Calendar with a collection of indices.
+     *
+     * @param self   a Calendar
+     * @param fields a collection of Calendar fields, e.g. [YEAR, MONTH]
+     * @return the value for the given field, e.g. [2022, FEBRUARY]
+     * @see java.util.Calendar
+     * @since 4.0.5
+     */
+    public static List<Integer> getAt(Calendar self, Collection fields) {
+        List<Integer> answer = new ArrayList<>(fields.size());
+        for (Object field : fields) {
+            if (field instanceof Collection) {
+                answer.addAll(getAt(self, (Collection) field));
+            } else {
+                int idx = DefaultTypeTransformation.intUnbox(field);
+                answer.add(getAt(self, idx));
+            }
+        }
+        return answer;
     }
 
     /**
