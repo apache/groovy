@@ -110,9 +110,10 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     @Test
     void testCloneableField() {
-        def (originalDolly, lab) = evaluate("""
-            import groovy.transform.Immutable
+        def (originalDolly, lab) = evaluate('''
+            import groovy.transform.*
 
+            @AutoClone
             class Dolly implements Cloneable {
                 String name
             }
@@ -124,7 +125,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
             def dolly = new Dolly(name: "The Sheep")
             [dolly, new Lab(name: "Area 51", clone: dolly)]
-        """)
+        ''')
 
         def clonedDolly = lab.clone
         def clonedDolly2 = lab.clone
