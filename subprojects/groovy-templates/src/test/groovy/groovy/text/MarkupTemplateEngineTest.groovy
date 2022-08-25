@@ -736,10 +736,9 @@ html {
 }
 '''
         StringWriter rendered = new StringWriter()
-        def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
+        def model = [persons: [Person[name: 'Cedric'], Person[name: 'Jochen']]]
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
-
     }
 
     void testInlinedModelTypeDeclarationShouldFailBecauseIncorrectType() {
@@ -761,11 +760,9 @@ html {
 }
 '''
             StringWriter rendered = new StringWriter()
-            def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
+            def model = [persons: [Person[name: 'Cedric'], Person[name: 'Jochen']]]
             template.make(model).writeTo(rendered)
-            assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
         } =~ 'No such property: name for class: java.lang.String'
-
     }
 
     void testFragment() {

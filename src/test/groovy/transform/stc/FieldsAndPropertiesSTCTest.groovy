@@ -383,23 +383,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5517
-    void testShouldFindStaticPropertyEvenIfObjectImplementsMap() {
-        assertScript '''
-            class C extends HashMap {
-                public static int version = 666
-            }
-            def map = new C()
-            map['foo'] = 123
-            def value = map.foo
-            assert value == 123
-            map['foo'] = 4.5
-            value = map['foo']
-            assert value == 4.5
-            assert C.version == 666
-        '''
-    }
-
     void testClassPropertyOnInterface() {
         assertScript '''
             Class test(Serializable arg) {
@@ -476,7 +459,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5700
-    void testInferenceOfMapDotProperty() {
+    void testMapPropertyAccess1() {
         assertScript '''
             def map = [key: 123]
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -488,7 +471,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5700, GROOVY-8788
-    void testInferenceOfMapSubProperty() {
+    void testMapPropertyAccess2() {
         assertScript '''
             def map = [key: 123]
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -496,6 +479,41 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             })
             def val = map['key']
             assert val == 123
+        '''
+    }
+
+    // GROOVY-8074
+    void testMapPropertyAccess3() {
+        assertScript '''
+            class C extends HashMap {
+                def foo = 1
+            }
+            def map = new C()
+            map.put('foo', 42)
+            assert map.foo == 42
+        '''
+
+        assertScript """
+            def map = new ${MapType.name}()
+            map.put('foo', 42)
+            assert map.foo == 42
+        """
+    }
+
+    // GROOVY-5517
+    void testMapPropertyAccess4() {
+        assertScript '''
+            class C extends HashMap {
+                public static int version = 666
+            }
+            def map = new C()
+            map['foo'] = 123
+            def value = map.foo
+            assert value == 123
+            map['foo'] = 4.5
+            value = map['foo']
+            assert value == 4.5
+            assert C.version == 666
         '''
     }
 
@@ -1268,6 +1286,10 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
+    }
+
+    static class MapType extends HashMap<String,Object> {
+        def foo = 1
     }
 
     static class BaseClass {

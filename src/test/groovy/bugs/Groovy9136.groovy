@@ -18,28 +18,71 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
+import org.junit.Test
 
-@CompileStatic
-final class Groovy9136 extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    void testMethodParameterAccessFromClosure() {
+final class Groovy9136 {
+
+    @Test
+    void testMethodParameterFieldAccessFromClosure1() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class Foo {
                 public String field = 'foo'
             }
-            @groovy.transform.CompileStatic
             class Bar {
-                def doIt(Foo foo) {
+                @groovy.transform.CompileStatic
+                def test(Foo foo) {
                     'baz'.with {
-                        foo.field // GROOVY-9136: Access to Foo#foo is forbidden at line: -1, column: -1
+                        foo.field // Access to Foo#foo is forbidden at line: -1, column: -1
                     }
                 }
             }
 
             def bar = new Bar()
-            def out = bar.doIt(new Foo())
+            def out = bar.test(new Foo())
+            assert out == 'foo'
+        '''
+    }
+
+    @Test // GROOVY-9195
+    void testMethodParameterFieldAccessFromClosure2() {
+        assertScript '''
+            class Foo {
+                private String field = 'foo'
+            }
+            class Bar {
+                @groovy.transform.CompileStatic
+                def test(Foo foo) {
+                    'baz'.with {
+                        foo.field
+                    }
+                }
+            }
+
+            def bar = new Bar()
+            def out = bar.test(new Foo())
+            assert out == 'foo'
+        '''
+    }
+
+    @Test
+    void testMethodParameterFieldAccessFromClosure3() {
+        assertScript '''
+            class Foo {
+                private String field = 'foo'
+            }
+            @groovy.transform.CompileStatic
+            class Bar {
+                def test(Foo foo) {
+                    foo.with {
+                        field
+                    }
+                }
+            }
+
+            def bar = new Bar()
+            def out = bar.test(new Foo())
             assert out == 'foo'
         '''
     }

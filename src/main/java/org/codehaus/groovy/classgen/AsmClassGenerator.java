@@ -91,6 +91,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
@@ -1180,8 +1181,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
-        if (controller.isInClosure()) return false;
-        return controller.isStaticContext() && isThisOrSuper(objectExpression);
+        return isThisOrSuper(objectExpression) && controller.isStaticContext() && !controller.isInClosure();
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
@@ -1233,11 +1233,11 @@ public class AsmClassGenerator extends ClassGenerator {
             if (controller.getCompileStack().isLHS()) {
                 adapter = setField;
                 if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-                if (usesSuper(expression)) adapter = setFieldOnSuper;
+                if (isSuperExpression(objectExpression)) adapter = setFieldOnSuper;
             } else {
                 adapter = getField;
                 if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
-                if (usesSuper(expression)) adapter = getFieldOnSuper;
+                if (isSuperExpression(objectExpression)) adapter = getFieldOnSuper;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1249,18 +1249,18 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private static boolean usesSuper(PropertyExpression pe) {
-        Expression expression = pe.getObjectExpression();
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            String variable = varExp.getName();
-            return variable.equals("super");
-        }
-        return false;
+    private boolean isGroovyObject(Expression objectExpression) {
+        if (ExpressionUtils.isThisExpression(objectExpression)) return true;
+        if (objectExpression instanceof ClassExpression) return false;
+
+        ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+        if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
+        if (GeneralUtils.isOrImplements(objectExpressionType, ClassHelper.MAP_TYPE)) return false; // GROOVY-8074
+        return implementsGroovyObject(objectExpressionType); // GROOVY-9195, GROOVY-9288, et al.
     }
 
-    private static boolean isGroovyObject(Expression objectExpression) {
-        return ExpressionUtils.isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
+    private static boolean implementsGroovyObject(ClassNode cn) {
+        return cn.isDerivedFromGroovyObject() || (!cn.isInterface() && cn.getCompileUnit() != null);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -1691,8 +1691,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadWrapper(Expression argument) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode goalClass = argument.getType();
-        visitClassExpression(new ClassExpression(goalClass));
-        if (goalClass.isDerivedFromGroovyObject()) {
+        visitClassExpression(classX(goalClass));
+        if (implementsGroovyObject(goalClass)) {
             createGroovyObjectWrapperMethod.call(mv);
         } else {
             createPojoWrapperMethod.call(mv);
