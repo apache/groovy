@@ -21,7 +21,7 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class Groovy8026Bug extends GroovyTestCase {
-    void testJavaBeanPropertiesAvailableInInnerClasses() {
+    void testMatcherGetAtCases() {
         assertScript '''
             def mm = '1 2 3 4 5 6 7 8 9' =~ /\\d/
             assert mm.collect { it }.toString() == '[1, 2, 3, 4, 5, 6, 7, 8, 9]'
