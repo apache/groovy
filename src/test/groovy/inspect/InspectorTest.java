@@ -51,7 +51,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals(object, inspector.getObject());
         try {
             new Inspector(null);
-            fail("should have thown IllegalArgumentException");
+            fail("should have thrown IllegalArgumentException");
         } catch (Exception expected) {
         }
     }
