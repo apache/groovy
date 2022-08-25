@@ -576,7 +576,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10414
+    // GROOVY-10414
     void testOuterPropertyAccess3() {
         assertScript '''
             class Outer {
