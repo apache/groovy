@@ -371,6 +371,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         GroovyObject obj = new A.B()
         '''
     }
+
     void testCastInnerClassToGroovyObject() {
         assertScript '''
         class A { static class B {} }
@@ -684,18 +685,16 @@ Printer
         assertScript '''
             interface A { void m() }
             interface B { void m() }
-            interface C extends A, B {}
-
-            class D {
-             D(C c) {
-               c.m()
-             }
+            interface C extends A,B {
             }
-            class CImpl implements C {
-                void m() { }
+            class Impl implements C {
+                void m() {}
             }
 
-            new D(new CImpl())
+            void test(C c) {
+                c.m()
+            }
+            test(new Impl())
         '''
     }
 
@@ -703,16 +702,16 @@ Printer
         assertScript '''
             interface A { void m() }
             interface B { void m() }
-            class C implements A,B {
+            interface C extends A,B {
+            }
+            class Impl implements C,A,B {
                 void m() {}
             }
-            class D {
-             D(C c) {
-               c.m()
-             }
-            }
 
-            new D(new C())
+            void test(C c) {
+                c.m()
+            }
+            test(new Impl())
         '''
     }
 
@@ -720,17 +719,14 @@ Printer
         assertScript '''
             interface A { void m() }
             interface B { void m() }
-            interface C extends A,B {}
-            class CImpl implements C, A,B {
+            class C implements A,B {
                 void m() {}
             }
-            class D {
-             D(C c) {
-               c.m()
-             }
-            }
 
-            new D(new CImpl())
+            void test(C c) {
+                c.m()
+            }
+            test(new C())
         '''
     }
 
@@ -969,6 +965,7 @@ Printer
             }
         '''
     }
+
     void testInnerClassImplementsInterfaceMethodWithTrait() {
         assertScript '''
             class Main {
@@ -994,6 +991,7 @@ Printer
             }
         '''
     }
+
     void testInnerClassImplementsInterfaceMethodWithDelegate() {
         assertScript '''
             class Main {

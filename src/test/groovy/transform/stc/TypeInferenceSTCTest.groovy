@@ -146,7 +146,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
 
-            def foo(o) {
+            void test(o) {
                 if (o instanceof A) {
                     o.bar()
                 }
@@ -154,13 +154,30 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     o.bar()
                 }
             }
-            foo(new A())
-            foo(new B())
+            test(new A())
+            test(new B())
+        '''
+    }
+
+    // GROOVY-9953
+    void testInstanceOf6() {
+        assertScript '''
+            class A {
+            }
+            A test(Object x) {
+                if (x instanceof A) {
+                    def y = x
+                    return y
+                } else {
+                    new A()
+                }
+            }
+            new A().with { assert test(it) === it }
         '''
     }
 
     // GROOVY-9454
-    void testInstanceOf6() {
+    void testInstanceOf7() {
         assertScript '''
             interface Face {
             }
@@ -187,7 +204,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10667
-    void testInstanceOf7() {
+    void testInstanceOf8() {
         assertScript '''
             trait Tagged {
                 String tag
@@ -206,6 +223,41 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
             doSomething1(new TaggedException(tag:'Test'))
         '''
+    }
+
+    @NotYetImplemented // GROOVY-7971
+    void testInstanceOf9() {
+        assertScript '''
+            import groovy.json.JsonOutput
+            def test(value) {
+                def out = new StringBuilder()
+                def isString = value.class == String
+                if (isString || value instanceof Map) {
+                    out.append(JsonOutput.toJson(value))
+                }
+                return out.toString()
+            }
+            def string = test('two')
+            assert string == '"two"'
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10096
+    void testInstanceOf10() {
+        shouldFailWithMessages '''
+            class Foo {
+                void foo() {
+                }
+            }
+            class Bar extends Foo {
+                void bar() {
+                }
+            }
+            static Bar baz(Foo foo) {
+                (false || foo instanceof Bar) ? foo : new Bar()
+            }
+        ''',
+        'Cannot return value of type Foo for method returning Bar'
     }
 
     void testNestedInstanceOf1() {
@@ -244,8 +296,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented
     void testMultipleInstanceOf1() {
-        shouldFailWithMessages '''
+        assertScript '''
             class A {
                 void bar() {
                 }
@@ -255,56 +308,109 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
 
-            def foo(o) {
+            void test(o) {
                 if (o instanceof A || o instanceof B) {
                     o.bar()
                 }
             }
-            foo(new A())
-            foo(new B())
-        ''',
-        'Reference to method is ambiguous. Cannot choose between [void A#bar(), void B#bar()]'
+            test(new A())
+            test(new B())
+        '''
+    }
+
+    void testMultipleInstanceOf2() {
+        assertScript '''
+            int cardinality(o) {
+                (o instanceof List || o instanceof Map ? o.size() : 1)
+            }
+            assert cardinality('') == 1
+            assert cardinality(['foo','bar']) == 2
+            assert cardinality([foo:'',bar:'']) == 2
+        '''
+    }
+
+    void testMultipleInstanceOf3() {
+        assertScript '''
+            boolean empty(o) {
+                (o instanceof List || o instanceof Map) && o.isEmpty()
+            }
+            assert !empty('')
+            assert  empty([])
+            assert  empty([:])
+            assert !empty(['foo'])
+            assert !empty([foo:null])
+        '''
     }
 
     // GROOVY-8965
-    void testMultipleInstanceOf2() {
+    void testMultipleInstanceOf4() {
+        ['o', '((Number) o)'].each {
+            assertScript """
+                def foo(o) {
+                    if (o instanceof Integer || o instanceof Double) {
+                        ${it}.floatValue() // ClassCastException
+                    }
+                }
+                def bar = foo(1.1d)
+                assert bar == 1.1f
+                def baz = foo(1)
+                assert baz == 1
+            """
+        }
+    }
+
+    @NotYetImplemented
+    void testMultipleInstanceOf5() {
         assertScript '''
-            def foo(o) {
-                if (o instanceof Integer || o instanceof Double) {
-                    ((Number) o).floatValue()
+            void test(thing) {
+                if (thing instanceof Deque) {
+                    thing.addFirst(1) // 'addFirst' only in Deque
+                } else if (thing instanceof Stack) {
+                    thing.addElement(2) // 'addElement' only in Stack
+                }
+                if (thing instanceof Deque || thing instanceof Stack) {
+                    assert thing.peek() in 1..2 // 'peek' in Deque and Stack but not LUB
                 }
             }
-            def bar = foo(1.1d)
-            assert bar == 1.1f
+            test(new Stack())
+            test(new ArrayDeque())
         '''
-        shouldFailWithMessages '''
-            def foo(o) {
-                if (o instanceof Integer || o instanceof Double) {
-                    o.floatValue() // CCE: Double cannot be cast to Integer
-                }
-            }
-            def bar = foo(1.1d)
-            assert bar == 1.1f
-        ''',
-        'Reference to method is ambiguous. Cannot choose between [float java.lang.Integer#floatValue(), float java.lang.Double#floatValue()]'
     }
 
     // GROOVY-10668
-    void testMultipleInstanceOf3() {
-        assertScript '''
-            def toArray(Object value) {
-                def result
-                if (value instanceof List)
-                    result = value.toArray()
-                else if (value instanceof String || value instanceof GString)
-                    result = value.toString().split(',')
-                else
-                    throw new Exception('not supported')
+    void testMultipleInstanceOf6() {
+        ['(value as String)', 'value.toString()'].each { string ->
+            assertScript """
+                def toArray(Object value) {
+                    def array
+                    if (value instanceof List)
+                        array = value.toArray()
+                    else if (value instanceof String || value instanceof GString)
+                        array = ${string}.split(',')
+                    else
+                        throw new Exception('not supported')
 
-                return result
+                    return array
+                }
+                toArray([1,2,3])
+                toArray('1,2,3')
+            """
+        }
+    }
+
+    @NotYetImplemented // GROOVY-8828
+    void testMultipleInstanceOf7() {
+        assertScript '''
+            interface Foo { }
+            interface Bar { String name() }
+
+            Map<String, Foo> map = [:]
+            map.values().each { foo ->
+                if (foo instanceof Bar) {
+                    String name = foo.name() // method available through Bar
+                    map.put(name, foo)       // second parameter expects Foo
+                }
             }
-            toArray([1,2,3])
-            toArray('1,2,3')
         '''
     }
 
@@ -566,28 +672,12 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9953
-    void testInstanceOfPropagatesToLocalVariable() {
-        assertScript '''
-            class A {
-            }
-            A test(Object x) {
-                if (x instanceof A) {
-                    def y = x
-                    return y
-                } else {
-                    new A()
-                }
-            }
-            new A().with { assert test(it) === it }
-        '''
-    }
-
     void testShouldNotAllowDynamicVariable() {
         shouldFailWithMessages '''
             String name = 'Guillaume'
             println naamme
-        ''', 'The variable [naamme] is undeclared'
+        ''',
+        'The variable [naamme] is undeclared'
     }
 
     void testShouldNotFailWithWith() {

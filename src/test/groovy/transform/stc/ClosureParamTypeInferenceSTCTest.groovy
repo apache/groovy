@@ -1497,7 +1497,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testGroovy10180() {
         assertScript '''
             void test(args) {

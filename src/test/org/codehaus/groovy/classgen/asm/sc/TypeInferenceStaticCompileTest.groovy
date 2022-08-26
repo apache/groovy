@@ -18,10 +18,26 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.TypeInferenceSTCTest
 
 /**
  * Unit tests for static compilation : type inference.
  */
 class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
+
+    @Override @NotYetImplemented
+    void testMultipleInstanceOf2() {
+        super.testMultipleInstanceOf2()
+    }
+
+    @Override @NotYetImplemented
+    void testMultipleInstanceOf3() {
+        super.testMultipleInstanceOf3()
+    }
+
+    @Override @NotYetImplemented
+    void testMultipleInstanceOf4() {
+        super.testMultipleInstanceOf4()
+    }
 }

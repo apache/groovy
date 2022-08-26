@@ -3777,12 +3777,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Receiver<String>> owners = new ArrayList<>();
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
-                && ((VariableExpression) objectExpression).getName().equals("owner")
+                && ((Variable) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
             List<Receiver<String>> enclosingClass = Collections.singletonList(
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
+            List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
+            int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
+            if (temporaryTypesCount > 0) {
+                // GROOVY-8965, GROOVY-10180, GROOVY-10668
+                ClassNode commonType = lowestUpperBound(temporaryTypes);
+                if (!commonType.equals(OBJECT_TYPE)) owners.add(Receiver.make(commonType));
+            }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
                 ClassNode staticType = receiver.getGenericsTypes()[0].getType();
                 owners.add(Receiver.make(staticType)); // Type from Class<Type>
@@ -3801,13 +3808,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && ((Variable) objectExpression).getName().equals("it")) {
                 owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
             }
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> instanceofTypes = getTemporaryTypesForExpression(objectExpression);
-                if (instanceofTypes != null && !instanceofTypes.isEmpty()) {
-                    ClassNode instanceofType = instanceofTypes.size() == 1 ? instanceofTypes.get(0)
-                            : new UnionTypeClassNode(instanceofTypes.toArray(ClassNode.EMPTY_ARRAY));
-                    owners.add(Receiver.make(instanceofType));
-                }
+            if (temporaryTypesCount > 1) {
+                owners.add(Receiver.make(new UnionTypeClassNode(temporaryTypes.toArray(ClassNode.EMPTY_ARRAY))));
             }
         }
         return owners;
