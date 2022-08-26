@@ -150,6 +150,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -1171,7 +1172,12 @@ public class AsmClassGenerator extends ClassGenerator {
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
         if (isObjectType(objectExpressionType)) objectExpressionType = objectExpression.getType();
-        return objectExpressionType.isDerivedFromGroovyObject();
+        if (isOrImplements(objectExpressionType, ClassHelper.MAP_TYPE)) return false; // GROOVY-8074
+        return implementsGroovyObject(objectExpressionType); // GROOVY-9195, GROOVY-9288, et al.
+    }
+
+    private static boolean implementsGroovyObject(final ClassNode cn) {
+        return cn.isDerivedFromGroovyObject() || (!cn.isInterface() && cn.getCompileUnit() != null);
     }
 
     @Override
@@ -2358,8 +2364,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadWrapper(final Expression argument) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode goalClass = argument.getType();
-        visitClassExpression(new ClassExpression(goalClass));
-        if (goalClass.isDerivedFromGroovyObject()) {
+        visitClassExpression(classX(goalClass));
+        if (implementsGroovyObject(goalClass)) {
             createGroovyObjectWrapperMethod.call(mv);
         } else {
             createPojoWrapperMethod.call(mv);

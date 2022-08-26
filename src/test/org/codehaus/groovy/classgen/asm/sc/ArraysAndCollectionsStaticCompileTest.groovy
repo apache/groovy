@@ -59,25 +59,6 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         '''
     }
 
-    // GROOVY-5988
-    void testMapArraySetPropertyAssignment() {
-        assertScript '''
-            Map<String, Object> props(Object p) {
-                Map<String, Object> props = [:]
-
-                for(String property in p.properties.keySet()){
-                    props[property] = 'TEST'
-                    // I need to use calling put directy to make it work
-                    // props.put property, 'TEST'
-                }
-                props
-            }
-            def map = props('SOME RANDOM STRING')
-            assert map['class'] == 'TEST'
-            assert map['bytes'] == 'TEST'
-        '''
-    }
-
     // GROOVY-7656
     void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
         assertScript '''
@@ -118,21 +99,6 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
             Foo.test()
         '''
         assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
-    }
-
-    // GROOVY-8074
-    void testMapSubclassPropertyStyleAccess() {
-        assertScript '''
-            @groovy.transform.stc.POJO
-            @groovy.transform.CompileStatic
-            class MyMap extends LinkedHashMap {
-                def foo = 1
-            }
-
-            def map = new MyMap()
-            map.put('foo', 42)
-            assert map.foo == 42
-        '''
     }
 
     // GROOVY-10029
