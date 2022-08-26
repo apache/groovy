@@ -307,6 +307,15 @@ class UnionTypeClassNode extends ClassNode {
     }
 
     @Override
+    public ClassNode getPlainNodeReference() {
+        int n = delegates.length; ClassNode[] plainNodes = new ClassNode[n];
+        for (int i = 0; i < n; i += 1) {
+            plainNodes[i] = delegates[i].getPlainNodeReference();
+        }
+        return new UnionTypeClassNode(plainNodes);
+    }
+
+    @Override
     public List<PropertyNode> getProperties() {
         List<PropertyNode> nodes = new LinkedList<PropertyNode>();
         for (ClassNode delegate : delegates) {
