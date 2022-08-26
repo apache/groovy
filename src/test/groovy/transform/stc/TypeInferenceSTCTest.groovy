@@ -547,7 +547,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
-    @NotYetImplemented // GROOVY-10217
+    // GROOVY-10217
     void testInstanceOfThenSubscriptOperator() {
         assertScript '''
             void test(Object o) {

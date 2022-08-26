@@ -642,15 +642,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             VariableExpression localVariable;
             if (accessedVariable instanceof Parameter) {
-                Parameter parameter = (Parameter) accessedVariable;
-                localVariable = new ParameterVariableExpression(parameter);
+                Parameter prm = (Parameter) accessedVariable;
+                localVariable = new ParameterVariableExpression(prm);
             } else {
                 localVariable = (VariableExpression) accessedVariable;
             }
 
             ClassNode inferredType = localVariable.getNodeMetaData(INFERRED_TYPE);
             inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
-            if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
+            if (inferredType != null && !inferredType.equals(OBJECT_TYPE)
+                    && !inferredType.equals(accessedVariable.getType())){
                 vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
             }
         }
@@ -758,7 +759,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
             } else {
                 if (op != EQUAL && op != ELVIS_EQUAL) {
-                    lType = getType(leftExpression);
+                    if (leftExpression instanceof VariableExpression && hasInferredReturnType(leftExpression)) {
+                        lType = getInferredReturnType(leftExpression); // GROOVY-10217
+                    } else {
+                        lType = getType(leftExpression);
+                    }
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
 
