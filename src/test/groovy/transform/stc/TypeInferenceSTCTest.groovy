@@ -398,7 +398,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-8828
+    // GROOVY-8828
     void testMultipleInstanceOf7() {
         assertScript '''
             interface Foo { }
