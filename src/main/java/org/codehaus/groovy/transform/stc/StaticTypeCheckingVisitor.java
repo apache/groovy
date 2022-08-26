@@ -214,7 +214,6 @@ import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
-import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -641,7 +640,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (variable != null) {
                     ClassNode inferredType = getInferredTypeFromTempInfo(variable, (ClassNode) variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
-                    if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT)) {
+                    if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
                         vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
                     }
                 }
@@ -778,29 +777,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
-            leftExpression.visit(this);
+            leftExpression.visit(this); final ClassNode lType, rType;
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
+                lType = getType(leftExpression);
             } else {
                 if (op == ASSIGN) {
-                    ClassNode lType = getOriginalDeclarationType(leftExpression);
+                    lType = getOriginalDeclarationType(leftExpression);
+
                     if (isFunctionalInterface(lType)) {
                         processFunctionalInterfaceAssignment(lType, rightExpression);
                     } else if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
                         storeInferredReturnType(rightExpression, getCombinedBoundType(lType.getGenericsTypes()[0]));
                     }
+                } else {
+                    if (leftExpression instanceof VariableExpression && hasInferredReturnType(leftExpression)) {
+                        lType = getInferredReturnType(leftExpression); // GROOVY-10217
+                    } else {
+                        lType = getType(leftExpression);
+                    }
                 }
                 rightExpression.visit(this);
             }
-            ClassNode lType = getType(leftExpression);
-            ClassNode rType = getType(rightExpression);
-            if (isNullConstant(rightExpression)) {
-                if (!isPrimitiveType(lType))
-                    rType = UNKNOWN_PARAMETER_TYPE; // primitive types should be ignored as they will result in another failure
-            }
+
+            rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
+                    ? UNKNOWN_PARAMETER_TYPE
+                    : getType(rightExpression);
             BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
             ClassNode resultType = op == KEYWORD_IN
                     ? getResultType(rType, op, lType, reversedBinaryExpression)
@@ -809,7 +814,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // in case of the "in" operator, the receiver and the arguments are reversed
                 // so we use the reversedExpression and get the target method from it
                 storeTargetMethod(expression, (MethodNode) reversedBinaryExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
-            } else if (op == LEFT_SQUARE_BRACKET
+            } else if (isArrayOp(op)
                     && leftExpression instanceof VariableExpression
                     && leftExpression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == null) {
                 storeType(leftExpression, lType);
@@ -822,8 +827,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (leftExpression instanceof VariableExpression) {
                 VariableExpression leftVar = (VariableExpression) leftExpression;
                 if (leftVar.isClosureSharedVariable()) {
-                    // if left expression is a closure shared variable, we should check it twice
-                    // see GROOVY-5874
+                    // GROOVY-5874: if left expression is a closure shared variable, we should check it twice
                     typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<Void>(expression));
                 }
             }

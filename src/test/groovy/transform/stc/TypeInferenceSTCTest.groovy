@@ -475,6 +475,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    // GROOVY-10217
+    void testInstanceOfThenSubscriptOperator() {
+        assertScript '''
+            void test(Object o) {
+                if (o instanceof List) {
+                    assert o[0] == 1
+                    def x = (List) o
+                    assert x[0] == 1
+                }
+            }
+            test([1])
+        '''
+    }
+
     void testInstanceOfInferenceWithImplicitIt() {
         assertScript '''
         ['a', 'b', 'c'].each {
