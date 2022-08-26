@@ -159,20 +159,21 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9953
+    // GROOVY-9953
     void testInstanceOf6() {
         assertScript '''
-            class A {
+            class C {
             }
-            A test(Object x) {
-                if (x instanceof A) {
+            C test(Object x) {
+                if (x instanceof C) {
                     def y = x
                     return y
                 } else {
-                    new A()
+                    new C()
                 }
             }
-            new A().with { assert test(it) === it }
+            def c = new C()
+            assert test(c).is(c)
         '''
     }
 
