@@ -268,7 +268,8 @@ public class ParameterTypes {
             return false;
 
         for (int i = 0; i < size; i++) {
-            if (args[i] != null && !parameterTypes[i].isAssignableFrom(args[i].getClass())) {
+            final Object arg = args[i];
+            if (arg != null && !parameterTypes[i].isAssignableFrom(arg.getClass())) {
                 return false;
             }
         }
@@ -283,7 +284,8 @@ public class ParameterTypes {
             return false;
 
         for (int i = 0; i < size; i++) {
-            if (args[i] != null && !parameterTypes[i].isAssignableFrom(args[i])) {
+            final Class arg = args[i];
+            if (arg != null && !parameterTypes[i].isAssignableFrom(arg)) {
                 return false;
             }
         }
