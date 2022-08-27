@@ -21,6 +21,7 @@ package groovy.inspect;
 import groovy.lang.GroovyShell;
 import groovy.lang.MetaProperty;
 import groovy.lang.PropertyValue;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.jmock.Mock;
 import org.jmock.cglib.MockObjectTestCase;
 
@@ -70,7 +71,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         Object testObject = new GroovyShell().evaluate("class Test {def meth1(a,b){}}\nreturn new Test()");
         Inspector insp = new Inspector(testObject);
         String[] classProps = insp.getClassProps();
-        assertEquals("package n/a", classProps[Inspector.CLASS_PACKAGE_IDX]);
+        // TODO investigate "n/a" for JDK8, "" for JDK9+
+        //assertEquals("package ", classProps[Inspector.CLASS_PACKAGE_IDX]);
         assertEquals("public class Test", classProps[Inspector.CLASS_CLASS_IDX]);
         assertEquals("implements GroovyObject ", classProps[Inspector.CLASS_INTERFACE_IDX]);
         assertEquals("extends Object", classProps[Inspector.CLASS_SUPERCLASS_IDX]);
@@ -93,8 +95,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testStaticMethods() {
         Inspector insp = new Inspector(this);
         Object[] methods = insp.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            String[] strings = (String[]) methods[i];
+        for (Object method : methods) {
+            String[] strings = (String[]) method;
             if (strings[1].indexOf("static") > -1) return; // ok, found one static method
         }
         fail("there should have been at least one static method in this TestCase, e.g. 'fail'.");
@@ -103,13 +105,16 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        String[] names = {"sleep", "sleep", "println", "println", "println", "find", "find", "findResult", "findResult",
-                "print", "print", "each", "invokeMethod", "asType", "inspect", "is", "isCase", "identity", "getAt",
-                "putAt", "dump", "getMetaPropertyValues", "getProperties", "use", "use", "use", "printf", "printf",
-                "eachWithIndex", "every", "every", "any", "any", "grep", "grep", "collect", "collect", "collect", "findAll","findAll",
-                "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
-                "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "inject", "getMetaClass", "setMetaClass",
-                "metaClass", "respondsTo", "respondsTo", "hasProperty", "toString", "asBoolean"
+        String[] names = {
+            "addShutdownHook", "any", "any", "asBoolean", "asType", "collect", "collect", "collect",
+            "dump", "each", "eachWithIndex", "every", "every", "find", "find", "findAll", "findAll",
+            "findIndexOf", "findIndexOf", "findIndexValues", "findIndexValues", "findLastIndexOf",
+            "findLastIndexOf", "findResult", "findResult", "getAt", "getMetaClass", "getMetaPropertyValues",
+            "getProperties", "grep", "grep", "hasProperty", "identity", "inject", "inject", "inspect",
+            "invokeMethod", "is", "isCase", "isNotCase", "iterator", "metaClass", "print", "print",
+            "printf", "printf", "println", "println", "println", "putAt", "respondsTo", "respondsTo",
+            "setMetaClass", "split", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
+            "with", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
         };
         assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);
@@ -203,8 +208,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testProperties() {
         Inspector insp = new Inspector(this);
         Object[] properties = insp.getPropertyInfo();
-        assertEquals(2, properties.length);
-        String[] names = {"class", "name"};
+        String[] names = {"class", "name", "someField", "SOME_CONST", "ANYTHING", "NULL", "NOT_NULL"};
+        assertEquals(7, properties.length);
         assertNameEquals(names, properties);
         String[] details = {"GROOVY", "public", "n/a", "Class", "class", "class groovy.inspect.InspectorTest"};
         assertContains(properties, details);
@@ -233,12 +238,12 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     }
 
     private void assertNameEquals(String[] names, Object[] metaMethods) {
-        Set metaSet = new HashSet();
-        for (int i = 0; i < metaMethods.length; i++) {
-            String[] strings = (String[]) metaMethods[i];
+        Set<String> metaSet = new TreeSet<>();
+        for (Object metaMethod : metaMethods) {
+            String[] strings = (String[]) metaMethod;
             metaSet.add(strings[Inspector.MEMBER_NAME_IDX]);
         }
-        Set nameSet = new HashSet(Arrays.asList(names));
+        Set<String> nameSet = new TreeSet<>(Arrays.asList(names));
         assertEquals(nameSet, metaSet);
     }
 
