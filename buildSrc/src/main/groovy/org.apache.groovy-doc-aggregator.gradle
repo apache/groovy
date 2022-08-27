@@ -87,6 +87,9 @@ def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
     destinationDir = file("${buildDir}/allgroovydoc")
     source = configurations.allSources
     classpath = configurations.allSourcesRuntimeClasspath
+    includeAuthor = false
+    processScripts = false
+    includeMainForScripts = false
 }
 
 def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
