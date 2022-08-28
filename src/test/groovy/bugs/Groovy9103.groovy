@@ -69,4 +69,13 @@ final class Groovy9103 {
         Object obj = new Tuple1('abc')
         assert obj.clone()
     }
+
+    @Test
+    void testClone4() {
+        assertScript '''
+            int[] nums = [1, 2, 3]
+            int[] cloned = nums.clone()
+            assert nums == cloned
+        '''
+    }
 }
