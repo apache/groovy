@@ -83,6 +83,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -2216,6 +2217,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `typeCheckingContext.pushEnclosingReturnStatement`
         }
         typeCheckingContext.popEnclosingMethod();
+    }
+
+    @Override
+    public void visitExpressionStatement(ExpressionStatement statement) {
+        typeCheckingContext.pushTemporaryTypeInfo();
+        super.visitExpressionStatement(statement);
+        typeCheckingContext.popTemporaryTypeInfo();
     }
 
     @Override

@@ -159,6 +159,21 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6127
+    void testInstanceOfSix() {
+        assertScript '''
+            def convertValueToType(value, Class targetType) {
+                if (value instanceof CharSequence) {
+                    value = value.toString()
+                }
+                if (value instanceof String) {
+                    String strValue = value.trim()
+                }
+            }
+            convertValueToType('foo', String)
+        '''
+    }
+
     // GROOVY-9953
     void testInstanceOf6() {
         assertScript '''
@@ -224,6 +239,17 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
             doSomething1(new TaggedException(tag:'Test'))
         '''
+    }
+
+    // GROOVY-8686
+    void testInstanceOf9() {
+         shouldFailWithMessages '''
+            def m(obj) {
+                boolean isA = (obj instanceof String && obj.equalsIgnoreCase('a'))
+                obj.toLowerCase() // typeof(obj) should be Object, not String
+            }
+        ''',
+        'Cannot find matching method java.lang.Object#toLowerCase'
     }
 
     void testNestedInstanceOf1() {
@@ -933,20 +959,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 new File[0].find { File f -> f.hidden }
             }
             findFile()
-        '''
-    }
-
-    void testShouldNotThrowIncompatibleArgToFunVerifyError() {
-        assertScript '''
-            Object convertValueToType(Object value, Class targetType) {
-                if (value instanceof CharSequence) {
-                    value = value.toString()
-                }
-                if (value instanceof String) {
-                    String strValue = value.trim()
-                }
-            }
-            convertValueToType('foo', String)
         '''
     }
 
