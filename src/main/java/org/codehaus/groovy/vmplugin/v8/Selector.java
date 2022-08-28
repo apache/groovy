@@ -677,9 +677,10 @@ public abstract class Selector {
         private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
             final String methodName = m.getName();
             final int parameterCount = m.getParameterTypes().length;
-            if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
+            final Class<?> declaringClass = m.getDeclaringClass();
+            if (declaringClass == Class.class && parameterCount == 1 && methodName.equals("forName")) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else if (parameterCount == 0 && methodName.equals("clone") && null != args && args.getClass().isArray()) {
+            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && args.getClass().isArray()) {
                 return ArrayUtil.getCloneArrayMethodHandle();
             } else {
                 return LOOKUP.unreflect(m);
