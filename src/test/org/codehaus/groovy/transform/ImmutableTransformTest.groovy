@@ -139,8 +139,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     @Test
     void testCloneableFieldNotCloneableObject() {
-        def cls = shouldFail(CloneNotSupportedException) {
-            def objects = evaluate("""
+        shouldFail(isAtLeastJdk('16.0') ? IllegalAccessException : CloneNotSupportedException, '''
                 import groovy.transform.Immutable
 
                 class Dolly {
@@ -154,10 +153,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
                 def dolly = new Dolly(name: "The Sheep")
                 [dolly, new Lab(name: "Area 51", clone: dolly)]
-            """)
-        }
-
-        assert cls == 'Dolly'
+        ''')
     }
 
     @Test

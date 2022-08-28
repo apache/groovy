@@ -1131,7 +1131,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (receiverClass.isArray()) {
                 if (methodName.equals("clone") && arguments.length == 0) {
                     try {
-                        return (Object[]) MethodHandleHolder.CLONE_ARRAY_METHOD_HANDLE.invokeExact((Object[]) object);
+                        return (Object[]) ArrayUtil.getCloneArrayMethodHandle().invokeExact((Object[]) object);
                     } catch (Throwable t) {
                         throw new GroovyRuntimeException(t);
                     }
@@ -1162,26 +1162,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 throw new GroovyRuntimeException(t);
             }
         }
-    }
-
-    private static class MethodHandleHolder {
-        private static final MethodHandle CLONE_ARRAY_METHOD_HANDLE;
-        static {
-            final Class<ArrayUtil> arrayUtilClass = ArrayUtil.class;
-            Method cloneArrayMethod;
-            try {
-                cloneArrayMethod = arrayUtilClass.getDeclaredMethod("cloneArray", Object[].class);
-            } catch (NoSuchMethodException e) {
-                throw new GroovyBugError("Failed to find `cloneArray` method in class `" + arrayUtilClass.getName() + "`", e);
-            }
-
-            try {
-                CLONE_ARRAY_METHOD_HANDLE = MethodHandles.lookup().in(arrayUtilClass).unreflect(cloneArrayMethod);
-            } catch (IllegalAccessException e) {
-                throw new GroovyBugError("Failed to create method handle for " + cloneArrayMethod);
-            }
-        }
-        private MethodHandleHolder() {}
     }
 
     private static final ClassValue<Map<String, Set<Method>>> SPECIAL_METHODS_MAP = new ClassValue<Map<String, Set<Method>>>() {

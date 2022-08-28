@@ -23,6 +23,8 @@ import org.junit.Test
 
 import java.util.concurrent.ConcurrentHashMap
 
+import static groovy.test.GroovyAssert.assertScript
+
 class StreamingTemplateEngineTest {
   TemplateEngine engine
   Map binding
@@ -463,48 +465,52 @@ class StreamingTemplateEngineTest {
 
   @Test
   void reuseClassLoader1() {
-    final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
-    System.setProperty(reuseOption, 'true')
+    assertScript '''
+        final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
+        System.setProperty(reuseOption, 'true')
 
-    try {
-      // reload class to initialize static field from the beginning
-      def steClass = reloadClass('groovy.text.StreamingTemplateEngine')
+        try {
+          // reload class to initialize static field from the beginning
+          def steClass = groovy.text.StreamingTemplateEngineTest.reloadClass('groovy.text.StreamingTemplateEngine')
 
-      GroovyClassLoader gcl = new GroovyClassLoader()
-      def engine = steClass.newInstance(gcl)
-      assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
-      assert gcl.loadedClasses.length > 0
-      def cloned = gcl.loadedClasses.clone()
-      assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
-      assert cloned == gcl.loadedClasses
-    } finally {
-      System.clearProperty(reuseOption)
-    }
+          GroovyClassLoader gcl = new GroovyClassLoader()
+          def engine = steClass.newInstance(gcl)
+          assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+          assert gcl.loadedClasses.length > 0
+          def cloned = gcl.loadedClasses.clone()
+          assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+          assert cloned == gcl.loadedClasses
+        } finally {
+          System.clearProperty(reuseOption)
+        }
+    '''
   }
 
   @Test
   void reuseClassLoader2() {
-    final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
-    System.setProperty(reuseOption, 'true')
+    assertScript '''
+        final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
+        System.setProperty(reuseOption, 'true')
 
-    try {
-      // reload class to initialize static field from the beginning
-      def steClass = reloadClass('groovy.text.StreamingTemplateEngine')
+        try {
+          // reload class to initialize static field from the beginning
+          def steClass = groovy.text.StreamingTemplateEngineTest.reloadClass('groovy.text.StreamingTemplateEngine')
 
-      GroovyClassLoader gcl = new GroovyClassLoader()
-      def engine = steClass.newInstance(gcl)
-      assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
-      assert gcl.loadedClasses.length > 0
-      def cloned = gcl.loadedClasses.clone()
-      engine = steClass.newInstance(gcl)
-      assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
-      assert cloned == gcl.loadedClasses
-    } finally {
-      System.clearProperty(reuseOption)
-    }
+          GroovyClassLoader gcl = new GroovyClassLoader()
+          def engine = steClass.newInstance(gcl)
+          assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+          assert gcl.loadedClasses.length > 0
+          def cloned = gcl.loadedClasses.clone()
+          engine = steClass.newInstance(gcl)
+          assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+          assert cloned == gcl.loadedClasses
+        } finally {
+          System.clearProperty(reuseOption)
+        }
+    '''
   }
 
-  private static Class reloadClass(String className) {
+  static Class reloadClass(String className) {
     def clazz =
             new GroovyClassLoader() {
               private final Map<String, Class> loadedClasses = new ConcurrentHashMap<String, Class>()

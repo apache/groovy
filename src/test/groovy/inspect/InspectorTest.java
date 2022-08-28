@@ -21,7 +21,6 @@ package groovy.inspect;
 import groovy.lang.GroovyShell;
 import groovy.lang.MetaProperty;
 import groovy.lang.PropertyValue;
-import org.codehaus.groovy.runtime.FormatHelper;
 import org.jmock.Mock;
 import org.jmock.cglib.MockObjectTestCase;
 
@@ -29,9 +28,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static groovy.test.GroovyAssert.isAtLeastJdk;
 
 public class InspectorTest extends MockObjectTestCase implements Serializable {
     public String someField = "only for testing";
@@ -139,6 +147,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     // TODO: if our code can never access inspect in this way, it would be better
     // to move this to a boundary class and then we wouldn't need this test
     public void testInspectUninspectableProperty() {
+        if (isAtLeastJdk("16.0")) return;
+
         Object dummyInstance = new Object();
         Inspector inspector = getTestableInspector(dummyInstance);
         Class[] paramTypes = {Object.class, MetaProperty.class};
