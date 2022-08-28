@@ -23,7 +23,7 @@ import groovy.lang.GroovyCodeSource;
 import groovy.lang.Writable;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
-import groovy.transform.CompileStatic;
+import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -47,6 +47,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,7 +64,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
 
     private static final Pattern LOCALIZED_RESOURCE_PATTERN = Pattern.compile("(.+?)(?:_([a-z]{2}(?:_[A-Z]{2,3})))?\\.([\\p{Alnum}.]+)$");
 
-    private static final boolean DEBUG_BYTECODE = Boolean.valueOf(System.getProperty("markuptemplateengine.compiler.debug","false"));
+    private static final boolean DEBUG_BYTECODE = Boolean.getBoolean("markuptemplateengine.compiler.debug");
 
     private static final AtomicLong counter = new AtomicLong();
 
@@ -77,39 +78,41 @@ public class MarkupTemplateEngine extends TemplateEngine {
         this(new TemplateConfiguration());
     }
 
-    public MarkupTemplateEngine(final TemplateConfiguration tplConfig) {
-        this(MarkupTemplateEngine.class.getClassLoader(), tplConfig);
+    public MarkupTemplateEngine(final TemplateConfiguration config) {
+        this(MarkupTemplateEngine.class.getClassLoader(), config, null);
     }
 
-    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig) {
-        this(parentLoader, tplConfig, null);
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration config) {
+        this(parentLoader, config, null);
     }
 
-    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration tplConfig, final TemplateResolver resolver) {
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final TemplateConfiguration config, final TemplateResolver resolver) {
+        templateConfiguration = config;
         compilerConfiguration = new CompilerConfiguration();
-        templateConfiguration = tplConfig;
-        compilerConfiguration.addCompilationCustomizers(new TemplateASTTransformer(tplConfig));
-        compilerConfiguration.addCompilationCustomizers(
-                new ASTTransformationCustomizer(Collections.singletonMap("extensions", "groovy.text.markup.MarkupTemplateTypeCheckingExtension"), CompileStatic.class));
+        List<CompilationCustomizer> customizers = compilerConfiguration.getCompilationCustomizers();
+        customizers.add(new TemplateASTTransformer(templateConfiguration));
+        customizers.add(new ASTTransformationCustomizer(
+                Collections.singletonMap("extensions", "groovy.text.markup.MarkupTemplateTypeCheckingExtension"), TypeChecked.class));
         if (templateConfiguration.isAutoNewLine()) {
-            compilerConfiguration.addCompilationCustomizers(
-                    new CompilationCustomizer(CompilePhase.CONVERSION) {
-                        @Override
-                        public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                            new AutoNewLineTransformer(source).visitClass(classNode);
-                        }
-                    }
-            );
+            customizers.add(new CompilationCustomizer(CompilePhase.CONVERSION) {
+                @Override
+                public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+                    new AutoNewLineTransformer(source).visitClass(classNode);
+                }
+            });
         }
+        if (DEBUG_BYTECODE) {
+            compilerConfiguration.setBytecodePostprocessor(BytecodeDumper.STANDARD_ERR);
+        }
+
         groovyClassLoader = AccessController.doPrivileged(new PrivilegedAction<TemplateGroovyClassLoader>() {
+            @Override
             public TemplateGroovyClassLoader run() {
                 return new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
             }
         });
-        if (DEBUG_BYTECODE) {
-            compilerConfiguration.setBytecodePostprocessor(BytecodeDumper.STANDARD_ERR);
-        }
-        templateResolver = resolver == null ? new DefaultTemplateResolver() : resolver;
+
+        templateResolver = resolver != null ? resolver : new DefaultTemplateResolver();
         templateResolver.configure(groovyClassLoader, templateConfiguration);
     }
 
@@ -375,5 +378,4 @@ public class MarkupTemplateEngine extends TemplateEngine {
             return url;
         }
     }
-
 }
