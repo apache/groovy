@@ -674,18 +674,12 @@ public abstract class Selector {
             }
         }
 
-        private static final Method OBJECT_CLONE_METHOD;
-        static {
-            try {
-                OBJECT_CLONE_METHOD = Object.class.getDeclaredMethod("clone");
-            } catch (NoSuchMethodException e) {
-                throw new GroovyBugError(e); // should never happen
-            }
-        }
         private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
-            if (m.getDeclaringClass() == Class.class && m.getName().equals("forName") && m.getParameterTypes().length == 1) {
+            final String methodName = m.getName();
+            final int parameterCount = m.getParameterTypes().length;
+            if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else if (null != args && args.getClass().isArray() && OBJECT_CLONE_METHOD.equals(m)) {
+            } else if (parameterCount == 0 && methodName.equals("clone") && null != args && args.getClass().isArray()) {
                 return ArrayUtil.getCloneArrayMethodHandle();
             } else {
                 return LOOKUP.unreflect(m);
