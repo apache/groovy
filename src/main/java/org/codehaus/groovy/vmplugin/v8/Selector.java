@@ -38,6 +38,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
@@ -673,9 +674,19 @@ public abstract class Selector {
             }
         }
 
+        private static final Method OBJECT_CLONE_METHOD;
+        static {
+            try {
+                OBJECT_CLONE_METHOD = Object.class.getDeclaredMethod("clone");
+            } catch (NoSuchMethodException e) {
+                throw new GroovyBugError(e); // should never happen
+            }
+        }
         private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
             if (m.getDeclaringClass() == Class.class && m.getName().equals("forName") && m.getParameterTypes().length == 1) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
+            } else if (null != args && args.getClass().isArray() && OBJECT_CLONE_METHOD.equals(m)) {
+                return ArrayUtil.getCloneArrayMethodHandle();
             } else {
                 return LOOKUP.unreflect(m);
             }
