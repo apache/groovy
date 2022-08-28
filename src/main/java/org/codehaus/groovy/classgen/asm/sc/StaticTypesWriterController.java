@@ -44,7 +44,6 @@ import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
 
-
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
  * dispatch. In case of a "mixed mode" where only some methods are annotated with {@link groovy.transform.TypeChecked}
@@ -53,19 +52,19 @@ import org.objectweb.asm.ClassVisitor;
 public class StaticTypesWriterController extends DelegatingController {
 
     protected boolean isInStaticallyCheckedMethod;
-    private StaticTypesCallSiteWriter callSiteWriter;
-    private StaticTypesStatementWriter statementWriter;
+
+    private LambdaWriter lambdaWriter;
+    private ClosureWriter closureWriter;
     private StaticTypesTypeChooser typeChooser;
     private StaticInvocationWriter invocationWriter;
-    private BinaryExpressionMultiTypeDispatcher binaryExprHelper;
+    private StaticTypesCallSiteWriter callSiteWriter;
+    private StaticTypesStatementWriter statementWriter;
     private UnaryExpressionHelper unaryExpressionHelper;
-    private ClosureWriter closureWriter;
-    private LambdaWriter lambdaWriter;
+    private BinaryExpressionMultiTypeDispatcher binaryExpressionHelper;
     private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 
-    public StaticTypesWriterController(WriterController normalController) {
-        super(normalController);
-        isInStaticallyCheckedMethod = false;
+    public StaticTypesWriterController(final WriterController controller) {
+        super(controller);
     }
 
     @Override
@@ -81,7 +80,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
 
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
-        this.binaryExprHelper = config.isIndyEnabled()
+        this.binaryExpressionHelper = config.isIndyEnabled()
                 ? new IndyStaticTypesMultiTypeDispatcher(this)
                 : new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }
@@ -93,17 +92,14 @@ public class StaticTypesWriterController extends DelegatingController {
     }
 
     private void updateStaticCompileFlag(final MethodNode mn) {
+        AnnotatedNode outer = mn;
         ClassNode classNode = getClassNode();
-        AnnotatedNode node = mn;
-        boolean implementsGeneratedClosureOrGeneratedLambdaInterface = ClassHelper.isGeneratedFunction(classNode);
-        if (implementsGeneratedClosureOrGeneratedLambdaInterface) {
-            node = classNode.getOuterClass();
+        boolean inClosureOrLambda = ClassHelper.isGeneratedFunction(classNode);
+        if (inClosureOrLambda) {
+            outer = classNode.getOuterClass();
         }
-
-        boolean isStaticCompileNode = classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE) != null;
-        isInStaticallyCheckedMethod =
-                mn != null && (StaticCompilationVisitor.isStaticallyCompiled(node)
-                                || implementsGeneratedClosureOrGeneratedLambdaInterface && isStaticCompileNode);
+        boolean isStaticCompileNode = Boolean.TRUE.equals(classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE));
+        isInStaticallyCheckedMethod = mn != null && (StaticCompilationVisitor.isStaticallyCompiled(outer) || inClosureOrLambda && isStaticCompileNode);
     }
 
     @Override
@@ -121,10 +117,8 @@ public class StaticTypesWriterController extends DelegatingController {
     @Override
     public CallSiteWriter getCallSiteWriter() {
         MethodNode methodNode = getMethodNode();
-        if (methodNode !=null && methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION)==Boolean.TRUE) {
-            return super.getCallSiteWriter();
-        }
-        if (isInStaticallyCheckedMethod) {
+        if (isInStaticallyCheckedMethod && (methodNode == null
+                || !Boolean.TRUE.equals(methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION)))) {
             return callSiteWriter;
         }
         return super.getCallSiteWriter();
@@ -139,7 +133,7 @@ public class StaticTypesWriterController extends DelegatingController {
         if (isInStaticallyCheckedMethod) {
             return statementWriter;
         } else {
-            return super.getStatementWriter();            
+            return super.getStatementWriter();
         }
     }
 
@@ -168,7 +162,7 @@ public class StaticTypesWriterController extends DelegatingController {
     @Override
     public BinaryExpressionHelper getBinaryExpressionHelper() {
         if (isInStaticallyCheckedMethod) {
-            return binaryExprHelper;
+            return binaryExpressionHelper;
         } else {
             return super.getBinaryExpressionHelper();
         }
