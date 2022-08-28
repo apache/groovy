@@ -18,7 +18,6 @@
  */
 package groovy.text
 
-import groovy.test.NotYetImplemented
 import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
@@ -47,93 +46,99 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testSimpleTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 body {
                     yield 'It works!'
                 }
             }
-            '''
+        '''
         String rendered = template.make()
         assert rendered == '<html><body>It works!</body></html>'
     }
 
+    @Test // GROOVY-10731
+    void testSimpleTemplate2() {
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+            def map = [:]
+            String key = ""
+            def value = map[key] // ArrayIndexOutOfBoundsException
+            span(class: "label label-${value}")
+        '''
+        String rendered = template.make()
+        assert rendered == '<span class=\'label label-null\'/>'
+    }
+
     @Test
     void testSimpleTemplateWithModel() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 body {
                     yield message
                 }
             }
-            '''
-        def model = [message: 'It works!']
-        StringWriter rendered = new StringWriter()
-        template.make(model).writeTo(rendered)
-        assert rendered.toString() == '<html><body>It works!</body></html>'
+        '''
+        String rendered = template.make(message: 'It works!')
+        assert rendered == '<html><body>It works!</body></html>'
     }
 
     @Test
     void testSimpleTemplateWithIncludeTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 body {
                     include template:'includes/hello.tpl'
                 }
             }
-            '''
-        StringWriter rendered = new StringWriter()
-        template.make().writeTo(rendered)
-        assert rendered.toString() == '<html><body>Hello from include!</body></html>'
+        '''
+        String rendered = template.make()
+        assert rendered == '<html><body>Hello from include!</body></html>'
     }
 
     @Test
     void testSimpleTemplateWithIncludeTemplateWithLocale() {
-        def tplConfig = new TemplateConfiguration()
-        tplConfig.locale = Locale.FRANCE
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, tplConfig)
+        def config = new TemplateConfiguration(locale: Locale.FRANCE)
+        def engine = new MarkupTemplateEngine(config)
         def template = engine.createTemplate '''
             html {
                 body {
                     include template:'includes/hello.tpl'
                 }
             }
-            '''
-        StringWriter rendered = new StringWriter()
-        template.make().writeTo(rendered)
-        assert rendered.toString() == '<html><body>Bonjour!</body></html>'
+        '''
+        String rendered = template.make()
+        assert rendered == '<html><body>Bonjour!</body></html>'
     }
 
     @Test
     void testSimpleTemplateWithIncludeTemplateWithLocalePriority() {
-        def tplConfig = new TemplateConfiguration()
-        tplConfig.locale = Locale.FRANCE // set default locale
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, tplConfig)
+        def config = new TemplateConfiguration(locale: Locale.FRANCE)
+        def engine = new MarkupTemplateEngine(config)
         def template = engine.createTemplate '''
             html {
                 body {
                     include template:'includes/hello_en_US.tpl' // if not found, will fall back to the default locale
                 }
             }
-            '''
-        StringWriter rendered = new StringWriter()
-        template.make().writeTo(rendered)
-        assert rendered.toString() == '<html><body>Bonjour!</body></html>'
+        '''
+        String rendered = template.make()
+        assert rendered == '<html><body>Bonjour!</body></html>'
     }
 
     @Test
     void testSimpleTemplateWithIncludeRaw() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 body {
                     include unescaped:'includes/hello.html'
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><body>Hello unescaped!</body></html>'
@@ -141,14 +146,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testSimpleTemplateWithIncludeEscaped() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 body {
                     include escaped:'includes/hello-escaped.txt'
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><body>Hello &lt;escaped&gt;!</body></html>'
@@ -156,13 +161,13 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testHTMLHeader() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             yieldUnescaped '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
             html {
                 body('Hello, XHTML!')
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>Hello, XHTML!</body></html>'
@@ -170,7 +175,7 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testTemplateWithHelperMethod() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             def foo = {
                 body('Hello from foo!')
@@ -179,7 +184,7 @@ final class MarkupTemplateEngineTest {
             html {
                 foo()
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><body>Hello from foo!</body></html>'
@@ -187,13 +192,13 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testCallPi() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             pi("xml-stylesheet":[href:"mystyle.css", type:"text/css"])
             html {
                 body('Hello, PI!')
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString().normalize() == '<?xml-stylesheet href=\'mystyle.css\' type=\'text/css\'?>\n<html><body>Hello, PI!</body></html>'
@@ -201,13 +206,13 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testXmlDeclaration() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             xmlDeclaration()
             html {
                 body('Hello, PI!')
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString().normalize() == '<?xml version=\'1.0\'?>\n<html><body>Hello, PI!</body></html>'
@@ -215,15 +220,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testXmlDeclarationWithEncoding() {
-        def configuration = new TemplateConfiguration()
-        configuration.declarationEncoding = 'UTF-8'
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(configuration)
+        def config = new TemplateConfiguration(declarationEncoding: 'UTF-8')
+        def engine = new MarkupTemplateEngine(config)
         def template = engine.createTemplate '''
             xmlDeclaration()
             html {
                 body('Hello, PI!')
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString().normalize() == '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<html><body>Hello, PI!</body></html>'
@@ -231,14 +235,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testNewLine() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         engine.templateConfiguration.newLineString = '||'
         def template = engine.createTemplate '''
             html {
                 newLine()
                 body('Hello, PI!')
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html>||<body>Hello, PI!</body></html>'
@@ -246,10 +250,10 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testXMLWithYieldTag() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             ':yield'()
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<yield/>'
@@ -257,13 +261,13 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testTagsWithAttributes() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             html {
                 a(href:'foo.html', 'Link text')
                 tagWithQuote(attr:"fo'o")
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><a href=\'foo.html\'>Link text</a><tagWithQuote attr=\'fo&apos;o\'/></html>'
@@ -271,14 +275,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testTagsWithAttributesAndDoubleQuotes() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         engine.templateConfiguration.useDoubleQuotes = true
         def template = engine.createTemplate '''
             html {
                 a(href:'foo.html', 'Link text')
                 tagWithQuote(attr:"fo'o")
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><a href="foo.html">Link text</a><tagWithQuote attr="fo\'o"/></html>'
@@ -286,7 +290,7 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testLoopInTemplate() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: 'Hello', persons: ['Bob', 'Alice']]
         def template = engine.createTemplate '''
             html {
@@ -298,7 +302,7 @@ final class MarkupTemplateEngineTest {
                     }
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body><ul><li>Hello Bob</li><li>Hello Alice</li></ul></body></html>'
@@ -306,7 +310,7 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testHelperFunctionInBinding() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: { it.toUpperCase() }]
         def template = engine.createTemplate '''
             html {
@@ -314,7 +318,7 @@ final class MarkupTemplateEngineTest {
                     text('hello')
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body>HELLO</body></html>'
@@ -322,13 +326,13 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testShouldNotEscapeUserInputAutomatically() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def model = [text: '<xml>']
         def template = engine.createTemplate '''
             html {
                 body(text)
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body><xml></body></html>'
@@ -336,15 +340,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testShouldEscapeUserInputAutomatically() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoEscape = true
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoEscape: true)
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def model = [text: '<xml>']
         def template = engine.createTemplate '''
             html {
                 body(text)
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body>&lt;xml&gt;</body></html>'
@@ -352,15 +355,14 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testShouldNotEscapeUserInputAutomaticallyEvenIfFlagSet() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoEscape = true
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoEscape: true)
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def model = [text: '<xml>']
         def template = engine.createTemplate '''
             html {
                 body(unescaped.text)
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
         assert rendered.toString() == '<html><body><xml></body></html>'
@@ -368,12 +370,12 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testTypeCheckedModel() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
             html {
                 body(text.toUpperCase())
             }
-            ''', [text: 'String']
+        ''', [text: 'String']
         def model = [text: 'Type checked!']
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
@@ -383,12 +385,12 @@ final class MarkupTemplateEngineTest {
     @Test
     void testTypeCheckedModelShouldFail() {
         def err = shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+            def engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
                 html {
                     body(text.toUpperCase())
                 }
-                ''', [text: 'Integer']
+            ''', [text: 'Integer']
             def model = [text: 'Type checked!']
             StringWriter rendered = new StringWriter()
             template.make(model).writeTo(rendered)
@@ -401,28 +403,27 @@ final class MarkupTemplateEngineTest {
     @Test
     void testTypeCheckedModelShouldFailWithoutModelDescription() {
         def err = shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+            def engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
                 html {
                     body(p.name.toUpperCase())
                 }
-                ''', [:]
+            ''', [:]
             def model = [p: new Person(name: 'Cédric')]
             StringWriter rendered = new StringWriter()
             template.make(model).writeTo(rendered)
         }
-
         assert err =~ /No such property: name/
     }
 
     @Test
     void testTypeCheckedModelShouldSucceedWithModelDescription() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
             html {
                 body(p.name.toUpperCase())
             }
-            ''', [p: 'groovy.text.MarkupTemplateEngineTest.Person']
+        ''', [p: 'groovy.text.MarkupTemplateEngineTest.Person']
         def model = [p: new Person(name: 'Cedric')]
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
@@ -431,7 +432,7 @@ final class MarkupTemplateEngineTest {
 
     @Test
     void testTypeCheckedModelShouldSucceedWithModelDescriptionUsingGenerics() {
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTypeCheckedModelTemplate '''
             html {
                 ul {
@@ -440,7 +441,7 @@ final class MarkupTemplateEngineTest {
                     }
                 }
             }
-            ''', [persons: 'List<groovy.text.MarkupTemplateEngineTest.Person>']
+        ''', [persons: 'List<groovy.text.MarkupTemplateEngineTest.Person>']
         def model = [persons: [new Person(name: 'Cedric')]]
         StringWriter rendered = new StringWriter()
         template.make(model).writeTo(rendered)
@@ -450,28 +451,25 @@ final class MarkupTemplateEngineTest {
     @Test
     void testTypeCheckedTemplateShouldFailInInclude() {
         def err = shouldFail {
-            MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
+            def engine = new MarkupTemplateEngine(new TemplateConfiguration())
             def template = engine.createTypeCheckedModelTemplate '''
                 html {
                     body {
                         include template:'includes/typecheckedinclude.tpl'
                     }
                 }
-                ''', [text: 'Integer']
+            ''', [text: 'Integer']
             def model = [text: 'Type checked!']
             StringWriter rendered = new StringWriter()
             template.make(model).writeTo(rendered)
         }
-
         assert err =~ /Cannot find matching method java.lang.Integer#toUpperCase\(\)/
     }
 
     @Test
     void testSimpleAutoIndent() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoIndent = true
-        config.newLineString = '\n'
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoIndent: true, newLineString: '\n')
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def template = engine.createTemplate '''
 html {
     newLine()
@@ -495,10 +493,8 @@ html {
 
     @Test
     void testSimpleAutoIndentShouldAddNewLineInLoop() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoIndent = true
-        config.newLineString = '\n'
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoIndent: true, newLineString: '\n')
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def template = engine.createTemplate '''
 html {
     newLine()
@@ -533,11 +529,8 @@ html {
 
     @Test
     void testSimpleAutoIndentShouldAutoAddNewLineInLoop() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoIndent = true
-        config.autoNewLine = true
-        config.newLineString = '\n'
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoIndent: true, autoNewLine: true, newLineString: '\n')
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def template = engine.createTemplate '''
 html {
     body {
@@ -567,11 +560,8 @@ html {
 
     @Test
     void testSimpleAutoIndentWithAutoNewLine() {
-        TemplateConfiguration config = new TemplateConfiguration()
-        config.autoIndent = true
-        config.autoNewLine = true
-        config.newLineString = '\n'
-        MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
+        def config = new TemplateConfiguration(autoIndent: true, autoNewLine: true, newLineString: '\n')
+        def engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def template = engine.createTemplate '''
 html {
     body {
@@ -608,7 +598,7 @@ html {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(this.class.classLoader, config)
         def template = engine.createTemplate '''int x = name.length()
             yield "$name: $x"
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         def model = [name: 'Michel']
         def tpl = template.make(model)
@@ -670,7 +660,7 @@ html {
                         include template:'hello-from-dir.tpl'
                     }
                 }
-                '''
+            '''
             StringWriter rendered = new StringWriter()
             template.make().writeTo(rendered)
             assert rendered.toString() == '<html><body>Hello from include!</body></html>'
@@ -707,16 +697,13 @@ html {
     @Test
     void testTypeCheckedModelShouldNotConflictWithAutoEscape() {
         def model = [title: "This is my glorious title ${1 + 1}".toString()]
-        def template = new MarkupTemplateEngine(
-                getClass().getClassLoader(),
-                new TemplateConfiguration(autoNewLine: true, autoEscape: true, newLineString: 'NL')).createTypeCheckedModelTemplate('''
-                    body {
-                      div(class: 'text')  {
-                        yield title.toUpperCase()
-                      }
-                    }
-
-                    ''', [title: 'String'])
+        def template = new MarkupTemplateEngine(this.class.classLoader, new TemplateConfiguration(autoNewLine: true, autoEscape: true, newLineString: 'NL')).createTypeCheckedModelTemplate('''
+            body {
+              div(class: 'text')  {
+                yield title.toUpperCase()
+              }
+            }
+        ''', [title: 'String'])
         def stringWriter = new StringWriter()
         template.make(model).writeTo(stringWriter)
         assert stringWriter.toString() == '<body>NL<div class=\'text\'>NLTHIS IS MY GLORIOUS TITLE 2NL</div>NL</body>'
@@ -756,7 +743,7 @@ html {
                     }
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
         template.make(model).writeTo(rendered)
@@ -780,7 +767,7 @@ html {
                     }
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
         template.make(model).writeTo(rendered)
@@ -805,13 +792,12 @@ html {
                         }
                     }
                 }
-                '''
+            '''
             StringWriter rendered = new StringWriter()
             def model = [persons: [[name: 'Cedric'], [name: 'Jochen']]]
             template.make(model).writeTo(rendered)
             assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
         }
-
         assert err =~ /No such property: name for class: java.lang.String/
     }
 
@@ -829,7 +815,7 @@ html {
                     }
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == "<html><body><a href='index.html'>Index</a><a href='page.html'>Page1</a><a href='page2.html'>Page2</a></body></html>"
@@ -845,7 +831,7 @@ html {
                     p('This is the body')
                 }
             }, title: 'This is the title'
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == "<html><head><title>This is the title</title></head><body><div><p>This is the body</p></div></body></html>"
@@ -861,7 +847,7 @@ html {
                     p('This is the body')
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make([title:'This is the title']).writeTo(rendered)
         assert rendered.toString() == "<html><head><title/></head><body><div><p>This is the body</p></div></body></html>"
@@ -872,7 +858,7 @@ html {
                     p('This is the body')
                 }
             }
-            '''
+        '''
         rendered = new StringWriter()
         template.make([title:'This is the title']).writeTo(rendered)
         assert rendered.toString() == "<html><head><title>This is the title</title></head><body><div><p>This is the body</p></div></body></html>"
@@ -883,7 +869,7 @@ html {
                     p('This is the body')
                 }
             }, title: 'This is another title'
-            '''
+        '''
         rendered = new StringWriter()
         template.make([title:'This is the title']).writeTo(rendered)
         assert rendered.toString() == "<html><head><title>This is another title</title></head><body><div><p>This is the body</p></div></body></html>"
@@ -907,7 +893,7 @@ html {
         def template = engine.createTemplate '''messages.each { message ->
                 yield message.summary
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         def model = [messages: [new Message(summary: 'summary')]]
         template.make(model).writeTo(rendered)
@@ -940,7 +926,7 @@ html {
                     include template:'includes/hello.tpl'
                 }
             }
-            '''
+        '''
         StringWriter rendered = new StringWriter()
         template.make().writeTo(rendered)
         assert rendered.toString() == '<html><body>Hello from include!Hello from include!Hello from include!</body></html>'
@@ -960,7 +946,7 @@ html {
                     p("This is a p with ${false?$a(href:'link.html','link'):x}")
                 }
             }
-            '''
+        '''
         String rendered = template.make()
         assert rendered == '<html><body><p>This is a p with <a href=\'link.html\'>link</a></p><p>This is a p with directly <p>hg</p></p></body></html>'
     }
@@ -977,7 +963,7 @@ html {
                     p("This is a p with ${stringOf { false?a(href:'link.html','link'):x} }")
                 }
             }
-            '''
+        '''
         String rendered = template.make()
         assert rendered == '<html><body><p>This is a p with <a href=\'link.html\'>link</a></p><p>This is a p with directly <p>hg</p></p></body></html>'
     }
@@ -987,7 +973,7 @@ html {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             p("This is an ${strong('error')}")
-            '''
+        '''
         String rendered = template.make().writeTo(new StringWriter())
         assert rendered == '<strong>error</strong><p>This is an </p>'
     }
@@ -1010,12 +996,12 @@ html {
         assert rendered == '<a>link</a>'
     }
 
-    @Test @NotYetImplemented // GROOVY-6939
+    @Test // GROOVY-6939
     void testShouldNotFailWithDoCallMethod() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             groups.each { k, v -> li(k) }
-            '''
+        '''
         def model = [groups:[a:'Group a',b:'Group b']]
         String rendered = template.make(model)
         assert rendered == '<li>a</li><li>b</li>'
@@ -1026,7 +1012,7 @@ html {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
             yield list[0]
-            '''
+        '''
         def model = [list:['Item 1']]
         String rendered = template.make(model)
         assert rendered == 'Item 1'
@@ -1034,7 +1020,7 @@ html {
         template = engine.createTemplate '''
             list[0] = 'Item 2'
             yield list[0]
-            '''
+        '''
         model = [list:['Item 1']]
         rendered = template.make(model)
         assert model.list[0] == 'Item 2'
@@ -1044,7 +1030,7 @@ html {
             def indirect = list
             indirect[0] = 'Item 4'
             yield list[0]
-            '''
+        '''
         model = [list:['Item 3']]
         rendered = template.make(model)
         assert model.list[0] == 'Item 4'
@@ -1058,11 +1044,13 @@ html {
             div {
                 yield xml.file.name
             }
-            '''
+        '''
         def model = [xml: [file:[name:'test']]]
         String rendered = template.make(model)
         assert rendered == '<div>test</div>'
     }
+
+    //--------------------------------------------------------------------------
 
     static class SimpleTagLib {
         def emoticon = { attrs, body ->
