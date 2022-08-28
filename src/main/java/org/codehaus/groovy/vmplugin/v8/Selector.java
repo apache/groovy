@@ -680,7 +680,7 @@ public abstract class Selector {
             final Class<?> declaringClass = m.getDeclaringClass();
             if (declaringClass == Class.class && parameterCount == 1 && methodName.equals("forName")) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && args.getClass().isArray()) {
+            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && 1 == args.length && args[0].getClass().isArray()) {
                 return ArrayUtil.getCloneArrayMethodHandle();
             } else {
                 return LOOKUP.unreflect(m);
