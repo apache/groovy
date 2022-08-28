@@ -586,7 +586,7 @@ public class InvokerHelper {
 
         // it's an instance; check if it's a Java one
         if (!(object instanceof GroovyObject)) {
-            if ("clone".equals(methodName) && null != object && object.getClass().isArray() && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
+            if ("clone".equals(methodName) && object.getClass().isArray() && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
                 return ArrayUtil.cloneArray((Object[]) object);
             }
 
