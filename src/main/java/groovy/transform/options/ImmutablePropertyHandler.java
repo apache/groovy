@@ -82,6 +82,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
+    private static final ClassNode CLONENOTSUPPORTED_TYPE = make(CloneNotSupportedException.class);
     private static final ClassNode COLLECTION_TYPE = makeWithoutCaching(Collection.class, false);
     private static final ClassNode DGM_TYPE = make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = make(ImmutableASTTransformation.class);
@@ -230,8 +231,8 @@ public class ImmutablePropertyHandler extends PropertyHandler {
             return assignStmt;
         }
         ArgumentListExpression nameArg = args(constX(fNode.getName()));
-        MethodCallExpression var = callX(varX(map), "get", nameArg);
-        var.setImplicitThis(false);
+        MethodCallExpression get = callX(varX(map), "get", nameArg);
+        get.setImplicitThis(false);
         MethodCallExpression containsKey = callX(varX(map), "containsKey", nameArg);
         containsKey.setImplicitThis(false);
         fNode.getDeclaringClass().getField(fNode.getName()).setInitialValueExpression(null); // to avoid default initialization
@@ -292,13 +293,17 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         assignStmt = ifElseS(
                 equalsNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
-                assignStmt);
+                ifElseS(isInstanceOfX(param, CLONEABLE_TYPE),
+                    assignStmt,
+                    throwS(ctorX(CLONENOTSUPPORTED_TYPE))));
         final Statement assignInit;
         final Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
             assignInit = shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr);
         } else {
-            assignInit = assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType));
+            assignInit = ifElseS(isInstanceOfX(initExpr, CLONEABLE_TYPE),
+                assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType)),
+                throwS(ctorX(CLONENOTSUPPORTED_TYPE)));
         }
         return assignFieldWithDefault(namedArgsMap, fNode, assignStmt, assignInit);
     }
