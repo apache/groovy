@@ -307,14 +307,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                 varX("this", cNode)
         )));
 
-        final ClassNode clonedNode = cNode.getPlainNodeReference();
-
-        addGeneratedMethod(cNode, "copyWith",
-                ACC_PUBLIC | ACC_FINAL,
-                clonedNode,
-                params(new Parameter(new ClassNode(Map.class), "map")),
-                null,
-                body);
+        addGeneratedMethod(cNode,
+            "copyWith",
+            ACC_PUBLIC | ACC_FINAL,
+            cNode.getPlainNodeReference(),
+            params(new Parameter(new ClassNode(Map.class), "map")),
+            null,
+            body);
     }
 
     /**
