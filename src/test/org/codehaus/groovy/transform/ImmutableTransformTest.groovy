@@ -139,7 +139,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     @Test
     void testCloneableFieldNotCloneableObject() {
-        shouldFail(isAtLeastJdk('16.0') ? IllegalAccessException : CloneNotSupportedException, '''
+        shouldFail(CloneNotSupportedException, '''
                 import groovy.transform.Immutable
 
                 class Dolly {
