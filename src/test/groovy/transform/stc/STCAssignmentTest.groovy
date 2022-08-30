@@ -24,118 +24,118 @@ package groovy.transform.stc
 class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testAssignmentFailure() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             int x = new Object()
-        """, "Cannot assign value of type java.lang.Object to variable of type int"
+        ''', 'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
     void testAssignmentFailure2() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             Set set = new Object()
-        """, "Cannot assign value of type java.lang.Object to variable of type java.util.Set"
+        ''', 'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
     void testAssignmentFailure3() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             Set set = new Integer(2)
-        """, "Cannot assign value of type java.lang.Integer to variable of type java.util.Set"
+        ''', 'Cannot assign value of type java.lang.Integer to variable of type java.util.Set'
     }
 
     void testIndirectAssignment() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             def o = new Object()
             int x = o
-        """, "Cannot assign value of type java.lang.Object to variable of type int"
+        ''', 'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
     void testIndirectAssignment2() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             def o = new Object()
             Set set = o
-        """, "Cannot assign value of type java.lang.Object to variable of type java.util.Set"
+        ''', 'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
     void testIndirectAssignment3() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             int x = 2
             Set set = x
-        """, "Cannot assign value of type int to variable of type java.util.Set"
+        ''', 'Cannot assign value of type int to variable of type java.util.Set'
     }
 
     void testAssignmentToEnum() {
-        assertScript """
+        assertScript '''
             enum MyEnum { a, b, c }
             MyEnum e = MyEnum.a
             e = 'a' // string to enum is implicit
             e = "${'a'}" // gstring to enum is implicit too
-        """
+        '''
     }
 
     void testAssignmentToEnumFailure() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             enum MyEnum { a, b, c }
             MyEnum e = MyEnum.a
             e = 1
-        """, "Cannot assign value of type int to variable of type MyEnum"
+        ''', 'Cannot assign value of type int to variable of type MyEnum'
     }
 
     void testAssignmentToString() {
-        assertScript """
+        assertScript '''
             String str = new Object()
-        """
+        '''
     }
 
     void testAssignmentToBoolean() {
-        assertScript """
+        assertScript '''
             boolean test = new Object()
-        """
+        '''
     }
 
     void testAssignmentToBooleanClass() {
-        assertScript """
+        assertScript '''
             Boolean test = new Object()
-        """
+        '''
     }
 
     void testAssignmentToClass() {
-        assertScript """
+        assertScript '''
             Class test = 'java.lang.String'
-        """
+        '''
     }
 
     void testPlusEqualsOnInt() {
-        assertScript """
+        assertScript '''
             int i = 0
             i += 1
-        """
+        '''
     }
 
     void testMinusEqualsOnInt() {
-        assertScript """
+        assertScript '''
             int i = 0
             i -= 1
-        """
+        '''
     }
 
     void testIntPlusEqualsObject() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             int i = 0
             i += new Object()
-        """, "Cannot find matching method int#plus(java.lang.Object)"
+        ''', 'Cannot find matching method int#plus(java.lang.Object)'
     }
 
     void testIntMinusEqualsObject() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             int i = 0
             i -= new Object()
-        """, "Cannot find matching method int#minus(java.lang.Object)"
+        ''', 'Cannot find matching method int#minus(java.lang.Object)'
     }
 
     void testStringPlusEqualsString() {
-        assertScript """
+        assertScript '''
             String str = 'test'
-            str+='test2'
-        """
+            str += 'test2'
+        '''
     }
 
     void testPlusEqualsOnProperty() {
@@ -398,16 +398,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.Object to variable of type char'
     }
 
+    // GROOVY-6577
     void testCastNullToBoolean() {
-        // GROOVY-6577
         assertScript '''
             boolean c = null
             assert c == false
         '''
     }
 
+    // GROOVY-6577
     void testCastNullToBooleanWithExplicitCast() {
-        // GROOVY-6577
         assertScript '''
             boolean c = (boolean) null
             assert c == false
@@ -550,13 +550,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testIfWithCommonInterface() {
         assertScript '''
             interface I {
-                def foo()
+                def m()
             }
             class A implements I {
-                def foo() { 'A' }
+                def m() { 'A' }
             }
             class B implements I {
-                def foo() { 'B' }
+                def m() { 'B' }
             }
 
             def x = new A()
@@ -564,7 +564,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             if (y) {
                 x = new B()
             }
-            assert x.foo() == 'B'
+            assert x.m() == 'B'
         '''
     }
 
@@ -593,16 +593,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-9786
     void testIfElseIfWithCommonInterface() {
-        ['I', 'def', 'Object'].each {
+        for (it in ['I', 'def', 'Object']) {
             assertScript """
                 interface I {
-                    def foo()
+                    def m()
                 }
                 class A implements I {
-                    def foo() { 'A' }
+                    def m() { 'A' }
                 }
                 class B implements I {
-                    def foo() { 'B' }
+                    def m() { 'B' }
                 }
 
                 $it x
@@ -613,34 +613,40 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 } else if (z) {
                     x = new B()
                 }
-                assert x.foo() == 'B'
+                assert x.m() == 'B'
             """
         }
     }
 
-    void testForLoopWithNewAssignment() {
+    void testForLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            for (int i=0; i<5;i++) { x = new HashSet() }
+            for (int i = 0; i < -1; i += 1) {
+                x = new HashSet()
+            }
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
-    void testWhileLoopWithNewAssignment() {
+    void testWhileLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            while (false) { x = new HashSet() }
+            while (false) {
+                x = new HashSet()
+            }
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
-    void testTernaryWithNewAssignment() {
+    void testTernaryInitWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            def cond = false
-            cond?(x = new HashSet()):3
+            def y = (false ? (x = new HashSet()) : 42)
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
     void testFloatSub() {
@@ -825,8 +831,8 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
               public MyInteger(String s) {super(s)}
             }
 
-            BigDecimal d = new MyDecimal("3.0")
-            BigInteger i = new MyInteger("3")
+            BigDecimal d = new MyDecimal('3.0')
+            BigInteger i = new MyInteger('3')
         '''
     }
 
@@ -926,14 +932,28 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     // GROOVY-5535
     void testAssignToNullInsideIf() {
         assertScript '''
-            Date foo() {
-                Date result = new Date()
+            Date test() {
+                Date x = new Date()
                 if (true) {
-                    result = null
+                    x = null
                 }
-                return result
+                x
             }
-            assert foo() == null
+            assert test() == null
+        '''
+    }
+
+    // GROOVY-10294
+    void testAssignToNullInsideIf2() {
+        assertScript '''
+            CharSequence test() {
+                def x = 'works'
+                if (false) {
+                    x = null
+                }
+                x
+            }
+            assert test() == 'works'
         '''
     }
 
@@ -962,7 +982,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class Base {}
             class Derived extends Base {
-                public String sayHello() { "hello"}
+                public String sayHello() { 'hello' }
             }
 
             class GBase<T extends Base> {
@@ -974,11 +994,11 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             }
 
             GDerived d = new GDerived();
-            assert d.method() == "hello"
+            assert d.method() == 'hello'
         '''
     }
 
-    //GROOVY-8157
+    // GROOVY-8157
     void testFlowTypingAfterParameterAssignment() {
         assertScript '''
             class A {}
@@ -1012,16 +1032,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testMultiAssign() {
         assertScript '''
-        def m() {
-            def row = ["", "", ""]
-            def (left, right) = [row[0], row[1]]
-            left.toUpperCase()
-        }
+            def row = ['', '', '']
+            def (one, two) = [row[0], row[1]]
+            one.toUpperCase()
         '''
     }
 
     // GROOVY-8220
-    void testFlowTypingParameterTempTypeAssignmentTracking() {
+    void testFlowTypingParameterTempTypeAssignmentTracking1() {
         assertScript '''
             class Foo {
                 CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
@@ -1036,7 +1054,10 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             }
             assert new Foo().makeEnv('X=1') == 'export X=1;'
         '''
-        // GROOVY-8237
+    }
+
+    // GROOVY-8237
+    void testFlowTypingParameterTempTypeAssignmentTracking2() {
         assertScript '''
             class Foo {
                 String parse(Reader reader) {
@@ -1050,7 +1071,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFlowTypingParameterTempTypeAssignmentTrackingWithGenerics() {
+    void testFlowTypingParameterTempTypeAssignmentTracking3() {
         assertScript '''
             class M {
                 Map<String, List<Object>> mvm = new HashMap<String, List<Object>>()
@@ -1078,29 +1099,32 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testNarrowingConversion() {
+    void testNarrowingConversion1() {
         assertScript '''
-        interface A1{}
-        interface A2 extends A1{}
-
-        class C1 implements A1{}
-
-        def m(A2 a2) {
-            C1 c1 = (C1) a2
-        }
+            interface A {
+            }
+            interface B extends A {
+            }
+            class C implements B {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
         '''
     }
 
-    void testFinalNarrowingConversion() {
+    void testNarrowingConversion2() {
         shouldFailWithMessages '''
-        interface A1{}
-        interface A2 extends A1{}
-
-        final class C1 implements A1{}
-
-        def m(A2 a2) {
-            C1 c1 = (C1) a2
-        }
-        ''', "Inconvertible types: cannot cast A2 to C1"
+            interface A {
+            }
+            interface B extends A {
+            }
+            final class C implements A {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
+        ''',
+        'Inconvertible types: cannot cast B to C'
     }
 }

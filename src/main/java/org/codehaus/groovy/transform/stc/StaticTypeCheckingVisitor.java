@@ -902,8 +902,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 // track conditional assignment
-                if (!isNullConstant(rightExpression)
-                        && leftExpression instanceof VariableExpression
+                if (leftExpression instanceof VariableExpression
                         && typeCheckingContext.ifElseForWhileAssignmentTracker != null) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessedVariable instanceof Parameter) {
@@ -1056,17 +1055,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return new Token(typeWithoutEqual, op.getText(), op.getStartLine(), op.getStartColumn());
     }
 
-    protected ClassNode getOriginalDeclarationType(Expression lhs) {
+    protected ClassNode getOriginalDeclarationType(final Expression lhs) {
         if (lhs instanceof VariableExpression) {
             Variable var = findTargetVariable((VariableExpression) lhs);
-            if (var instanceof PropertyNode) {
-                // Do NOT trust the type of the property node!
-                return getType(lhs);
+            if (!(var instanceof DynamicVariable || var instanceof PropertyNode)) {
+                return var.getOriginType();
             }
-            if (var instanceof DynamicVariable) return getType(lhs);
-            return var.getOriginType();
-        }
-        if (lhs instanceof FieldExpression) {
+        } else if (lhs instanceof FieldExpression) {
             return ((FieldExpression) lhs).getField().getOriginType();
         }
         return getType(lhs);
@@ -4003,29 +3998,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void restoreTypeBeforeConditional() {
         Set<Map.Entry<VariableExpression, List<ClassNode>>> entries = typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet();
         for (Map.Entry<VariableExpression, List<ClassNode>> entry : entries) {
-            VariableExpression var = entry.getKey();
-            List<ClassNode> items = entry.getValue();
-            ClassNode originValue = items.get(0);
-            storeType(var, originValue);
+            VariableExpression ve = entry.getKey();
+            List<ClassNode> types = entry.getValue();
+            ve.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, types.get(0));
         }
     }
 
     protected Map<VariableExpression, ClassNode> popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
-        Map<VariableExpression, ClassNode> assignments = new HashMap<VariableExpression, ClassNode>();
+        Map<VariableExpression, ClassNode> assignments = new HashMap<>();
         if (!typeCheckingContext.ifElseForWhileAssignmentTracker.isEmpty()) {
             for (Map.Entry<VariableExpression, List<ClassNode>> entry : typeCheckingContext.ifElseForWhileAssignmentTracker.entrySet()) {
                 VariableExpression key = entry.getKey();
                 List<ClassNode> allValues = entry.getValue();
-                // GROOVY-6099: First element of the list may be null, if no assignment was made before the branch
-                List<ClassNode> nonNullValues = new ArrayList<ClassNode>(allValues.size());
+                List<ClassNode> nonNullValues = new ArrayList<>(allValues.size());
                 for (ClassNode value : allValues) {
-                    if (value != null) nonNullValues.add(value);
+                    if (value != null && value != UNKNOWN_PARAMETER_TYPE) nonNullValues.add(value); // GROOVY-6099, GROOVY-10294
                 }
-                if (nonNullValues.isEmpty()) continue;
-
-                ClassNode cn = lowestUpperBound(nonNullValues);
-                storeType(key, cn);
-                assignments.put(key, cn);
+                if (!nonNullValues.isEmpty()) {
+                    ClassNode cn = lowestUpperBound(nonNullValues);
+                    assignments.put(key, cn);
+                    storeType(key, cn);
+                }
             }
         }
         typeCheckingContext.ifElseForWhileAssignmentTracker = oldTracker;
@@ -4228,15 +4221,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
             final Variable accessedVariable = var.getAccessedVariable();
-            if (accessedVariable != exp && accessedVariable instanceof VariableExpression) {
-                storeType((VariableExpression) accessedVariable, cn);
+            if (accessedVariable instanceof VariableExpression) {
+                if (accessedVariable != exp)
+                    storeType((VariableExpression) accessedVariable, cn);
+            } else if (accessedVariable instanceof Parameter
+                    || accessedVariable instanceof PropertyNode
+                    && ((PropertyNode) accessedVariable).getField().isSynthetic()) {
+                ((AnnotatedNode) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
             }
-            if (accessedVariable instanceof Parameter
-                    || (accessedVariable instanceof PropertyNode
-                        && ((PropertyNode) accessedVariable).getField().isSynthetic())) {
-                ((ASTNode) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
-            }
-            if (var.isClosureSharedVariable() && cn != null) {
+            if (cn != null && var.isClosureSharedVariable()) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
                 if (assignedTypes == null) {
                     assignedTypes = new LinkedList<ClassNode>();
