@@ -28,6 +28,7 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.internal.util.Function;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -388,6 +389,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             visitClass(innerClassNode);
         }
         typeCheckingContext.alreadyVisitedMethods = oldVisitedMethod;
+        typeCheckingContext.popEnclosingClassNode();
+        if (type != null) {
+            typeCheckingContext.popErrorCollector();
+        }
         node.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, node);
         // mark all methods as visited. We can't do this in visitMethod because the type checker
         // works in a two pass sequence and we don't want to skip the second pass
@@ -776,6 +781,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
+
             leftExpression.visit(this); final ClassNode lType, rType;
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             if (setterInfo != null) {
@@ -959,6 +965,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
         VariableExpression ve = varX("%", setterInfo.receiverType);
+        ve.setType(setterInfo.receiverType); // same as origin type
+
+        Function<MethodNode, ClassNode> firstParamType = new Function<MethodNode, ClassNode>() {
+            @Override public ClassNode apply(final MethodNode method) {
+                ClassNode type = method.getParameters()[0].getOriginType();
+                if (!method.isStatic() && !(method instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
+                    Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(null, setterInfo.receiverType, method.getDeclaringClass());
+                    type = applyGenericsContext(spec, type);
+                }
+                return type;
+            }
+        };
+
         // for compound assignment "x op= y" find type as if it was "x = (x op y)"
         final Expression newRightExpression = isCompoundAssignment(expression)
                 ? binX(leftExpression, getOpWithoutEqual(expression), rightExpression)
@@ -971,7 +990,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
             // notation AND that the RHS is not a boolean/String/Class
             for (MethodNode setter : setterInfo.setters) {
-                ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
+                ClassNode type = getWrapper(firstParamType.apply(setter));
                 if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
                     call = callX(ve, setterInfo.name, castX(type, newRightExpression));
                     call.setImplicitThis(false);
@@ -988,13 +1007,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (setter == directSetterCandidate) {
                     leftExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
                     leftExpression.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE); // clear assumption
-                    storeType(leftExpression, getType(newRightExpression));
+                    ClassNode setterType = firstParamType.apply(setter);
+                    storeType(leftExpression, setterType);
                     break;
                 }
             }
             return false;
         } else {
-            ClassNode firstSetterType = setterInfo.setters.get(0).getParameters()[0].getOriginType();
+            ClassNode firstSetterType = firstParamType.apply(setterInfo.setters.get(0));
             addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
@@ -2522,7 +2542,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
                 if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
-                candidates.addAll(findDGMMethodsForClassNode(getTransformLoader(), receiverType, nameText));
+                candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates);
                 if (!candidates.isEmpty()) {
                     break;
@@ -3382,7 +3402,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // if the call expression is a spread operator call, then we must make sure that
         // the call is made on a collection type
         if (call.isSpreadSafe()) {
-            //TODO check if this should not be change to iterator based call logic
             ClassNode expressionType = getType(objectExpression);
             if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
@@ -5141,7 +5160,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ArgumentListExpression args = new ArgumentListExpression();
             VariableExpression vexp = varX("$self", receiver);
             args.addExpression(vexp);
-            if (arguments instanceof TupleExpression) {
+            if (arguments instanceof TupleExpression) { // NO_ARGUMENTS
                 for (Expression argument : (TupleExpression) arguments) {
                     args.addExpression(argument);
                 }

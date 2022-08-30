@@ -1269,7 +1269,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             new D<Number>().p = 'x'
         ''',
-        'Cannot assign value of type java.lang.String to variable of type T'
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Number'
     }
 
     // GROOVY-10225
