@@ -374,6 +374,32 @@ final class GrapeIvyTest {
     }
 
     @Test
+    void testInvalidGroup() {
+        def ex = shouldFail '''
+            @Grab('org/ejml:ejml-simple:0.41')
+            import org.ejml.simple.SimpleMatrix
+        '''
+        assert ex.message.contains("Grab: invalid value of 'org/ejml' for group")
+    }
+
+    @Test
+    void testInvalidVersion() {
+        def ex = shouldFail '''
+            @Grab('org.ejml:ejml-simple:0.41|')
+            import org.ejml.simple.SimpleMatrix
+        '''
+        assert ex.message.contains("Grab: invalid value of '0.41|' for version")
+    }
+
+    @Test
+    void testInvalidMutuallyExclusiveArgs() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', groupId: 'org.ejml', module: 'ejml-simple', version: '0.41')
+        '''
+        assert ex.message.contains('Grab: mutually exclusive arguments: [groupId, group]')
+    }
+
+    @Test
     void testTransitiveShorthandExpectFailure() {
         shouldFail MissingPropertyException, '''
             @Grab('commons-digester:commons-digester:2.1;transitive=false')

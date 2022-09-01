@@ -221,11 +221,34 @@ class GrapeIvy implements GrapeEngine {
             throw new RuntimeException('grab requires at least a module: or artifactId: or artifact: argument')
         }
 
+        // check for malformed components of the coordinates
+        deps.each { k, v ->
+            if (v instanceof CharSequence) {
+                if (k.toString().contains('v')) { // revision, version, rev
+                    if (!(v ==~ '[^\\/:"<>|]*')) {
+                        throw new RuntimeException("Grab: invalid value of '$v' for $k: should not contain any of / \\ : \" < > |")
+                    }
+                } else {
+                    if (!(v ==~ '[-._a-zA-Z0-9]*')) {
+                        throw new RuntimeException("Grab: invalid value of '$v' for $k: should only contain - . _ a-z A-Z 0-9")
+                    }
+                }
+            }
+        }
+
+        // check for mutually exclusive arguments
+        Set<String> keys = (Set<String>) deps.keySet()
+        keys.each { key ->
+            Set<String> badArgs = exclusiveGrabArgs[key]
+            if (badArgs && !badArgs.disjoint(keys)) {
+                throw new RuntimeException("Grab: mutually exclusive arguments: ${keys.intersect(badArgs) + key}")
+            }
+        }
+
         String groupId = deps.group ?: deps.groupId ?: deps.organisation ?: deps.organization ?: deps.org ?: ''
         String ext = deps.ext ?: deps.type ?: ''
         String type = deps.type ?: ''
 
-        //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
         String version = deps.version ?: deps.revision ?: deps.rev ?: '*'
         if ('*' == version) version = 'latest.default'
 
@@ -646,15 +669,6 @@ class GrapeIvy implements GrapeEngine {
     }
 
     URI[] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
-        // check for mutually exclusive arguments
-        Set keys = args.keySet()
-        keys.each { a ->
-            Set badArgs = exclusiveGrabArgs[a]
-            if (badArgs && !badArgs.disjoint(keys)) {
-                throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + a}")
-            }
-        }
-
         // check the kill switch
         if (!enableGrapes) {
             return [] as URI[]
