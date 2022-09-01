@@ -218,10 +218,6 @@ tasks.withType(Javadoc).configureEach {
     options.source = sharedConfiguration.targetJavaVersion.get()
 }
 
-tasks.named("compileTestGroovy") {
-    options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
-}
-
 tasks.withType(CodeNarc).configureEach {
     ignoreFailures = true
     configFile = rootProject.file("config/codenarc/codenarc.groovy")

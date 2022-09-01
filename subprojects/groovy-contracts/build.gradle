@@ -33,7 +33,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
-    systemProperty 'spock.iKnowWhatImDoing.disableGroovyVersionCheck', 'true'
 }
 
 groovyLibrary {
