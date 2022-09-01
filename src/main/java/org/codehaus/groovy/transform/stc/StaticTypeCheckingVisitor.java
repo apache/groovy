@@ -2455,6 +2455,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
+                // GROOVY-10741: check for reference to a property node's method
+                MethodNode generated = findPropertyMethod(receiverType, nameText);
+                if (generated != null && candidates.stream().noneMatch(mn -> mn.getName().equals(generated.getName()))){
+                    candidates.add(generated);
+                }
                 candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
 
@@ -2490,6 +2495,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static ClassNode wrapClosureType(final ClassNode returnType) {
         return makeClassSafe0(CLOSURE_TYPE, wrapTypeIfNecessary(returnType).asGenericsType());
+    }
+
+    private static MethodNode findPropertyMethod(final ClassNode type, final String name) {
+        for (ClassNode cn = type; cn != null; cn = cn.getSuperClass()) {
+            for (PropertyNode pn : cn.getProperties()) {
+                if (name.equals(pn.getGetterNameOrDefault())) {
+                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), pn.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                    node.setDeclaringClass(pn.getDeclaringClass());
+                    return node;
+                } else if (name.equals(pn.getSetterNameOrDefault()) && !Modifier.isFinal(pn.getModifiers())) {
+                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
+                    node.setDeclaringClass(pn.getDeclaringClass());
+                    return node;
+                }
+            }
+        }
+        return null;
     }
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
@@ -3678,9 +3700,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType) {
-        Parameter[] parameters = findSAM(functionalInterfaceType).getParameters().clone();
-        for (int i = 0, n = parameters.length; i < n; i += 1) {
-            parameters[i] = new Parameter(dynamicType(), "p" + System.nanoTime());
+        int nParameters = findSAM(functionalInterfaceType).getParameters().length;
+        Parameter[] parameters = new Parameter[nParameters];
+        for (int i = 0; i < nParameters; i += 1) {
+            parameters[i] = new Parameter(dynamicType(), "p" + i);
         }
 
         return new LambdaExpression(parameters, EmptyStatement.INSTANCE);
@@ -3724,8 +3747,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param args     the argument classes
      */
     private static void addArrayMethods(final List<MethodNode> methods, final ClassNode receiver, final String name, final ClassNode[] args) {
-        if (args.length != 1) return;
         if (!receiver.isArray()) return;
+        if (args == null || args.length != 1) return;
         if (!isIntCategory(getUnwrapper(args[0]))) return;
         if ("getAt".equals(name)) {
             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, receiver.getComponentType(), new Parameter[]{new Parameter(args[0], "arg")}, null, null);
