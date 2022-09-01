@@ -945,6 +945,32 @@ Printer
         '''
     }
 
+    // GROOVY-10741
+    void testMethodPointerPropertyReference() {
+        assertScript '''
+            class C { def foo }
+            List<C> list = [new C(foo:'bar'), new C(foo:'baz')]
+            assert list.collect(C.&getFoo) == ['bar', 'baz'] // Cannot find matching method C#getFoo
+        '''
+        assertScript '''
+            record R(def foo) { }
+            List<R> list = [new R('bar'), new R('baz')]
+            assert list.collect(R.&foo) == ['bar', 'baz'] // Cannot find matching method R#foo
+        '''
+        assertScript '''
+            class C { def foo }
+            def proc = C.&setFoo
+            def pogo = new C(foo:'bar')
+            assert pogo.foo == 'bar'
+            proc.call(pogo, 'baz')
+            assert pogo.foo == 'baz'
+        '''
+        shouldFailWithMessages '''
+            class C { final foo }
+            def set = C.&setFoo
+        ''', 'Cannot find matching method C#setFoo'
+    }
+
     // GROOVY-9463
     void testMethodPointerUnknownReference() {
         shouldFailWithMessages '''
