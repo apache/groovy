@@ -918,6 +918,25 @@ Printer
         '''
     }
 
+    // GROOVY-10741
+    void testMethodPointerPropertyReference() {
+        assertScript '''
+            class C { def foo }
+            def pogo = new C(foo:'bar')
+            assert pogo.foo == 'bar'
+
+            def proc = pogo.&setFoo
+            proc.call('baz')
+            assert pogo.foo == 'baz'
+        '''
+        shouldFailWithMessages '''
+            class C { final foo }
+            def pogo = new C(foo:'bar')
+
+            def proc = pogo.&setFoo
+        ''', 'Cannot find matching method C#setFoo'
+    }
+
     // GROOVY-9463
     void testMethodPointerUnknownReference() {
         shouldFailWithMessages '''
