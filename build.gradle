@@ -363,8 +363,8 @@ allprojects {
         compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
     }
 
-    tasks.withType(AbstractCopyTask) {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    tasks.withType(AbstractCopyTask) { t ->
+        duplicatesStrategy = t.name.contains('TestResources') ? DuplicatesStrategy.INCLUDE : DuplicatesStrategy.EXCLUDE
     }
 
     tasks.withType(JavaCompile) {

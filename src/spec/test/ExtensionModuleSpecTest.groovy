@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,6 +16,8 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import groovy.test.GroovyTestCase
+
 class ExtensionModuleSpecTest extends GroovyTestCase {
     void testShouldAddMaxRetriesToInteger() {
         assertScript '''// tag::instance_extension_assert[]
