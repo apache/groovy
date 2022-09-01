@@ -165,7 +165,7 @@ allprojects {
 
     def producedJars = [jar]
     jar {
-        duplicatesStrategy = DuplicatesStrategy.WARN
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         appendix = 'raw'
         manifest {
             from(allManifest) {
@@ -180,7 +180,7 @@ allprojects {
     if (rootProject.indyCapable()) {
         task jarWithIndy(type: Jar) {
             dependsOn compileGroovyWithIndy
-            duplicatesStrategy = DuplicatesStrategy.WARN
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             classifier = 'indy'
             appendix = 'raw'
             from sourceSets.main.java.outputDir
@@ -306,19 +306,21 @@ producedJars.each {
 }
 
 subprojects { sp ->
-    jar {
+    tasks.withType(Jar).configureEach { jar ->
         metaInf {
-            if (file("${projectDir}/LICENSE").exists()) {
-                from "${projectDir}/LICENSE"
-            } else {
-                from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+            if (jar.name == 'sourcesJar') {
+                if (file("${projectDir}/LICENSE").exists()) {
+                    from "${projectDir}/LICENSE"
+                } else {
+                    from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+                }
+                if (file("${projectDir}/NOTICE").exists()) {
+                    from "${projectDir}/NOTICE"
+                } else {
+                    from "${rootProject.projectDir}/notices/NOTICE-BASE"
+                }
+                rename '^([A-Z]+)-([^.]*)', '$1'
             }
-            if (file("${projectDir}/NOTICE").exists()) {
-                from "${projectDir}/NOTICE"
-            } else {
-                from "${rootProject.projectDir}/notices/NOTICE-BASE"
-            }
-            rename '^([A-Z]+)-([^.]*)', '$1'
         }
         exclude '**/package-info.class'
     }

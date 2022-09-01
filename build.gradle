@@ -364,7 +364,7 @@ allprojects {
     }
 
     tasks.withType(AbstractCopyTask) {
-        duplicatesStrategy = DuplicatesStrategy.WARN
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
     tasks.withType(JavaCompile) {
