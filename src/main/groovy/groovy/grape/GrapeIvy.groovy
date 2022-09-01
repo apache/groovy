@@ -198,6 +198,30 @@ class GrapeIvy implements GrapeEngine {
             throw new RuntimeException('grab requires at least a module: or artifactId: or artifact: argument')
         }
 
+        // check for malformed components of the coordinates
+        dep.each { k, v ->
+            if (v instanceof CharSequence) {
+                if (k.toString().contains('v')) { // revision, version, rev
+                    if (!(v ==~ '[^\\/:"<>|]*')) {
+                        throw new RuntimeException("Grab: invalid value of '$v' for $k: should not contain any of / \\ : \" < > |")
+                    }
+                } else {
+                    if (!(v ==~ '[-._a-zA-Z0-9]*')) {
+                        throw new RuntimeException("Grab: invalid value of '$v' for $k: should only contain - . _ a-z A-Z 0-9")
+                    }
+                }
+            }
+        }
+
+        // check for mutually exclusive arguments
+        Set<String> keys = (Set<String>) dep.keySet()
+        keys.each { key ->
+            Set<String> badArgs = MUTUALLY_EXCLUSIVE_KEYS[key]
+            if (badArgs && !badArgs.disjoint(keys)) {
+                throw new RuntimeException("Grab: mutually exclusive arguments: ${keys.intersect(badArgs) + key}")
+            }
+        }
+
         String groupId = dep.group ?: dep.groupId ?: dep.organisation ?: dep.organization ?: dep.org ?: ''
         // TODO: accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
         String version = dep.version ?: dep.revision ?: dep.rev ?: '*'
@@ -593,15 +617,6 @@ class GrapeIvy implements GrapeEngine {
     }
 
     URI[] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
-        // check for mutually exclusive arguments
-        Set<String> keys = (Set<String>) args.keySet()
-        keys.each { key ->
-            Set<String> badArgs = MUTUALLY_EXCLUSIVE_KEYS[key]
-            if (badArgs && !badArgs.disjoint(keys)) {
-                throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + key}")
-            }
-        }
-
         // check the kill switch
         if (!enableGrapes) {
             return new URI[0]
