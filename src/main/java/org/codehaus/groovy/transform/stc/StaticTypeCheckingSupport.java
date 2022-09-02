@@ -746,7 +746,7 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        if (implementsInterfaceOrSubclassOf(right, left)) {
+        if (implementsInterfaceOrSubclassOf(getWrapper(right), left)) {
             return true;
         }
 
