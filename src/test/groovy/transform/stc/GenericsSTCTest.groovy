@@ -1193,7 +1193,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8409, GROOVY-9915
+    // GROOVY-8409, GROOVY-9915, GROOVY-10745
     void testShouldUseMethodGenericType10() {
         assertScript '''
             interface OngoingStubbing<T> /*extends IOngoingStubbing*/ {
@@ -1211,6 +1211,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             when(foo()).thenReturn(Optional.empty())
+        '''
+
+        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            Map map() { [:] }
+            Optional.of(map()).orElse(Collections.emptyMap());
         '''
     }
 
