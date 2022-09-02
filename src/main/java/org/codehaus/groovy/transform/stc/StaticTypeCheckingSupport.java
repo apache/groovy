@@ -701,15 +701,16 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        // simple check on being subclass
-        if (right.isDerivedFrom(left) || (left.isInterface() && right.implementsInterface(left))) return true;
-
         // if left and right are primitives or numbers allow
         if (isPrimitiveType(leftRedirect) && isPrimitiveType(rightRedirect)) return true;
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
 
         // left is a float/double and right is a BigDecimal
         if (WideningCategories.isFloatingCategory(leftRedirect) && BigDecimal_TYPE.equals(rightRedirect)) {
+            return true;
+        }
+
+        if (WideningCategories.implementsInterfaceOrSubclassOf(getWrapper(right), left)) {
             return true;
         }
 

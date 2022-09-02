@@ -1297,21 +1297,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
     }
 
-    private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
-        // last, check generic type information to ensure that inferred types are compatible
-        if (!leftExpressionType.isUsingGenerics()) return;
-        // example of incomplete type info: "List<Type> list = new LinkedList()"
-        // we assume arity related errors are already handled here
-        if (missesGenericsTypes(wrappedRHS)) return;
-
-        GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-        if (UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) ||
-                gt.isCompatibleWith(wrappedRHS) ||
-                isNullConstant(rightExpression)) return;
-
-        addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                + wrappedRHS.toString(false)
-                + " to: " + leftExpressionType.toString(false), rightExpression);
+    private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
+        if (leftExpressionType.isUsingGenerics()
+                && !missesGenericsTypes(rightExpressionType)
+                && !isNullConstant(rightExpression) && !UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)
+                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType)))
+            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -1323,31 +1314,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return false;
     }
 
-    protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode inferredRightExpressionTypeOrig) {
-        ClassNode inferredRightExpressionType = inferredRightExpressionTypeOrig;
+    protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
-        ClassNode leftRedirect = leftExpressionType.redirect();
-        // see if instanceof applies
+        ClassNode rTypeInferred; // see if any instanceof exists
         if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
-            inferredRightExpressionType = getInferredReturnType(rightExpression);
+            rTypeInferred = getInferredReturnType(rightExpression);
+        } else {
+            rTypeInferred = rightExpressionType;
         }
-        ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
+        ClassNode rTypeAdjusted = adjustTypeForSpreading(rTypeInferred, leftExpression);
 
-        // check types are compatible for assignment
-        if (!checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression)) {
-            if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
-                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
+        if (!checkCompatibleAssignmentTypes(leftExpressionType, rTypeAdjusted, rightExpression)) {
+            if (!extension.handleIncompatibleAssignment(leftExpressionType, rTypeAdjusted, assignmentExpression)) {
+                addAssignmentError(leftExpressionType, rTypeInferred, rightExpression);
             }
         } else {
-            addPrecisionErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression);
-            addListAssignmentConstructorErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression, assignmentExpression);
-            addMapAssignmentConstructorErrors(leftRedirect, leftExpression, rightExpression);
-            if (hasGStringStringError(leftExpressionType, wrappedRHS, rightExpression)) return;
-            checkTypeGenerics(leftExpressionType, wrappedRHS, rightExpression);
+            ClassNode lTypeRedirect = leftExpressionType.redirect();
+            addPrecisionErrors(lTypeRedirect, leftExpressionType, rTypeAdjusted, rightExpression);
+            addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
+            addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+            if (!hasGStringStringError(leftExpressionType, rTypeAdjusted, rightExpression)) {
+                checkTypeGenerics(leftExpressionType, rTypeAdjusted, rightExpression);
+            }
         }
     }
 

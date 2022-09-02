@@ -526,7 +526,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8638
-    void testReturnTypeInferenceWithMethodGenerics18() {
+    void _testReturnTypeInferenceWithMethodGenerics18() {
         assertScript '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
@@ -1311,15 +1311,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-10367
+    @NotYetImplemented // GROOVY-10367
     void testDiamondInferrenceFromConstructor26() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<X, Y extends X> { // works without Y
-              X x
+                X x
             }
             def <Z extends Number> void test(Z z) {
-              z = new C<>(z).x // Cannot assign value of type Object to variable of type Z
+                z = new C<>(z).x // Cannot assign value of type X to variable of type Z
             }
             test(null)
         '''
@@ -1967,7 +1967,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10525
-    void testMethodCallWithClassParameterUnbounded2() {
+    void _testMethodCallWithClassParameterUnbounded2() {
         assertScript '''
             @Grab('javax.validation:validation-api:1.1.0.Final')
             import javax.validation.Validator
@@ -4161,7 +4161,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6760
-    void testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
+    void _testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
         assertScript '''
             @Grab('com.netflix.rxjava:rxjava-core:0.18.1')
             import rx.Observable
