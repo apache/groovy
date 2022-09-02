@@ -39,7 +39,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
     public static final int ENUM_DEF = 61;
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
-    private static final Pattern RAW_COMMENT_PATTERN = Pattern.compile("\"(?s).*?\\\\*\\\\s*@\"");
+    private static final Pattern RAW_COMMENT_PATTERN = Pattern.compile("(?s).*?\\*\\s*@");
     private static final Pattern TRIMMED_COMMENT_PATTERN = Pattern.compile("(?m)^\\s*\\*\\s*([^*]*)$");
     private static final GroovyTag[] EMPTY_GROOVYTAG_ARRAY = new GroovyTag[0];
     private final String name;
@@ -104,7 +104,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
         if (trimmed.equals(rawCommentText)) return;
         String cleaned = TRIMMED_COMMENT_PATTERN.matcher(trimmed).replaceAll("$1").trim();
         String[] split = cleaned.split("(?m)^@", -1);
-        List<GroovyTag> result = new ArrayList<GroovyTag>();
+        List<GroovyTag> result = new ArrayList<>();
         for (String s : split) {
             String tagname = null;
             if (s.startsWith("param") || s.startsWith("throws")) {
