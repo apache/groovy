@@ -1270,13 +1270,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
     }
 
-    private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
+    private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
         if (leftExpressionType.isUsingGenerics()
-                && !isNullConstant(rightExpression)
+                && !missesGenericsTypes(rightExpressionType)
                 && !(rightExpression instanceof ClosureExpression) // GROOVY-10277
-                && !UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) && !missesGenericsTypes(wrappedRHS)
-                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrappedRHS))
-            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(wrappedRHS) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+                && !isNullConstant(rightExpression) && !UNKNOWN_PARAMETER_TYPE.equals(rightExpressionType)
+                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrapTypeIfNecessary(rightExpressionType)))
+            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(rightExpressionType) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -1307,23 +1307,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
-        ClassNode rTypeWrapped = adjustTypeForSpreading(rightExpressionType, leftExpression);
+        ClassNode rType = adjustTypeForSpreading(rightExpressionType, leftExpression);
 
-        if (!checkCompatibleAssignmentTypes(leftExpressionType, rTypeWrapped, rightExpression)) {
-            if (!extension.handleIncompatibleAssignment(leftExpressionType, rightExpressionType, assignmentExpression)) {
+        if (!checkCompatibleAssignmentTypes(leftExpressionType, rType, rightExpression)) {
+            if (!extension.handleIncompatibleAssignment(leftExpressionType, rType, assignmentExpression)) {
                 addAssignmentError(leftExpressionType, rightExpressionType, rightExpression);
             }
         } else {
             ClassNode lTypeRedirect = leftExpressionType.redirect();
-            addPrecisionErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression);
+            addPrecisionErrors(lTypeRedirect, leftExpressionType, rType, rightExpression);
             if (rightExpression instanceof ListExpression) {
                 addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
                 addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
             }
-            if (!hasGStringStringError(leftExpressionType, rTypeWrapped, rightExpression)
-                    && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
-                checkTypeGenerics(leftExpressionType, rTypeWrapped, rightExpression);
+            if (!hasGStringStringError(leftExpressionType, rType, rightExpression) && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
+                checkTypeGenerics(leftExpressionType, rType, rightExpression);
             }
         }
     }

@@ -751,8 +751,9 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        // simple sub-type check
-        if (!left.isInterface() ? right.isDerivedFrom(left) : GeneralUtils.isOrImplements(right, left)) return true;
+        if (implementsInterfaceOrSubclassOf(getWrapper(right), left)) {
+            return true;
+        }
 
         if (right.isDerivedFrom(CLOSURE_TYPE) && isSAMType(left)) {
             return true;
