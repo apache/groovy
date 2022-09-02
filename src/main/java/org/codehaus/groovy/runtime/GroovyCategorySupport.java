@@ -188,8 +188,8 @@ public class GroovyCategorySupport {
 
         private void use(Class categoryClass) {
             CachedClass cachedClass = ReflectionCache.getCachedClass(categoryClass);
-            LinkedList<CachedClass> classStack = new LinkedList<CachedClass>();
-            for (CachedClass superClass = cachedClass; superClass.getTheClass()!=Object.class; superClass = superClass.getCachedSuperClass()) {
+            LinkedList<CachedClass> classStack = new LinkedList<>();
+            for (CachedClass superClass = cachedClass; superClass != null && superClass.getTheClass() != Object.class; superClass = superClass.getCachedSuperClass()) {
                 classStack.add(superClass);
             }
 
