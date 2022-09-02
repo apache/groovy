@@ -20,6 +20,8 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 final class CategoryTest extends GroovyTestCase {
 
     void setUp() {
@@ -259,6 +261,17 @@ final class CategoryTest extends GroovyTestCase {
                 assert 'abc'.getFoo() == 'String'
                 assert 'abc'.foo      == 'String'
             }
+        '''
+    }
+
+    // GROOVY-10743
+    void testStaticMethodOnInterface() {
+        if(!isAtLeastJdk('9.0')) return
+        assertScript '''
+        use(java.util.stream.Stream) {
+            assert [1, 1].iterate(f -> [f[1], f.sum()]).limit(8).toList()*.head() == [1, 1, 2, 3, 5, 8, 13, 21]
+            assert 16.iterate(n -> n < 500, n -> n * 2).toList() == [16, 32, 64, 128, 256]
+        }
         '''
     }
 
