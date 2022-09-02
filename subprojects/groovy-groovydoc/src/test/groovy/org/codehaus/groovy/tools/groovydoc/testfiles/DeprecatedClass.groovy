@@ -20,6 +20,8 @@ package org.codehaus.groovy.tools.groovydoc.testfiles
 
 /**
  * Meow!
+ *
+ * @deprecated Use something else
  */
 @Deprecated
 class DeprecatedClass {

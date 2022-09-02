@@ -21,11 +21,13 @@ package org.codehaus.groovy.tools.groovydoc.testfiles
 class DeprecatedField {
     @Deprecated
     /**
-     * @deprecated Use my ass instead
+     * A public deprecated field
+     *
+     * @deprecated Use something else
      */
     public String field
 
-    public boolean isHandlesNodeChildren() {
+    boolean isHandlesNodeChildren() {
         return true
     }
 
