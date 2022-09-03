@@ -924,7 +924,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (source instanceof ClosureExpression) {
                 inferParameterAndReturnTypesOfClosureOnRHS(target, (ClosureExpression) source);
             } else if (source instanceof MethodReferenceExpression) {
-                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target);
+                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target, (MethodReferenceExpression) source);
 
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambdaExpression);
                 source.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
@@ -3682,7 +3682,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     newArgumentExpressions.add(argumentExpression);
                 } else {
                     methodReferencePositions.add(i);
-                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType));
+                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType, (MethodReferenceExpression) argumentExpression));
                 }
             }
         }
@@ -3698,14 +3698,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType) {
-        int nParameters = findSAM(functionalInterfaceType).getParameters().length;
-        Parameter[] parameters = new Parameter[nParameters];
-        for (int i = 0; i < nParameters; i += 1) {
-            parameters[i] = new Parameter(dynamicType(), "p" + i);
+    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType, final MethodReferenceExpression methodReference) {
+        Parameter[] parameters = findSAM(functionalInterfaceType).getParameters();
+        int nParameters = parameters.length;
+        if (nParameters > 0) {
+            ClassNode firstParamType = dynamicType();
+            // GROOVY-10734: Type::instanceMethod has implied first param
+            List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
+            if (candidates != null && !candidates.isEmpty()) {
+                ClassNode objExpType = getType(methodReference.getExpression());
+                if (isClassClassNodeWrappingConcreteType(objExpType)
+                        && candidates.stream().allMatch(mn -> !mn.isStatic())) {
+                    firstParamType = objExpType.getGenericsTypes()[0].getType();
+                }
+            }
+            parameters = new Parameter[nParameters];
+            for (int i = 0; i < nParameters; i += 1) {
+                parameters[i] = new Parameter(i == 0 ? firstParamType : dynamicType(), "p" + i);
+            }
         }
-
-        return new LambdaExpression(parameters, EmptyStatement.INSTANCE);
+        return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
 
     /**
@@ -5617,7 +5629,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
                 ClassNode[] matchTypes = candidates.stream()
                         .map(candidate -> collateMethodReferenceParameterTypes(mp, candidate))
-                        .filter(candidate -> checkSignatureSuitability(candidate, paramTypes))
+                        .filter(signature -> checkSignatureSuitability(signature, paramTypes))
                         .findFirst().orElse(null); // TODO: order signatures by param distance
                 if (matchTypes != null) {
                     Map<GenericsTypeName, GenericsType> connections = new HashMap<>();

@@ -216,6 +216,24 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-10734
+    void testFunctionCI8() {
+        assertScript shell, '''
+            class C {
+                String p
+            }
+            @CompileStatic
+            Map test(Collection<C> items) {
+                items.stream().collect(
+                    Collectors.groupingBy(C::getP) // Failed to find the expected method[getP(Object)] in the type[C]
+                )
+            }
+            def map = test([new C(p:'foo'), new C(p:'bar'), new C(p:'foo')])
+            assert map.foo.size() == 2
+            assert map.bar.size() == 1
+        '''
+    }
+
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript shell, '''
