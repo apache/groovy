@@ -40,6 +40,14 @@ gradleEnterprise {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven{ url('https://repository.ow2.org/nexus/content/repositories/public/')}
+        mavenLocal()
+    }
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 def subprojects = [
