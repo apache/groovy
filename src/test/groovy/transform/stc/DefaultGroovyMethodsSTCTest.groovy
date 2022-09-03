@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : default groovy methods.
  */
@@ -215,6 +217,33 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             def sorted3 = orig3.sort(new SecondLetterComparator())
             assert orig3 == [ant:5, rat:10, bug:15, dog:20]
             assert sorted3*.value == [10, 5, 20, 15]
+        '''
+    }
+
+    // GROOVY-7976, GROOVY-7992
+    void testSortMethodsWithComparatorAcceptingSuperclass() {
+        assertScript '''
+            List<Number> numbers = [2,1,3]
+            numbers.sort(new Comparator<Object>() {
+                int compare(o1, o2) {
+                    o1.toString() <=> o2.toString()
+                }
+            })
+            assert numbers == [1,2,3]
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-7992
+    void testMaxWithComparatorAcceptingSuperclass() {
+        assertScript '''
+            List<Number> numbers = [1,2,3]
+            // Cannot assign value of type Object to variable of type Number
+            Number highest = numbers.max(new Comparator<Object>() {
+                int compare(o1, o2) {
+                    o1.hashCode() <=> o2.hashCode()
+                }
+            })
+            assert highest == 3
         '''
     }
 
