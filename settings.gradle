@@ -24,6 +24,8 @@ pluginManagement {
         mavenCentral()
 //        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     }
+
+    includeBuild("build-logic")
 }
 
 // check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
