@@ -934,7 +934,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (rhsExpression instanceof ClosureExpression) {
             inferParameterAndReturnTypesOfClosureOnRHS(lhsType, (ClosureExpression) rhsExpression);
         } else if (rhsExpression instanceof MethodReferenceExpression) {
-            LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lhsType);
+            LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lhsType, (MethodReferenceExpression) rhsExpression);
 
             inferParameterAndReturnTypesOfClosureOnRHS(lhsType, lambdaExpression);
             rhsExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
@@ -3665,7 +3665,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     newArgumentExpressions.add(argumentExpression);
                 } else {
                     methodReferencePositions.add(i);
-                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType));
+                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType, (MethodReferenceExpression) argumentExpression));
                 }
             }
         }
@@ -3681,11 +3681,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType) {
-        int nParameters = findSAM(functionalInterfaceType).getParameters().length;
-        Parameter[] parameters = new Parameter[nParameters];
-        for (int i = 0; i < nParameters; i += 1) {
-            parameters[i] = new Parameter(DYNAMIC_TYPE, "p" + i);
+    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType, final MethodReferenceExpression methodReference) {
+        Parameter[] parameters = findSAM(functionalInterfaceType).getParameters();
+        int nParameters = parameters.length;
+        if (nParameters > 0) {
+            ClassNode firstParamType = DYNAMIC_TYPE;
+            // GROOVY-10734: Type::instanceMethod has implied first param
+            List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
+            if (candidates != null && !candidates.isEmpty()) {
+                ClassNode objExpType = getType(methodReference.getExpression());
+                if (isClassClassNodeWrappingConcreteType(objExpType)
+                        && candidates.stream().allMatch(mn -> !mn.isStatic())) {
+                    firstParamType = objExpType.getGenericsTypes()[0].getType();
+                }
+            }
+            parameters = new Parameter[nParameters];
+            for (int i = 0; i < nParameters; i += 1) {
+                parameters[i] = new Parameter(i == 0 ? firstParamType : DYNAMIC_TYPE, "p" + i);
+            }
         }
         return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
