@@ -35,11 +35,6 @@ buildScanRecipes {
 
 archivesBaseName = 'groovy'
 
-repositories {
-    // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
-}
-
 groovyLibrary {
     registerOptionalFeature 'gpars'
     registerOptionalFeature 'grapes'

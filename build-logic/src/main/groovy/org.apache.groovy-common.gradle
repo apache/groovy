@@ -41,10 +41,6 @@ if (project == rootProject) {
 group = 'org.apache.groovy'
 version = sharedConfiguration.groovyVersion.get()
 
-repositories {
-    mavenCentral()
-}
-
 tasks.named('rat') {
     inputDir = projectDir
     excludes = ['subprojects/**', // covered above
