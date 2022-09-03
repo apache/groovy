@@ -1199,6 +1199,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * 'Case' implementation for iterable types which tests if the 'switch'
+     * operand is contained in any of the 'case' values.
+     * For example:
+     * <pre class="groovyTestCase">Iterable it = {[1,3,5].iterator()}
+     * switch( 3 ) {
+     *   case it:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }
+     *
+     * //GROOVY-7919
+     * assert 1 in it
+     * assert 2 !in it
+     * </pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the caseValue is deemed to contain the switchValue
+     * @see #contains(Iterable,Object)
+     * @since 5.0.0
+     */
+    public static boolean isCase(Iterable caseValue, Object switchValue) {
+        return contains(caseValue, switchValue);
+    }
+
+    /**
      * 'Case' implementation for maps which tests the groovy truth
      * value obtained using the 'switch' operand as key.
      * For example:
