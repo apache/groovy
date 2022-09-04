@@ -761,6 +761,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10749
+    void testReturnTypeInferenceWithMethodGenerics29() {
+        String named = 'class Named { String name }'
+
+        for (expr in ['Named.&getName', 'Named::getName', '{Named named -> named.getName()}', '(Named named) -> named.getName()']) {
+            assertScript named + """
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.util.stream.Collector<Named, ?, java.util.Map<java.lang.String, java.util.List<Named>>>'
+                })
+                def collector = java.util.stream.Collectors.groupingBy($expr)
+            """
+        }
+
+        // explicit type args
+        assertScript named + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.stream.Collector<Named, ?, java.util.Map<java.lang.String, java.util.List<Named>>>'
+            })
+            def c1 = java.util.stream.Collectors.<Named,String>groupingBy(named -> named.getName())
+            //                                   ^^^^^^^^^^^^^^
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.stream.Collector<Named, ?, java.util.Map<java.lang.String, Named>>'
+            })
+            def c2 = java.util.stream.Collectors.<Named,String,Named>toMap(named -> named.getName(), named -> named)
+            //                                   ^^^^^^^^^^^^^^^^^^^^
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
@@ -1499,7 +1531,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type.toString(false) == 'C<java.lang.Object>' // TODO: String
+                assert type.toString(false) == 'C<java.lang.String>'
             })
             def y = new C<>((String s) -> { print(s); }) // error: Expected type Object for lambda parameter: s
         '''

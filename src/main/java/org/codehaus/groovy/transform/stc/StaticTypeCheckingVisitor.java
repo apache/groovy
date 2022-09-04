@@ -5611,7 +5611,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param samType     the target type for the argument expression
      * @return SAM type augmented using information from the argument expression
      */
-    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType) {
+    private static ClassNode convertClosureTypeToSAMType(Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType) {
         Map<GenericsTypeName, GenericsType> samTypeConnections = GenericsUtils.extractPlaceholders(samType);
         samTypeConnections.replaceAll((xx, gt) -> // GROOVY-9762, GROOVY-9803: reduce "? super T" to "T"
             Optional.ofNullable(gt.getLowerBound()).map(GenericsType::new).orElse(gt)
@@ -5619,9 +5619,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
 
         Parameter[] parameters = sam.getParameters();
-        if (parameters.length > 0
-                && expression instanceof MethodPointerExpression
-                && GenericsUtils.hasUnresolvedGenerics(closureReturnType)) {
+        if (parameters.length > 0 && expression instanceof MethodPointerExpression) {
             // try to resolve referenced method type parameters in return type
             MethodPointerExpression mp = (MethodPointerExpression) expression;
             List<MethodNode> candidates = mp.getNodeMetaData(MethodNode.class);
@@ -5641,6 +5639,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     closureReturnType = applyGenericsContext(connections, closureReturnType);
                     // apply known generics connections to the SAM's placeholders in the return type
                     closureReturnType = applyGenericsContext(samTypeConnections, closureReturnType);
+
+                    expression = new ClosureExpression(Arrays.stream(matchTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new), null);
                 }
             }
         }
@@ -5650,7 +5650,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // repeat the same for each parameter given in the ClosureExpression
         if (parameters.length > 0 && expression instanceof ClosureExpression) {
-            return closureType; // TODO
+            ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
+            int i = 0;
+            // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
+            for (Parameter p : getParametersSafe((ClosureExpression) expression))
+                if (!p.isDynamicTyped()) extractGenericsConnections(samTypeConnections, p.getType(), paramTypes[i++]);
         }
 
         return applyGenericsContext(samTypeConnections, samType.redirect());
@@ -5681,8 +5685,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return false;
         }
         for (int i = 0; i < n; i += 1) {
-            // for method closure, SAM parameters act like arguments
-            if (!isAssignableTo(providerTypes[i], receiverTypes[i])) {
+            // for method closure SAM parameters act like arguments
+            if (!isAssignableTo(providerTypes[i], receiverTypes[i])
+                    && !providerTypes[i].isGenericsPlaceHolder()) {
                 return false;
             }
         }
