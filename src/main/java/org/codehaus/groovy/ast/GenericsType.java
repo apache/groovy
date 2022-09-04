@@ -76,7 +76,7 @@ public class GenericsType extends ASTNode {
 
         if (placeholder) visited.add(name);
 
-        StringBuilder ret = new StringBuilder(wildcard ? "?" : ((type == null || placeholder) ? name : genericsBounds(type, visited)));
+        StringBuilder ret = new StringBuilder(wildcard || placeholder ? name : genericsBounds(type, visited));
         if (lowerBound != null) {
             ret.append(" super ").append(genericsBounds(lowerBound, visited));
         } else if (upperBounds != null
@@ -114,6 +114,8 @@ public class GenericsType extends ASTNode {
     private static StringBuilder appendName(final ClassNode theType, final StringBuilder sb) {
         if (theType.isArray()) {
             appendName(theType.getComponentType(), sb).append("[]");
+        } else if (theType.isGenericsPlaceHolder()) {
+            sb.append(theType.getUnresolvedName());
         } else if (theType.getOuterClass() != null) {
             String parentClassNodeName = theType.getOuterClass().getName();
             if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
@@ -124,13 +126,13 @@ public class GenericsType extends ASTNode {
             sb.append('.');
             sb.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
         } else {
-            sb.append(theType.isGenericsPlaceHolder() ? theType.getUnresolvedName() : theType.getName());
+            sb.append(theType.getName());
         }
         return sb;
     }
 
     public String getName() {
-        return name;
+        return (isWildcard() ? "?" : name);
     }
 
     public void setName(final String name) {

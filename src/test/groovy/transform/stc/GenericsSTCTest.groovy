@@ -284,6 +284,60 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-10646
+    void testReturnTypeInferenceWithMethodGenerics28() {
+        String types = '''
+            class Model {
+            }
+            interface Output<T> {
+                T getT()
+            }
+            abstract class WhereDSL<Type> {
+                abstract Type where()
+            }
+            abstract class Input<T> extends WhereDSL<ReferencesOuterClassTP> {
+                class ReferencesOuterClassTP implements Output<T> {
+                    @Override T getT() { return null }
+                }
+            }
+        '''
+        assertScript types + '''
+            void m(Input<Model> input) {
+                def output = input.where()
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'Model'
+                })
+                def result = output.getT()
+            }
+        '''
+        assertScript types + '''
+            @FunctionalInterface
+            interface Xform extends java.util.function.Function<Input<Model>, Output<Model>> {
+            }
+
+            void select(Xform xform) {
+            }
+
+            select { input ->
+                def result = input.where()
+                return result // Cannot return value of type Input$ReferencesOuterClassTP for closure expecting Output<Model>
+            }
+        '''
+    }
+
+    // GROOVY-10749
+    void testReturnTypeInferenceWithMethodGenerics29() {
+        String named = 'class Named { String name }'
+
+        assertScript named + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.stream.Collector <Named, ?, java.util.Map>'
+            })
+            def collector = java.util.stream.Collectors.groupingBy { Named named -> named.getName() }
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
@@ -1048,7 +1102,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
         ''',
-        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
     void testCompatibleGenericAssignmentWithInference() {
@@ -1824,13 +1878,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
-        ''', 'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        ''',
+        'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
     void testAssignmentToInterfaceFromUserClassWithGenerics() {
-        assertScript '''class UserList<T> extends LinkedList<T> {}
-        List<String> list = new UserList<String>()
+        assertScript '''
+            class UserList<T> extends LinkedList<T> {}
+            List<String> list = new UserList<String>()
         '''
     }
 
@@ -3023,7 +3079,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Object> l = new ArrayList<>()
             assert foo(l) == 1
         ''',
-        '#foo(java.util.List <A extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
+        '#foo(java.util.List <? extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
 
     // GROOVY-5891

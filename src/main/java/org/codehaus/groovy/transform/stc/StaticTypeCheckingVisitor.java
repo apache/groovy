@@ -5413,7 +5413,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
         // use the generics information from Closure to further specify the type
-        if (closureType.isUsingGenerics()) {
+        if (isClosureWithType(closureType)) {
             ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
 
             // the SAM's return type exactly corresponds to the inferred closure return type
@@ -5422,44 +5422,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Parameter[] parameters = sam.getParameters();
             // repeat the same for each parameter given in the ClosureExpression
             if (parameters.length > 0 && expression instanceof ClosureExpression) {
-                List<ClassNode[]> genericsToConnect = new ArrayList<ClassNode[]>();
-                ClassNode[] closureParamTypes = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                if (closureParamTypes == null)
-                    closureParamTypes = extractTypesFromParameters(((ClosureExpression) expression).getParameters());
-
-                for (int i = 0, n = parameters.length; i < n; i += 1) {
-                    Parameter parameter = parameters[i];
-                    if (parameter.getOriginType().isUsingGenerics() && closureParamTypes.length > i) {
-                        genericsToConnect.add(new ClassNode[]{closureParamTypes[i], parameter.getOriginType()});
-                    }
-                }
-                for (ClassNode[] classNodes : genericsToConnect) {
-                    ClassNode found = classNodes[0];
-                    ClassNode expected = classNodes[1];
-                    if (!isAssignableTo(found, expected)) {
-                        // probably facing a type mismatch
-                        continue;
-                    }
-                    ClassNode generifiedType = GenericsUtils.parameterizeType(found, expected);
-                    while (expected.isArray()) {
-                        expected = expected.getComponentType();
-                        generifiedType = generifiedType.getComponentType();
-                    }
-                    if (expected.isGenericsPlaceHolder()) {
-                        placeholders.put(new GenericsTypeName(expected.getGenericsTypes()[0].getName()), new GenericsType(generifiedType));
-                    } else {
-                        GenericsType[] expectedGenericsTypes = expected.getGenericsTypes();
-                        GenericsType[] foundGenericsTypes = generifiedType.getGenericsTypes();
-
-                        for (int i = 0, n = expectedGenericsTypes.length; i < n; i += 1) {
-                            GenericsType type = expectedGenericsTypes[i];
-                            if (type.isPlaceholder()) {
-                                String name = type.getName();
-                                placeholders.put(new GenericsTypeName(name), foundGenericsTypes[i]);
-                            }
-                        }
-                    }
-                }
+                ClassNode[] paramTypes = applyGenericsContext(placeholders, extractTypesFromParameters(parameters));
+                int i = 0;
+                // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
+                for (Parameter p : getParametersSafe((ClosureExpression) expression))
+                    if (!p.isDynamicTyped()) extractGenericsConnections(placeholders, p.getType(), paramTypes[i++]);
             }
         }
 

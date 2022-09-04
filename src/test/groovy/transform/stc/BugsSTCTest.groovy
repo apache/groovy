@@ -238,7 +238,8 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             L<String> items = ['foo', 'bar'] as L<String>
             items.removeIf({a, b -> 1} as Comparator<?>)
             assert items
-        ''', 'Cannot call L <String>#removeIf(java.util.Comparator <java.lang.Object super java.lang.String>) with arguments [java.util.Comparator <?>]'
+        ''',
+        'Cannot call L <String>#removeIf(java.util.Comparator <? super java.lang.String>) with arguments [java.util.Comparator <?>]'
     }
 
     void testGroovy5482ListsAndFlowTyping() {
