@@ -278,7 +278,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isPowe
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isShiftOperation;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTraitSelf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingUncheckedGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isVargs;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.lastArgMatchesVarg;
@@ -5518,14 +5517,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param samType     the type into which the closure is coerced into
      * @return SAM type augmented using information from the argument expression
      */
-    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
+    private static ClassNode convertClosureTypeToSAMType(Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
         // use the generics information from Closure to further specify the type
-        if (closureType.isUsingGenerics()) {
+        if (isClosureWithType(closureType)) {
             ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
 
             Parameter[] parameters = sam.getParameters();
-            if (parameters.length > 0 && expression instanceof MethodPointerExpression
-                    && isUsingUncheckedGenerics(closureReturnType)) { // needs resolve
+            if (parameters.length > 0 && expression instanceof MethodPointerExpression) {
                 MethodPointerExpression mp = (MethodPointerExpression) expression;
                 MethodNode mn = chooseMethod(mp, () ->
                     applyGenericsContext(placeholders, extractTypesFromParameters(parameters))
@@ -5541,6 +5539,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     closureReturnType = applyGenericsContext(connections, closureReturnType);
                     // apply known generics connections to the placeholders of the return type
                     closureReturnType = applyGenericsContext(placeholders, closureReturnType);
+
+                    expression = new ClosureExpression(Arrays.stream(pTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new), null);
                 }
             }
 
@@ -5549,44 +5549,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // repeat the same for each parameter given in the ClosureExpression
             if (parameters.length > 0 && expression instanceof ClosureExpression) {
-                List<ClassNode[]> genericsToConnect = new ArrayList<>();
-                Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
-                ClassNode[] closureParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                if (closureParamTypes == null) closureParamTypes = extractTypesFromParameters(closureParams);
-
-                for (int i = 0, n = parameters.length; i < n; i += 1) {
-                    Parameter parameter = parameters[i];
-                    if (parameter.getOriginType().isUsingGenerics() && closureParamTypes.length > i) {
-                        genericsToConnect.add(new ClassNode[]{closureParamTypes[i], parameter.getOriginType()});
-                    }
-                }
-                for (ClassNode[] classNodes : genericsToConnect) {
-                    ClassNode found = classNodes[0];
-                    ClassNode expected = classNodes[1];
-                    if (!isAssignableTo(found, expected)) {
-                        // probably facing a type mismatch
-                        continue;
-                    }
-                    ClassNode generifiedType = GenericsUtils.parameterizeType(found, expected);
-                    while (expected.isArray()) {
-                        expected = expected.getComponentType();
-                        generifiedType = generifiedType.getComponentType();
-                    }
-                    if (expected.isGenericsPlaceHolder()) {
-                        placeholders.put(new GenericsTypeName(expected.getGenericsTypes()[0].getName()), new GenericsType(generifiedType));
-                    } else {
-                        GenericsType[] expectedGenericsTypes = expected.getGenericsTypes();
-                        GenericsType[] foundGenericsTypes = generifiedType.getGenericsTypes();
-
-                        for (int i = 0, n = expectedGenericsTypes.length; i < n; i += 1) {
-                            GenericsType type = expectedGenericsTypes[i];
-                            if (type.isPlaceholder()) {
-                                String name = type.getName();
-                                placeholders.put(new GenericsTypeName(name), foundGenericsTypes[i]);
-                            }
-                        }
-                    }
-                }
+                ClassNode[] paramTypes = applyGenericsContext(placeholders, extractTypesFromParameters(parameters));
+                int i = 0;
+                // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
+                for (Parameter p : getParametersSafe((ClosureExpression) expression))
+                    if (!p.isDynamicTyped()) extractGenericsConnections(placeholders, p.getType(), paramTypes[i++]);
             }
         }
 

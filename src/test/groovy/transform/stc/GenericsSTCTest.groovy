@@ -719,6 +719,79 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-10646
+    void testReturnTypeInferenceWithMethodGenerics28() {
+        String types = '''
+            class Model {
+            }
+            interface Output<T> {
+                T getT()
+            }
+            abstract class WhereDSL<Type> {
+                abstract Type where()
+            }
+            abstract class Input<T> extends WhereDSL<ReferencesOuterClassTP> {
+                class ReferencesOuterClassTP implements Output<T> {
+                    @Override T getT() { return null }
+                }
+            }
+        '''
+        assertScript types + '''
+            void m(Input<Model> input) {
+                def output = input.where()
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'Model'
+                })
+                def result = output.getT()
+            }
+        '''
+        assertScript types + '''
+            @FunctionalInterface
+            interface Xform extends java.util.function.Function<Input<Model>, Output<Model>> {
+            }
+
+            void select(Xform xform) {
+            }
+
+            select { input ->
+                def result = input.where()
+                return result // Cannot return value of type Input$ReferencesOuterClassTP for closure expecting Output<Model>
+            }
+        '''
+    }
+
+    // GROOVY-10749
+    void testReturnTypeInferenceWithMethodGenerics29() {
+        String named = 'class Named { String name }'
+
+        for (expr in ['Named.&getName', 'Named::getName', '{Named named -> named.getName()}', '(Named named) -> named.getName()']) {
+            assertScript named + """
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.util.stream.Collector <Named, ?, java.util.Map>'
+                })
+                def collector = java.util.stream.Collectors.groupingBy($expr)
+            """
+        }
+
+        // explicit type args
+        assertScript named + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.stream.Collector <Named, ?, java.util.Map>'
+            })
+            def c1 = java.util.stream.Collectors.<Named,String>groupingBy(named -> named.getName())
+            //                                   ^^^^^^^^^^^^^^
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.stream.Collector <Named, ?, java.util.Map>'
+            })
+            def c2 = java.util.stream.Collectors.<Named,String,Named>toMap(named -> named.getName(), named -> named)
+            //                                   ^^^^^^^^^^^^^^^^^^^^
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
