@@ -100,7 +100,6 @@ final class MethodReferenceTest extends GroovyTestCase {
 
             p()
         '''
-
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
@@ -662,7 +661,6 @@ final class MethodReferenceTest extends GroovyTestCase {
 
             p()
         '''
-
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
@@ -737,7 +735,6 @@ final class MethodReferenceTest extends GroovyTestCase {
                 [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
             }
         '''
-
         assert err.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
     }
 
@@ -751,8 +748,21 @@ final class MethodReferenceTest extends GroovyTestCase {
                 Function<String,String> reference = String::toLowerCaseX
             }
         '''
-
         assert err.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
+    }
+
+    // GROOVY-10742
+    void testVoidMethodSelection() {
+        def err = shouldFail '''
+            import java.util.function.Function
+
+            void foo(bar) { }
+            @groovy.transform.CompileStatic
+            void test() {
+                Function<Object,String> f = this::foo
+            }
+        '''
+        assert err =~ /Invalid return type: void is not convertible to java.lang.String/
     }
 
     // GROOVY-10269
@@ -771,7 +781,6 @@ final class MethodReferenceTest extends GroovyTestCase {
                 baz(this::foo) // not yet supported!
             }
         '''
-
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 
@@ -791,7 +800,6 @@ final class MethodReferenceTest extends GroovyTestCase {
                 }
             }
         '''
-
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 }

@@ -54,10 +54,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 
 /**
  * Generates bytecode for method reference expressions in statically-compiled code.
@@ -72,16 +74,13 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     @Override
     public void writeMethodReferenceExpression(final MethodReferenceExpression methodReferenceExpression) {
-        ClassNode functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
-        if (!ClassHelper.isFunctionalInterface(functionalInterfaceType)) {
-            // generate the default bytecode; most likely a method closure
+        ClassNode  functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
+        MethodNode abstractMethod = ClassHelper.findSAM(functionalInterfaceType);
+        if (abstractMethod == null || !functionalInterfaceType.isInterface()) {
+            // generate the default bytecode -- most likely a method closure
             super.writeMethodReferenceExpression(methodReferenceExpression);
             return;
         }
-
-        ClassNode redirect = functionalInterfaceType.redirect();
-        MethodNode abstractMethod = ClassHelper.findSAM(redirect);
-        String abstractMethodDesc = createMethodDescriptor(abstractMethod);
 
         ClassNode classNode = controller.getClassNode();
         Expression typeOrTargetRef = methodReferenceExpression.getExpression();
@@ -103,7 +102,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, typeOrTargetRefType);
         }
 
-        validate(methodReferenceExpression, typeOrTargetRef, typeOrTargetRefType, methodRefName, parametersWithExactType, methodRefMethod);
+        validate(methodReferenceExpression, typeOrTargetRefType, methodRefName, methodRefMethod, parametersWithExactType,
+                resolveClassNodeGenerics(extractPlaceholders(functionalInterfaceType), null, abstractMethod.getReturnType()));
 
         if (isExtensionMethod(methodRefMethod)) {
             ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
@@ -148,7 +148,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 createAbstractMethodDesc(functionalInterfaceType, typeOrTargetRef),
                 createBootstrapMethod(classNode.isInterface(), false),
                 createBootstrapMethodArguments(
-                        abstractMethodDesc,
+                        createMethodDescriptor(abstractMethod),
                         referenceKind,
                         isConstructorReference ? classNode : typeOrTargetRefType,
                         methodRefMethod,
@@ -157,25 +157,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         );
 
         if (isClassExpression) {
-            controller.getOperandStack().push(redirect);
+            controller.getOperandStack().push(functionalInterfaceType);
         } else {
-            controller.getOperandStack().replace(redirect, 1);
+            controller.getOperandStack().replace(functionalInterfaceType, 1);
         }
     }
 
-    private void validate(final MethodReferenceExpression methodReferenceExpression, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType, final String methodRefName, final Parameter[] parametersWithExactType, final MethodNode methodRefMethod) {
-        if (methodRefMethod == null) {
-            addFatalError("Failed to find the expected method["
-                    + methodRefName + "("
-                    + Arrays.stream(parametersWithExactType)
-                            .map(e -> e.getType().getText())
-                            .collect(Collectors.joining(","))
-                    + ")] in the type[" + typeOrTargetRefType.getText() + "]", methodReferenceExpression);
-        } else if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
-            ClassNode firstParameterType = parametersWithExactType[0].getType();
-            if (!isAssignableTo(firstParameterType, typeOrTargetRefType)) {
-                throw new RuntimeParserException("Invalid receiver type: " + firstParameterType.getText() + " is not compatible with " + typeOrTargetRefType.getText(), typeOrTargetRef);
-            }
+    private void validate(final MethodReferenceExpression methodReference, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
+        if (methodNode == null) {
+            String error = String.format("Failed to find the expected method[%s(%s)] in the type[%s]",
+                    methodName, Arrays.stream(samParameters).map(e -> e.getType().getText()).collect(Collectors.joining(",")), targetType.getText());
+            addFatalError(error, methodReference);
+        } else if (methodNode.isVoidMethod() && !samReturnType.equals(ClassHelper.VOID_TYPE)) {
+            addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
+        } else if (samParameters.length > 0 && isTypeReferingInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
+            throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
     }
 
