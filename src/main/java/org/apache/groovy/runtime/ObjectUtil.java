@@ -19,6 +19,7 @@
 package org.apache.groovy.runtime;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.ArrayUtil;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -41,10 +42,37 @@ public class ObjectUtil {
     @SuppressWarnings("unchecked")
     public static <T> T cloneObject(T object) throws Throwable {
         if (null == object) return null;
-        if (!(object instanceof Cloneable)) throw new CloneNotSupportedException(object.getClass().getName());
 
-        final Method cloneMethod = object.getClass().getMethod("clone");
-        final MethodHandle cloneMethodHandle = LOOKUP.in(object.getClass()).unreflect(cloneMethod);
+        final Class<?> clazz = object.getClass();
+        if (!(object instanceof Cloneable)) throw new CloneNotSupportedException(clazz.getName());
+
+        if (clazz.isArray()) {
+            if (clazz.getComponentType().isPrimitive()) {
+                if (byte[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((byte[]) object);
+                } else if (short[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((short[]) object);
+                } else if (int[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((int[]) object);
+                } else if (char[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((char[]) object);
+                } else if (long[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((long[]) object);
+                } else if (float[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((float[]) object);
+                } else if (double[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((double[]) object);
+                } else if (boolean[].class == clazz) {
+                    return (T) ArrayUtil.cloneArray((boolean[]) object);
+                }
+
+                throw new GroovyBugError(clazz.getName() + " is not an array of primitive type"); // should never happen
+            }
+            return (T) ArrayUtil.cloneArray((Object[]) object);
+        }
+
+        final Method cloneMethod = clazz.getMethod("clone");
+        final MethodHandle cloneMethodHandle = LOOKUP.in(clazz).unreflect(cloneMethod);
 
         return (T) cloneMethodHandle.invokeWithArguments(object);
     }

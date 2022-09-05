@@ -597,7 +597,6 @@ public class InvokerHelper {
 
     static Object invokePojoMethod(Object object, String methodName, Object arguments) {
         if ("clone".equals(methodName) && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
-            if (object.getClass().isArray()) return ArrayUtil.cloneArray((Object[]) object);
             try {
                 return ObjectUtil.cloneObject(object);
             } catch (Throwable t) {

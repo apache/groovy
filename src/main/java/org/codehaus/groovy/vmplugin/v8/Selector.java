@@ -39,7 +39,6 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
@@ -682,9 +681,6 @@ public abstract class Selector {
             if (declaringClass == Class.class && parameterCount == 1 && methodName.equals("forName")) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
             } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && 1 == args.length) {
-                if (args[0].getClass().isArray()) {
-                    return ArrayUtil.getCloneArrayMethodHandle();
-                }
                 return ObjectUtil.getCloneObjectMethodHandle();
             }
 
