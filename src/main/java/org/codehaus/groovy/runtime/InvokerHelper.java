@@ -44,6 +44,7 @@ import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -586,6 +587,14 @@ public class InvokerHelper {
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
         }
 
+        if ("clone".equals(methodName) && (null == arguments || arguments.getClass().isArray() && 0 == Array.getLength(arguments))) {
+            try {
+                return ObjectUtil.cloneObject(object);
+            } catch (Throwable t) {
+                UncheckedThrow.rethrow(t);
+            }
+        }
+
         // it's an instance; check if it's a Java one
         if (!(object instanceof GroovyObject)) {
             return invokePojoMethod(object, methodName, arguments);
@@ -596,14 +605,6 @@ public class InvokerHelper {
     }
 
     static Object invokePojoMethod(Object object, String methodName, Object arguments) {
-        if ("clone".equals(methodName) && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
-            try {
-                return ObjectUtil.cloneObject(object);
-            } catch (Throwable t) {
-                UncheckedThrow.rethrow(t);
-            }
-        }
-
         MetaClass metaClass = InvokerHelper.getMetaClass(object);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }

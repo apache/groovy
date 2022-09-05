@@ -109,4 +109,37 @@ final class Groovy9103 {
             dolly.clone()
         ''')
     }
+
+    @Test
+    void testClone7() {
+        ['Object', 'Dolly'].each { typeName ->
+            assertScript """
+                import org.codehaus.groovy.runtime.InvokerHelper
+                class Dolly implements Cloneable {
+                    String name
+
+                    public ${typeName} clone() {
+                        return super.clone()
+                    }
+                }
+
+                def dolly = new Dolly(name: "The Sheep")
+                def cloned = InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
+                assert cloned instanceof Dolly
+            """
+        }
+    }
+
+    @Test
+    void testClone8() {
+        shouldFail(CloneNotSupportedException, '''
+            import org.codehaus.groovy.runtime.InvokerHelper
+            class Dolly {
+                String name
+            }
+
+            def dolly = new Dolly(name: "The Sheep")
+            InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
+        ''')
+    }
 }
