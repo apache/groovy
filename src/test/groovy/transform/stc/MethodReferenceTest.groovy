@@ -877,6 +877,19 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-10742
+    void testVoidMethodSelection() {
+        def err = shouldFail shell, '''
+            void foo(bar) {
+            }
+            @CompileStatic
+            void test() {
+                Function<Object,String> f = this::foo
+            }
+        '''
+        assert err =~ /Invalid return type: void is not convertible to java.lang.String/
+    }
+
     @Test // GROOVY-10269
     void testNotFunctionalInterface() {
         def err = shouldFail shell, '''
