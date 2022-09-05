@@ -18,12 +18,6 @@
  */
 package org.codehaus.groovy.runtime;
 
-import org.codehaus.groovy.GroovyBugError;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-
 /**
 * This is a generated class used internally during the writing of bytecode within the CallSiteWriter logic.
 * This is not a class exposed to users, as is the case with almost all classes in the org.codehaus.groovy packages.
@@ -61,31 +55,32 @@ import java.lang.reflect.Method;
 public class ArrayUtil {
     private static final Object[] EMPTY = new Object[0];
 
-    public static MethodHandle getCloneArrayMethodHandle() {
-        return MethodHandleHolder.CLONE_ARRAY_METHOD_HANDLE;
-    }
-
-    private static class MethodHandleHolder {
-        private static final MethodHandle CLONE_ARRAY_METHOD_HANDLE;
-        static {
-            final Class<ArrayUtil> arrayUtilClass = ArrayUtil.class;
-            Method cloneArrayMethod;
-            try {
-                cloneArrayMethod = arrayUtilClass.getDeclaredMethod("cloneArray", Object[].class);
-            } catch (NoSuchMethodException e) {
-                throw new GroovyBugError("Failed to find `cloneArray` method in class `" + arrayUtilClass.getName() + "`", e);
-            }
-
-            try {
-                CLONE_ARRAY_METHOD_HANDLE = MethodHandles.lookup().in(arrayUtilClass).unreflect(cloneArrayMethod);
-            } catch (IllegalAccessException e) {
-                throw new GroovyBugError("Failed to create method handle for " + cloneArrayMethod);
-            }
-        }
-        private MethodHandleHolder() {}
-    }
-
     public static <T> T[] cloneArray(T[] array) {
+        return array.clone();
+    }
+
+    public static byte[] cloneArray(byte[] array) {
+        return array.clone();
+    }
+    public static short[] cloneArray(short[] array) {
+        return array.clone();
+    }
+    public static int[] cloneArray(int[] array) {
+        return array.clone();
+    }
+    public static char[] cloneArray(char[] array) {
+        return array.clone();
+    }
+    public static long[] cloneArray(long[] array) {
+        return array.clone();
+    }
+    public static float[] cloneArray(float[] array) {
+        return array.clone();
+    }
+    public static double[] cloneArray(double[] array) {
+        return array.clone();
+    }
+    public static boolean[] cloneArray(boolean[] array) {
         return array.clone();
     }
 
