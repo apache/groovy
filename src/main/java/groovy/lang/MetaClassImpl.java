@@ -1130,7 +1130,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             if (methodName.equals("clone") && arguments.length == 0) {
                 try {
-                    return (Object) ObjectUtil.getCloneObjectMethodHandle().invokeExact((Object) object);
+                    return ObjectUtil.cloneObject(object);
                 } catch (Throwable t) {
                     throw new GroovyRuntimeException(t);
                 }
