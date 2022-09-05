@@ -33,6 +33,8 @@ import groovy.lang.Script;
 import groovy.lang.SpreadMap;
 import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
+import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
@@ -586,10 +588,6 @@ public class InvokerHelper {
 
         // it's an instance; check if it's a Java one
         if (!(object instanceof GroovyObject)) {
-            if ("clone".equals(methodName) && object.getClass().isArray() && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
-                return ArrayUtil.cloneArray((Object[]) object);
-            }
-
             return invokePojoMethod(object, methodName, arguments);
         }
 
@@ -598,6 +596,14 @@ public class InvokerHelper {
     }
 
     static Object invokePojoMethod(Object object, String methodName, Object arguments) {
+        if ("clone".equals(methodName) && (null == arguments || arguments.getClass().isArray() && 0 == ((Object[]) arguments).length)) {
+            try {
+                return ObjectUtil.cloneObject(object);
+            } catch (Throwable t) {
+                UncheckedThrow.rethrow(t);
+            }
+        }
+
         MetaClass metaClass = InvokerHelper.getMetaClass(object);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }

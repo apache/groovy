@@ -32,13 +32,13 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.transform.Internal;
+import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
@@ -680,11 +680,11 @@ public abstract class Selector {
             final Class<?> declaringClass = m.getDeclaringClass();
             if (declaringClass == Class.class && parameterCount == 1 && methodName.equals("forName")) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && 1 == args.length && args[0].getClass().isArray()) {
-                return ArrayUtil.getCloneArrayMethodHandle();
-            } else {
-                return LOOKUP.unreflect(m);
+            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && 1 == args.length) {
+                return ObjectUtil.getCloneObjectMethodHandle();
             }
+
+            return LOOKUP.unreflect(m);
         }
 
         /**
