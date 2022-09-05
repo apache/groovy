@@ -86,6 +86,7 @@ final class Groovy9103 {
                 class Dolly implements Cloneable {
                     String name
 
+                    @Override
                     public ${typeName} clone() {
                         return super.clone()
                     }
@@ -118,6 +119,7 @@ final class Groovy9103 {
                 class Dolly implements Cloneable {
                     String name
 
+                    @Override
                     public ${typeName} clone() {
                         return super.clone()
                     }

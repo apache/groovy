@@ -44,7 +44,6 @@ import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -587,7 +586,7 @@ public class InvokerHelper {
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
         }
 
-        if ("clone".equals(methodName) && (null == arguments || arguments.getClass().isArray() && 0 == Array.getLength(arguments))) {
+        if ("clone".equals(methodName) && 0 == asArray(arguments).length) {
             try {
                 return ObjectUtil.cloneObject(object);
             } catch (Throwable t) {
