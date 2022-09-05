@@ -19,22 +19,20 @@
 package org.apache.groovy.ast.tools;
 
 import groovy.transform.ImmutableOptions;
+import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -45,14 +43,13 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 
 public class ImmutablePropertyUtils {
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
     private static final ClassNode DATE_TYPE = make(Date.class);
-    private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
+    private static final ClassNode OBJECT_UTIL_TYPE = make(ObjectUtil.class);
     private static final Class<? extends Annotation> IMMUTABLE_OPTIONS_CLASS = ImmutableOptions.class;
     public static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(IMMUTABLE_OPTIONS_CLASS, false);
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
@@ -135,15 +132,7 @@ public class ImmutablePropertyUtils {
     private ImmutablePropertyUtils() { }
 
     public static Expression cloneArrayOrCloneableExpr(final Expression fieldExpr, final ClassNode type) {
-        Expression smce = callX(
-                REFLECTION_INVOKER_TYPE,
-                "invoke",
-                args(
-                        fieldExpr,
-                        constX("clone"),
-                        new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), Collections.emptyList())
-                )
-        );
+        Expression smce = callX(OBJECT_UTIL_TYPE, "cloneObject", args(fieldExpr));
         return castX(type, smce);
     }
 
