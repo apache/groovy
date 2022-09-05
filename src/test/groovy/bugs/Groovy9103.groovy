@@ -67,7 +67,7 @@ final class Groovy9103 {
     @Test
     void testClone3() {
         Object obj = new Tuple1('abc')
-        assert obj.clone()
+        assert obj.clone().getClass() === Tuple1.class
     }
 
     @Test
