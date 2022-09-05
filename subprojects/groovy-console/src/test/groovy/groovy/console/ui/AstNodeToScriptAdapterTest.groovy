@@ -604,7 +604,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
 
         // assert clones
-        assert result.contains("((java.util.Date) org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][]))")
+        assert result.contains("((java.util.Date) org.apache.groovy.runtime.ObjectUtil.cloneObject(when))")
     }
 
     void testAnonymousInnerClass() {
