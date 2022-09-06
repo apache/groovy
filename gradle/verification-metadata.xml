@@ -122,6 +122,10 @@
          <trusted-key id="517b94f8d0a46317a28d8ab30da8a5ec02d11ead" group="net.sf.jopt-simple" name="jopt-simple" version="4.6"/>
          <trusted-key id="53c935821aa6a755bd337db53595395eb3d8e1ba" group="org.apache.logging.log4j"/>
          <trusted-key id="5e7d42f58249a287bd7384da25a73bfc746e1035" group="net.sourceforge.htmlunit"/>
+         <trusted-key id="60200ac4ae761f1614d6c46766d68daa073be985">
+            <trusting group="ch.qos.logback"/>
+            <trusting group="org.slf4j"/>
+         </trusted-key>
          <trusted-key id="6214760097dc5cfad0175ac2c9fbaa83a8753994">
             <trusting group="com.fasterxml.jackson.core"/>
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
