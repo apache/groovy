@@ -85,6 +85,7 @@
             <trusting group="^org[.]apache($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="19beab2d799c020f17c69126b16698a4adf4d638" group="org.checkerframework" name="checker-qual"/>
+         <trusted-key id="28118c070cb22a0175a2e8d43d12ca2ac19f3181" group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
          <trusted-key id="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb">
             <trusting group="commons-codec"/>
             <trusting group="commons-io"/>
@@ -1359,6 +1360,11 @@
       </component>
       <component group="org.yaml" name="snakeyaml" version="1.30">
          <artifact name="snakeyaml-1.30.jar">
+            <pgp value="120d6f34e627ed3a772ebbfe55c7e5e701832382"/>
+         </artifact>
+      </component>
+      <component group="org.yaml" name="snakeyaml" version="1.31">
+         <artifact name="snakeyaml-1.31.jar">
             <pgp value="120d6f34e627ed3a772ebbfe55c7e5e701832382"/>
          </artifact>
       </component>
