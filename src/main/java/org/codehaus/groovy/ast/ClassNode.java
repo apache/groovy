@@ -100,7 +100,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  *  through a Class instance
  * <li> Labels:<br>
  * ClassNodes created through ClassHelper.makeWithoutCaching. They
- * are place holders, its redirect points to the real structure, which can
+ * are placeholders, its redirect points to the real structure, which can
  * be a label too, but following all redirects it should end with a ClassNode
  * from one of the other two categories. If ResolveVisitor finds such a
  * node, it tries to set the redirects. Any such label created after

@@ -106,7 +106,7 @@ public class Numbers {
      */
     public static Number parseInteger(String text) {
         String text1 = text;
-        // remove place holder underscore before starting
+        // remove placeholder underscore before starting
         text1 = text1.replace("_", "");
 
         char c = ' ';

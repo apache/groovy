@@ -42,7 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 
 /**
  * This local transform adds a logging ability to your program using
- * Log4j logging. Every method call on a unbound variable named <i>log</i>
+ * Log4j logging. Every method call on an unbound variable named <i>log</i>
  * will be mapped to a call to the logger. For this a <i>log</i> field will be
  * inserted in the class. If the field already exists the usage of this transform
  * will cause a compilation error. The method name will be used to determine
@@ -54,7 +54,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
  * if (log.isNameEnabled() {
  *    log.name(exp)
  * }</pre>
- * Here name is a place holder for info, debug, warning, error, etc.
+ * Here name is a placeholder for info, debug, warning, error, etc.
  * If the expression exp is a constant or only a variable access the method call will
  * not be transformed. But this will still cause a call on the injected logger.
  *
