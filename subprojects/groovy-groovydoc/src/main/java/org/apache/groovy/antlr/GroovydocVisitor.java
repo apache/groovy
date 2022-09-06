@@ -50,6 +50,7 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyMethodDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyParameter;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyProgramElementDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyType;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -96,6 +97,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(ClassNode node) {
+        boolean isSynthetic = (node.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (isSynthetic || node.isSynthetic()) return;
         final Map<String, String> aliases = new HashMap<>();
         final List<String> imports = new ArrayList<>();
         for (ImportNode iNode : node.getModule().getImports()) {
@@ -206,7 +209,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructor(ConstructorNode node) {
-        if (node.isSynthetic()) return;
+        boolean isSynthetic = (node.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (isSynthetic || node.isSynthetic()) return;
         SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(currentClassDoc.simpleTypeName(), currentClassDoc);
         setConstructorOrMethodCommon(node, cons);
         currentClassDoc.add(cons);
@@ -217,7 +221,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     public void visitMethod(MethodNode node) {
         if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
             return;
-        if (node.isSynthetic()) return;
+        boolean isSynthetic = (node.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (isSynthetic || node.isSynthetic()) return;
         if ("false".equals(properties.getProperty("includeMainForScripts", "true"))
                 && currentClassDoc.isScript() && "main".equals(node.getName()) && node.isStatic() && node.getParameters().length == 1)
             return;
@@ -370,7 +375,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitField(FieldNode node) {
-        if (node.isSynthetic()) return;
+        boolean isSynthetic = (node.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (isSynthetic || node.isSynthetic()) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
