@@ -40,7 +40,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 
 /**
  * This local transform adds a logging ability to your program using
- * java.logging. Every method call on a unbound variable named <i>log</i>
+ * java.logging. Every method call on an unbound variable named <i>log</i>
  * will be mapped to a call to the logger. For this a <i>log</i> field will be
  * inserted in the class. If the field already exists the usage of this transform
  * will cause a compilation error. The method name will be used to determine

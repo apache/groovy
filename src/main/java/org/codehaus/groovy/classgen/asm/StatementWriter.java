@@ -513,7 +513,7 @@ public class StatementWriter {
         mv.visitVarInsn(ALOAD, index);
         mv.visitInsn(MONITORENTER);
         mv.visitLabel(synchronizedStart);
-        // place holder for "empty" synchronized blocks, for example
+        // placeholder for "empty" synchronized blocks, for example
         // if there is only a break/continue.
         mv.visitInsn(NOP);
 
