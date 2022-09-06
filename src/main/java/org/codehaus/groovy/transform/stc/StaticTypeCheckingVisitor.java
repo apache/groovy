@@ -2258,6 +2258,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (typeCheckingContext.getEnclosingClosure() != null) {
             ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+            // GROOVY-9995: return ctor call with diamond operator
+            if (expression instanceof ConstructorCallExpression) {
+                if (inferredReturnType != null) inferDiamondType((ConstructorCallExpression) expression, inferredReturnType);
+            }
             if (STRING_TYPE.equals(inferredReturnType) && StaticTypeCheckingSupport.isGStringOrGStringStringLUB(type)) {
                 type = STRING_TYPE; // GROOVY-9971: implicit "toString()" before return
             }
