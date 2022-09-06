@@ -1654,6 +1654,65 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9762
+    void testShouldUseMethodGenericType7() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        for (toList in ['{ list(it) }', 'this.&list']) {
+            assertScript """
+                def <T> List<T> list(T item) {
+                    return [item]
+                }
+                def test() {
+                    Optional<Integer> opt = Optional.ofNullable(1)
+                    List<Integer> ret = opt.map($toList).get()
+                    return ret
+                }
+                assert test() == [1]
+            """
+        }
+    }
+
+    // GROOVY-9803
+    void testShouldUseMethodGenericType8() {
+        if (GroovyAssert.isAtLeastJdk('1.8')) {
+            assertScript '''
+                def opt = Optional.of(42)
+                    .map(Collections.&singleton)
+                    .map{it.first().intValue()} // Cannot find matching method java.lang.Object#intValue()
+                assert opt.get() == 42
+            '''
+        }
+        // same as above but with separate type parameter name for each location
+        for (toSet in ['D.&wrap', 'Collections.&singleton', '{x -> [x].toSet()}', '{Collections.singleton(it)}']) {
+            assertScript """
+                abstract class A<I,O> {
+                    abstract O apply(I input)
+                }
+                class C<T> {
+                    static <U> C<U> of(U item) {
+                        new C<U>()
+                    }
+                    def <V> C<V> map(A<? super T, ? super V> func) {
+                        new C<V>()
+                    }
+                }
+                class D {
+                    static <W> Set<W> wrap(W o) {
+                    }
+                }
+
+                void test() {
+                    def c = C.of(42)
+                    def d = c.map($toSet)
+                    def e = d.map{it.first().intValue()}
+                }
+
+                test()
+            """
+        }
+    }
+
     // GROOVY-9945
     void testShouldUseMethodGenericType9() {
         assertScript '''

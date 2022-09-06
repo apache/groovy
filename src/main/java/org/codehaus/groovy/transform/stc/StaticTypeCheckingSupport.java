@@ -1876,16 +1876,21 @@ public abstract class StaticTypeCheckingSupport {
         return type.getGenericsTypes();
     }
 
-    static Map<GenericsTypeName, GenericsType> applyGenericsContextToParameterClass(
-            Map<GenericsTypeName, GenericsType> spec, ClassNode parameterUsage
-    ) {
+    static Map<GenericsTypeName, GenericsType> applyGenericsContextToParameterClass(final Map<GenericsTypeName, GenericsType> spec, final ClassNode parameterUsage) {
         GenericsType[] gts = parameterUsage.getGenericsTypes();
-        if (gts == null) return Collections.EMPTY_MAP;
+        if (gts == null) return Collections.emptyMap();
 
-        GenericsType[] newGTs = applyGenericsContext(spec, gts);
-        ClassNode newTarget = parameterUsage.redirect().getPlainNodeReference();
-        newTarget.setGenericsTypes(newGTs);
-        return GenericsUtils.extractPlaceholders(newTarget);
+        ClassNode newType = parameterUsage.redirect().getPlainNodeReference();
+        newType.setGenericsTypes(applyGenericsContext(spec, gts));
+
+        Map<GenericsTypeName, GenericsType> newSpec = GenericsUtils.extractPlaceholders(newType);
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : newSpec.entrySet()) {
+             // GROOVY-9762, GROOVY-9803: reduce "? super T" to "T"
+            ClassNode lowerBound = entry.getValue().getLowerBound();
+            if (lowerBound != null)
+                entry.setValue(new GenericsType(lowerBound));
+        }
+        return newSpec;
     }
 
     static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
