@@ -1309,6 +1309,11 @@
             <pgp value="475f3b8e59e6e63aa78067482c7b12f2a511e325"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="slf4j-api" version="2.0.0">
+         <artifact name="slf4j-api-2.0.0.jar">
+            <pgp value="60200ac4ae761f1614d6c46766d68daa073be985"/>
+         </artifact>
+      </component>
       <component group="org.sonarsource.scanner.gradle" name="sonarqube-gradle-plugin" version="3.0">
          <artifact name="sonarqube-gradle-plugin-3.0.jar">
             <ignored-keys>
