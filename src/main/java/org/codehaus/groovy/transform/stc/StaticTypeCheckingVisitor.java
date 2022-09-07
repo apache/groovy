@@ -236,6 +236,7 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashSet_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
@@ -325,7 +326,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
     protected static final ClassNode DELEGATES_TO = ClassHelper.make(DelegatesTo.class);
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
-    protected static final ClassNode LINKEDHASHMAP_CLASSNODE = ClassHelper.make(LinkedHashMap.class);
+    protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE; //TODO @Deprecated
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
     protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
@@ -1290,19 +1291,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        if ((leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
-                || (isWildcardLeftHandSide(leftRedirect) && !leftRedirect.equals(CLASS_Type)) // GROOVY-6802, GROOVY-6803
-                || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
+    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
+        if (!isConstructorAbbreviation(leftRedirect, rightExpression)
+                // GROOVY-6802, GROOVY-6803: Object, String or [Bb]oolean target
+                || (isWildcardLeftHandSide(leftRedirect) && !leftRedirect.equals(CLASS_Type))) {
             return;
         }
 
         // groovy constructor shorthand: A a = [x:2, y:3]
-        ClassNode[] argTypes = getArgumentTypes(args(rightExpression));
+        ClassNode[] argTypes = {getType(rightExpression)};
         checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
         // perform additional type checking on arguments
-        MapExpression mapExpression = (MapExpression) rightExpression;
-        checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
+        checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
@@ -1326,6 +1326,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (rightExpression instanceof ListExpression) {
             return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
                     || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
+        }
+        if (rightExpression instanceof MapExpression) {
+            return !(LinkedHashMap_TYPE.isDerivedFrom(leftType) || LinkedHashMap_TYPE.implementsInterface(leftType));
         }
         return false;
     }
@@ -1354,7 +1357,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (rightExpression instanceof ListExpression) {
                 addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
-                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression)rightExpression);
             }
             if (!hasGStringStringError(leftExpressionType, rTypeAdjusted, rightExpression)
                     && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
@@ -1438,10 +1441,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         constructors = findMethod(node, "<init>", arguments);
         if (constructors.isEmpty()) {
-            if (isBeingCompiled(node) && !node.isInterface() && arguments.length == 1 && arguments[0].equals(LINKEDHASHMAP_CLASSNODE)) {
+            if (isBeingCompiled(node) && !node.isInterface() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
                 // there will be a default hash map constructor added later
-                ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LINKEDHASHMAP_CLASSNODE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-                return cn;
+                return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
             } else {
                 addStaticTypeError("No matching constructor found: " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
                 return null;
@@ -4592,7 +4594,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * the literal may be composed of sub-types of {@code Type}. In these cases,
      * {@code ArrayList<Type>} is an appropriate result type for the expression.
      */
-    private ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
+    private static ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
         ClassNode resultType = sourceType.equals(baseType) ? sourceType
                 : GenericsUtils.parameterizeType(sourceType, baseType.getPlainNodeReference());
 
@@ -4608,7 +4610,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resultType;
     }
 
-    private ClassNode getMathResultType(final int op, final ClassNode leftRedirect, final ClassNode rightRedirect, final String operationName) {
+    private static ClassNode getMathResultType(final int op, final ClassNode leftRedirect, final ClassNode rightRedirect, final String operationName) {
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
             if (isOperationInGroup(op)) {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;
@@ -5311,7 +5313,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode inferMapExpressionType(final MapExpression map) {
-        ClassNode mapType = LINKEDHASHMAP_CLASSNODE.getPlainNodeReference();
+        ClassNode mapType = LinkedHashMap_TYPE.getPlainNodeReference();
         List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
         int nExpressions = entryExpressions.size();
         if (nExpressions == 0) return mapType;
