@@ -639,15 +639,16 @@ public class GenericsUtils {
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
             ClassNode dummyNode = dummyDeclaration.getLeftExpression().getType();
             GenericsType[] dummyNodeGenericsTypes = dummyNode.getGenericsTypes();
-            if (dummyNodeGenericsTypes == null) {
-                return null;
+            if (dummyNodeGenericsTypes != null) {
+                int n = dummyNodeGenericsTypes.length;
+                ClassNode[] signature = new ClassNode[n];
+                for (int i = 0; i < n; i += 1) {
+                    GenericsType genericsType = dummyNodeGenericsTypes[i];
+                    signature[i] = genericsType.isWildcard() ? ClassHelper.dynamicType()
+                                    : resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
+                }
+                return signature;
             }
-            ClassNode[] signature = new ClassNode[dummyNodeGenericsTypes.length];
-            for (int i = 0, n = dummyNodeGenericsTypes.length; i < n; i += 1) {
-                final GenericsType genericsType = dummyNodeGenericsTypes[i];
-                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
-            }
-            return signature;
         } catch (Exception | LinkageError e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }

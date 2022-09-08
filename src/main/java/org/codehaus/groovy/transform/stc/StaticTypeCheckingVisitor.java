@@ -136,6 +136,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -3018,6 +3019,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
+                if (paramTypes.length != samParamTypes.length) { // GROOVY-8499
+                    addError("Incorrect number of parameters. Expected " + samParamTypes.length + " but found " + paramTypes.length, expression);
+                }
             }
         }
     }
@@ -3065,41 +3069,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
-        Parameter[] closureParams = expression.getParameters();
-        if (closureParams == null) return; // no-arg closure
+        Parameter[] closureParams = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(dynamicType(),"it")} : getParametersSafe(expression);
 
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
         List<ClassNode[]> candidates = new LinkedList<>();
         for (ClassNode[] signature : closureSignatures) {
             resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
-            if (signature.length == closureParams.length // same number of arguments
-                    || (signature.length == 1 && closureParams.length == 0) // implicit it
+            if (signature.length == closureParams.length // matching number of parameters
                     || (closureParams.length > signature.length && last(signature).isArray())) { // vargs
                 candidates.add(signature);
             }
         }
+
+        if (candidates.isEmpty() && !closureSignatures.isEmpty()) {
+            String spec = closureSignatures.stream().mapToInt(sig -> sig.length).distinct()
+                                           .sorted().mapToObj(Integer::toString).collect(Collectors.joining(" or "));
+            addError("Incorrect number of parameters. Expected " + spec + " but found " + closureParams.length, expression);
+        }
+
         if (candidates.size() > 1) {
             for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
                 ClassNode[] inferred = candIt.next();
-                for (int i = 0, n = closureParams.length; i < n; i += 1) {
-                    Parameter closureParam = closureParams[i];
+                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
                     ClassNode declaredType = closureParam.getOriginType();
-                    ClassNode inferredType;
-                    if (i < inferred.length - 1 || inferred.length == n) {
-                        inferredType = inferred[i];
-                    } else {
-                        ClassNode lastInferred = inferred[inferred.length - 1];
-                        if (lastInferred.isArray()) {
-                            inferredType = lastInferred.getComponentType();
-                        } else {
-                            candIt.remove();
-                            continue;
-                        }
-                    }
-                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, i == (n - 1))) {
-                        candIt.remove();
-                    }
-                }
+                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, false)) candIt.remove();
+                }, () -> {
+                    candIt.remove();
+                });
             }
             if (candidates.size() > 1 && resolverClass instanceof ClassExpression) {
                 candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
@@ -3108,28 +3104,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addError("Ambiguous prototypes for closure. More than one target method matches. Please use explicit argument types.", expression);
             }
         }
+
         if (candidates.size() == 1) {
             ClassNode[] inferred = candidates.get(0);
-            if (closureParams.length == 0 && inferred.length == 1) {
+            if (hasImplicitParameter(expression) && inferred.length == 1) {
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferred);
             } else {
-                for (int i = 0, n = closureParams.length; i < n; i += 1) {
-                    Parameter closureParam = closureParams[i];
-                    ClassNode inferredType = OBJECT_TYPE;
-                    if (i < inferred.length - 1 || inferred.length == n) {
-                        inferredType = inferred[i];
-                    } else {
-                        ClassNode lastInferred = inferred[inferred.length - 1];
-                        if (lastInferred.isArray()) {
-                            inferredType = lastInferred.getComponentType();
-                        } else {
-                            addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + n, expression);
-                        }
-                    }
-                    checkParamType(closureParam, inferredType, i == n-1, false);
+                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
+                    checkParamType(closureParam, inferredType, false, false);
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
+                }, () -> {
+                    addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
+                });
+            }
+        }
+    }
+
+    private static void checkClosureSignature(final Parameter[] declared, final ClassNode[] inferred, final BiConsumer<Parameter,ClassNode> consumer, final Runnable reject) {
+        for (int i = 0, j = inferred.length-1, n = declared.length; i < n; i += 1) {
+            ClassNode declaredType = declared[i].getOriginType();
+            ClassNode inferredType = inferred[Math.min(i, j)];
+            if (isDynamicTyped(inferredType)) continue;
+            if (i >= j) { // at or past end
+                if (inferredType.isArray()) {
+                    if (n > inferred.length || !declaredType.isArray() && !isObjectType(declaredType)) {
+                        inferredType = inferredType.getComponentType(); // spread array out
+                    }
+                } else if (i > j) {
+                    reject.run();
+                    continue;
                 }
             }
+            consumer.accept(declared[i], inferredType);
         }
     }
 

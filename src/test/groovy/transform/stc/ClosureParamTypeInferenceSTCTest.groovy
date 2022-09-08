@@ -620,10 +620,27 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testInferenceForDGM_eachMatch() {
+        assertScript '''
+            'foo bar baz'.eachMatch(~/(?m)^(\s*).*\n$/) { all, ws ->
+                all.trim(); ws.length()
+            }
+        '''
+    }
+
     void testInferenceForDGM_eachWithIndexOnMap() {
         assertScript '''
-            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
             [a:'A',bb:'B',ccc:'C'].eachWithIndex { e,i -> assert e.key.toUpperCase() == e.value*(1+i) }
+            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
+        '''
+    }
+    void testInferenceForDGM_eachWithIndexOnObject() {
+        assertScript '''
+            def foo(object) {
+                object.eachWithIndex { Map<String,String> map, i -> map.ccc.toLowerCase() + (1+i) }
+                //                     ^^^^^^^^^^^^^^^^^^ each/eachWithIndex are flexible
+            }
+            foo([ [a:'A',bb:'B',ccc:'C'] ])
         '''
     }
     void testInferenceForDGM_eachWithIndexOnIterable() {
@@ -1192,34 +1209,112 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6939
+    void testParamCountCheck1() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.each { x, y -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck2() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.eachWithIndex { x, y, z -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 2 but found 3'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck3() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.eachWithIndex { print it }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 2 but found 1'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck4() {
+        shouldFailWithMessages '''
+            def m(... array) {
+                array.each { x, y -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck5() {
+        shouldFailWithMessages '''
+            def m() {
+                [:].each { -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 or 2 but found 0'
+    }
+
+    // GROOVY-8816
+    void testParamCountCheck6() {
+        shouldFailWithMessages '''
+            def m() {
+                [].each { -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 0'
+    }
+
+    // GROOVY-9854
+    void testParamCountCheck7() {
+        shouldFailWithMessages '''
+            switch (42) { case { -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 0'
+    }
+
+    // GROOVY-9854
+    void testParamCountCheck8() {
+        shouldFailWithMessages '''
+            switch (42) { case { i, j -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-8499: SAM type
+    void testParamCountCheck9() {
+        shouldFailWithMessages '''
+            ['ab'.chars, '12'.chars].combinations().stream().map((x, y) -> "$x$y")
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
     void testInferenceWithSAMTypeCoercion() {
-        assertScript '''import java.util.concurrent.Callable
+        assertScript '''
             interface Action<T> {
                 void execute(T thing)
             }
 
             class Wrapper<T> {
-
                 private final T thing
-
                 Wrapper(T thing) {
                     this.thing = thing
                 }
-
                 void contravariantTake(Action<? super T> action) {
                     action.execute(thing)
                 }
-
                 void invariantTake(Action<T> action) {
                     action.execute(thing)
                 }
-
             }
 
-            static <T> Wrapper<T> wrap(Callable<T> callable) {
+            static <T> Wrapper<T> wrap(java.util.concurrent.Callable<T> callable) {
                 new Wrapper(callable.call())
             }
-
             static Integer dub(Integer integer) {
                 integer * 2
             }
@@ -1237,6 +1332,8 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    //--------------------------------------------------------------------------
 
     void testGroovy6022() {
         assertScript '''import groovy.transform.stc.SimpleType
@@ -1296,27 +1393,25 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-            def method() {
+            def foo() {
               assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
               assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
             }
-
-            method()
+            foo()
         '''
     }
 
     void testGroovy9058() {
         assertScript '''
-            List<Object[]> bar() { [['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[]] }
-
-            def foo() {
-                def result = []
-                List<Object[]> bar = bar()
-                bar.each { row -> result << row[0].toString().toUpperCase() }
-                result
+            List<Object[]> table() {
+                [ ['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[] ]
             }
-
-            assert foo() == ['FEE', 'FO']
+            def foo() {
+                List<String> result = []
+                table().each { row -> result << row[0].toString().toUpperCase() }
+                assert result == ['FEE', 'FO']
+            }
+            foo()
         '''
     }
 
@@ -1467,16 +1562,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             assert result == 'positive'
         '''
-
-        shouldFailWithMessages '''
-            switch (42) { case { -> }: break; }
-        ''',
-        'Incorrect number of parameters. Expected 1 but found 0'
-
-        shouldFailWithMessages '''
-            switch (42) { case { i, j -> }: break; }
-        ''',
-        'Incorrect number of parameters. Expected 1 but found 2'
 
         shouldFailWithMessages '''
             switch (42) { case { String s -> }: break; }

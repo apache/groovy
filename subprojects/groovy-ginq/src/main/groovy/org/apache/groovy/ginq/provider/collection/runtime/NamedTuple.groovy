@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
-
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import groovy.transform.stc.POJO
@@ -28,9 +27,9 @@ import groovy.transform.stc.POJO
  *
  * @since 4.0.0
  */
+@CompileStatic
 @PackageScope
 @POJO
-@CompileStatic
 class NamedTuple<E> extends Tuple<E> {
     private static final long serialVersionUID = -5067092453136522209L
     private final Map<String, E> data = new LinkedHashMap<>()
@@ -43,17 +42,17 @@ class NamedTuple<E> extends Tuple<E> {
             throw new IllegalArgumentException("names should be unique: $nameList")
         }
 
-        for (int i = 0, n = nameListSize; i < n; i++) {
+        for (int i = 0, n = nameListSize; i < n; i += 1) {
             data.put(nameList.get(i), elementList.get(i))
         }
     }
 
-    def getAt(String name) {
-        return data.get(name)
-    }
-
     def get(String name) {
         return getAt(name)
+    }
+
+    def getAt(String name) {
+        return data.get(name)
     }
 
     boolean exists(String name) {
@@ -66,8 +65,10 @@ class NamedTuple<E> extends Tuple<E> {
 
     @Override
     String toString() {
-        '(' + nameList.withIndex()
-                .collect((String n, int i) -> { "${n}:${this[i]}" })
-                .join(', ') + ')'
+        StringJoiner sj = new StringJoiner(', ', '(', ')')
+        for (String name : getNameList()) {
+            sj.add(name + ':' + this[name])
+        }
+        sj.toString()
     }
 }
