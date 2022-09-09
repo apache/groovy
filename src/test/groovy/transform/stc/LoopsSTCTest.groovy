@@ -225,17 +225,6 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8487, GROOVY-10712
-    void testForInLoopOnIterator() {
-        assertScript '''
-            def list = []
-            for (item in ['a','b','c'].iterator()) {
-                list.add(item.toUpperCase())
-            }
-            assert list == ['A','B','C']
-        '''
-    }
-
     // GROOVY-6123
     void testForInLoopOnEnumeration() {
         assertScript '''

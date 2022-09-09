@@ -17518,7 +17518,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Iterator iterator(final Object o) {
-        if (o instanceof Iterator) return (Iterator)o; //GROOVY-8487
         return DefaultTypeTransformation.asCollection(o).iterator();
     }
 
