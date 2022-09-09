@@ -1996,10 +1996,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
                 componentType = col.getGenericsTypes()[0].getType();
 
-            } else if (implementsInterfaceOrIsSubclassOf(collectionType, Iterator_TYPE)) { // GROOVY-10712
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, Iterator_TYPE);
-                componentType = col.getGenericsTypes()[0].getType();
-
             } else if (collectionType.equals(STRING_TYPE)) {
                 componentType = STRING_TYPE;
             } else {
