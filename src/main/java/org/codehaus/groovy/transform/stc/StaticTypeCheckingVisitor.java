@@ -1486,7 +1486,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode objectExpressionType = getType(objectExpression);
         if (objectExpression instanceof ConstructorCallExpression) {
-            inferDiamondType((ConstructorCallExpression) objectExpression, objectExpressionType);
+            ClassNode rawType = objectExpressionType.getPlainNodeReference();
+            inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
         }
         List<ClassNode> enclosingTypes = typeCheckingContext.getEnclosingClassNodes();
 
