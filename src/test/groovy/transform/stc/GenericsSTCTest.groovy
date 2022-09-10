@@ -285,6 +285,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7316, GROOVY-10256
+    void testReturnTypeInferenceWithMethodGenerics16() {
+        shouldFailWithMessages '''
+            def <T extends CharSequence> T chars() {
+            }
+            List test() {
+                chars()
+            }
+        ''',
+        'Cannot return value of type java.lang.CharSequence on method returning type java.util.List'
+    }
+
     // GROOVY-10098
     void testReturnTypeInferenceWithMethodGenerics17() {
         assertScript '''
