@@ -507,12 +507,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 public static int version = 666
             }
             def map = new C()
-            map['foo'] = 123
+            map.foo = 123
             def value = map.foo
             assert value == 123
             map['foo'] = 4.5
             value = map['foo']
             assert value == 4.5
+            value = map.version
+            assert value == null
             assert C.version == 666
         '''
     }
