@@ -1071,14 +1071,14 @@ public class AsmClassGenerator extends ClassGenerator {
         if (ExpressionUtils.isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
 
+        // GROOVY-9195, GROOVY-9288: uniform treatment for "foo.bar" and "foo.with { bar }" using TypeChooser (not getType())
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
-        if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
-        if (isOrImplements(objectExpressionType, ClassHelper.MAP_TYPE)) return false; // GROOVY-8074
-        return implementsGroovyObject(objectExpressionType); // GROOVY-9195, GROOVY-9288, et al.
+        return implementsGroovyObject(objectExpressionType) // GROOVY-10540
+            && !isOrImplements(objectExpressionType, ClassHelper.MAP_TYPE); // GROOVY-5517, GROOVY-8074
     }
 
     private static boolean implementsGroovyObject(final ClassNode cn) {
-        return cn.isDerivedFromGroovyObject() || (!cn.isInterface() && cn.getCompileUnit() != null);
+        return cn.isDerivedFromGroovyObject() || (cn.getCompileUnit() != null && !cn.isInterface());
     }
 
     @Override
