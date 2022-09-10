@@ -1757,14 +1757,14 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode superClass = getNextSuperClass(type, target);
             if (superClass != null) {
                 if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
-                    Map<String, ClassNode> spec = GenericsUtils.createGenericsSpec(type);
-                    if (!spec.isEmpty()) {
-                        superClass = GenericsUtils.correctToGenericsSpecRecurse(spec, superClass);
-                    }
+                    // propagate type arguments to the super class or interface
+                    Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+                    extractGenericsConnections(spec, type.getGenericsTypes(),
+                                    type.redirect().getGenericsTypes());
+                    superClass = applyGenericsContext(spec, superClass);
                 }
                 extractGenericsConnections(connections, superClass, target);
             } else {
-                // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
             }
         }
