@@ -22,16 +22,6 @@ import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
 
-    void testGetAtFromStaticMap() {
-        assertScript '''
-            class Foo {
-                public static Map CLASSES = [:]
-            }
-            String foo = 'key'
-            Foo.CLASSES[foo]
-        '''
-    }
-
     // GROOVY-5561
     void testShouldNotThrowAccessForbidden() {
         assertScript '''
