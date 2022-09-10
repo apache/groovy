@@ -498,7 +498,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-7316, GROOVY-10256
+    // GROOVY-7316, GROOVY-10256
     void testReturnTypeInferenceWithMethodGenerics16() {
         shouldFailWithMessages '''
             def <T extends CharSequence> T chars() {
@@ -507,7 +507,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 chars()
             }
         ''',
-        'Cannot return value of type #T for method returning java.util.List'
+        'Cannot return value of type T on method returning type java.util.List'
     }
 
     // GROOVY-10098
