@@ -1098,26 +1098,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (constructor != null && !argumentList.getExpressions().isEmpty()) {
                 ClassNode type = GenericsUtils.parameterizeType(cceType, cceType);
                 type = inferReturnTypeGenerics(type, constructor, argumentList);
-                if (type.isUsingGenerics()) {
-                    // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
-                    if (checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
-                        // allow covariance of each type parameter, but maintain semantics for nested generics
+                if (lType.getGenericsTypes() != null // GROOVY-10367: nothing to inspect
+                        // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
+                        && checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
+                    // allow covariance of each type parameter, but maintain semantics for nested generics
 
-                        ClassNode pType = GenericsUtils.parameterizeType(lType, type);
-                        GenericsType[] lhs = pType.getGenericsTypes(), rhs = type.getGenericsTypes();
-                        if (lhs == null || rhs == null || lhs.length != rhs.length) throw new GroovyBugError(
-                                "Parameterization failed: " + prettyPrintType(pType) + " ~ " + prettyPrintType(type));
+                    ClassNode pType = GenericsUtils.parameterizeType(lType, type);
+                    GenericsType[] lhs = pType.getGenericsTypes(), rhs = type.getGenericsTypes();
+                    if (lhs == null || rhs == null || lhs.length != rhs.length) throw new GroovyBugError(
+                            "Parameterization failed: " + prettyPrintType(pType) + " ~ " + prettyPrintType(type));
 
-                        boolean allMatch = true;
-                        for (int i = 0, n = lhs.length; i < n && allMatch; i += 1) {
-                            if (!GenericsUtils.buildWildcardType(getCombinedBoundType(lhs[i])).isCompatibleWith(getCombinedBoundType(rhs[i]))) {
-                                allMatch = false;
-                            }
+                    boolean allMatch = true;
+                    for (int i = 0, n = lhs.length; i < n && allMatch; i += 1) {
+                        if (!GenericsUtils.buildWildcardType(getCombinedBoundType(lhs[i])).isCompatibleWith(getCombinedBoundType(rhs[i]))) {
+                            allMatch = false;
                         }
-                        if (allMatch) type = pType; // lType proved to be a viable type witness
                     }
-                    inferredType = type;
+                    if (allMatch) type = pType; // lType proved to be a viable type witness
                 }
+                inferredType = type;
             }
             if (inferredType.isGenericsPlaceHolder()) // GROOVY-10344: "T t = new C<>()"
                 inferredType = getCombinedBoundType(inferredType.getGenericsTypes()[0]);
@@ -1475,8 +1474,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode  objectExpressionType = getType(objectExpression);
-        if (objectExpression instanceof ConstructorCallExpression) { // GROOVY-9963
-            inferDiamondType((ConstructorCallExpression) objectExpression, objectExpressionType);
+        if (objectExpression instanceof ConstructorCallExpression) {
+            ClassNode rawType = objectExpressionType.getPlainNodeReference();
+            inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
         }
         List<ClassNode> enclosingTypes = typeCheckingContext.getEnclosingClassNodes();
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
