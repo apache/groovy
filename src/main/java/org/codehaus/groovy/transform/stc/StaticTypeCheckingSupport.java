@@ -680,44 +680,38 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression, boolean allowConstructorCoercion) {
-        ClassNode leftRedirect = left.redirect();
-        ClassNode rightRedirect = right.redirect();
-        if (leftRedirect == rightRedirect) return true;
-
-        if (leftRedirect.isArray() && rightRedirect.isArray()) {
-            ClassNode leftComponent = leftRedirect.getComponentType();
-            ClassNode rightComponent = rightRedirect.getComponentType();
-            if (isPrimitiveType(leftComponent) != isPrimitiveType(rightComponent)) return false;
-            return checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
-        }
-
-        if (right == VOID_TYPE || right == void_WRAPPER_TYPE) {
-            return left == VOID_TYPE || left == void_WRAPPER_TYPE;
-        }
-
-        if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
-            if (leftRedirect.equals(BigDecimal_TYPE) || leftRedirect.equals(Number_TYPE)) {
-                // any number can be assigned to BigDecimal or Number
-                return true;
-            }
-            if (leftRedirect.equals(BigInteger_TYPE)) {
-                return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect)) ||
-                        rightRedirect.isDerivedFrom(BigInteger_TYPE);
-            }
-        }
-
-        // if rightExpression is null and leftExpression is not a primitive type, it's ok
         boolean rightExpressionIsNull = isNullConstant(rightExpression);
         if (rightExpressionIsNull && !isPrimitiveType(left)) {
             return true;
         }
 
+        if (left.isArray() && right.isArray()) {
+            ClassNode leftComponent = left.getComponentType();
+            ClassNode rightComponent = right.getComponentType();
+            if (isPrimitiveType(leftComponent) != isPrimitiveType(rightComponent)) return false;
+            return checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
+        }
+
+        ClassNode leftRedirect = left.redirect();
+        ClassNode rightRedirect = right.redirect();
+        if (leftRedirect == rightRedirect) return true;
+
+        if (rightRedirect == void_WRAPPER_TYPE) return leftRedirect == VOID_TYPE;
+        if (rightRedirect == VOID_TYPE) return leftRedirect == void_WRAPPER_TYPE;
+
+        if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
+            if (leftRedirect.equals(BigDecimal_TYPE) || leftRedirect.equals(Number_TYPE)) {
+                return true; // any number can be assigned to BigDecimal or Number
+            }
+            if (leftRedirect.equals(BigInteger_TYPE)) {
+                return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
+            }
+        }
+
         // on an assignment everything that can be done by a GroovyCast is allowed
 
-        // anything can be assigned to an Object, String, Boolean
-        // or Class typed variable
-        if (isWildcardLeftHandSide(leftRedirect)
-                && !(left.equals(boolean_TYPE) && rightExpressionIsNull)) return true;
+        // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
+        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && rightExpressionIsNull)) return true;
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect == STRING_TYPE) {
@@ -1829,25 +1823,25 @@ public abstract class StaticTypeCheckingSupport {
     private static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
         // if declaration does not provide generics, there is no connection to make
         if (usage == null || declaration == null || declaration.length == 0) return;
-        if (usage.length != declaration.length) return;
+        final int n; if ((n = usage.length) != declaration.length) return;
 
         // both have generics
-        for (int i = 0; i < usage.length; i++) {
+        for (int i = 0; i < n; i += 1) {
             GenericsType ui = usage[i];
             GenericsType di = declaration[i];
             if (di.isPlaceholder()) {
                 connections.put(new GenericsTypeName(di.getName()), ui);
             } else if (di.isWildcard()) {
+                ClassNode lowerBound = di.getLowerBound(), upperBounds[] = di.getUpperBounds();
                 if (ui.isWildcard()) {
-                    extractGenericsConnections(connections, ui.getLowerBound(), di.getLowerBound());
-                    extractGenericsConnections(connections, ui.getUpperBounds(), di.getUpperBounds());
+                    extractGenericsConnections(connections, ui.getLowerBound(), lowerBound);
+                    extractGenericsConnections(connections, ui.getUpperBounds(), upperBounds);
                 } else {
-                    ClassNode cu = ui.getType();
-                    extractGenericsConnections(connections, cu, di.getLowerBound());
-                    ClassNode[] upperBounds = di.getUpperBounds();
+                    ClassNode ui_type = ui.getType();
+                    extractGenericsConnections(connections, ui_type, lowerBound);
                     if (upperBounds != null) {
-                        for (ClassNode cn : upperBounds) {
-                            extractGenericsConnections(connections, cu, cn);
+                        for (ClassNode ub : upperBounds) {
+                            extractGenericsConnections(connections, ui_type, ub);
                         }
                     }
                 }

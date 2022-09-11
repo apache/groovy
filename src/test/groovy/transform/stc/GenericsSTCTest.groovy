@@ -2078,6 +2078,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10107
+    void testAssignNullTypeParameterWithUpperBounds() {
+        assertScript '''
+            class C<T extends Number> {
+                void m() {
+                    T n = null
+                }
+            }
+            new C<Long>().m()
+        '''
+    }
+
     void testMethodCallWithArgumentUsingNestedGenerics() {
         assertScript '''
            ThreadLocal<Map<Integer, String>> cachedConfigs = new ThreadLocal<Map<Integer, String>>()

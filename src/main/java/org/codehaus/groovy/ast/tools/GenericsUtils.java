@@ -173,7 +173,7 @@ public class GenericsUtils {
         GenericsType[] parameterized = type.getGenericsTypes(); int n;
         if (parameterized == null || (n = parameterized.length) == 0) return;
 
-        // GROOVY-8609, GROOVY-10067, etc.
+        // GROOVY-8609
         if (type.isGenericsPlaceHolder()) {
             GenericsType gt = parameterized[0];
             GenericsType.GenericsTypeName name = new GenericsType.GenericsTypeName(gt.getName());
