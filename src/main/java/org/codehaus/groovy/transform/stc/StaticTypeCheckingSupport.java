@@ -1451,9 +1451,12 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static void addMethodLevelDeclaredGenerics(MethodNode method, Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
-        ClassNode dummy = OBJECT_TYPE.getPlainNodeReference();
-        dummy.setGenericsTypes(method.getGenericsTypes());
-        GenericsUtils.extractPlaceholders(dummy, resolvedPlaceholders);
+        GenericsType[] generics = method.getGenericsTypes();
+        if (!method.isStatic() && !resolvedPlaceholders.isEmpty()) {
+            // GROOVY-8034: non-static method may use class generics
+            generics = applyGenericsContext(resolvedPlaceholders, generics);
+        }
+        GenericsUtils.extractPlaceholders(GenericsUtils.makeClassSafe0(OBJECT_TYPE, generics), resolvedPlaceholders);
     }
 
     protected static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod) {

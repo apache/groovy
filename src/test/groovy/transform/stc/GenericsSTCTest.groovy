@@ -2586,12 +2586,37 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testCorrectlyBoundedBySuperGenericParameterType() {
+    void testCorrectlyBoundedBySuperGenericParameterType1() {
         assertScript '''
             class Foo {
                 static <T extends List<? super CharSequence>> void bar(T a) {}
             }
             Foo.bar([new Object()])
+        '''
+    }
+
+    // GROOVY-8034
+    void testCorrectlyBoundedBySuperGenericParameterType2() {
+        assertScript '''
+            class A<I, O> {
+                def <IO extends A<? super O, ?>> IO andThen(IO next) { next }
+            }
+
+            def a1 = new A<String , Integer>()
+            def a2 = new A<Integer, Double >()
+            def a3 = new A<Double , String >()
+            def a4 = new A<String , Double >()
+            def a5 = new A<Number , Object >()
+
+            a1.andThen(a2)
+            a2.andThen(a3)
+            a3.andThen(a4)
+            a4.andThen(a5)
+
+            a1.andThen(a2)
+                .andThen(a3)
+                .andThen(a4)
+                .andThen(a5)
         '''
     }
 
