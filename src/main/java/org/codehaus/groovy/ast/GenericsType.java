@@ -426,7 +426,7 @@ public class GenericsType extends ASTNode {
                                                 match = gt.checkGenerics(classNodeType.getLowerBound());
                                             } else if (classNodeType.getUpperBounds() != null) {
                                                 match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
-                                            } else { // GROOVY-10576: "?" vs "? extends Object" (citation required) or no match
+                                            } else { // GROOVY-10267, GROOVY-10576: "?" vs "? extends Object" (citation required) or no match
                                                 match = (!gt.isPlaceholder() && !gt.isWildcard() && ClassHelper.OBJECT_TYPE.equals(gt.getType()));
                                             }
                                         } else {
@@ -449,18 +449,8 @@ public class GenericsType extends ASTNode {
         return match;
     }
 
-    /**
-     * Represents {@link GenericsType} name.
-     * <p>
-     * TODO: In order to distinguish GenericsType with same name, we should add a property to keep the declaring class.
-     * <ol>
-     * <li> change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
-     * <li> try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
-     * <li> run all tests to see whether the change breaks anything
-     * <li> if all tests pass, congratulations! but if some tests are broken, try to debug and find why...
-     * </ol>
-     * We should find a way to set declaring class for `GenericsType` first, it can be completed at the resolving phase.
-     */
+    //--------------------------------------------------------------------------
+
     public static class GenericsTypeName {
         private final String name;
 

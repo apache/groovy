@@ -3091,7 +3091,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10116
+    // GROOVY-10116
     void testCompatibleArgumentsForPlaceholders10() {
         assertScript '''
             class Foo<X,T> {
