@@ -2348,7 +2348,62 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-5692, GROOVY-10006
     void testCompatibleArgumentsForPlaceholders1() {
+        assertScript '''
+            def <T> T test(T one, T two) { }
+            def result = test(1,"II")
+        '''
+        assertScript '''
+            def <T> T test(T one, T two, T three) { }
+            def result = test(1,"II",Class)
+        '''
+        assertScript '''
+            def <T extends Number> T test(T one, T two) { }
+            def result = test(1L,2G)
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-5692
+    void testCompatibleArgumentsForPlaceholders2() {
+        assertScript '''
+            def <T> boolean test(T one, List<T> many) { }
+            test(1,["II","III"])
+        '''
+    }
+
+    // GROOVY-10220
+    void testCompatibleArgumentsForPlaceholders3() {
+        assertScript '''
+            class C<S, T extends Number> {
+            }
+            class D<T> {
+                C<? extends T, Integer> f
+                D(C<? extends T, Integer> p) {
+                    f = p
+                }
+            }
+
+            assert new D<String>(null).f == null
+        '''
+    }
+
+    // GROOVY-10235
+    void testCompatibleArgumentsForPlaceholders4() {
+        assertScript '''
+            import static java.util.concurrent.ConcurrentHashMap.newKeySet
+
+            void accept(Collection<Integer> integers) {
+                assert integers
+            }
+
+            Set<Integer> integers = newKeySet()
+            integers.add(42)
+            accept(integers)
+        '''
+    }
+
+    void testCompatibleArgumentsForPlaceholders5() {
         assertScript '''
             def <X> X foo(X x) {
             }
@@ -2362,7 +2417,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10482
-    void testCompatibleArgumentsForPlaceholders2() {
+    void testCompatibleArgumentsForPlaceholders6() {
         ['def', 'public', 'static', '@Deprecated'].each {
             assertScript """
                 class Foo<X> {
@@ -2379,13 +2434,100 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10499
+    void testCompatibleArgumentsForPlaceholders7() {
+        ['?', 'Y', '? extends Y'].each {
+            assertScript """
+                class Foo<X> {
+                    Foo(X x) {
+                    }
+                }
+                class Bar<Y> {
+                    Bar(Foo<${it}> foo, Y y) {
+                    }
+                    Y baz(Y y) {
+                    }
+                }
+                def <Z> void test(Z z = null) {
+                    new Bar<>(new Foo<Z>(z), z).baz(z) // Cannot find matching method Bar#baz(Z)
+                }
+                test()
+            """
+        }
+    }
+
+    // GROOVY-10100
+    void testCompatibleArgumentsForPlaceholders8() {
+        assertScript '''
+            import java.util.function.Function
+
+            class C<T> {
+                T m(Object... args) {
+                }
+            }
+            def <T extends Number> void test() {
+                C<T> c = new C<>()
+                Function<String[], T> f = c.&m
+                T t = f.apply(["string"] as String[]) // Cannot assign value of type java.lang.String[] to variable of type T
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-10115
+    void testCompatibleArgumentsForPlaceholders9() {
+        assertScript '''
+            class C<X, T extends X> {
+                T t
+                C(T t) {
+                    this.t = t
+                }
+            }
+            new C(null)
+        '''
+    }
+
+    // GROOVY-10116
+    void testCompatibleArgumentsForPlaceholders10() {
+        assertScript '''
+            class Foo<X,T> {
+                Foo(Bar<X,T> bar) {
+                }
+            }
+            class Bar<X,T> {
+            }
+            class Baz<T> {
+                void test() {
+                    Foo<T,Long> x = new Foo<T,Long>(new Bar<T,Long>()) // Cannot call Foo#<init>(Bar<T,Long>) with arguments [Bar<T,Long>]
+                }
+            }
+            new Baz().test()
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10153
+    void testCompatibleArgumentsForPlaceholders11() {
+        ['A', 'B', 'C'].each { T ->
+            assertScript """
+                class A {}
+                class B extends A {}
+                class C extends B {}
+                class Foo<T extends A> {}
+
+                Foo<? super C> foo = new Foo<$T>()
+                //  ^ lower bound is C (explicit); upper bound is A (implicit)
+            """
+        }
+    }
+
     void testIncompatibleGenericsForTwoArguments() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, T arg2) {
                 println arg1 == arg2
             }
             printEqual(1, 'foo')
-        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
+        ''',
+        '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
 
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
@@ -2394,11 +2536,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''',
+        '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
-    // GROOVY-9902
-    void testIncompatibleArgumentsForGenericArgument_IncludingDelegation() {
+    // GROOVY-9902: incomplete generics should not stop type checking
+    void testIncompatibleArgumentsForPlaceholders3() {
         shouldFailWithMessages '''
             class Holder<Unknown> {
                 TypedProperty<Number, Unknown> numberProperty = prop(Number)
@@ -2494,7 +2637,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert twoIntegers.getTop() == 2
 
             def oneIntegerAgain = stack.push(1).push(2).pop()
-            assert oneIntegerAgain.getTop() == 1 // BOOM!!!!
+            assert oneIntegerAgain.getTop() == 1 // Cannot find matching method IStack#getTop()
         '''
     }
 
@@ -2511,14 +2654,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5735
     void testCorrespondingParameterType() {
         assertScript '''
-        public <T> void someMethod (java.lang.Class<T> clazz, T object) {}
+            public <T> void someMethod (java.lang.Class<T> clazz, T object) {}
 
-        void method() {
-            List<String> list = null
-            someMethod(java.util.List.class, list)
-        }
+            void method() {
+                List<String> list = null
+                someMethod(java.util.List.class, list)
+            }
 
-        method()
+            method()
         '''
     }
 
