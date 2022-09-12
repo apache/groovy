@@ -456,7 +456,7 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode sourceComponent = type.getComponentType(), targetComponent = toBeAssignedTo.getComponentType();
             return (isPrimitiveType(sourceComponent) == isPrimitiveType(targetComponent)) && isAssignableTo(sourceComponent, targetComponent);
         }
-        if (type.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(toBeAssignedTo)) {
+        if (type.isDerivedFrom(GSTRING_TYPE) && toBeAssignedTo.equals(STRING_TYPE)) {
             return true;
         }
         if (type.equals(STRING_TYPE) && toBeAssignedTo.isDerivedFrom(GSTRING_TYPE)) {
@@ -1778,9 +1778,7 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode ui = usage[i];
             ClassNode di = declaration[i];
             if (di.isGenericsPlaceHolder()) {
-                GenericsType gt = new GenericsType(di);
-                gt.setPlaceholder(di.isGenericsPlaceHolder());
-                connections.put(new GenericsTypeName(di.getGenericsTypes()[0].getName()), gt);
+                connections.put(new GenericsTypeName(di.getUnresolvedName()), new GenericsType(ui));
             } else if (di.isUsingGenerics()) {
                 extractGenericsConnections(connections, ui.getGenericsTypes(), di.getGenericsTypes());
             }
