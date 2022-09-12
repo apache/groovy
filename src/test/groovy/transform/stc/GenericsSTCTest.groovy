@@ -608,7 +608,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-10339
+    // GROOVY-10339
     void testReturnTypeInferenceWithMethodGenerics22() {
         for (type in ['Comparable', 'Serializable']) {
             assertScript """
@@ -2952,7 +2952,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5692, GROOVY-10006
+    // GROOVY-5692, GROOVY-10006
     void testCompatibleArgumentsForPlaceholders1() {
         assertScript '''
             def <T> T test(T one, T two) { }
@@ -2968,7 +2968,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5692
+    // GROOVY-5692
     void testCompatibleArgumentsForPlaceholders2() {
         assertScript '''
             def <T> boolean test(T one, List<T> many) { }

@@ -1533,17 +1533,21 @@ public abstract class StaticTypeCheckingSupport {
                 continue;
             }
             if (!compatibleConnection(resolved, connection)) {
-                if (!(resolved.isPlaceholder() || resolved.isWildcard())
-                        && !fixedGenericsPlaceHolders.contains(entry.getKey())
-                        && compatibleConnection(connection, resolved)) {
-                    // we did for example find T=String and now check against
-                    // T=Object, which fails the first compatibleConnection check
-                    // but since T=Object works for both, the second one will pass
-                    // and we need to change the type for T to the more general one
-                    resolvedMethodGenerics.put(entry.getKey(), connection);
-                } else {
-                    return false;
+                if (!resolved.isPlaceholder() && !resolved.isWildcard()
+                        && !fixedGenericsPlaceHolders.contains(entry.getKey())) {
+                    // GROOVY-5692, GROOVY-10006: multiple witnesses
+                    if (compatibleConnection(connection, resolved)) {
+                        // was "T=Integer" and now is "T=Number" or "T=Object"
+                        resolvedMethodGenerics.put(entry.getKey(), connection);
+                        continue;
+                    } else if (!connection.isPlaceholder() && !connection.isWildcard()) {
+                        // combine "T=Integer" and "T=String" to produce "T=? extends Serializable & Comparable<...>"
+                        ClassNode lub = WideningCategories.lowestUpperBound(connection.getType(), resolved.getType());
+                        resolvedMethodGenerics.put(entry.getKey(), lub.asGenericsType());
+                        continue;
+                    }
                 }
+                return false; // incompatible
             }
         }
         return true;
