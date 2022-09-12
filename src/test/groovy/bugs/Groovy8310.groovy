@@ -18,13 +18,11 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy8310 {
 
     @Test
@@ -35,84 +33,82 @@ final class Groovy8310 {
             }
 
             @groovy.transform.CompileStatic
-            def use() {
+            def foo() {
                 bar {
                     [1]
                 }
             }
         '''
-
         assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure <java.util.List>\)/
     }
 
     @Test
     void testClosureReturnType2() {
         def err = shouldFail '''
-            public <T> T bar(Closure<Collection<Integer>> block) {
+            def <T> T bar(Closure<Collection<Integer>> block) {
                 block()
             }
 
             @groovy.transform.CompileStatic
-            def use() {
+            def foo() {
                 bar {
                     [1]
                 }
             }
         '''
-
-        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure <java.util.List>\)/
+        assert err =~ /Cannot call <T> \w+#bar\(groovy.lang.Closure <java.util.Collection>\) with arguments \[groovy.lang.Closure <java.util.List>\]/
     }
 
     @Test
     void testClosureReturnType3() {
         assertScript '''
-            public <T> T bar(Closure<? extends Collection<Integer>> block) {
+            def <T> T bar(Closure<? extends Collection<Integer>> block) {
                 block()
             }
 
             @groovy.transform.CompileStatic
-            def use() {
+            def foo() {
                 bar {
                     [1]
                 }
             }
 
-            assert use() == [1]
+            assert foo() == [1]
         '''
     }
 
     @Test
     void testClosureReturnType4() {
         assertScript '''
-            public <T> T bar(Closure<Collection<Integer>> block) {
+            def <T> T bar(Closure<Collection<Integer>> block) {
                 block()
             }
 
             @groovy.transform.CompileStatic
-            def use() {
+            def foo() {
                 bar {
                     (Collection<Integer>) [1]
                 }
             }
 
-            assert use() == [1]
+            assert foo() == [1]
         '''
     }
 
     @Test
     void testClosureReturnType5() {
         assertScript '''
-            public <T> T bar(Closure<Collection<Integer>> block) {
+            def <T> T bar(Closure<Collection<Integer>> block) {
                 block()
             }
 
-            def use() {
+            def foo() {
                 bar {
                     [1] as Collection<Integer>
                 }
             }
 
-            assert use() == [1]
+            assert foo() == [1]
         '''
     }
 }
