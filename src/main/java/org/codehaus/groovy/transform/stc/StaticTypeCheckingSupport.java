@@ -462,9 +462,6 @@ public abstract class StaticTypeCheckingSupport {
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
         if (UNKNOWN_PARAMETER_TYPE == type) return true;
         if (type == toBeAssignedTo) return true;
-        if (toBeAssignedTo.redirect() == STRING_TYPE && type.redirect() == GSTRING_TYPE) {
-            return true;
-        }
         if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
         if (isPrimitiveType(type)) type = getWrapper(type);
         if (NUMBER_TYPES.containsKey(type.redirect()) && NUMBER_TYPES.containsKey(toBeAssignedTo.redirect())) {
@@ -481,7 +478,7 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
-            if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
+            if (toBeAssignedTo.equals(OBJECT_TYPE)) return true;
             if (toBeAssignedTo.isUsingGenerics()) {
                 // perform additional check on generics
                 // ? extends toBeAssignedTo
@@ -490,12 +487,9 @@ public abstract class StaticTypeCheckingSupport {
             }
             return true;
         }
-
-        //SAM check
         if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo)) {
             return true;
         }
-
         return false;
     }
 
@@ -1601,17 +1595,21 @@ public abstract class StaticTypeCheckingSupport {
                 continue;
             }
             if (!compatibleConnection(resolved, connection)) {
-                if (!(resolved.isPlaceholder() || resolved.isWildcard()) &&
-                        !fixedGenericsPlaceHolders.contains(entry.getKey()) &&
-                        compatibleConnection(connection, resolved)) {
-                    // we did for example find T=String and now check against
-                    // T=Object, which fails the first compatibleConnection check
-                    // but since T=Object works for both, the second one will pass
-                    // and we need to change the type for T to the more general one
-                    resolvedMethodGenerics.put(entry.getKey(), connection);
-                } else {
-                    return false;
+                if (!resolved.isPlaceholder() && !resolved.isWildcard()
+                        && !fixedGenericsPlaceHolders.contains(entry.getKey())) {
+                    // GROOVY-5692, GROOVY-10006: multiple witnesses
+                    if (compatibleConnection(connection, resolved)) {
+                        // was "T=Integer" and now is "T=Number" or "T=Object"
+                        resolvedMethodGenerics.put(entry.getKey(), connection);
+                        continue;
+                    } else if (!connection.isPlaceholder() && !connection.isWildcard()) {
+                        // combine "T=Integer" and "T=String" to produce "T=? extends Serializable & Comparable<...>"
+                        ClassNode lub = WideningCategories.lowestUpperBound(connection.getType(), resolved.getType());
+                        resolvedMethodGenerics.put(entry.getKey(), lub.asGenericsType());
+                        continue;
+                    }
                 }
+                return false; // incompatible
             }
         }
         return true;
@@ -1656,13 +1654,10 @@ public abstract class StaticTypeCheckingSupport {
         return type;
     }
 
-    static void applyGenericsConnections(
-            Map<GenericsTypeName, GenericsType> connections,
-            Map<GenericsTypeName, GenericsType> resolvedPlaceholders
-    ) {
-        if (connections == null) return;
-        int count = 0;
+    static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
+        if (!asBoolean(connections)) return;
 
+        int count = 0;
         while (count++ < 10000) {
             boolean checkForMorePlaceholders = false;
             for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
@@ -2081,11 +2076,11 @@ public abstract class StaticTypeCheckingSupport {
      * A DGM-like method which adds support for method calls which are handled
      * specifically by the Groovy compiler.
      */
+    @SuppressWarnings("unused")
     private static class ObjectArrayStaticTypesHelper {
         public static <T> T getAt(T[] arr, int index) {
             return null;
         }
-
         public static <T, U extends T> void putAt(T[] arr, int index, U object) {
         }
     }

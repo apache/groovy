@@ -674,6 +674,20 @@ public class WideningCategories {
         }
 
         @Override
+        public GenericsType asGenericsType() {
+            ClassNode[] ubs;
+            if (upper.equals(OBJECT_TYPE)) {
+                ubs = interfaces; // Object is implicit
+            } else {
+                ubs = new ClassNode[interfaces.length + 1]; ubs[0] = upper;
+                System.arraycopy(interfaces, 0, ubs, 1, interfaces.length);
+            }
+            GenericsType gt = new GenericsType(ClassHelper.makeWithoutCaching("?"), ubs, null);
+            gt.setWildcard(true);
+            return gt;
+        }
+
+        @Override
         public ClassNode getPlainNodeReference() {
             ClassNode[] intf = interfaces==null?null:new ClassNode[interfaces.length];
             if (intf!=null) {

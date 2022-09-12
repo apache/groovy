@@ -323,6 +323,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-10339
+    void testReturnTypeInferenceWithMethodGenerics21() {
+        for (type in ['Character', 'Integer']) {
+            shouldFailWithMessages """
+                Character foo() {
+                }
+                def <T> T bar(T x, T y) {
+                }
+                $type z = bar(foo(), 1)
+            """,
+            'Cannot assign value of type'
+        }
+    }
+
+    // GROOVY-10339
+    void testReturnTypeInferenceWithMethodGenerics22() {
+        for (type in ['Comparable', 'Serializable']) {
+            assertScript """
+                String foo() {
+                }
+                def <T> T bar(T x, T y) {
+                }
+                $type z = bar(foo(), 1)
+            """
+        }
+    }
+
     // GROOVY-10749
     void testReturnTypeInferenceWithMethodGenerics29() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
@@ -2348,7 +2375,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5692, GROOVY-10006
+    // GROOVY-5692, GROOVY-10006
     void testCompatibleArgumentsForPlaceholders1() {
         assertScript '''
             def <T> T test(T one, T two) { }
@@ -2364,7 +2391,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5692
+    // GROOVY-5692
     void testCompatibleArgumentsForPlaceholders2() {
         assertScript '''
             def <T> boolean test(T one, List<T> many) { }
@@ -2518,26 +2545,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 //  ^ lower bound is C (explicit); upper bound is A (implicit)
             """
         }
-    }
-
-    void testIncompatibleGenericsForTwoArguments() {
-        shouldFailWithMessages '''
-            public <T> void printEqual(T arg1, T arg2) {
-                println arg1 == arg2
-            }
-            printEqual(1, 'foo')
-        ''',
-        '#printEqual(T, T) with arguments [int, java.lang.String]'
-    }
-
-    void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
-        shouldFailWithMessages '''
-            public <T> void printEqual(T arg1, List<T> arg2) {
-                println arg1 == arg2
-            }
-            printEqual(1, ['foo'])
-        ''',
-        '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
     // GROOVY-9902: incomplete generics should not stop type checking
