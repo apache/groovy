@@ -127,7 +127,14 @@ final class WideningCategoriesTest extends GenericsTestCase {
         assert lowestUpperBound(b,a) == make(HashSet)
     }
 
-    void testBuildCommonTypeWithTwoInterfacesSharingOneParent() {
+    void testBuildCommonTypeWithTwoInterfacesSharingOneParent0() {
+        ClassNode a = make(Set).plainNodeReference
+        ClassNode b = LIST_TYPE.plainNodeReference
+        assert lowestUpperBound(a,b).toString(false) == 'java.util.Collection <java.lang.Object>'
+        assert lowestUpperBound(b,a).toString(false) == 'java.util.Collection <java.lang.Object>'
+    }
+
+    void testBuildCommonTypeWithTwoInterfacesSharingOneParent1() {
         ClassNode a = make(InterfaceCA)
         ClassNode b = make(InterfaceDA)
         assert lowestUpperBound(a,b) == make(InterfaceA)

@@ -353,18 +353,15 @@ public class WideningCategories {
             if (a.implementsInterface(b)) {
                 return b;
             }
-            // each interface may have one or more "extends", so we must find those
-            // which are common
-            ClassNode[] interfacesFromA = a.getInterfaces();
-            ClassNode[] interfacesFromB = b.getInterfaces();
-            Set<ClassNode> common = new HashSet<>();
-            Collections.addAll(common, interfacesFromA);
-            Set<ClassNode> fromB = new HashSet<>();
-            Collections.addAll(fromB, interfacesFromB);
-            common.retainAll(fromB);
+            if (interfacesImplementedByA == null)
+                interfacesImplementedByA = GeneralUtils.getInterfacesAndSuperInterfaces(a);
+            if (interfacesImplementedByB == null)
+                interfacesImplementedByB = GeneralUtils.getInterfacesAndSuperInterfaces(b);
 
+            // each interface may have one or more "extends", so we must find those which are common
+            List<ClassNode> common = keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB);
             if (common.size() == 1) {
-                return common.iterator().next();
+                return common.get(0);
             } else if (common.size() > 1) {
                 return buildTypeWithInterfaces(a, b, common);
             }
