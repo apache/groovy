@@ -109,7 +109,6 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -672,6 +671,11 @@ public abstract class StaticTypeCheckingSupport {
         return checkCompatibleAssignmentTypes(left, right, rightExpression, true);
     }
 
+    /**
+     * Everything that can be done by {@code castToType} should be allowed for assignment.
+     *
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToType(Object,Class)
+     */
     public static boolean checkCompatibleAssignmentTypes(ClassNode left, ClassNode right, Expression rightExpression, boolean allowConstructorCoercion) {
         boolean rightExpressionIsNull = isNullConstant(rightExpression);
         if (rightExpressionIsNull && !isPrimitiveType(left)) {
@@ -864,7 +868,7 @@ public abstract class StaticTypeCheckingSupport {
                     return !Double.valueOf(val).equals(number);
                 }
                 default: // double
-                    return false; // no possible loose here
+                    return false; // no possible loss here
             }
         }
         return true; // possible loss of precision
@@ -930,7 +934,7 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray() && superOrInterface.isArray()) {
             return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
         }
-        if (GROOVY_OBJECT_TYPE.equals(superOrInterface) && !type.isInterface() && isBeingCompiled(type)) {
+        if (superOrInterface.equals(GROOVY_OBJECT_TYPE) && !type.isInterface() && isBeingCompiled(type)) {
             return true;
         }
         return false;
@@ -1069,7 +1073,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return zero or more results
      */
     public static List<MethodNode> chooseBestMethod(final ClassNode receiver, final Collection<MethodNode> methods, final ClassNode... argumentTypes) {
-        if (!asBoolean(methods)) {
+        if (methods == null || methods.isEmpty()) {
             return Collections.emptyList();
         }
         if (isUsingUncheckedGenerics(receiver)) {
@@ -1655,7 +1659,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
-        if (!asBoolean(connections)) return;
+        if (connections == null || connections.isEmpty()) return;
 
         int count = 0;
         while (count++ < 10000) {
@@ -1947,7 +1951,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         ClassNode newType = type.getPlainNodeReference();
         GenericsType[] gt = type.getGenericsTypes();
-        if (asBoolean(spec)) {
+        if (spec != null) {
             gt = applyGenericsContext(spec, gt);
         }
         newType.setGenericsTypes(gt);

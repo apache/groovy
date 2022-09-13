@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.NotYetImplemented
-
 /**
  * Unit tests for static type checking : ternary operator.
  */
@@ -133,7 +131,41 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10357
+    // GROOVY-10330
+    void testTypeParameterTypeParameter1() {
+        assertScript '''
+            import org.apache.groovy.internal.util.Function
+
+            class C<T> {
+                T y
+                void m(T x, Function<T, T> f) {
+                    assert f.apply(x) == 'foo'
+                }
+                void test(T x, Function<T, T> f) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type.isGenericsPlaceHolder()
+                        assert type.unresolvedName == 'T'
+                    })
+                    def z = true ? x : y
+                    m(z, f)
+                }
+            }
+            new C<String>().test('FOO', { it.toLowerCase() })
+        '''
+    }
+
+    // GROOVY-10363
+    void testTypeParameterTypeParameter2() {
+        assertScript '''
+            def <X extends java.util.concurrent.Callable<Number>> X m(X x, X y) {
+                X ecks = true ? x : y // infers as Callable<Object>
+            }
+            assert m(null,null) == null
+        '''
+    }
+
+    // GROOVY-10357
     void testAbstractMethodDefault() {
         assertScript '''
             import org.apache.groovy.internal.util.Function
@@ -145,10 +177,50 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             def a = new A() {
                 @Override
                 long m(Function<Boolean,Integer> f) {
-                    f(true).longValue()
+                    f.apply(true).longValue()
                 }
             }
             assert a.m() == 1L
+        '''
+    }
+
+    // GROOVY-10358
+    void testCommonInterface() {
+        assertScript '''
+            interface I {
+                int m(int i)
+            }
+            abstract class A implements I {
+            }
+            class B<T> extends A {
+                int m(int i) {
+                    i + 1
+                }
+            }
+            class C<T> extends A {
+                int m(int i) {
+                    i - 1
+                }
+            }
+
+            C<String> c = null; int i = 1
+            int x = (false ? c : new B<String>()).m(i) // Cannot find matching method A#m(int)
+            assert x == 2
+        '''
+    }
+
+    // GROOVY-10603
+    void testCommonInterface2() {
+        assertScript '''
+            interface I {}
+            interface J extends I {}
+            class Foo implements I {}
+            class Bar implements J {}
+
+            I test(Foo x, Bar y) {
+                true ? x : y // Cannot return value of type GroovyObject for method returning I
+            }
+            test(null, null)
         '''
     }
 

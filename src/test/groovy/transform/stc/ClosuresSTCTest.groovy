@@ -321,7 +321,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             { -> x = 123 }
             x.charAt(0) // available in String but not available in Integer
         ''',
-        'Cannot find matching method java.io.Serializable or java.lang.Comparable'
+        'Cannot find matching method (java.io.Serializable or java.lang.Comparable',')#charAt(int)'
     }
 
     // GROOVY-9516

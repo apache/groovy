@@ -906,7 +906,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10230
+    // GROOVY-10230
     void testDiamondInferrenceFromConstructor23() {
         assertScript '''
             class A {
@@ -2417,6 +2417,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10235
     void testCompatibleArgumentsForPlaceholders4() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             import static java.util.concurrent.ConcurrentHashMap.newKeySet
 
@@ -2486,7 +2488,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10100
     void testCompatibleArgumentsForPlaceholders8() {
         assertScript '''
-            import java.util.function.Function
+            import org.apache.groovy.internal.util.Function
 
             class C<T> {
                 T m(Object... args) {
@@ -3222,10 +3224,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10557
     void testReturnTypeInferenceWithClosure2() {
         assertScript '''
+            import org.apache.groovy.internal.util.Function
+
             class C {
-                interface Function<T, R> {
-                    R apply(T t)
-                }
                 def <T> T m(Function<Reader,T> fn)  {
                     new StringReader("").withCloseable { reader ->
                         fn.apply(reader)
@@ -3747,11 +3748,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6731
     void testContravariantMethodResolution() {
         assertScript '''
-            interface Function<T, R> {
-                R apply(T t)
-            }
+            import org.apache.groovy.internal.util.Function
 
-            public <I, O> void transform(Function<? super I, ? extends O> function) {
+            def <I, O> void transform(Function<? super I, ? extends O> function) {
                 function.apply('')
             }
 
@@ -3768,11 +3767,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testContravariantMethodResolutionWithImplicitCoercion() {
         assertScript '''
-            interface Function<T, R> {
-                R apply(T t)
-            }
+            import org.apache.groovy.internal.util.Function
 
-            public <I, O> void transform(Function<? super I, ? extends O> function) {
+            def <I, O> void transform(Function<? super I, ? extends O> function) {
                 function.apply('')
             }
 
@@ -3926,9 +3923,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9635
     void testCovariantReturnTypeInferredFromMethod3() {
         assertScript '''
-            interface Function<T, R> {
-                R apply(T t)
-            }
+            import org.apache.groovy.internal.util.Function
 
             class C<R extends Number> {
                 def <V> V m(Function<C, V> f) { // R from C is confused with R->V from Function
