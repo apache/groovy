@@ -610,7 +610,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
                 it.exit()                                       // <9>
             }
             // end::least_upper_bound_collection_inference[]
-        ''', '[Static type checking] - Cannot find matching method Greeter or Salute#exit()'
+        ''',
+        '[Static type checking] - Cannot find matching method (Greeter or Salute)#exit()'
     }
 
     void testInstanceOfInference() {

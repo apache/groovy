@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : ternary operator.
  */
@@ -185,7 +183,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10358
+    // GROOVY-10358
     void testCommonInterface() {
         assertScript '''
             interface I {
