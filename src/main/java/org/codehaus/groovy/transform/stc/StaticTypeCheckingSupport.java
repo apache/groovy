@@ -468,11 +468,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             return true;
         }
-        if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo)) {
-            return true;
-        }
-
-        return false;
+        return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }
 
     static boolean isVargs(final Parameter[] parameters) {
@@ -644,6 +640,11 @@ public abstract class StaticTypeCheckingSupport {
         return checkCompatibleAssignmentTypes(left, right, rightExpression, true);
     }
 
+    /**
+     * Everything that can be done by {@code castToType} should be allowed for assignment.
+     *
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToType(Object,Class)
+     */
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression, final boolean allowConstructorCoercion) {
         if (!isPrimitiveType(left) && isNullConstant(rightExpression)) {
             return true;
@@ -823,7 +824,7 @@ public abstract class StaticTypeCheckingSupport {
                     return !Double.valueOf(val).equals(number);
                 }
                 default: // double
-                    return false; // no possible loose here
+                    return false; // no possible loss here
             }
         }
         return true; // possible loss of precision
@@ -885,7 +886,7 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray() && superOrInterface.isArray()) {
             return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
         }
-        if (GROOVY_OBJECT_TYPE.equals(superOrInterface) && !type.isInterface() && isBeingCompiled(type)) {
+        if (superOrInterface.equals(GROOVY_OBJECT_TYPE) && !type.isInterface() && isBeingCompiled(type)) {
             return true;
         }
         return false;
@@ -1603,6 +1604,14 @@ public abstract class StaticTypeCheckingSupport {
                     GenericsTypeName name = new GenericsTypeName(oldValue.getName());
                     GenericsType newValue = connections.get(name); // find "V" in T=V
                     if (newValue == oldValue) continue;
+                    if (newValue == null) {
+                        newValue = connections.get(entry.getKey());
+                        if (newValue != null) { // GROOVY-10315, GROOVY-10317
+                            ClassNode o = GenericsUtils.makeClassSafe0(CLASS_Type, oldValue),
+                                      n = GenericsUtils.makeClassSafe0(CLASS_Type, newValue);
+                            newValue = WideningCategories.lowestUpperBound(o,n).getGenericsTypes()[0];
+                        }
+                    }
                     if (newValue == null) {
                         entry.setValue(newValue = applyGenericsContext(connections, oldValue));
                         checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);

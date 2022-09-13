@@ -2392,7 +2392,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10315
     void testShouldUseMethodGenericType14() {
-        for (args in ['m2(), c.m()'/*, 'c.m(), m2()'*/]) {
+        for (args in ['m2(), c.m()', 'c.m(), m2()']) {
             assertScript """
                 class C<T> {
                     def T m() {
@@ -2408,6 +2408,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 test(new C<String>())
             """
         }
+    }
+
+    // GROOVY-10317
+    void testShouldUseMethodGenericType14a() {
+        assertScript '''
+            class B {
+                def <X> X m() {
+                }
+            }
+            class C<Y,Z> {
+                void p(Y y) {
+                }
+                void test() {
+                    def b = new B()
+                    (new C<Z,Z>()).p(b.m())
+                }
+            }
+            new C().test()
+        '''
     }
 
     // GROOVY-10364
