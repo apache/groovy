@@ -215,7 +215,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10062
+    // GROOVY-10062
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
             def <T> T m(T t, ... zeroOrMore) {
@@ -304,7 +305,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10053
+    // GROOVY-10053
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenericsA() {
         ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
             assertScript """
@@ -411,7 +413,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10067
+    // GROOVY-10067
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics11() {
         assertScript '''
             def <N extends Number> N getNumber() {
@@ -480,7 +483,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-8409, GROOVY-10067
+    // GROOVY-8409, GROOVY-10067
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics15() {
         shouldFailWithMessages '''
             List<CharSequence> list = ['x'].collect() // GROOVY-10074
@@ -594,7 +598,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10339
+    // GROOVY-10339
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics21() {
         for (type in ['Character', 'Integer']) {
             shouldFailWithMessages """
@@ -669,7 +674,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10622
+    // GROOVY-10622
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics26() {
         String types = '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -702,7 +708,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10637
+    // GROOVY-10637
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics27() {
         assertScript '''
             class Outer extends groovy.transform.stc.MyBean<Inner> {
@@ -719,7 +726,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10646
+    // GROOVY-10646
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics28() {
         String types = '''
             class Model {
@@ -1082,7 +1090,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10080
+    // GROOVY-10080
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor11() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1235,7 +1244,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
                 T2 t
                 B(T2 t) {
-                    this.t  = t
+                    this.t  = t // Cannot assign value of type A<C,? extends T1> to variable of type T2
                 }
             }
             class C {
@@ -1266,7 +1275,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10228
+    // GROOVY-10228
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor18() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1482,7 +1492,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10633
+    // GROOVY-10633
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor32() {
         assertScript '''
             class A<T, Y> {
@@ -1633,7 +1644,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10342
+    // GROOVY-10342
+    @NotYetImplemented
     void testAssignmentShouldWorkForParameterizedType2() {
         assertScript '''
             class C<T> {
@@ -3128,7 +3140,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10153
+    // GROOVY-10153
+    @NotYetImplemented
     void testCompatibleArgumentsForPlaceholders11() {
         ['A', 'B', 'C'].each { T ->
             assertScript """
@@ -3151,7 +3164,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '#test(int, java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
-    @NotYetImplemented // GROOVY-7720
+    // GROOVY-7720
+    @NotYetImplemented
     void testIncompatibleArgumentsForPlaceholders2() {
         shouldFailWithMessages '''
             class Consumer<T> {
@@ -3216,9 +3230,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             test(new Holder<Object>())
         ''',
-        'Cannot call TypedProperty <String, Object>#eq(java.lang.String) with arguments [groovy.lang.GString]',
-        'Cannot call TypedProperty <String, Unknown>#eq(java.lang.String) with arguments [int]',
-        'Cannot call TypedProperty <Number, Unknown>#eq(java.lang.Number) with arguments [java.lang.String]'
+        'Cannot call TypedProperty','#eq(java.lang.String) with arguments [groovy.lang.GString]',
+        'Cannot find matching method TypedProperty#eq(int)', // chooseBestMethod removes "eq"
+        'Cannot find matching method TypedProperty#eq(java.lang.String)'
     }
 
     // GROOVY-5748
@@ -3616,7 +3630,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10049, GROOVY-10166
+    // GROOVY-10049, GROOVY-10166
     void testShouldFindMethodEvenWithRepeatNames2() {
         assertScript '''
             abstract class A<T extends C> {
@@ -3658,7 +3672,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10322
+    // GROOVY-10322
     void testShouldFindMethodEvenWithRepeatNames4() {
         assertScript '''
             class C<T> {
@@ -3684,29 +3698,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5893
+    // GROOVY-5893
     void testPlusInClosure() {
-        assertScript '''
-            def list = [1, 2, 3]
+        ['def', 'Object', 'Number', 'Integer', 'Comparable'].each { type ->
+            assertScript """
+                List<Integer> list = [1, 2, 3]
 
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
-            })
-            def sum = 0
-            list.each { int i -> sum = sum+i }
-            assert sum == 6
+                int sum = 0
+                list.each { int i -> sum = sum + i }
+                assert sum == 6
 
-            sum = 0
-            list.each { int i -> sum += i }
-            assert sum == 6
+                sum = 0
+                list.each { int i -> sum += i }
+                assert sum == 6
 
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-            })
-            def sumWithInject = list.inject(0, { int x, int y -> x + y })
-            sum = sumWithInject
-            assert sum == 6
-        '''
+                $type sumWithInject = list.inject(0, { int x, int y -> x + y })
+                //    ^^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ U    ^ E  ^^^^^ V
+                assert sumWithInject == 6
+            """
+        }
     }
 
     // GROOVY-10320
@@ -4135,7 +4145,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5839
     void testMethodShadowGenerics() {
-        shouldFailWithMessages '''
+        assertScript '''
             class C<T> {
                 Collection<C<T>> attached = []
                 def <T> void attach(C<T> toAttach) {
@@ -4145,8 +4155,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def c1 = new C<Short>()
             def c2 = new C<Long>()
             c1.attach(c2)
-        ''',
-        'Cannot call <T> C <Short>#attach(C <Short>) with arguments [C <Long>]'
+        '''
     }
 
     void testSuperClassGenerics() {
@@ -4430,7 +4439,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9998
+    // GROOVY-9998
+    @NotYetImplemented
     void testContravariantMethodResolution2() {
         assertScript '''import groovy.transform.*
 
@@ -4685,7 +4695,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign java.util.List <java.lang.Integer> to: java.util.List <CharSequence>'
     }
 
-    @NotYetImplemented // GROOVY-10295
+    // GROOVY-10295
+    @NotYetImplemented
     void testReturnTypeChecking2() {
         assertScript '''
             List<CharSequence> test() {
@@ -4854,7 +4865,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-10055
+    // GROOVY-10055
     void testSelfReferentialTypeParameter2() {
         assertScript '''
             abstract class A<Self extends A<Self>> {
@@ -4914,7 +4925,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
-            interface Supplier<T> { def <T> T get() }
+            import java.util.function.Supplier
 
             def <T> T doGet(Supplier<T> supplier) { supplier.get() }
 
