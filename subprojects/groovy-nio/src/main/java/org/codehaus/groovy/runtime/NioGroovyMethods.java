@@ -1034,7 +1034,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *                which can be used to control subsequent processing
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory or illegal filter combinations are supplied
-     * @see DefaultGroovyMethods#sort(java.util.Collection, groovy.lang.Closure)
+     * @see DefaultGroovyMethods#sort(java.lang.Iterable, groovy.lang.Closure)
      * @see groovy.io.FileVisitResult
      * @see groovy.io.FileType
      * @since 2.3.0
