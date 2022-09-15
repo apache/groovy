@@ -2462,7 +2462,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             selector = objectNode.getNextSibling();
         } else {
             implicitThis = true;
-            objectExpression = VariableExpression.THIS_EXPRESSION;
+            objectExpression = new VariableExpression("this");
             selector = node;
         }
 

@@ -3996,7 +3996,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // e.g. m(1, 2) or m 1, 2
     private MethodCallExpression createMethodCallExpression(final Expression baseExpr, final Expression arguments) {
-        Expression thisExpr = new VariableExpression("this");
+        Expression thisExpr = new VariableExpression(THIS_STR);
         thisExpr.setColumnNumber(baseExpr.getColumnNumber());
         thisExpr.setLineNumber(baseExpr.getLineNumber());
 
