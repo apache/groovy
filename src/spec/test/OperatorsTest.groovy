@@ -421,7 +421,7 @@ assert null*.make == null                             // <3>
         assertScript '''
 // tag::spreaddot_iterable[]
 class Component {
-    Long id
+    Integer id
     String name
 }
 class CompositeObject implements Iterable<Component> {
