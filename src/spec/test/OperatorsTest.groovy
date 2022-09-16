@@ -332,7 +332,7 @@ assert user.@name == 'Bob'                   // <1>
             // tag::constructor_refs[]
             @CompileStatic
             void constructorRefs() {
-                assert [1, 2, 3] == ['1', '2', '3'].stream().map(Integer::new).collect(toList())  // <1>
+                assert [1, 2, 3] == ['1', '2', '3'].stream().map(Integer::valueOf).collect(toList())  // <1>
 
                 def result = [1, 2, 3].stream().toArray(Integer[]::new)                           // <2>
                 assert result instanceof Integer[]
