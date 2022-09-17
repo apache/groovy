@@ -194,8 +194,8 @@ def compileTestExtensionModule = tasks.register("compileTestExtensionModule", Ja
     classpath = files(tasks.named('jar'))
     source fileTree(extModuleFixtureDir.dir("src/main/java"))
     destinationDirectory = extModuleOutputDir.map  { it.dir("classes") }
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = sharedConfiguration.targetJavaVersion.get()
+    targetCompatibility = sharedConfiguration.targetJavaVersion.get()
 }
 
 def testExtensionModuleJar = tasks.register("testExtensionModuleJar", Jar) {

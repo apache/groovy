@@ -1093,9 +1093,7 @@ public class CompilerConfiguration {
             throw new GroovyBugError("Bytecode version '" + getTargetBytecode() + "' is not supported by the compiler");
         }
 
-        if (bytecodeVersion <= Opcodes.V1_8) {
-            return Opcodes.V1_8;
-        } else if (isPreviewFeatures()) {
+        if (isPreviewFeatures()) {
             return bytecodeVersion | Opcodes.V_PREVIEW;
         } else {
             return bytecodeVersion;
