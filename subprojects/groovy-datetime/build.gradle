@@ -24,6 +24,7 @@ dependencies {
     api rootProject // DateTimeExtensions has methods with Closure params...
     testImplementation projects.groovyTest
     testImplementation projects.groovyDateutil
+    testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
 }
 
 groovyLibrary {
