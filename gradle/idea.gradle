@@ -50,8 +50,8 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)idea/ }) {
 
                     // jdk, language level fix
                     def pRoot = node.component.find { it.'@name' == 'ProjectRootManager' }
-                    pRoot.'@languageLevel' = 'JDK_1_8'
-                    pRoot.'@project-jdk-name' = '1.8'
+                    pRoot.'@languageLevel' = 'JDK_11'
+                    pRoot.'@project-jdk-name' = '11'
 
                     // Use git
                     def vcsConfig = node.component.find { it.'@name' == 'VcsDirectoryMappings' }

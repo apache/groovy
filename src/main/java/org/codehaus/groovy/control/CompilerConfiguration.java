@@ -67,19 +67,19 @@ public class CompilerConfiguration {
     public static final String MEM_STUB = "memStub";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
-    public static final String JDK4 = "1.4";
+    @Deprecated public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
-    public static final String JDK5 = "1.5";
+    @Deprecated public static final String JDK5 = "1.5";
     /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. */
-    public static final String JDK6 = "1.6";
+    @Deprecated public static final String JDK6 = "1.6";
     /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. */
-    public static final String JDK7 = "1.7";
+    @Deprecated public static final String JDK7 = "1.7";
     /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. */
-    public static final String JDK8 = "1.8";
+    @Deprecated public static final String JDK8 = "1.8";
     /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. */
-    public static final String JDK9 = "9";
+    @Deprecated public static final String JDK9 =   "9";
     /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
-    public static final String JDK10 = "10";
+    @Deprecated public static final String JDK10 = "10";
     /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
     public static final String JDK11 = "11";
     /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
@@ -100,30 +100,9 @@ public class CompilerConfiguration {
     public static final String JDK19 = "19";
 
     /**
-     * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
-     * @deprecated
-     */
-    @Deprecated
-    public static final String POST_JDK5 = JDK5;
-
-    /**
-     * This constant is for comparing targetBytecode to ensure it is set to an earlier value than JDK 1.5.
-     * @deprecated
-     */
-    @Deprecated
-    public static final String PRE_JDK5 = JDK4;
-
-    /**
      * JDK version to bytecode version mapping.
      */
     public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
-            JDK4,  Opcodes.V1_4,
-            JDK5,  Opcodes.V1_5,
-            JDK6,  Opcodes.V1_6,
-            JDK7,  Opcodes.V1_7,
-            JDK8,  Opcodes.V1_8,
-            JDK9,  Opcodes.V9,
-            JDK10, Opcodes.V10,
             JDK11, Opcodes.V11,
             JDK12, Opcodes.V12,
             JDK13, Opcodes.V13,
@@ -512,7 +491,7 @@ public class CompilerConfiguration {
     public CompilerConfiguration(final CompilerConfiguration configuration) {
         setWarningLevel(configuration.getWarningLevel());
         setTargetDirectory(configuration.getTargetDirectory());
-        setClasspathList(new LinkedList<>(configuration.getClasspath()));
+        setClasspathList(configuration.getClasspath());
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setParameters(configuration.getParameters());
@@ -601,6 +580,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
+    @Deprecated
     public static boolean isPostJDK5(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK5);
     }
@@ -611,6 +591,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
+    @Deprecated
     public static boolean isPostJDK7(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK7);
     }
@@ -621,6 +602,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.8+
      */
+    @Deprecated
     public static boolean isPostJDK8(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK8);
     }
@@ -631,6 +613,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 9+
      */
+    @Deprecated
     public static boolean isPostJDK9(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK9);
     }
@@ -641,6 +624,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 10+
      */
+    @Deprecated
     public static boolean isPostJDK10(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK10);
     }
@@ -831,7 +815,6 @@ public class CompilerConfiguration {
             setDisabledGlobalASTTransformations(disabledTransforms);
         }
     }
-
 
     /**
      * Gets the currently configured warning level. See {@link WarningMessage}
@@ -1070,8 +1053,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets the bytecode compatibility level. The parameter can take one of the values
-     * in {@link #ALLOWED_JDKS}.
+     * Sets the bytecode compatibility level. The parameter can take one of the
+     * values in {@link #ALLOWED_JDKS}.
      *
      * @param version the bytecode compatibility level
      */
@@ -1080,8 +1063,12 @@ public class CompilerConfiguration {
     }
 
     private void setTargetBytecodeIfValid(final String version) {
-        if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(version)) {
-            this.targetBytecode = version;
+        int index = Arrays.binarySearch(ALLOWED_JDKS, !version.startsWith("1") ? "1." + version : version);
+        if (index >= 0) {
+            targetBytecode = ALLOWED_JDKS[index];
+        } else {
+            index = Math.abs(index) - 2; // closest version
+            targetBytecode = ALLOWED_JDKS[Math.max(0, index)];
         }
     }
 
@@ -1096,20 +1083,17 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns the ASM bytecode version
+     * Returns the targeted bytecode (aka Java class file) version number.
      *
-     * @return ASM bytecode version
      * @since 4.0.0
      */
-    public int getBytecodeVersion() {
-        Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
+    public final int getBytecodeVersion() {
+        Integer bytecodeVersion = JDK_TO_BYTECODE_VERSION_MAP.get(getTargetBytecode());
         if (bytecodeVersion == null) {
-            throw new GroovyBugError("Bytecode version [" + targetBytecode + "] is not supported by the compiler");
+            throw new GroovyBugError("Bytecode version '" + getTargetBytecode() + "' is not supported by the compiler");
         }
 
-        if (bytecodeVersion <= Opcodes.V1_8) {
-            return Opcodes.V1_8;
-        } else if (previewFeatures) {
+        if (isPreviewFeatures()) {
             return bytecodeVersion | Opcodes.V_PREVIEW;
         } else {
             return bytecodeVersion;
@@ -1127,7 +1111,7 @@ public class CompilerConfiguration {
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
             return javaVersion;
         }
-        return JDK8;
+        return JDK11;
     }
 
     /**

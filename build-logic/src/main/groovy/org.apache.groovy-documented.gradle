@@ -77,7 +77,7 @@ tasks.withType(Groovydoc).configureEach {
     header = "Groovy ${versions.groovy}"
     footer = 'Copyright &copy; 2003-2022 The Apache Software Foundation. All rights reserved.'
     overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
-    includePrivate = false
+    access = GroovydocAccess.PROTECTED
     link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link 'https://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'

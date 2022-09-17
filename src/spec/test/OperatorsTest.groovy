@@ -332,7 +332,7 @@ assert user.@name == 'Bob'                   // <1>
             // tag::constructor_refs[]
             @CompileStatic
             void constructorRefs() {
-                assert [1, 2, 3] == ['1', '2', '3'].stream().map(Integer::new).collect(toList())  // <1>
+                assert [1, 2, 3] == ['1', '2', '3'].stream().map(Integer::valueOf).collect(toList())  // <1>
 
                 def result = [1, 2, 3].stream().toArray(Integer[]::new)                           // <2>
                 assert result instanceof Integer[]
@@ -421,7 +421,7 @@ assert null*.make == null                             // <3>
         assertScript '''
 // tag::spreaddot_iterable[]
 class Component {
-    Long id
+    Integer id
     String name
 }
 class CompositeObject implements Iterable<Component> {
@@ -612,6 +612,7 @@ assert function(*args,5,6) == 26
         // tag::membership_op[]
         def list = ['Grace','Rob','Emmy']
         assert ('Emmy' in list)                     // <1>
+        assert ('Alex' !in list)                    // <2>
         // end::membership_op[]
     }
 
@@ -621,6 +622,7 @@ assert function(*args,5,6) == 26
         def list2 = ['Groovy 1.8','Groovy 2.0','Groovy 2.3']        // <2>
         assert list1 == list2                                       // <3>
         assert !list1.is(list2)                                     // <4>
+        assert list1 !== list2                                      // <5>
         // end::identity_op[]
     }
 

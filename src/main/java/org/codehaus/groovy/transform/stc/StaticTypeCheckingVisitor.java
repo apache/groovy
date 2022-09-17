@@ -136,6 +136,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -924,7 +925,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (source instanceof ClosureExpression) {
                 inferParameterAndReturnTypesOfClosureOnRHS(target, (ClosureExpression) source);
             } else if (source instanceof MethodReferenceExpression) {
-                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target);
+                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target, (MethodReferenceExpression) source);
 
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambdaExpression);
                 source.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
@@ -1255,19 +1256,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        if ((leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
-                || (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) // GROOVY-6802, GROOVY-6803
-                || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
+    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
+        if (!isConstructorAbbreviation(leftRedirect, rightExpression)
+                // GROOVY-6802, GROOVY-6803: Object, String or [Bb]oolean target
+                || (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect))) {
             return;
         }
 
         // groovy constructor shorthand: A a = [x:2, y:3]
-        ClassNode[] argTypes = getArgumentTypes(args(rightExpression));
+        ClassNode[] argTypes = {getType(rightExpression)};
         checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
         // perform additional type checking on arguments
-        MapExpression mapExpression = (MapExpression) rightExpression;
-        checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
+        checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
@@ -1319,7 +1319,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (rightExpression instanceof ListExpression) {
                 addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
-                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression)rightExpression);
             }
             if (!hasGStringStringError(leftExpressionType, rType, rightExpression) && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
                 checkTypeGenerics(leftExpressionType, rType, rightExpression);
@@ -1378,44 +1378,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      *
      * @param node      the class node for which we will try to find a matching constructor
      * @param arguments the constructor arguments
-     * @deprecated use {@link #checkGroovyStyleConstructor(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.ast.ClassNode[], org.codehaus.groovy.ast.ASTNode)} )}
-     */
-    @Deprecated
-    protected void checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments) {
-        checkGroovyStyleConstructor(node, arguments, typeCheckingContext.getEnclosingClassNode());
-    }
-
-    /**
-     * Checks that a constructor style expression is valid regarding the number
-     * of arguments and the argument types.
-     *
-     * @param node      the class node for which we will try to find a matching constructor
-     * @param arguments the constructor arguments
      */
     protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode source) {
         if (isObjectType(node) || isDynamicTyped(node)) {
             // in that case, we are facing a list constructor assigned to a def or object
             return null;
         }
-        List<ConstructorNode> constructors = node.getDeclaredConstructors();
+        List<? extends MethodNode> constructors = node.getDeclaredConstructors();
         if (constructors.isEmpty() && arguments.length == 0) {
             return null;
         }
-        List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
-        if (constructorList.isEmpty()) {
-            if (isBeingCompiled(node) && arguments.length == 1 && LinkedHashMap_TYPE.equals(arguments[0])) {
+        constructors = findMethod(node, "<init>", arguments);
+        if (constructors.isEmpty()) {
+            if (isBeingCompiled(node) && !node.isInterface() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
                 // there will be a default hash map constructor added later
-                ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-                return cn;
+                return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
             } else {
                 addStaticTypeError("No matching constructor found: " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
                 return null;
             }
-        } else if (constructorList.size() > 1) {
+        } else if (constructors.size() > 1) {
             addStaticTypeError("Ambiguous constructor call " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
             return null;
         }
-        return constructorList.get(0);
+        return constructors.get(0);
     }
 
     /**
@@ -3033,6 +3019,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
+                if (paramTypes.length != samParamTypes.length) { // GROOVY-8499
+                    addError("Incorrect number of parameters. Expected " + samParamTypes.length + " but found " + paramTypes.length, expression);
+                }
             }
         }
     }
@@ -3080,41 +3069,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
-        Parameter[] closureParams = expression.getParameters();
-        if (closureParams == null) return; // no-arg closure
+        Parameter[] closureParams = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(dynamicType(),"it")} : getParametersSafe(expression);
 
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
         List<ClassNode[]> candidates = new LinkedList<>();
         for (ClassNode[] signature : closureSignatures) {
             resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
-            if (signature.length == closureParams.length // same number of arguments
-                    || (signature.length == 1 && closureParams.length == 0) // implicit it
+            if (signature.length == closureParams.length // matching number of parameters
                     || (closureParams.length > signature.length && last(signature).isArray())) { // vargs
                 candidates.add(signature);
             }
         }
+
+        if (candidates.isEmpty() && !closureSignatures.isEmpty()) {
+            String spec = closureSignatures.stream().mapToInt(sig -> sig.length).distinct()
+                                           .sorted().mapToObj(Integer::toString).collect(Collectors.joining(" or "));
+            addError("Incorrect number of parameters. Expected " + spec + " but found " + closureParams.length, expression);
+        }
+
         if (candidates.size() > 1) {
             for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
                 ClassNode[] inferred = candIt.next();
-                for (int i = 0, n = closureParams.length; i < n; i += 1) {
-                    Parameter closureParam = closureParams[i];
+                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
                     ClassNode declaredType = closureParam.getOriginType();
-                    ClassNode inferredType;
-                    if (i < inferred.length - 1 || inferred.length == n) {
-                        inferredType = inferred[i];
-                    } else {
-                        ClassNode lastInferred = inferred[inferred.length - 1];
-                        if (lastInferred.isArray()) {
-                            inferredType = lastInferred.getComponentType();
-                        } else {
-                            candIt.remove();
-                            continue;
-                        }
-                    }
-                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, i == (n - 1))) {
-                        candIt.remove();
-                    }
-                }
+                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, false)) candIt.remove();
+                }, () -> {
+                    candIt.remove();
+                });
             }
             if (candidates.size() > 1 && resolverClass instanceof ClassExpression) {
                 candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
@@ -3123,28 +3104,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addError("Ambiguous prototypes for closure. More than one target method matches. Please use explicit argument types.", expression);
             }
         }
+
         if (candidates.size() == 1) {
             ClassNode[] inferred = candidates.get(0);
-            if (closureParams.length == 0 && inferred.length == 1) {
+            if (hasImplicitParameter(expression) && inferred.length == 1) {
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferred);
             } else {
-                for (int i = 0, n = closureParams.length; i < n; i += 1) {
-                    Parameter closureParam = closureParams[i];
-                    ClassNode inferredType = OBJECT_TYPE;
-                    if (i < inferred.length - 1 || inferred.length == n) {
-                        inferredType = inferred[i];
-                    } else {
-                        ClassNode lastInferred = inferred[inferred.length - 1];
-                        if (lastInferred.isArray()) {
-                            inferredType = lastInferred.getComponentType();
-                        } else {
-                            addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + n, expression);
-                        }
-                    }
-                    checkParamType(closureParam, inferredType, i == n-1, false);
+                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
+                    checkParamType(closureParam, inferredType, false, false);
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
+                }, () -> {
+                    addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
+                });
+            }
+        }
+    }
+
+    private static void checkClosureSignature(final Parameter[] declared, final ClassNode[] inferred, final BiConsumer<Parameter,ClassNode> consumer, final Runnable reject) {
+        for (int i = 0, j = inferred.length-1, n = declared.length; i < n; i += 1) {
+            ClassNode declaredType = declared[i].getOriginType();
+            ClassNode inferredType = inferred[Math.min(i, j)];
+            if (isDynamicTyped(inferredType)) continue;
+            if (i >= j) { // at or past end
+                if (inferredType.isArray()) {
+                    if (n > inferred.length || !declaredType.isArray() && !isObjectType(declaredType)) {
+                        inferredType = inferredType.getComponentType(); // spread array out
+                    }
+                } else if (i > j) {
+                    reject.run();
+                    continue;
                 }
             }
+            consumer.accept(declared[i], inferredType);
         }
     }
 
@@ -3684,7 +3675,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     newArgumentExpressions.add(argumentExpression);
                 } else {
                     methodReferencePositions.add(i);
-                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType));
+                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType, (MethodReferenceExpression) argumentExpression));
                 }
             }
         }
@@ -3700,14 +3691,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType) {
-        int nParameters = findSAM(functionalInterfaceType).getParameters().length;
-        Parameter[] parameters = new Parameter[nParameters];
-        for (int i = 0; i < nParameters; i += 1) {
-            parameters[i] = new Parameter(dynamicType(), "p" + i);
+    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType, final MethodReferenceExpression methodReference) {
+        Parameter[] parameters = findSAM(functionalInterfaceType).getParameters();
+        int nParameters = parameters.length;
+        if (nParameters > 0) {
+            ClassNode firstParamType = dynamicType();
+            // GROOVY-10734: Type::instanceMethod has implied first param
+            List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
+            if (candidates != null && !candidates.isEmpty()) {
+                ClassNode objExpType = getType(methodReference.getExpression());
+                if (isClassClassNodeWrappingConcreteType(objExpType)
+                        && candidates.stream().allMatch(mn -> !mn.isStatic())) {
+                    firstParamType = objExpType.getGenericsTypes()[0].getType();
+                }
+            }
+            parameters = new Parameter[nParameters];
+            for (int i = 0; i < nParameters; i += 1) {
+                parameters[i] = new Parameter(i == 0 ? firstParamType : dynamicType(), "p" + i);
+            }
         }
-
-        return new LambdaExpression(parameters, EmptyStatement.INSTANCE);
+        return new LambdaExpression(parameters, GENERATED_EMPTY_STATEMENT);
     }
 
     /**
@@ -4542,7 +4545,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (isArrayOp(op)) {
-            if (isOrImplements(left, MAP_TYPE) && isStringType(right)) { // GROOVY-5700, GROOVY-8788
+            if (isOrImplements(left, MAP_TYPE) && (isStringType(right) || isGStringOrGStringStringLUB(right))) { // GROOVY-5700, GROOVY-6668, GROOVY-8212, GROOVY-8788
                 PropertyExpression prop = propX(leftExpression, rightExpression); // m['xx'] -> m.xx
                 return existsProperty(prop, !typeCheckingContext.isTargetOfEnclosingAssignment(expr))
                             ? getType(prop) : getTypeForMapPropertyExpression(left, prop);
@@ -5616,7 +5619,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param samType     the target type for the argument expression
      * @return SAM type augmented using information from the argument expression
      */
-    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType) {
+    private static ClassNode convertClosureTypeToSAMType(Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType) {
         Map<GenericsTypeName, GenericsType> samTypeConnections = GenericsUtils.extractPlaceholders(samType);
         samTypeConnections.replaceAll((xx, gt) -> // GROOVY-9762, GROOVY-9803: reduce "? super T" to "T"
             Optional.ofNullable(gt.getLowerBound()).map(GenericsType::new).orElse(gt)
@@ -5624,9 +5627,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
 
         Parameter[] parameters = sam.getParameters();
-        if (parameters.length > 0
-                && expression instanceof MethodPointerExpression
-                && GenericsUtils.hasUnresolvedGenerics(closureReturnType)) {
+        if (parameters.length > 0 && expression instanceof MethodPointerExpression) {
             // try to resolve referenced method type parameters in return type
             MethodPointerExpression mp = (MethodPointerExpression) expression;
             List<MethodNode> candidates = mp.getNodeMetaData(MethodNode.class);
@@ -5634,7 +5635,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
                 ClassNode[] matchTypes = candidates.stream()
                         .map(candidate -> collateMethodReferenceParameterTypes(mp, candidate))
-                        .filter(candidate -> checkSignatureSuitability(candidate, paramTypes))
+                        .filter(signature -> checkSignatureSuitability(signature, paramTypes))
                         .findFirst().orElse(null); // TODO: order signatures by param distance
                 if (matchTypes != null) {
                     Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
@@ -5646,6 +5647,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     closureReturnType = applyGenericsContext(connections, closureReturnType);
                     // apply known generics connections to the SAM's placeholders in the return type
                     closureReturnType = applyGenericsContext(samTypeConnections, closureReturnType);
+
+                    expression = new ClosureExpression(Arrays.stream(matchTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new), null);
                 }
             }
         }
@@ -5655,7 +5658,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // repeat the same for each parameter given in the ClosureExpression
         if (parameters.length > 0 && expression instanceof ClosureExpression) {
-            return closureType; // TODO
+            ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
+            int i = 0;
+            // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
+            for (Parameter p : getParametersSafe((ClosureExpression) expression))
+                if (!p.isDynamicTyped()) extractGenericsConnections(samTypeConnections, p.getType(), paramTypes[i++]);
         }
 
         return applyGenericsContext(samTypeConnections, samType.redirect());
@@ -5686,8 +5693,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return false;
         }
         for (int i = 0; i < n; i += 1) {
-            // for method closure, SAM parameters act like arguments
-            if (!isAssignableTo(providerTypes[i], receiverTypes[i])) {
+            // for method closure SAM parameters act like arguments
+            if (!isAssignableTo(providerTypes[i], receiverTypes[i])
+                    && !providerTypes[i].isGenericsPlaceHolder()) {
                 return false;
             }
         }

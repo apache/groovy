@@ -23,7 +23,6 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 final class Groovy9413 {
-// .\gradlew --no-daemon --max-workers 2 :test --tests groovy.bugs.Groovy9413 --debug-jvm
     @Test
     void testInterfaceGenerics() {
         def config = new CompilerConfiguration(
@@ -38,49 +37,48 @@ final class Groovy9413 {
                 import java.util.Map;
 
                 interface APSBus {
-                  void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
+                    void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
                 }
 
                 interface APSBusRouter {
-                  boolean send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
+                    boolean send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
                 }
 
                 interface APSHandler<T> {
-                  void handle(T value);
+                    void handle(T value);
                 }
 
                 interface APSResult<T> {
                 }
 
                 class APSServiceTracker<Service> {
-                  void withService(WithService<Service> withService, Object... args) throws Exception {
-                  }
+                    void withService(WithService<Service> withService, Object... args) throws Exception {
+                    }
                 }
 
                 interface WithService<Service> {
-                  void withService(Service service, Object... args) throws Exception;
+                    void withService(Service service, Object... args) throws Exception;
                 }
             '''
             def b = new File(parentDir, 'B.groovy')
             b.write '''
                 @groovy.transform.CompileStatic
                 class One9413 implements APSBus {
+                    private APSServiceTracker<APSBusRouter> busRouterTracker
 
-                  private APSServiceTracker<APSBusRouter> busRouterTracker
-
-                  @Override
-                  void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler) {
-                    busRouterTracker.withService() { APSBusRouter busRouter ->
-                      busRouter.send(target, message, resultHandler)
+                    @Override
+                    void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler) {
+                        busRouterTracker.withService({ APSBusRouter busRouter, Object[] arguments ->
+                            busRouter.send(target, message, resultHandler)
+                        })
                     }
-                  }
                 }
 
                 @groovy.transform.CompileStatic
                 class Two9413 implements APSBusRouter {
-                  @Override
-                  boolean send(String target, Map<String, Object> payload, APSHandler<APSResult<?>> resultHandler) {
-                  }
+                    @Override
+                    boolean send(String target, Map<String, Object> payload, APSHandler<APSResult<?>> resultHandler) {
+                    }
                 }
             '''
 
@@ -89,8 +87,8 @@ final class Groovy9413 {
             cu.addSources(a, b)
             cu.compile()
         } finally {
-            parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
         }
     }
 }

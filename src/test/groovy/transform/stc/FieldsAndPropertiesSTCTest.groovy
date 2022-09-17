@@ -589,6 +589,17 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5797
+    void testReadMapProperty2() {
+        assertScript '''
+            def m(Map foo) {
+                def map = [baz: 1]
+                map[ foo.bar ]
+            }
+            assert m(bar:'baz') == 1
+        '''
+    }
+
     void testWriteMapProperty() {
         assertScript '''
             def map = [:]

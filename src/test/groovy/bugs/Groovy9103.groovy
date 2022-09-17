@@ -21,8 +21,8 @@ package groovy.bugs
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-// TODO: add JVM option `--illegal-access=deny` when all warnings fixed
 final class Groovy9103 {
 
     @Test
@@ -67,7 +67,7 @@ final class Groovy9103 {
     @Test
     void testClone3() {
         Object obj = new Tuple1('abc')
-        assert obj.clone()
+        assert obj.clone().getClass() === Tuple1.class
     }
 
     @Test
@@ -77,5 +77,71 @@ final class Groovy9103 {
             int[] cloned = nums.clone()
             assert nums == cloned
         '''
+    }
+
+    @Test // GROOVY-10747
+    void testClone5() {
+        ['Object', 'Dolly'].each { typeName ->
+            assertScript """
+                class Dolly implements Cloneable {
+                    String name
+
+                    @Override
+                    public ${typeName} clone() {
+                        return super.clone()
+                    }
+                }
+
+                def dolly = new Dolly(name: "The Sheep")
+                def cloned = dolly.clone()
+                assert cloned instanceof Dolly
+            """
+        }
+    }
+
+    @Test // GROOVY-10747
+    void testClone6() {
+        shouldFail(CloneNotSupportedException, '''
+            class Dolly {
+                String name
+            }
+
+            def dolly = new Dolly(name: "The Sheep")
+            dolly.clone()
+        ''')
+    }
+
+    @Test
+    void testClone7() {
+        ['Object', 'Dolly'].each { typeName ->
+            assertScript """
+                import org.codehaus.groovy.runtime.InvokerHelper
+                class Dolly implements Cloneable {
+                    String name
+
+                    @Override
+                    public ${typeName} clone() {
+                        return super.clone()
+                    }
+                }
+
+                def dolly = new Dolly(name: "The Sheep")
+                def cloned = InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
+                assert cloned instanceof Dolly
+            """
+        }
+    }
+
+    @Test
+    void testClone8() {
+        shouldFail(CloneNotSupportedException, '''
+            import org.codehaus.groovy.runtime.InvokerHelper
+            class Dolly {
+                String name
+            }
+
+            def dolly = new Dolly(name: "The Sheep")
+            InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
+        ''')
     }
 }

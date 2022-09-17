@@ -1199,6 +1199,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * 'Case' implementation for iterable types which tests if the 'switch'
+     * operand is contained in any of the 'case' values.
+     * For example:
+     * <pre class="groovyTestCase">Iterable it = {[1,3,5].iterator()}
+     * switch( 3 ) {
+     *   case it:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }
+     *
+     * //GROOVY-7919
+     * assert 1 in it
+     * assert 2 !in it
+     * </pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the caseValue is deemed to contain the switchValue
+     * @see #contains(Iterable,Object)
+     * @since 5.0.0
+     */
+    public static boolean isCase(Iterable caseValue, Object switchValue) {
+        return contains(caseValue, switchValue);
+    }
+
+    /**
      * 'Case' implementation for maps which tests the groovy truth
      * value obtained using the 'switch' operand as key.
      * For example:
@@ -1550,7 +1578,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the modified Iterator
      * @since 1.5.5
      */
-    public static <T> Iterator<T> unique(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> Iterator<T> unique(Iterator<T> self, Comparator<? super T> comparator) {
         return uniqueItems(new IteratorIterableAdapter<>(self), comparator).listIterator();
     }
 
@@ -1614,7 +1642,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #unique(java.util.Collection, boolean, java.util.Comparator)
      * @since 1.0
      */
-    public static <T> Collection<T> unique(Collection<T> self, Comparator<T> comparator) {
+    public static <T> Collection<T> unique(Collection<T> self, Comparator<? super T> comparator) {
         return unique(self, true, comparator) ;
     }
 
@@ -1665,7 +1693,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #unique(java.util.Collection, boolean, java.util.Comparator)
      * @since 2.4.0
      */
-    public static <T> List<T> unique(List<T> self, Comparator<T> comparator) {
+    public static <T> List<T> unique(List<T> self, Comparator<? super T> comparator) {
         return (List<T>) unique((Collection<T>) self, true, comparator);
     }
 
@@ -1716,7 +1744,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return self      the collection without duplicates
      * @since 1.8.1
      */
-    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Comparator<T> comparator) {
+    public static <T> Collection<T> unique(Collection<T> self, boolean mutate, Comparator<? super T> comparator) {
         List<T> answer = uniqueItems(self, comparator);
         if (mutate) {
             self.clear();
@@ -1725,7 +1753,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return mutate ? self : answer;
     }
 
-    private static <T> List<T> uniqueItems(Iterable<T> self, Comparator<T> comparator) {
+    private static <T> List<T> uniqueItems(Iterable<T> self, Comparator<? super T> comparator) {
         List<T> answer = new ArrayList<>();
         for (T t : self) {
             boolean duplicated = false;
@@ -1788,7 +1816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return self      the List without duplicates
      * @since 2.4.0
      */
-    public static <T> List<T> unique(List<T> self, boolean mutate, Comparator<T> comparator) {
+    public static <T> List<T> unique(List<T> self, boolean mutate, Comparator<? super T> comparator) {
         return (List<T>) unique((Collection<T>) self, mutate, comparator);
     }
 
@@ -1828,9 +1856,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private boolean exhausted;
         private E next;
 
-        private ToUniqueIterator(Iterator<E> delegate, Comparator<E> comparator) {
+        private ToUniqueIterator(Iterator<E> delegate, Comparator<? super E> comparator) {
+            this.seen = new TreeSet<>(comparator);
             this.delegate = delegate;
-            seen = new TreeSet<>(comparator);
             advance();
         }
 
@@ -1875,7 +1903,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator with no duplicate items
      * @since 2.4.0
      */
-    public static <T> Iterator<T> toUnique(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> Iterator<T> toUnique(Iterator<T> self, Comparator<? super T> comparator) {
         return new ToUniqueIterator<>(self, comparator);
     }
 
@@ -1936,7 +1964,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Collection of non-duplicate items
      * @since 2.4.0
      */
-    public static <T> Collection<T> toUnique(Iterable<T> self, Comparator<T> comparator) {
+    public static <T> Collection<T> toUnique(Iterable<T> self, Comparator<? super T> comparator) {
         Collection<T> result = createSimilarCollection(self);
         addAll(result, toUnique(self.iterator(), comparator));
         return result;
@@ -1987,7 +2015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the List of non-duplicate items
      * @since 2.4.0
      */
-    public static <T> List<T> toUnique(List<T> self, Comparator<T> comparator) {
+    public static <T> List<T> toUnique(List<T> self, Comparator<? super T> comparator) {
         return (List<T>) toUnique((Iterable<T>) self, comparator);
     }
 
@@ -2130,7 +2158,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *        If {@code null}, the Comparable natural ordering of the elements will be used.
      * @return the unique items from the array
      */
-    public static <T> T[] toUnique(T[] self, Comparator<T> comparator) {
+    public static <T> T[] toUnique(T[] self, Comparator<? super T> comparator) {
         Collection<T> items = toUnique(new ArrayIterable<>(self), comparator);
         return items.toArray(createSimilarArray(self, items.size()));
     }
@@ -2213,7 +2241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.0
      */
-    public static <T> T each(T self, Closure closure) {
+    public static <T> T each(T self, @ClosureParams(value=FromString.class, options="?") Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
         return self;
     }
@@ -2260,10 +2288,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.0
      */
-    public static <T> T eachWithIndex(T self, /*@ClosureParams(value=FromString.class, options="?,Integer")*/ Closure closure) {
+    public static <T> T eachWithIndex(T self, @ClosureParams(value=FromString.class, options="?,Integer") Closure closure) {
         final Object[] args = new Object[2];
         int counter = 0;
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
             args[0] = iter.next();
             args[1] = counter++;
             closure.call(args);
@@ -2281,7 +2309,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Iterable
      * @since 2.3.0
      */
-    public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         eachWithIndex(self.iterator(), closure);
         return self;
     }
@@ -2296,7 +2324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Iterator (now exhausted)
      * @since 2.3.0
      */
-    public static <T> Iterator<T> eachWithIndex(Iterator<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> Iterator<T> eachWithIndex(Iterator<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         final Object[] args = new Object[2];
         int counter = 0;
         while (self.hasNext()) {
@@ -2317,7 +2345,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Collection
      * @since 2.4.0
      */
-    public static <T> Collection<T> eachWithIndex(Collection<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> Collection<T> eachWithIndex(Collection<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (Collection<T>) eachWithIndex((Iterable<T>) self, closure);
     }
 
@@ -2331,7 +2359,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self List
      * @since 2.4.0
      */
-    public static <T> List<T> eachWithIndex(List<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> List<T> eachWithIndex(List<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (List<T>) eachWithIndex((Iterable<T>) self, closure);
     }
 
@@ -2345,7 +2373,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Set
      * @since 2.4.0
      */
-    public static <T> Set<T> eachWithIndex(Set<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> Set<T> eachWithIndex(Set<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (Set<T>) eachWithIndex((Iterable<T>) self, closure);
     }
 
@@ -2359,7 +2387,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self SortedSet
      * @since 2.4.0
      */
-    public static <T> SortedSet<T> eachWithIndex(SortedSet<T> self, @ClosureParams(value=FromString.class, options="T,java.lang.Integer") Closure closure) {
+    public static <T> SortedSet<T> eachWithIndex(SortedSet<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (SortedSet<T>) eachWithIndex((Iterable<T>) self, closure);
     }
 
@@ -7011,7 +7039,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(Iterator, java.util.Comparator)
      * @since 2.2.0
      */
-    public static <T> T min(Iterable<T> self, Comparator<T> comparator) {
+    public static <T> T min(Iterable<T> self, Comparator<? super T> comparator) {
         return min(self.iterator(), comparator);
     }
 
@@ -7023,7 +7051,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the minimum value
      * @since 1.5.5
      */
-    public static <T> T min(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> T min(Iterator<T> self, Comparator<? super T> comparator) {
         T answer = null;
         boolean first = true;
         while (self.hasNext()) {
@@ -7047,7 +7075,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(Iterator, java.util.Comparator)
      * @since 1.5.5
      */
-    public static <T> T min(T[] self, Comparator<T> comparator) {
+    public static <T> T min(T[] self, Comparator<? super T> comparator) {
         return min(new ArrayIterator<>(self), comparator);
     }
 
@@ -7452,7 +7480,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #max(Iterator, Comparator)
      * @since 2.2.0
      */
-    public static <T> T max(Iterable<T> self, Comparator<T> comparator) {
+    public static <T> T max(Iterable<T> self, Comparator<? super T> comparator) {
         return max(self.iterator(), comparator);
     }
 
@@ -7464,7 +7492,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the maximum value
      * @since 1.5.5
      */
-    public static <T> T max(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> T max(Iterator<T> self, Comparator<? super T> comparator) {
         T answer = null;
         while (self.hasNext()) {
             T value = self.next();
@@ -7484,7 +7512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #max(Iterator, Comparator)
      * @since 1.5.5
      */
-    public static <T> T max(T[] self, Comparator<T> comparator) {
+    public static <T> T max(T[] self, Comparator<? super T> comparator) {
         return max(new ArrayIterator<>(self), comparator);
     }
 
@@ -9615,7 +9643,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a sorted List
      * @since 2.4.0
      */
-    public static <T> List<T> toSorted(Iterable<T> self, Comparator<T> comparator) {
+    public static <T> List<T> toSorted(Iterable<T> self, Comparator<? super T> comparator) {
         List<T> list = toList(self);
         list.sort(comparator);
         return list;
@@ -9674,7 +9702,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted items as an Iterator
      * @since 2.4.0
      */
-    public static <T> Iterator<T> toSorted(Iterator<T> self, Comparator<T> comparator) {
+    public static <T> Iterator<T> toSorted(Iterator<T> self, Comparator<? super T> comparator) {
         return toSorted(toList(self), comparator).listIterator();
     }
 
@@ -9728,7 +9756,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted array
      * @since 2.4.0
      */
-    public static <T> T[] toSorted(T[] self, Comparator<T> comparator) {
+    public static <T> T[] toSorted(T[] self, Comparator<? super T> comparator) {
         T[] answer = self.clone();
         Arrays.sort(answer, comparator);
         return answer;
@@ -12889,7 +12917,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Collection as an intersection of both collections
      * @since 2.5.0
      */
-    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right, Comparator<T> comparator) {
+    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right, Comparator<? super T> comparator) {
         if (left.isEmpty() || right.isEmpty())
             return createSimilarCollection(left, 0);
 
@@ -12939,7 +12967,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Collection as an intersection of both iterables
      * @since 2.5.0
      */
-    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, Comparator<T> comparator) {
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, Comparator<? super T> comparator) {
         return intersect(asCollection(left), asCollection(right), comparator);
     }
 
@@ -13005,7 +13033,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List as an intersection of a List and an Iterable
      * @since 2.5.0
      */
-    public static <T> List<T> intersect(List<T> left, Iterable<T> right, Comparator<T> comparator) {
+    public static <T> List<T> intersect(List<T> left, Iterable<T> right, Comparator<? super T> comparator) {
         return (List<T>) intersect((Collection<T>) left, asCollection(right), comparator);
     }
 
@@ -13041,7 +13069,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Set as an intersection of a Set and an Iterable
      * @since 2.5.0
      */
-    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right, Comparator<T> comparator) {
+    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
         return (Set<T>) intersect((Collection<T>) left, asCollection(right), comparator);
     }
 
@@ -13077,7 +13105,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Set as an intersection of a SortedSet and an Iterable
      * @since 2.5.0
      */
-    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right, Comparator<T> comparator) {
+    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
         return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right), comparator);
     }
 
@@ -13675,7 +13703,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 4.0.0
      */
     @SuppressWarnings("unchecked")
-    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<T> comparator) {
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<? super T> comparator) {
         Collection<T> self1 = asCollection(self);
         Collection<?> removeMe1 = asCollection(removeMe);
         Collection<T> ansCollection = createSimilarCollection(self1);

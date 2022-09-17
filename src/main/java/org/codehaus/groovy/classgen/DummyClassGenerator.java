@@ -40,7 +40,7 @@ import static org.objectweb.asm.Opcodes.NEW;
 
 /**
  * To generate a class that has all the fields and methods, except that fields are not initialized
- * and methods are empty. It's intended for being used as a place holder during code generation
+ * and methods are empty. It's intended for being used as a placeholder during code generation
  * of reference to the "this" class itself.
  */
 public class DummyClassGenerator extends ClassGenerator {

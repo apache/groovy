@@ -357,7 +357,7 @@ Groovy 3.0.0 introduces the Elvis operator, for example:
 --------------------------------------
 import groovy.transform.ToString
 
-@ToString
+@ToString(includePackage = false)
 class Element {
     String name
     int atomicNumber
@@ -798,6 +798,7 @@ to calling `contains`, like in the following example:
 include::../test/OperatorsTest.groovy[tags=membership_op,indent=0]
 ----
 <1> equivalent to calling `list.contains('Emmy')` or `list.isCase('Emmy')`
+<2> membership negation equivalent to calling `!list.contains('Emmy')` or `!list.isCase('Emmy')`
 
 === Identity operator
 
@@ -810,8 +811,9 @@ include::../test/OperatorsTest.groovy[tags=identity_op,indent=0]
 ----
 <1> Create a list of strings
 <2> Create another list of strings containing the same elements
-<3> using `==`, we test object equality
-<4> but using `is`, we can check that references are distinct
+<3> using `==`, we test object equality, equivalent to `list1.equals(list2)` in Java
+<4> using `is`, we can check that references are distinct,  equivalent to `list1 == list2` in Java
+<5> using `===` or `!==` (supported and recommended since Groovy 3.0.0), we can also check whether references are distinct or not, equivalent to `list1 == list2` and `list1 != list2` in Java
 
 === Coercion operator
 
@@ -1004,4 +1006,3 @@ Here is a complete list of the operators and their corresponding methods:
 | `~a`
 | a.bitwiseNegate()
 |====
-

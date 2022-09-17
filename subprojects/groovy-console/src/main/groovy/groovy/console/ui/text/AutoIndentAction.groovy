@@ -36,16 +36,14 @@ class AutoIndentAction extends AbstractAction {
         def cursorPos = inputArea.getCaretPosition()
         int rowNum = rootElement.getElementIndex(cursorPos)
         def rowElement = rootElement.getElement(rowNum)
-        int startOffset = rowElement.getStartOffset()
-        int endOffset = rowElement.getEndOffset()
-        String rowContent = inputArea.document.getText(startOffset, endOffset - startOffset);
-        String contentBeforeCursor = inputArea.document.getText(startOffset, cursorPos - startOffset);
+        int startOffset = rowElement.startOffset, endOffset = rowElement.endOffset
+        String rowContent = inputArea.document.getText(startOffset, endOffset - startOffset)
+        String contentBeforeCursor = inputArea.document.getText(startOffset, cursorPos - startOffset)
+
         String whitespaceStr = ''
-        def matcher = (rowContent =~ /(?m)^(\s*).*\n$/)
-        matcher.each { all, ws ->
+        rowContent.eachMatch(~/(?m)^(\s*).*\n$/) { all, ws ->
             whitespaceStr = ws
         }
-
         if (contentBeforeCursor ==~ /(\s)*/) {
             whitespaceStr = contentBeforeCursor
         }

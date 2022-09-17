@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.lang.GroovyObjectHelper;
+import org.apache.groovy.runtime.ObjectUtil;
 import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -39,7 +40,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
-import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -1128,15 +1128,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
 
-            if (receiverClass.isArray()) {
-                if (methodName.equals("clone") && arguments.length == 0) {
-                    try {
-                        return (Object[]) ArrayUtil.getCloneArrayMethodHandle().invokeExact((Object[]) object);
-                    } catch (Throwable t) {
-                        throw new GroovyRuntimeException(t);
-                    }
+            if (methodName.equals("clone") && arguments.length == 0) {
+                try {
+                    return ObjectUtil.cloneObject(object);
+                } catch (Throwable t) {
+                    throw new GroovyRuntimeException(t);
                 }
-                throw mme;
             }
 
             boolean spyFound = (lookup != null);

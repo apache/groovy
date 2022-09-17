@@ -19,26 +19,16 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GroovyShell;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
 
-public class InterfaceConversionMapTest {
+public final class InterfaceConversionMapTest {
 
-    private final GroovyShell shell;
-
-    public InterfaceConversionMapTest() {
-        final CompilerConfiguration cc = new CompilerConfiguration();
-        cc.setTargetBytecode(CompilerConfiguration.JDK8);
-        shell = new GroovyShell(cc);
-    }
-
-    // GROOVY-7330
-    @Test
+    @Test // GROOVY-7330
     public void testMapToProxy() {
-        final Map map = (Map) shell.evaluate("[x: {10}, y: {20}]");
+        final Map map = (Map) new GroovyShell().evaluate("[x: {10}, y: {20}]");
         final SomeInterface si = DefaultGroovyMethods.asType(map, SomeInterface.class);
         Assert.assertEquals(20, si.y());
         Assert.assertEquals(10, si.x());

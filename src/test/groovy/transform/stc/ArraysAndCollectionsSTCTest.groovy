@@ -263,14 +263,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferredMapDotProperty() {
-        assertScript '''
-            def map = [:]
-            map['a'] = 1
-            map.b = 2
-        '''
-    }
-
     void testInlineMap() {
         assertScript '''
             Map map = [a:1, b:2]
@@ -769,18 +761,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5797
-    void testShouldAllowExpressionAsMapPropertyKey() {
-        assertScript '''
-            def m( Map param ) {
-                def map = [ tim:4 ]
-                map[ param.key ]
-            }
-
-            assert m( [ key: 'tim' ] ) == 4
-        '''
-    }
-
     // GROOVY-5793
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
         assertScript '''
@@ -1097,5 +1077,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             Map<String,Integer> map = [1:2]
         ''',
         'Cannot assign java.util.LinkedHashMap<java.lang.Integer, java.lang.Integer> to: java.util.Map<java.lang.String, java.lang.Integer>'
+    }
+
+    // GROOVY-8136
+    void testInterfaceThatExtendsMapInitializedByMapLiteral() {
+        shouldFailWithMessages '''
+            interface MVM<K, V> extends Map<K, List<V>> { }
+            MVM map = [:] // no STC error; fails at runtime
+        ''',
+        'No matching constructor found'
     }
 }

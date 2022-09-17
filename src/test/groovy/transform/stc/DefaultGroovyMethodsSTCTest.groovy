@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : default groovy methods.
  */
@@ -218,6 +220,33 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7976, GROOVY-7992
+    void testSortMethodsWithComparatorAcceptingSuperclass() {
+        assertScript '''
+            List<Number> numbers = [2,1,3]
+            numbers.sort(new Comparator<Object>() {
+                int compare(o1, o2) {
+                    o1.toString() <=> o2.toString()
+                }
+            })
+            assert numbers == [1,2,3]
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-7992
+    void testMaxWithComparatorAcceptingSuperclass() {
+        assertScript '''
+            List<Number> numbers = [1,2,3]
+            // Cannot assign value of type Object to variable of type Number
+            Number highest = numbers.max(new Comparator<Object>() {
+                int compare(o1, o2) {
+                    o1.hashCode() <=> o2.hashCode()
+                }
+            })
+            assert highest == 3
+        '''
+    }
+
     // GROOVY-8205
     void testEachOnEnumValues() {
         assertScript '''
@@ -337,5 +366,47 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
             test()
         '''
+    }
+
+    // GROOVY-6668, GROOVY-8212
+    void testMapGetAtVsObjectGetAt2() {
+        assertScript '''
+            Map<String, String> map = [key:'val']
+
+            // no value type inference
+            assert map.getAt('key') == 'val'
+            assert map.getAt("${'key'}") == 'val'
+
+            // yes value type inference
+            assert map['key'].toUpperCase() == 'VAL'
+            assert map["${'key'}"].toUpperCase() == 'VAL'
+
+            assert map.get('key').toUpperCase() == 'VAL'
+            assert map.get("${'key'}")?.toUpperCase() == null // get(Object); no coerce
+        '''
+    }
+
+    // GROOVY-6668, GROOVY-8212
+    void testMapPutAtVsObjectPutAt() {
+        assertScript '''
+            Map<String, String> map = [:]
+
+            map['key'] = 'val'
+            assert map.remove('key') == 'val'
+
+            map["${'key'}"] = 'val'
+            assert map.remove('key') == 'val'
+
+            map.putAt('key','val')
+            assert map.remove('key') == 'val'
+
+            map.putAt("${'key'}",'val')
+            assert map.remove('key') == 'val'
+        '''
+        shouldFailWithMessages '''
+            Map<String, String> map = [:]
+            map.put("${'key'}",'val')
+        ''',
+        'Cannot call java.util.LinkedHashMap#put(java.lang.String, java.lang.String) with arguments [groovy.lang.GString, java.lang.String]'
     }
 }

@@ -82,7 +82,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
-    private static final ClassNode CLONENOTSUPPORTED_TYPE = make(CloneNotSupportedException.class);
     private static final ClassNode COLLECTION_TYPE = makeWithoutCaching(Collection.class, false);
     private static final ClassNode DGM_TYPE = make(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = make(ImmutableASTTransformation.class);
@@ -293,17 +292,13 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         assignStmt = ifElseS(
                 equalsNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
-                ifElseS(isInstanceOfX(param, CLONEABLE_TYPE),
-                    assignStmt,
-                    throwS(ctorX(CLONENOTSUPPORTED_TYPE))));
+                assignStmt);
         final Statement assignInit;
         final Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
             assignInit = shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr);
         } else {
-            assignInit = ifElseS(isInstanceOfX(initExpr, CLONEABLE_TYPE),
-                assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType)),
-                throwS(ctorX(CLONENOTSUPPORTED_TYPE)));
+            assignInit = assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType));
         }
         return assignFieldWithDefault(namedArgsMap, fNode, assignStmt, assignInit);
     }

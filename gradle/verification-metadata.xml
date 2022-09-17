@@ -85,6 +85,7 @@
             <trusting group="^org[.]apache($|([.].*))" regex="true"/>
          </trusted-key>
          <trusted-key id="19beab2d799c020f17c69126b16698a4adf4d638" group="org.checkerframework" name="checker-qual"/>
+         <trusted-key id="28118c070cb22a0175a2e8d43d12ca2ac19f3181" group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
          <trusted-key id="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb">
             <trusting group="commons-codec"/>
             <trusting group="commons-io"/>
@@ -122,6 +123,10 @@
          <trusted-key id="517b94f8d0a46317a28d8ab30da8a5ec02d11ead" group="net.sf.jopt-simple" name="jopt-simple" version="4.6"/>
          <trusted-key id="53c935821aa6a755bd337db53595395eb3d8e1ba" group="org.apache.logging.log4j"/>
          <trusted-key id="5e7d42f58249a287bd7384da25a73bfc746e1035" group="net.sourceforge.htmlunit"/>
+         <trusted-key id="60200ac4ae761f1614d6c46766d68daa073be985">
+            <trusting group="ch.qos.logback"/>
+            <trusting group="org.slf4j"/>
+         </trusted-key>
          <trusted-key id="6214760097dc5cfad0175ac2c9fbaa83a8753994">
             <trusting group="com.fasterxml.jackson.core"/>
             <trusting group="^com[.]fasterxml($|([.].*))" regex="true"/>
@@ -1305,6 +1310,11 @@
             <pgp value="475f3b8e59e6e63aa78067482c7b12f2a511e325"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="slf4j-api" version="2.0.0">
+         <artifact name="slf4j-api-2.0.0.jar">
+            <pgp value="60200ac4ae761f1614d6c46766d68daa073be985"/>
+         </artifact>
+      </component>
       <component group="org.sonarsource.scanner.gradle" name="sonarqube-gradle-plugin" version="3.0">
          <artifact name="sonarqube-gradle-plugin-3.0.jar">
             <ignored-keys>
@@ -1350,6 +1360,11 @@
       </component>
       <component group="org.yaml" name="snakeyaml" version="1.30">
          <artifact name="snakeyaml-1.30.jar">
+            <pgp value="120d6f34e627ed3a772ebbfe55c7e5e701832382"/>
+         </artifact>
+      </component>
+      <component group="org.yaml" name="snakeyaml" version="1.31">
+         <artifact name="snakeyaml-1.31.jar">
             <pgp value="120d6f34e627ed3a772ebbfe55c7e5e701832382"/>
          </artifact>
       </component>
