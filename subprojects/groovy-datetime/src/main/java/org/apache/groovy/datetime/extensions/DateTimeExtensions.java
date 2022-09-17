@@ -51,10 +51,12 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -294,6 +296,36 @@ public final class DateTimeExtensions {
      */
     public static long getAt(final TemporalAccessor self, TemporalField field) {
         return self.getLong(field);
+    }
+
+    /**
+     * Supports the getAt operator for an iterable; equivalent to collecting the
+     * {@link java.time.temporal.TemporalAccessor#getLong(java.time.temporal.TemporalField)} method
+     * for each field in the supplied iterable.
+     * <pre class="groovyTestCase">
+     * import static java.time.temporal.ChronoField.*
+     * import java.time.LocalTime
+     *
+     * def breakfast = LocalTime.of(8, 30, 0)
+     * def (h, m, s) = breakfast[HOUR_OF_DAY, MINUTE_OF_HOUR, SECOND_OF_MINUTE]
+     * assert "$h:$m:$s" == "8:30:0"
+     * </pre>
+     * <p>
+     *
+     * @param self  a TemporalAccessor
+     * @param fields an iterable of non-null TemporalField values
+     * @return the list of values for the fields
+     * @throws DateTimeException                if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
+     * @throws ArithmeticException              if numeric overflow occurs
+     * @since 4.0.6
+     */
+    public static List<Long> getAt(final TemporalAccessor self, Iterable<TemporalField> fields) {
+        List<Long> result = new ArrayList<>();
+        for (TemporalField f : fields) {
+            result.add(self.getLong(f));
+        }
+        return result;
     }
 
     /* ******** java.time.temporal.TemporalAmount extension methods ******** */
