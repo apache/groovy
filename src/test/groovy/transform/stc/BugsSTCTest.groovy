@@ -1177,4 +1177,19 @@ Printer
             new Outer().test()
         '''
     }
+
+    // GROOVY-9999
+    void testMathSqrt() {
+        assertScript '''
+            import groovy.transform.TypeChecked
+
+            @TypeChecked
+            def test() {
+               Math.sqrt(Math.PI*2)
+            }
+
+            double result = (double) test() // 2.5066282746310002
+            assert result > 2.5066
+        '''
+    }
 }
