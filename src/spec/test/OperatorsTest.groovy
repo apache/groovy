@@ -620,6 +620,7 @@ assert function(*args,5,6) == 26
         def list2 = ['Groovy 1.8','Groovy 2.0','Groovy 2.3']        // <2>
         assert list1 == list2                                       // <3>
         assert !list1.is(list2)                                     // <4>
+        assert list1 !== list2                                      // <5>
         // end::identity_op[]
     }
 
