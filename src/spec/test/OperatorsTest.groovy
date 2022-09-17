@@ -612,6 +612,7 @@ assert function(*args,5,6) == 26
         // tag::membership_op[]
         def list = ['Grace','Rob','Emmy']
         assert ('Emmy' in list)                     // <1>
+        assert ('Alex' !in list)                    // <2>
         // end::membership_op[]
     }
 

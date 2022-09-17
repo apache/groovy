@@ -798,6 +798,7 @@ to calling `contains`, like in the following example:
 include::../test/OperatorsTest.groovy[tags=membership_op,indent=0]
 ----
 <1> equivalent to calling `list.contains('Emmy')` or `list.isCase('Emmy')`
+<2> membership negation equivalent to calling `!list.contains('Emmy')` or `!list.isCase('Emmy')`
 
 === Identity operator
 
