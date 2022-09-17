@@ -802,8 +802,8 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=identity_op,indent
 ----
 <1> Create a list of strings
 <2> Create another list of strings containing the same elements
-<3> using `==`, we test object equality
-<4> but using `is`, we can check that references are distinct
+<3> using `==`, we test object equality, equivalent to `list1.equals(list2)` in Java
+<4> but using `is`, we can check that references are distinct,  equivalent to `list1 != list2` in Java
 
 === Coercion operator
 
