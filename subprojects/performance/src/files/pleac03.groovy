@@ -273,7 +273,7 @@ I really like that description of PLEAC.
 '''
 expected = '''
 Sender                    Recipient                 Time              Delta
-<origin>                  somewhere.com             01:14:57 06/12/31 
+<origin>                  somewhere.com             01:14:57 06/12/31
 win2K001                  omta05ps.mx.bigpond.com   01:14:57 06/12/31 1m 14s
 omta05ps.mx.bigpond.com   mail.sourceforge.net      01:16:11 06/12/31 8s
 sc8-sf-mx1-b.sourceforge. sc8-sf-list2-new.sourcefo 01:16:19 06/12/31 1s
