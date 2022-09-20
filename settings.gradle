@@ -43,8 +43,6 @@ gradleEnterprise {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        maven{ url('https://repository.ow2.org/nexus/content/repositories/public/')}
-        mavenLocal()
     }
 }
 
