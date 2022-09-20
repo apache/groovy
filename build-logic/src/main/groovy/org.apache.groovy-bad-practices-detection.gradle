@@ -1,5 +1,3 @@
-import groovy.transform.CompileStatic
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -44,7 +42,7 @@ allprojects { p ->
     p.configurations.metaClass = new ContainerMetaclassClass(p.configurations.metaClass, checkResolution)
 }
 
-@CompileStatic
+@groovy.transform.CompileStatic
 class ContainerMetaclassClass extends DelegatingMetaClass {
     Closure configuration
 

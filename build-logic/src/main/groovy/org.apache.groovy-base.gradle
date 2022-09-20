@@ -322,14 +322,14 @@ afterEvaluate {
 }
 
 @CompileStatic
-static Configuration createConsumableConfiguration(ObjectFactory objects,
-                                                   TaskContainer tasks,
-                                                   ConfigurationContainer container,
-                                                   String name,
-                                                   String usage,
-                                                   String artifactTask,
-                                                   List<String> capabilities,
-                                                   int targetJvmVersion) {
+Configuration createConsumableConfiguration(ObjectFactory objects,
+                                            TaskContainer tasks,
+                                            ConfigurationContainer container,
+                                            String name,
+                                            String usage,
+                                            String artifactTask,
+                                            List<String> capabilities,
+                                            int targetJvmVersion) {
     container.create(name) { Configuration cnf ->
         cnf.canBeConsumed = true
         cnf.canBeResolved = false
