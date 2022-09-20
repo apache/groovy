@@ -1383,8 +1383,8 @@ public abstract class StaticTypeCheckingSupport {
                 if (gt != null) {
                     return gt.getType();
                 }
-                ClassNode cn = type.redirect();
-                return cn != type ? cn : OBJECT_TYPE;
+                ClassNode cn = extractType(type.asGenericsType()); // GROOVY-10756
+                return cn != type ? cn : OBJECT_TYPE; // do not return placeholder
             } else {
                 GenericsType[] gts = type.getGenericsTypes();
                 if (gts != null) {  final int n = gts.length;
