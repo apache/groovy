@@ -1590,5 +1590,10 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             Java10756.files?.collect { it.name }
             //                         ^^ File
         """
+
+        assertScript """import ${Java10756.name.replace('$','.')}
+            def file = Java10756.files?[0]
+            file?.name
+        """
     }
 }
