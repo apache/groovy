@@ -114,7 +114,7 @@ class SharedConfiguration {
             logger.lifecycle "ArtifactoryUser user: ${username.getOrElse("not defined")}"
         }
 
-        private static Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
+        private Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
             providers.provider {
                 // try to read artifactory.properties
                 Directory base = layout.projectDirectory
@@ -127,7 +127,7 @@ class SharedConfiguration {
             }
         }
 
-        private static Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
+        private Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
             return providers.gradleProperty(gradlePropertyName).forUseAtConfigurationTime()
                     .orElse(providers.environmentVariable(envVarName).forUseAtConfigurationTime())
                     .orElse(properties.map { it.getProperty(propertyName) })
