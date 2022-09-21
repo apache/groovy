@@ -214,6 +214,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
     public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+            ArrayGroovyMethods.class,
             DefaultGroovyMethods.class,
             EncodingGroovyMethods.class,
             IOGroovyMethods.class,
@@ -3178,116 +3179,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return count(Arrays.asList(self), closure);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(int[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(long[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(short[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(char[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(boolean[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(double[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(float[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
+    @Deprecated
     public static Number count(byte[] self, Object value) {
-        return count(InvokerHelper.asIterator(self), value);
+        return ArrayGroovyMethods.count(self, value);
     }
 
     /**
@@ -6103,88 +6032,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sum(self, null, true);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static byte sum(byte[] self) {
-        return sum(self, (byte) 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static short sum(short[] self) {
-        return sum(self, (short) 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static int sum(int[] self) {
-        return sum(self, 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static long sum(long[] self) {
-        return sum(self, 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static char sum(char[] self) {
-        return sum(self, (char) 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static float sum(float[] self) {
-        return sum(self, (float) 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
-    /**
-     * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
-     *
-     * @param self The array of values to add together
-     * @return The sum of all of the items
-     * @since 2.4.2
-     */
+    @Deprecated
     public static double sum(double[] self) {
-        return sum(self, 0);
+        return ArrayGroovyMethods.sum(self);
     }
 
     /**
@@ -6246,123 +6126,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5 as byte)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static byte sum(byte[] self, byte initialValue) {
-        byte s = initialValue;
-        for (byte v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5 as short)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static short sum(short[] self, short initialValue) {
-        short s = initialValue;
-        for (short v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert 5+1+2+3+4 == ([1,2,3,4] as int[]).sum(5)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static int sum(int[] self, int initialValue) {
-        int s = initialValue;
-        for (int v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as long) == ([1,2,3,4] as long[]).sum(5)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static long sum(long[] self, long initialValue) {
-        long s = initialValue;
-        for (long v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5 as char)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static char sum(char[] self, char initialValue) {
-        char s = initialValue;
-        for (char v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as float) == ([1,2,3,4] as float[]).sum(5)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static float sum(float[] self, float initialValue) {
-        float s = initialValue;
-        for (float v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
-    /**
-     * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as double) == ([1,2,3,4] as double[]).sum(5)</pre>
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
-     * @since 2.4.2
-     */
+    @Deprecated
     public static double sum(double[] self, double initialValue) {
-        double s = initialValue;
-        for (double v : self) {
-            s += v;
-        }
-        return s;
+        return ArrayGroovyMethods.sum(self, initialValue);
     }
 
     /**
@@ -6567,112 +6363,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    /**
-     * Calculates the average of the bytes in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as byte[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static BigDecimal average(byte[] self) {
-        long s = 0;
-        int count = 0;
-        for (byte v : self) {
-            s += v;
-            count++;
-        }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return ArrayGroovyMethods.average(self);
     }
 
-    /**
-     * Calculates the average of the shorts in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as short[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static BigDecimal average(short[] self) {
-        long s = 0;
-        int count = 0;
-        for (short v : self) {
-            s += v;
-            count++;
-        }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return ArrayGroovyMethods.average(self);
     }
 
-    /**
-     * Calculates the average of the ints in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as int[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static BigDecimal average(int[] self) {
-        long s = 0;
-        int count = 0;
-        for (int v : self) {
-            s += v;
-            count++;
-        }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return ArrayGroovyMethods.average(self);
     }
 
-    /**
-     * Calculates the average of the longs in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as long[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static BigDecimal average(long[] self) {
-        long s = 0;
-        int count = 0;
-        for (long v : self) {
-            s += v;
-            count++;
-        }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return ArrayGroovyMethods.average(self);
     }
 
-    /**
-     * Calculates the average of the floats in the array.
-     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as float[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static double average(float[] self) {
-        double s = 0.0d;
-        int count = 0;
-        for (float v : self) {
-            s += v;
-            count++;
-        }
-        return s/count;
+        return ArrayGroovyMethods.average(self);
     }
 
-    /**
-     * Calculates the average of the doubles in the array.
-     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as double[]).average()</pre>
-     *
-     * @param self The array of values to calculate the average of
-     * @return The average of the items
-     * @since 3.0.0
-     */
+    @Deprecated
     public static double average(double[] self) {
-        double s = 0.0d;
-        int count = 0;
-        for (double v : self) {
-            s += v;
-            count++;
-        }
-        return s/count;
+        return ArrayGroovyMethods.average(self);
     }
 
     /**
@@ -6803,116 +6521,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return join(new ArrayIterator<>(self), separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of boolean
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(boolean[] self, String separator) {
-        return join(new BooleanArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of byte
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(byte[] self, String separator) {
-        return join(new ByteArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of char
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(char[] self, String separator) {
-        return join(new CharArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of double
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(double[] self, String separator) {
-        return join(new DoubleArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of float
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(float[] self, String separator) {
-        return join(new FloatArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of int
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(int[] self, String separator) {
-        return join(new IntArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of long
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(long[] self, String separator) {
-        return join(new LongArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
-    /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of short
-     * @param separator a String separator
-     * @return the joined String
-     * @since 2.4.1
-     */
+    @Deprecated
     public static String join(short[] self, String separator) {
-        return join(new ShortArrayIterator(self), separator);
+        return ArrayGroovyMethods.join(self, separator);
     }
 
     /**
@@ -7549,84 +7195,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new IntRange(false, 0, self.length);
     }
 
-    /**
-     * Returns indices of the boolean array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(boolean[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the byte array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(byte[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the char array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(char[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the double array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(double[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the float array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(float[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the int array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(int[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the long array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(long[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
-    /**
-     * Returns indices of the short array.
-     *
-     * @see #getIndices(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static IntRange getIndices(short[] self) {
-        return new IntRange(false, 0, self.length);
+        return ArrayGroovyMethods.getIndices(self);
     }
 
     /**
@@ -11693,108 +11299,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return array != null && array.length > 0;
     }
 
-    /**
-     * Coerces a byte array to a boolean value.
-     * A byte array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(byte[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a short array to a boolean value.
-     * A short array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(short[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces an int array to a boolean value.
-     * An int array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(int[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a long array to a boolean value.
-     * A long array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(long[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a float array to a boolean value.
-     * A float array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(float[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a double array to a boolean value.
-     * A double array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(double[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a boolean array to a boolean value.
-     * A boolean array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(boolean[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
-    /**
-     * Coerces a char array to a boolean value.
-     * A char array is false if the array is of length 0,
-     * and true otherwise.
-     *
-     * @param array an array
-     * @return the array's boolean value
-     * @since 1.7.4
-     */
+    @Deprecated
     public static boolean asBoolean(char[] array) {
-        return array != null && array.length > 0;
+        return ArrayGroovyMethods.asBoolean(array);
     }
 
     /**
@@ -13226,31 +12768,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    /**
-     * Compare the contents of this array to the contents of the given array.
-     *
-     * @param left  an int array
-     * @param right the array being compared
-     * @return true if the contents of both arrays are equal.
-     * @since 1.5.0
-     */
+    @Deprecated
     public static boolean equals(int[] left, int[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return ArrayGroovyMethods.equals(left, right);
     }
 
     /**
@@ -15341,92 +14861,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return false;
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(boolean[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(byte[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(char[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(short[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(int[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(long[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(float[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
-    /**
-     * Returns the string representation of the given array.
-     *
-     * @param self an array
-     * @return the string representation
-     * @since 1.6.0
-     */
+    @Deprecated
     public static String toString(double[] self) {
-        return FormatHelper.toString(self);
+        return ArrayGroovyMethods.toString(self);
     }
 
     /**
@@ -17331,16 +16803,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         each(self, closure);
     }
 
-    /**
-     * Traverse through each byte of this byte array. Alias for each.
-     *
-     * @param self    a byte array
-     * @param closure a closure
-     * @see #each(java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.5
-     */
+    @Deprecated
     public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        each(self, closure);
+        ArrayGroovyMethods.eachByte(self, closure);
     }
 
     /**

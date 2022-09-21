@@ -39,7 +39,8 @@ tasks.named('asciidoctor') {
 }
 
 distribution {
-    docs ':', 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
+    docs ':', 'org.codehaus.groovy.runtime.ArrayGroovyMethods',
+            'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods',
             'org.codehaus.groovy.runtime.EncodingGroovyMethods',
             'org.codehaus.groovy.runtime.IOGroovyMethods',

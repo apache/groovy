@@ -63,6 +63,13 @@ class WorkingWithArraysTest extends GroovyTestCase {
             result += v * i         // index starts from 0
         }
         assert result == 'eiiooouuuu'
+
+        result = ''
+        int[] nums = [0, 1, 2]
+        nums.eachWithIndex { value, index ->
+            result += value.doubleValue()
+        }
+        assert result == '0.01.02.0'
         // end::array_each[]
     }
 
