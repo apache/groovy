@@ -158,7 +158,7 @@ distribution {
         }
         ['xdocs',
          'config',
-         'buildSrc',
+         'build-logic',
          'licenses',
          'notices',
          'security',
