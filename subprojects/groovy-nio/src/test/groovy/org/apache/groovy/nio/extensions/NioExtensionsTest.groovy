@@ -18,22 +18,28 @@
  */
 package org.apache.groovy.nio.extensions
 
+import groovy.io.FileType
+import spock.lang.Specification
+import spock.lang.TempDir
+
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
-import groovy.io.FileType
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
-import spock.lang.Specification
-
 class NioExtensionsTest extends Specification {
 
-    @Rule
-    TemporaryFolder temporaryFolder
+    @TempDir
+    private File tempDir
+
+    private File tempFile
+
+    def setup() {
+        tempFile = File.createTempFile('temp', '.ext')
+        tempFile.deleteOnExit()
+    }
 
     def testShouldAppendByteArrayToFile() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         path.write('Hello')
         byte[] bytes = ' World'.bytes
         path.append(bytes)
@@ -44,7 +50,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendStringToFileUsingDefaultEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         path.write('Hello')
         path.append(' World')
 
@@ -54,7 +60,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByReaderToFileUsingDefaultEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         path.write('Hello')
         Reader reader = new StringReader(' World')
         path.append(reader)
@@ -65,7 +71,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByWriterToFileUsingDefaultEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         path.write('Hello')
         Writer writer = new StringWriter()
         writer.append(' World')
@@ -77,7 +83,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendStringToFileUsingSpecifiedEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         String encoding = 'UTF-8'
         path.write('؁', encoding)
         path.append(' ؁', encoding)
@@ -88,10 +94,10 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         String encoding = 'UTF-8'
         path.write('؁', encoding)
-        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        Reader reader = new CharArrayReader([' ', '؁'] as char[])
         path.append(reader, encoding)
 
         then:
@@ -100,7 +106,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncoding() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         String encoding = 'UTF-8'
         path.write('؁', encoding)
         Writer writer = new CharArrayWriter()
@@ -114,7 +120,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendStringToFileUsingSpecifiedEncodingWithBom() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         Files.delete(path)
         String encoding = 'UTF-16LE'
         path.write('؁', encoding, true)
@@ -130,11 +136,11 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByReaderToFileUsingSpecifiedEncodingWithBom() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         Files.delete(path)
         String encoding = 'UTF-16LE'
         path.write('؁', encoding, true)
-        Reader reader = new CharArrayReader([' ','؁'] as char[])
+        Reader reader = new CharArrayReader([' ', '؁'] as char[])
         path.append(reader, encoding, true)
 
         then:
@@ -147,7 +153,7 @@ class NioExtensionsTest extends Specification {
 
     def testShouldAppendTextSuppliedByWriterToFileUsingSpecifiedEncodingWithBom() {
         when:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         Files.delete(path)
         String encoding = 'UTF-16LE'
         path.write('؁', encoding, true)
@@ -167,7 +173,7 @@ class NioExtensionsTest extends Specification {
     def testPathSize() {
         when:
         def str = 'Hello world!'
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         Files.copy(new ByteArrayInputStream(str.getBytes()), path, StandardCopyOption.REPLACE_EXISTING)
 
         then:
@@ -177,7 +183,7 @@ class NioExtensionsTest extends Specification {
     def testNewObjectOutputStream() {
         setup:
         def str = 'Hello world!'
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
 
         when:
         def outputStream = path.newObjectOutputStream()
@@ -195,7 +201,7 @@ class NioExtensionsTest extends Specification {
     def testNewObjectInputStream() {
         setup:
         def str = 'Hello world!'
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def outputStream = new ObjectOutputStream(new FileOutputStream(path.toFile()))
         outputStream.writeObject(str)
         outputStream.close()
@@ -215,7 +221,7 @@ class NioExtensionsTest extends Specification {
         def str1 = 'alpha'
         def str2 = 'beta'
         def str3 = 'delta'
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def stream = new ObjectOutputStream(new FileOutputStream(path.toFile()))
         stream.writeObject(str1)
         stream.writeObject(str2)
@@ -232,11 +238,10 @@ class NioExtensionsTest extends Specification {
 
     def testReadLines() {
         setup:
-        def file = temporaryFolder.newFile()
-        file.text = 'alpha\nbeta\ndelta'
+        tempFile.text = 'alpha\nbeta\ndelta'
 
         when:
-        def lines = file.toPath().readLines()
+        def lines = tempFile.toPath().readLines()
 
         then:
         lines == ['alpha', 'beta', 'delta']
@@ -245,11 +250,10 @@ class NioExtensionsTest extends Specification {
     def testNewReader() {
         setup:
         def str = 'Hello world!'
-        def file = temporaryFolder.newFile()
-        file.text = str
+        tempFile.text = str
 
         when:
-        def reader = file.toPath().newReader()
+        def reader = tempFile.toPath().newReader()
         def line = reader.readLine()
 
         then:
@@ -259,104 +263,95 @@ class NioExtensionsTest extends Specification {
 
     def testGetBytes() {
         when:
-        def file = temporaryFolder.newFile()
-        file.text = 'Hello world!'
+        tempFile.text = 'Hello world!'
 
         then:
-        file.toPath().getBytes() == 'Hello world!'.getBytes()
+        tempFile.toPath().getBytes() == 'Hello world!'.getBytes()
     }
 
     def testSetBytes() {
         when:
-        def file = temporaryFolder.newFile()
-        file.text = 'Hello world!'
-        file.toPath().setBytes('Ciao mundo!'.getBytes())
+        tempFile.text = 'Hello world!'
+        tempFile.toPath().setBytes('Ciao mundo!'.getBytes())
 
         then:
-        file.text == 'Ciao mundo!'
+        tempFile.text == 'Ciao mundo!'
     }
 
     def testSetText() {
         when:
-        def file = temporaryFolder.newFile()
-        file.toPath().setText('Ciao mundo!')
+        tempFile.toPath().setText('Ciao mundo!')
         // invoke twice to make sure that the content is truncated by the setText method
-        file.toPath().setText('Hello world!')
+        tempFile.toPath().setText('Hello world!')
 
         then:
-        file.text == 'Hello world!'
+        tempFile.text == 'Hello world!'
     }
 
-    def testWrite()  {
+    def testWrite() {
         when:
         def str = 'Hello world!'
-        def file = temporaryFolder.newFile()
-        file.toPath().write(str)
+        tempFile.toPath().write(str)
 
         then:
-        file.text == 'Hello world!'
+        tempFile.text == 'Hello world!'
     }
 
-    def testWriteWithEncoding()  {
+    def testWriteWithEncoding() {
         when:
         def str = 'Hello world!'
-        def file = temporaryFolder.newFile()
-        file.toPath().write('Ciao mundo!')
-        file.toPath().write(str, 'UTF-8')
+        tempFile.toPath().write('Ciao mundo!')
+        tempFile.toPath().write(str, 'UTF-8')
 
         then:
-        file.text == str
+        tempFile.text == str
     }
 
     def testWriteWithEncodingAndBom() {
         when:
         def str = '؁'
-        def file = temporaryFolder.newFile()
-        file.toPath().write(str, 'UTF-16LE', true)
+        tempFile.toPath().write(str, 'UTF-16LE', true)
 
         then:
-        assert file.getBytes() == [-1, -2, 1, 6] as byte[]
+        assert tempFile.getBytes() == [-1, -2, 1, 6] as byte[]
     }
 
     def testAppendObject() {
         setup:
-        def file = temporaryFolder.newFile()
-        file.text = 'alpha'
+        tempFile.text = 'alpha'
 
         when:
-        file.toPath().append('-gamma')
+        tempFile.toPath().append('-gamma')
 
         then:
-        file.text == 'alpha-gamma'
+        tempFile.text == 'alpha-gamma'
     }
 
     def testAppendBytes() {
         setup:
-        def file = temporaryFolder.newFile()
-        file.text = 'alpha'
+        tempFile.text = 'alpha'
 
         when:
-        file.toPath().append('-beta'.getBytes())
+        tempFile.toPath().append('-beta'.getBytes())
 
         then:
-        file.text == 'alpha-beta'
+        tempFile.text == 'alpha-beta'
     }
 
     def testAppendInputStream() {
         setup:
-        def file = temporaryFolder.newFile()
-        file.text = 'alpha'
+        tempFile.text = 'alpha'
 
         when:
-        file.toPath().append(new ByteArrayInputStream('-delta'.getBytes()))
+        tempFile.toPath().append(new ByteArrayInputStream('-delta'.getBytes()))
 
         then:
-        file.text == 'alpha-delta'
+        tempFile.text == 'alpha-delta'
     }
 
     def testLeftShift() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
 
         when:
         path << 'Hello '
@@ -368,15 +363,15 @@ class NioExtensionsTest extends Specification {
 
     def testEachFile() {
         setup:
-        def folder = temporaryFolder.newFolder('test').toPath()
+        def folder = tempDir.toPath()
         def file1 = Files.createTempFile(folder, 'file_1_', null)
         def file2 = Files.createTempFile(folder, 'file_2_', null)
         def file3 = Files.createTempFile(folder, 'file_X_', null)
         def sub1 = Files.createTempDirectory(folder, 'sub1_')
-        def file4  = Files.createTempFile(sub1, 'file_4_', null)
-        def file5  = Files.createTempFile(sub1, 'file_5_', null)
+        def file4 = Files.createTempFile(sub1, 'file_4_', null)
+        def file5 = Files.createTempFile(sub1, 'file_5_', null)
         def sub2 = Files.createTempDirectory(sub1, 'sub2_')
-        def file6  = Files.createTempFile(sub2, 'file_6_', null)
+        def file6 = Files.createTempFile(sub2, 'file_6_', null)
 
         when:
         def result1 = []
@@ -430,7 +425,7 @@ class NioExtensionsTest extends Specification {
 
     def testEachDir() {
         setup:
-        def folder = temporaryFolder.newFolder('test').toPath()
+        def folder = tempDir.toPath()
         def sub1 = Files.createTempDirectory(folder, 'sub_1_')
         def sub2 = Files.createTempDirectory(folder, 'sub_2_')
         def sub3 = Files.createTempDirectory(folder, 'sub_X_')
@@ -463,10 +458,11 @@ class NioExtensionsTest extends Specification {
 
     def testAppendUTF16LE() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         Files.delete(path)
-        def file = temporaryFolder.newFile()
+        def file = File.createTempFile('temp2', '.ext')
         file.delete()
+        file.deleteOnExit()
         def str = 'Hello world!'
 
         // save using a File, thus uses ResourcesGroovyMethods
@@ -494,7 +490,7 @@ class NioExtensionsTest extends Specification {
 
     def testWriteUTF16LE() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def str = 'Hello world!'
 
         when:
@@ -506,7 +502,7 @@ class NioExtensionsTest extends Specification {
 
     def testWriteUTF16LEWithBom() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def str = 'Hello world!'
 
         when:
@@ -518,7 +514,7 @@ class NioExtensionsTest extends Specification {
 
     def testWriteUTF16BE() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def str = 'Hello world!'
 
         when:
@@ -530,7 +526,7 @@ class NioExtensionsTest extends Specification {
 
     def testWriteUTF16BEWithBom() {
         setup:
-        def path = temporaryFolder.newFile().toPath()
+        def path = tempFile.toPath()
         def str = 'Hello world!'
 
         when:

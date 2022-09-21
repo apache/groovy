@@ -24,7 +24,7 @@ dependencies {
     api rootProject // NioExtensions uses Closure
 
     testImplementation projects.groovyTest
-    testImplementation("org.spockframework:spock-junit4:${versions.spock}") {
+    testImplementation("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
 }
