@@ -2837,6 +2837,35 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-10767
+    void testSimpleSelfTypeInSubTrait2() {
+        assertScript shell, '''
+            trait A {
+                void methodA() {
+                }
+            }
+            @TypeChecked
+            @SelfType(T)
+            trait B implements A {
+                void methodB() {
+                    methodA() // Cannot find matching method <UnionType:T+B>#methodA()
+                }
+            }
+            class C extends T implements B {
+                void method() {
+                    methodA()
+                    methodB()
+                }
+            }
+            class T {
+                void methodT() {
+                }
+            }
+
+            new C().method()
+        '''
+    }
+
     @Test
     void testDoubleSelfType() {
         assertScript shell, '''
