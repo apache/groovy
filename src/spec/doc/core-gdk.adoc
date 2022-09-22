@@ -26,6 +26,8 @@ include::_working-with-io.adoc[leveloffset=+1]
 
 include::_working-with-collections.adoc[leveloffset=+1]
 
+include::_working-with-arrays.adoc[leveloffset=+1]
+
 include::../../../subprojects/groovy-dateutil/src/spec/doc/_working-with-dateutil-types.adoc[leveloffset=+1]
 
 include::../../../subprojects/groovy-datetime/src/spec/doc/_working-with-datetime-types.adoc[leveloffset=+1]

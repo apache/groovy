@@ -1,0 +1,65 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Working with arrays
+:gdk: http://www.groovy-lang.org/gdk.html[Groovy development kit]
+
+Groovy provides array support based on Java arrays with several extensions found in the {gdk}. The overall
+intention is that whether you are using an array or a collection, the code for working with the aggregate remains the same.
+
+[[Arrays]]
+== Arrays
+
+=== Array literals
+
+You can create arrays as follows. Notice that `[]` is also used as the empty array
+expression when given an explicit array type.
+
+[source,groovy]
+-------------------------------------
+include::../test/gdk/WorkingWithArraysTest.groovy[tags=array_literals,indent=0]
+-------------------------------------
+
+=== Iterating on a list
+
+Iterating on elements of a list is usually done calling the `each` and `eachWithIndex` methods, which execute code on each
+item of a list:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithArraysTest.groovy[tags=array_each,indent=0]
+----------------------------------------------------------------------------
+
+=== Other useful methods
+
+There are numerous other GDK methods for working with arrays.
+Just be a little careful to read the documentation.
+For collections, there are some mutating methods which alter
+the original collection and others which produce new collections,
+leaving the original untouched.
+Since arrays are of a fixed size, we wouldn't expect mutating
+methods which altered an array's size. Often instead, such methods return
+collections. Here are some interesting array GDK methods:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithArraysTest.groovy[tags=array_gdk,indent=0]
+----------------------------------------------------------------------------
