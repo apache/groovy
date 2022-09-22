@@ -48,6 +48,8 @@ item of a list:
 include::../test/gdk/WorkingWithArraysTest.groovy[tags=array_each,indent=0]
 ----------------------------------------------------------------------------
 
+=== Other useful methods
+
 There are numerous other GDK methods for working with arrays.
 Just be a little careful to read the documentation.
 For collections, there are some mutating methods which alter
