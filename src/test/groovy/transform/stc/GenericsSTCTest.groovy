@@ -1696,6 +1696,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10765
+    void testAssignmentShouldWorkForParameterizedMap2() {
+        assertScript '''import java.util.function.BiFunction
+
+            def <X, Y, Z> Map<X, Z> transform(Map<X, Y> map, BiFunction<? super X, ? super Y, Z> transformer) {
+                map.collectEntries { k, v -> [k, transformer.apply(k, v)] }
+            }
+
+            Map<String, ? extends File> one = [:]
+            Map<String, Integer> two = transform(one) { k, v -> v.hashCode() }
+        '''
+    }
+
     // GROOVY-10222
     void testAssignmentShouldWorkForParameterizedType() {
         assertScript '''
