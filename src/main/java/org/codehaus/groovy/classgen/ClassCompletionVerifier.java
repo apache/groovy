@@ -786,11 +786,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkGenericsUsage(ref, node.getComponentType());
         } else if (!node.isRedirectNode() && node.isUsingGenerics()) {
             addError(
-                    "A transform used a generics containing ClassNode "+ node + " " +
+                    "A transform used a generics-containing ClassNode "+ node + " " +
                     "for "+getRefDescriptor(ref) +
                     "directly. You are not supposed to do this. " +
-                    "Please create a new ClassNode referring to the old ClassNode " +
-                    "and use the new ClassNode instead of the old one. Otherwise " +
+                    "Please create a clean ClassNode using ClassNode#getPlainNodeReference() " +
+                    "and #setGenericsTypes(GenericsType[]) on it or use GenericsUtils.makeClassSafe*" +
+                    "and use the new ClassNode instead of the original one. Otherwise " +
                     "the compiler will create wrong descriptors and a potential " +
                     "NullPointerException in TypeResolver in the OpenJDK. If this is " +
                     "not your own doing, please report this bug to the writer of the " +
