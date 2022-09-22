@@ -1776,7 +1776,8 @@ public abstract class StaticTypeCheckingSupport {
                     extractGenericsConnections(connections, ui.getUpperBounds(), upperBounds);
                 } else if (!isUnboundedWildcard(di)) {
                     ClassNode boundType = lowerBound != null ? lowerBound : upperBounds[0];
-                    if (boundType.isGenericsPlaceHolder()) { // GROOVY-9998
+                    if (boundType.isGenericsPlaceHolder() // GROOVY-9998
+                            && boundType != ui.getType()) { // GROOVY-10765
                         String placeholderName = boundType.getUnresolvedName();
                         ui = new GenericsType(ui.getType()); ui.setWildcard(true);
                         storeGenericsConnection(connections, placeholderName, ui);
