@@ -4301,16 +4301,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 exp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, cn == null ? null : lowestUpperBound(oldValue, cn));
             }
         }
+
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
-            final Variable accessedVariable = var.getAccessedVariable();
+            Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable instanceof VariableExpression) {
-                if (accessedVariable != exp)
+                if (accessedVariable != var)
                     storeType((VariableExpression) accessedVariable, cn);
-            } else if (accessedVariable instanceof Parameter
-                    || accessedVariable instanceof PropertyNode
-                    && ((PropertyNode) accessedVariable).getField().isSynthetic()) {
-                ((AnnotatedNode) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
+            } else if (accessedVariable instanceof Parameter) {
+                ((Parameter) accessedVariable).putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
             }
             if (cn != null && var.isClosureSharedVariable()) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
@@ -4321,10 +4320,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 assignedTypes.add(cn);
             }
             if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
+                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
                 if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
                     // a type inference has been made on a variable whose type was defined in an instanceof block
-                    // we erase available information with the new type
+                    // erase available information with the new type
                     temporaryTypesForExpression.clear();
                 }
             }
