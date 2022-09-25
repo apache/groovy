@@ -4450,22 +4450,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             VariableExpression var = (VariableExpression) exp;
             Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable instanceof VariableExpression) {
-                if (accessedVariable != exp)
+                if (accessedVariable != var)
                     storeType((VariableExpression) accessedVariable, cn);
-            } else if (accessedVariable instanceof Parameter
-                    || accessedVariable instanceof PropertyNode
-                    && ((PropertyNode) accessedVariable).getField().isSynthetic()) {
-                ((AnnotatedNode) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
+            } else if (accessedVariable instanceof Parameter) {
+                ((Parameter) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
             }
             if (cn != null && var.isClosureSharedVariable()) {
-                List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<ClassNode>());
+                List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<>());
                 assignedTypes.add(cn);
             }
             if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
+                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
                 if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
                     // a type inference has been made on a variable whose type was defined in an instanceof block
-                    // we erase available information with the new type
+                    // erase available information with the new type
                     temporaryTypesForExpression.clear();
                 }
             }
