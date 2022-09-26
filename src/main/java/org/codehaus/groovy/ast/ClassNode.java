@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
@@ -151,8 +150,9 @@ public class ClassNode extends AnnotatedNode {
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
     private List<ConstructorNode> constructors;
-    private final MapOfLists methods;
-    private List<MethodNode> methodsList;
+    // TODO: initialize for primary nodes only!
+    private final MapOfLists methods = new MapOfLists();
+    private List<MethodNode> methodsList = Collections.emptyList();
     private List<FieldNode> fields;
     private List<PropertyNode> properties;
     private Map<String, FieldNode> fieldIndex;
@@ -164,6 +164,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
+    // TODO: initialize for primary nodes only!!
     private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
     private List<RecordComponentNode> recordComponents = Collections.emptyList();
@@ -175,11 +176,11 @@ public class ClassNode extends AnnotatedNode {
 
     // use this to synchronize access for the lazy init
     protected final Object lazyInitLock = new Object();
-
-    // clazz!=null when resolved
-    protected Class clazz;
     // only false when this classNode is constructed from a class
     private volatile boolean lazyInitDone = true;
+
+    // clazz!=null when resolved
+    protected Class<?> clazz;
     // not null if if the ClassNode is an array
     private ClassNode componentType;
     // if not null this instance is handled as proxy
@@ -195,6 +196,63 @@ public class ClassNode extends AnnotatedNode {
     // if set to true the name getGenericsTypes consists
     // of 1 element describing the name of the placeholder
     private boolean placeholder;
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * @param name       the fully-qualified name of the class
+     * @param modifiers  the modifiers; see {@link java.lang.reflect.Modifier Modifier} or {@link org.objectweb.asm.Opcodes Opcodes}
+     * @param superClass the base class; use "java.lang.Object" if no direct base class
+     * @param interfaces the interfaces
+     * @param mixins     the mixins
+     */
+    public ClassNode(final String name, final int modifiers, final ClassNode superClass, final ClassNode[] interfaces, final MixinNode[] mixins) {
+        this.name = name;
+        this.modifiers = modifiers;
+
+        this.isPrimaryNode = true;
+        setSuperClass(superClass);
+        setInterfaces(interfaces);
+        setMixins(mixins);
+    }
+
+    /**
+     * @param name       the fully-qualified name of the class
+     * @param modifiers  the modifiers; see {@link java.lang.reflect.Modifier Modifier} or {@link org.objectweb.asm.Opcodes Opcodes}
+     * @param superClass the base class; use "java.lang.Object" if no direct base class
+     */
+    public ClassNode(final String name, final int modifiers, final ClassNode superClass) {
+        this(name, modifiers, superClass, ClassNode.EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
+    }
+
+    /**
+     * Creates a non-primary {@code ClassNode} from a real class.
+     */
+    public ClassNode(final Class<?> c) {
+        this(c.getName(), c.getModifiers(), null, null, MixinNode.EMPTY_ARRAY);
+        this.clazz = c;
+        this.lazyInitDone = false;
+        this.isPrimaryNode = false;
+    }
+
+    /**
+     * Constructor used by {@code makeArray()} if a real class is available.
+     */
+    private ClassNode(final Class<?> c, final ClassNode componentType) {
+        this(c);
+        this.componentType = componentType;
+    }
+
+    /**
+     * Constructor used by {@code makeArray()} if no real class is available.
+     */
+    private ClassNode(final ClassNode componentType) {
+        this(componentType.getName() + "[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        this.componentType = componentType.redirect();
+        this.isPrimaryNode = false;
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Returns the {@code ClassNode} this node is a proxy for or the node itself.
@@ -246,33 +304,6 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Constructor used by {@code makeArray()} if no real class is available.
-     */
-    private ClassNode(ClassNode componentType) {
-        this(componentType.getName() + "[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
-        this.componentType = componentType.redirect();
-        isPrimaryNode = false;
-    }
-
-    /**
-     * Constructor used by {@code makeArray()} if a real class is available.
-     */
-    private ClassNode(Class<?> c, ClassNode componentType) {
-        this(c);
-        this.componentType = componentType;
-    }
-
-    /**
-     * Creates a non-primary {@code ClassNode} from a real class.
-     */
-    public ClassNode(Class<?> c) {
-        this(c.getName(), c.getModifiers(), null, null, MixinNode.EMPTY_ARRAY);
-        clazz = c;
-        lazyInitDone = false;
-        isPrimaryNode = false;
-    }
-
-    /**
      * The complete class structure will be initialized only when really needed
      * to avoid having too many objects during compilation.
      */
@@ -318,45 +349,16 @@ public class ClassNode extends AnnotatedNode {
         this.syntheticPublic = syntheticPublic;
     }
 
-    /**
-     * @param name       the fully-qualified name of the class
-     * @param modifiers  the modifiers; see {@link org.objectweb.asm.Opcodes}
-     * @param superClass the base class; use "java.lang.Object" if no direct base class
-     */
-    public ClassNode(String name, int modifiers, ClassNode superClass) {
-        this(name, modifiers, superClass, EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
-    }
-
-    /**
-     * @param name       the fully-qualified name of the class
-     * @param modifiers  the modifiers; see {@link org.objectweb.asm.Opcodes}
-     * @param superClass the base class; use "java.lang.Object" if no direct base class
-     * @param interfaces the interfaces for this class
-     * @param mixins     the mixins for this class
-     */
-    public ClassNode(String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
-        this.name = name;
-        this.modifiers = modifiers;
-        this.superClass = superClass;
-        this.interfaces = interfaces;
-        this.mixins = mixins;
-
-        isPrimaryNode = true;
-        if (superClass != null) {
-            usesGenerics = superClass.isUsingGenerics();
+    public void setSuperClass(final ClassNode superClass) {
+        if (redirect != null) {
+            redirect.setSuperClass(superClass);
+        } else {
+            this.superClass = superClass;
+            // GROOVY-10763: update generics indicator
+            if (superClass != null && !usesGenerics && isPrimaryNode) {
+                usesGenerics = superClass.isUsingGenerics();
+            }
         }
-        if (!usesGenerics && interfaces != null) {
-            usesGenerics = stream(interfaces).anyMatch(ClassNode::isUsingGenerics);
-        }
-        methods = new MapOfLists();
-        methodsList = Collections.emptyList();
-    }
-
-    /**
-     * Sets the superclass of this {@code ClassNode}.
-     */
-    public void setSuperClass(ClassNode superClass) {
-        redirect().superClass = superClass;
     }
 
     /**
@@ -381,11 +383,17 @@ public class ClassNode extends AnnotatedNode {
         return interfaces;
     }
 
-    public void setInterfaces(ClassNode[] interfaces) {
+    public void setInterfaces(final ClassNode[] interfaces) {
         if (redirect != null) {
             redirect.setInterfaces(interfaces);
         } else {
             this.interfaces = interfaces;
+            // GROOVY-10763: update generics indicator
+            if (interfaces != null && !usesGenerics && isPrimaryNode) {
+                for (int i = 0, n = interfaces.length; i < n; i += 1) {
+                    usesGenerics |= interfaces[i].isUsingGenerics();
+                }
+            }
         }
     }
 
@@ -416,8 +424,12 @@ public class ClassNode extends AnnotatedNode {
         return redirect().mixins;
     }
 
-    public void setMixins(MixinNode[] mixins) {
-        redirect().mixins = mixins;
+    public void setMixins(final MixinNode[] mixins) {
+        if (redirect != null) {
+            redirect.setMixins(mixins);
+        } else {
+            this.mixins = mixins;
+        }
     }
 
     /**

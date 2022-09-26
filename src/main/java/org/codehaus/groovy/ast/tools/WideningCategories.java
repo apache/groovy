@@ -220,7 +220,7 @@ public class WideningCategories {
                 }
             }
 
-            return new LowestUpperBoundClassNode(((LowestUpperBoundClassNode)lub).name, superClass, interfaces);
+            return new LowestUpperBoundClassNode(lub.getUnresolvedName(), superClass, interfaces);
         } else {
             return parameterizeLowestUpperBound(lub, a, b, lub);
         }
@@ -524,7 +524,6 @@ public class WideningCategories {
      *
      */
     public static class LowestUpperBoundClassNode extends ClassNode {
-        private final String name;
         private final String text;
         private final ClassNode upper;
         private final ClassNode[] interfaces;
@@ -532,42 +531,34 @@ public class WideningCategories {
 
         public LowestUpperBoundClassNode(final String name, final ClassNode upper, final ClassNode... interfaces) {
             super(name, ACC_PUBLIC | ACC_FINAL, upper, interfaces, null);
-            this.name = name;
             this.upper = upper;
             this.interfaces = interfaces;
             Arrays.sort(interfaces, (cn1, cn2) -> {
-                String n1 = cn1 instanceof LowestUpperBoundClassNode ? ((LowestUpperBoundClassNode) cn1).name : cn1.getName();
-                String n2 = cn2 instanceof LowestUpperBoundClassNode ? ((LowestUpperBoundClassNode) cn2).name : cn2.getName();
-                return n1.compareTo(n2);
+                String name1 = cn1 instanceof LowestUpperBoundClassNode ? cn1.getUnresolvedName() : cn1.getName();
+                String name2 = cn2 instanceof LowestUpperBoundClassNode ? cn2.getUnresolvedName() : cn2.getName();
+                return name1.compareTo(name2);
             });
             compileTimeClassNode = isObjectType(upper) && interfaces.length > 0 ? interfaces[0] : upper;
 
             StringJoiner sj = new StringJoiner(" or ", "(", ")");
             if (!isObjectType(upper)) sj.add(upper.getText());
             for (ClassNode i: interfaces) sj.add(i.getText());
-            this.text = sj.toString();
+            text = sj.toString();
 
-            boolean usesGenerics = upper.isUsingGenerics();
-            List<GenericsType[]> genericsTypesList = new ArrayList<>();
-            genericsTypesList.add(upper.getGenericsTypes());
-            for (ClassNode anInterface : interfaces) {
-                usesGenerics |= anInterface.isUsingGenerics();
-                genericsTypesList.add(anInterface.getGenericsTypes());
-            }
-            setUsingGenerics(usesGenerics);
-            if (usesGenerics) {
-                List<GenericsType> flatList = new ArrayList<>();
-                for (GenericsType[] gts : genericsTypesList) {
-                    if (gts != null) {
-                        Collections.addAll(flatList, gts);
-                    }
+            if (isUsingGenerics()) {
+                List<GenericsType> generics = new ArrayList<>();
+                if (upper.getGenericsTypes() != null)
+                    Collections.addAll(generics, upper.getGenericsTypes());
+                for (ClassNode i : interfaces) {
+                    if (i.getGenericsTypes() != null)
+                        Collections.addAll(generics, i.getGenericsTypes());
                 }
-                setGenericsTypes(flatList.toArray(GenericsType.EMPTY_ARRAY));
+                setGenericsTypes(generics.toArray(GenericsType.EMPTY_ARRAY));
             }
         }
 
         public String getLubName() {
-            return name;
+            return getUnresolvedName();
         }
 
         @Override
@@ -583,13 +574,6 @@ public class WideningCategories {
         @Override
         public Class getTypeClass() {
             return compileTimeClassNode.getTypeClass();
-        }
-
-        @Override
-        public int hashCode() {
-            int result = super.hashCode();
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            return result;
         }
 
         @Override
@@ -617,7 +601,7 @@ public class WideningCategories {
             for (int i = 0; i < interfaces.length; i += 1) {
                 faces[i] = interfaces[i].getPlainNodeReference();
             }
-            return new LowestUpperBoundClassNode(name, upper.getPlainNodeReference(), faces);
+            return new LowestUpperBoundClassNode(getUnresolvedName(), upper.getPlainNodeReference(), faces);
         }
     }
 

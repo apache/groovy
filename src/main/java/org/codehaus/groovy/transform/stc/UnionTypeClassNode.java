@@ -61,6 +61,7 @@ class UnionTypeClassNode extends ClassNode {
     UnionTypeClassNode(final ClassNode... classNodes) {
         super(makeName(classNodes), 0, ClassHelper.OBJECT_TYPE);
         delegates = classNodes == null ? ClassNode.EMPTY_ARRAY : classNodes;
+        isPrimaryNode = false;
     }
 
     private static String makeName(final ClassNode[] nodes) {
@@ -423,7 +424,11 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public void setInterfaces(final ClassNode[] interfaces) {
-        throw new UnsupportedOperationException();
+        if (isPrimaryNode) {
+            super.setInterfaces(interfaces);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -458,7 +463,11 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public void setSuperClass(final ClassNode superClass) {
-        throw new UnsupportedOperationException();
+        if (isPrimaryNode) {
+            super.setSuperClass(superClass);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
