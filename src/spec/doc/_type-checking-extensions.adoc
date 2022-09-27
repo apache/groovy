@@ -25,13 +25,12 @@
 
 === Towards a smarter type checker
 
-Despite being a dynamic language, Groovy can be used with a static type
-checker at compile time, enabled using the <<static-type-checking,@TypeChecked>>
-annotation. In this mode, the compiler becomes
-more verbose and throws errors for, example, typos, non-existent
-methods,… This comes with a few limitations though, most of them coming
-from the fact that Groovy remains inherently a dynamic language. For
-example, you wouldn’t be able to use type checking on code that uses the markup builder:
+Despite being a dynamic language, Groovy can be used with a <<static-type-checking,static type checker>>
+at compile time, enabled using the `@TypeChecked` annotation. In this mode, the
+compiler becomes more verbose and throws errors for, example, typos, non-existent
+methods, etc. This comes with a few limitations though, most of them coming from
+the fact that Groovy remains inherently a dynamic language. For example, you
+wouldn’t be able to use type checking on code that uses the markup builder:
 
 [source,groovy]
 ----
@@ -246,7 +245,7 @@ Can be used to perform additional checks after the type checker has finished its
 | Called when the type checker finds an
   unresolved variable
 | *Arguments*
-| VariableExpression var
+| VariableExpression vexp
 | *Usage*
 |
 [source,groovy]
@@ -286,7 +285,7 @@ Allows the developer to handle "dynamic" properties
 | Called when the type checker cannot
   find an attribute on the receiver
 | *Arguments*
-| AttributeExpression aex
+| AttributeExpression aexp
 | *Usage*
 |
 [source,groovy]
@@ -564,19 +563,16 @@ make things easier.
 [[Typecheckingextensions-Supportclasses]]
 ==== Support classes
 
-The DSL relies on a support class
-called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
-This class itself
-extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] . Those
-two classes define a number of _helper_ methods that will make working
+The DSL relies on a support class called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
+This class itself extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] .
+Those two classes define a number of _helper_ methods that will make working
 with the AST easier, especially regarding type checking. One interesting
 thing to know is that you *have access to the type checker*. This means
 that you can programmatically call methods of the type checker,
 including those that allow you to *throw compilation errors*.
 
-The extension script delegates to
-the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class, meaning that you have
-direct access to the following variables:
+The extension script delegates to the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class,
+meaning that you have direct access to the following variables:
 
 * _context_: the type checker context, of type gapi:org.codehaus.groovy.transform.stc.TypeCheckingContext[]
 * _typeCheckingVisitor_: the type checker itself, a gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor[] instance
@@ -588,6 +584,12 @@ in context for the type checker. For example, the current stack of
 enclosing method calls, binary expressions, closures, … This information
 is in particular important if you have to know _where_ you are when an
 error occurs and that you want to handle it.
+
+In addition to facilities provided by `GroovyTypeCheckingExtensionSupport` and `StaticTypeCheckingVisitor`,
+a type-checking DSL script imports static members from gapi:org.codehaus.groovy.ast.ClassHelper[] and
+gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport[] granting access to common types via
+`OBJECT_TYPE`, `STRING_TYPE`, `THROWABLE_TYPE`, etc. and checks like `missesGenericsTypes(ClassNode)`,
+`isClassClassNodeWrappingConcreteType(ClassNode)` and so on.
 
 [[Typecheckingextensions-Classnodes]]
 ==== Class nodes
@@ -677,8 +679,7 @@ if (node instanceof BinaryExpression) {
 }
 ---------------------------------------
 
-which requires you to import the `BinaryExpression` class, you can just
-write:
+you can just write:
 
 [source,groovy]
 -------------------------------

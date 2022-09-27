@@ -17,9 +17,9 @@
  *  under the License.
  */
 // tag::event[]
-unresolvedVariable { var ->
-    if ('people' == var.name) {
-        storeType(var, classNodeFor(List))
+unresolvedVariable { VariableExpression vexp ->
+    if (vexp.name == 'people') {
+        storeType(vexp, LIST_TYPE)
         handled = true
     }
 }

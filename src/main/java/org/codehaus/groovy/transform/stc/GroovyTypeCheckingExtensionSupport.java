@@ -63,36 +63,31 @@ import java.util.Map;
 public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExtension {
 
     // method name to DSL name
-    private static final Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
-            new HashMap<String, String>() {
-                private static final long serialVersionUID = 8938707932245818749L;
-
-                {
-                put("onMethodSelection", "onMethodSelection");
-                put("afterMethodCall", "afterMethodCall");
-                put("beforeMethodCall", "beforeMethodCall");
-                put("unresolvedVariable", "handleUnresolvedVariableExpression");
-                put("unresolvedProperty", "handleUnresolvedProperty");
-                put("unresolvedAttribute", "handleUnresolvedAttribute");
-                put("ambiguousMethods", "handleAmbiguousMethods");
-                put("methodNotFound", "handleMissingMethod");
-                put("afterVisitMethod", "afterVisitMethod");
-                put("beforeVisitMethod", "beforeVisitMethod");
-                put("afterVisitClass", "afterVisitClass");
-                put("beforeVisitClass", "beforeVisitClass");
-                put("incompatibleAssignment", "handleIncompatibleAssignment");
-                put("incompatibleReturnType", "handleIncompatibleReturnType");
-                put("setup","setup");
-                put("finish", "finish");
-            }}
+    private static final Map<String, String> METHOD_ALIASES = org.apache.groovy.util.Maps.of(
+            "onMethodSelection",      "onMethodSelection",
+            "afterMethodCall",        "afterMethodCall",
+            "beforeMethodCall",       "beforeMethodCall",
+            "unresolvedVariable",     "handleUnresolvedVariableExpression",
+            "unresolvedProperty",     "handleUnresolvedProperty",
+            "unresolvedAttribute",    "handleUnresolvedAttribute",
+            "ambiguousMethods",       "handleAmbiguousMethods",
+            "methodNotFound",         "handleMissingMethod",
+            "afterVisitMethod",       "afterVisitMethod",
+            "beforeVisitMethod",      "beforeVisitMethod",
+            "afterVisitClass",        "afterVisitClass",
+            "beforeVisitClass",       "beforeVisitClass",
+            "incompatibleAssignment", "handleIncompatibleAssignment",
+            "incompatibleReturnType", "handleIncompatibleReturnType",
+            "setup",                  "setup",
+            "finish",                 "finish"
     );
-
-    // the following fields are closures executed in event-based methods
-    private final Map<String, List<Closure>> eventHandlers = new HashMap<String, List<Closure>>();
 
     private final String scriptPath;
 
     private final CompilationUnit compilationUnit;
+
+    /** Closures executed in event-based methods. */
+    private final Map<String, List<Closure>> eventHandlers = new HashMap<>();
 
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).
@@ -115,13 +110,17 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     @Override
     public void setup() {
-        CompilerConfiguration config = new CompilerConfiguration();
-        config.setScriptBaseClass("org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingDSL");
         ImportCustomizer ic = new ImportCustomizer();
-        ic.addStarImports("org.codehaus.groovy.ast.expr");
-        ic.addStaticStars("org.codehaus.groovy.ast.ClassHelper");
-        ic.addStaticStars("org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
-        config.addCompilationCustomizers(ic);
+        ic.addStarImports(
+                "org.codehaus.groovy.ast",
+                "org.codehaus.groovy.ast.expr");
+        ic.addStaticStars(
+                "org.codehaus.groovy.ast.ClassHelper",
+                "org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
+
+        CompilerConfiguration config = new CompilerConfiguration().addCompilationCustomizers(ic);
+        config.setScriptBaseClass("org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport.TypeCheckingDSL");
+
         final GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():typeCheckingVisitor.getSourceUnit().getClassLoader();
 
         // since Groovy 2.2, it is possible to use FQCN for type checking extension scripts
@@ -152,7 +151,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             addLoadingError(config);
         }
-        if (script==null) {
+        if (script == null) {
             ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
             // cast to prevent incorrect @since 1.7 warning
             InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
@@ -182,7 +181,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 throw new GroovyBugError("Unsupported encoding found in compiler configuration", e);
             }
         }
-        if (script!=null) {
+        if (script != null) {
             script.extension = this;
             script.run();
             List<Closure> list = eventHandlers.get("setup");
@@ -427,14 +426,15 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] && ((Object[]) args).length == 1) {
                 String type = name.substring(2);
                 Object target = ((Object[]) args)[0];
-                if (target==null) return false;
+                if (target == null) return Boolean.FALSE;
                 try {
-                    Class typeClass = Class.forName("org.codehaus.groovy.ast.expr."+type);
+                    Class<?> typeClass = Class.forName("org.codehaus.groovy.ast.expr." + type);
                     return typeClass.isAssignableFrom(target.getClass());
                 } catch (ClassNotFoundException e) {
-                    return false;
+                    return Boolean.FALSE;
                 }
             }
+
             if (args instanceof Object[] && ((Object[]) args).length == 1 && ((Object[]) args)[0] instanceof Closure) {
                 Object[] argsArray = (Object[]) args;
                 String methodName = METHOD_ALIASES.get(name);

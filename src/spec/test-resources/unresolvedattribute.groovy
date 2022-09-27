@@ -17,9 +17,9 @@
  *  under the License.
  */
 // tag::event[]
-unresolvedAttribute { aex ->
-    if (getType(aex.objectExpression)==classNodeFor(String)) {
-        storeType(aex,classNodeFor(String))
+unresolvedAttribute { AttributeExpression aexp ->
+    if (getType(aexp.objectExpression) == STRING_TYPE) {
+        storeType(aexp, STRING_TYPE)
         handled = true
     }
 }
