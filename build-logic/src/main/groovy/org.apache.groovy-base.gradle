@@ -46,7 +46,7 @@ if (sharedConfiguration.hasCodeCoverage.get()) {
     pluginManager.apply(JacocoPlugin)
 }
 
-def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, sharedConfiguration, project.convention.plugins.java, java)
+def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, sharedConfiguration, java)
 
 java {
     withSourcesJar()

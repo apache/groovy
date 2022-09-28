@@ -37,7 +37,6 @@ import org.gradle.api.java.archives.Manifest
 import org.gradle.api.java.archives.ManifestMergeDetails
 import org.gradle.api.java.archives.ManifestMergeSpec
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -59,7 +58,6 @@ class GroovyLibraryExtension {
     final Property<Boolean> checkBinaryCompatibility
 
     final ObjectFactory objects
-    final JavaPluginConvention javaPluginConvention
     final JavaPluginExtension javaPluginExtension
     final SoftwareComponentContainer components
     final ConfigurationContainer configurations
@@ -70,7 +68,6 @@ class GroovyLibraryExtension {
     GroovyLibraryExtension(ObjectFactory factory,
                            ProjectLayout layout,
                            SharedConfiguration sharedConfiguration,
-                           JavaPluginConvention javaPluginConvention,
                            JavaPluginExtension javaPluginExtension,
                            SoftwareComponentContainer components,
                            ConfigurationContainer configurations,
@@ -83,7 +80,6 @@ class GroovyLibraryExtension {
         this.grooid = factory.property(Boolean).convention(false)
         this.checkBinaryCompatibility = factory.property(Boolean).convention(true)
         this.repackagedDependencies = factory.listProperty(String).convention([])
-        this.javaPluginConvention = javaPluginConvention
         this.javaPluginExtension = javaPluginExtension
         this.components = components
         this.configurations = configurations
@@ -158,7 +154,7 @@ class GroovyLibraryExtension {
 
     void registerOptionalFeature(String name) {
         javaPluginExtension.registerFeature(name) {
-            it.usingSourceSet(javaPluginConvention.sourceSets.getByName("main"))
+            it.usingSourceSet(javaPluginExtension.sourceSets.getByName("main"))
         }
         AdhocComponentWithVariants component = findComponent()
         def apiElements = configurations.getByName("${name}ApiElements")
@@ -203,7 +199,7 @@ class GroovyLibraryExtension {
 
     private Manifest createBaseManifest() {
         def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-        javaPluginConvention.manifest { Manifest mn ->
+        javaPluginExtension.manifest { Manifest mn ->
             mn.attributes(
                     'Extension-Name': 'groovy',
                     'Specification-Title': 'Groovy: a powerful, multi-faceted language for the JVM',
