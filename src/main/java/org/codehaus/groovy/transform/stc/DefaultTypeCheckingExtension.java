@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,17 +46,23 @@ import java.util.List;
  * @since 2.1.0
  */
 public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
+
     protected final List<TypeCheckingExtension> handlers = new LinkedList<TypeCheckingExtension>();
 
     public DefaultTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
     }
 
-    public void addHandler(TypeCheckingExtension handler) {
+    @Deprecated
+    public void addHandler$$bridge(final TypeCheckingExtension handler) {
         handlers.add(handler);
     }
 
-    public void removeHandler(TypeCheckingExtension handler) {
+    public boolean addHandler(final TypeCheckingExtension handler) {
+        return !handlers.contains(handler) ? handlers.add(handler) : false;
+    }
+
+    public void removeHandler(final TypeCheckingExtension handler) {
         handlers.remove(handler);
     }
 
@@ -181,16 +186,15 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
 
     @Override
     public void setup() {
-        ArrayList<TypeCheckingExtension> copy = new ArrayList<TypeCheckingExtension>(handlers);
-        // we're using a copy here because new extensions can be added during the "setup" phase
-        for (TypeCheckingExtension handler : copy) {
+        // We're using a copy here because new extensions can be added during the setup phase!
+        for (TypeCheckingExtension handler : handlers.toArray(new TypeCheckingExtension[0])) {
             handler.setup();
         }
     }
 
     @Override
     public void finish() {
-        for (TypeCheckingExtension handler : handlers) {
+        for (TypeCheckingExtension handler : handlers.toArray(new TypeCheckingExtension[0])) {
             handler.finish();
         }
     }

@@ -19,6 +19,9 @@
 package org.codehaus.groovy.transform.stc;
 
 import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -36,6 +39,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
@@ -45,7 +49,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 /**
  * <p>Custom type checking extensions may extend this method in order to benefit from a lot
@@ -57,18 +60,19 @@ import java.util.logging.Logger;
  * @since 2.3.0
  */
 public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
-    private static final Logger LOG = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
+
     protected final TypeCheckingContext context;
+    /** @see {@link #log(String)} */ protected boolean debug;
+    /** @see {@link #setHandled(boolean)} */ protected boolean handled;
     private final Set<MethodNode> generatedMethods = new LinkedHashSet<>();
     private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<>();
-    // this boolean is used through setHandled(boolean)
-    protected boolean handled = false;
-    protected boolean debug = false;
 
     public AbstractTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
         this.context = typeCheckingVisitor.typeCheckingContext;
     }
+
+    //--------------------------------------------------------------------------
 
     public void setHandled(final boolean handled) {
         this.handled = handled;
@@ -246,12 +250,9 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return argTypeMatches(argumentTypes, index, clazz);
     }
 
-    @SuppressWarnings("unchecked")
-    public <R> R withTypeChecker(Closure<R> code) {
-        Closure<R> clone = (Closure<R>) code.clone();
-        clone.setDelegate(typeCheckingVisitor);
-        clone.setResolveStrategy(Closure.DELEGATE_FIRST);
-        return clone.call();
+    public <R> R withTypeChecker(@DelegatesTo(value = StaticTypeCheckingVisitor.class, strategy = Closure.DELEGATE_FIRST)
+            @ClosureParams(value = SimpleType.class, options = "org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor") final Closure<R> code) {
+        return DefaultGroovyMethods.with(typeCheckingVisitor, code);
     }
 
     /**
@@ -283,7 +284,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         }
         setHandled(true);
         if (debug) {
-            LOG.info("Turning " + call.getText() + " into a dynamic method call returning " + StaticTypeCheckingSupport.prettyPrintType(returnType));
+            log("Turning " + call.getText() + " into a dynamic method call returning " + StaticTypeCheckingSupport.prettyPrintType(returnType));
         }
         return new MethodNode(call.getMethodAsString(), 0, returnType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
     }
@@ -309,7 +310,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         storeType(pexp, returnType);
         setHandled(true);
         if (debug) {
-            LOG.info("Turning '" + pexp.getText() + "' into a dynamic property access of type " + StaticTypeCheckingSupport.prettyPrintType(returnType));
+            log("Turning '" + pexp.getText() + "' into a dynamic property access of type " + StaticTypeCheckingSupport.prettyPrintType(returnType));
         }
     }
 
@@ -334,12 +335,13 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         storeType(vexp, returnType);
         setHandled(true);
         if (debug) {
-            LOG.info("Turning '" + vexp.getText() + "' into a dynamic variable access of type " + StaticTypeCheckingSupport.prettyPrintType(returnType));
+            log("Turning '" + vexp.getText() + "' into a dynamic variable access of type " + StaticTypeCheckingSupport.prettyPrintType(returnType));
         }
     }
 
-    public void log(String message) {
-        LOG.info(message);
+    public void log(final String message) {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
+        logger.info(message);
     }
 
     public BinaryExpression getEnclosingBinaryExpression() {
@@ -434,7 +436,9 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         context.pushTemporaryTypeInfo();
     }
 
-    private static class TypeCheckingScope extends LinkedHashMap<String, Object> {
+    //--------------------------------------------------------------------------
+
+    public static class TypeCheckingScope extends LinkedHashMap<String, Object> {
         private static final long serialVersionUID = 7607331333917615144L;
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
@@ -445,6 +449,5 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         public AbstractTypeCheckingExtension.TypeCheckingScope getParent() {
             return parent;
         }
-
     }
 }

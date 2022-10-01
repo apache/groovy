@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Base class for type checking extensions written in Groovy. Compared to its superclass, {@link TypeCheckingExtension},
@@ -86,6 +87,8 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     private final CompilationUnit compilationUnit;
 
+    private TypeCheckingExtension delegateExtension;
+
     /** Closures executed in event-based methods. */
     private final Map<String, List<Closure>> eventHandlers = new HashMap<>();
 
@@ -103,6 +106,21 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         this.scriptPath = scriptPath;
         this.compilationUnit = compilationUnit;
     }
+
+    @Override
+    public boolean equals(Object that) {
+        if (that == this) return true;
+        if (that == null || that.getClass() != this.getClass()) return false;
+        GroovyTypeCheckingExtensionSupport support = (GroovyTypeCheckingExtensionSupport) that;
+        return Objects.equals(scriptPath,support.scriptPath) && Objects.equals(compilationUnit,support.compilationUnit);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(scriptPath, compilationUnit);
+    }
+
+    //--------------------------------------------------------------------------
 
     public void setDebug(final boolean debug) {
         this.debug = debug;
@@ -133,9 +151,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 // since 2.4, we can also register precompiled type checking extensions which are not scripts
                 try {
                     Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(StaticTypeCheckingVisitor.class);
-                    TypeCheckingExtension extension = (TypeCheckingExtension) declaredConstructor.newInstance(typeCheckingVisitor);
-                    typeCheckingVisitor.addTypeCheckingExtension(extension);
-                    extension.setup();
+                    delegateExtension = (TypeCheckingExtension) declaredConstructor.newInstance(typeCheckingVisitor);
+                    typeCheckingVisitor.addTypeCheckingExtension(delegateExtension);
+                    delegateExtension.setup();
                     return;
                 } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                     addLoadingError(config);
@@ -202,6 +220,11 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     @Override
     public void finish() {
+        if (delegateExtension != null) { typeCheckingVisitor.extension.removeHandler(delegateExtension);
+            delegateExtension.finish();
+            return;
+        }
+
         List<Closure> list = eventHandlers.get("finish");
         if (list != null) {
             for (Closure closure : list) {
@@ -391,14 +414,6 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
         return methodList;
     }
-
-    // -------------------------------------
-    // delegate to the type checking context
-    // -------------------------------------
-
-    // --------------------------------------------
-    // end of delegate to the type checking context
-    // --------------------------------------------
 
     public abstract static class TypeCheckingDSL extends Script {
         private GroovyTypeCheckingExtensionSupport extension;

@@ -138,6 +138,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -395,6 +396,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.extension.addHandler(new TraitTypeCheckingExtension(this));
     }
 
+    public void setCompilationUnit(final CompilationUnit compilationUnit) {
+        typeCheckingContext.setCompilationUnit(compilationUnit);
+    }
+
     @Override
     protected SourceUnit getSourceUnit() {
         return typeCheckingContext.getSource();
@@ -402,6 +407,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public void initialize() {
         extension.setup();
+    }
+
+    /**
+     * Returns array of type checking annotations. Subclasses may override this
+     * method in order to provide additional types which must be looked up when
+     * checking if a method or a class node should be skipped.
+     * <p>
+     * The default implementation returns {@link TypeChecked}.
+     */
+    protected ClassNode[] getTypeCheckingAnnotations() {
+        return TYPECHECKING_ANNOTATIONS;
     }
 
     /**
@@ -418,9 +434,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         this.extension.addHandler(extension);
     }
 
-    public void setCompilationUnit(final CompilationUnit compilationUnit) {
-        typeCheckingContext.setCompilationUnit(compilationUnit);
+    private List<TypeCheckingExtension> getTypeCheckingExtensions(final AnnotatedNode classOrMethod) {
+        List<Expression> ex = new ArrayList<>();
+        for (ClassNode type : getTypeCheckingAnnotations()) {
+            for (AnnotationNode anno : classOrMethod.getAnnotations(type)) {
+                Expression extensions = anno.getMember("extensions");
+                if (extensions instanceof ConstantExpression) {
+                    ex.add(extensions);
+                } else if (extensions instanceof ListExpression) {
+                    ex.addAll(((ListExpression) extensions).getExpressions());
+                }
+            }
+        }
+        if (ex.isEmpty()) return Collections.emptyList();
+        return ex.stream().filter(e -> e instanceof ConstantExpression).map(pathOrType ->
+            new GroovyTypeCheckingExtensionSupport(this, pathOrType.getText(), typeCheckingContext.getCompilationUnit())
+        ).collect(Collectors.toList());
     }
+
+    private <Node extends AnnotatedNode> void doWithTypeCheckingExtensions(final Node classOrMethod, final Consumer<Node> visitor) {
+        List<TypeCheckingExtension> extensions = getTypeCheckingExtensions(classOrMethod);
+        if (extensions.isEmpty()) {
+            visitor.accept(classOrMethod);
+        } else { // GROOVY-10770: extension composition
+            List<TypeCheckingExtension> added = new ArrayList<>();
+            for (TypeCheckingExtension ext : extensions) {
+                if (extension.addHandler(ext)) {
+                    added.add(ext);
+                    ext.setup();
+                }
+            }
+            try {
+                visitor.accept(classOrMethod);
+            } finally {
+                for (TypeCheckingExtension ext : added) {
+                    extension.removeHandler(ext);
+                    ext.finish();
+                }
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
 
     @Override
     public void visitClass(final ClassNode node) {
@@ -436,7 +491,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Set<MethodNode> oldSet = typeCheckingContext.alreadyVisitedMethods;
             typeCheckingContext.alreadyVisitedMethods = new LinkedHashSet<>();
 
-            super.visitClass(node);
+            doWithTypeCheckingExtensions(node, super::visitClass);
             node.getInnerClasses().forEachRemaining(this::visitClass);
 
             typeCheckingContext.alreadyVisitedMethods = oldSet;
@@ -453,17 +508,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             node.getDeclaredConstructors().forEach(n -> n.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE));
         }
         extension.afterVisitClass(node);
-    }
-
-    /**
-     * Returns array of type checking annotations. Subclasses may override this
-     * method in order to provide additional types which must be looked up when
-     * checking if a method or a class node should be skipped.
-     * <p>
-     * The default implementation returns {@link TypeChecked}.
-     */
-    protected ClassNode[] getTypeCheckingAnnotations() {
-        return TYPECHECKING_ANNOTATIONS;
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {
@@ -2595,7 +2639,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
         }
         readClosureParameterAnnotation(node); // GROOVY-6603
-        super.visitConstructorOrMethod(node, isConstructor);
+        doWithTypeCheckingExtensions(node, it -> super.visitConstructorOrMethod(it, isConstructor));
         if (node.hasDefaultValue()) {
             visitDefaultParameterArguments(node.getParameters());
         }

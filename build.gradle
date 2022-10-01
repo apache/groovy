@@ -68,7 +68,8 @@ groovyCore {
     bridgedClasses 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.runtime.StringGroovyMethods',
             'org.codehaus.groovy.classgen.Verifier',
-            'org.codehaus.groovy.ast.tools.GeneralUtils'
+            'org.codehaus.groovy.ast.tools.GeneralUtils',
+            'org.codehaus.groovy.transform.stc.DefaultTypeCheckingExtension'
 
     excludeFromJavadoc '**/GroovyRecognizer.java', '*.g4' // generated file
 }
