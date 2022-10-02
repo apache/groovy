@@ -37,7 +37,7 @@ The Groovy development team
 :apache-license-link: https://www.apache.org/licenses/LICENSE-2.0.txt
 :apache-groovy-twitter-icon: https://img.shields.io/twitter/follow/ApacheGroovy.svg?style=social
 :apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
-:jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
+:jdk-icon: https://img.shields.io/badge/java-11+-4c7e9f.svg
 //:bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
 :opencollective-link: https://opencollective.com/friends-of-groovy
 :sponsors-silver-img: https://opencollective.com/friends-of-groovy/tiers/silver-sponsor.svg?avatarHeight=45&width=890
