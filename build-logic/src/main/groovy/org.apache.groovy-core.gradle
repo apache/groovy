@@ -145,6 +145,7 @@ tasks.withType(GroovyCompile).configureEach {
     if (it.name == 'compileGroovy') {
         classpath = files(bootstrapJar, classpath)
     }
+    options.incremental = true
 }
 
 allprojects {
