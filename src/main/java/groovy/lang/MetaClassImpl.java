@@ -2118,6 +2118,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
+            if (null == method) {
+                method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
+            }
             if (method != null) {
                 return new GetMethodMetaProperty(name, VM_PLUGIN.transformMetaMethod(this, method));
             }
