@@ -21,7 +21,6 @@ package groovy
 import groovy.test.GroovyTestCase
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
 
 final class CategoryTest extends GroovyTestCase {
 
@@ -356,6 +355,20 @@ final class CategoryTest extends GroovyTestCase {
         shouldFail(MissingPropertyException) {
             assert x.baz != "works" // accessing x.baz should throw MPE
         }
+    }
+
+    // GROOVY-10783
+    void testPropertyMissing2() {
+        assertScript '''\
+            class X{ def bar(){1}}
+            class XCat4{ static propertyMissing(X x, String name) {"works"}}
+
+            def x = new X()
+
+            use(XCat4) {
+                assert x.baz == "works"
+            }
+        '''
     }
 
     // GROOVY-3867

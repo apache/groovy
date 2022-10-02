@@ -2113,6 +2113,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // check for a generic get method provided through a category
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
+            if (null == method) {
+                method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
+            }
             if (method != null) {
                 MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
                 return new GetMethodMetaProperty(name, transformedMetaMethod);
