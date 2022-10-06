@@ -460,25 +460,39 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //GROOVY-7164
-    void testDefaultConstructorWhenSetterParamAndFieldHaveDifferentTypes() {
+    // GROOVY-7164
+    void testMapStyleConstructorWhenSetterParamAndFieldHaveDifferentTypes() {
         assertScript '''
-            class Test {
+            class C {
                 private long timestamp
 
                 Date getTimestamp() {
                     return timestamp ? new Date(timestamp) : null
                 }
 
-                void setTimestamp (Date timestamp) {
+                void setTimestamp(Date timestamp) {
                     this.timestamp = timestamp.time
                 }
-
-                def main() {
-                    new Test(timestamp: new Date())
-                }
             }
-            new Test().main()
+            new C(timestamp: new Date())
+        '''
+    }
+
+    // GROOVY-10787
+    void testMapStyleConstructorWithParameterizedProperty() {
+        assertScript '''
+            abstract class A<X extends Serializable> {
+                X x
+            }
+            class C<Y extends Serializable> extends A<Y> {
+            }
+
+            def <Z extends Number> C<Z> fn(List<Z> list_of_z) {
+                new C<Z>(x: list_of_z.first())
+            }
+
+            def c = fn([42])
+            assert c.x == 42
         '''
     }
 
