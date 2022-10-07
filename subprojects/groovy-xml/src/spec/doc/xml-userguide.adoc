@@ -44,7 +44,7 @@ or map of objects.
 include::../test/UserGuideXmlSlurperTest.groovy[tags=testParseText,indent=0]
 ----
 
-<1> Parsing the XML an returning the root node as a GPathResult
+<1> Parsing the XML and returning the root node as a GPathResult
 <2> Checking we're using a GPathResult
 <3> Traversing the tree in a GPath style
 
@@ -54,7 +54,7 @@ include::../test/UserGuideXmlSlurperTest.groovy[tags=testParseText,indent=0]
 include::../test/UserGuideXmlParserTest.groovy[tags=testParseText,indent=0]
 ----
 
-<1> Parsing the XML an returning the root node as a Node
+<1> Parsing the XML and returning the root node as a Node
 <2> Checking we're using a Node
 <3> Traversing the tree in a GPath style
 
