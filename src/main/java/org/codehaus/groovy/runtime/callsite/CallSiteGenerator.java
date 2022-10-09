@@ -219,11 +219,7 @@ public class CallSiteGenerator {
     }
 
     private static ClassWriter makeClassWriter() {
-        if (VMPluginFactory.getPlugin().getVersion()>=8) {
-            return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        } else {
-            return new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        }
+        return new ClassWriter(VMPluginFactory.getPlugin().getVersion() >= 6 ? ClassWriter.COMPUTE_FRAMES : ClassWriter.COMPUTE_MAXS);
     }
 
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
