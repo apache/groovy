@@ -79,6 +79,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
 
@@ -823,8 +824,8 @@ public class CompilationUnit extends ProcessingUnit {
     protected ClassVisitor createClassVisitor() {
         CompilerConfiguration config = getConfiguration();
         int computeMaxStackAndFrames = ClassWriter.COMPUTE_MAXS;
-        if (CompilerConfiguration.isPostJDK7(config.getTargetBytecode()) || config.isIndyEnabled()) {
-            computeMaxStackAndFrames += ClassWriter.COMPUTE_FRAMES;
+        if (config.isIndyEnabled() || isAtLeast(config.getTargetBytecode(), CompilerConfiguration.JDK6)) {
+            computeMaxStackAndFrames = ClassWriter.COMPUTE_FRAMES;
         }
         return new ClassWriter(computeMaxStackAndFrames) {
             private ClassNode getClassNode(String name) {
@@ -838,22 +839,22 @@ public class CompilationUnit extends ProcessingUnit {
                 ClassNodeResolver.LookupResult lookupResult = getClassNodeResolver().resolveName(name, CompilationUnit.this);
                 return lookupResult == null ? null : lookupResult.getClassNode();
             }
-            private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+            private ClassNode getCommonSuperClassNode(ClassNode a, ClassNode b) {
                 // adapted from ClassWriter code
-                if (c.isDerivedFrom(d)) return d;
-                if (d.isDerivedFrom(c)) return c;
-                if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
+                if (a.isDerivedFrom(b)) return b;
+                if (b.isDerivedFrom(a)) return a;
+                if (a.isInterface() || b.isInterface()) return ClassHelper.OBJECT_TYPE;
                 do {
-                    c = c.getSuperClass();
-                } while (c != null && !d.isDerivedFrom(c));
-                if (c == null) return ClassHelper.OBJECT_TYPE;
-                return c;
+                    a = a.getSuperClass();
+                } while (a != null && !b.isDerivedFrom(a));
+                if (a == null) return ClassHelper.OBJECT_TYPE;
+                return a;
             }
             @Override
             protected String getCommonSuperClass(String arg1, String arg2) {
                 ClassNode a = getClassNode(arg1.replace('/', '.'));
                 ClassNode b = getClassNode(arg2.replace('/', '.'));
-                return getCommonSuperClassNode(a,b).getName().replace('.','/');
+                return getCommonSuperClassNode(a, b).getName().replace('.', '/');
             }
         };
     }
