@@ -54,7 +54,6 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -2260,22 +2259,28 @@ public abstract class StaticTypeCheckingSupport {
      * @param config the compiler configuration
      * @return the result of the expression
      */
-    public static Object evaluateExpression(Expression expr, CompilerConfiguration config) {
-        String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
-        ClassNode node = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
-        ReturnStatement code = new ReturnStatement(expr);
-        addGeneratedMethod(node, "eval", Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+        String className = "Expression$"+UUID.randomUUID().toString().replace('-', '$');
+        ClassNode classNode = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
+        addGeneratedMethod(classNode, "eval", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
+
         CompilerConfiguration copyConf = new CompilerConfiguration(config);
+        copyConf.setPreviewFeatures(false);
+        copyConf.setScriptBaseClass(null);
+        copyConf.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
+
         CompilationUnit cu = new CompilationUnit(copyConf);
-        cu.addClassNode(node);
-        cu.compile(Phases.CLASS_GENERATION);
-        @SuppressWarnings("unchecked")
-        List<GroovyClass> classes = (List<GroovyClass>) cu.getClasses();
-        Class aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
         try {
-            return aClass.getMethod("eval").invoke(null);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            cu.addClassNode(classNode);
+            cu.compile(Phases.CLASS_GENERATION);
+            GroovyClass gc = (GroovyClass) cu.getClasses().get(0);
+            Class<?> c = cu.getClassLoader().defineClass(className, gc.getBytes());
+            // invoke method to produce return value
+            return c.getMethod("eval").invoke(null);
+        } catch (ReflectiveOperationException e) {
             throw new GroovyBugError(e);
+        } finally {
+            org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly(cu.getClassLoader());
         }
     }
 
