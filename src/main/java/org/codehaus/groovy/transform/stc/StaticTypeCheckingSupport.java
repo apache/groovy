@@ -2204,26 +2204,26 @@ public abstract class StaticTypeCheckingSupport {
                 return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config)).toArray(String[]::new);
         }
 
-        String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
-        ClassNode simpleClass = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
-        addGeneratedMethod(simpleClass, "eval", Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
+        String className = "Expression$"+UUID.randomUUID().toString().replace('-', '$');
+        ClassNode classNode = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
+        addGeneratedMethod(classNode, "eval", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
 
-        // adjust configuration so class can be inspected by this JVM
+        // adjust configuration so class can be executed by this JVM
         CompilerConfiguration cc = new CompilerConfiguration(config);
-        cc.setPreviewFeatures(false); // unlikely to be required by expression
+        cc.setPreviewFeatures(false);
+        cc.setScriptBaseClass(null);
         cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
 
         CompilationUnit cu = new CompilationUnit(cc);
         try {
-            cu.addClassNode(simpleClass);
+            cu.addClassNode(classNode);
             cu.compile(Phases.CLASS_GENERATION);
-            List<GroovyClass> classes = cu.getClasses();
-            Class<?> aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
-            try {
-                return aClass.getMethod("eval").invoke(null);
-            } catch (ReflectiveOperationException e) {
-                throw new GroovyBugError(e);
-            }
+            GroovyClass gc = cu.getClasses().get(0);
+            Class<?> c = cu.getClassLoader().defineClass(className, gc.getBytes());
+            // invoke method to produce return value
+            return c.getMethod("eval").invoke(null);
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyBugError(e);
         } finally {
             closeQuietly(cu.getClassLoader());
         }
