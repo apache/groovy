@@ -35,15 +35,15 @@ public class DefaultMetaClassInfo {
     private static boolean origBooleanRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original boolean metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original boolean metaclass is used.
      */
     public static boolean isOrigBool() {
         return origBooleanRes;
     }
 
     /**
-     * sets if the original boolean metaclass is used
+     * Sets if the original boolean metaclass is used.
      */
     public static void setOrigBool(boolean v) {
         origBoolean = v;
@@ -60,15 +60,15 @@ public class DefaultMetaClassInfo {
     private static boolean origByteRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original byte metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original byte metaclass is used.
      */
     public static boolean isOrigByte() {
         return origByteRes;
     }
 
     /**
-     * sets if the original byte metaclass is used
+     * Sets if the original byte metaclass is used.
      */
     public static void setOrigByte(boolean v) {
         origByte = v;
@@ -85,15 +85,15 @@ public class DefaultMetaClassInfo {
     private static boolean origCharRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original char metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original char metaclass is used.
      */
     public static boolean isOrigChar() {
         return origCharRes;
     }
 
     /**
-     * sets if the original char metaclass is used
+     * Sets if the original char metaclass is used
      */
     public static void setOrigChar(boolean v) {
         origChar = v;
@@ -110,15 +110,15 @@ public class DefaultMetaClassInfo {
     private static boolean origShortRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original short metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original short metaclass is used.
      */
     public static boolean isOrigShort() {
         return origShortRes;
     }
 
     /**
-     * sets if the original short metaclass is used
+     * Sets if the original short metaclass is used.
      */
     public static void setOrigShort(boolean v) {
         origShort = v;
@@ -135,15 +135,15 @@ public class DefaultMetaClassInfo {
     private static boolean origIntRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original integer metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original integer metaclass is used.
      */
     public static boolean isOrigInt() {
         return origIntRes;
     }
 
     /**
-     * sets if the original int metaclass is used
+     * Sets if the original int metaclass is used.
      */
     public static void setOrigInt(boolean v) {
         origInt = v;
@@ -160,15 +160,15 @@ public class DefaultMetaClassInfo {
     private static boolean origIntArrayWCH = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original integer array metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original integer array metaclass is used.
      */
     public static boolean isOrigIntArray() {
         return origIntArrayWCH;
     }
 
     /**
-     * sets if the original int array metaclass is used
+     * Sets if the original int array metaclass is used.
      */
     public static void setOrigIntArray(boolean v) {
         origIntArray = v;
@@ -185,15 +185,15 @@ public class DefaultMetaClassInfo {
     private static boolean origLongRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original long metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original long metaclass is used.
      */
     public static boolean isOrigLong() {
         return origLongRes;
     }
 
     /**
-     * sets if the original long metaclass is used
+     * Sets if the original long metaclass is used.
      */
     public static void setOrigLong(boolean v) {
         origLong = v;
@@ -210,15 +210,15 @@ public class DefaultMetaClassInfo {
     private static boolean origFloatRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original float metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original float metaclass is used.
      */
     public static boolean isOrigFloat() {
         return origFloatRes;
     }
 
     /**
-     * sets if the original float metaclass is used
+     * Sets if the original float metaclass is used.
      */
     public static void setOrigFloat(boolean v) {
         origFloat = v;
@@ -235,15 +235,15 @@ public class DefaultMetaClassInfo {
     private static boolean origDoubleRes = true;
 
     /**
-     * @return  true if no metaclass creation handle is set and if
-     *          the original double metaclass is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original double metaclass is used.
      */
     public static boolean isOrigDouble() {
         return origDoubleRes;
     }
 
     /**
-     * sets if the original double metaclass is used
+     * Sets if the original double metaclass is used.
      */
     public static void setOrigDouble(boolean v) {
         origDouble = v;
@@ -258,7 +258,7 @@ public class DefaultMetaClassInfo {
     private static boolean withoutCustomHandle = true;
 
     /**
-     * sets if the system uses a custom metaclass creation handle
+     * Sets if the system uses a custom metaclass creation handle.
      */
     public static void setWithoutCustomMetaclassCreationHandle(boolean mch) {
         withoutCustomHandle = mch;
