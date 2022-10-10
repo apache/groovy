@@ -26,7 +26,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
  * Call site for invoking static methods
-*   meta class  - cached
+*   metaclass  - cached
 *   method - not cached
 */
 public class ConstructorMetaMethodSite extends MetaMethodSite {
@@ -49,9 +49,9 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
 
     @Override
     public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
-        if (receiver == metaClass.getTheClass() // meta class match receiver
+        if (receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args) )  
+           && MetaClassHelper.sameClasses(params, args) )
         {
             MetaClassHelper.unwrap(args);
             try {

@@ -21,7 +21,7 @@ package org.codehaus.groovy.control.io;
 import java.io.Writer;
 
 /**
- *  An Writer than eats its input.
+ *  A Writer that eats its input.
  */
 public class NullWriter extends Writer {
     public static final NullWriter DEFAULT = new NullWriter();

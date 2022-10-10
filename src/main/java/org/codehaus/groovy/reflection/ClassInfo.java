@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Handle for all information we want to keep about the class
  * <p>
- * This class handles caching internally and its advisable to not store
+ * This class handles caching internally and it's advisable to not store
  * references directly to objects of this class.  The static factory method
  * {@link ClassInfo#getClassInfo(Class)} should be used to retrieve an instance
  * from the cache.  Internally the {@code Class} associated with a {@code ClassInfo}
@@ -299,7 +299,7 @@ public class ClassInfo implements Finalizable {
      * If no {@code MetaClass} exists one will be created.
      * <p>
      * It is not safe to call this method without a {@code Class} associated with this {@code ClassInfo}.
-     * It is advisable to aways retrieve a ClassInfo instance from the cache by using the static
+     * It is advisable to always retrieve a ClassInfo instance from the cache by using the static
      * factory method {@link ClassInfo#getClassInfo(Class)} to ensure the referenced Class is
      * strongly reachable.
      *

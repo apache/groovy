@@ -54,7 +54,7 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  * Mix of BuilderSupport and SwingBuilder's factory support.
  *
  * Warning: this implementation is not thread safe and should not be used
- * across threads in a multi-threaded environment.  A locking mechanism
+ * across threads in a multithreaded environment.  A locking mechanism
  * should be implemented by the subclass if use is expected across
  * multiple threads.
  */
@@ -735,7 +735,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * This is a hook for subclasses to plugin a custom strategy for mapping
+     * This is a hook for subclasses to plug in a custom strategy for mapping
      * names to factories.
      *
      * @param name       the name of the factory
@@ -749,7 +749,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * This is a hook for subclasses to plugin a custom strategy for mapping
+     * This is a hook for subclasses to plug in a custom strategy for mapping
      * names to explicit methods.
      *
      * @param methodName the name of the explicit method
@@ -762,7 +762,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * This is a hook for subclasses to plugin a custom strategy for mapping
+     * This is a hook for subclasses to plug in a custom strategy for mapping
      * names to property methods.
      *
      * @param propertyName the name of the explicit method
@@ -892,7 +892,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                         getProxyBuilder().getContext().put(PARENT_NAME, parentName);
                         getProxyBuilder().getContext().put(PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
                         getProxyBuilder().getContext().put(CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
-                        // lets register the builder as the delegate
+                        // let's register the builder as the delegate
                         getProxyBuilder().setClosureDelegate(closure, node);
                         closure.call();
                     } finally {
@@ -1168,7 +1168,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     public Object build(Script script) {
         // this used to be synchronized, but we also used to remove the
         // metaclass.  Since adding the metaclass is now a side effect, we
-        // don't need to ensure the meta-class won't be observed and don't
+        // don't need to ensure the metaclass won't be observed and don't
         // need to hide the side effect.
         MetaClass scriptMetaClass = script.getMetaClass();
         script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));

@@ -947,7 +947,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   }
 
   /**
-   * Returns a unmodifiable snapshot {@link Set} view of the keys contained in
+   * Returns an unmodifiable snapshot {@link Set} view of the keys contained in
    * this map. The set's iterator returns the keys whose order of iteration is
    * the ascending order in which its entries are considered eligible for
    * retention, from the least-likely to be retained to the most-likely.
@@ -975,7 +975,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    * of the keys.
    *
    * @param limit the maximum size of the returned set
-   * @return a ascending snapshot view of the keys in this map
+   * @return an ascending snapshot view of the keys in this map
    * @throws IllegalArgumentException if the limit is negative
    */
   public Set<K> ascendingKeySetWithLimit(int limit) {
@@ -1064,7 +1064,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    * policy, determining the retention ordering requires a traversal of the
    * entries.
    *
-   * @return a ascending snapshot view of this map
+   * @return an ascending snapshot view of this map
    */
   public Map<K, V> ascendingMap() {
     return ascendingMapWithLimit(Integer.MAX_VALUE);
@@ -1083,7 +1083,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    * entries.
    *
    * @param limit the maximum size of the returned map
-   * @return a ascending snapshot view of this map
+   * @return an ascending snapshot view of this map
    * @throws IllegalArgumentException if the limit is negative
    */
   public Map<K, V> ascendingMapWithLimit(int limit) {
@@ -1675,7 +1675,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
      * entry consumes. The default algorithm bounds the map by the number of
      * key-value pairs by giving each entry a weight of <tt>1</tt>.
      *
-     * @param weigher the algorithm to determine a entry's weight
+     * @param weigher the algorithm to determine an entry's weight
      * @throws NullPointerException if the weigher is null
      */
     public Builder<K, V> weigher(EntryWeigher<? super K, ? super V> weigher) {

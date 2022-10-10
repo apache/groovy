@@ -20,7 +20,7 @@ package org.codehaus.groovy.reflection.v7;
 
 import org.codehaus.groovy.reflection.GroovyClassValue;
 
-/** GroovyClassValue implementaion that simply delegates to Java 7's java.lang.ClassValue
+/** GroovyClassValue implementation that simply delegates to Java 7's java.lang.ClassValue
  * @see java.lang.ClassValue
  *
  * @param <T>

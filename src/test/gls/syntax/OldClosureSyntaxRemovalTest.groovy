@@ -29,7 +29,7 @@ class OldClosureSyntaxRemovalTest extends CompilableTestSupport {
         def oldClosure = { a | b }
         assert newClosure(1) == 1
         assert oldClosure.getMaximumNumberOfParameters() == 1
-        // the old closure would have cimply returned b
+        // the old closure would have simply returned b
         // after removal this is the logic or
         assert oldClosure(1) == (a | b)
     }

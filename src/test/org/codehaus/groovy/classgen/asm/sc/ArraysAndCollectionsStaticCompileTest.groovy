@@ -67,7 +67,7 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
 
                 for(String property in p.properties.keySet()){
                     props[property] = 'TEST'
-                    // I need to use calling put directy to make it work
+                    // I need to use calling put directly to make it work
                     // props.put property, 'TEST'
                 }
                 props

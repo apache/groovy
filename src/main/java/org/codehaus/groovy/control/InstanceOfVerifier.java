@@ -45,7 +45,7 @@ public abstract class InstanceOfVerifier extends ClassCodeVisitorSupport {
                     addTypeError(expression.getRightExpression(), "type parameter " + referenceType.getUnresolvedName() +
                         ". Use its erasure " + referenceType.getNameWithoutPackage() + " instead since further generic type information will be erased at runtime");
                 } else if (referenceType.getGenericsTypes() != null) {
-                    // TODO: Cannot perform instanceof check against parameterized type Class<Type>. Use the form Class<?> instead since further eneric type information will be erased at runtime
+                    // TODO: Cannot perform instanceof check against parameterized type Class<Type>. Use the form Class<?> instead since further generic type information will be erased at runtime
                 }
             }
         }

@@ -27,12 +27,12 @@ public class StringHelper {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     /**
-     * This method tokenizes a string by space characters, 
-     * but ignores spaces in quoted parts,that are parts in 
-     * '' or "". The method does allows the usage of "" in '' 
-     * and '' in "". The space character between tokens is not 
-     * returned. 
-     * 
+     * This method tokenizes a string by space characters,
+     * but ignores spaces in quoted parts,that are parts in
+     * '' or "". The method allows the usage of "" in ''
+     * and '' in "". The space character between tokens is not
+     * returned.
+     *
      * @param s the string to tokenize
      * @return the tokens
      */
@@ -82,5 +82,5 @@ public class StringHelper {
             pos++;
         }
         return pos;
-    } 
+    }
 }

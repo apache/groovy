@@ -416,7 +416,7 @@ Set or list preferences.
 [[GroovyShell-Preferences]]
 === Preferences
 
-Some of aspects of `groovysh` behaviors can be customized by setting
+Some aspects of `groovysh` behaviors can be customized by setting
 preferences. Preferences are set using the `set` command or the `:=`
 shortcut.
 
@@ -480,7 +480,7 @@ Configures the editor used by the `edit` command.
 
 Default is the value of the system environment variable `EDITOR`.
 
-Mac OS XTo use TextEdit, the default text editor on Mac OS X, configure:
+To use TextEdit, the default text editor on macOS, configure:
 set editor /Applications/TextEdit.app/Contents/MacOS/TextEdit
 
 [[GroovyShell-SettingaPreference]]
@@ -499,7 +499,7 @@ To list the current _set_ preferences (and their values):
 groovy:000> :show preferences
 ----------------
 
-Limitation: At the moment, there is no way to list all of the
+Limitation: At the moment, there is no way to list all the
 known/available preferences to be set.
 
 [[GroovyShell-ClearingPreferencesieResettingtoDefaults]]

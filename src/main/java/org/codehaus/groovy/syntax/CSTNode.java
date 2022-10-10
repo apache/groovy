@@ -158,7 +158,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node an its first four children match the
+     * Returns true if the node and its first four children match the
      * specified types.  Missing nodes have type Types.NULL.
      */
     boolean matches(int type, int child1, int child2, int child3, int child4) {

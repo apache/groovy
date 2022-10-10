@@ -34,7 +34,7 @@ import java.util.UUID;
 
 /**
  * Class responsible for the actual String serialization of the possible values of a JSON structure.
- * This class can also be used as a category, so as to add <code>toJson()</code> methods to various types.
+ * This class can also be used as a category, to add <code>toJson()</code> methods to various types.
  * <p>
  * This class does not provide the ability to customize the resulting output.  A {@link JsonGenerator}
  * can be used if the ability to alter the resulting output is required.

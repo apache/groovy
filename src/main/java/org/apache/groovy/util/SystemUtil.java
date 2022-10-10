@@ -138,7 +138,7 @@ public class SystemUtil {
     }
 
     /**
-     * Retrieves an Long System property
+     * Retrieves a Long System property
      *
      * @param name the name of the system property.
      * @param def the default value

@@ -79,7 +79,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
         def metaClasses = []
         registry.each { metaClasses << it }
 
-        // we add one more constant meta class and then count them to
+        // we add one more constant metaclass and then count them to
         // see if the number fits
         Integer.metaClass.foo = {}
 

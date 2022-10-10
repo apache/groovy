@@ -209,7 +209,7 @@ public class GroovyMBean extends GroovyObjectSupport {
     }
 
     /**
-     * List of string representations of all of the attributes on the MBean.
+     * List of string representations of all the attributes on the MBean.
      *
      * @return list of descriptions of each attribute on the mbean
      */
@@ -288,7 +288,7 @@ public class GroovyMBean extends GroovyObjectSupport {
     }
 
     /**
-     * Description of all of the operations available on the MBean.
+     * Description of all the operations available on the MBean.
      *
      * @return full description of each operation on the MBean
      */

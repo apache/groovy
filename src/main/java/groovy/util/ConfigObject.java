@@ -145,7 +145,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
 
     /**
-     * Converts this ConfigObject into a the java.util.Properties format, flattening the tree structure beforehand
+     * Converts this ConfigObject into the java.util.Properties format, flattening the tree structure beforehand
      *
      * @return A java.util.Properties instance
      */

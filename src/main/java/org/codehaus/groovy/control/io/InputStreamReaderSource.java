@@ -58,7 +58,7 @@ public class InputStreamReaderSource extends AbstractReaderSource {
 
     /**
      * Returns true if the source can be restarted (ie. if getReader()
-     * will return non-null on subsequent calls.
+     * will return non-null on subsequent calls).
      */
     @Override
     public boolean canReopenSource() {

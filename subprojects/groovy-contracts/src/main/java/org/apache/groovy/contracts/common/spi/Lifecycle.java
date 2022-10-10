@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.MethodNode;
  * <p>Specifies life-cycle hook-ins for applying AST transformation logic before and
  * after the annotation processors have been run.</p>
  *
- * <p>During excution of GContracts AST transformations, the following process is applied on each {@link ClassNode}
+ * <p>During execution of GContracts AST transformations, the following process is applied on each {@link ClassNode}
  * instance which qualifies for contract annotations:</P>
  *
  * <ol>
@@ -42,7 +42,7 @@ import org.codehaus.groovy.ast.MethodNode;
  *
  * <h3>Handling of AnnotationProcessor implementation classes</h3>
  *
- * <p>{@link AnnotationProcessor} implementatios are used to modify domain classes found in <tt>org.apache.groovy.contracts.domain</tt>. For that
+ * <p>{@link AnnotationProcessor} implementations are used to modify domain classes found in <tt>org.apache.groovy.contracts.domain</tt>. For that
  * reason, concrete annotation processor often don't modify AST nodes directly, but simply work with domain classes like
  * {@link org.apache.groovy.contracts.domain.Contract}. Whenever an annotation processor is done, it has finished its work on the
  * underlying domain model. </p>

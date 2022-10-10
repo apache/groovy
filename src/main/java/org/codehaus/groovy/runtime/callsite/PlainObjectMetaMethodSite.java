@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
 
 /**
  * Plain ordinary object call site
- *   meta class - cached
+ *   metaclass - cached
  *   method - cached
  *
  */

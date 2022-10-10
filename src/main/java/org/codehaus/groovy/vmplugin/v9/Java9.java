@@ -288,7 +288,7 @@ public class Java9 extends Java8 {
             } else if (declaringClass.isAssignableFrom(theClass)) {
                 // if caller can not access the method,
                 // try to find the corresponding method in its derived class
-                // GROOVY-9081: Sub-class derives the protected members from public class, "Invoke the members on the sub class instances"
+                // GROOVY-9081: Sub-class derives the protected members from public class, "Invoke the members on the subclass instances"
                 // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
                 // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
                 Optional<CachedMethod> cachedMethod = getAccessibleMetaMethod(metaMethod, paramTypes, caller, theClass, false);

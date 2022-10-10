@@ -76,7 +76,7 @@ public class MethodRankHelperTest extends TestCase {
     }
 
     /**
-     * turns a int array to a Integer array
+     * turns an int array to an Integer array
      */
     private Integer[] box(int[] ia) {
         Integer[] ret = new Integer[ia.length];

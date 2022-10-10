@@ -77,7 +77,7 @@ public class ClassNodeResolver {
          */
         public boolean isClassNode() { return cn!=null; }
         /**
-         * returns true if a SourecUnit is stored
+         * returns true if a SourceUnit is stored
          */
         public boolean isSourceUnit() { return su!=null; }
         /**
@@ -254,7 +254,7 @@ public class ClassNodeResolver {
             try {
                 asmClass = new DecompiledClassNode(AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
                 if (!asmClass.getName().equals(name)) {
-                    // this may happen under Windows because getResource is case insensitive under that OS!
+                    // this may happen under Windows because getResource is case-insensitive under that OS!
                     asmClass = null;
                 }
             } catch (IOException e) {

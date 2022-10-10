@@ -434,7 +434,7 @@ public class CharBuf extends Writer implements CharSequence {
                         _buffer[_location] = '\\';
                         _location++;
                         break;
-                    //There is not requirement to escape solidus so we will not.
+                    //There is no requirement to escape solidus so we will not.
 //                        case '/':
 //                            _buffer[_location] = '\\';
 //                            _location ++;

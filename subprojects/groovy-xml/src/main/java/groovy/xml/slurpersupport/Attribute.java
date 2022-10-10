@@ -148,7 +148,7 @@ public class Attribute extends GPathResult {
     }
 
     /**
-     * NOP, because an node can not be appended to an attribute.
+     * NOP, because a node can not be appended to an attribute.
      */
     @Override
     protected void appendNode(final Object newValue) {

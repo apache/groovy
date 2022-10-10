@@ -378,7 +378,7 @@ class CliBuilder {
      * For backwards compatibility with Apache Commons CLI, set this property to
      * <code>true</code> if the parser should recognize long options with both
      * a single hyphen and a double hyphen prefix. The default is <code>false</code>,
-     * so only long options with a double hypen prefix (<code>--option</code>) are recognized.
+     * so only long options with a double hyphen prefix (<code>--option</code>) are recognized.
      * @since 2.5
      */
     boolean acceptLongOptionsWithSingleHyphen = false

@@ -55,7 +55,7 @@ class ImportsSyntaxCompleterTest extends CompleterTestSupport {
             def candidates = ['prefill']
             assert completer.findMatchingPreImportedClasses('Big', candidates)
             assert ['prefill', 'BigInteger', 'BigDecimal'] == candidates
-            // test again without invoking pakage Helper
+            // test again without invoking package Helper
             assert completer.findMatchingPreImportedClasses('Big', candidates)
             assert ['prefill', 'BigInteger', 'BigDecimal', 'BigInteger', 'BigDecimal'] == candidates
         }

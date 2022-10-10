@@ -26,7 +26,7 @@ public class TransactionBuilder {
         closure.setDelegate(bean);
         closure.call(this);
 
-        // lets call the closures now
+        // let's call the closures now
         System.out.println("Performing normal transaction");
         bean.run().call(this);
         bean.onSuccess().call(this);

@@ -104,7 +104,7 @@ public class ASTNode implements NodeMetaDataHandler {
     }
 
     /**
-     * Copies all node meta data from the other node to this one
+     * Copies all node metadata from the other node to this one
      * @param other - the other node
      */
     public void copyNodeMetaData(ASTNode other) {

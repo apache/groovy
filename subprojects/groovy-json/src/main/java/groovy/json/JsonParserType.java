@@ -19,7 +19,7 @@
 package groovy.json;
 
 /**
- * Allows selection of parser type for new new JsonSlurper.
+ * Allows selection of parser type for new JsonSlurper.
  * <p />
  * To enable the INDEX_OVERLAY parser do this:
  *
@@ -29,7 +29,7 @@ package groovy.json;
  *
  * INDEX_OVERLAY should be your parser of choice.
  * <p />
- * CHAR_BUFFER is the parser of choice due to element of least surprise and need to
+ * CHAR_BUFFER is the parser of choice due to element of the least surprise and need to
  * mimic existing Slurper behavior as much as possible.
  * <p />
  * Use CHARACTER_SOURCE for large file parsing.

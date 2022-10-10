@@ -500,7 +500,7 @@ resulting in an updated string containing the new number value.
 
 [NOTE]
 An embedded closure expression taking more than one parameter will generate an exception at runtime.
-Only closures with zero or one parameters are allowed.
+Only closures with zero or one parameter are allowed.
 
 ==== Interoperability with Java
 
@@ -513,7 +513,7 @@ the `toString()` method of the GString is automatically and transparently called
 include::../test/SyntaxTest.groovy[tags=java_gstring_interop_1,indent=0]
 ----
 <1> We create a GString variable
-<2> We double check it's an instance of the GString
+<2> We double-check it's an instance of the GString
 <3> We then pass that GString to a method taking a String as parameter
 <4> The signature of the `takeString()` method explicitly says its sole parameter is a String
 <5> We also verify that the parameter is indeed a String and not a GString.
@@ -757,13 +757,13 @@ include::../test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
 <5> Access two elements at once, returning a new list containing those two elements
 <6> Use a range to access a range of values from the list, from a start to an end element position
 
-As lists can be heterogeneous in nature, lists can also contain other lists to create multi-dimensional lists:
+As lists can be heterogeneous in nature, lists can also contain other lists to create multidimensional lists:
 
 [source,groovy]
 ----
 include::../test/SyntaxTest.groovy[tags=multi_dim_list,indent=0]
 ----
-<1> Define a list of list of numbers
+<1> Define a list of numbers
 <2> Access the second element of the top-most list, and the first element of the inner list
 
 == Arrays

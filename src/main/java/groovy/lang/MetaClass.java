@@ -106,7 +106,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param propertyName The name of the property
      * @param optionalValue The value of the property which could be null in the case of a getter
      * @param isGetter Whether the missing property event was the result of a getter or a setter
-     * 
+     *
      * @return The result of the propertyMissing method or throws MissingPropertyException
      */
      Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter);
@@ -136,12 +136,12 @@ public interface MetaClass extends MetaObjectProtocol {
 
     /**
      * Complete the initialisation process. After this method
-     * is called no methods should be added to the meta class.
+     * is called no methods should be added to the metaclass.
      * Invocation of methods or access to fields/properties is
-     * forbidden unless this method is called. This method 
+     * forbidden unless this method is called. This method
      * should contain any initialisation code, taking a longer
-     * time to complete. An example is the creation of the 
-     * Reflector. It is suggested to synchronize this 
+     * time to complete. An example is the creation of the
+     * Reflector. It is suggested to synchronize this
      * method.
      */
      void initialize();

@@ -60,7 +60,7 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     private int len = 0;
     /**
-     * Holds whether or not we ae in lazy chop mode or not.
+     * Holds whether we are in lazy chop mode.
      */
     private final boolean lazyChop;
 

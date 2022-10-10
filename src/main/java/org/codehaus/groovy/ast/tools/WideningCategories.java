@@ -95,7 +95,7 @@ public class WideningCategories {
     }
 
     /**
-     * Used to check if a type is an double or Double.
+     * Used to check if a type is a double or Double.
      * @param type the type to check
      */
     public static boolean isDouble(final ClassNode type) {
@@ -151,7 +151,7 @@ public class WideningCategories {
     }
 
     /**
-     * It is of a floating category, if the provided type is a
+     * It is of a floating category, if the provided type is
      * a float, double. C(type)=float
      */
     public static boolean isFloatingCategory(final ClassNode type) {
@@ -227,9 +227,9 @@ public class WideningCategories {
     }
 
     /**
-     * Given a lowest upper bound computed without generic type information but which requires to be parameterized
+     * Given the lowest upper bound computed without generic type information but which requires to be parameterized
      * and the two implementing classnodes which are parameterized with potentially two different types, returns
-     * a parameterized lowest upper bound.
+     * the parameterized lowest upper bound.
      *
      * For example, if LUB is Set&lt;T&gt; and a is Set&lt;String&gt; and b is Set&lt;StringBuffer&gt;, this
      * will return a LUB which parameterized type matches Set&lt;? extends CharSequence&gt;

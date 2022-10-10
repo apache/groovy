@@ -84,7 +84,7 @@ public class GroovyMain {
     // automatically output the result of each script
     private boolean autoOutput;
 
-    // automatically split each line using the splitpattern
+    // automatically split each line using the splitPattern
     private boolean autoSplit;
 
     // The pattern used to split the current line

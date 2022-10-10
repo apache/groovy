@@ -456,8 +456,7 @@ public class DataSet extends Sql {
     }
 
     /**
-     * Returns a List of all of the rows from the table a DataSet
-     * represents.
+     * Returns a List of all the rows from the DataSet.
      *
      * @return Returns a list of GroovyRowResult objects from the dataset
      * @throws SQLException if a database error occurs

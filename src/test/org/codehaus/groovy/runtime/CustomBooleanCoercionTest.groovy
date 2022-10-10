@@ -118,7 +118,7 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
     }
 }
 
-/** A Predicate classe coercible to a boolea expression */
+/** A Predicate classe coercible to a boolean expression */
 class Predicate {
     boolean value
     boolean asBoolean() { value }

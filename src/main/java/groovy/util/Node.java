@@ -788,7 +788,7 @@ public class Node implements Serializable, Cloneable {
 
 
     /**
-     * Converts the text of this GPathResult to a Integer object.
+     * Converts the text of this GPathResult to an Integer object.
      *
      * @return the GPathResult, converted to a <code>Integer</code>
      */

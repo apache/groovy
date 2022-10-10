@@ -61,7 +61,7 @@ public class GStringExpression extends Expression {
                 transformExpressions(values, transformer));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
-        return ret;        
+        return ret;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class GStringExpression extends Expression {
     }
 
     public void addValue(Expression value) {
-        // If the first thing is an value, then we need a dummy empty string in front of it so that when we
+        // If the first thing is a value, then we need a dummy empty string in front of it so that when we
         // toString it they come out in the correct order.
         if (strings.isEmpty())
             strings.add(ConstantExpression.EMPTY_STRING);

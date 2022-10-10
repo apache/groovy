@@ -399,7 +399,7 @@ long longComputation(int seed) {
 }
 
 def x = longComputation(1) // returns after 100 milliseconds
-def y = longComputation(1) // returns immediatly
+def y = longComputation(1) // returns immediately
 def z = longComputation(2) // returns after 200 milliseconds
 assert x==y
 assert x!=z

@@ -390,7 +390,7 @@ public class XmlUtil {
 
     /**
      * Factory method to create a SAXParser configured to validate according to a particular schema language and
-     * an URL pointing to the schema to validate against.
+     * a URL pointing to the schema to validate against.
      * The created SAXParser will be namespace-aware and not validate against DTDs.
      *
      * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
@@ -407,7 +407,7 @@ public class XmlUtil {
 
     /**
      * Factory method to create a SAXParser configured to validate according to a particular schema language and
-     * an URL pointing to the schema to validate against.
+     * a URL pointing to the schema to validate against.
      *
      * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
      * @param namespaceAware will the parser be namespace aware

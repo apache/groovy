@@ -374,7 +374,7 @@ public class DefaultTypeTransformation {
 
         Object[] args = null;
         if (object instanceof Collection) {
-            // let's try invoke the constructor with the list as arguments
+            // let's try to invoke the constructor with the list as arguments
             // such as for creating a Dimension, Point, Color etc.
             Collection collection = (Collection) object;
             args = collection.toArray();

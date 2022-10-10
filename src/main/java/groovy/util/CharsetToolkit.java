@@ -140,14 +140,14 @@ public class CharsetToolkit {
     /**
      * Guess the encoding of the provided buffer.
      * If Byte Order Markers are encountered at the beginning of the buffer, we immediately
-     * return the charset implied by this BOM. Otherwise, the file would not be a human
-     * readable text file.
+     * return the charset implied by this BOM. Otherwise, the file would not be a
+     * human-readable text file.
      * <p>
      * If there is no BOM, this method tries to discern whether the file is UTF-8 or not.
      * If it is not UTF-8, we assume the encoding is the default system encoding
      * (of course, it might be any 8-bit charset, but usually, an 8-bit charset is the default one).
      * <p>
-     * It is possible to discern UTF-8 thanks to the pattern of characters with a multi-byte sequence.
+     * It is possible to discern UTF-8 thanks to the pattern of characters with a multibyte sequence.
      * <pre>
      * UCS-4 range (hex.)        UTF-8 octet sequence (binary)
      * 0000 0000-0000 007F       0xxxxxxx
@@ -163,7 +163,7 @@ public class CharsetToolkit {
      */
     private Charset guessEncoding() {
         // if the file has a Byte Order Marker, we can assume the file is in UTF-xx
-        // otherwise, the file would not be human readable
+        // otherwise, the file would not be human-readable
         if (hasUTF8Bom())
             return StandardCharsets.UTF_8;
         if (hasUTF16LEBom())
@@ -197,7 +197,7 @@ public class CharsetToolkit {
                 // a two-bytes sequence was encountered
                 if (isTwoBytesSequence(b0)) {
                     // there must be one continuation byte of the form 10xxxxxx,
-                    // otherwise the following character is is not a valid UTF-8 construct
+                    // otherwise the following character is not a valid UTF-8 construct
                     if (!isContinuationChar(b1))
                         validU8Char = false;
                     else
@@ -206,7 +206,7 @@ public class CharsetToolkit {
                 // a three-bytes sequence was encountered
                 else if (isThreeBytesSequence(b0)) {
                     // there must be two continuation bytes of the form 10xxxxxx,
-                    // otherwise the following character is is not a valid UTF-8 construct
+                    // otherwise the following character is not a valid UTF-8 construct
                     if (!(isContinuationChar(b1) && isContinuationChar(b2)))
                         validU8Char = false;
                     else
@@ -215,7 +215,7 @@ public class CharsetToolkit {
                 // a four-bytes sequence was encountered
                 else if (isFourBytesSequence(b0)) {
                     // there must be three continuation bytes of the form 10xxxxxx,
-                    // otherwise the following character is is not a valid UTF-8 construct
+                    // otherwise the following character is not a valid UTF-8 construct
                     if (!(isContinuationChar(b1) && isContinuationChar(b2) && isContinuationChar(b3)))
                         validU8Char = false;
                     else
@@ -224,7 +224,7 @@ public class CharsetToolkit {
                 // a five-bytes sequence was encountered
                 else if (isFiveBytesSequence(b0)) {
                     // there must be four continuation bytes of the form 10xxxxxx,
-                    // otherwise the following character is is not a valid UTF-8 construct
+                    // otherwise the following character is not a valid UTF-8 construct
                     if (!(isContinuationChar(b1)
                         && isContinuationChar(b2)
                         && isContinuationChar(b3)
@@ -236,7 +236,7 @@ public class CharsetToolkit {
                 // a six-bytes sequence was encountered
                 else if (isSixBytesSequence(b0)) {
                     // there must be five continuation bytes of the form 10xxxxxx,
-                    // otherwise the following character is is not a valid UTF-8 construct
+                    // otherwise the following character is not a valid UTF-8 construct
                     if (!(isContinuationChar(b1)
                         && isContinuationChar(b2)
                         && isContinuationChar(b3)
@@ -253,7 +253,7 @@ public class CharsetToolkit {
                 break;
             i++;
         }
-        // if no byte with an high order bit set, the encoding is US-ASCII
+        // if no byte with a high order bit set, the encoding is US-ASCII
         // (it might have been UTF-7, but this encoding is usually internally used only by mail systems)
         if (!highOrderBit) {
             // returns the default charset rather than US-ASCII if the enforce8Bit flag is set.
@@ -263,7 +263,7 @@ public class CharsetToolkit {
                 return StandardCharsets.US_ASCII;
         }
         // if no invalid UTF-8 were encountered, we can assume the encoding is UTF-8,
-        // otherwise the file would not be human readable
+        // otherwise the file would not be human-readable
         if (validU8Char)
             return StandardCharsets.UTF_8;
         // finally, if it's not UTF-8 nor US-ASCII, let's assume the encoding is the default encoding

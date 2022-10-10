@@ -255,7 +255,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Returns the registry for this metaclass
      *
-     * @return The resgistry
+     * @return The registry
      */
     public MetaClassRegistry getRegistry() {
         return registry;
@@ -972,7 +972,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param instance      The instance
      * @param propertyName  The name of the property
      * @param optionalValue The value in the case of a setter
-     * @param isGetter      True if its a getter
+     * @param isGetter      True if it's a getter
      * @return The value in the case of a getter or a MissingPropertyException
      */
     protected Object invokeStaticMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
@@ -1413,7 +1413,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             try {
                 return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
             } catch (MissingMethodException mme) {
-                // fall through -- "doCall" is not instrisic to Closure
+                // fall through -- "doCall" is not intrinsic to Closure
             }
         }
 
@@ -1595,7 +1595,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
         MetaMethod method = retrieveStaticMethod(methodName, arguments);
-        // let's try use the cache to find the method
+        // let's try to use the cache to find the method
 
         if (method != null) {
             MetaClassHelper.unwrap(arguments);
@@ -3136,7 +3136,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     /**
      * adds a MetaMethod to this class. WARNING: this method will not
-     * do the neccessary steps for multimethod logic and using this
+     * do the necessary steps for multimethod logic and using this
      * method doesn't mean, that a method added here is replacing another
      * method from a parent class completely. These steps are usually done
      * by initialize, which means if you need these steps, you have to add
@@ -3284,7 +3284,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return;
             }
         }
-        // the casese true and null for a match are through, the
+        // the cases true and null for a match are through, the
         // remaining case is false and that means adding the method
         // to our list
         list.add(method);
@@ -3456,7 +3456,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     /**
      * Complete the initialisation process. After this method
-     * is called no methods should be added to the meta class.
+     * is called no methods should be added to the metaclass.
      * Invocation of methods or access to fields/properties is
      * forbidden unless this method is called. This method
      * should contain any initialisation code, taking a longer
@@ -3508,7 +3508,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             for (Method listenerMethod : listenerMethods) {
                 final MetaMethod metaMethod = CachedMethod.find(descriptor.getAddListenerMethod());
                 // GROOVY-5202
-                // there might be a non public listener of some kind
+                // there might be a non-public listener of some kind
                 // we skip that here
                 if (metaMethod == null) continue;
                 addToAllMethodsIfPublic(metaMethod);
@@ -3963,20 +3963,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * indicates is the meta class method invocation for non-static methods is done
+     * indicates is the metaclass method invocation for non-static methods is done
      * through a custom invoker object.
      *
-     * @return true - if the method invocation is not done by the meta class itself
+     * @return true - if the method invocation is not done by the metaclass itself
      */
     public boolean hasCustomInvokeMethod() {
         return invokeMethodMethod != null;
     }
 
     /**
-     * indicates is the meta class method invocation for static methods is done
+     * indicates is the metaclass method invocation for static methods is done
      * through a custom invoker object.
      *
-     * @return true - if the method invocation is not done by the meta class itself
+     * @return true - if the method invocation is not done by the metaclass itself
      */
     public boolean hasCustomStaticInvokeMethod() {
         return false;

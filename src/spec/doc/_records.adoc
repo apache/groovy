@@ -58,7 +58,7 @@ include::../test/RecordSpecificationTest.groovy[tags=record_message_equivalent,i
 
 Note the special naming convention for record getters. They are the same name as the field
 (rather than the often common JavaBean convention of capitalized with a "get" prefix).
-Rather than refering to a record's fields or properties, the term _component_
+Rather than referring to a record's fields or properties, the term _component_
 is typically used for records. So our `Message` record has `from`, `to`, and `body` components.
 
 Like in Java, you can override the normally implicitly supplied methods

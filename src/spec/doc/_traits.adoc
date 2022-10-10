@@ -813,7 +813,7 @@ In order to make this contract explicit, and to make the type checker aware of t
 a `@SelfType` annotation that will:
 
 * let you declare the types that a class that implements this trait must inherit or implement
-* throw a compile time error if those type constraints are not satisfied
+* throw a compile-time error if those type constraints are not satisfied
 
 So in our previous example, we can fix the trait using the `@groovy.transform.SelfType` annotation:
 

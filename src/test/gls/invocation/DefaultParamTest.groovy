@@ -106,7 +106,7 @@ final class DefaultParamTest extends GroovyTestCase {
 
     void testPrecendence() {
         // def meth(Closure cl = null) will produce a call meth(null)
-        // since interfaces are prefered over normal classes and since
+        // since interfaces are preferred over normal classes and since
         // def meth(Map args, Closure cl = null) will produce a method
         // meth(Map) a simple call with meth(null) would normally call
         // meth(Map). To ensure this will not happen the call has to

@@ -577,7 +577,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     /**
-     * Adds a ClassNode directly to the unit (ie. without source).
+     * Adds a ClassNode directly to the unit (i.e. without source).
      * WARNING: the source is needed for error reporting, using
      * this method without setting a SourceUnit will cause
      * NullPinterExceptions
@@ -774,7 +774,7 @@ public class CompilationUnit extends ProcessingUnit {
             visitor = new ExtendedVerifier(source);
             visitor.visitClass(classNode);
 
-            // because the class may be generated even if a error was found
+            // because the class may be generated even if an error was found
             // and that class may have an invalid format we fail here if needed
             getErrorCollector().failIfErrors();
 

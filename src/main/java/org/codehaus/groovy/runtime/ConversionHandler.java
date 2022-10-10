@@ -45,7 +45,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
     private MetaClass metaClass;
 
     /**
-     * Creates a ConversionHandler with an delegate.
+     * Creates a ConversionHandler with a delegate.
      *
      * @param delegate the delegate
      * @throws IllegalArgumentException if the given delegate is null

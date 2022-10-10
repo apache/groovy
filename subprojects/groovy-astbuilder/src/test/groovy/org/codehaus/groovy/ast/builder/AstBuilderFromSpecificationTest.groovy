@@ -91,7 +91,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
 
 /**
- * Unit test for the AST from Psuedo-specification feature.
+ * Unit test for the AST from Pseudo-specification feature.
  */
 class AstBuilderFromSpecificationTest extends GroovyTestCase {
 

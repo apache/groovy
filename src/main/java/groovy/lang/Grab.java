@@ -128,7 +128,7 @@ public @interface Grab {
      * {@code group#module;version[confs]} (where only group and module are required and confs,
      * if used, is one or more comma separated configuration names)<br>
      * In addition, you can add any valid Ivy attributes at the end of your string value using
-     * semi-colon separated name = value pairs, e.g.:<br>
+     * semicolon separated name = value pairs, e.g.:<br>
      * {@code @Grab('junit:junit:*;transitive=false')}<br>
      * {@code @Grab('group=junit;module=junit;version=4.8.2;classifier=javadoc')}<br>
      */

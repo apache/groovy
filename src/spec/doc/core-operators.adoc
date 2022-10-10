@@ -731,7 +731,7 @@ include::../test/OperatorsTest.groovy[tags=spaceship,indent=0]
 [[subscript-operator]]
 === Subscript operator
 
-The subscript operator is a short hand notation for `getAt` or `putAt`, depending on whether you find it on
+The subscript operator is a shorthand notation for `getAt` or `putAt`, depending on whether you find it on
 the left hand side or the right hand side of an assignment:
 
 [source,groovy]

@@ -264,7 +264,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
             private static final long serialVersionUID = -3786157136157691230L;
         }
 
-        //WE USE THIS AS REUSABLE        
+        //WE USE THIS AS REUSABLE
         //CHECKSTYLE.OFF: ConstantNameCheck - special case with a reusable exception
         private static final FinishedReadingException finishedReadingException;
         //CHECKSTYLE.ON: ConstantNameCheck
@@ -541,7 +541,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
              Note: we don't do java escaping of slashes in the below
              example, i.e. the source string is what you would see in a text editor when looking at your template
-             file: 
+             file:
              source string     result
              'bob'            -> 'bob'
              '\bob'           -> '\bob'
@@ -559,7 +559,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 //this means we have received a double backslash sequence
                 //if this is followed by ${ or <% we output one backslash
                 //and interpret the following sequences with groovy, if followed by anything
-                //else we output the two backslashes and continue as usual 
+                //else we output the two backslashes and continue as usual
                 source.mark(3);
                 int d = read(source, sourcePosition, lookAhead);
                 c = read(source, sourcePosition, lookAhead);
@@ -630,7 +630,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         }
 
         /**
-         * Parses a non curly dollar preceded identifier of the type
+         * Parses a non-curly dollar preceded identifier of the type
          * '$bird' in the following template example:
          *
          * <pre>
@@ -785,7 +785,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         /*
          * Create groovy assertion style error message for template error. Example:
          *
-         * Error parsing expression on line 71 column 15, message: no such property jboss for for class DUMMY
+         * Error parsing expression on line 71 column 15, message: no such property jboss for class DUMMY
          * templatedata${jboss}templateddatatemplateddata
          *             ^------^
          *                 |
@@ -853,7 +853,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
             try {
                 msg += "\n" + getErrorContext(p.row);
             } catch (IOException e) {
-                //we opt for not doing anthing here...we just do not get context if
+                //we opt for not doing anything here...we just do not get context if
                 //this happens
             }
 

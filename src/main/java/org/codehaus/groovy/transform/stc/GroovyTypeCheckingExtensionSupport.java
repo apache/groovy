@@ -57,7 +57,7 @@ import java.util.Objects;
 /**
  * Base class for type checking extensions written in Groovy. Compared to its superclass, {@link TypeCheckingExtension},
  * this class adds a number of utility methods aimed at leveraging the syntax of the Groovy language to improve
- * expressivity and conciseness.
+ * expressiveness and conciseness.
  *
  * @since 2.1.0
  */

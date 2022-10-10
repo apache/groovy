@@ -36,7 +36,7 @@ class UnicodeEscapes2 extends GroovyTestCase {
         def a = 1
         assert \u0061 == 1 // char 61 is 'a'
 
-        // Not intepreted as an escape
+        // Not interpreted as an escape
         // \\u0061 == 1 // @fail:parse
 
         assert "\u0061".length() == 1

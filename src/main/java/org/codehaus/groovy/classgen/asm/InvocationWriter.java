@@ -831,7 +831,7 @@ public class InvocationWriter {
     }
 
     /**
-     * Converts sourceType to a non primitive by using Groovy casting.
+     * Converts sourceType to a non-primitive by using Groovy casting.
      * sourceType might be a primitive
      * This might be done using SBA#castToType
      */

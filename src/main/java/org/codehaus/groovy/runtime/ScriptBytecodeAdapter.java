@@ -668,7 +668,7 @@ public class ScriptBytecodeAdapter {
         }
         if (from instanceof Integer && to instanceof Integer) {
             // Currently, empty ranges where from != to, the range is full exclusive (e.g. 0<..<-1) and from and to
-            // have a different sign are constructed as IntRanges. This is because t3hese ranges can still be used to
+            // have a different sign are constructed as IntRanges. This is because these ranges can still be used to
             // index into lists.
             return new IntRange(!exclusiveLeft, !exclusiveRight, (Integer) from, (Integer) to);
         }
