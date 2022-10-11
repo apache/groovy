@@ -392,14 +392,78 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return methodList;
     }
 
-    // -------------------------------------
-    // delegate to the type checking context
-    // -------------------------------------
-
-    // --------------------------------------------
-    // end of delegate to the type checking context
-    // --------------------------------------------
-
+    /**
+     * Event handler registration:
+     * <dl>
+     *   <dt>setup</dt>                          <dd>Registers closure that runs after the type checker finishes initialization</dd>
+     *   <dt>finish</dt>                         <dd>Registers closure that runs after the type checker completes type checking</dd>
+     *   <dt>beforeVisitClass</dt>               <dd>Registers closure that runs before type checking a class</dd>
+     *   <dt>afterVisitClass</dt>                <dd>Registers closure that runs after having finished the visit of a type checked class</dd>
+     *   <dt>beforeVisitMethod</dt>              <dd>Registers closure that runs before type checking a method body</dd>
+     *   <dt>afterVisitMethod</dt>               <dd>Registers closure that runs after type checking a method body</dd>
+     *   <dt>beforeMethodCall</dt>               <dd>Registers closure that runs before the type checker starts type checking a method call</dd>
+     *   <dt>afterMethodCall</dt>                <dd>Registers closure that runs once the type checker has finished type checking a method call</dd>
+     *   <dt>methodNotFound</dt>                 <dd>Registers closure that runs when it fails to find an appropriate method for a method call</dd>
+     *   <dt>ambiguousMethods</dt>               <dd>Registers closure that runs when the type checker cannot choose between several candidate methods</dd>
+     *   <dt>onMethodSelection</dt>              <dd>Registers closure that runs when it finds a method appropriate for a method call</dd>
+     *   <dt>unresolvedVariable</dt>             <dd>Registers closure that runs when the type checker finds an unresolved variable</dd>
+     *   <dt>unresolvedProperty</dt>             <dd>Registers closure that runs when the type checker cannot find a property on the receiver</dd>
+     *   <dt>unresolvedAttribute</dt>            <dd>Registers closure that runs when the type checker cannot find an attribute on the receiver</dd>
+     *   <dt>incompatibleAssignment</dt>         <dd>Registers closure that runs when the type checker thinks that the right-hand side of an assignment is incompatible with the left-hand side</dd>
+     *   <dt>incompatibleReturnType</dt>         <dd>Registers closure that runs when the type checker thinks that a return value is incompatibe with the return type</dd>
+     * </dl>
+     *
+     * Expression categorization:
+     * <dl>
+     *   <dt>isAnnotationConstantExpression</dt> <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.AnnotationConstantExpression AnnotationConstantExpression}</dd>
+     *   <dt>isArgumentListExpression</dt>       <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ArgumentListExpression ArgumentListExpression}</dd>
+     *   <dt>isArrayExpression</dt>              <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ArrayExpression ArrayExpression}</dd>
+     *   <dt>isAttributeExpression</dt>          <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.AttributeExpression AttributeExpression}</dd>
+     *   <dt>isBinaryExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BinaryExpression BinaryExpression}</dd>
+     *   <dt>isBitwiseNegationExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BitwiseNegationExpression BitwiseNegationExpression}</dd>
+     *   <dt>isBooleanExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.BooleanExpression BooleanExpression}</dd>
+     *   <dt>isCastExpression</dt>               <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.CastExpression CastExpression}</dd>
+     *   <dt>isClassExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ClassExpression ClassExpression}</dd>
+     *   <dt>isClosureExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ClosureExpression ClosureExpression}</dd>
+     *   <dt>isConstantExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ConstantExpression ConstantExpression}</dd>
+     *   <dt>isConstructorCallExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ConstructorCallExpression ConstructorCallExpression}</dd>
+     *   <dt>isDeclarationExpression</dt>        <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.DeclarationExpression DeclarationExpression}</dd>
+     *   <dt>isElvisOperatorExpression</dt>      <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.ElvisOperatorExpression ElvisOperatorExpression}</dd>
+     *   <dt>isEmptyExpression</dt>              <dd>Determines if argument is an {@link org.codehaus.groovy.ast.expr.EmptyExpression EmptyExpression}</dd>
+     *   <dt>isFieldExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.FieldExpression FieldExpression}</dd>
+     *   <dt>isGStringExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.GStringExpression GStringExpression}</dd>
+     *   <dt>isLambdaExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.LambdaExpression LambdaExpression}</dd>
+     *   <dt>isListExpression</dt>               <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.ListExpression ListExpression}</dd>
+     *   <dt>isMapExpression</dt>                <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MapExpression MapExpression}</dd>
+     *   <dt>isMapEntryExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MapEntryExpression MapEntryExpression}</dd>
+     *   <dt>isMethodCallExpression</dt>         <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodCallExpression MethodCallExpression}</dd>
+     *   <dt>isMethodPointerExpression</dt>      <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodPointerExpression MethodPointerExpression}</dd>
+     *   <dt>isMethodReferenceExpression</dt>    <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression MethodReferenceExpression}</dd>
+     *   <dt>isNamedArgumentListExpression</dt>  <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.NamedArgumentListExpression NamedArgumentListExpression}</dd>
+     *   <dt>isNotExpression</dt>                <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.NotExpression NotExpression}</dd>
+     *   <dt>isPostfixExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PostfixExpression PostfixExpression}</dd>
+     *   <dt>isPrefixExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PrefixExpression PrefixExpression}</dd>
+     *   <dt>isPropertyExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.PropertyExpression PropertyExpression}</dd>
+     *   <dt>isRangeExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.RangeExpression RangeExpression}</dd>
+     *   <dt>isSpreadExpression</dt>             <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.SpreadExpression SpreadExpression}</dd>
+     *   <dt>isSpreadMapExpression</dt>          <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.SpreadMapExpression SpreadMapExpression}</dd>
+     *   <dt>isStaticMethodCallExpression</dt>   <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.StaticMethodCallExpression StaticMethodCallExpression}</dd>
+     *   <dt>isTernaryExpression</dt>            <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.TernaryExpression TernaryExpression}</dd>
+     *   <dt>isTupleExpression</dt>              <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.TupleExpression TupleExpression}</dd>
+     *   <dt>isUnaryMinusExpression</dt>         <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.UnaryMinusExpression UnaryMinusExpression}</dd>
+     *   <dt>isUnaryPlusExpression</dt>          <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.UnaryPlusExpression UnaryPlusExpression}</dd>
+     *   <dt>isVariableExpression</dt>           <dd>Determines if argument is a  {@link org.codehaus.groovy.ast.expr.VariableExpression VariableExpression}</dd>
+     * </dl>
+     *
+     * General utility:
+     * <ul>
+     *   <li>Delegates to {@link AbstractTypeCheckingExtension}</li>
+     *   <li>Imports static members of {@link org.codehaus.groovy.ast.ClassHelper ClassHelper}</li>
+     *   <li>Imports static members of {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport StaticTypeCheckingSupport}</li>
+     * </ul>
+     *
+     * @see <a href="https://docs.groovy-lang.org/latest/html/documentation/#_a_dsl_for_type_checking">Groovy Language Documentation</a>
+     */
     public abstract static class TypeCheckingDSL extends Script {
         private GroovyTypeCheckingExtensionSupport extension;
 

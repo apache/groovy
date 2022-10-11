@@ -508,7 +508,7 @@ inner/anonymous class defined in the same class with is not skipped.
     that an assignment is incorrect, meaning that the right-hand side of an
     assignment is incompatible with the left-hand side
 | *Arguments*
-| ClassNode lhsType, ClassNode rhsType,  Expression assignment
+| ClassNode lhsType, ClassNode rhsType, Expression assignment
 | *Usage*
 |
 [source,groovy]
@@ -523,6 +523,30 @@ is possible that assigning a variable of one type to a property of
 another type is handled through that runtime mechanism. In that case, you
 can help the type checker just by telling it that the assignment is
 valid (using `handled` set to `true`).
+|===
+
+[[event-incompatibleReturnType]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| incompatibleReturnType
+| *Called When*
+| Called when the type checker thinks that a return value is incompatibe with
+    the return type of the enclosing closure or method
+| *Arguments*
+| ReturnStatement statement, ClassNode valueType
+| *Usage*
+|
+[source,groovy]
+----
+include::../test-resources/incompatiblereturntype.groovy[tags=event,indent=0]
+----
+
+Gives the developer the ability to handle incorrect return values. This is for
+example useful when the return value will undergo implicit conversion or the
+enclosing closure's target type is difficult to infer properly. In that case,
+you can help the type checker just by telling it that the assignment is valid
+(by setting the `handled` property).
 |===
 
 [[event-ambiguousMethods]]
