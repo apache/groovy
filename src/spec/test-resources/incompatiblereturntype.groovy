@@ -17,9 +17,8 @@
  *  under the License.
  */
 // tag::event[]
-unresolvedAttribute { aexp ->
-    if (getType(aexp.objectExpression) == STRING_TYPE) {
-        storeType(aexp, STRING_TYPE)
+incompatibleReturnType { stmt, type ->
+    if (type == STRING_TYPE) {
         handled = true
     }
 }

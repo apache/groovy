@@ -25,13 +25,12 @@
 
 === Towards a smarter type checker
 
-Despite being a dynamic language, Groovy can be used with a static type
-checker at compile time, enabled using the <<static-type-checking,@TypeChecked>>
-annotation. In this mode, the compiler becomes
-more verbose and throws errors for, example, typos, non-existent
-methods,… This comes with a few limitations though, most of them coming
-from the fact that Groovy remains inherently a dynamic language. For
-example, you wouldn’t be able to use type checking on code that uses the markup builder:
+Despite being a dynamic language, Groovy can be used with a <<static-type-checking,static type checker>>
+at compile time, enabled using the `@TypeChecked` annotation. In this mode, the
+compiler becomes more verbose and throws errors for, example, typos, non-existent
+methods, etc. This comes with a few limitations though, most of them coming from
+the fact that Groovy remains inherently a dynamic language. For example, you
+wouldn’t be able to use type checking on code that uses the markup builder:
 
 [source,groovy]
 ----
@@ -246,7 +245,7 @@ Can be used to perform additional checks after the type checker has finished its
 | Called when the type checker finds an
   unresolved variable
 | *Arguments*
-| VariableExpression var
+| VariableExpression vexp
 | *Usage*
 |
 [source,groovy]
@@ -286,7 +285,7 @@ Allows the developer to handle "dynamic" properties
 | Called when the type checker cannot
   find an attribute on the receiver
 | *Arguments*
-| AttributeExpression aex
+| AttributeExpression aexp
 | *Usage*
 |
 [source,groovy]
@@ -424,8 +423,8 @@ include::{projectdir}/src/spec/test-resources/beforevisitmethod.groovy[tags=even
 The type checker will call this method before
 starting to type check a method body. If you want, for example, to
 perform type checking by yourself instead of letting the type checker do
-it, you have to set the handled flag to true.This event can also be used
-to help defining the scope of your extension (for example, applying it
+it, you have to set the handled flag to true. This event can also be used
+to help define the scope of your extension (for example, applying it
 only if you are inside method foo).
 |===
 
@@ -506,10 +505,10 @@ inner/anonymous class defined in the same class with is not skipped.
 | incompatibleAssignment
 | *Called When*
 | Called when the type checker thinks
-    that an assignment is incorrect, meaning that the right hand side of an
-    assignment is incompatible with the left hand side
+    that an assignment is incorrect, meaning that the right-hand side of an
+    assignment is incompatible with the left-hand side
 | *Arguments*
-| ClassNode lhsType, ClassNode rhsType,  Expression assignment
+| ClassNode lhsType, ClassNode rhsType, Expression assignment
 | *Usage*
 |
 [source,groovy]
@@ -524,6 +523,30 @@ is possible that assigning a variable of one type to a property of
 another type is handled through that runtime mechanism. In that case, you
 can help the type checker just by telling it that the assignment is
 valid (using `handled` set to `true`).
+|===
+
+[[event-incompatibleReturnType]]
+[cols="1,3a",width="100%"]
+|===
+| *Event name*
+| incompatibleReturnType
+| *Called When*
+| Called when the type checker thinks that a return value is incompatibe with
+    the return type of the enclosing closure or method
+| *Arguments*
+| ReturnStatement statement, ClassNode valueType
+| *Usage*
+|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test-resources/incompatiblereturntype.groovy[tags=event,indent=0]
+----
+
+Gives the developer the ability to handle incorrect return values. This is for
+example useful when the return value will undergo implicit conversion or the
+enclosing closure's target type is difficult to infer properly. In that case,
+you can help the type checker just by telling it that the assignment is valid
+(by setting the `handled` property).
 |===
 
 [[event-ambiguousMethods]]
@@ -564,19 +587,16 @@ make things easier.
 [[Typecheckingextensions-Supportclasses]]
 ==== Support classes
 
-The DSL relies on a support class
-called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
-This class itself
-extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] . Those
-two classes define a number of _helper_ methods that will make working
+The DSL relies on a support class called gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] .
+This class itself extends gapi:org.codehaus.groovy.transform.stc.TypeCheckingExtension[] .
+Those two classes define a number of _helper_ methods that will make working
 with the AST easier, especially regarding type checking. One interesting
 thing to know is that you *have access to the type checker*. This means
 that you can programmatically call methods of the type checker,
 including those that allow you to *throw compilation errors*.
 
-The extension script delegates to
-the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class, meaning that you have
-direct access to the following variables:
+The extension script delegates to the gapi:org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport[] class,
+meaning that you have direct access to the following variables:
 
 * _context_: the type checker context, of type gapi:org.codehaus.groovy.transform.stc.TypeCheckingContext[]
 * _typeCheckingVisitor_: the type checker itself, a gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor[] instance
@@ -588,6 +608,12 @@ in context for the type checker. For example, the current stack of
 enclosing method calls, binary expressions, closures, … This information
 is in particular important if you have to know _where_ you are when an
 error occurs and that you want to handle it.
+
+In addition to facilities provided by `GroovyTypeCheckingExtensionSupport` and `StaticTypeCheckingVisitor`,
+a type-checking DSL script imports static members from gapi:org.codehaus.groovy.ast.ClassHelper[] and
+gapi:org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport[] granting access to common types via
+`OBJECT_TYPE`, `STRING_TYPE`, `THROWABLE_TYPE`, etc. and checks like `missesGenericsTypes(ClassNode)`,
+`isClassClassNodeWrappingConcreteType(ClassNode)` and so on.
 
 [[Typecheckingextensions-Classnodes]]
 ==== Class nodes
@@ -677,8 +703,7 @@ if (node instanceof BinaryExpression) {
 }
 ---------------------------------------
 
-which requires you to import the `BinaryExpression` class, you can just
-write:
+you can just write:
 
 [source,groovy]
 -------------------------------
@@ -758,7 +783,7 @@ builder.foo {
 -------------
 
 Your extension, then, should only be active once you’ve entered
-the `foo` method, and inactive outside of this scope. But you could have
+the `foo` method, and inactive outside this scope. But you could have
 complex situations like multiple builders in the same file or embedded
 builders (builders in builders). While you should not try to fix all
 this from start (you must accept limitations to type checking), the type
@@ -923,7 +948,7 @@ The more advanced one is to use <<ast-xform-as-extension,AST transformations dur
 complex.
 
 Type checking extensions allow you to help the type checker where it
-fails, but it also allow you to fail where it doesn’t. In that context,
+fails, but it also allows you to fail where it doesn’t. In that context,
 it makes sense to support extensions for `@CompileStatic` too. Imagine
 an extension that is capable of type checking SQL queries. In that case,
 the extension would be valid in both dynamic and static context, because
@@ -933,7 +958,7 @@ without the extension, the code would still pass.
 === Mixed mode compilation
 
 In the previous section, we highlighted the fact that you can activate type checking extensions with
-`@CompileStatic`. In that context, the type checker would not complain anymore about some unresolved variables or
+`@CompileStatic`. In that context, the type checker would not complain any more about some unresolved variables or
 unknown method calls, but it would still wouldn't know how to compile them statically.
 
 Mixed mode compilation offers a third way, which is to instruct the compiler that whenever an unresolved variable
@@ -1032,7 +1057,7 @@ The `makeDynamic` call does 3 things:
 * but also marks the `call` to be done dynamically
 
 So when the compiler will have to generate bytecode for the call to `move`, since it is now marked as a dynamic call,
-it will fallback to the dynamic compiler and let it handle the call. And since the extension tells us that the return
+it will fall back to the dynamic compiler and let it handle the call. And since the extension tells us that the return
 type of the dynamic call is a `Robot`, subsequent calls will be done statically!
 
 Some would wonder why the static compiler doesn't do this by default without an extension. It is a design decision:
