@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 import org.codehaus.groovy.transform.stc.TypeCheckingContext
 

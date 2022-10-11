@@ -16,8 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.codehaus.groovy.ast.ClassNode
-
 // tag::event[]
 afterVisitClass { ClassNode classNode ->
     def name = classNode.nameWithoutPackage

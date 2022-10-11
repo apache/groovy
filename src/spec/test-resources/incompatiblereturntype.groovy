@@ -17,10 +17,9 @@
  *  under the License.
  */
 // tag::event[]
-beforeVisitClass { ClassNode classNode ->
-    def name = classNode.nameWithoutPackage
-    if (!(name[0] in 'A'..'Z')) {
-        addStaticTypeError("Class '${name}' doesn't start with an uppercase letter",classNode)
+incompatibleReturnType { stmt, type ->
+    if (type == STRING_TYPE) {
+        handled = true
     }
 }
 // end::event[]
