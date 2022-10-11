@@ -420,15 +420,15 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
      * <dl>
      *   <dt>setup</dt>                          <dd>Registers closure that runs after the type checker finishes initialization</dd>
      *   <dt>finish</dt>                         <dd>Registers closure that runs after the type checker completes type checking</dd>
-     *   <dt>beforeVisitClass</dt>               <dd>Registers closure that runs by the type checker before type checking a class</dd>
-     *   <dt>afterVisitClass</dt>                <dd>Registers closure that runs by the type checker after having finished the visit of a type checked class</dd>
-     *   <dt>beforeVisitMethod</dt>              <dd>Registers closure that runs by the type checker before type checking a method body</dd>
-     *   <dt>afterVisitMethod</dt>               <dd>Registers closure that runs by the type checker after type checking a method body</dd>
+     *   <dt>beforeVisitClass</dt>               <dd>Registers closure that runs before type checking a class</dd>
+     *   <dt>afterVisitClass</dt>                <dd>Registers closure that runs after having finished the visit of a type checked class</dd>
+     *   <dt>beforeVisitMethod</dt>              <dd>Registers closure that runs before type checking a method body</dd>
+     *   <dt>afterVisitMethod</dt>               <dd>Registers closure that runs after type checking a method body</dd>
      *   <dt>beforeMethodCall</dt>               <dd>Registers closure that runs before the type checker starts type checking a method call</dd>
      *   <dt>afterMethodCall</dt>                <dd>Registers closure that runs once the type checker has finished type checking a method call</dd>
-     *   <dt>methodNotFound</dt>                 <dd>Registers closure that runs by the type checker when it fails to find an appropriate method for a method call</dd>
+     *   <dt>methodNotFound</dt>                 <dd>Registers closure that runs when it fails to find an appropriate method for a method call</dd>
      *   <dt>ambiguousMethods</dt>               <dd>Registers closure that runs when the type checker cannot choose between several candidate methods</dd>
-     *   <dt>onMethodSelection</dt>              <dd>Registers closure that runs by the type checker when it finds a method appropriate for a method call</dd>
+     *   <dt>onMethodSelection</dt>              <dd>Registers closure that runs when it finds a method appropriate for a method call</dd>
      *   <dt>unresolvedVariable</dt>             <dd>Registers closure that runs when the type checker finds an unresolved variable</dd>
      *   <dt>unresolvedProperty</dt>             <dd>Registers closure that runs when the type checker cannot find a property on the receiver</dd>
      *   <dt>unresolvedAttribute</dt>            <dd>Registers closure that runs when the type checker cannot find an attribute on the receiver</dd>
