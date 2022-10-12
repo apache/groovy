@@ -30,95 +30,100 @@ import org.codehaus.groovy.transform.trait.Traits;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class CachedSAMClass extends CachedClass {
 
-    private static final int ABSTRACT_STATIC_PRIVATE =
-            Modifier.ABSTRACT|Modifier.PRIVATE|Modifier.STATIC;
-    private static final int VISIBILITY = 5; // public|protected
-    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Method method;
 
-    public CachedSAMClass(Class klazz, ClassInfo classInfo) {
-        super(klazz, classInfo);
-        method = getSAMMethod(klazz);
-        if (method==null) throw new GroovyBugError("assigned method should not have been null!");
+    public CachedSAMClass(Class clazz, ClassInfo classInfo) {
+        super(clazz, classInfo);
+        method = getSAMMethod(clazz);
+        if (method == null) throw new GroovyBugError("assigned method should not have been null!");
     }
 
     @Override
     public boolean isAssignableFrom(Class argument) {
-        return argument == null ||
-                Closure.class.isAssignableFrom(argument) ||
-                ReflectionCache.isAssignableFrom(getTheClass(), argument);
+        return argument == null
+            || Closure.class.isAssignableFrom(argument)
+            || ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
+
+    @Override
+    public Object coerceArgument(Object argument) {
+        if (argument instanceof Closure) {
+            Class<?> clazz = getTheClass();
+            return coerceToSAM((Closure<?>) argument, method, clazz);
+        } else {
+            return argument;
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
+    private static final int PUBLIC_OR_PROTECTED = Modifier.PUBLIC | Modifier.PROTECTED;
+    private static final int ABSTRACT_STATIC_PRIVATE = Modifier.ABSTRACT | Modifier.STATIC | Modifier.PRIVATE;
 
     public static Object coerceToSAM(Closure argument, Method method, Class clazz) {
         return coerceToSAM(argument, method, clazz, clazz.isInterface());
     }
 
-    /* Should we make the following method private? */
-    @SuppressWarnings("unchecked")
     public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
-        if (argument!=null && clazz.isAssignableFrom(argument.getClass())) {
+        if (argument != null && clazz.isAssignableFrom(argument.getClass())) {
             return argument;
         }
-        if (isInterface) {
-            if (Traits.isTrait(clazz)) {
-                Map<String,Closure> impl = Collections.singletonMap(
-                        method.getName(),
-                        argument
-                );
-                return ProxyGenerator.INSTANCE.instantiateAggregate(impl,Collections.singletonList(clazz));
-            }
-            return Proxy.newProxyInstance(
-                    clazz.getClassLoader(),
-                    new Class[]{clazz},
-                    new ConvertedClosure(argument));
+
+        if (!isInterface) {
+            return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(Collections.singletonMap(method.getName(), argument), clazz);
+        } else if (method != null && isOrImplementsTrait(clazz)) { // GROOVY-8243
+            return ProxyGenerator.INSTANCE.instantiateAggregate(Collections.singletonMap(method.getName(), argument), Collections.singletonList(clazz));
         } else {
-            Map<String, Object> m = new HashMap<String,Object>();
-            m.put(method.getName(), argument);
-            return ProxyGenerator.INSTANCE.
-                    instantiateAggregateFromBaseClass(m, clazz);
-        }
-    }
-    
-    @Override
-    public Object coerceArgument(Object argument) {
-        if (argument instanceof Closure) {
-            Class clazz = getTheClass();
-            return coerceToSAM((Closure) argument, method, clazz);
-        } else {
-            return argument;
+            return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, new ConvertedClosure(argument));
         }
     }
 
-    private static Method[] getDeclaredMethods(final Class c) {
+    private static boolean isOrImplementsTrait(Class<?> c) {
+        if (Traits.isTrait(c)) return true; // quick check
+
+        Queue<Class<?>> todo = new ArrayDeque<>(Arrays.asList(c.getInterfaces()));
+        Set<Class<?>> done = new HashSet<>();
+        while ((c = todo.poll()) != null) {
+            if (done.add(c)) {
+                if (Traits.isTrait(c)) return true;
+                Collections.addAll(todo, c.getInterfaces());
+            }
+        }
+        return false;
+    }
+
+    private static Method[] getDeclaredMethods(final Class<?> c) {
         try {
-            Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+            Method[] methods = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Method[]>() {
+                @Override
                 public Method[] run() {
                     return c.getDeclaredMethods();
                 }
             });
-            if (methods!=null) return methods;
+            if (methods != null) return methods;
         } catch (java.security.AccessControlException ace) {
             // swallow and do as if no method is available
         }
         return EMPTY_METHOD_ARRAY;
     }
 
-    private static void getAbstractMethods(Class c, List<Method> current) {
-        if (c==null || !Modifier.isAbstract(c.getModifiers())) return;
+    private static void getAbstractMethods(Class<?> c, List<Method> current) {
+        if (c == null || !Modifier.isAbstract(c.getModifiers())) return;
         getAbstractMethods(c.getSuperclass(), current);
-        for (Class ci : c.getInterfaces()) {
+        for (Class<?> ci : c.getInterfaces()) {
             getAbstractMethods(ci, current);
         }
         for (Method m : getDeclaredMethods(c)) {
@@ -127,16 +132,17 @@ public class CachedSAMClass extends CachedClass {
         }
     }
 
-    private static boolean hasUsableImplementation(Class c, Method m) {
-        if (c==m.getDeclaringClass()) return false;
+    private static boolean hasUsableImplementation(Class<?> c, Method m) {
+        if (c == m.getDeclaringClass()) return false;
         Method found;
         try {
             found = c.getMethod(m.getName(), m.getParameterTypes());
             int asp = found.getModifiers() & ABSTRACT_STATIC_PRIVATE;
-            int visible = found.getModifiers() & VISIBILITY;
-            if (visible !=0 && asp == 0) return true;
-        } catch (NoSuchMethodException e) {/*ignore*/}
-        if (c==Object.class) return false;
+            int visible = found.getModifiers() & PUBLIC_OR_PROTECTED;
+            if (visible != 0 && asp == 0) return true;
+        } catch (NoSuchMethodException ignore) {
+        }
+        if (c == Object.class) return false;
         return hasUsableImplementation(c.getSuperclass(), m);
     }
 
@@ -145,9 +151,7 @@ public class CachedSAMClass extends CachedClass {
         if (current.size()==1) return current.get(0);
         Method m = current.remove(0);
         for (Method m2 : current) {
-            if (m.getName().equals(m2.getName()) && 
-                Arrays.equals(m.getParameterTypes(), m2.getParameterTypes()))
-            {
+            if (m.getName().equals(m2.getName()) && Arrays.equals(m.getParameterTypes(), m2.getParameterTypes())) {
                 continue;
             }
             return null;
@@ -156,53 +160,41 @@ public class CachedSAMClass extends CachedClass {
     }
 
     /**
-     * returns the abstract method from a SAM type, if it is a SAM type.
-     * @param c the SAM class
-     * @return null if nothing was found, the method otherwise
+     * Finds the abstract method of given class, if it is a SAM type.
      */
     public static Method getSAMMethod(Class<?> c) {
-      try {
-        return getSAMMethodImpl(c);
-      } catch (NoClassDefFoundError ignore) {
-        return null;
-      }
-    }
-
-    private static Method getSAMMethodImpl(Class<?> c) {
-        // SAM = single public abstract method
         // if the class is not abstract there is no abstract method
         if (!Modifier.isAbstract(c.getModifiers())) return null;
-        if (c.isInterface()) {
-            Method[] methods = c.getMethods();
-            // res stores the first found abstract method
-            Method res = null;
-            for (Method mi : methods) {
-                // ignore methods, that are not abstract and from Object
-                if (!Modifier.isAbstract(mi.getModifiers())) continue;
-                // ignore trait methods which have a default implementation
-                if (mi.getAnnotation(Traits.Implemented.class)!=null) continue;
-                try {
-                    Object.class.getMethod(mi.getName(), mi.getParameterTypes());
-                    continue;
-                } catch (NoSuchMethodException e) {/*ignore*/}
-
-                // we have two methods, so no SAM
-                if (res!=null) return null;
-                res = mi;
+        try {
+            if (c.isInterface()) {
+                // res stores the first found abstract method
+                Method res = null;
+                for (Method mi : c.getMethods()) {
+                    // ignore methods that are not abstract
+                    if (!Modifier.isAbstract(mi.getModifiers())) continue;
+                    // ignore trait methods with a default implementation
+                    if (mi.getAnnotation(Traits.Implemented.class) != null) continue;
+                    try { // ignore methods that are from java.lang.Object
+                        Object.class.getMethod(mi.getName(), mi.getParameterTypes());
+                        continue;
+                    } catch (NoSuchMethodException ignore) {
+                    }
+                    // we have two methods, so no SAM
+                    if (res != null) return null;
+                    res = mi;
+                }
+                return res;
+            } else {
+                List<Method> methods = new LinkedList<>();
+                getAbstractMethods(c, methods);
+                if (methods.isEmpty()) return null;
+                for (ListIterator<Method> it = methods.listIterator(); it.hasNext(); ) {
+                    if (hasUsableImplementation(c, it.next())) it.remove();
+                }
+                return getSingleNonDuplicateMethod(methods);
             }
-            return res;
-
-        } else {
-
-            LinkedList<Method> methods = new LinkedList();
-            getAbstractMethods(c, methods);
-            if (methods.isEmpty()) return null;
-            ListIterator<Method> it = methods.listIterator();
-            while (it.hasNext()) {
-                Method m = it.next();
-                if (hasUsableImplementation(c, m)) it.remove();
-            }
-            return getSingleNonDuplicateMethod(methods);
+        } catch (NoClassDefFoundError ignore) {
+            return null;
         }
     }
 }

@@ -18,12 +18,14 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.transform.NotYetImplemented
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 
-class TraitASTTransformationTest extends GroovyTestCase {
+final class TraitASTTransformationTest extends GroovyTestCase {
+
     void testTraitOverrideAnnotation() {
         assertScript '''
         interface MyInterface {
@@ -1116,7 +1118,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
-    void testSAMCoercionOfTraitOnAssignment() {
+    void testSAMCoercion1() {
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1139,7 +1141,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
-    void testSAMCoercionOfTraitOnMethod() {
+    void testSAMCoercion2() {
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1150,6 +1152,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             }
             test { 'hello' } // SAM coercion
         '''
+
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1166,26 +1169,60 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
-    void testImplicitSAMCoercionBug() {
+    void testSAMCoercion3() {
         assertScript '''
-trait Greeter {
-    String greet() { "Hello $name" }
-    abstract String getName()
-}
-Greeter greeter = { 'Alice' }
-assert greeter.greet() == 'Hello Alice'
-'''
+            trait Greeter {
+                abstract String getName()
+                String greet() { "Hello $name" }
+            }
+            Greeter greeter = { 'Alice' }
+            assert greeter.greet() == 'Hello Alice'
+            assert greeter.getName().equals('Alice')
+        '''
     }
 
-    void testExplicitSAMCoercionBug() {
+    void testSAMCoercion4() {
         assertScript '''
-trait Greeter {
-    String greet() { "Hello $name" }
-    abstract String getName()
-}
-Greeter greeter = { 'Alice' } as Greeter
-assert greeter.greet() == 'Hello Alice'
-'''
+            trait Greeter {
+                abstract String getName()
+                String greet() { "Hello $name" }
+            }
+            def greeter = { 'Alice' } as Greeter
+            assert greeter.greet() == 'Hello Alice'
+            assert greeter.getName().equals('Alice')
+        '''
+    }
+
+    // GROOVY-8243
+    void testSAMCoercion5() {
+        assertScript '''
+            trait T {
+                abstract foo(int n)
+                def bar(double n) {
+                    "trait $n".toString()
+                }
+            }
+            interface I extends T {
+            }
+
+            I obj = { "proxy $it".toString() }
+            assert obj.foo(123) == 'proxy 123'
+            assert obj.bar(4.5) == 'trait 4.5'
+        '''
+    }
+
+    // GROOVY-8244
+    @NotYetImplemented
+    void testSAMCoercion6() {
+        assertScript '''
+            trait T {
+                abstract def foo(int a, int b = 2)
+            }
+            T t = { int a, int b ->
+                return a + b
+            }
+            assert t.foo(40) == 42
+        '''
     }
 
     void testMethodMissingInTrait() {
