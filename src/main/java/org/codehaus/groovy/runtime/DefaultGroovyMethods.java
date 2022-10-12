@@ -57,7 +57,6 @@ import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.util.ReversedList;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -121,7 +120,6 @@ import java.io.Writer;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -11972,13 +11970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(final Closure impl, final Class<T> type) {
         if (type.isInterface() && !type.isInstance(impl)) {
-            if (Traits.isTrait(type) || ClassHelper.make(type).getAllInterfaces().stream().anyMatch(Traits::isTrait)) { // GROOVY-8243
-                Method sam = CachedSAMClass.getSAMMethod(type);
-                if (sam != null) {
-                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(Collections.singletonMap(sam.getName(), impl), Collections.singletonList(type));
-                }
-            }
-            return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type}, new ConvertedClosure(impl));
+            return (T) CachedSAMClass.coerceToSAM(impl, CachedSAMClass.getSAMMethod(type), type, true);
         }
 
         try {
