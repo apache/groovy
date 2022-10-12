@@ -24,7 +24,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -43,27 +42,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_CLASS_ARRAY;
+
 /**
- * Classes to generate 'Proxy' objects which implement interfaces,
- * maps of closures and/or extend classes/delegates.
+ * Generates 'Proxy' objects which implement interfaces, maps of closures and/or
+ * extend classes/delegates.
  */
+@SuppressWarnings("rawtypes")
 public class ProxyGenerator {
-    private static final Class[] EMPTY_INTERFACE_ARRAY = MetaClassHelper.EMPTY_TYPE_ARRAY;
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
-    private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
     static {
         // wrap the standard MetaClass with the delegate
         setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(ProxyGenerator.class));
     }
 
-    private ClassLoader override = null;
-    private boolean debug = false;
-    private boolean emptyMethods = false;
-
-    private static final Integer GROOVY_ADAPTER_CACHE_DEFAULT_SIZE = Integer.getInteger("groovy.adapter.cache.default.size", 64);
-
-    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO should we make ProxyGenerator singleton?
+    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO: Should we make ProxyGenerator singleton?
 
     /**
      * The adapter cache is used to cache proxy classes. When, for example, a call like:
@@ -71,7 +65,11 @@ public class ProxyGenerator {
      * adapter already exists. If so, then the class is reused, instead of generating a
      * new class.
      */
-    private final LRUCache adapterCache = new LRUCache(GROOVY_ADAPTER_CACHE_DEFAULT_SIZE);
+    private final LRUCache<CacheKey,ProxyGeneratorAdapter> adapterCache = new LRUCache<>(Integer.getInteger("groovy.adapter.cache.default.size", 64));
+
+    private boolean debug;
+    private boolean emptyMethods;
+    private ClassLoader override;
 
     public boolean getDebug() {
         return debug;
@@ -158,7 +156,6 @@ public class ProxyGenerator {
         return instantiateAggregate(closureMap, interfaces, clazz, null);
     }
 
-    @SuppressWarnings("unchecked")
     public GroovyObject instantiateAggregate(Map closureMap, List<Class> interfaces, Class clazz, Object[] constructorArgs) {
         if (clazz != null && Modifier.isFinal(clazz.getModifiers())) {
             throw new GroovyCastException("Cannot coerce a map to class " + clazz.getName() + " because it is a final class");
@@ -199,7 +196,6 @@ public class ProxyGenerator {
      * @param name the name of the proxy, unused, but kept for compatibility with previous versions of Groovy.
      * @return a proxy object implementing the specified interfaces, and delegating to the provided object
      */
-    @SuppressWarnings("unchecked")
     public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate, Class baseClass, String name) {
         Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
         ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, delegate.getClass(), baseClass);
@@ -207,33 +203,20 @@ public class ProxyGenerator {
         return adapter.delegatingProxy(delegate, map, (Object[])null);
     }
 
-    private ProxyGeneratorAdapter createAdapter(Map closureMap, List<Class> interfaces, Class delegateClass, Class baseClass) {
-        // According to https://shipilev.net/blog/2016/arrays-wisdom-ancients/#_conclusion
-        // toArray(new T[0]) seems faster, safer, and contractually cleaner, and therefore should be the default choice now.
-        Class[] intfs = interfaces != null ? interfaces.toArray(EMPTY_INTERFACE_ARRAY) : EMPTY_INTERFACE_ARRAY;
-        Class base = baseClass;
-        if (base == null) {
-            if (intfs.length > 0) {
-                base = intfs[0];
-            } else {
-                base = Object.class;
-            }
+    private ProxyGeneratorAdapter createAdapter(final Map<Object,Object> closureMap, final List<Class> interfaceList, final Class delegateClass, final Class baseClass) {
+        Class[] interfaces = interfaceList != null ? interfaceList.toArray(EMPTY_CLASS_ARRAY) : EMPTY_CLASS_ARRAY;
+        final Class base = baseClass != null ? baseClass : (interfaces.length > 0 ? interfaces[0] : Object.class);
+        Set<String> methodNames = closureMap.isEmpty() ? Collections.emptySet() : new HashSet<>();
+        for (Object key : closureMap.keySet()) {
+            methodNames.add(key.toString());
         }
-        Set<String> keys = closureMap == EMPTY_CLOSURE_MAP ? EMPTY_KEYSET : new HashSet<String>();
-        for (Object o : closureMap.keySet()) {
-            keys.add(o.toString());
-        }
-        boolean useDelegate = null != delegateClass;
-        CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, keys, intfs, emptyMethods, useDelegate);
-        final Class b = base;
+        boolean useDelegate = (delegateClass != null);
+        CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, methodNames, interfaces, emptyMethods, useDelegate);
 
-        return (ProxyGeneratorAdapter) adapterCache.getAndPut(
-                key,
-                k -> new ProxyGeneratorAdapter(closureMap, b, intfs, useDelegate
-                        ? delegateClass.getClassLoader()
-                        : b.getClassLoader(), emptyMethods, useDelegate ? delegateClass : null
-                )
-        );
+        return adapterCache.getAndPut(key, k -> {
+            ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
+            return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
+        });
     }
 
     private static void setMetaClass(final MetaClass metaClass) {
@@ -245,6 +228,8 @@ public class ProxyGenerator {
         };
         GroovySystem.getMetaClassRegistry().setMetaClass(ProxyGenerator.class, newMetaClass);
     }
+
+    //--------------------------------------------------------------------------
 
     private static final class CacheKey {
         private static final Comparator<Class> INTERFACE_COMPARATOR = (o1, o2) -> {
@@ -334,5 +319,4 @@ public class ProxyGenerator {
             }
         }
     }
-
 }
