@@ -31,72 +31,83 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CachedSAMClass extends CachedClass {
 
-    private static final int ABSTRACT_STATIC_PRIVATE = Modifier.ABSTRACT | Modifier.PRIVATE | Modifier.STATIC;
-    private static final int VISIBILITY = 5; // public|protected
-    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Method method;
 
-    public CachedSAMClass(Class klazz, ClassInfo classInfo) {
-        super(klazz, classInfo);
-        method = getSAMMethod(klazz);
+    public CachedSAMClass(Class clazz, ClassInfo classInfo) {
+        super(clazz, classInfo);
+        method = getSAMMethod(clazz);
         if (method == null) throw new GroovyBugError("assigned method should not have been null!");
     }
 
     @Override
     public boolean isAssignableFrom(Class argument) {
-        return argument == null ||
-                Closure.class.isAssignableFrom(argument) ||
-                ReflectionCache.isAssignableFrom(getTheClass(), argument);
-    }
-
-    public static Object coerceToSAM(Closure argument, Method method, Class clazz) {
-        return coerceToSAM(argument, method, clazz, clazz.isInterface());
-    }
-
-    /* Should we make the following method private? */
-    @SuppressWarnings("unchecked")
-    public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
-        if (argument != null && clazz.isAssignableFrom(argument.getClass())) {
-            return argument;
-        }
-
-        final String name = method.getName();
-        if (isInterface) {
-            if (Traits.isTrait(clazz)) {
-                Map<String, Closure> impl = Collections.singletonMap(name, argument);
-                return ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.singletonList(clazz));
-            }
-            return Proxy.newProxyInstance(
-                    clazz.getClassLoader(),
-                    new Class[] { clazz },
-                    new ConvertedClosure(argument));
-        } else {
-            Map<String, Object> m = Collections.singletonMap(name, argument);
-            return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(m, clazz);
-        }
+        return argument == null
+            || Closure.class.isAssignableFrom(argument)
+            || ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Closure) {
-            Class clazz = getTheClass();
-            return coerceToSAM((Closure) argument, method, clazz);
+            Class<?> clazz = getTheClass();
+            return coerceToSAM((Closure<?>) argument, method, clazz);
         } else {
             return argument;
         }
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should remove the security check
+    //--------------------------------------------------------------------------
+
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
+    private static final int PUBLIC_OR_PROTECTED = Modifier.PUBLIC | Modifier.PROTECTED;
+    private static final int ABSTRACT_STATIC_PRIVATE = Modifier.ABSTRACT | Modifier.STATIC | Modifier.PRIVATE;
+    private static final Set<String> OBJECT_METHOD_NAMES = Arrays.stream(Object.class.getMethods()).map(Method::getName).collect(Collectors.toSet());
+
+    public static Object coerceToSAM(Closure argument, Method method, Class clazz) {
+        return coerceToSAM(argument, method, clazz, clazz.isInterface());
+    }
+
+    public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
+        if (argument != null && clazz.isAssignableFrom(argument.getClass())) {
+            return argument;
+        }
+
+        if (!isInterface) {
+            return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(Collections.singletonMap(method.getName(), argument), clazz);
+        } else if (method != null && isOrImplementsTrait(clazz)) { // GROOVY-8243
+            return ProxyGenerator.INSTANCE.instantiateAggregate(Collections.singletonMap(method.getName(), argument), Collections.singletonList(clazz));
+        } else {
+            return Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, new ConvertedClosure(argument));
+        }
+    }
+
+    private static boolean isOrImplementsTrait(Class<?> c) {
+        if (Traits.isTrait(c)) return true; // quick check
+
+        Queue<Class<?>> todo = new ArrayDeque<>(Arrays.asList(c.getInterfaces()));
+        Set<Class<?>> done = new HashSet<>();
+        while ((c = todo.poll()) != null) {
+            if (done.add(c)) {
+                if (Traits.isTrait(c)) return true;
+                Collections.addAll(todo, c.getInterfaces());
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("removal") // TODO: a future Groovy version should remove the security check
     private static Method[] getDeclaredMethods(final Class<?> c) {
         try {
             Method[] methods = java.security.AccessController.doPrivileged((PrivilegedAction<Method[]>) c::getDeclaredMethods);
@@ -127,7 +138,7 @@ public class CachedSAMClass extends CachedClass {
             found = c.getMethod(m.getName(), m.getParameterTypes());
             final int modifiers = found.getModifiers();
             int asp = modifiers & ABSTRACT_STATIC_PRIVATE;
-            int visible = modifiers & VISIBILITY;
+            int visible = modifiers & PUBLIC_OR_PROTECTED;
             if (visible != 0 && asp == 0) return true;
         } catch (NoSuchMethodException ignore) {
         }
@@ -150,56 +161,44 @@ public class CachedSAMClass extends CachedClass {
     }
 
     /**
-     * returns the abstract method from a SAM type, if it is a SAM type.
-     * @param c the SAM class
-     * @return null if nothing was found, the method otherwise
+     * Finds the abstract method of given class, if it is a SAM type.
      */
     public static Method getSAMMethod(Class<?> c) {
-      try {
-        return getSAMMethodImpl(c);
-      } catch (NoClassDefFoundError ignore) {
-        return null;
-      }
-    }
-
-    private static Method getSAMMethodImpl(Class<?> c) {
-        // SAM = single public abstract method
         // if the class is not abstract there is no abstract method
         if (!Modifier.isAbstract(c.getModifiers())) return null;
-        if (c.isInterface()) {
-            // res stores the first found abstract method
-            Method res = null;
-            for (Method mi : c.getMethods()) {
-                // ignore methods, that are not abstract and from Object
-                if (!Modifier.isAbstract(mi.getModifiers())) continue;
-                // ignore trait methods which have a default implementation
-                if (mi.getAnnotation(Traits.Implemented.class) != null) continue;
+        try {
+            if (c.isInterface()) {
+                // res stores the first found abstract method
+                Method res = null;
+                for (Method mi : c.getMethods()) {
+                    // ignore methods, that are not abstract and from Object
+                    if (!Modifier.isAbstract(mi.getModifiers())) continue;
+                    // ignore trait methods which have a default implementation
+                    if (mi.getAnnotation(Traits.Implemented.class) != null) continue;
 
-                final String name = mi.getName();
-                // avoid throwing `NoSuchMethodException` as possible as we could
-                if (OBJECT_METHOD_NAME_SET.contains(name)) {
-                    try {
-                        Object.class.getMethod(name, mi.getParameterTypes());
-                        continue;
-                    } catch (NoSuchMethodException ignore) {
+                    String name = mi.getName();
+                    // avoid throwing `NoSuchMethodException` as possible as we could
+                    if (OBJECT_METHOD_NAMES.contains(name)) {
+                        try {
+                            Object.class.getMethod(name, mi.getParameterTypes());
+                            continue;
+                        } catch (NoSuchMethodException ignore) {
+                        }
                     }
+                    // we have two methods, so no SAM
+                    if (res != null) return null;
+                    res = mi;
                 }
-
-                // we have two methods, so no SAM
-                if (res != null) return null;
-                res = mi;
+                return res;
+            } else {
+                List<Method> methods = new LinkedList<>();
+                getAbstractMethods(c, methods);
+                if (methods.isEmpty()) return null;
+                methods.removeIf(m -> hasUsableImplementation(c, m));
+                return getSingleNonDuplicateMethod(methods);
             }
-            return res;
-
-        } else {
-            List<Method> methods = new LinkedList<>();
-            getAbstractMethods(c, methods);
-            if (methods.isEmpty()) return null;
-            methods.removeIf(m -> hasUsableImplementation(c, m));
-            return getSingleNonDuplicateMethod(methods);
+        } catch (NoClassDefFoundError ignore) {
+            return null;
         }
     }
-
-    private static final Set<String> OBJECT_METHOD_NAME_SET =
-            Collections.unmodifiableSet(Arrays.stream(Object.class.getMethods()).map(m -> m.getName()).collect(Collectors.toSet()));
 }

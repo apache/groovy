@@ -1576,13 +1576,15 @@ final class TraitASTTransformationTest {
     void testSAMCoercion5() {
         assertScript shell, '''
             trait T {
-                abstract def foo(int i)
-                def bar(double j) { "trait $j".toString() }
+                abstract foo(int n)
+                def bar(double n) {
+                    "trait $n".toString()
+                }
             }
             interface I extends T {
             }
 
-            def obj = { "proxy $it".toString() } as I
+            I obj = { "proxy $it".toString() }
             assert obj.foo(123) == 'proxy 123'
             assert obj.bar(4.5) == 'trait 4.5'
         '''
