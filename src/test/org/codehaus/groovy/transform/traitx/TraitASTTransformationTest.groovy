@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -1212,7 +1211,6 @@ assert phone.speak() == 'My name is Galaxy S3\''''
     }
 
     // GROOVY-8244
-    @NotYetImplemented
     void testSAMCoercion6() {
         assertScript '''
             trait T {

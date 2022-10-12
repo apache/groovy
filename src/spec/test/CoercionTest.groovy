@@ -16,7 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class CoercionTest extends GroovyTestCase {
+
+final class CoercionTest extends GroovyTestCase {
 
     void testStringToEnumValue() {
         assertScript '''
@@ -297,6 +298,34 @@ println iter.next()
 assert map.i==0
 // end::use_coerced_iterator[]
 '''
+        // "remove()" is an interface default method
+        assertScript '''import static groovy.test.GroovyAssert.shouldFail
+
+            def iter = [next: {->null}, hasNext: {->true}] as Iterator
+            shouldFail(UnsupportedOperationException) {
+                iter.remove()
+            }
+
+            iter = [next: {->null}, hasNext: {->true}, remove: {->}] as Iterator
+            iter.remove()
+        '''
+    }
+
+    // GROOVY-10717
+    void testCoerceMapToAbstract() {
+        assertScript '''import static groovy.test.GroovyAssert.shouldFail
+
+            abstract class A {
+                String b,c
+            }
+
+            def a = [getB: {->'bb'}, getX: {->'xx'}] as A
+            assert a.b == 'bb' // overrides accessor
+            assert a.c == null // generated accessor
+            shouldFail(MissingPropertyException) {
+                a.x
+            }
+        '''
     }
 
     void testCoerceThrowsNPE() {
