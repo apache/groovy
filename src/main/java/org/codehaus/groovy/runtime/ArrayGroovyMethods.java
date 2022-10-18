@@ -1,3 +1,21 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
@@ -6,10 +24,17 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
-import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.util.BooleanArrayIterator;
+import org.codehaus.groovy.util.ByteArrayIterator;
+import org.codehaus.groovy.util.CharArrayIterator;
+import org.codehaus.groovy.util.DoubleArrayIterator;
+import org.codehaus.groovy.util.FloatArrayIterator;
+import org.codehaus.groovy.util.IntArrayIterator;
+import org.codehaus.groovy.util.LongArrayIterator;
+import org.codehaus.groovy.util.ShortArrayIterator;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.List;
 
 /**
  * This class defines new groovy methods which appear on primitive arrays inside the Groovy environment.
@@ -42,7 +67,7 @@ public class ArrayGroovyMethods {
     }
 
     //-------------------------------------------------------------------------
-   	// any
+    // any
 
     /**
      * Iterates over the contents of a boolean Array, and checks whether a
@@ -51,7 +76,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      boolean[] array = [false, true, false]
-     *      assert array.any{ true == it.booleanValue()}
+     *      assert array.any{ true == it.booleanValue() }
      * }
      * test()
      * </pre>
@@ -76,7 +101,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      byte[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.byteValue()}
+     *      assert array.any{ 0 == it.byteValue() }
      * }
      * test()
      * </pre>
@@ -101,7 +126,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      char[] array = ['a' as char, 'b' as char, 'c' as char]
-     *      assert array.any{ 'a' as char == it.charValue()}
+     *      assert array.any{ 'a' as char == it.charValue() }
      * }
      * test()
      * </pre>
@@ -126,7 +151,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      short[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.shortValue()}
+     *      assert array.any{ 0 == it.shortValue() }
      * }
      * test()
      * </pre>
@@ -151,7 +176,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      int[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.intValue()}
+     *      assert array.any{ 0 == it.intValue() }
      * }
      * test()
      * </pre>
@@ -176,7 +201,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      long[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.longValue()}
+     *      assert array.any{ 0 == it.longValue() }
      * }
      * test()
      * </pre>
@@ -201,7 +226,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      float[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.floatValue()}
+     *      assert array.any{ 0 == it.floatValue() }
      * }
      * test()
      * </pre>
@@ -226,7 +251,7 @@ public class ArrayGroovyMethods {
      * {@code @groovy.transform.TypeChecked}
      * void test(){
      *      double[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.floatValue()}
+     *      assert array.any{ 0 == it.floatValue() }
      * }
      * test()
      * </pre>
@@ -244,8 +269,8 @@ public class ArrayGroovyMethods {
         return false;
     }
 
-   	//-------------------------------------------------------------------------
-   	// asBoolean (brought over from DefaultGroovyMethods)
+    //-------------------------------------------------------------------------
+    // asBoolean (brought over from DefaultGroovyMethods)
 
     /**
      * Coerces a boolean array to a boolean value.
@@ -351,10 +376,10 @@ public class ArrayGroovyMethods {
         return array != null && array.length > 0;
     }
 
-   	//-------------------------------------------------------------------------
-   	// asType (skipped, as it is not needed)
-   	//-------------------------------------------------------------------------
-   	// average (brought over from DefaultGroovyMethods)
+    //-------------------------------------------------------------------------
+    // asType (skipped, as it is not needed)
+    //-------------------------------------------------------------------------
+    // average (brought over from DefaultGroovyMethods)
 
     /**
      * Calculates the average of the bytes in the array.
@@ -443,7 +468,7 @@ public class ArrayGroovyMethods {
             s += v;
             count++;
         }
-        return s/count;
+        return s / count;
     }
 
     /**
@@ -461,11 +486,11 @@ public class ArrayGroovyMethods {
             s += v;
             count++;
         }
-        return s/count;
+        return s / count;
     }
 
-   	//-------------------------------------------------------------------------
-   	// chop
+    //-------------------------------------------------------------------------
+    // chop
 
     /**
      * Chops the boolean array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
@@ -651,18 +676,18 @@ public class ArrayGroovyMethods {
         return DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes);
     }
 
-   	//-------------------------------------------------------------------------
-   	// collate
-   	//-------------------------------------------------------------------------
-   	// collect
-   	//-------------------------------------------------------------------------
-   	// collectEntries
-   	//-------------------------------------------------------------------------
-   	// collectMany
-   	//-------------------------------------------------------------------------
-   	// contains
-   	//-------------------------------------------------------------------------
-   	// count
+    //-------------------------------------------------------------------------
+    // collate
+    //-------------------------------------------------------------------------
+    // collect
+    //-------------------------------------------------------------------------
+    // collectEntries
+    //-------------------------------------------------------------------------
+    // collectMany
+    //-------------------------------------------------------------------------
+    // contains
+    //-------------------------------------------------------------------------
+    // count
 
     /**
      * Counts the number of occurrences of the given value inside this array.
@@ -776,16 +801,16 @@ public class ArrayGroovyMethods {
         return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
     }
 
-   	//-------------------------------------------------------------------------
-   	// countBy
-   	//-------------------------------------------------------------------------
-   	// drop
-   	//-------------------------------------------------------------------------
-   	// dropRight
-   	//-------------------------------------------------------------------------
-   	// dropWhile
-   	//-------------------------------------------------------------------------
-   	// each
+    //-------------------------------------------------------------------------
+    // countBy
+    //-------------------------------------------------------------------------
+    // drop
+    //-------------------------------------------------------------------------
+    // dropRight
+    //-------------------------------------------------------------------------
+    // dropWhile
+    //-------------------------------------------------------------------------
+    // each
 
     /**
      * Iterates through a boolean[] passing each boolean to the given closure.
@@ -794,7 +819,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      boolean[] array = [false, true, false]
      *      String result = ''
-     *      array.each{ result += it.booleanValue()}
+     *      array.each{ result += it.booleanValue() }
      *      assert result == 'falsetruefalse'
      * }
      * test()
@@ -806,7 +831,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean[] each(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(boolean item : self){
+        for (boolean item : self) {
             closure.call(item);
         }
         return self;
@@ -819,7 +844,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      byte[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.intValue()}
+     *      array.each{ result += it.intValue() }
      *      assert result == '012'
      * }
      * test()
@@ -831,7 +856,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte[] each(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(byte item : self){
+        for (byte item : self) {
             closure.call(item);
         }
         return self;
@@ -844,7 +869,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      char[] array = ['a' as char, 'b' as char, 'c' as char]
      *      String result = ''
-     *      array.each{ result += it.charValue()}
+     *      array.each{ result += it.charValue() }
      *      assert result == 'abc'
      * }
      * test()
@@ -856,7 +881,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char[] each(char[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(char item : self){
+        for (char item : self) {
             closure.call(item);
         }
         return self;
@@ -869,7 +894,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      short[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.shortValue()}
+     *      array.each{ result += it.shortValue() }
      *      assert result == '012'
      * }
      * test()
@@ -881,7 +906,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short[] each(short[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(short item : self){
+        for (short item : self) {
             closure.call(item);
         }
         return self;
@@ -894,7 +919,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      int[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.intValue()}
+     *      array.each{ result += it.intValue() }
      *      assert result == '012'
      * }
      * test()
@@ -906,7 +931,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int[] each(int[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(int item : self){
+        for (int item : self) {
             closure.call(item);
         }
         return self;
@@ -919,7 +944,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      long[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.longValue()}
+     *      array.each{ result += it.longValue() }
      *      assert result == '012'
      * }
      * test()
@@ -931,7 +956,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long[] each(long[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(long item : self){
+        for (long item : self) {
             closure.call(item);
         }
         return self;
@@ -944,7 +969,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      float[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.floatValue()}
+     *      array.each{ result += it.floatValue() }
      *      assert result == '0.01.02.0'
      * }
      * test()
@@ -956,7 +981,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float[] each(float[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(float item : self){
+        for (float item : self) {
             closure.call(item);
         }
         return self;
@@ -969,7 +994,7 @@ public class ArrayGroovyMethods {
      * void test(){
      *      double[] array = [0, 1, 2]
      *      String result = ''
-     *      array.each{ result += it.doubleValue()}
+     *      array.each{ result += it.doubleValue() }
      *      assert result == '0.01.02.0'
      * }
      * test()
@@ -981,14 +1006,14 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double[] each(double[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(double item : self){
+        for (double item : self) {
             closure.call(item);
         }
         return self;
     }
 
-   	//-------------------------------------------------------------------------
-   	// eachByte
+    //-------------------------------------------------------------------------
+    // eachByte
 
     /**
      * Traverse through each byte of this byte array. Alias for each.
@@ -1002,8 +1027,8 @@ public class ArrayGroovyMethods {
         each(self, closure);
     }
 
-   	//-------------------------------------------------------------------------
-   	// eachWithIndex
+    //-------------------------------------------------------------------------
+    // eachWithIndex
 
     /**
      * Iterates through an boolean[],
@@ -1025,10 +1050,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static boolean[] eachWithIndex(boolean[] self, @ClosureParams(value=FromString.class, options="Boolean,Integer") Closure closure) {
+    public static boolean[] eachWithIndex(boolean[] self, @ClosureParams(value = FromString.class, options = "Boolean,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1054,10 +1080,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static byte[] eachWithIndex(byte[] self, @ClosureParams(value=FromString.class, options="Byte,Integer") Closure closure) {
+    public static byte[] eachWithIndex(byte[] self, @ClosureParams(value = FromString.class, options = "Byte,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1083,10 +1110,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static char[] eachWithIndex(char[] self, @ClosureParams(value=FromString.class, options="Character,Integer") Closure closure) {
+    public static char[] eachWithIndex(char[] self, @ClosureParams(value = FromString.class, options = "Character,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1112,10 +1140,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static short[] eachWithIndex(short[] self, @ClosureParams(value=FromString.class, options="Short,Integer") Closure closure) {
+    public static short[] eachWithIndex(short[] self, @ClosureParams(value = FromString.class, options = "Short,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1141,10 +1170,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static int[] eachWithIndex(int[] self, @ClosureParams(value=FromString.class, options="Integer,Integer") Closure closure) {
+    public static int[] eachWithIndex(int[] self, @ClosureParams(value = FromString.class, options = "Integer,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1170,10 +1200,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static long[] eachWithIndex(long[] self, @ClosureParams(value=FromString.class, options="Long,Integer") Closure closure) {
+    public static long[] eachWithIndex(long[] self, @ClosureParams(value = FromString.class, options = "Long,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1199,10 +1230,11 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static float[] eachWithIndex(float[] self, @ClosureParams(value=FromString.class, options="Float,Integer") Closure closure) {
+    public static float[] eachWithIndex(float[] self, @ClosureParams(value = FromString.class, options = "Float,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
@@ -1228,17 +1260,18 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static double[] eachWithIndex(double[] self, @ClosureParams(value=FromString.class, options="Double,Integer") Closure closure) {
+    public static double[] eachWithIndex(double[] self, @ClosureParams(value = FromString.class, options = "Double,Integer") Closure closure) {
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
-            args[0] = self[i]; args[1] = i;
+            args[0] = self[i];
+            args[1] = i;
             closure.call(args);
         }
         return self;
     }
 
-   	//-------------------------------------------------------------------------
-   	// equals
+    //-------------------------------------------------------------------------
+    // equals
 
     /**
      * Compare the contents of this array to the contents of the given array.
@@ -1456,30 +1489,30 @@ public class ArrayGroovyMethods {
         return true;
     }
 
-   	//-------------------------------------------------------------------------
-   	// every
-   	//-------------------------------------------------------------------------
-   	// find
-   	//-------------------------------------------------------------------------
-   	// findAll
-   	//-------------------------------------------------------------------------
-   	// findIndexOf
-   	//-------------------------------------------------------------------------
-   	// findIndexValues
-   	//-------------------------------------------------------------------------
-   	// findLastIndexOf
-   	//-------------------------------------------------------------------------
-   	// findResult
-   	//-------------------------------------------------------------------------
-   	// findResults
-   	//-------------------------------------------------------------------------
-   	// first
-   	//-------------------------------------------------------------------------
-   	// flatten
-   	//-------------------------------------------------------------------------
-   	// getAt
-   	//-------------------------------------------------------------------------
-   	// getIndices
+    //-------------------------------------------------------------------------
+    // every
+    //-------------------------------------------------------------------------
+    // find
+    //-------------------------------------------------------------------------
+    // findAll
+    //-------------------------------------------------------------------------
+    // findIndexOf
+    //-------------------------------------------------------------------------
+    // findIndexValues
+    //-------------------------------------------------------------------------
+    // findLastIndexOf
+    //-------------------------------------------------------------------------
+    // findResult
+    //-------------------------------------------------------------------------
+    // findResults
+    //-------------------------------------------------------------------------
+    // first
+    //-------------------------------------------------------------------------
+    // flatten
+    //-------------------------------------------------------------------------
+    // getAt
+    //-------------------------------------------------------------------------
+    // getIndices
 
     /**
      * Returns indices of the boolean array.
@@ -1561,22 +1594,22 @@ public class ArrayGroovyMethods {
         return new IntRange(false, 0, self.length);
     }
 
-   	//-------------------------------------------------------------------------
-   	// grep
-   	//-------------------------------------------------------------------------
-   	// groupBy
-   	//-------------------------------------------------------------------------
-   	// head
-   	//-------------------------------------------------------------------------
-   	// indexed
-   	//-------------------------------------------------------------------------
-   	// init
-   	//-------------------------------------------------------------------------
-   	// inject
-   	//-------------------------------------------------------------------------
-   	// iterator
-   	//-------------------------------------------------------------------------
-   	// join
+    //-------------------------------------------------------------------------
+    // grep
+    //-------------------------------------------------------------------------
+    // groupBy
+    //-------------------------------------------------------------------------
+    // head
+    //-------------------------------------------------------------------------
+    // indexed
+    //-------------------------------------------------------------------------
+    // init
+    //-------------------------------------------------------------------------
+    // inject
+    //-------------------------------------------------------------------------
+    // iterator
+    //-------------------------------------------------------------------------
+    // join
 
     /**
      * Concatenates the string representation of each
@@ -1690,39 +1723,39 @@ public class ArrayGroovyMethods {
         return DefaultGroovyMethods.join(new DoubleArrayIterator(self), separator);
     }
 
-   	//-------------------------------------------------------------------------
-   	// last
-   	//-------------------------------------------------------------------------
-   	// max
-   	//-------------------------------------------------------------------------
-   	// min
-   	//-------------------------------------------------------------------------
-   	// minus
-   	//-------------------------------------------------------------------------
-   	// plus
-   	//-------------------------------------------------------------------------
-   	// reverse
-   	//-------------------------------------------------------------------------
-   	// reverseEach
-   	//-------------------------------------------------------------------------
-   	// shuffle
-   	//-------------------------------------------------------------------------
-   	// shuffled
-   	//-------------------------------------------------------------------------
-   	// size
-   	//-------------------------------------------------------------------------
-   	// sort
-   	//-------------------------------------------------------------------------
-   	// split
-   	//-------------------------------------------------------------------------
-   	// sum
+    //-------------------------------------------------------------------------
+    // last
+    //-------------------------------------------------------------------------
+    // max
+    //-------------------------------------------------------------------------
+    // min
+    //-------------------------------------------------------------------------
+    // minus
+    //-------------------------------------------------------------------------
+    // plus
+    //-------------------------------------------------------------------------
+    // reverse
+    //-------------------------------------------------------------------------
+    // reverseEach
+    //-------------------------------------------------------------------------
+    // shuffle
+    //-------------------------------------------------------------------------
+    // shuffled
+    //-------------------------------------------------------------------------
+    // size
+    //-------------------------------------------------------------------------
+    // sort
+    //-------------------------------------------------------------------------
+    // split
+    //-------------------------------------------------------------------------
+    // sum
 
     /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static byte sum(byte[] self) {
@@ -1734,7 +1767,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static char sum(char[] self) {
@@ -1746,7 +1779,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static short sum(short[] self) {
@@ -1758,7 +1791,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static int sum(int[] self) {
@@ -1770,7 +1803,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static long sum(long[] self) {
@@ -1782,7 +1815,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static float sum(float[] self) {
@@ -1794,7 +1827,7 @@ public class ArrayGroovyMethods {
      * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static double sum(double[] self) {
@@ -1807,7 +1840,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static byte sum(byte[] self, byte initialValue) {
@@ -1824,7 +1857,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static char sum(char[] self, char initialValue) {
@@ -1841,7 +1874,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static short sum(short[] self, short initialValue) {
@@ -1858,7 +1891,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static int sum(int[] self, int initialValue) {
@@ -1875,7 +1908,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static long sum(long[] self, long initialValue) {
@@ -1892,7 +1925,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static float sum(float[] self, float initialValue) {
@@ -1909,7 +1942,7 @@ public class ArrayGroovyMethods {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static double sum(double[] self, double initialValue) {
@@ -1920,28 +1953,28 @@ public class ArrayGroovyMethods {
         return s;
     }
 
-   	//-------------------------------------------------------------------------
-   	// swap
-   	//-------------------------------------------------------------------------
-   	// tail
-   	//-------------------------------------------------------------------------
-   	// take
-   	//-------------------------------------------------------------------------
-   	// takeRight
-   	//-------------------------------------------------------------------------
-   	// takeWhile
-   	//-------------------------------------------------------------------------
-   	// toArrayString
-   	//-------------------------------------------------------------------------
-   	// toList
-   	//-------------------------------------------------------------------------
-   	// toSet
-   	//-------------------------------------------------------------------------
-   	// toSorted
-   	//-------------------------------------------------------------------------
-   	// toSpreadMap
-   	//-------------------------------------------------------------------------
-   	// toString
+    //-------------------------------------------------------------------------
+    // swap
+    //-------------------------------------------------------------------------
+    // tail
+    //-------------------------------------------------------------------------
+    // take
+    //-------------------------------------------------------------------------
+    // takeRight
+    //-------------------------------------------------------------------------
+    // takeWhile
+    //-------------------------------------------------------------------------
+    // toArrayString
+    //-------------------------------------------------------------------------
+    // toList
+    //-------------------------------------------------------------------------
+    // toSet
+    //-------------------------------------------------------------------------
+    // toSorted
+    //-------------------------------------------------------------------------
+    // toSpreadMap
+    //-------------------------------------------------------------------------
+    // toString
 
     /**
      * Returns the string representation of the given array.
@@ -2031,10 +2064,10 @@ public class ArrayGroovyMethods {
         return FormatHelper.toString(self);
     }
 
-   	//-------------------------------------------------------------------------
-   	// toUnique
-   	//-------------------------------------------------------------------------
-   	// transpose
-   	//-------------------------------------------------------------------------
-   	// union
+    //-------------------------------------------------------------------------
+    // toUnique
+    //-------------------------------------------------------------------------
+    // transpose
+    //-------------------------------------------------------------------------
+    // union
 }
