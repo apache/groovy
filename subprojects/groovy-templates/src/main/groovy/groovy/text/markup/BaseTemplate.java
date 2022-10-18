@@ -382,8 +382,8 @@ public abstract class BaseTemplate implements Writable {
     }
 
     /**
-     * Imports a template and renders it using the specified model, allowing fine grained composition
-     * of templates and layouting. This works similarily to a template include but allows a distinct
+     * Imports a template and renders it using the specified model, allowing fine-grained composition
+     * of templates and layouting. This works similarly to a template include but allows a distinct
      * model to be used. This version doesn't inherit the model from the parent. If you need model
      * inheritance, see {@link #layout(java.util.Map, String, boolean)}.
      * @param model model to be passed to the template
@@ -397,8 +397,8 @@ public abstract class BaseTemplate implements Writable {
     }
 
     /**
-     * Imports a template and renders it using the specified model, allowing fine grained composition of templates and
-     * layouting. This works similarily to a template include but allows a distinct model to be used. If the layout
+     * Imports a template and renders it using the specified model, allowing fine-grained composition of templates and
+     * layouting. This works similarly to a template include but allows a distinct model to be used. If the layout
      * inherits from the parent model, a new model is created, with the values from the parent model, eventually
      * overridden with those provided specifically for this layout.
      *

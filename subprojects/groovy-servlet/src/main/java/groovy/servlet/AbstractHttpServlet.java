@@ -71,7 +71,7 @@ import java.util.regex.Pattern;
  * </pre>
  * <p>
  * If you experience class-loading-troubles with Tomcat 4 (or higher) or any
- * other servlet container using custom class loader setups, you can fallback
+ * other servlet container using custom class loader setups, you can fall back
  * to use (slower) reflection in Groovy's MetaClass implementation. Please
  * contact the dev team with your problem! Thanks.
  * The servlet init parameter name is:
@@ -147,7 +147,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     protected boolean reflection;
 
     /**
-     * Debug flag logging the class the class loader of the request.
+     * Debug flag logging the classloader of the request.
      */
     private boolean logGROOVY861;
 

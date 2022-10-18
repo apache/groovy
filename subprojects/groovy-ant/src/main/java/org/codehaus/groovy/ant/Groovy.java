@@ -716,7 +716,7 @@ public class Groovy extends Java {
     }
 
     /**
-     * Try to build a script name for the script of the groovy task to have an helpful value in stack traces in case of exception
+     * Try to build a script name for the script of the groovy task to have a helpful value in stack traces in case of exception
      *
      * @return the name to use when compiling the script
      */

@@ -31,7 +31,7 @@ import java.util.Map;
 
 /**
  * GroovyResultSetExtension implements additional logic for ResultSet. Due to
- * the version incompatibility between java6 and java5 this methods are moved
+ * the version incompatibility between java6 and java5 those methods were moved
  * here from the original GroovyResultSet class. The methods in this class are
  * used by the proxy GroovyResultSetProxy, which will try to invoke methods
  * on this class before invoking it on ResultSet.

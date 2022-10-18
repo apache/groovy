@@ -565,9 +565,9 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Gets whether or not the ant classpath is to be included in the classpath.
+     * Gets whether the ant classpath is to be included in the classpath.
      *
-     * @return whether or not the ant classpath is to be included in the classpath
+     * @return whether the ant classpath is to be included in the classpath
      */
     public boolean getIncludeantruntime() {
         return includeAntRuntime;
@@ -583,7 +583,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Gets whether or not the java runtime should be included in this
+     * Gets whether the java runtime should be included in this
      * task's classpath.
      *
      * @return the includejavaruntime attribute
@@ -1417,7 +1417,7 @@ public class Groovyc extends MatchingTask {
             /*
              * Iterate over the classpath provided to groovyc, and add any missing path
              * entries to the AntClassLoader.  This is a workaround, since for some reason
-             * 'directory' classpath entries were not added to the AntClassLoader' classpath.
+             * 'directory' classpath entries were not added to the 'AntClassLoader' classpath.
              */
             for (String cpEntry : classpath) {
                 boolean found = false;

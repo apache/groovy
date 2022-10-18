@@ -47,7 +47,7 @@ public class ClassInfoDeadlockStressTest {
      * We first generate a large number of ClassInfo instances for classes
      * that are no longer reachable.  Then queue up threads to all request
      * ClassInfo instances for new classes simultaneously to ensure that
-     * clearing the old references wont deadlock the creation of new
+     * clearing the old references won't deadlock the creation of new
      * instances.
      * <p>
      * GROOVY-8067

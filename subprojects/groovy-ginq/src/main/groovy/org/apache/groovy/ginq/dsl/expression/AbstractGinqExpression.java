@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 
 /**
- * Represents GINQ expression which could hold meta data
+ * Represents GINQ expression which could hold metadata
  *
  * @since 4.0.0
  */

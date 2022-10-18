@@ -19,7 +19,7 @@
 package groovy.json;
 
 /**
- * Allows selection of parser type for new new JsonSlurper.
+ * Allows selection of parser type for new JsonSlurper.
  * <p />
  * To enable the INDEX_OVERLAY parser do this:
  *

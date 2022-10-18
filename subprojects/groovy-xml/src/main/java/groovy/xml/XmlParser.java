@@ -245,7 +245,7 @@ public class XmlParser implements ContentHandler {
     /**
      * Parse the content of the specified URI into a tree of Nodes.
      *
-     * @param uri a String containing a uri pointing to the XML to be parsed
+     * @param uri a String containing a URI pointing to the XML to be parsed
      * @return the root node of the parsed tree of Nodes
      * @throws SAXException Any SAX exception, possibly
      *                      wrapping another exception.
@@ -366,7 +366,7 @@ public class XmlParser implements ContentHandler {
     }
 
     // ContentHandler interface
-    //-------------------------------------------------------------------------                    
+    //-------------------------------------------------------------------------
     @Override
     public void startDocument() throws SAXException {
         parent = null;

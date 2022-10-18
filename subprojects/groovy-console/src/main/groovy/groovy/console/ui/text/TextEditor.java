@@ -346,7 +346,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
         super.processKeyEvent(e);
 
         //  Handle release of Insert key to toggle overtype/insert mode
-        //  unless a modifier is active (eg Shift+Insert for paste or
+        //  unless a modifier is active (e.g. Shift+Insert for paste or
         //  Ctrl+Insert for Copy)
         if (e.getID() == KeyEvent.KEY_RELEASED &&
                 e.getKeyCode() == KeyEvent.VK_INSERT &&

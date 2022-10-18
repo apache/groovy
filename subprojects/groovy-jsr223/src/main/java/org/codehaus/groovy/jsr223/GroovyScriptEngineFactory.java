@@ -86,7 +86,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     /**
-     * This is also different than scripting.dev.java.net which used an
+     * This is also different from scripting.dev.java.net which used an
      * initial lowercase.  But these are proper names and should be capitalized.
      */
     @Override
