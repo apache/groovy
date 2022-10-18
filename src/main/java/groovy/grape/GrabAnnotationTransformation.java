@@ -384,7 +384,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 }
             } catch (RuntimeException re) {
                 // Decided against syntax exception since this is not a syntax error.
-                // The down side is we lose line number information for the offending
+                // The downside is we lose line number information for the offending
                 // @Grab annotation.
                 source.addException(re);
             }
