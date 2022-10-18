@@ -176,7 +176,7 @@ final class Groovy8678 {
     private class BigDecimalCategory {
         // using @Category here has a similar effect like
         //     BigDecimal.metaClass.call << { delegate * 2 }
-        // but without the side effects on the state of BigDecimal's meta class after the test
+        // but without the side effects on the state of BigDecimal's metaclass after the test
         def call() {
             return this * 2
         }
@@ -186,7 +186,7 @@ final class Groovy8678 {
     private class FloatCategory {
         // using @Category here has a similar effect like
         //     Float.metaClass.call << { delegate * 2 }
-        // but without the side effects on the state of Float's meta class after the test
+        // but without the side effects on the state of Float's metaclass after the test
         def call() {
             return this * 2
         }
@@ -196,7 +196,7 @@ final class Groovy8678 {
     private class DoubleCategory {
         // using @Category here has a similar effect like
         //     Double.metaClass.call << { delegate * 2 }
-        // but without the side effects on the state of Double's meta class after the test
+        // but without the side effects on the state of Double's metaclass after the test
         def call() {
             return this * 2
         }

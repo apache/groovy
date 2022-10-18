@@ -55,7 +55,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
         }
 
         public void call(ClassVisitor classWriter, ClassNode classNode) {
-            // lets test out the class verifier
+            // let's test out the class verifier
             if (DUMP_CLASS) {
                 dumper.visitClass(classNode);
             }

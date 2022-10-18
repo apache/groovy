@@ -19,7 +19,7 @@
 package groovy.lang;
 
 /**
- * A hand crafted example GString
+ * A handcrafted example GString
  */
 public class DummyGString extends DummyGStringBase {
 

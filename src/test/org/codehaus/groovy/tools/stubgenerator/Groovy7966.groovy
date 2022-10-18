@@ -19,7 +19,7 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that fileorder doesn't impact whether GroovyObject appears in implements list.
+ * Test that file order doesn't impact whether GroovyObject appears in implements list.
  */
 final class Groovy7966 extends StringSourcesStubTestCase {
 

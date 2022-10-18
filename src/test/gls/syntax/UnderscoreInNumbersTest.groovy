@@ -47,7 +47,7 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
 
             // this one is mentioned in the proposal but I think is wrong
             // since we shouldn't allow _., ie. an underscore (or a series of underscores)
-            // should alwasy be surrounded with at least one number
+            // should always be surrounded with at least one number
             // double whyWouldYouEverDoThis = 0x1_.ffff_ffff_ffff_fp10_23
         '''
     }

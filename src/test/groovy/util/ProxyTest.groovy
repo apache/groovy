@@ -29,9 +29,9 @@ class ProxyTest extends GroovyTestCase {
         assertSame original, proxy.adaptee
         // method, that is only known on adaptee is relayed through the proxy
         assertEquals original.size(), proxy.size()
-        // method, that is availabe in both objects should come from proxy
+        // method, that is available in both objects should come from proxy
         assertEquals 0, proxy.length()
-        // method, that is availabe in both objects
+        // method, that is available in both objects
         // but should come from adaptee needs explicit relay
         assertEquals original, proxy.toString()
         // method from decorator, that is not in adaptee
@@ -48,25 +48,25 @@ class ProxyTest extends GroovyTestCase {
 
   void testProxyCollect ( ) {
     def collection = [ 1 , 2 , 3 ]
-    def proxy = ( new Proxy ( ) ).wrap ( collection ) 
+    def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( [ 2 , 3 , 4 ] , proxy.collect { it + 1 } )
   }
 
   void testProxyAny ( ) {
     def collection = [ 1 , 2 , 3 ]
-    def proxy = ( new Proxy ( ) ).wrap ( collection ) 
+    def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( true , proxy.any { it == 2 } )
   }
 
   void testProxyFind ( ) {
     def collection = [ 1 , 2 , 3 ]
-    def proxy = ( new Proxy ( ) ).wrap ( collection ) 
+    def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( 2 , proxy.find { it == 2 } )
   }
 
   void testProxyEach ( ) {
     def collection = [ 1 , 2 , 3 ]
-    def proxy = ( new Proxy ( ) ).wrap ( collection ) 
+    def proxy = ( new Proxy ( ) ).wrap ( collection )
     def testString = ''
     proxy.each { testString += it }
     assertEquals ( '123' , testString )

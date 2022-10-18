@@ -75,7 +75,7 @@ class HexTest extends GroovyTestCase {
     }
 
     void testEncodeAndDecode() {
-        // test with an arbitary string
+        // test with an arbitrary string
         def testString = "00010fa011f000ff"
         assert testString.decodeHex().encodeHex().toString() == testString
 

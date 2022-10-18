@@ -1134,7 +1134,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             }
 
             class Aircraft {
-                private type         // instrinsic state
+                private type         // intrinsic state
                 private assetNumber  // extrinsic state
                 private bought       // extrinsic state
                 Aircraft(typeCode, assetNumber, bought) {
