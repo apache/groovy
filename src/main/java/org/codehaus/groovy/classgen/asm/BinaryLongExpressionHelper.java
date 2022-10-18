@@ -61,7 +61,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
             DUP2_X1
             DUP2_X1
             POP2
-            DUP2_X1          
+            DUP2_X1
          */
         mv.visitInsn(DUP2_X1);
         mv.visitInsn(POP2);
@@ -77,14 +77,14 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         mv.visitInsn(POP2);
     }
 
-    private static final MethodCaller 
+    private static final MethodCaller
         longArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "lArrayGet"),
         longArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "lArraySet");
 
     private static final int[] bitOp = {
         LOR,            //  BITWISE_OR / PIPE   340
         LAND,           //  BITWISE_AND         341
-        LXOR,           //  BIWISE_XOR          342
+        LXOR,           //  BITWISE_XOR         342
     };
 
     @Override

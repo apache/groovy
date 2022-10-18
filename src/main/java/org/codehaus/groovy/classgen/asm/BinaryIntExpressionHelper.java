@@ -57,7 +57,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
 
     private static final int[] stdCompareCodes = {
         IF_ICMPEQ,      // COMPARE_NOT_EQUAL            120
-        IF_ICMPNE,      // COMPARE_IDENTICAL            121 
+        IF_ICMPNE,      // COMPARE_IDENTICAL            121
         IF_ICMPEQ,      // COMPARE_NOT_IDENTICAL        122
         IF_ICMPNE,      // COMPARE_EQUAL                123
         IF_ICMPGE,      // COMPARE_LESS_THAN            124
@@ -78,10 +78,10 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     private static final int[] bitOp = {
         IOR,            //  BITWISE_OR / PIPE   340
         IAND,           //  BITWISE_AND         341
-        IXOR,           //  BIWISE_XOR          342
-    };    
+        IXOR,           //  BITWISE_XOR         342
+    };
 
-    /* unhandled types from from org.codehaus.groovy.syntax.Types
+    /* unhandled types from org.codehaus.groovy.syntax.Types
     public static final int LOGICAL_OR                  = 162;   // ||
     public static final int LOGICAL_AND                 = 164;   // &&
 
@@ -137,7 +137,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
 
 
     /**
-     * writes a std compare. This involves the tokens IF_ICMPEQ, IF_ICMPNE, 
+     * writes a std compare. This involves the tokens IF_ICMPEQ, IF_ICMPNE,
      * IF_ICMPEQ, IF_ICMPNE, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE and IF_ICMPLT
      * @param type the token type
      * @return true if a successful std compare write
@@ -174,7 +174,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     @Override
     protected boolean writeSpaceship(int type, boolean simulate) {
         if (type != COMPARE_TO) return false;
-        /*  
+        /*
            we will actually do
 
           (x < y) ? -1 : ((x == y) ? 0 : 1)
@@ -200,7 +200,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
           to load them again, we will instead duplicate them. This will
           require some pop actions in the branches!
 
-              DUP2          (operands: IIII) 
+              DUP2          (operands: IIII)
               IF_ICMPGE L1  (operands: II)
               ICONST_M1     (operands: III)
               GOTO L2
@@ -212,7 +212,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
           L3
               - jump from L1 branch to here (operands: -)
               ICONST_1      (operands: I)
-          L2  
+          L2
           - if jump from GOTO L2 we have III, but need only I
           - if from L3 branch we get only I
 

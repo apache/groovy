@@ -611,7 +611,7 @@ public class BytecodeHelper {
     public static boolean isClassLiteralPossible(ClassNode classNode) {
         // the current implementation only checks for public modifier, because Groovy used to allow
         // handles on classes even if they are package protected and not in the same package.
-        // There are situations where we could make more fine grained checks, but be careful of
+        // There are situations where we could make more fine-grained checks, but be careful of
         // potential breakage of existing code.
         return Modifier.isPublic(classNode.getModifiers());
     }

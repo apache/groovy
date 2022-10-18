@@ -397,7 +397,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             // store value in array
             bew.arraySet(false);
 
-            // load return value && correct operand stack stack
+            // load return value && correct operand stack
             operandStack.remove(3);
             rhsValueLoader.visit(acg);
         } else {

@@ -128,7 +128,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
-        // meta class check with boolean holder
+        // metaclass check with boolean holder
         MethodNode mn = controller.getMethodNode();
         if (mn != null) {
             mv.visitFieldInsn(GETSTATIC, controller.getInternalClassName(), Verifier.STATIC_METACLASS_BOOL, "Z");
@@ -332,7 +332,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.writeExpressionStatement(statement);
         } else {
             StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
-            // we have to have handle DelcarationExpressions special, since their
+            // we have to have handle DeclarationExpressions special, since their
             // entry should be outside the optimization path, we have to do that of
             // course only if we are actually going to do two different paths,
             // otherwise it is not needed
@@ -777,7 +777,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
             super.visitConstructorCallExpression(expression);
-            // we cannot set a target for the constructor call, since we cannot easily check the meta class of the other class
+            // we cannot set a target for the constructor call, since we cannot easily check the metaclass of the other class
             //setMethodTarget(call, "<init>", call.getArguments(), false);
         }
 
