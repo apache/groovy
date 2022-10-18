@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
- * Interface for template resolvers, which, given a template identifier, return an URL where the template
+ * Interface for template resolvers, which, given a template identifier, return a URL where the template
  * can be loaded.
  */
 public interface TemplateResolver {

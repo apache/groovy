@@ -51,7 +51,7 @@ import java.security.PrivilegedAction;
  * the logging jar starts with "commons-logging-".
  *
  * This was needed because if ant wants to access a task argument that uses for example a Path
- * it look for a matching method which includes a matching class. But two classes of the same name
+ * it looks for a matching method which includes a matching class. But two classes of the same name
  * with different class loaders are different, so ant would not be able to find the method.
  *
  * @see org.codehaus.groovy.tools.RootLoader

@@ -237,7 +237,7 @@ public interface JsonGenerator {
          *
          * <p>If two or more closures are registered for the exact same type the last
          * closure based on the order they were specified will be used.  When serializing an
-         * object its type is compared to the list of registered types in the order the were
+         * object its type is compared to the list of registered types in the order they were
          * given and the closure for the first suitable type will be called.  Therefore, it is
          * important to register more specific types first.
          *

@@ -329,7 +329,7 @@ class JmxMetaMapBuilder {
 
                 // ctorName:[]
                 if (descriptor && (descriptor instanceof List && descriptor.size() == 0)) {
-                    params = null // represnts a ctor with no params
+                    params = null // represents a ctor with no params
                 }
                 // ctorName:["paramType1","paramType2"..."paramTypeN"]
                 if (descriptor && (descriptor instanceof List && descriptor.size() > 0)) {

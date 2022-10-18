@@ -1207,7 +1207,7 @@ public class Sql implements AutoCloseable {
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql         the sql statement
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
@@ -1239,7 +1239,7 @@ public class Sql implements AutoCloseable {
      * @param sql         the sql statement
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
@@ -1306,7 +1306,7 @@ public class Sql implements AutoCloseable {
      * @param params      a list of parameters
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
@@ -1344,7 +1344,7 @@ public class Sql implements AutoCloseable {
      * @param map         a map containing the named parameters
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -1363,7 +1363,7 @@ public class Sql implements AutoCloseable {
      * @param sql         the sql statement
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -1404,7 +1404,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql         the sql statement
      * @param params      a list of parameters
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
@@ -1420,7 +1420,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql         the sql statement
      * @param params      a map of named parameters
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -1437,7 +1437,7 @@ public class Sql implements AutoCloseable {
      *
      * @param params      a map of named parameters
      * @param sql         the sql statement
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -1593,7 +1593,7 @@ public class Sql implements AutoCloseable {
      * Resource handling is performed automatically where appropriate.
      *
      * @param gstring     a GString containing the SQL query with embedded params
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
@@ -1624,7 +1624,7 @@ public class Sql implements AutoCloseable {
      * "scrollable" type.
      *
      * @param gstring     a GString containing the SQL query with embedded params
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
      * @param rowClosure  called for each row with a GroovyResultSet
@@ -1751,7 +1751,7 @@ public class Sql implements AutoCloseable {
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql         the SQL statement
-     * @param metaClosure called with meta data of the ResultSet
+     * @param metaClosure called with metadata of the ResultSet
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -1780,7 +1780,7 @@ public class Sql implements AutoCloseable {
      * @param sql         the SQL statement
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -1971,7 +1971,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql         the SQL statement
      * @param params      a list of parameters
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -1986,7 +1986,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql         the SQL statement
      * @param params      a map of named parameters
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -2002,7 +2002,7 @@ public class Sql implements AutoCloseable {
      *
      * @param params      a map of named parameters
      * @param sql         the SQL statement
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -2037,7 +2037,7 @@ public class Sql implements AutoCloseable {
      * @param params      a list of parameters
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -2061,7 +2061,7 @@ public class Sql implements AutoCloseable {
      * @param params      a map of named parameters
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -2079,7 +2079,7 @@ public class Sql implements AutoCloseable {
      * @param sql         the SQL statement
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @since 1.8.7
@@ -2154,7 +2154,7 @@ public class Sql implements AutoCloseable {
      * Resource handling is performed automatically where appropriate.
      *
      * @param gstring     a GString containing the SQL query with embedded params
-     * @param metaClosure called with meta data of the ResultSet
+     * @param metaClosure called with metadata of the ResultSet
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
@@ -2187,7 +2187,7 @@ public class Sql implements AutoCloseable {
      * @param gstring     the SQL statement
      * @param offset      the 1-based offset for the first row to be processed
      * @param maxRows     the maximum number of rows to be processed
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -2722,7 +2722,7 @@ public class Sql implements AutoCloseable {
      * @param params         The parameter values that will be substituted
      *                       into the SQL statement's parameter slots
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
-     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     *                       inserted row or rows (some drivers may be case-sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      * @see Connection#prepareStatement(String, String[])
@@ -2771,7 +2771,7 @@ public class Sql implements AutoCloseable {
      * @param params         a map containing the named parameters
      * @param sql            The SQL statement to execute
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
-     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     *                       inserted row or rows (some drivers may be case-sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      * @see Connection#prepareStatement(String, String[])
@@ -2810,7 +2810,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql            The SQL statement to execute
      * @param keyColumnNames an array of column names indicating the columns that should be returned from the
-     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     *                       inserted row or rows (some drivers may be case-sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      * @since 2.3.2
@@ -2844,7 +2844,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql            The SQL statement to execute
      * @param keyColumnNames an array of column names indicating the columns that should be returned from the
-     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     *                       inserted row or rows (some drivers may be case-sensitive, e.g. may require uppercase names)
      * @param params         The parameter values that will be substituted
      *                       into the SQL statement's parameter slots
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
@@ -2911,7 +2911,7 @@ public class Sql implements AutoCloseable {
      *
      * @param gstring        a GString containing the SQL query with embedded params
      * @param keyColumnNames a list of column names indicating the columns that should be returned from the
-     *                       inserted row or rows (some drivers may be case sensitive, e.g. may require uppercase names)
+     *                       inserted row or rows (some drivers may be case-sensitive, e.g. may require uppercase names)
      * @return A list of the auto-generated row results for each inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      * @see Connection#prepareStatement(String, String[])
@@ -4028,7 +4028,7 @@ public class Sql implements AutoCloseable {
      *
      * @param sql         query to execute
      * @param rs          the ResultSet to process
-     * @param metaClosure called for meta data (only once after sql execution)
+     * @param metaClosure called for metadata (only once after sql execution)
      * @return the resulting list of rows
      * @throws SQLException if a database error occurs
      */
@@ -4418,7 +4418,7 @@ public class Sql implements AutoCloseable {
      * Default behavior is to call a previously saved closure, if any, using the
      * statement as a parameter.
      *
-     * @param statement the statement to cleanup
+     * @param statement the statement to clean up
      * @since 4.0.1
      */
     protected void cleanup(Statement statement) {

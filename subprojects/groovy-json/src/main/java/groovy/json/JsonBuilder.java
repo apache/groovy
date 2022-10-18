@@ -46,7 +46,7 @@ import java.util.Map;
  *       def builder = new groovy.json.JsonBuilder()
  *       def root = builder.people {
  *           person {
- *               firstName 'Guillame'
+ *               firstName 'Guillaume'
  *               lastName 'Laforge'
  *               // Named arguments are valid values for objects too
  *               address(

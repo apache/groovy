@@ -910,7 +910,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of potentially calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory. Whether the closure is called is determined by whether
@@ -939,7 +939,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of potentially calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory.
@@ -1078,7 +1078,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Convenience method for {@link #traverse(Path, java.util.Map, groovy.lang.Closure)} when
      * no options to alter the traversal behavior are required.
      *
@@ -1190,7 +1190,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory.
@@ -1788,7 +1788,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Create a new PrintWriter for this file which is then
-     * passed it into the given closure.  This method ensures its the writer
+     * passed it into the given closure. This method ensures the writer
      * is closed after the closure returns.
      *
      * @param self    a Path

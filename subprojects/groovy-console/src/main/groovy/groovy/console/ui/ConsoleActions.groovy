@@ -219,7 +219,7 @@ loopModeAction = action(
         name: 'Loop Mode',
         closure: controller.&loopMode,
         mnemonic: 'p',
-        shortDescription: 'Run script continuously in a loop when run is envoked. Uncheck to stop loop'
+        shortDescription: 'Run script continuously in a loop when run is invoked. Uncheck to stop loop'
 )
 
 runSelectionAction = action(

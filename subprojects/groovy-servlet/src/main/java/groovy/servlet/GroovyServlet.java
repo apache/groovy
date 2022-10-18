@@ -169,7 +169,7 @@ public class GroovyServlet extends AbstractHttpServlet {
     }
 
     /**
-     * Hook method to setup the GroovyScriptEngine to use.<br>
+     * Hook method to set up the GroovyScriptEngine to use.<br>
      * Subclasses may override this method to provide a custom engine.
      */
     protected GroovyScriptEngine createGroovyScriptEngine(){

@@ -133,7 +133,7 @@ class ServletBindingTest extends GroovyTestCase {
     }
 
     /**
-     * Tests that getVariables truely returns all variables
+     * Tests that getVariables truly returns all variables
      */
     void testGetVariables_Contract() {
         def expectedVariables = ['request', 'response', 'context', 'application',
@@ -226,7 +226,7 @@ class ServletBindingTest extends GroovyTestCase {
     }
 
     /**
-     * Tests the contract on setVarible().
+     * Tests the contract on setVariable().
      */
     void testSetVariable_Contract() {
         def request = makeDefaultRequest()
