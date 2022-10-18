@@ -244,12 +244,12 @@ import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_TYPE_ARRAY;
  * When using the default implementations of MetaClass, methods are only allowed to be added before initialize() is called.
  * In other words you create a new MetaClass, add some methods and then call initialize(). If you attempt to add new methods
  * after initialize() has been called, an error will be thrown. This is to ensure that the MetaClass can operate appropriately
- * in multi-threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
+ * in multithreaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
  * <p>
  * ExpandoMetaClass differs here from the default in that it allows you to add methods after initialize has been called.
  * This is done by setting the initialize flag internally to false and then add the methods. Since this is not thread
  * safe it has to be done in a synchronized block. The methods to check for modification and initialization are
- * therefore synchronized as well. Any method call done through this meta class will first check if the it is
+ * therefore synchronized as well. Any method call done through this metaclass will first check if the it is
  * synchronized. Should this happen during a modification, then the method cannot be selected or called unless the
  * modification is completed.
  * <p>
@@ -327,7 +327,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * in the MetaClassRegistry automatically
      *
      * @param theClass The class that the MetaClass applies to
-     * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
+     * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will affect all instances if changed
      */
     public ExpandoMetaClass(Class theClass, boolean register) {
         this(theClass,register,false,null);
@@ -342,8 +342,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * in the MetaClassRegistry automatically
      *
      * @param theClass The class that the MetaClass applies to
-     * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will effect all instances if changed
-     * @param allowChangesAfterInit Should the meta class be modifiable after initialization. Default is false.
+     * @param register True if the MetaClass should be registered inside the MetaClassRegistry. This defaults to true and ExpandoMetaClass will affect all instances if changed
+     * @param allowChangesAfterInit Should the metaclass be modifiable after initialization. Default is false.
      */
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit) {
         this(theClass, register, allowChangesAfterInit, null);
@@ -507,7 +507,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Checks if the meta class is initialized.
+     * Checks if the metaclass is initialized.
      * @see groovy.lang.MetaClassImpl#isInitialized()
      */
     @Override
@@ -901,7 +901,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             if (isInitialized()) {
                 throw new RuntimeException("Already initialized, cannot add new method: " + metaMethod);
             }
-            // we always adds meta methods to class itself
+            // we always add meta methods to class itself
             addMetaMethodToIndex(metaMethod, metaMethodIndex.getHeader(theClass));
 
             dropMethodCache(methodName);
@@ -957,7 +957,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             modified = true;
             // Implementation note: By default Groovy uses soft references to store MetaClass
             // this insures the registry doesn't grow and get out of hand. By doing this we're
-            // saying this this EMC will be a hard reference in the registry. As we're only
+            // saying this EMC will be a hard reference in the registry. As we're only
             // going have a small number of classes that have modified EMC this is ok
             if (inRegistry) {
                 MetaClass currMetaClass = registry.getMetaClass(theClass);
@@ -1251,7 +1251,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     /**
      * Returns true if the name of the method specified and the number of arguments make it a javabean property
      *
-     * @param name True if its a Javabean property
+     * @param name True if it's a Javabean property
      * @param args The arguments
      * @return True if it is a javabean property method
      */

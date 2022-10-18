@@ -28,7 +28,7 @@ import java.io.Writer;
  * of itself. This mechanism is particularly useful for templates and such like.
  * <p>
  * It is worth noting that writable implementations often override their
- * toString() implementation as well to allow rendering the same result 
+ * toString() implementation as well to allow rendering the same result
  * directly to a String; however this is not required.
  */
 public interface Writable {
@@ -37,14 +37,14 @@ public interface Writable {
      * Writes this object to the given writer.
      * <p>
      * This is used to defer content creation until the point when it is
-     * streamed to the output destination.  Oftentimes, content will be defined 
-     * but not necessarily created (as is may be the case with a Closure 
-     * definition.)  In that case, the output is then 'deferred' to the point 
-     * when it is serialized to the writer. This class may be used whenever an 
-     * object should be responsible for creating its own textual representation, 
+     * streamed to the output destination.  Oftentimes, content will be defined
+     * but not necessarily created (as it may be the case with a Closure
+     * definition.)  In that case, the output is then 'deferred' to the point
+     * when it is serialized to the writer. This class may be used whenever an
+     * object should be responsible for creating its own textual representation,
      * but creating the entire output as a single String would be inefficient
      * (such as outputting a multi-gigabyte XML document.)
-     * 
+     *
      * @param out the Writer to which this Writable should output its data.
      * @return the Writer that was passed
      * @throws IOException if an error occurred while outputting data to the writer
