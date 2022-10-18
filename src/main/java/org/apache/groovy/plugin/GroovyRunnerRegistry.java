@@ -282,7 +282,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
     /**
      * Returns the registered runner for the specified key.
      *
-     * @param key used to lookup the runner
+     * @param key used to look up the runner
      * @return the runner registered with the given key
      */
     @Override

@@ -3443,7 +3443,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         InnerClassNode anonymousInnerClass;
         if (ctx.t == 1) {
             anonymousInnerClass = new EnumConstantClassNode(outerClass, innerClassName, superClass.getPlainNodeReference());
-            // and remove the final modifier from superClass to allow the sub class
+            // and remove the final modifier from superClass to allow the subclass
             superClass.setModifiers(superClass.getModifiers() & ~Opcodes.ACC_FINAL);
         } else {
             anonymousInnerClass = new InnerClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, superClass);
@@ -4452,7 +4452,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             methodCallExpression.setSafe(false);
         }
 
-        // if the generics types meta data is not empty, it is a generic method call, e.g. obj.<Integer>a(1, 2)
+        // if the generics types metadata is not empty, it is a generic method call, e.g. obj.<Integer>a(1, 2)
         methodCallExpression.setGenericsTypes(
                 propertyExpression.getNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES));
 
@@ -4718,7 +4718,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         if (!(nmd instanceof Boolean)) {
-            throw new GroovyBugError(nodeMetaDataHandler + " node meta data[" + key + "] is not an instance of Boolean");
+            throw new GroovyBugError(nodeMetaDataHandler + " node metadata[" + key + "] is not an instance of Boolean");
         }
 
         return (Boolean) nmd;
