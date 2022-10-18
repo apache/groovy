@@ -89,7 +89,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         try {
             return super.invokeMethod(name, args);
         } catch (MissingMethodException e) {
-            // lets try invoke the method on the real String
+            // let's try to invoke the method on the real String
             return InvokerHelper.invokeMethod(toString(), name, args);
         }
     }

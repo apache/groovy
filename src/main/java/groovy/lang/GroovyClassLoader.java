@@ -812,8 +812,8 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * sets if the recompilation should be enable. There are 3 possible
-     * values for this. Any value different than null overrides the
+     * sets if the recompilation should be enabled. There are 3 possible
+     * values for this. Any value different from null overrides the
      * value from the compiler configuration. true means to recompile if needed
      * false means to never recompile.
      *
@@ -1032,8 +1032,8 @@ public class GroovyClassLoader extends URLClassLoader {
 
         File file = new File(path, fileWithoutPackage);
         if (file.exists()) {
-            // file.exists() might be case insensitive.
-            // Let's do case sensitive match for the filename
+            // file.exists() might be case-insensitive.
+            // Let's do case-sensitive match for the filename
             try {
                 String caseSensitiveName = file.getCanonicalPath();
                 int index = caseSensitiveName.lastIndexOf(File.separator);
@@ -1066,7 +1066,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param source the source we may want to compile
      * @param cls    the former class
      * @return true if the source is newer, false else
-     * @throws IOException if it is not possible to open an
+     * @throws IOException if it is not possible to open a
      *                     connection for the given source
      * @see #getTimeStamp(Class)
      */

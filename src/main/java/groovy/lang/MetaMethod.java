@@ -94,7 +94,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
      * @throws IllegalArgumentException if the parameters are not valid
      */
     public void checkParameters(Class[] arguments) {
-        // lets check that the argument types are valid
+        // let's check that the argument types are valid
         if (!isValidMethod(arguments)) {
             throw new IllegalArgumentException(
                     "Parameters to method: "
@@ -107,7 +107,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     *Returns true if this this metamethod represents the same method as the argument.
+     * Returns true if this metamethod represents the same method as the argument.
      *
      * @param method A metaMethod instance
      * @return true if method is for the same method as this method, false otherwise.
@@ -171,7 +171,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is static.
+     * Returns whether this method is static.
      * @return true if this method is static
      */
     public boolean isStatic() {
@@ -179,7 +179,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is abstract.
+     * Returns whether this method is abstract.
      * @return true if this method is abstract
      */
     public boolean isAbstract() {
@@ -187,7 +187,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is interface-default.
+     * Returns whether this method is interface-default.
      * @return true if this method is default
      */
     public boolean isDefault() {
@@ -195,7 +195,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is private.
+     * Returns whether this method is private.
      * @return true if this method is private
      */
     public final boolean isPrivate() {
@@ -203,7 +203,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is protected.
+     * Returns whether this method is protected.
      * @return true if this method is protected
      */
     public final boolean isProtected() {
@@ -211,7 +211,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether or not this method is public.
+     * Returns whether this method is public.
      * @return true if this method is public
      */
     public final boolean isPublic() {
@@ -232,7 +232,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
 
     /**
      * Checks the compatibility between two modifier masks. Checks that they are equal
-     * with regards to access and static modifier.
+     * in regard to access and static modifier.
      *
      * @return true if the modifiers are compatible
      */

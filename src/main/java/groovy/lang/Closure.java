@@ -850,7 +850,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Builds a trampolined variant of the current closure.
      * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
      * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
-     * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
+     * the calculation and, instead of a recursive call to itself or another function, it returns a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
      * Here is an example:
@@ -874,7 +874,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Builds a trampolined variant of the current closure.
      * To prevent stack overflow due to deep recursion, functions can instead leverage the trampoline mechanism
      * and avoid recursive calls altogether. Under trampoline, the function is supposed to perform one step of
-     * the calculation and, instead of a recursive call to itself or another function, it return back a new closure,
+     * the calculation and, instead of a recursive call to itself or another function, it returns a new closure,
      * which will be executed by the trampoline as the next step.
      * Once a non-closure value is returned, the trampoline stops and returns the value as the final result.
      * @return A closure, which will execute the original closure on a trampoline.
