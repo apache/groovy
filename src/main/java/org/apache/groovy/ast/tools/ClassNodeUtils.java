@@ -63,11 +63,11 @@ public class ClassNodeUtils {
     private ClassNodeUtils() { }
 
     /**
-     * Formats a type name into a human readable version. For arrays, appends "[]" to the formatted
+     * Formats a type name into a human-readable version. For arrays, appends "[]" to the formatted
      * type name of the component. For unit class nodes, uses the class node name.
      *
      * @param cNode the type to format
-     * @return a human readable version of the type name (java.lang.String[] for example)
+     * @return a human-readable version of the type name (java.lang.String[] for example)
      */
     public static String formatTypeName(final ClassNode cNode) {
         if (cNode.isArray()) {
@@ -350,7 +350,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detect whether a given ClassNode is a inner class (non-static).
+     * Detect whether a given ClassNode is an inner class (non-static).
      *
      * @param cNode the ClassNode of interest
      * @return true if the given node is a (non-static) inner class, else false
@@ -387,7 +387,7 @@ public class ClassNodeUtils {
     /**
      * Determine if an explicit (non-generated) constructor is in the class.
      *
-     * @param xform if non null, add an error if an explicit constructor is found
+     * @param xform if non-null, add an error if an explicit constructor is found
      * @param cNode the type of the containing class
      * @return true if an explicit (non-generated) constructor was found
      */

@@ -61,7 +61,7 @@ public class ImmutablePropertyUtils {
      * Also, Color is not final so while not normally used with child
      * classes, it isn't strictly immutable. Use at your own risk.
      *
-     * This list can by extended by providing "known immutable" classes
+     * This list can be extended by providing "known immutable" classes
      * via Immutable.knownImmutableClasses
      */
     private static final Set<String> BUILTIN_IMMUTABLES = new HashSet<>(Arrays.asList(
