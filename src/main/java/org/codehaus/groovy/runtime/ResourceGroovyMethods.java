@@ -1259,7 +1259,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of potentially calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory. Whether the closure is called is determined by whether
@@ -1289,7 +1289,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of potentially calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory.
@@ -1439,7 +1439,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Convenience method for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} when
      * no options to alter the traversal behavior are required.
      *
@@ -1545,7 +1545,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Processes each descendant file in this directory and any sub-directories.
+     * Processes each descendant file in this directory and any subdirectories.
      * Processing consists of calling <code>closure</code> passing it the current
      * file (which may be a normal file or subdirectory) and then if a subdirectory was encountered,
      * recursively processing the subdirectory.
@@ -2144,7 +2144,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create a new PrintWriter for this file which is then
-     * passed it into the given closure.  This method ensures its the writer
+     * passed it into the given closure.  This method ensures the writer
      * is closed after the closure returns.
      *
      * @param file    a File
@@ -2307,7 +2307,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param url a URL
      * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws MalformedURLException is thrown if the URL is not well-formed
      * @throws IOException           if an I/O error occurs while creating the input stream
      * @since 1.5.5
      */
@@ -2330,7 +2330,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param url        a URL
      * @param parameters connection parameters
      * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws MalformedURLException is thrown if the URL is not well-formed
      * @throws IOException           if an I/O error occurs while creating the input stream
      * @since 1.8.1
      */
@@ -2352,7 +2352,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param url     a URL
      * @param charset opens the stream with a specified charset
      * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws MalformedURLException is thrown if the URL is not well-formed
      * @throws IOException           if an I/O error occurs while creating the input stream
      * @since 1.5.5
      */
@@ -2367,7 +2367,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param parameters connection parameters
      * @param charset    opens the stream with a specified charset
      * @return a BufferedReader for the URL
-     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws MalformedURLException is thrown if the URL is not well-formed
      * @throws IOException           if an I/O error occurs while creating the input stream
      * @since 1.8.1
      */
@@ -2618,7 +2618,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the CharSequence representing a URI
      * @return a URI
-     * @throws java.net.URISyntaxException is thrown if the URI is not well formed.
+     * @throws java.net.URISyntaxException is thrown if the URI is not well-formed.
      * @since 1.8.2
      */
     public static URI toURI(CharSequence self) throws URISyntaxException {
@@ -2630,7 +2630,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the String representing a URI
      * @return a URI
-     * @throws java.net.URISyntaxException is thrown if the URI is not well formed.
+     * @throws java.net.URISyntaxException is thrown if the URI is not well-formed.
      * @since 1.0
      */
     public static URI toURI(String self) throws URISyntaxException {
@@ -2642,7 +2642,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the CharSequence representing a URL
      * @return a URL
-     * @throws java.net.MalformedURLException is thrown if the URL is not well formed.
+     * @throws java.net.MalformedURLException is thrown if the URL is not well-formed.
      * @since 1.8.2
      */
     public static URL toURL(CharSequence self) throws MalformedURLException {
@@ -2654,7 +2654,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the String representing a URL
      * @return a URL
-     * @throws java.net.MalformedURLException is thrown if the URL is not well formed.
+     * @throws java.net.MalformedURLException is thrown if the URL is not well-formed.
      * @since 1.0
      */
     public static URL toURL(String self) throws MalformedURLException {
@@ -2687,7 +2687,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Gets path from a <code>List</code> of <code>String</code>s.
      *
-     * @param pathStack     <code>List</code> of <code>String</code>s to be concated as a path.
+     * @param pathStack     <code>List</code> of <code>String</code>s to be concatenated as a path.
      * @param separatorChar <code>char</code> to be used as separator between names in path
      * @return <code>String</code>, never <code>null</code>
      */

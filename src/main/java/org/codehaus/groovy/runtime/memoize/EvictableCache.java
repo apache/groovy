@@ -82,7 +82,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
     int size();
 
     /**
-     * Represents a eviction strategy for the cache with limited size
+     * Represents an eviction strategy for the cache with limited size
      */
     enum EvictionStrategy {
         /**

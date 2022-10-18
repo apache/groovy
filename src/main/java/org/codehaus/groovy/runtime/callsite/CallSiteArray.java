@@ -113,7 +113,7 @@ public final class CallSiteArray {
     }
 
     // for MetaClassImpl we try to pick meta method,
-    // otherwise or if method doesn't exist we make call via POJO meta class
+    // otherwise or if method doesn't exist we make call via POJO metaclass
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
         final Class klazz = receiver.getClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);

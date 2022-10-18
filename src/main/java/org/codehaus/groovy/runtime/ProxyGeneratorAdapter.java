@@ -382,7 +382,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      * Visit every class/interface this proxy should implement, and generate the appropriate
      * bytecode for delegation if available.
      *
-     * @param clazz an class for which to generate bytecode
+     * @param clazz a class for which to generate bytecode
      */
     private void visitClass(final Class<?> clazz) {
         Method[] methods = clazz.getDeclaredMethods();

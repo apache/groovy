@@ -27,7 +27,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
  * This class represents a property with multiple setters. Unlike a MetaBeanProperty you cannot get the setter
- * in this case. Instead invocation is done through the meta class of the property recevier.
+ * in this case. Instead invocation is done through the metaclass of the property receiver.
  */
 public class MultipleSetterProperty extends MetaProperty {
     private MetaMethod getter;
