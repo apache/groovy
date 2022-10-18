@@ -838,7 +838,7 @@ public class GenericsUtils {
      * but the other will not try even if the parameterized type has placeholders
      *
      * @param declaringClass the generics class node declaring the generics types
-     * @param actualReceiver the sub-class class node
+     * @param actualReceiver the subclass class node
      * @return the placeholder-to-actualtype mapping
      *
      * @since 3.0.0

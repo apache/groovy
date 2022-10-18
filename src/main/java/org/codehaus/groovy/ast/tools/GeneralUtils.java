@@ -290,7 +290,7 @@ public class GeneralUtils {
      * Builds a binary expression that compares two values.
      *
      * @param lhv expression for the value to compare from
-     * @param rhv expression for the value value to compare to
+     * @param rhv expression for the value to compare to
      * @return the expression comparing two values
      */
     public static BinaryExpression cmpX(final Expression lhv, final Expression rhv) {

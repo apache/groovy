@@ -62,7 +62,7 @@ public abstract class AsmDecompiler {
      * Loads the URL contents and parses them with ASM, producing a {@link ClassStub} object representing the structure of
      * the corresponding class file. Stubs are cached and reused if queried several times with equal URLs.
      *
-     * @param url an URL from a class loader, most likely a file system file or a JAR entry.
+     * @param url a URL from a class loader, most likely a file system file or a JAR entry.
      * @return the class stub
      * @throws IOException if reading from this URL is impossible
      */

@@ -31,10 +31,10 @@ import java.util.function.Function;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public interface NodeMetaDataHandler {
     /**
-     * Gets the node meta data.
+     * Gets the node metadata.
      *
-     * @param key the meta data key
-     * @return the node meta data value for this key
+     * @param key the metadata key
+     * @return the node metadata value for this key
      */
     default <T> T getNodeMetaData(Object key) {
         Map metaDataMap = this.getMetaDataMap();
@@ -45,11 +45,11 @@ public interface NodeMetaDataHandler {
     }
 
     /**
-     * Gets the node meta data.
+     * Gets the node metadata.
      *
-     * @param key the meta data key
-     * @param valFn the meta data value supplier
-     * @return the node meta data value for this key
+     * @param key the metadata key
+     * @param valFn the metadata value supplier
+     * @return the node metadata value for this key
      */
     default <T> T getNodeMetaData(Object key, Function<?, ? extends T> valFn) {
         if (key == null) throw new GroovyBugError("Tried to get/set meta data with null key on " + this + ".");
@@ -63,7 +63,7 @@ public interface NodeMetaDataHandler {
     }
 
     /**
-     * Copies all node meta data from the other node to this one
+     * Copies all node metadata from the other node to this one
      *
      * @param other the other node
      */
@@ -82,10 +82,10 @@ public interface NodeMetaDataHandler {
     }
 
     /**
-     * Sets the node meta data.
+     * Sets the node metadata.
      *
-     * @param key   the meta data key
-     * @param value the meta data value
+     * @param key   the metadata key
+     * @param value the metadata value
      * @throws GroovyBugError if key is null or there is already meta
      *                        data under that key
      */
@@ -95,11 +95,11 @@ public interface NodeMetaDataHandler {
     }
 
     /**
-     * Sets the node meta data but allows overwriting values.
+     * Sets the node metadata but allows overwriting values.
      *
-     * @param key   the meta data key
-     * @param value the meta data value
-     * @return the old node meta data value for this key
+     * @param key   the metadata key
+     * @param value the metadata value
+     * @return the old node metadata value for this key
      * @throws GroovyBugError if key is null
      */
     default Object putNodeMetaData(Object key, Object value) {
@@ -114,9 +114,9 @@ public interface NodeMetaDataHandler {
     }
 
     /**
-     * Removes a node meta data entry.
+     * Removes a node metadata entry.
      *
-     * @param key the meta data key
+     * @param key the metadata key
      * @throws GroovyBugError if the key is null
      */
     default void removeNodeMetaData(Object key) {

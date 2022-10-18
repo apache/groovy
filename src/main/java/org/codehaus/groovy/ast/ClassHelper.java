@@ -229,7 +229,7 @@ public class ClassHelper {
      * A new ClassNode object is only created if the class
      * is not one of the predefined ones
      *
-     * @param c class used to created the ClassNode
+     * @param c class used to create the ClassNode
      * @return ClassNode instance created from the given class
      */
     public static ClassNode make(Class c) {
