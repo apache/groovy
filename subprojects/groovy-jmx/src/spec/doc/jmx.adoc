@@ -628,7 +628,7 @@ image:{reldir_jmx}/assets/img/jconsole-implicit-export.png[]
 
 ==== JmxBuilder.bean() Syntax
 
-The JmxBuilder.bean() node supports an extensive set of descriptors to describe your bean for management. The JMX MBeanServer uses these descriptors to expose meta data about the bean exposed for management.
+The JmxBuilder.bean() node supports an extensive set of descriptors to describe your bean for management. The JMX MBeanServer uses these descriptors to expose metadata about the bean exposed for management.
 
 ----
 jmx.export {
@@ -800,7 +800,7 @@ In the snippet above, the **builder will only export methods start() and stop()*
 
 ==== Export Operations by Signature
 
-Using JmxBuilder, you can target methods to export for management using the methods's parameter signature. This is useful when you want to distinguish methods with the same name that you want to export (i.e. stop() instead of stop(boolean)).
+Using JmxBuilder, you can target methods to export for management using the methods' parameter signature. This is useful when you want to distinguish methods with the same name that you want to export (i.e. stop() instead of stop(boolean)).
 
 [source,groovy]
 ----
@@ -818,7 +818,7 @@ JmxBuilder supports detailed descriptors for bean operations. You can supply dee
 include::../test/JmxTest.groovy[tags=export_operations_with_explicit_descriptors,indent=0]
 ----
 
-The snippet above shows all of the ways JmxBuilder allows you to describe an operation targeted for management:
+The snippet above shows all the ways JmxBuilder allows you to describe an operation targeted for management:
 
 - Operations **start() and stop()** are described by the "desc" key (this is enough since there are no params).
 - In operation **setResource()** uses of a shorthand version of **params**: to describe the parameters for the method.
@@ -1015,7 +1015,7 @@ Here is an example of JmxBuilder's listener node:
 include::../test/JmxTest.groovy[tags=jmxbuilders_listener,indent=0]
 ----
 
-This example shows how you can use a stand alone listener (outside of an MBean export). Here, we **export a timer with a 1 second** resolution. Then, we specify a listener to that timer that will print "beep" every second.
+This example shows how you can use a stand-alone listener (outside an MBean export). Here, we **export a timer with a 1 second** resolution. Then, we specify a listener to that timer that will print "beep" every second.
 
 === Emitting JMX Events
 
