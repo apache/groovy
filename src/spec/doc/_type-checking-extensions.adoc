@@ -958,7 +958,7 @@ without the extension, the code would still pass.
 === Mixed mode compilation
 
 In the previous section, we highlighted the fact that you can activate type checking extensions with
-`@CompileStatic`. In that context, the type checker would not complain any more about some unresolved variables or
+`@CompileStatic`. In that context, the type checker would not complain anymore about some unresolved variables or
 unknown method calls, but it would still wouldn't know how to compile them statically.
 
 Mixed mode compilation offers a third way, which is to instruct the compiler that whenever an unresolved variable

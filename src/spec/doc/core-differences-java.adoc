@@ -169,7 +169,7 @@ new File('/path/to/file').withReader('UTF-8') { reader ->
 WARNING: The implementation of anonymous inner classes and nested classes follow Java closely,
 but there are some differences, e.g.
 local variables accessed from within such classes don't have to be final.
-We piggy-back on some implementation details we use for `groovy.lang.Closure`
+We piggyback on some implementation details we use for `groovy.lang.Closure`
 when generating inner class bytecode.
 
 === Static inner classes

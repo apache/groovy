@@ -55,7 +55,7 @@ include::../test/IntegrationTest.groovy[tags=eval_x,indent=0]
 <4> Simple evaluation with three bound parameters named `x`, `y` and `z`
 
 The `Eval` class makes it very easy to evaluate simple scripts, but doesn't scale: there is no caching of the script, and
-it isn't meant to evaluate more than one liners.
+it isn't meant to evaluate more than one-liners.
 
 [[integ-groovyshell]]
 === GroovyShell
