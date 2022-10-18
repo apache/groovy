@@ -210,7 +210,7 @@ class ASTComparatorCategory {
 
     /**
      * Main method that makes the magic. Compares all properties for object a and object b.
-     * There is a lot of problems in this code, like omitted class checking and so on. Just belive, it will be used properly.
+     * There is a lot of problems in this code, like omitted class checking and so on. Just believe it will be used properly.
      * @param a
      * @param b
      * @return
@@ -280,7 +280,7 @@ class ASTComparatorCategory {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Just a bunch of copypasted methods. Maybe will wrote AST transformation for them.
+    // Just a bunch of copy-pasted methods. Maybe will wrote AST transformation for them.
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     static equals(ClassNode a, ClassNode b) {

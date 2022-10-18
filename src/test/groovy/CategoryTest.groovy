@@ -190,7 +190,7 @@ final class CategoryTest extends GroovyTestCase {
         // this test will call a method using a POJO while a category is active
         // in call site caching this triggers the usage of POJOMetaClassSite,
         // which was missing a null check for the receiver. The last foo call
-        // uses null to exaclty check that path. I use multiple calls with foo(1)
+        // uses null to exactly check that path. I use multiple calls with foo(1)
         // before to ensure for example indy will do the right things as well,
         // since indy may need more than one call here.
         assertScript """

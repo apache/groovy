@@ -120,7 +120,7 @@ class CastTest extends GroovyTestCase {
         mySet = [2, 3, 4, 3] as Set
         assert mySet instanceof HashSet
 
-        // identitiy test
+        // identity test
         mySet = {} as Set
         assert mySet.is ( mySet as Set )
 

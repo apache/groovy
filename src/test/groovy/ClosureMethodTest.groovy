@@ -249,7 +249,7 @@ class ClosureMethodTest extends GroovyTestCase {
         // Check edges
         try {
             [].inject { a, b -> a + b } == null
-            fail("inject(Closure) on an emtpy list should throw a NoSuchElementException")
+            fail("inject(Closure) on an empty list should throw a NoSuchElementException")
         }
         catch (NoSuchElementException e) {
         }
@@ -263,7 +263,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
         try {
             ([] as Object[]).inject { c, item -> c + item }
-            fail("inject(Closure) on an emtpy Object[] should throw a NoSuchElementException")
+            fail("inject(Closure) on an empty Object[] should throw a NoSuchElementException")
         }
         catch (NoSuchElementException e) {
         }
@@ -278,7 +278,7 @@ class ClosureMethodTest extends GroovyTestCase {
         try {
             iter = [hasNext: { -> false }, next: { -> null }] as Iterator
             iter.inject { a, b -> a * b }
-            fail("inject(Closure) on an exhaused iterator should throw a NoSuchElementException")
+            fail("inject(Closure) on an exhausted iterator should throw a NoSuchElementException")
         }
         catch (NoSuchElementException e) {
         }
