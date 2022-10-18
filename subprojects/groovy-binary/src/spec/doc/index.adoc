@@ -140,11 +140,11 @@ Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder
 Security is a complex and multi-faceted issue and needs to be addressed in a holistic way.
 Groovy offers some features to improve security, but organisations
 concerned about security should already be addressing other necessary aspects
-such as network security, file-system security, operating sytem security, database security,
+such as network security, file-system security, operating system security, database security,
 passwords and potentially encryption.
 
 Also, since Groovy runs on the JDK and optionally uses other library dependencies,
-users should ensure their JDK and all depdendencies are up to date with respect to
+users should ensure their JDK and all dependencies are up-to-date with respect to
 the latest security fixes.
 
 With regard to security issues that may affect the Groovy project itself,
@@ -164,7 +164,7 @@ offer some of the same security features as Java programs, including:
 
 Special security support is provided through:
 
-* gapi:groovy.lang.GroovyShell[], gapi:groovy.lang.GroovyClassLoader[] and other parts of the Groovy runtime fully support the Java security manager which allows you to sandbox script execution with a security policy. (Note: this funtionality might be scaled back in future Groovy versions or when running
+* gapi:groovy.lang.GroovyShell[], gapi:groovy.lang.GroovyClassLoader[] and other parts of the Groovy runtime fully support the Java security manager which allows you to sandbox script execution with a security policy. (Note: this functionality might be scaled back in future Groovy versions or when running
 on particular JDK versions in line with https://openjdk.java.net/jeps/411[JEP 411])
 * gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer[]
 secures source code by controlling what code constructs are permitted or prohibited in a code base

@@ -163,7 +163,7 @@ Also, it could be referenced by its index, e.g. `r[0]`
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_01,indent=0]
 ----
 [NOTE]
-`select P1, P2, ..., Pn` is a simplifed syntax of `select new NamedRecord(P1, P2, ..., Pn)` when and only when `n` >= 2.
+`select P1, P2, ..., Pn` is a simplified syntax of `select new NamedRecord(P1, P2, ..., Pn)` when and only when `n` >= 2.
 Also, `NamedRecord` instance will be created if `as` clause is used.
 The values stored in the `NamedRecord` could be referenced by their names.
 

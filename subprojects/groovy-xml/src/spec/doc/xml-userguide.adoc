@@ -32,10 +32,10 @@ one of:
 * `groovy.xml.XmlParser`
 * `groovy.xml.XmlSlurper`
 
-Both have the same approach to parse an xml. Both come with a bunch of
+Both have the same approach to parse an XML. Both come with a bunch of
 overloaded parse methods plus some special methods such as `parseText`,
 parseFile and others. For the next example we will use the `parseText`
-method. It parses a XML `String` and recursively converts it to a list
+method. It parses an XML `String` and recursively converts it to a list
 or map of objects.
 
 [source,groovy]
@@ -98,7 +98,7 @@ frequency.
 === DOMCategory
 
 There is another way of parsing XML documents with Groovy with the
-used of `groovy.xml.dom.DOMCategory` which is a category class which
+use of `groovy.xml.dom.DOMCategory` which is a category class which
 adds GPath style operations to Java's DOM classes.
 
 NOTE: Java has in-built support for DOM processing of XML using classes
@@ -106,7 +106,7 @@ representing the various parts of XML documents, e.g. `Document`,
 `Element`, `NodeList`, `Attr` etc. For more information about these classes,
 refer to the respective JavaDocs.
 
-Having a XML like the following:
+Having an XML like the following:
 
 [source,groovy]
 ----
@@ -167,7 +167,7 @@ get the first book's author's name
 include::../test/UserGuideXmlSlurperTest.groovy[tags=testGettingANodeText,indent=0]
 ----
 
-First we parse the document with `XmlSlurper` and the we have to
+First we parse the document with `XmlSlurper` and then we have to
 consider the returning value as the root of the XML document, so in
 this case is "response".
 
@@ -181,7 +181,7 @@ wanted the text inside that node we should be calling the `text()`
 method.  The `author` node is an instance of `GPathResult` type and
 `text()` a method giving us the content of that node as a String.
 
-When using `GPath` with an xml parsed with `XmlSlurper` we'll have as a
+When using `GPath` with an XML parsed with `XmlSlurper` we'll have as a
 result a `GPathResult` object. `GPathResult` has many other convenient
 methods to convert the text inside a node to any other type such as:
 
@@ -192,12 +192,12 @@ methods to convert the text inside a node to any other type such as:
 
 All these methods try to convert a `String` to the appropriate type.
 
-If we were using a XML parsed with `XmlParser` we could be dealing with
+If we were using an XML parsed with `XmlParser` we could be dealing with
 instances of type `Node`. But still all the actions applied to
 `GPathResult` in these examples could be applied to a Node as
 well. Creators of both parsers took into account `GPath` compatibility.
 
-Next step is to get the some values from a given node's attribute. In the following sample
+Next step is to get some values from a given node's attribute. In the following sample
 we want to get the first book's author's id. We'll be using two different approaches. Let's see the code first:
 
 [source,groovy]
@@ -332,7 +332,7 @@ include::../test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml1,ind
 <1> We're creating a reference string to compare against
 <2> The `xmlWriter` instance is used by `MarkupBuilder` to convert the
 xml representation to a String instance eventually
-<3> The `xmlMarkup.movie(...)` call will create a XML node with a tag
+<3> The `xmlMarkup.movie(...)` call will create an XML node with a tag
 called `movie` and with content `the godfather`.
 
 [source,groovy]
@@ -409,7 +409,7 @@ include::../test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testSimpleExamp
 
 <1> Note that `StreamingMarkupBuilder.bind` returns a `Writable`
 instance that may be used to stream the markup to a Writer
-<2> We're capturing the output in a String to parse it again an check
+<2> We're capturing the output in a String to parse it again and check
 the structure of the generated XML with `XmlSlurper`.
 
 === MarkupBuilderHelper
@@ -452,7 +452,7 @@ from within the `bind` method scope when using
 include::../test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testMkp,indent=0]
 ----
 
-<1> If we want to generate a escaped value for the name attribute with
+<1> If we want to generate an escaped value for the name attribute with
 `mkp.yield`
 <2> Checking the values later on with `XmlSlurper`
 
@@ -469,9 +469,9 @@ the following example:
 include::../test/UserGuideMarkupBuilderTest.groovy[tags=testDOMToGroovy,indent=0]
 ----
 
-<1> Creating `DOMToGroovy` instance 
+<1> Creating `DOMToGroovy` instance
 <2> Converts the XML to `MarkupBuilder` calls which are available in the output `StringWriter`
-<3> Using `output` variable to create the whole MarkupBuilder 
+<3> Using `output` variable to create the whole MarkupBuilder
 <4> Back to XML string
 
 == Manipulating XML

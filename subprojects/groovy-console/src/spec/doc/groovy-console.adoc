@@ -97,7 +97,7 @@ blank input area
 [[GroovyConsole-Historyandresults]]
 === History and results
 
-* You can pop-up a gui inspector on the last (non-null) result by
+* You can pop up a gui inspector on the last (non-null) result by
 selecting `Inspect Last` from the `Actions` menu. The inspector is a
 convenient way to view lists and maps.
 * The console remembers the last ten script runs. You can scroll back
@@ -118,7 +118,7 @@ find yourself running a script multiple times until it works the way you want
 it to. However, what if your code takes too long to finish or worse, creates
 an infinite loop? Interrupting script execution can be achieved by clicking
 the `interrupt` button on the small dialog box that pops up when a script
-is executing or through the `interrupt` icon in the tool bar.
+is executing or through the `interrupt` icon in the toolbar.
 
 image:{reldir_console}/assets/img/gconsole-toolbar.png[Toolbar]
 
