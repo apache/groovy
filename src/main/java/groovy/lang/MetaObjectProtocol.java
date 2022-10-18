@@ -29,14 +29,14 @@ import java.util.List;
 public interface MetaObjectProtocol {
 
     /**
-     * Obtain a list of all meta properties available on this meta class
+     * Obtain a list of all meta properties available on this metaclass
      *
      * @see groovy.lang.MetaProperty
      * @return A list of MetaProperty instances
      */
     List<MetaProperty> getProperties();
     /**
-     * Obtain a list of all the meta methods available on this meta class
+     * Obtain a list of all the meta methods available on this metaclass
      *
      * @see groovy.lang.MetaMethod
      * @return A list of MetaMethod instances
