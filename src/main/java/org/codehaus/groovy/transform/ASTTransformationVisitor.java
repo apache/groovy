@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>
  * {@link org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor} will add a list
  * of annotations that this visitor should be concerned about.  All other
- * annotations are ignored, whether or not they are GroovyASTTransformation
+ * annotations are ignored, whether they are GroovyASTTransformation
  * annotated or not.
  * <p>
  * A Two-pass method is used. First all candidate annotations are added to a
@@ -140,7 +140,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             // first pass, collect nodes
             super.visitClass(classNode);
 
-            // second pass, call visit on all of the collected nodes
+            // second pass, call visit on all the collected nodes
             List<Tuple2<ASTTransformation, ASTNode[]>> tuples = new ArrayList<>();
             for (ASTNode[] node : targetNodes) {
                 for (ASTTransformation snt : transforms.get(node[0])) {

@@ -118,7 +118,7 @@ public class MessageSource
     }
 
     /**
-     * Format a message (based on {@link MessageFormat} using the message
+     * Format a message (based on {@link MessageFormat}) using the message
      * from the resource bundles using the given code as a pattern and the
      * given objects as arguments.
      */

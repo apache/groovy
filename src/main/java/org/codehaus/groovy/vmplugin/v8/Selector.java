@@ -205,7 +205,7 @@ public abstract class Selector {
 
             if (staticTargetType.isPrimitive()) {
                 handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
-                // need to call here here because we used the static target type
+                // need to call here because we used the static target type
                 // it won't be done otherwise because handle.type() == callSite.type()
                 castAndSetGuards();
             } else {
@@ -295,7 +295,7 @@ public abstract class Selector {
         }
 
         /**
-         * this method chooses a property from the meta class.
+         * this method chooses a property from the metaclass.
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
@@ -353,8 +353,8 @@ public abstract class Selector {
 
         /**
          * Additionally to the normal {@link MethodSelector#setHandleForMetaMethod()}
-         * task we have to also take care of generic getter methods, that depend
-         * one the name.
+         * task we have to also take care of generic getter methods, that depends
+         * on the name.
          */
         @Override
         public void setHandleForMetaMethod() {
@@ -397,7 +397,7 @@ public abstract class Selector {
         }
 
         /**
-         * For a constructor call we always use the static meta class from the registry
+         * For a constructor call we always use the static metaclass from the registry
          */
         @Override
         public MetaClass getMetaClass() {
@@ -407,7 +407,7 @@ public abstract class Selector {
         }
 
         /**
-         * This method chooses a constructor from the meta class.
+         * This method chooses a constructor from the metaclass.
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
@@ -447,7 +447,7 @@ public abstract class Selector {
             if (beanConstructor) {
                 // we have handle that takes no arguments to create the bean,
                 // we have to use its return value to call #setBeanProperties with it
-                // and the meta class.
+                // and the metaclass.
 
                 // to do this we first bind the values to #setBeanProperties
                 MethodHandle con = BEAN_CONSTRUCTOR_PROPERTY_SETTER.bindTo(mc);
@@ -501,7 +501,7 @@ public abstract class Selector {
 
     /**
      * Method invocation based {@link Selector}.
-     * This Selector is called for method invocations and is base for cosntructor
+     * This Selector is called for method invocations and is base for constructor
      * calls as well as getProperty calls.
      */
     private static class MethodSelector extends Selector {
@@ -560,7 +560,7 @@ public abstract class Selector {
         }
 
         /**
-         * Gives the meta class to an Object.
+         * Gives the metaclass to an Object.
          */
         public MetaClass getMetaClass() {
             Object receiver = args[0];
@@ -582,9 +582,9 @@ public abstract class Selector {
         }
 
         /**
-         * Uses the meta class to get a meta method for a method call.
-         * There will be no meta method selected, if the meta class is no MetaClassImpl
-         * or the meta class is an AdaptingMetaClass.
+         * Uses the metaclass to get a meta method for a method call.
+         * There will be no meta method selected, if the metaclass is no MetaClassImpl
+         * or the metaclass is an AdaptingMetaClass.
          */
         public void chooseMeta(MetaClassImpl mci) {
             if (mci == null) return;
@@ -701,7 +701,7 @@ public abstract class Selector {
         }
 
         /**
-         * Creates a MethodHandle, which will use the meta class path.
+         * Creates a MethodHandle, which will use the metaclass path.
          * This method is called only if no handle has been created before. This
          * is usually the case if the method selection failed.
          */
@@ -718,7 +718,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
 
                 if (receiver instanceof GroovyObject) {
-                    // if the meta class call fails we may still want to fall back to call
+                    // if the metaclass call fails we may still want to fall back to call
                     // GroovyObject#invokeMethod if the receiver is a GroovyObject
                     if (LOG_ENABLED) LOG.info("add MissingMethod handler for GroovyObject#invokeMethod fallback path");
                     handle = MethodHandles.catchException(handle, MissingMethodException.class, GROOVY_OBJECT_INVOKER);
@@ -926,7 +926,7 @@ public abstract class Selector {
                 }
             }
 
-            // handle constant meta class and category changes
+            // handle constant metaclass and category changes
             handle = switchPoint.guardWithTest(handle, fallback);
             if (LOG_ENABLED) LOG.info("added switch point guard");
 
@@ -1005,10 +1005,10 @@ public abstract class Selector {
 
         /**
          * setting a call site target consists of the following steps:
-         * # get the meta class
+         * # get the metaclass
          * # select a method/constructor/property from it, if it is a MetaClassImpl
          * # make a handle out of the selection
-         * # if nothing could be selected select a path through the given MetaClass or the GroovyObject
+         * # if nothing could be selected, select a path through the given MetaClass or the GroovyObject
          * # apply transformations for vargs, implicit null argument, coercion, wrapping, null receiver and spreading
          */
         @Override
@@ -1047,7 +1047,7 @@ public abstract class Selector {
 
     /**
      * Returns {@link NullObject#getNullObject()} if the receiver
-     * (args[0]) is null. If it is not null, the recevier itself
+     * (args[0]) is null. If it is not null, the receiver itself
      * is returned.
      */
     public Object getCorrectedReceiver() {

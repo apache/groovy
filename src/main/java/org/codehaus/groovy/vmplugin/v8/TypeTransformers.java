@@ -155,7 +155,7 @@ public class TypeTransformers {
                 // return ProxyGenerator.INSTANCE.instantiateAggregate(impl,Collections.singletonList(clazz));
                 // TO_SAMTRAIT_PROXY is a handle (Object,Object,ProxyGenerator,Class)GroovyObject
                 // where the second object is the input closure, everything else
-                // needs to be provide and is in remaining order: method name,
+                // needs to be provided and is in remaining order: method name,
                 // ProxyGenerator.INSTANCE and singletonList(parameter)
                 MethodHandle ret = TO_SAMTRAIT_PROXY;
                 ret = MethodHandles.insertArguments(ret, 2, ProxyGenerator.INSTANCE, Collections.singletonList(parameter));
@@ -168,8 +168,8 @@ public class TypeTransformers {
             //        new Class[]{parameter},
             //        new ConvertedClosure((Closure) arg));
             // TO_REFLECTIVE_PROXY will do that for us, though
-            // input is the closure, the method name, the class loader and the 
-            // class[]. All of that but the closure must be provided here  
+            // input is the closure, the method name, the class loader and the
+            // class[]. All of that but the closure must be provided here
             MethodHandle ret = TO_REFLECTIVE_PROXY;
             ret = MethodHandles.insertArguments(ret, 1,
                     method.getName(),
@@ -183,7 +183,7 @@ public class TypeTransformers {
             //            instantiateAggregateFromBaseClass(m, parameter);
             // TO_GENERATED_PROXY is a handle (Object,Object,ProxyGenerator,Class)GroovyObject
             // where the second object is the input closure, everything else
-            // needs to be provide and is in remaining order: method name, 
+            // needs to be provided and is in remaining order: method name,
             // ProxyGenerator.INSTANCE and parameter
             MethodHandle ret = TO_GENERATED_PROXY;
             ret = MethodHandles.insertArguments(ret, 2, ProxyGenerator.INSTANCE, parameter);

@@ -173,7 +173,7 @@ public class IndyInterface {
     }
 
     /**
-     * Callback for constant meta class update change
+     * Callback for constant metaclass update change
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {

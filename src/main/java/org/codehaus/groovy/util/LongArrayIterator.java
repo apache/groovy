@@ -23,7 +23,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow a longt array to be used where an Iterator is expected.
+ * Allow a long array to be used where an Iterator is expected.
  *
  * @since 3.0.8
  */

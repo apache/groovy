@@ -80,7 +80,7 @@ public class ReturnStatementToIterationConverter {
         }
 
         /*
-         * Assign the iteration variables their new value before recuring
+         * Assign the iteration variables their new value before recurring
          */
         for (int i = 0, n = arguments.size(); i < n; i++) {
             ExpressionStatement argAssignment = createAssignmentToIterationVariable(arguments.get(i), i, positionMapping);

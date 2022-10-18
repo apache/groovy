@@ -29,7 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This compilation customizer allows addiing various types of imports to the compilation unit. Supports adding:
+ * This compilation customizer allows adding various types of imports to the compilation unit. Supports adding:
  * <ul>
  *     <li>standard imports via {@link #addImports(String...)} or {@link #addImport(String, String)}</li>
  *     <li>star imports via {@link #addStarImports(String...)}</li>

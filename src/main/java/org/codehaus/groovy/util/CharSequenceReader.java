@@ -94,7 +94,7 @@ public class CharSequenceReader extends Reader implements Serializable {
     }
 
     /**
-     * Read the sepcified number of characters into the array.
+     * Read the specified number of characters into the array.
      *
      * @param array The array to store the characters in
      * @param offset The starting position in the array to store

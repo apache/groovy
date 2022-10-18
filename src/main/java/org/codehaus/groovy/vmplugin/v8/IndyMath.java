@@ -38,7 +38,7 @@ import static org.codehaus.groovy.vmplugin.v8.TypeHelper.replaceWithMoreSpecific
  * This class contains math operations used by indy instead of the normal
  * meta method and call site caching system. The goal is to avoid boxing, thus
  * use primitive types for parameters and return types where possible.
- * WARNING: This class is for internal use only. Do not use it outside of the
+ * WARNING: This class is for internal use only. Do not use it outside the
  * org.codehaus.groovy.vmplugin.v7 package of groovy-core.
  */
 public class IndyMath {

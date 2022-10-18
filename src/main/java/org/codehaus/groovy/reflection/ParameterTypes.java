@@ -196,7 +196,7 @@ public class ParameterTypes {
             return newArgs;
         } else if (argumentArray.length == paramTypes.length) {
             // the number of arguments is correct, but if the last argument
-            // is no array we have to wrap it in a array. If the last argument
+            // is no array we have to wrap it in an array. If the last argument
             // is null, then we don't have to do anything
             Object lastArgument = argumentArray[argumentArray.length - 1];
             if (lastArgument != null && !lastArgument.getClass().isArray()) {
@@ -250,7 +250,7 @@ public class ParameterTypes {
     }
 
     private static boolean isValidExactMethod(Class[] arguments, CachedClass[] pt) {
-        // lets check the parameter types match
+        // let's check the parameter types match
         int size = pt.length;
         for (int i = 0; i < size; i++) {
             if (!pt[i].isAssignableFrom(arguments[i])) {
@@ -261,7 +261,7 @@ public class ParameterTypes {
     }
 
     public boolean isValidExactMethod(Object[] args) {
-        // lets check the parameter types match
+        // let's check the parameter types match
         getParametersTypes0();
         int size = args.length;
         if (size != parameterTypes.length)
@@ -277,7 +277,7 @@ public class ParameterTypes {
     }
 
     public boolean isValidExactMethod(Class[] args) {
-        // lets check the parameter types match
+        // let's check the parameter types match
         getParametersTypes0();
         int size = args.length;
         if (size != parameterTypes.length)

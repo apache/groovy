@@ -379,7 +379,7 @@ public class AnnotationCollectorTransform {
      * get the list of annotations we aliased from the collector and adds it to
      * aliasAnnotationUsage. The method will also map all members from
      * aliasAnnotationUsage to the aliased nodes. Should a member stay unmapped,
-     * we will ad an error. Further processing of those members is done by the
+     * we will add an error. Further processing of those members is done by the
      * annotations.
      *
      * @param collector                 reference to the annotation with {@link AnnotationCollector}
