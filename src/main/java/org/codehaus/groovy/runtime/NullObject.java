@@ -75,7 +75,7 @@ public class NullObject extends GroovyObjectSupport {
     /**
      * Tries to set a property on null, which will always fail
      *
-     * @param property - the proprty to set
+     * @param property - the property to set
      * @param newValue - the new value of the property
      */
     @Override
@@ -131,7 +131,7 @@ public class NullObject extends GroovyObjectSupport {
     /**
      * Fallback for null+null.
      * The result is always a NPE. The plus(String) version will catch
-     * the case of adding a non null String to null.
+     * the case of adding a non-null String to null.
      *
      * @param o - the Object
      * @return nothing

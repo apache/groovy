@@ -60,7 +60,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
     }
 
     /**
-     * Constructs a LRU cache with the specified initial capacity and max size.
+     * Constructs an LRU cache with the specified initial capacity and max size.
      * The LRU cache is slower than {@link LRUCache}
      *
      * @param initialCapacity initial capacity of the LRU cache
@@ -71,7 +71,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
     }
 
     /**
-     * Constructs a LRU cache with the default initial capacity(16)
+     * Constructs an LRU cache with the default initial capacity(16)
      *
      * @param maxSize max size of the LRU cache
      * @see #ConcurrentCommonCache(int, int)

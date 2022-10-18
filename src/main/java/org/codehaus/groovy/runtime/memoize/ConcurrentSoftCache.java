@@ -51,7 +51,7 @@ public class ConcurrentSoftCache<K, V> extends ConcurrentCommonCache<K, SoftRefe
     }
 
     /**
-     * Constructs a LRU cache with the specified initial capacity and max size.
+     * Constructs an LRU cache with the specified initial capacity and max size.
      * The LRU cache is slower than {@link LRUCache}
      *
      * @param initialCapacity initial capacity of the LRU cache
@@ -62,7 +62,7 @@ public class ConcurrentSoftCache<K, V> extends ConcurrentCommonCache<K, SoftRefe
     }
 
     /**
-     * Constructs a LRU cache with the default initial capacity(16)
+     * Constructs an LRU cache with the default initial capacity(16)
      *
      * @param maxSize max size of the LRU cache
      * @see #ConcurrentSoftCache(int, int)

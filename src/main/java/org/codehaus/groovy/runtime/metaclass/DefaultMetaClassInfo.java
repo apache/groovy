@@ -29,21 +29,21 @@ public class DefaultMetaClassInfo {
     //                  boolean
     //---------------------------------------------
 
-    // if original boolean meta class
+    // if original boolean metaclass
     private static boolean origBoolean = true;
     // if origBoolean and withoutCustomHandle
     private static boolean origBooleanRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original boolean meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original boolean metaclass is used.
      */
     public static boolean isOrigBool() {
         return origBooleanRes;
     }
 
     /**
-     * sets if the original boolean meta class is used
+     * Sets if the original boolean metaclass is used.
      */
     public static void setOrigBool(boolean v) {
         origBoolean = v;
@@ -54,21 +54,21 @@ public class DefaultMetaClassInfo {
     //                  byte
     //---------------------------------------------
 
-    // if original Byte meta class
+    // if original Byte metaclass
     private static boolean origByte = true;
     // if origByte and withoutCustomHandle
     private static boolean origByteRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original byte meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original byte metaclass is used.
      */
     public static boolean isOrigByte() {
         return origByteRes;
     }
 
     /**
-     * sets if the original byte meta class is used
+     * Sets if the original byte metaclass is used.
      */
     public static void setOrigByte(boolean v) {
         origByte = v;
@@ -79,21 +79,21 @@ public class DefaultMetaClassInfo {
     //                  char
     //---------------------------------------------
 
-    // if original char meta class
+    // if original char metaclass
     private static boolean origChar = true;
     // if origChar and withoutCustomHandle
     private static boolean origCharRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original char meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original char metaclass is used.
      */
     public static boolean isOrigChar() {
         return origCharRes;
     }
 
     /**
-     * sets if the original char meta class is used
+     * Sets if the original char metaclass is used.
      */
     public static void setOrigChar(boolean v) {
         origChar = v;
@@ -104,21 +104,21 @@ public class DefaultMetaClassInfo {
     //                  short
     //---------------------------------------------
 
-    // if original short meta class
+    // if original short metaclass
     private static boolean origShort = true;
     // if origShort and withoutCustomHandle
     private static boolean origShortRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original short meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original short metaclass is used.
      */
     public static boolean isOrigShort() {
         return origShortRes;
     }
 
     /**
-     * sets if the original short meta class is used
+     * Sets if the original short metaclass is used.
      */
     public static void setOrigShort(boolean v) {
         origShort = v;
@@ -129,21 +129,21 @@ public class DefaultMetaClassInfo {
     //                  int
     //---------------------------------------------
 
-    // if original Integer meta class
+    // if original Integer metaclass
     private static boolean origInt = true;
     // if origInt and withoutCustomHandle
     private static boolean origIntRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original integer meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original integer metaclass is used.
      */
     public static boolean isOrigInt() {
         return origIntRes;
     }
 
     /**
-     * sets if the original int meta class is used
+     * Sets if the original int metaclass is used.
      */
     public static void setOrigInt(boolean v) {
         origInt = v;
@@ -154,21 +154,21 @@ public class DefaultMetaClassInfo {
     //                  int[]
     //---------------------------------------------
 
-    // if original Integer[] meta class
+    // if original Integer[] metaclass
     private static boolean origIntArray = true;
     // if origInt and withoutCustomHandle
     private static boolean origIntArrayWCH = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original integer array meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original integer array metaclass is used.
      */
     public static boolean isOrigIntArray() {
         return origIntArrayWCH;
     }
 
     /**
-     * sets if the original int array meta class is used
+     * Sets if the original int array metaclass is used.
      */
     public static void setOrigIntArray(boolean v) {
         origIntArray = v;
@@ -179,21 +179,21 @@ public class DefaultMetaClassInfo {
     //                  long
     //---------------------------------------------
 
-    // if original long meta class
+    // if original long metaclass
     private static boolean origLong = true;
     // if origLong and withoutCustomHandle
     private static boolean origLongRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original long meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original long metaclass is used.
      */
     public static boolean isOrigLong() {
         return origLongRes;
     }
 
     /**
-     * sets if the original long meta class is used
+     * Sets if the original long metaclass is used.
      */
     public static void setOrigLong(boolean v) {
         origLong = v;
@@ -204,21 +204,21 @@ public class DefaultMetaClassInfo {
     //                  float
     //---------------------------------------------
 
-    // if original float meta class
+    // if original float metaclass
     private static boolean origFloat = true;
     // if origFloat and withoutCustomHandle
     private static boolean origFloatRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original float meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original float metaclass is used.
      */
     public static boolean isOrigFloat() {
         return origFloatRes;
     }
 
     /**
-     * sets if the original float meta class is used
+     * Sets if the original float metaclass is used.
      */
     public static void setOrigFloat(boolean v) {
         origFloat = v;
@@ -229,21 +229,21 @@ public class DefaultMetaClassInfo {
     //                  double
     //---------------------------------------------
 
-    // if original double meta class
+    // if original double metaclass
     private static boolean origDouble = true;
     // if origFloat and withoutCustomHandle
     private static boolean origDoubleRes = true;
 
     /**
-     * @return  true if no meta class creation handle is set and if
-     *          the original double meta class is used.
+     * Returns true if no metaclass creation handle is set and if
+     * the original double metaclass is used.
      */
     public static boolean isOrigDouble() {
         return origDoubleRes;
     }
 
     /**
-     * sets if the original double meta class is used
+     * Sets if the original double metaclass is used.
      */
     public static void setOrigDouble(boolean v) {
         origDouble = v;
@@ -251,14 +251,14 @@ public class DefaultMetaClassInfo {
     }
 
     //---------------------------------------------
-    //     custom meta class creation handle
+    //     custom metaclass creation handle
     //---------------------------------------------
 
-    // if a custom meta class creation handle is set
+    // if a custom metaclass creation handle is set
     private static boolean withoutCustomHandle = true;
 
     /**
-     * sets if the system uses a custom meta class creation handle
+     * Sets if the system uses a custom metaclass creation handle.
      */
     public static void setWithoutCustomMetaclassCreationHandle(boolean mch) {
         withoutCustomHandle = mch;
@@ -278,7 +278,7 @@ public class DefaultMetaClassInfo {
 
     public static boolean disabledStandardMetaClass() {
         return disabledStandardMC;
-    }    
+    }
 
 
     private static void changeFlags(boolean mch) {
@@ -293,7 +293,7 @@ public class DefaultMetaClassInfo {
             origByteRes = origByte; origCharRes = origChar;
             origBooleanRes = origBoolean; origShortRes = origShort;
             origIntRes = origInt; origLongRes = origLong;
-            origFloatRes = origFloat; origDoubleRes = origDouble; 
+            origFloatRes = origFloat; origDoubleRes = origDouble;
             origIntArrayWCH = origIntArray;
         }
     }
@@ -309,7 +309,7 @@ public class DefaultMetaClassInfo {
             setOrigInt(orig);
         } else if (c.getComponentType()==Integer.class) {
             setOrigIntArray(orig);
-        } else if (c==Long.class) { 
+        } else if (c==Long.class) {
             setOrigLong(orig);
         } else if (c==Float.class) {
             setOrigFloat(orig);
@@ -323,7 +323,7 @@ public class DefaultMetaClassInfo {
     //         GlobalMetaClassVersioning
     //---------------------------------------------
     public static class ConstantMetaClassVersioning {
-        private boolean valid = true; 
+        private boolean valid = true;
         public boolean isValid(){return valid;}
     }
     private static ConstantMetaClassVersioning constantMetaClassVersioning = new ConstantMetaClassVersioning();

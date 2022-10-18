@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 
 /**
  * POJO call site
- *   meta class - cached
+ *   metaclass - cached
  *   method - cached
 */
 public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
@@ -66,7 +66,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver, Object[] args) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, args);
         }
@@ -80,7 +80,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params);
         } catch (NullPointerException e) {
@@ -93,7 +93,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver, Object arg1) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1);
         } catch (NullPointerException e) {
@@ -106,7 +106,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2);
         } catch (NullPointerException e) {
@@ -119,7 +119,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
         } catch (NullPointerException e) {
@@ -132,7 +132,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return receiver.getClass() == metaClass.getTheClass() // metaclass match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
         } catch (NullPointerException e) {

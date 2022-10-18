@@ -25,7 +25,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
  * Call site for invoking static methods
- *   meta class  - cached
+ *   metaclass  - cached
  *   method - not cached
  */
 public class StaticMetaClassSite extends MetaClassSite {

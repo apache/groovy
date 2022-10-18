@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 
 /**
  * POGO call site
- *   meta class - cached
+ *   metaclass - cached
  *   method - cached
 */
 public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {

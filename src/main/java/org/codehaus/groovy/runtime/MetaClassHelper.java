@@ -378,7 +378,7 @@ public class MetaClassHelper {
         long ret = 0;
         int noVargsLength = parametersLength - 1;
 
-        // if the number of parameters does not match we have 
+        // if the number of parameters does not match we have
         // a vargs usage
         //
         // case A: arguments.length<parameters.length
@@ -392,13 +392,13 @@ public class MetaClassHelper {
         // case B: arguments.length>parameters.length
         //
         //         In this case all arguments with a index bigger than
-        //         paramMinus1 are part of the vargs, so a 
-        //         distance calculation needs to be done against 
+        //         paramMinus1 are part of the vargs, so a
+        //         distance calculation needs to be done against
         //         parameters[noVargsLength].getComponentType()
         //
         //         VArgs penalty: 2l+arguments.length-parameters.length
         //
-        // case C: arguments.length==parameters.length && 
+        // case C: arguments.length==parameters.length &&
         //         isAssignableFrom( parameters[noVargsLength],
         //                           arguments[noVargsLength] )
         //
@@ -406,11 +406,11 @@ public class MetaClassHelper {
         //
         //         VArgs penalty: 0l
         //
-        // case D: arguments.length==parameters.length && 
+        // case D: arguments.length==parameters.length &&
         //         !isAssignableFrom( parameters[noVargsLength],
         //                            arguments[noVargsLength] )
         //
-        //         In this case we have a vargs case again, we need 
+        //         In this case we have a vargs case again, we need
         //         to calculate arguments[noVargsLength] against
         //         parameters[noVargsLength].getComponentType
         //
@@ -458,7 +458,7 @@ public class MetaClassHelper {
          *      assert foo(new Object(),new Object()) == 2
          *  --> D preferred over B
          *
-         *  This gives C<A<D<B 
+         *  This gives C<A<D<B
          */
 
         // first we calculate all arguments, that are for sure not part
@@ -597,7 +597,7 @@ public class MetaClassHelper {
         return answer;
     }
 
-    // 
+    //
 
     /**
      * @param list   a list of MetaMethods
@@ -663,7 +663,7 @@ public class MetaClassHelper {
             baseClass = fallback;
         }
         /*
-         * If no specific super class has been found and type fallback is an interface, check if all arg classes 
+         * If no specific super class has been found and type fallback is an interface, check if all arg classes
          * implement it. If yes, then that interface is the common type across arguments.
          */
         if (baseClass == Object.class && fallback.isInterface()) {
@@ -723,7 +723,7 @@ public class MetaClassHelper {
     /**
      * Returns a callable object for the given method name on the object.
      * The object acts like a Closure in that it can be called, like a closure
-     * and passed around - though really its a method pointer, not a closure per se.
+     * and passed around - though really it's a method pointer, not a closure per se.
      *
      * @param object     the object containing the method
      * @param methodName the method of interest
@@ -1004,14 +1004,14 @@ public class MetaClassHelper {
     }
 
     /**
-     * Sets the meta class for an object, by delegating to the appropriate
+     * Sets the metaclass for an object, by delegating to the appropriate
      * {@link DefaultGroovyMethods} helper method. This method was introduced as
      * a breaking change in 2.0 to solve rare cases of stack overflow. See GROOVY-5285.
      *
-     * The method is named doSetMetaClass in order to prevent misusages. Do not use
+     * The method is named doSetMetaClass in order to prevent misuses. Do not use
      * this method directly unless you know what you do.
      *
-     * @param self the object for which to set the meta class
+     * @param self the object for which to set the metaclass
      * @param mc the metaclass
      */
     public static void doSetMetaClass(Object self, MetaClass mc) {

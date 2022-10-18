@@ -99,7 +99,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * @param useAccessible defines whether or not the {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
+     * @param useAccessible defines whether the {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)}
      *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistryImpl(boolean useAccessible) {
@@ -146,7 +146,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         addNonRemovableMetaClassRegistryChangeEventListener(cmcu -> {
             // The calls to DefaultMetaClassInfo.setPrimitiveMeta and sdyn.setBoolean need to be
             // ordered. Even though metaClassInfo is thread-safe, it is included in the block
-            // so the meta classes are added to the queue in the same order.
+            // so the metaclasses are added to the queue in the same order.
             synchronized (metaClassInfo) {
                metaClassInfo.add(cmcu.getNewMetaClass());
                DefaultMetaClassInfo.getNewConstantMetaClassVersioning();
@@ -274,7 +274,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * if oldMc is null, newMc will replace whatever meta class was used before.
+     * if oldMc is null, newMc will replace whatever metaclass was used before.
      * if oldMc is not null, then newMc will be used only if the stored mc is
      * the same as oldMc
      */
@@ -361,7 +361,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * Adds a listener for constant meta classes.
+     * Adds a listener for constant metaclasses.
      * @param listener the listener
      */
     @Override
@@ -373,7 +373,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
 
     /**
-     * Adds a listener for constant meta classes. This listener cannot be removed!
+     * Adds a listener for constant metaclasses. This listener cannot be removed!
      * @param listener the listener
      */
     @Override
@@ -384,7 +384,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * Removes a constant meta class listener.
+     * Removes a constant metaclass listener.
      * @param listener the listener
      */
     @Override
@@ -455,10 +455,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * Returns an iterator to iterate over all constant meta classes.
+     * Returns an iterator to iterate over all constant metaclasses.
      * This iterator can be seen as making a snapshot of the current state
-     * of the registry. The snapshot will include all meta classes that has
-     * been used unless they are already collected. Collected meta classes
+     * of the registry. The snapshot will include all metaclasses that has
+     * been used unless they are already collected. Collected metaclasses
      * will be skipped automatically, so you can expect that each element
      * of the iteration is not null. Calling this method is thread safe, the
      * usage of the iterator is not.
@@ -472,7 +472,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         return new Iterator() {
             // index in the ref array
             private int index = 0;
-            // the current meta class
+            // the current metaclass
             private MetaClass currentMeta;
             // used to ensure that hasNext has been called
             private boolean hasNextCalled = false;

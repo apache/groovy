@@ -760,7 +760,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    the source CharSequence
      * @param regex   a Regex CharSequence
-     * @param closure a closure with one parameter or as much parameters as groups
+     * @param closure a closure with one parameter or as many parameters as groups
      * @return the source CharSequence
      *
      * @since 1.8.2
@@ -780,7 +780,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    the source CharSequence
      * @param pattern a regex Pattern
-     * @param closure a closure with one parameter or as much parameters as groups
+     * @param closure a closure with one parameter or as many parameters as groups
      * @return the source CharSequence
      *
      * @since 1.8.2
@@ -800,7 +800,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    the source string
      * @param pattern a regex Pattern
-     * @param closure a closure with one parameter or as much parameters as groups
+     * @param closure a closure with one parameter or as many parameters as groups
      * @return the source string
      *
      * @since 1.6.1
@@ -819,7 +819,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    the source string
      * @param regex   a Regex string
-     * @param closure a closure with one parameter or as much parameters as groups
+     * @param closure a closure with one parameter or as many parameters as groups
      * @return the source string
      *
      * @since 1.6.0
@@ -2979,7 +2979,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the original CharSequence
      * @param num  the number of chars to take from this CharSequence
      * @return a CharSequence consisting of the first {@code num} chars,
-     *         or else the whole CharSequence if it has less then {@code num} elements.
+     *         or else the whole CharSequence if it has less than {@code num} elements.
      *
      * @since 1.8.1
      */
@@ -2999,7 +2999,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the original GString
      * @param num  the number of chars to take from this GString
      * @return a String consisting of the first {@code num} chars,
-     *         or else the whole GString if it has less then {@code num} elements.
+     *         or else the whole GString if it has less than {@code num} elements.
      *
      * @since 2.3.7
      */
@@ -3013,7 +3013,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the original String
      * @param num  the number of chars to take from this String
      * @return a String consisting of the first {@code num} chars,
-     *         or else the whole String if it has less then {@code num} elements.
+     *         or else the whole String if it has less than {@code num} elements.
      *
      * @since 2.5.5
      */

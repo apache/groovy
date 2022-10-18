@@ -119,7 +119,7 @@ public class GStringImpl extends GString {
     /**
      * Get the strings of this GString.
      * <p>
-     * This methods returns the same array as used in the constructor.
+     * This method returns the same array as used in the constructor.
      * Changing the values will result in changes of the GString.
      * It is generally not recommended to do so.
      */

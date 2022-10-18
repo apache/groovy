@@ -75,7 +75,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
     }
 
     /**
-     * Constructs a LRU cache with the specified initial capacity and max size.
+     * Constructs an LRU cache with the specified initial capacity and max size.
      * The LRU cache is slower than {@link LRUCache}
      *
      * @param initialCapacity initial capacity of the LRU cache
@@ -86,7 +86,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
     }
 
     /**
-     * Constructs a LRU cache with the default initial capacity
+     * Constructs an LRU cache with the default initial capacity
      *
      * @param maxSize max size of the LRU cache
      * @see #CommonCache(int, int)

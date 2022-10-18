@@ -27,7 +27,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
  * POJO call site
- *   meta class - cached
+ *   metaclass - cached
  *   method - cached
 */
 public class StaticMetaMethodSite extends MetaMethodSite {
@@ -48,37 +48,37 @@ public class StaticMetaMethodSite extends MetaMethodSite {
     }
 
     protected final boolean checkCall(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args);
     }
 
     protected final boolean checkCall(Object receiver) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params);
     }
 
     protected final boolean checkCall(Object receiver, Object arg1) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, arg1);
     }
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, arg1, arg2);
     }
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
     }
 
     protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
     }

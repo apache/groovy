@@ -67,7 +67,7 @@ import java.util.Set;
  *
  * This class also supports optional guaranteed
  * exclusive reads, simply by surrounding a call within a synchronized
- * block, as in <br> 
+ * block, as in <br>
  * <code>ConcurrentReaderHashMap t; ... Object v; <br>
  * synchronized(t) { v = t.get(k); } </code> <br>
  *
@@ -78,7 +78,7 @@ import java.util.Set;
  *   ConcurrentReaderHashMap t; ...            // Inefficient version
  *   Object key; ...
  *   Object value; ...
- *   synchronized(t) { 
+ *   synchronized(t) {
  *     if (!t.containsKey(key))
  *       t.put(key, value);
  *       // other code if not previously present
@@ -123,7 +123,7 @@ import java.util.Set;
  * during updates. Like Hashtable but unlike java.util.HashMap,
  * this class does NOT allow <tt>null</tt> to be used as a key or
  * value.  This class is also typically faster than ConcurrentHashMap
- * when there is usually only one thread updating the table, but 
+ * when there is usually only one thread updating the table, but
  * possibly many retrieving values from it.
  * <p>
  *
@@ -136,8 +136,8 @@ import java.util.Set;
  * @author Adapted from ConcurrentHashMap (Doug Lea)
  * @author adapted by the Groovy community
  */
-public class ConcurrentReaderHashMap 
-  extends AbstractMap 
+public class ConcurrentReaderHashMap
+  extends AbstractMap
   implements Cloneable, Serializable {
   private static final long serialVersionUID = -3225682440765612861L;
 
@@ -176,7 +176,7 @@ public class ConcurrentReaderHashMap
   protected final BarrierLock barrierLock = new BarrierLock();
 
   /**
-   * field written to only to guarantee lock ordering.
+   * field written only to guarantee lock ordering.
    **/
   protected transient Object lastWrite;
 
@@ -185,7 +185,7 @@ public class ConcurrentReaderHashMap
    * all readers to see table. Call only when already
    * holding main sync lock.
    **/
-  protected final void recordModification(Object x) { 
+  protected final void recordModification(Object x) {
     synchronized(barrierLock) {
       lastWrite = x;
     }
@@ -196,9 +196,9 @@ public class ConcurrentReaderHashMap
    * accesses will be at least as fresh as from last
    * use of barrierLock
    **/
-  protected final Entry[] getTableForReading() { 
+  protected final Entry[] getTableForReading() {
     synchronized(barrierLock) {
-      return table; 
+      return table;
     }
   }
 
@@ -207,12 +207,12 @@ public class ConcurrentReaderHashMap
    * The default initial number of table slots for this table (32).
    * Used when not otherwise specified in constructor.
    **/
-  public static final int DEFAULT_INITIAL_CAPACITY = 32; 
+  public static final int DEFAULT_INITIAL_CAPACITY = 32;
 
 
   /**
    * The minimum capacity, used if a lower value is implicitly specified
-   * by either of the constructors with arguments.  
+   * by either of the constructors with arguments.
    * MUST be a power of two.
    */
   private static final int MINIMUM_CAPACITY = 4;
@@ -229,7 +229,7 @@ public class ConcurrentReaderHashMap
    * Used when not otherwise specified in constructor.
    **/
 
-  public static final float DEFAULT_LOAD_FACTOR = 0.75f; 
+  public static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
 
   /**
@@ -258,7 +258,7 @@ public class ConcurrentReaderHashMap
   protected float loadFactor;
 
   /**
-   * Returns the appropriate capacity (power of two) for the specified 
+   * Returns the appropriate capacity (power of two) for the specified
    * initial capacity argument.
    */
   private static int p2capacity(int initialCapacity) {
@@ -289,21 +289,21 @@ public class ConcurrentReaderHashMap
     return ((h << 7) - h + (h >>> 9) + (h >>> 17));
   }
 
-  /** 
-   * Check for equality of non-null references x and y. 
+  /**
+   * Check for equality of non-null references x and y.
    **/
   protected boolean eq(Object x, Object y) {
     return x == y || x.equals(y);
   }
 
   /**
-   * Constructs a new, empty map with the specified initial 
-   * capacity and the specified load factor. 
+   * Constructs a new, empty map with the specified initial
+   * capacity and the specified load factor.
    *
    * @param initialCapacity the initial capacity
    *  The actual initial capacity is rounded to the nearest power of two.
    * @param loadFactor  the load factor of the ConcurrentReaderHashMap
-   * @throws IllegalArgumentException  if the initial maximum number 
+   * @throws IllegalArgumentException  if the initial maximum number
    *               of elements is less
    *               than zero, or if the load factor is non-positive.
    */
@@ -320,12 +320,12 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Constructs a new, empty map with the specified initial 
+   * Constructs a new, empty map with the specified initial
    * capacity and default load factor.
    *
-   * @param   initialCapacity   the initial capacity of the 
+   * @param   initialCapacity   the initial capacity of the
    *                            ConcurrentReaderHashMap.
-   * @throws    IllegalArgumentException if the initial maximum number 
+   * @throws    IllegalArgumentException if the initial maximum number
    *              of elements is less than zero.
    */
   public ConcurrentReaderHashMap(int initialCapacity) {
@@ -389,7 +389,7 @@ public class ConcurrentReaderHashMap
     // throw null pointer exception if key null
     int hash = hash(key);
 
-    /* 
+    /*
        Start off at the apparently correct bin.  If entry is found, we
        need to check after a barrier anyway.  If not found, we need a
        barrier to check if we are actually in right bin. So either
@@ -422,7 +422,7 @@ public class ConcurrentReaderHashMap
 
       else if (e.hash == hash && eq(key, e.key)) {
         Object value = e.value;
-        if (value != null) 
+        if (value != null)
           return value;
 
         // Entry was invalidated during deletion. But it could
@@ -444,10 +444,10 @@ public class ConcurrentReaderHashMap
 
   /**
    * Tests if the specified object is a key in this table.
-   * 
+   *
    * @param   key   possible key.
-   * @return  <code>true</code> if and only if the specified object 
-   *          is a key in this table, as determined by the 
+   * @return  <code>true</code> if and only if the specified object
+   *          is a key in this table, as determined by the
    *          <tt>equals</tt> method; <code>false</code> otherwise.
    * @exception  NullPointerException  if the key is <code>null</code>.
    * @see     #contains(Object)
@@ -458,12 +458,12 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Maps the specified <code>key</code> to the specified 
-   * <code>value</code> in this table. Neither the key nor the 
+   * Maps the specified <code>key</code> to the specified
+   * <code>value</code> in this table. Neither the key nor the
    * value can be <code>null</code>. <p>
    *
-   * The value can be retrieved by calling the <code>get</code> method 
-   * with a key that is equal to the original key. 
+   * The value can be retrieved by calling the <code>get</code> method
+   * with a key that is equal to the original key.
    *
    * @param      key     the table key.
    * @param      value   the value.
@@ -475,7 +475,7 @@ public class ConcurrentReaderHashMap
    */
   @Override
   public Object put(Object key, Object value) {
-    if (value == null) 
+    if (value == null)
       throw new NullPointerException();
 
     int hash = hash(key);
@@ -502,7 +502,7 @@ public class ConcurrentReaderHashMap
           }
         }
         else {
-          Object oldValue = e.value; 
+          Object oldValue = e.value;
           if (first == tab[index] && oldValue != null) {
             e.value = value;
             return oldValue;
@@ -520,7 +520,7 @@ public class ConcurrentReaderHashMap
    * Continuation of put(), called only when sync lock is
    * held and interference has been detected.
    **/
-  protected Object sput(Object key, Object value, int hash) { 
+  protected Object sput(Object key, Object value, int hash) {
 
     Entry[] tab = table;
     int index = hash & (tab.length-1);
@@ -536,7 +536,7 @@ public class ConcurrentReaderHashMap
         return null;
       }
       else if (e.hash == hash && eq(key, e.key)) {
-        Object oldValue = e.value; 
+        Object oldValue = e.value;
         e.value = value;
         return oldValue;
       }
@@ -551,7 +551,7 @@ public class ConcurrentReaderHashMap
    * with a larger capacity. This method is called automatically when the
    * number of keys in this map exceeds its capacity and load factor.
    */
-  protected void rehash() { 
+  protected void rehash() {
     Entry[] oldTable = table;
     int oldCapacity = oldTable.length;
     if (oldCapacity >= MAXIMUM_CAPACITY) {
@@ -617,7 +617,7 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Removes the key (and its corresponding value) from this 
+   * Removes the key (and its corresponding value) from this
    * table. This method does nothing if the key is not in the table.
    *
    * @param   key   the key that needs to be removed.
@@ -629,7 +629,7 @@ public class ConcurrentReaderHashMap
   @Override
   public Object remove(Object key) {
     /*
-      Find the entry, then 
+      Find the entry, then
         1. Set value field to null, to force get() to retry
         2. Rebuild the list without this entry.
            All entries following removed node can stay in list, but
@@ -645,8 +645,8 @@ public class ConcurrentReaderHashMap
     Entry first = tab[index];
     Entry e = first;
 
-    for (e = first; e != null; e = e.next) 
-      if (e.hash == hash && eq(key, e.key)) 
+    for (e = first; e != null; e = e.next)
+      if (e.hash == hash && eq(key, e.key))
         break;
 
 
@@ -713,7 +713,7 @@ public class ConcurrentReaderHashMap
    *
    * @param value value whose presence in this map is to be tested.
    * @return <tt>true</tt> if this map maps one or more keys to the
-   * specified value.  
+   * specified value.
    * @exception  NullPointerException  if the value is <code>null</code>.
    */
   @Override
@@ -738,10 +738,10 @@ public class ConcurrentReaderHashMap
    *
    * Note that this method is identical in functionality to containsValue,
    * (which is part of the Map interface in the collections framework).
-   * 
+   *
    * @param      value   a value to search for.
    * @return     <code>true</code> if and only if some key maps to the
-   *             <code>value</code> argument in this table as 
+   *             <code>value</code> argument in this table as
    *             determined by the <tt>equals</tt> method;
    *             <code>false</code> otherwise.
    * @exception  NullPointerException  if the value is <code>null</code>.
@@ -755,8 +755,8 @@ public class ConcurrentReaderHashMap
 
 
   /**
-   * Copies all of the mappings from the specified map to this one.
-   * 
+   * Copies all the mappings from the specified map to this one.
+   *
    * These mappings replace any mappings that this map had for any of the
    * keys currently in the specified Map.
    *
@@ -790,11 +790,11 @@ public class ConcurrentReaderHashMap
   @Override
   public synchronized void clear() {
     Entry[] tab = table;
-    for (int i = 0; i < tab.length ; ++i) { 
+    for (int i = 0; i < tab.length ; ++i) {
 
       // must invalidate all to force concurrent get's to wait and then retry
-      for (Entry e = tab[i]; e != null; e = e.next) 
-        e.value = null; 
+      for (Entry e = tab[i]; e != null; e = e.next)
+        e.value = null;
 
       tab[i] = null;
     }
@@ -803,7 +803,7 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Returns a shallow copy of this 
+   * Returns a shallow copy of this
    * <tt>ConcurrentReaderHashMap</tt> instance: the keys and
    * values themselves are not cloned.
    *
@@ -811,7 +811,7 @@ public class ConcurrentReaderHashMap
    */
   @Override
   public synchronized Object clone() {
-    try { 
+    try {
       ConcurrentReaderHashMap t = (ConcurrentReaderHashMap)super.clone();
 
       t.keySet = null;
@@ -824,14 +824,14 @@ public class ConcurrentReaderHashMap
 
       for (int i = 0; i < tab.length; ++i) {
         Entry first = null;
-        for (Entry e = tab[i]; e != null; e = e.next) 
+        for (Entry e = tab[i]; e != null; e = e.next)
           first = new Entry(e.hash, e.key, e.value, first);
         ttab[i] = first;
       }
 
       return t;
-    } 
-    catch (CloneNotSupportedException e) { 
+    }
+    catch (CloneNotSupportedException e) {
       // this shouldn't happen, since we are Cloneable
       throw new InternalError();
     }
@@ -1044,11 +1044,11 @@ public class ConcurrentReaderHashMap
    */
   protected static class Entry implements Map.Entry {
 
-    /* 
+    /*
        The use of volatile for value field ensures that
        we can detect status changes without synchronization.
        The other fields are never changed, and are
-       marked as final. 
+       marked as final.
     */
     protected final int hash;
     protected final Object key;
@@ -1062,7 +1062,7 @@ public class ConcurrentReaderHashMap
       this.value = value;
     }
 
-    // Map.Entry Ops 
+    // Map.Entry Ops
 
     @Override
     public Object getKey() {
@@ -1077,23 +1077,23 @@ public class ConcurrentReaderHashMap
      * return null, reflecting the fact that the entry has been
      * concurrently removed. However, there are no assurances that
      * concurrent removals will be reflected using this method.
-     * 
-     * @return     the current value, or null if the entry has been 
+     *
+     * @return     the current value, or null if the entry has been
      * detectably removed.
      **/
     @Override
     public Object getValue() {
-      return value; 
+      return value;
     }
 
     /**
-     * Set the value of this entry.  Note: In an entrySet or
+     * Set the value of this entry (Note: In an entrySet or
      * entrySet.iterator), unless the set or iterator is used under
      * synchronization of the table as a whole (or you can otherwise
      * guarantee lack of concurrent modification), <tt>setValue</tt>
      * is not strictly guaranteed to actually replace the value field
      * obtained via the <tt>get</tt> operation of the underlying hash
-     * table in multi-threaded applications.  If iterator-wide
+     * table in multithreaded applications.  If iterator-wide
      * synchronization is not used, and any other concurrent
      * <tt>put</tt> or <tt>remove</tt> operations occur, sometimes
      * even to <em>other</em> entries, then this change is not
@@ -1104,7 +1104,7 @@ public class ConcurrentReaderHashMap
      * @return     the previous value, or null if entry has been detectably
      * removed.
      * @exception  NullPointerException  if the value is <code>null</code>.
-     * 
+     *
      **/
     @Override
     public Object setValue(Object value) {
@@ -1137,7 +1137,7 @@ public class ConcurrentReaderHashMap
 
   protected class HashIterator implements Iterator, Enumeration {
     protected final Entry[] tab;           // snapshot of table
-    protected int index;                   // current slot 
+    protected int index;                   // current slot
     protected Entry entry = null;          // current node of slot
     protected Object currentKey;           // key for current node
     protected Object currentValue;         // value for current node
@@ -1162,7 +1162,7 @@ public class ConcurrentReaderHashMap
         returns normally if hasNext() returns true. This avoids
         surprises especially when final element is removed during
         traversal -- instead, we just ignore the removal during
-        current traversal.  
+        current traversal.
       */
 
       for (;;) {
@@ -1225,7 +1225,7 @@ public class ConcurrentReaderHashMap
 
 
   /**
-   * Save the state of the <tt>ConcurrentReaderHashMap</tt> 
+   * Save the state of the <tt>ConcurrentReaderHashMap</tt>
    * instance to a stream (i.e.,
    * serialize it).
    *
@@ -1262,7 +1262,7 @@ public class ConcurrentReaderHashMap
   }
 
   /**
-   * Reconstitute the <tt>ConcurrentReaderHashMap</tt> 
+   * Reconstitute the <tt>ConcurrentReaderHashMap</tt>
    * instance from a stream (i.e.,
    * deserialize it).
    *
@@ -1288,14 +1288,14 @@ public class ConcurrentReaderHashMap
     }
   }
 
-  /** 
+  /**
    * @return the number of slots in this table
    **/
   public synchronized int capacity() {
     return table.length;
   }
 
-  /** 
+  /**
    * @return the load factor
    **/
   public float loadFactor() {

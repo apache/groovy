@@ -35,13 +35,13 @@ import java.util.Set;
 /**
  * Utility class for MissingMethodException, MissingPropertyException etc.
  * This class contains methods assisting in ranking and listing probable intended
- * methods/fields when a exception is thrown.
+ * methods/fields when an exception is thrown.
  */
 public class MethodRankHelper{
     //These are the costs for the various edit operations
     //they are used by the two DamerauLevenshtein implementations
     public static final int DL_SUBSTITUTION = 10;
-    public static final int DL_DELETE = 10; //This is also the cost for a insert
+    public static final int DL_DELETE = 10; //This is also the cost for an insert
     public static final int DL_TRANSPOSITION = 5;
     public static final int DL_CASE = 5;
 
@@ -62,7 +62,7 @@ public class MethodRankHelper{
 
     /**
      * Returns a string detailing possible solutions to a missing method
-     * if no good solutions can be found a empty string is returned.
+     * if no good solutions can be found an empty string is returned.
      *
      * @param methodName the name of the method that doesn't exist
      * @param type the class on which the method is invoked
@@ -140,7 +140,7 @@ public class MethodRankHelper{
 
     /**
      * Returns a string detailing possible solutions to a missing constructor
-     * if no good solutions can be found a empty string is returned.
+     * if no good solutions can be found an empty string is returned.
      *
      * @param arguments the arguments passed to the constructor
      * @param type the class on which the constructor is invoked
@@ -165,7 +165,7 @@ public class MethodRankHelper{
 
     /**
      * Returns a string detailing possible solutions to a missing field or property
-     * if no good solutions can be found a empty string is returned.
+     * if no good solutions can be found an empty string is returned.
      *
      * @param fieldName the missing field
      * @param type the class on which the field is sought
@@ -252,9 +252,8 @@ public class MethodRankHelper{
     }
 
     /**
-     * This class wraps a method object and a score variable so methods 
-     * Can easily be ranked by their likeness to a another method
-     *
+     * This class wraps a method object and a score variable so methods
+     * can easily be ranked by their likeness to another method
      */
     private static final class RankableMethod implements Comparable {
         final MetaMethod m;
@@ -313,9 +312,8 @@ public class MethodRankHelper{
     }
 
     /**
-     * This class wraps a method object and a score variable so methods 
-     * Can easily be ranked by their likeness to a another method
-     *
+     * This class wraps a method object and a score variable so methods
+     * can easily be ranked by their likeness to another method
      */
     private static final class RankableConstructor implements Comparable {
         final Constructor c;
@@ -341,8 +339,8 @@ public class MethodRankHelper{
     }
 
     /**
-     * This class wraps a method object and a score variable so methods 
-     * Can easily be ranked by their likeness to a another method
+     * This class wraps a method object and a score variable so methods
+     * can easily be ranked by their likeness to another method
      *
      */
     private static final class RankableField implements Comparable {
@@ -398,7 +396,7 @@ public class MethodRankHelper{
 
     /**
      * This is a slightly modified version of the Damerau Levenshtein distance
-     * algorithm. It has a additional test to see if a character has switched case,
+     * algorithm. It has an additional test to see if a character has switched case,
      * in the original algorithm this counts as a substitution.
      * The "cost" for a substitution is given as 10 instead of 1 in this version,
      * this enables transpositions and case modifications to have a lower cost than
@@ -406,7 +404,7 @@ public class MethodRankHelper{
      *
      * Currently the lowercase versions of t_j and s_i isn't cached, its probable
      * that some speed could be gained from this.
-     * 
+     *
      * This version is based on Chas Emerick's implementation of Levenshtein Distance
      * for jakarta commons.
      * @param s a CharSequence
@@ -452,7 +450,7 @@ public class MethodRankHelper{
             for (i = 1; i <= n; i++) {
                 s_i = s.charAt(i - 1);
                 if (Character.isLowerCase(s_i) ^ Character.isLowerCase(t_j)) {
-                    //if s_i and t_i don't have have the same case
+                    //if s_i and t_i don't have the same case
                     cost = caselessCompare(s_i, t_j) ? DL_CASE : DL_SUBSTITUTION;
                 } else {
                     //if they share case check for substitution
@@ -496,7 +494,7 @@ public class MethodRankHelper{
     }
 
     /**
-     * This is a implementation of DL distance between two Object arrays instead
+     * This is an implementation of DL distance between two Object arrays instead
      * of character streams. The objects are compared using their equals method.
      * No objects may be null.
      * This implementation is based on Chas Emerick's implementation of Levenshtein Distance
