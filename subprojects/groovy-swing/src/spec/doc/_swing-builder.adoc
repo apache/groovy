@@ -30,7 +30,7 @@ endif::[]
 
 `SwingBuilder` allows you to create full-fledged Swing GUIs in a declarative and concise fashion. It accomplishes this by employing a common idiom in Groovy, builders.
 Builders handle the busywork of creating complex objects for you, such as instantiating children, calling Swing methods, and attaching these children to their parents.
-As a consequence, your code is much more readable and maintainable, while still allowing you access to the full range of Swing components.
+As a consequence, your code is much more readable and maintainable, while still allowing you to access to the full range of Swing components.
 
 Here's a simple example of using `SwingBuilder`:
 
@@ -46,7 +46,7 @@ image:{reldir_swing}/assets/img/SwingBuilder001.png[]
 This hierarchy of components would normally be created through a series of repetitive instantiations, setters, and finally attaching this child to its respective parent.
 Using `SwingBuilder`, however, allows you to define this hierarchy in its native form, which makes the interface design understandable simply by reading the code.
 
-The flexibility shown here is made possible by leveraging the many programming features built-in to Groovy, such as closures, implicit constructor calling, import aliasing, and string interpolation. 
+The flexibility shown here is made possible by leveraging the many programming features built-in to Groovy, such as closures, implicit constructor calling, import aliasing, and string interpolation.
 Of course, these do not have to be fully understood in order to use `SwingBuilder`; as you can see from the code above, their uses are intuitive.
 
 Here is a slightly more involved example, with an example of `SwingBuilder` code re-use via a closure.
