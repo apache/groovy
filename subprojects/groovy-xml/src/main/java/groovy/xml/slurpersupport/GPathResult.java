@@ -284,7 +284,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     /**
-     * Converts the text of this GPathResult to a Integer object.
+     * Converts the text of this GPathResult to an Integer object.
      *
      * @return the GPathResult, converted to a <code>Integer</code>
      */
@@ -652,7 +652,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                     } else {
                         delegate.invokeMethod("yield", new Object[]{child});
                     }
-                }                
+                }
             }
         };
     }

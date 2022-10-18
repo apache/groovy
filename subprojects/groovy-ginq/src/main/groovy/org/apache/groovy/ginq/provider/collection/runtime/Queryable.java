@@ -354,7 +354,7 @@ public interface Queryable<T> {
 
     //  Built-in aggregate functions {
     /**
-     * Aggreate function {@code count}, similar to SQL's {@code count}
+     * Aggregate function {@code count}, similar to SQL's {@code count}
      *
      * @return count result
      * @since 4.0.0

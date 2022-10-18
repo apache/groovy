@@ -19,7 +19,7 @@
 package groovy.xml
 
 /**
- * Factory method targetting dynamic contexts which allows a new {@code XmlParser} to be created.
+ * Factory method targeting dynamic contexts which allows a new {@code XmlParser} to be created.
  * It is intended to assist with migration from Groovy 2.5.x to Groovy 3+.
  * Code using this factory will not need to change moving from 2.x to 3+.
  * In Groovy 2.5.x, a {@code groovy.util.XmlParser} will be returned.

@@ -414,7 +414,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             }
             if (matchEnd < checkPoint) {
                 // if we finished before hitting the end of the checkpoint from
-                // no mroe matches, then set ensure the text is reset to the
+                // no more matches, then set ensure the text is reset to the
                 // defaultStyle
                 styledDocument.setCharacterAttributes(matchEnd, checkPoint - matchEnd, defaultStyle, true);
             }

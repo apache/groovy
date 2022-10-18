@@ -73,7 +73,7 @@ public class ManagedConcurrentValueMapStressTest {
     /**
      * This tests for deadlock which can happen if more than one thread is allowed
      * to process entries from the same RefQ. We run multiple iterations because it
-     * wont always be detected one run.
+     * won't always be detected in one run.
      *
      * @throws Exception
      */

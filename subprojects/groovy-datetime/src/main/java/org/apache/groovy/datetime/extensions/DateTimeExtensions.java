@@ -117,8 +117,8 @@ public final class DateTimeExtensions {
      * unit each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
      * <p>
-     * The particular unit incremented by depends on the specific sub-type of {@link java.time.temporal.Temporal}.
-     * Most sub-types use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
+     * The particular unit incremented by depends on the specific subtype of {@link java.time.temporal.Temporal}.
+     * Most subtypes use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
      * <ul>
      * <li>{@link java.time.chrono.ChronoLocalDate} and its sub-types use {@link java.time.temporal.ChronoUnit#DAYS}.
      * <li>{@link java.time.YearMonth} uses {@link java.time.temporal.ChronoUnit#MONTHS}.
@@ -185,8 +185,8 @@ public final class DateTimeExtensions {
      * unit each iteration, calling the closure once per iteration. The closure may accept a single
      * {@link java.time.temporal.Temporal} argument.
      * <p>
-     * The particular unit decremented by depends on the specific sub-type of {@link java.time.temporal.Temporal}.
-     * Most sub-types use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
+     * The particular unit decremented by depends on the specific subtype of {@link java.time.temporal.Temporal}.
+     * Most subtypes use a unit of {@link java.time.temporal.ChronoUnit#SECONDS} except for
      * <ul>
      * <li>{@link java.time.chrono.ChronoLocalDate} and its sub-types use {@link java.time.temporal.ChronoUnit#DAYS}.
      * <li>{@link java.time.YearMonth} uses {@link java.time.temporal.ChronoUnit#MONTHS}.
@@ -503,7 +503,7 @@ public final class DateTimeExtensions {
      * Returns an {@link java.time.Instant} that is one second after this instant.
      *
      * @param self an Instant
-     * @return an Instant one second ahead
+     * @return an Instant one-second ahead
      * @since 2.5.0
      */
     public static Instant next(final Instant self) {
@@ -514,7 +514,7 @@ public final class DateTimeExtensions {
      * Returns an {@link java.time.Instant} that one second before this instant.
      *
      * @param self an Instant
-     * @return an Instant one second behind
+     * @return an Instant one-second behind
      * @since 2.5.0
      */
     public static Instant previous(final Instant self) {
@@ -1372,7 +1372,7 @@ public final class DateTimeExtensions {
      * No normalization is performed.
      *
      * @param self a Period
-     * @return a Period one day longer in length
+     * @return a Period one-day longer in length
      * @since 2.5.0
      */
     public static Period next(final Period self) {
@@ -1384,7 +1384,7 @@ public final class DateTimeExtensions {
      * No normalization is performed.
      *
      * @param self a Period
-     * @return a Period one day shorter in length
+     * @return a Period one-day shorter in length
      * @since 2.5.0
      */
     public static Period previous(final Period self) {
@@ -2124,7 +2124,7 @@ public final class DateTimeExtensions {
         return ZoneOffset.ofTotalSeconds(offsetMillis / 1000);
     }
 
-    /* duplicated with DateUtilExtensions.toCalendar() but we don't want modulkes to depend on one another */
+    /* duplicated with DateUtilExtensions.toCalendar() but we don't want modules to depend on one another */
     private static Calendar toCalendar(Date self) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(self);

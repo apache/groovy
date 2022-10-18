@@ -390,7 +390,7 @@ public class XmlUtil {
 
     /**
      * Factory method to create a SAXParser configured to validate according to a particular schema language and
-     * an URL pointing to the schema to validate against.
+     * a URL pointing to the schema to validate against.
      * The created SAXParser will be namespace-aware and not validate against DTDs.
      *
      * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
@@ -407,7 +407,7 @@ public class XmlUtil {
 
     /**
      * Factory method to create a SAXParser configured to validate according to a particular schema language and
-     * an URL pointing to the schema to validate against.
+     * a URL pointing to the schema to validate against.
      *
      * @param schemaLanguage the schema language used, e.g. XML Schema or RelaxNG (as per the String representation in javax.xml.XMLConstants)
      * @param namespaceAware will the parser be namespace aware
@@ -567,20 +567,26 @@ public class XmlUtil {
         try {
             factory.setFeature(feature, value);
         }
-        catch (TransformerConfigurationException ignored) { }
+        catch (TransformerConfigurationException ignored) {
+            // feature is not supported, ignore
+        }
     }
 
     public static void setFeatureQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
         }
-        catch (ParserConfigurationException ignored) { }
+        catch (ParserConfigurationException ignored) {
+            // feature is not supported, ignore
+        }
     }
 
     public static void setFeatureQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
         }
-        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) { }
+        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) {
+            // feature is not supported, ignore
+        }
     }
 }

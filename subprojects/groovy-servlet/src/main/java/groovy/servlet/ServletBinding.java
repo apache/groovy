@@ -84,7 +84,7 @@ import java.util.Map;
  *
  * If <code>response.getWriter()</code> is called directly (without using out), then a write method
  * call on 'sout' will not cause the <code>IllegalStateException</code>, but it will still be invalid.
- * It is the responsibility of the user of this class, to not to mix these different usage
+ * It is the responsibility of the user of this class to not mix these different usage
  * styles. The same applies to calling <code>response.getOutputStream()</code> and using 'out' or 'html'.
  *
  * <h3>Methods</h3>

@@ -55,8 +55,8 @@ public class JsonToken {
     private String text;
 
     /**
-     * Return the value represented by this token (ie. a number, a string, a boolean or null).
-     * For numbers, BigDecimal is returned for decimals and Integer, Long or BigInteger for 
+     * Return the value represented by this token (i.e. a number, a string, a boolean or null).
+     * For numbers, BigDecimal is returned for decimals and Integer, Long or BigInteger for
      * integral numbers.
      *
      * @return the represented value

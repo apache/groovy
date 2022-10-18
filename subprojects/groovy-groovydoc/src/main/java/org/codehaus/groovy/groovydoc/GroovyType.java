@@ -24,7 +24,7 @@ public interface GroovyType {
 
     /**
      * The qualified name of this type excluding any dimension information.
-     * For example, a two dimensional array of String returns "<code>java.lang.String</code>".
+     * For example, a two-dimensional array of String returns "<code>java.lang.String</code>".
      */
     String qualifiedTypeName();
 
@@ -36,13 +36,13 @@ public interface GroovyType {
 
     /**
      * The unqualified name of this type excluding any dimension information.
-     * For example, a two dimensional array of String returns "<code>String</code>".
+     * For example, a two-dimensional array of String returns "<code>String</code>".
      */
     String typeName();
 
     /**
      * The qualified name including any dimension information.
-     * For example, a two dimensional array of String returns
+     * For example, a two-dimensional array of String returns
      * "<code>java.lang.String[][]</code>", and the parameterized type
      * <code>List&lt;Integer&gt;</code> returns "<code>java.util.List&lt;java.lang.Integer&gt;</code>".
      */

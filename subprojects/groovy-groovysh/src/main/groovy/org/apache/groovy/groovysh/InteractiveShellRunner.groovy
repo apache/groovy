@@ -140,7 +140,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
     }
 
     private void adjustHistory() {
-        // we save the evicted line in casesomeone wants to use it with history recall
+        // we save the evicted line in case someone wants to use it with history recall
         if (shell instanceof Groovysh) {
             def history = shell.history
             shell.historyFull = (history != null) && (history.size() >= history.maxSize)

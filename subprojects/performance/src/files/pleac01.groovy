@@ -249,7 +249,7 @@ assert v1 == 'omega' && v2 == 'alpha'
 
 // @@PLEAC@@_1.4
 //----------------------------------------------------------------------------------
-// char and int are interchangable, apart from precision difference
+// char and int are interchangeable, apart from precision difference
 // char use 16 bits while int use 32, requiring a cast from int to char
 char ch = 'e'
 int num = ch         // no problem

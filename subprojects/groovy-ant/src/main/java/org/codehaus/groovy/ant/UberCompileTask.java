@@ -35,7 +35,7 @@ import java.io.IOException;
  * This works by invoking the {@link GenerateStubsTask} task, then the
  * {@link Javac} task and then the {@link GroovycTask}.  Each task can be
  * configured by creating a nested element.  Common configuration such as
- * the source dir and classpath is picked up from this tasks configuration.
+ * the source dir and classpath is picked up from this task's configuration.
  */
 public class UberCompileTask extends Task {
     private Path src;

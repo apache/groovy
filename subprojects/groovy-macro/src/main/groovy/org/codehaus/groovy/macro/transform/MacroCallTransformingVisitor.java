@@ -44,7 +44,7 @@ import java.util.List;
 /**
  * Visitor to find and transform macro method calls. For the performance reasons it's not a transformer,
  * but transforming visitor - it mutates {@link MethodCallExpression} if it's a macro method call by replacing
- * original call (i.e. {@code myMacroMethod("foo", "bar")} with something like:
+ * original call (i.e. {@code myMacroMethod("foo", "bar")}) with something like:
  * {@code MacroStub.INSTANCE.macroMethod(123)}
  * (where {@code myMacroMethod} returns constant expression {@code 123})
  *
