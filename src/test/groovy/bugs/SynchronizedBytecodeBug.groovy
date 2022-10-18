@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 class SynchronizedBytecodeBug extends GroovyTestCase {
 
     /**
-     * Groovy's bytecode associated with syncrhonized(foo) construct used to generate invalid bytecode
+     * Groovy's bytecode associated with synchronized(foo) construct used to generate invalid bytecode
      * This test method shows that the standard wait()/notify() works.
      */
     void testSynchronized() {

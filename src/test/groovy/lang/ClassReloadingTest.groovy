@@ -83,7 +83,7 @@ class ClassReloadingTest extends GroovyTestCase {
         def message = groovyClass.newInstance().greeting
         assert "hello" == message
 
-        // (string, string) version should not do the caching as it breaks Spring integration (bean refreh)
+        // (string, string) version should not do the caching as it breaks Spring integration (bean refresh)
         classStr = """
             class Groovy3981 {
                 def greeting = "goodbye"

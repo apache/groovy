@@ -784,10 +784,10 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
     void testPickMethodForVarg() {
         // as of 1.6 a metaClass is often the HandleMetaclass, which delegates
-        // methods to an underlaying meta class. hasMethod is a Method on EMC
+        // methods to an underlying metaclass. hasMethod is a Method on EMC
         // that takes a Class[] vargs argument as last part. If that part is not
         // given, then hasMetaMethod will still work, but the code actually
-        // invoking the method in EMC.invokeMehod(String,Object) has to correct the
+        // invoking the method in EMC.invokeMethod(String,Object) has to correct the
         // arguments.
         assert "".metaClass.pickMethod("trim")
     }

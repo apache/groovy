@@ -142,7 +142,7 @@ final class ReadWriteLockTest {
     void testDeadlockingDoesNotOccur() {
         def tester = new MyClass()
 
-        // this tests for deadlocks from not releaseing in finally block
+        // this tests for deadlocks from not releasing in finally block
         shouldFail { tester.namedReaderMethod1() }
         shouldFail { tester.namedReaderMethod2() }
         shouldFail { tester.namedWriterMethod1() }

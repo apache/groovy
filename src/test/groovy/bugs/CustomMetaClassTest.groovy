@@ -36,7 +36,7 @@ class CustomMetaClassTest extends GroovyTestCase {
 
     void testReplaceMetaClass() {
         /*
-         * Constructing first instance before meta class replacement
+         * Constructing first instance before metaclass replacement
          * is made.
          */
         def firstInstance = "first"
@@ -50,13 +50,13 @@ class CustomMetaClassTest extends GroovyTestCase {
         registry.setMetaClass(String.class, myMetaClass)
 
         /*
-         * Constructing second instance after meta class replacment
+         * Constructing second instance after metaclass replacement
          * is made.
          */
         def secondInstance = "second"
 
         /*
-         * Since we are replacing a meta class at the class level
+         * Since we are replacing a metaclass at the class level
          * we are changing the behavior of the first and second
          * instances of the string.
          */

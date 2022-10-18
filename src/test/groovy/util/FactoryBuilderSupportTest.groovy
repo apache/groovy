@@ -256,7 +256,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         // property neither set in the binding or explicitly, should fail
         shouldFail { b.exp }
 
-        // setting first should set the value in the binding and make it usable 
+        // setting first should set the value in the binding and make it usable
         b.notExp = 1
         assert b.notExp == 1
 
@@ -274,7 +274,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         b.exp = 4
         assert val == 5
 
-        // symbols in the property closure shold also resolve to the builder...
+        // symbols in the property closure should also resolve to the builder...
         b.registerExplicitProperty ('exp2', {exp}, {exp = it })
 
         assert b.exp2 == val - 1
@@ -300,7 +300,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         b.exp(5)
         assert val == 8
 
-        // symbols in the method closure shold also resolve to the builder...
+        // symbols in the method closure should also resolve to the builder...
         b.registerExplicitMethod ('exp2', {exp(it)})
 
         assert b.exp2(-2) == 6
@@ -535,7 +535,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             withBuilder(c){
                fooz(){
                   baz()
-               }   
+               }
             }
         }
         assert b.@log == [
@@ -587,7 +587,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             withBuilder(c,'foo'){
                fooz(){
                   baz()
-               }   
+               }
             }
         }
 
@@ -646,7 +646,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
             withBuilder(c,'foo',bar:'baz'){
                fooz(){
                   baz()
-               }   
+               }
             }
         }
 
@@ -723,7 +723,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
                 'post_node_completion', 'x', 'x'/*,
             'node_completed',null,'x',
             'post_node_completion',null, 'x'*/
-                // node foo() was not completed successfuly
+                // node foo() was not completed successfully
         ]
         assert c.@log == [
                 'register', 'outest', 'Layers',
@@ -910,7 +910,7 @@ class XFactory extends AbstractFactory {
         builder.@log << 'handle_node_attributes'
         builder.@log << node
         attributes.each{entry -> builder.@log << entry.key; builder.@log << entry.value}
-        return false 
+        return false
     }
 
     public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
