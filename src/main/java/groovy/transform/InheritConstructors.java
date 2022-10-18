@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Class annotation to make constructors from a super class available in a sub class.
+ * Class annotation to make constructors from a super class available in a subclass.
  * Should be used with care with other annotations which create constructors - see "Known
  * Limitations" for more details.
  * <p>
@@ -70,7 +70,7 @@ import java.lang.annotation.Target;
  * Typical Groovy style is to use named-arg constructors when possible.
  * This is easy to do for Groovy objects or any objects following JavaBean
  * conventions. In other cases, inheriting the constructors may be useful.
- * However, sub-classes often introduce new properties and these are often best
+ * However, subclasses often introduce new properties and these are often best
  * set in a constructor; especially if that matches the style adopted
  * in parent classes. So, even for the example above, it may have been
  * better style to define an explicit constructor for <code>PersonAge</code>

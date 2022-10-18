@@ -107,13 +107,13 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
 
         int temp;
 
-        // Find largest index j with a[j] < a[j+1]
+        // Find the largest index j with a[j] < a[j+1]
         int j = a.length - 2;
         while (a[j] > a[j + 1]) {
             j--;
         }
 
-        // Find index k such that a[k] is smallest integer
+        // Find index k such that a[k] is the smallest integer
         // greater than a[j] to the right of a[j]
         int k = a.length - 1;
         while (a[j] > a[k]) {

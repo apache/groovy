@@ -50,7 +50,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * tried to be compatible with both expected tuple behavior and expected named-argument behavior
  * by peeking into the supplied map and guessing as to which approach might be applicable.
  * Recent versions of Groovy now allow both {@code @TupleConstructor} and {@code @MapConstructor}
- * annotations to co-exist which provide's a more flexible solution to this problem. While more
+ * annotations to co-exist which provides a more flexible solution to this problem. While more
  * flexible, the new approach isn't fully compatible with the previous approach. If for some
  * reason you need the old behavior, you can try this property handler. Some features of the
  * new approach won't be available to you.

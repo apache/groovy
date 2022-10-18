@@ -89,7 +89,7 @@ import java.lang.annotation.Target;
 public @interface AutoFinal {
     /**
      * Indicates that adding final to parameters should not be applied on this node.
-     * <p>Normally not required since leaving off the annotation will achieve the same affect.
+     * <p>Normally not required since leaving off the annotation will achieve the same effect.
      * However, it can be useful for selectively disabling this annotation in just a small part
      * of an otherwise annotated class. As an example, it would make sense to set this to {@code false} on
      * a method which altered parameters in a class already marked as {@code @AutoFinal}.
