@@ -131,11 +131,11 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
         // Method in base script that will contain the script body code.
         MethodNode runScriptMethod = ClassHelper.findSAM(baseScriptType);
 
-        // If they want to use a name other than than "run", then make the change.
+        // If they want to use a name other than "run", then make the change.
         if (isCustomScriptBodyMethod(runScriptMethod)) {
             MethodNode defaultMethod = cNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
             // GROOVY-6706: Sometimes an NPE is thrown here.
-            // The reason is that our transform is getting called more than once sometimes.  
+            // The reason is that our transform is getting called more than once sometimes.
             if (defaultMethod != null) {
                 cNode.removeMethod(defaultMethod);
                 MethodNode methodNode = new MethodNode(runScriptMethod.getName(), runScriptMethod.getModifiers() & ~ACC_ABSTRACT

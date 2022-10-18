@@ -40,7 +40,7 @@ public interface ReaderSource extends HasCleanup {
 
    /**
     *  Returns true if the source can be restarted (ie. if getReader()
-    *  will return non-null on subsequent calls.
+    *  will return non-null on subsequent calls).
     * @return true if the resource can be reopened for reading
     */
     boolean canReopenSource();

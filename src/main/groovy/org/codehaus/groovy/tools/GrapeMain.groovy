@@ -200,7 +200,7 @@ class GrapeMain implements Runnable {
     @Command(name = 'resolve', header = 'Enumerates the jars used by a grape',
             customSynopsis = 'grape resolve [-adhisv] (<groupId> <artifactId> <version>)+',
             description = [
-                    'Prints the file locations of the jars representing the artifcats for the specified module(s) and the respective transitive dependencies.',
+                    'Prints the file locations of the jars representing the artifacts for the specified module(s) and the respective transitive dependencies.',
                     '',
                     'Parameters:',
                     '      <group>     Which module group the module comes from. Translates directly',

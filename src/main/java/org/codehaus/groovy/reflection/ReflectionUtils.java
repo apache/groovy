@@ -78,7 +78,7 @@ public class ReflectionUtils {
     private static final ClassContextHelper HELPER = new ClassContextHelper();
 
     /**
-     * Determines whether or not the getCallingClass methods will return
+     * Determines whether the getCallingClass methods will return
      * any sensible results.  On JVMs that are not Sun derived i.e.
      * (gcj, Harmony) this will likely return false.  When not available
      * all getCallingClass methods will return null.

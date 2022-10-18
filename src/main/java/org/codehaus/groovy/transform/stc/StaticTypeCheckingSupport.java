@@ -227,7 +227,7 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * This comparator is used when we return the list of methods from DGM which name correspond to a given
-     * name. As we also lookup for DGM methods of superclasses or interfaces, it may be possible to find
+     * name. As we also look up for DGM methods of superclasses or interfaces, it may be possible to find
      * two methods which have the same name and the same arguments. In that case, we should not add the method
      * from superclass or interface otherwise the system won't be able to select the correct method, resulting
      * in an ambiguous method selection for similar methods.
@@ -723,7 +723,7 @@ public abstract class StaticTypeCheckingSupport {
                     : implementsInterfaceOrSubclassOf(leftRedirect, rightRedirect); // GROOVY-10067, GROOVY-10342
 
         } else if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
-            // BigDecimal or Number can be assigned any derivitave of java.lang.Number
+            // BigDecimal or Number can be assigned any derivative of java.lang.Number
             if (isNumberType(rightRedirect) || rightRedirect.isDerivedFrom(Number_TYPE)) {
                 return true;
             }
@@ -2257,8 +2257,8 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Returns true if the class node represents a the class node for the Class class
-     * and if the parametrized type is a neither a placeholder or a wildcard. For example,
+     * Returns true if the class node represents a class node for the Class class
+     * and if the parametrized type is a neither a placeholder nor a wildcard. For example,
      * the class node Class&lt;Foo&gt; where Foo is a class would return true, but the class
      * node for Class&lt;?&gt; would return false.
      *

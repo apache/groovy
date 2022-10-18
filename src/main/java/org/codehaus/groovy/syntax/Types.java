@@ -1106,7 +1106,7 @@ public class Types {
 
 
     /**
-     * Adds a element to the TEXTS and LOOKUP.
+     * Adds an element to the TEXTS and LOOKUP.
      */
     private static void addTranslation(String text, int type) {
         TEXTS.put(type, text);
@@ -1114,7 +1114,7 @@ public class Types {
     }
 
     /**
-     * Adds a element to the KEYWORDS, TEXTS and LOOKUP.
+     * Adds an element to the KEYWORDS, TEXTS and LOOKUP.
      */
     private static void addKeyword(String text, int type) {
         KEYWORDS.add(text);

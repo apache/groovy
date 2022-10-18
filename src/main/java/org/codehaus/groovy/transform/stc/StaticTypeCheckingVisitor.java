@@ -858,7 +858,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (!Modifier.isPublic(modifiers) && !enclosingType.equals(resultType)
                             && !getOutermost(enclosingType).equals(getOutermost(resultType))
                             && (Modifier.isPrivate(modifiers) || !Objects.equals(enclosingType.getPackageName(), resultType.getPackageName()))) {
-                        resultType = originType; // TODO: Find accesible type in hierarchy of resultType?
+                        resultType = originType; // TODO: Find accessible type in hierarchy of resultType?
                     } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) { // GROOVY-9033, GROOVY-10089, et al.
                         Map<GenericsTypeName, GenericsType> enclosing = extractGenericsParameterMapOfThis(typeCheckingContext);
                         resultType = fullyResolveType(resultType, Optional.ofNullable(enclosing).orElseGet(Collections::emptyMap));
@@ -3769,7 +3769,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * In the case of a <em>Object.with { ... }</em> call, this method is supposed to retrieve
      * the inferred closure return type.
      *
-     * @param callArguments the argument list from the <em>Object#with(Closure)</em> call, ie. a single closure expression
+     * @param callArguments the argument list from the <em>Object#with(Closure)</em> call, i.e. a single closure expression
      * @return the inferred closure return type or <em>null</em>
      */
     protected ClassNode getInferredReturnTypeFromWithClosureArgument(final Expression callArguments) {
@@ -4577,7 +4577,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * For "{@code List<Type> x = [...]}" or "{@code Set<Type> y = [...]}", etc.
-     * the literal may be composed of sub-types of {@code Type}. In these cases,
+     * the literal may be composed of subtypes of {@code Type}. In these cases,
      * {@code ArrayList<Type>} is an appropriate result type for the expression.
      */
     private static ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
@@ -5487,7 +5487,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Given method call like "m(Collections.emptyList())", the type of the call
-     * argument is {@code List<T>} without explicit type arguments. Knowning the
+     * argument is {@code List<T>} without explicit type arguments. Knowing the
      * method target of "m", {@code T} could be resolved.
      */
     private void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {

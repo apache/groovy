@@ -167,7 +167,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             addError(message, cn);
             return;
         }
-        // parameterize a type by using all of the parameters only
+        // parameterize a type by using all the parameters only
         if (cnTypes.length != rnTypes.length) {
             if (Boolean.FALSE.equals(isAIC) && cnTypes.length == 0) {
                 return; // allow Diamond for non-AIC cases from CCE

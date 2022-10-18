@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import java.util.Objects;
 
 /**
- * An utility class used to wrap an expression with additional metadata used by the type checker.
+ * A utility class used to wrap an expression with additional metadata used by the type checker.
  * In particular, this is used to detect closure shared variables misuses. We need in some circumstances
  * to store the method call expression and its argument types.
  */

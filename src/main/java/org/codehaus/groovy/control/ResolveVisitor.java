@@ -155,7 +155,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * does when combining package names and class names. The idea
      * that if we use a package, then we do not want to replace the
      * '.' with a '$' for the package part, only for the class name
-     * part. There is also the case of a imported class, so this logic
+     * part. There is also the case of an imported class, so this logic
      * can't be done in these cases...
      */
     private static class ConstructedClassWithPackage extends ClassNode {
@@ -653,7 +653,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // At this point we know that we have a match for pname. This may
                     // mean, that name[pname.length()..<-1] is a static inner class.
                     // For this the rest of the name does not need any dots in its name.
-                    // It is either completely a inner static class or it is not.
+                    // It is either completely an inner static class or it is not.
                     // Since we do not want to have useless lookups we create the name
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + "$" + name.substring(pname.length() + 1).replace('.', '$');
@@ -764,7 +764,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             classNodeResolver = new ClassNodeResolver();
         // We do not need to check instances of LowerCaseClass
         // to be a Class, because unless there was an import for
-        // for this we do not lookup these cases. This was a decision
+        // this we do not look up these cases. This was a decision
         // made on the mailing list. To ensure we will not visit this
         // method again we set a NO_CLASS for this name
         if (type instanceof LowerCaseClass) {
@@ -872,7 +872,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return tuple(name, Boolean.FALSE);
     }
 
-    // iterate from the inner most to the outer and check for classes
+    // iterate from the innermost to the outer and check for classes
     // this check will ignore a .class property, for Example Integer.class will be
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property

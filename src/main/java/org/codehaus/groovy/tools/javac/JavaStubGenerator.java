@@ -328,7 +328,7 @@ public class JavaStubGenerator {
             };
             int origNumConstructors = classNode.getDeclaredConstructors().size();
             verifier.visitClass(classNode);
-            // undo unwanted side-effect of verifier
+            // undo unwanted side effect of verifier
             if (origNumConstructors == 0 && classNode.getDeclaredConstructors().size() == 1) {
                 classNode.getDeclaredConstructors().clear();
             }
