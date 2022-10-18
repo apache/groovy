@@ -26,7 +26,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 import java.lang.invoke.SwitchPoint;
 
 /**
- * The one and only implementation of a meta class.
+ * The one and only implementation of a metaclass.
  * INTERNAL USE ONLY.
  */
 @Incubating
