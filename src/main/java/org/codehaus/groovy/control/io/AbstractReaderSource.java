@@ -37,8 +37,8 @@ public abstract class AbstractReaderSource implements ReaderSource {
     }
 
     /**
-     * Returns true if the source can be restarted (ie. if getReader()
-     * will return non-null on subsequent calls.
+     * Returns true if the source can be restarted (i.e. if getReader()
+     * will return non-null on subsequent calls).
      */
     @Override
     public boolean canReopenSource() {

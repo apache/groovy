@@ -21,7 +21,7 @@ package org.codehaus.groovy.control.customizers.builder;
 import groovy.util.FactoryBuilderSupport;
 
 /**
- * A helper interface for factories which require post processing of generated nodes.
+ * A helper interface for factories which require post-processing of generated nodes.
  *
  * @since 2.1.0
  */

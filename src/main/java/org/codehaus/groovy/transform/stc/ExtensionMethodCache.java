@@ -33,7 +33,7 @@ import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENS
 
 /**
  * This class is used to make extension methods lookup faster. Basically, it will only
- * collect the list of extension methods (see {@link ExtensionModule} if the list of
+ * collect the list of extension methods (see {@link ExtensionModule}) if the list of
  * extension modules has changed. It avoids recomputing the whole list each time we perform
  * a method lookup.
  */

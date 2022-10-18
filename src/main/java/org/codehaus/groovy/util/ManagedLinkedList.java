@@ -122,7 +122,7 @@ public class ManagedLinkedList<T> {
     }
 
     /**
-     * Returns an array of non null elements from the source array.
+     * Returns an array of non-null elements from the source array.
      *
      * @param tArray the source array
      * @return the array

@@ -78,7 +78,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
             // We need @InheritConstructors from parent classes processed first
             // so force that order here. The transformation is benign on an already
             // processed node so processing twice in any order won't matter bar
-            // a very small time penalty.
+            // a very small-time penalty.
             processClass(sNode, node);
         }
         for (ConstructorNode cn : sNode.getDeclaredConstructors()) {

@@ -52,7 +52,7 @@ public class ConfigurationException extends RuntimeException implements GroovyEx
     }
 
     /**
-     * Its always fatal.
+     * It's always fatal.
      */
     @Override
     public boolean isFatal() {

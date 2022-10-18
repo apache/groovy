@@ -117,7 +117,7 @@ public class ErrorCollector implements Serializable {
      * The message is not required to have a source line and column specified, but it is best practice to try
      * and include that information.
      * @param fatal
-     *      if true then then processing will stop
+     *      if true then processing will stop
      */
     public void addError(final Message message, final boolean fatal) throws CompilationFailedException {
         if (fatal) {

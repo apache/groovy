@@ -30,7 +30,7 @@ public enum CompilePhase {
     INITIALIZATION(Phases.INITIALIZATION),
 
     /**
-    * the grammar is used to to produce tree of tokens representing the source code
+    * the grammar is used to produce tree of tokens representing the source code
     */
     PARSING(Phases.PARSING),
 
@@ -92,7 +92,7 @@ public enum CompilePhase {
     }
 
     /**
-    * Returns the underlieng integer Phase number.
+    * Returns the underlying integer Phase number.
     */
     public int getPhaseNumber() {
         return phaseNumber;
