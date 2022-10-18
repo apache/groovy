@@ -46,7 +46,7 @@ public class PickAnyArgumentHint extends SingleSignatureClosureHint {
     private final int genericTypeIndex;
 
     /**
-     * Creates the an argument picker which extracts the type of the first parameter.
+     * Creates an argument picker which extracts the type of the first parameter.
      */
     public PickAnyArgumentHint() {
         this(0,-1);

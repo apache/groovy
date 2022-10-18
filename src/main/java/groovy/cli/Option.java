@@ -54,9 +54,9 @@ public @interface Option {
     String longName() default "";
 
     /**
-     * The value separator for this multi-valued option. Only allowed for array-typed arguments.
+     * The value separator for this multivalued option. Only allowed for array-typed arguments.
      *
-     * @return the value separator for this multi-valued option
+     * @return the value separator for this multivalued option
      */
     String valueSeparator() default "";
 

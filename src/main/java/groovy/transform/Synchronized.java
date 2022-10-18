@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * parameter to the {@code @Synchronized} annotation. In this usage variant, the lock field
  * will not be created automatically, and you must explicitly create it yourself.
  * <p>
- * <em>Rationale:</em> Locking on <code>this</code> or your own class object can have unfortunate side-effects,
+ * <em>Rationale:</em> Locking on <code>this</code> or your own class object can have unfortunate side effects,
  * as other code not under your control can lock on these objects as well, which can
  * cause race conditions and other nasty threading-related bugs.
  * <p>
