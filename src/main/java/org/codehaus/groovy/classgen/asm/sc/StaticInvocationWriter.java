@@ -737,7 +737,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     if (isObjectType(declaringClass)) {
                         // checkcast not necessary because Object never evolves
                         // and it prevents a potential ClassCastException if the
-                        // delegate of a closure is changed in a SC closure
+                        // delegate of a closure is changed in an SC closure
                         type = ClassHelper.OBJECT_TYPE;
                     } else if (isObjectType(type)) {
                         // can happen for compiler rewritten code, where type information is missing

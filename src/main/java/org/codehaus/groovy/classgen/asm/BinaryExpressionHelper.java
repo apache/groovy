@@ -840,7 +840,7 @@ public class BinaryExpressionHelper {
         // jump depending on the value. For true we are done, for false we
         // have to load y, thus we first remove x and then load y.
         // But since x and y may have different stack lengths, this cannot work
-        // Thus we have to have to do the following:
+        // Thus we have to do the following:
         // Be X the type of x, Y the type of y and S the common supertype of
         // X and Y, then we have to see x?:y as
         //      var t=x;boolean(t)?S(t):S(y)

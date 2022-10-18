@@ -573,7 +573,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     @Override
                     public void visit(final MethodVisitor mv) {
                         /*
-                         * the code is (meta class is stored in 1):
+                         * the code is (metaclass is stored in 1):
                          * this.metaClass = <1>
                          */
                         mv.visitVarInsn(ALOAD, 0);
@@ -1672,7 +1672,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /**
-     * When constant expressions are created, the value is always wrapped to a non primitive type.
+     * When constant expressions are created, the value is always wrapped to a non-primitive type.
      * Some constant expressions are optimized to return primitive types, but not all primitives are
      * handled. This method guarantees to return a similar constant expression but with a primitive type
      * instead of a boxed type.

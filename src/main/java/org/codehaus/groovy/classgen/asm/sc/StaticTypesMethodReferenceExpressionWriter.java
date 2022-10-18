@@ -145,7 +145,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             if (isConstructorReference) { // TODO: move this check to the parser
                 addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
             } else if (methodRefMethod.isStatic() && !targetIsArgument) {
-                // "string"::valueOf refers to static method, so instance is superflous
+                // "string"::valueOf refers to static method, so instance is superfluous
                 typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
                 isClassExpression = true;
             } else {

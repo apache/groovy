@@ -674,7 +674,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
             /*
              *  if it is static final but not accessed inside a static constructor, or,
-             *  if it is an instance final but not accessed inside a instance constructor, it is an error
+             *  if it is an instance final but not accessed inside an instance constructor, it is an error
              */
             boolean isFinal = fn.isFinal();
             boolean isStatic = fn.isStatic();

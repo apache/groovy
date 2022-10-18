@@ -436,7 +436,7 @@ public class CompileStack {
     /**
      * Causes the state-stack to add an element and sets
      * the given scope as new current variable scope. Creates
-     * a element for the state stack so pop has to be called later
+     * an element for the state stack so pop has to be called later
      */
     public void pushVariableScope(final VariableScope scope) {
         pushState();
@@ -464,7 +464,7 @@ public class CompileStack {
     /**
      * Should be called when descending into a loop that defines
      * also a scope. Calls pushVariableScope and prepares labels
-     * for a loop structure. Creates a element for the state stack
+     * for a loop structure. Creates an element for the state stack
      * so pop has to be called later
      */
     public void pushLoop(final VariableScope el, final List<String> labelNames) {
@@ -497,7 +497,7 @@ public class CompileStack {
 
     /**
      * Should be called when descending into a loop that does
-     * not define a scope. Creates a element for the state stack
+     * not define a scope. Creates an element for the state stack
      * so pop has to be called later
      */
     public void pushLoop(final List<String> labelNames) {
@@ -544,7 +544,7 @@ public class CompileStack {
     }
 
     /**
-     * Creates a new break label and a element for the state stack
+     * Creates a new break label and an element for the state stack
      * so pop has to be called later
      */
     public Label pushSwitch() {

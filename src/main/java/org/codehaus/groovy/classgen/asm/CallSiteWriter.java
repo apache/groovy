@@ -64,7 +64,7 @@ import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 /**
- * This class represents non public API used by AsmClassGenerator. Don't
+ * This class represents non-public API used by AsmClassGenerator. Don't
  * use this class in your code
  */
 public class CallSiteWriter {
