@@ -25,7 +25,7 @@ Tests in this subproject are used for stress testing.  These types of tests
 will normally involve calls to `System.gc()`, spinning up many threads, and
 may attempt to create OutOfMemory errors.
 
-These tests can be long running and may be prone to failure on different
+These tests can be long-running and may be prone to failure on different
 platforms, so in order to run these tests you must enable them as follows:
 
     ./gradlew -PstressTests :stress:test
