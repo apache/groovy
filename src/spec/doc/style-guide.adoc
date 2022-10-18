@@ -276,7 +276,7 @@ class Person {
 }
 ----
 
-As you can see, a free standing 'field' without modifier visibility actually
+As you can see, a freestanding 'field' without modifier visibility actually
 makes the Groovy compiler to generate a private field and a getter and setter for you.
 
 When using such POGOs from Java, the getter and setter are indeed there, and can be used as usual, of course.
@@ -475,7 +475,7 @@ assert "foooo/baaaaar" ==~ /fo+\/ba+r/
 The advantage of the "slashy" notation is that you don't need to double escape backslashes, making working with regex a bit simpler.
 
 Last but not least, prefer using single quoted strings when you need string constants,
-and use double quoted strings when you are explicitly relying on string interpolation.
+and use double-quoted strings when you are explicitly relying on string interpolation.
 
 == Native syntax for data structures
 
@@ -588,7 +588,7 @@ Same thing for collections, etc.
 
 Thus, you can use some shortcuts in things like `while()`, `if()`, the ternary operator, the Elvis operator (see below), etc.
 
-It's even possible to customize the Groovy Truth, by adding an boolean `asBoolean()` method to your classes!
+It's even possible to customize the Groovy Truth, by adding a boolean `asBoolean()` method to your classes!
 
 == Safe graph navigation
 

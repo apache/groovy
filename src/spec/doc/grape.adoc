@@ -117,7 +117,7 @@ proxy server, you can specify those settings on the command like via the
 groovy -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080 yourscript.groovy
 -------------------------------------------------------------------------
 
-Or you can make this system wide by adding these properties to your
+Or you can make this system-wide by adding these properties to your
 JAVA_OPTS environment variable:
 
 ------------------------------------------------------------
@@ -234,7 +234,7 @@ annotation to apply to only a subset of the Grab annotations.
 === Method call
 
 Typically a call to grab will occur early in the script or in class
-initialization. This is to insure that the libraries are made available
+initialization. This is to ensure that the libraries are made available
 to the ClassLoader before the groovy code relies on the code. A couple
 of typical calls may appear as follows:
 
@@ -303,7 +303,7 @@ runtime exception.
 [[Grape-ArgumentsMaparguments]]
 ==== Arguments Map arguments
 
-* `classLoader:` - <GroovyClassLaoder> or <RootClassLoader> - The
+* `classLoader:` - <GroovyClassLoader> or <RootClassLoader> - The
 ClassLoader to add resolved Jars to
 * `refObject:` - <Object> - The closest parent ClassLoader for the
 object’s class will be treated as though it were passed in as

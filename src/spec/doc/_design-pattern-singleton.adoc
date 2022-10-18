@@ -38,7 +38,7 @@ Suppose we wish to create a class for collecting votes. Because getting the righ
 include::../test/DesignPatternsTest.groovy[tags=singleton_vote_collector,indent=0]
 ----
 
-Some points of interest about this code:
+Some points of interest in this code:
 
 - it has a private constructor, so no `VoteCollector` objects can be created in our system (except for the `INSTANCE` we create)
 - the `INSTANCE` is also private, so it can't be changed once set

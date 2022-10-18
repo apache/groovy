@@ -223,7 +223,7 @@ include::../test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
 <2> calling the closure will return the instance of `Enclosing` where the closure is defined
 <3> in general, you will just want to use the shortcut `this` notation
 <4> and it returns *exactly* the same object
-<5> if the closure is defined in a inner class
+<5> if the closure is defined in an inner class
 <6> `this` in the closure *will* return the inner class, not the top-level one
 <7> in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
 <8> then `this` corresponds to the closest outer class, not the enclosing closure!
@@ -250,7 +250,7 @@ include::../test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
 <2> calling the closure will return the instance of `Enclosing` where the closure is defined
 <3> in general, you will just want to use the shortcut `owner` notation
 <4> and it returns *exactly* the same object
-<5> if the closure is defined in a inner class
+<5> if the closure is defined in an inner class
 <6> `owner` in the closure *will* return the inner class, not the top-level one
 <7> but in case of nested closures, like here `cl` being defined inside the scope of `nestedClosures`
 <8> then `owner` corresponds to the enclosing closure, hence a different object from `this`!
@@ -495,7 +495,7 @@ include::../test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
 
 ==== Right currying
 
-Similarily to left currying, it is possible to set the right-most parameter of a closure:
+Similarly to left currying, it is possible to set the right-most parameter of a closure:
 
 [source,groovy]
 ----
@@ -554,7 +554,7 @@ The behavior of the cache can be tweaked using alternate methods:
 * `memoizeAtLeast` will generate a new closure which caches *at least* _n_ values
 * `memoizeBetween` will generate a new closure which caches *at least* _n_ values and *at most* _n_ values
 
-The cache used in all memoize variants is a LRU cache.
+The cache used in all memoize variants is an LRU cache.
 
 === Composition
 

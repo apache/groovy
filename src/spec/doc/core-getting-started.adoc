@@ -107,7 +107,7 @@ That's all there is to it!
 
 ==== MacPorts
 
-If you're on MacOS and have https://www.macports.org[MacPorts] installed, you can run:
+If you're on macOS and have https://www.macports.org[MacPorts] installed, you can run:
 
 [source,shell]
 ----
@@ -116,7 +116,7 @@ sudo port install groovy
 
 ==== Homebrew
 
-If you're on MacOS and have https://mxcl.github.com/homebrew[Homebrew] installed, you can run:
+If you're on macOS and have https://mxcl.github.com/homebrew[Homebrew] installed, you can run:
 
 [source,shell]
 ----
