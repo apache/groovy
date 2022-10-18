@@ -54,7 +54,7 @@ public class DecompiledClassNode extends ClassNode {
     /**
      * Handle the case of inner classes returning the correct modifiers from
      * the INNERCLASS reference since the top-level modifiers for inner classes
-     * wont include static or private/protected.
+     * won't include static or private/protected.
      */
     private static int getModifiers(ClassStub classData) {
         return (classData.innerClassModifiers != -1 ? classData.innerClassModifiers : classData.accessModifiers);

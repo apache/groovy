@@ -195,7 +195,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     /**
      * this method actually does not compile a class. It's only
      * a marker that this type has to be compiled by the CompilationUnit
-     * at the end of a parse step no node should be be left.
+     * at the end of a parse step no node should be left.
      */
     public void addClassNodeToCompile(final ClassNode node, final SourceUnit location) {
         String nodeName = node.getName();

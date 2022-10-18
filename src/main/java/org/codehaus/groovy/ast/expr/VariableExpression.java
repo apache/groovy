@@ -169,7 +169,7 @@ public class VariableExpression extends Expression implements Variable {
 
     /**
      * For internal use only. This flag is used by compiler internals and should probably
-     * be converted to a node metadata in future.
+     * be converted to a node metadata in the future.
      *
      * @param useRef
      */
@@ -179,7 +179,7 @@ public class VariableExpression extends Expression implements Variable {
 
     /**
      * For internal use only. This flag is used by compiler internals and should probably
-     * be converted to a node metadata in future.
+     * be converted to a node metadata in the future.
      */
     public boolean isUseReferenceDirectly() {
         return useRef;
