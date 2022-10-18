@@ -112,7 +112,7 @@ public class FormatHelper {
      * </pre>
      *
      * @param options a map of configuration options
-     * @param arguments the argument(s) to calulate the {@code toString} for
+     * @param arguments the argument(s) to calculate the {@code toString} for
      * @return the string rendering of the argument(s)
      * @see DefaultGroovyMethods#inspect(Object)
      */

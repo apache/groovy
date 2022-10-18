@@ -989,7 +989,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Standard iterator for a input stream which iterates through the stream
+     * Standard iterator for an input stream which iterates through the stream
      * content in a byte-based fashion.
      *
      * @param self an InputStream object

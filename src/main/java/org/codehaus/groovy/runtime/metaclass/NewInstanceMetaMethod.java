@@ -43,7 +43,7 @@ public class NewInstanceMetaMethod extends NewMetaMethod {
 
     @Override
     public int getModifiers() {
-        // lets clear the static bit
+        // let's clear the static bit
         return Modifier.PUBLIC;
     }
 

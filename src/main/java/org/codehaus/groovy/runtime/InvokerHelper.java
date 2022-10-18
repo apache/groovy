@@ -125,7 +125,7 @@ public class InvokerHelper {
             }
             return answer;
         }
-        // let's assume its a collection of 1
+        // let's assume it's a collection of 1
         return Collections.singletonList(value);
     }
 
@@ -652,7 +652,7 @@ public class InvokerHelper {
     }
 
     /**
-     * Converts the given object into an array; if its an array then just
+     * Converts the given object into an array; if it's an array then just
      * cast otherwise wrap it in an array
      */
     public static Object[] asArray(Object arguments) {

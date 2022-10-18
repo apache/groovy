@@ -52,7 +52,7 @@ public class EncodingGroovyMethods {
      * information on Base64 encoding and chunking see <code>RFC 4648</code>.
      *
      * @param data Byte array to be encoded
-     * @param chunked whether or not the Base64 encoded data should be MIME chunked
+     * @param chunked whether the Base64 encoded data should be MIME chunked
      * @return object which will write the Base64 encoding of the byte array
      * @since 1.5.1
      */
@@ -79,7 +79,7 @@ public class EncodingGroovyMethods {
      * information on Base64 encoding and chunking see <code>RFC 4648</code>.
      *
      * @param data byte array to be encoded
-     * @param chunked whether or not the Base64 encoded data should be MIME chunked
+     * @param chunked whether the Base64 encoded data should be MIME chunked
      * @return object which will write the Base64 encoding of the byte array
      * @since 1.5.7
      */
@@ -187,7 +187,7 @@ public class EncodingGroovyMethods {
      * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
      *
      * @param data Byte array to be encoded
-     * @param pad whether or not the encoded data should be padded
+     * @param pad whether the encoded data should be padded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
      * @since 2.5.0
      */
@@ -221,7 +221,7 @@ public class EncodingGroovyMethods {
      * Base 64 Encoding with URL and Filename Safe Alphabet</code>.
      *
      * @param data Byte array to be encoded
-     * @param pad whether or not the encoded data should be padded
+     * @param pad whether the encoded data should be padded
      * @return object which will write the Base64 URL and Filename Safe encoding of the byte array
      * @since 2.5.0
      */

@@ -24,7 +24,7 @@ import java.util.List;
 
 
 /**
- * An abstract base class for a key used for comparators and Map keys to lookup a method by
+ * An abstract base class for a key used for comparators and Map keys to look up a method by
  * name and parameter types
  */
 public abstract class MethodKey {
@@ -41,7 +41,7 @@ public abstract class MethodKey {
     }
 
     /**
-     * Creates an immutable copy that we can cache. 
+     * Creates an immutable copy that we can cache.
      */
     public MethodKey createCopy() {
         int size = getParameterCount();
@@ -120,7 +120,7 @@ public abstract class MethodKey {
         /** @todo we should use the real Josh Bloch algorithm here */
 
         // can't remember the exact Josh Bloch algorithm and I've not got the book handy
-        // but its something like this IIRC
+        // but it's something like this IIRC
         for (int i = 0; i < size; i++) {
             answer *= 37;
             answer += 1 + getParameterType(i).hashCode();

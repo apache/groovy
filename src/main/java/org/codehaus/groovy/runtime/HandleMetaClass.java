@@ -39,9 +39,9 @@ public class HandleMetaClass extends DelegatingMetaClass {
         super(mc);
         if (obj != null) {
             if (InvokerHelper.getMetaClass(obj.getClass()) == mc || !(mc instanceof ExpandoMetaClass))
-              object = obj; // object has default meta class, so we need to replace it on demand
+              object = obj; // object has default metaclass, so we need to replace it on demand
             else
-              object = NONE; // object already has per instance meta class
+              object = NONE; // object already has per instance metaclass
         }
     }
 

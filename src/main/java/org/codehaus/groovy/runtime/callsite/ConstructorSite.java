@@ -52,7 +52,7 @@ public class ConstructorSite extends MetaClassSite {
     }
 
     protected final boolean checkCall(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+        return receiver == metaClass.getTheClass() // metaclass match receiver
                 && ((MetaClassImpl) metaClass).getVersion() == version // metaClass still be valid
                 && MetaClassHelper.sameClasses(params, args);
     }
