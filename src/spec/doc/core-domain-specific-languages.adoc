@@ -132,7 +132,7 @@ This allows you to provide your own Java or Groovy objects which can take advant
 
 [options="header"]
 |======================
-|Operator | Method 
+|Operator | Method
 | `a + b` | a.plus(b)
 | `a - b` | a.minus(b)
 | `a * b` | a.multiply(b)
@@ -273,7 +273,7 @@ An illustration of this can be found in Groovy using the `TimeCategory`:
 include::../test/metaprogramming/CategoryTest.groovy[tags=time_category,indent=0]
 ----
 <1> using the `TimeCategory`, a property `minute` is added to the `Integer` class
-<2> similarily, the `months` method returns a `groovy.time.DatumDependentDuration` which can be used in calculus
+<2> similarly, the `months` method returns a `groovy.time.DatumDependentDuration` which can be used in calculus
 
 Categories are lexically bound, making them a great fit for internal DSLs.
 
@@ -351,7 +351,7 @@ include::../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
 ---------------------------------------
 
 Then the type checker will know that there’s an `email` method accepting
-a `Closure`, but it will complain for every method call *inside* the
+a `Closure`, but it will complain about every method call *inside* the
 closure, because `from`, for example, is not a method which is defined
 in the class. Indeed, it’s defined in the `EmailSpec` class and it has
 absolutely no hint to help it knowing that the closure delegate will, at
@@ -1032,7 +1032,7 @@ You can also share all the settings by simply sharing the config file.
 
 If:
 
-* runtime metaprogramming doesn't allow you do do what you want
+* runtime metaprogramming doesn't allow you to do what you want
 * you need to improve the performance of the execution of your DSLs
 * you want to leverage the same syntax as Groovy but with different semantics
 * you want to improve support for type checking in your DSLs
@@ -1080,7 +1080,7 @@ include::../../../subprojects/groovy-xml/src/spec/doc/_dom-builder.adoc[leveloff
 
 ==== NodeBuilder
 
-`NodeBuilder` is used for creating nested trees of gapi:groovy.util.Node[Node] objects for handling arbitrary data. 
+`NodeBuilder` is used for creating nested trees of gapi:groovy.util.Node[Node] objects for handling arbitrary data.
 To create a simple user list you use a `NodeBuilder` like this:
 
 [source,groovy]

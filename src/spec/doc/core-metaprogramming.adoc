@@ -562,7 +562,7 @@ The following sections go into detail on how `ExpandoMetaClass` can be used in v
 
 ===== Methods
 
-Once the `ExpandoMetaClass` is accessed by calling the `metaClass` property, methods can added by using either the left shift
+Once the `ExpandoMetaClass` is accessed by calling the `metaClass` property, methods can be added by using either the left shift
 `<<` or the `=` operator.
 
 [NOTE]
@@ -677,8 +677,8 @@ class HTMLCodec {
 
 The example above shows a codec implementation. Grails comes with various codec implementations each defined in a single class.
 At runtime there will be multiple codec classes in the application classpath. At application startup the framework adds
-a `encodeXXX` and a `decodeXXX` method to certain meta-classes where `XXX` is the first part of the codec class name (e.g.
-`encodeHTML`). This mechanism is in the following shown in some Groovy pseudo-code:
+a `encodeXXX` and a `decodeXXX` method to certain metaclasses where `XXX` is the first part of the codec class name (e.g.
+`encodeHTML`). This mechanism is in the following shown in some Groovy pseudocode:
 
 [source,groovy]
 ----
@@ -723,7 +723,7 @@ The following example shows how to override `invokeMethod`:
 include::../test/metaprogramming/ExpandoMetaClassTest.groovy[tags=emc_invoke_method,indent=0]
 ----
 
-The first step in the `Closure` code is to lookup the `MetaMethod` for the given name and arguments. If the method
+The first step in the `Closure` code is to look up the `MetaMethod` for the given name and arguments. If the method
 can be found everything is fine and it is delegated to. If not, a dummy value is returned.
 
 [NOTE]
@@ -937,7 +937,7 @@ boilerplate code incorrect is reduced.
 
 [[xform-ToString]]
 ===== `@groovy.transform.ToString`
-The `@ToString` AST transformation generates a human readable `toString` representation of the class. For example,
+The `@ToString` AST transformation generates a human-readable `toString` representation of the class. For example,
 annotating the `Person` class like below will automatically generate the `toString` method for you:
 
 [source,groovy]
@@ -1761,7 +1761,7 @@ include::../test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_excep
 ----
 
 The fourth example illustrates the case of user supplied code. Our class is annotated with `@AutoImplement`,
-implements an interface, has an explcitly overriden `hasNext` method, and has an annotation attribute containing the
+implements an interface, has an explicitly overridden `hasNext` method, and has an annotation attribute containing the
 supplied code for any supplied methods. Here is the class definition:
 
 [source,groovy]
@@ -1807,7 +1807,7 @@ singleton, ...) by using a declarative style.
 ===== `@groovy.transform.BaseScript`
 
 `@BaseScript` is used within scripts to indicate that the script should
-extend fron a custom script base class rather than `groovy.lang.Script`.
+extend from a custom script base class rather than `groovy.lang.Script`.
 See the documentation for <<{core-domain-specific-languages}#dsl-basescript,domain specific languages>> for further details.
 
 [[xform-Delegate]]
@@ -2085,7 +2085,7 @@ and some non-tail recursive calls are erroneously treated as tail recursive.
 
 The `@Singleton` annotation can be used to implement the singleton design pattern on a class. The singleton instance
 is defined eagerly by default, using class initialization, or lazily, in which case the field is initialized using
-double checked locking.
+double-checked locking.
 
 [source,groovy]
 ----
@@ -2432,7 +2432,7 @@ generating code which will for example allow you to interrupt execution automati
 ===== `@groovy.transform.ThreadInterrupt`
 
 One complicated situation in the JVM world is when a thread can't be stopped. The `Thread#stop` method exists but is
-deprecated (and isn't reliable) so your only chance relies in `Thread#interrupt`. Calling the latter will set the
+deprecated (and isn't reliable) so your only chance lies in `Thread#interrupt`. Calling the latter will set the
 `interrupt` flag on the thread, but it will *not* stop the execution of the thread. This is problematic because it's the
 responsibility of the code executing in the thread to check the interrupt flag and properly exit. This makes sense when
 you, as a developer, know that the code you are executing is meant to be run in an independent thread, but in general,
@@ -3045,7 +3045,7 @@ transformations may only be applied in the semantic analysis phase or
 later. Briefly, the compiler phases are:
 
 * _Initialization_: source files are opened and environment configured
-* _Parsing_: the grammar is used to to produce tree of tokens representing
+* _Parsing_: the grammar is used to produce tree of tokens representing
 the source code
 * _Conversion_: An abstract syntax tree (AST) is created from token trees.
 * _Semantic Analysis_: Performs consistency and validity checks that the
@@ -3339,10 +3339,10 @@ Although the `macro` method is used in this example to create a **statement** th
 **expressions** as well, it depends on which `macro` signature you use:
 
 - `macro(Closure)`: Create a given statement with the code inside the closure.
-- `macro(Boolean,Closure)`: if **true** wrap expressions inside the closure inside an statement, if **false** then return
+- `macro(Boolean,Closure)`: if **true** wrap expressions inside the closure inside a statement, if **false** then return
 an expression
 - `macro(CompilePhase, Closure)`: Create a given statement with the code inside the closure in a specific compile phase
-- `macro(CompilePhase, Boolean, Closure)`: Create an statement or an expression (true == statement, false == expression)
+- `macro(CompilePhase, Boolean, Closure)`: Create a statement or an expression (true == statement, false == expression)
 in a specific compilation phase.
 
 NOTE: All these signatures can be found at `org.codehaus.groovy.macro.runtime.MacroGroovyMethods`
@@ -3478,7 +3478,7 @@ assert null == safe(safe(nullObject.hashcode()).toString())
 ==== Testing AST transformations
 ===== Separating source trees
 
-This section is about good practices with regards to testing AST transformations. Previous sections highlighted the fact
+This section is about good practices in regard to testing AST transformations. Previous sections highlighted the fact
 that to be able to execute an AST transformation, it has to be precompiled. It might sound obvious but a lot of people
 get caught on this, trying to use an AST transformation in the same source tree as where it is defined.
 

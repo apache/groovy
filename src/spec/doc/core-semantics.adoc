@@ -416,7 +416,7 @@ Which will print the value for each sub-expression:
 include::../test/semantics/PowerAssertTest.groovy[tags=assert_error_2,indent=0]
 ----
 
-In case you don't want a pretty printed error message like above, you can fallback to a custom error message by
+In case you don't want a pretty printed error message like above, you can fall back to a custom error message by
 changing the optional message part of the assertion, like in this example:
 
 [source,groovy]
@@ -597,7 +597,7 @@ NOTE: array access are zero-based in GPath expressions
 
 ==== GPath for XML navigation
 
-Here is an example with a XML document and various form of GPath expressions:
+Here is an example with an XML document and various form of GPath expressions:
 [source,groovy]
 ----
 include::../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
@@ -681,7 +681,7 @@ include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,ind
 -----
 
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
-closure outside of the parenthesis, improving the readability of your code.
+closure outside the parenthesis, improving the readability of your code.
 
 ==== Closure to arbitrary type coercion
 
@@ -876,7 +876,7 @@ Method calls can omit the parentheses if there is at least one parameter and the
 include::../test/semantics/OptionalityTest.groovy[tags=optional_parentheses,indent=0]
 ----
 
-Parentheses are required for method calls without parameters or ambiguous method calls: 
+Parentheses are required for method calls without parameters or ambiguous method calls:
 
 [source,groovy]
 ----
@@ -926,7 +926,7 @@ include::../test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,in
 
 === Optional public keyword
 
-By default, Groovy classes and methods are `public`. Therefore this class: 
+By default, Groovy classes and methods are `public`. Therefore this class:
 
 [source,groovy]
 ----
@@ -1502,7 +1502,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,ind
 
 The example above shows a class that Groovy will be able to compile. However, if you try to create an instance of `MyService` and call the
 `doSomething` method, then it will fail *at runtime*, because `printLine` doesn't exist. Of course, we already showed how Groovy could make
-this a perfectly valid call, for example by catching `MethodMissingException` or implementing a custom meta-class, but if you know you're
+this a perfectly valid call, for example by catching `MethodMissingException` or implementing a custom metaclass, but if you know you're
 not in such a case, `@TypeChecked` comes handy:
 
 [source,groovy]
@@ -1578,7 +1578,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=typeinference_field_vs_loca
 
 Why such a difference? The reason is _thread safety_. At compile time, we can't make *any* guarantee about the type of
 a field. Any thread can access any field at any time and between the moment a field is assigned a variable of some
-type in a method and the time is is used the line after, another thread may have changed the contents of the field. This
+type in a method and the time is used the line after, another thread may have changed the contents of the field. This
 is not the case for local variables: we know if they "escape" or not, so we can make sure that the type of a variable is
 constant (or not) over time. Note that even if a field is final, the JVM makes no guarantee about it, so the type checker
 doesn't behave differently if a field is final or not.
@@ -1825,7 +1825,7 @@ In Groovy, we could write:
 include::../test/typing/TypeCheckingTest.groovy[tags=groovy_method_selection,indent=0]
 ----
 
-But this time, it will return `6`, because the method which is chosen is chosen *at runtime*, based on the _actual_
+But this time, it will return `6`, because the method which is chosen *at runtime*, based on the _actual_
 argument types. So at runtime, `o` is a `String` so the `String` variant is used. Note that this behavior has nothing
 to do with type checking, it's the way Groovy works in general: dynamic dispatch.
 
@@ -1979,7 +1979,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround,indent=0]
 ----
 <1> the type of `it` needs to be declared explicitly
 
-By explicitly declaring the type of the `it` variable, you can workaround the problem and make this code statically
+By explicitly declaring the type of the `it` variable, you can work around the problem and make this code statically
 checked.
 
 ====== Parameters inferred from single-abstract method types
@@ -1997,8 +1997,8 @@ include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_sam,indent
 <3> there's no need to declare the type of the `it` variable anymore
 <4> `it.age` compiles properly, the type of `it` is inferred from the `Predicate#apply` method signature
 
-TIP: By using this technique, we leverage the _automatic coercion of closures to SAM types_ feature of Groovy. The
-question whether you should use a _SAM type_ or a _Closure_ really depends on what you need to do. In a lot of cases,
+TIP: By using this technique, we leverage the _automatic coercion of closures to SAM types_ feature of Groovy.
+Whether you should use a _SAM type_ or a _Closure_ really depends on what you need to do. In a lot of cases,
 using a SAM interface is enough, especially if you consider functional interfaces as they are found in Java 8. However,
 closures provide features that are not accessible to functional interfaces. In particular, closures can have a delegate,
 and owner and can be manipulated as objects (for example, cloned, serialized, curried, ...) before being called. They can
@@ -2152,7 +2152,7 @@ In short, the lack of the `@ClosureParams` annotation on a method accepting a `C
 
 A third optional argument is named _conflictResolutionStrategy_. It can reference a class (extending from
 `ClosureSignatureConflictResolver`) that can perform additional resolution of parameter types if more than
-one are found after initial inference calculations are complete. Groovy comes with the a default type resolver
+one are found after initial inference calculations are complete. Groovy comes with a default type resolver
 which does nothing, and another which selects the first signature if multiple are found. The resolver is
 only invoked if more than one signature is found and is by design a post processor. Any statements which need
 injected typing information must pass one of the parameter signatures determined through type hints. The
@@ -2171,7 +2171,7 @@ discussed in a link:core-domain-specific-languages.html#section-delegatesto[spec
 In the <<static-type-checking,type checking section>>, we have seen that Groovy provides optional type checking thanks to the
 `@TypeChecked` annotation. The type checker runs at compile time and performs a static analysis of dynamic code. The
 program will behave exactly the same whether type checking has been enabled or not. This means that the `@TypeChecked`
-annotation is neutral with regards to the semantics of a program. Even though it may be necessary to add type information
+annotation is neutral in regard to the semantics of a program. Even though it may be necessary to add type information
 in the sources so that the program is considered type safe, in the end, the semantics of the program are the same.
 
 While this may sound fine, there is actually one issue with this: type checking of dynamic code, done at compile time, is

@@ -105,7 +105,7 @@ we can employ some interesting ways to solve the aggregation including:
 to potentially start part way through be reusing a cached value of summing 1..4 if that had been calculated earlier
 * Inherent parallelization can make use of multiple cores
 
-Let's just look at the first of these in more detail. With a multi-core
+Let's just look at the first of these in more detail. With a multicore
 processor, one core could add `10` plus `11`, another core `12` plus `13`, and so on.
 We'd use the _identity_ element if needed (shown being added to `16` in our example).
 Then the intermediate results could also be added together concurrently and so on until the result was reached.

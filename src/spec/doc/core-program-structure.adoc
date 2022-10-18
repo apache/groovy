@@ -31,7 +31,7 @@ This chapter covers the program structure of the Groovy programming language.
 
 == Package names
 
-Package names play exactly the same role as in Java. They allows us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed. 
+Package names play exactly the same role as in Java. They allow us to separate the code base without any conflicts. Groovy classes must specify their package before the class definition, else the default package is assumed.
 
 Defining a package is very similar to Java:
 
@@ -62,7 +62,7 @@ Default imports are the imports that Groovy language provides by default. For ex
 include::../test/PackageTest.groovy[tags=default_import,indent=0]
 ----
 
-The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. 
+The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you.
 
 The below imports are added by groovy for you:
 
@@ -91,7 +91,7 @@ include::../test/PackageTest.groovy[tags=import_statement,indent=0]
 
 === Star import
 
-Groovy, like Java, provides a special way to import all classes from a package using `*`, the so called star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
+Groovy, like Java, provides a special way to import all classes from a package using `*`, the so-called star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
 
 [source,groovy]
 ----
@@ -105,7 +105,7 @@ That's perfectly valid code. But with a `*` import, we can achieve the same effe
 include::../test/PackageTest.groovy[tags=star_import,indent=0]
 ----
 
-One problem with `*` imports is that they can clutter your local namespace. But with the kinds of aliasing provided by Groovy, this can be solved easily. 
+One problem with `*` imports is that they can clutter your local namespace. But with the kinds of aliasing provided by Groovy, this can be solved easily.
 
 === Static import
 
@@ -143,7 +143,7 @@ Now, that's clean!
 
 A static star import is very similar to the regular star import. It will import all the static methods from the given class.
 
-For example, lets say we need to calculate sines and cosines for our application. 
+For example, lets say we need to calculate sines and cosines for our application.
 The class `java.lang.Math` has static methods named `sin` and `cos` which fit our need. With the help of a static star import, we can do:
 
 [source,groovy]
@@ -266,7 +266,7 @@ method that the compiler will generate and will *not* be visible outside of the 
 a variable will *not* be visible in other methods of the script
 * if the variable is undeclared, it goes into the gapi:groovy.lang.Script#getBinding()[script binding]. The binding is
 visible from the methods, and is especially important if you use a script to interact with an application and need to
-share data between the script and the application. Readers might refer to the 
+share data between the script and the application. Readers might refer to the
 <<{guide-integrating}#_integrating_groovy_in_a_java_application,integration guide>> for more information.
 
 TIP: Another approach to making a variable visible to all methods, is to use the

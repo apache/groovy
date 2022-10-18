@@ -120,7 +120,7 @@ List<String> roles = ['Trinity', 'Morpheus']
 ----
 
 Java employs type erasure for backwards compatibility with earlier versions of Java.
-Dynamic Groovy can be thought of as more agressively applying type erasure.
+Dynamic Groovy can be thought of as more aggressively applying type erasure.
 In general,  less generics type information will be checked at compile time.
 Groovy's static nature employs similar checks to Java with regard to generics information.
 
@@ -128,7 +128,7 @@ Groovy's static nature employs similar checks to Java with regard to generics in
 
 Groovy classes are very similar to Java classes, and are compatible with Java ones at JVM level.
 They may have methods, fields and properties (think JavaBeans properties but with less boilerplate).
-Classes and class members can have the same modifiers (public, protected, private, static, etc) as in Java
+Classes and class members can have the same modifiers (public, protected, private, static, etc.) as in Java
 with some minor differences at the source level which are explained shortly.
 
 The key differences between Groovy classes and their Java counterparts are:
@@ -163,7 +163,7 @@ include::../test/ClassTest.groovy[tags=class_instantiation,indent=0]
 
 === Inner class
 
-Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, a inner class can access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
+Inner classes are defined within another classes. The enclosing class can use the inner class as usual. On the other side, an inner class can access members of its enclosing class, even if they are private. Classes other than the enclosing class are not allowed to access inner classes. Here is an example:
 
 [source,groovy]
 ----
@@ -339,7 +339,7 @@ Groovy supports two invocation styles:
 
 To create an object by using positional parameters, the respective class needs to declare one or more
 constructors. In the case of multiple constructors, each must have a unique type signature. The constructors can also
-added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
+be added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
 
 Typically, once at least one constructor is declared, the class can only be instantiated by having one of its
 constructors called. It is worth noting that, in this case, you can't normally create the class with named parameters.
@@ -397,7 +397,7 @@ is a Map but there are also additional positional parameters. Use this style wit
 
 === Methods
 
-Groovy methods are quite similar to other languages. Some peculiarities will be shown in the next subsections. 
+Groovy methods are quite similar to other languages. Some peculiarities will be shown in the next subsections.
 
 ==== Method definition
 
@@ -752,7 +752,7 @@ which defines the property:
 include::../test/ClassTest.groovy[tags=property_access,indent=0]
 ----
 <1> `this.name` will directly access the field because the property is accessed from within the class that defines it
-<2> similarily a read access is done directly on the `name` field
+<2> similarly a read access is done directly on the `name` field
 <3> write access to the property is done outside of the `Person` class so it will implicitly call `setName`
 <4> read access to the property is done outside of the `Person` class so it will implicitly call `getName`
 <5> this will call the `name` method on `Person` which performs a direct access to the field
@@ -778,7 +778,7 @@ include::../test/ClassTest.groovy[tags=pseudo_properties,indent=0]
 ----
 <1> writing `p.name` is allowed because there is a pseudo-property `name`
 <2> reading `p.age` is allowed because there is a pseudo-readonly property `age`
-<3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
+<3> writing `p.groovy` is allowed because there is a pseudo-write-only property `groovy`
 
 This syntactic sugar is at the core of many DSLs written in Groovy.
 
@@ -1145,7 +1145,7 @@ we will imagine two annotations, each of them accepting one argument:
 include::../test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
 ----
 
-And suppose that you want create a meta-annotation named `@Explosive`:
+And suppose that you want to create a meta-annotation named `@Explosive`:
 
 [source,groovy]
 ----
@@ -1205,8 +1205,8 @@ and then place your meta-annotation on a class that already has an explicit `@To
 annotation. Should this be an error? Should both annotations be applied? Does one take
 priority over the other? There is no correct answer. In some scenarios it might be
 quite appropriate for any of these answers to be correct. So, rather than trying to
-preempt one correct way to handle the duplicate annotation issue, Groovy let's you
-write your own custom meta-annotation processors (covered next) and let's you write
+preempt one correct way to handle the duplicate annotation issue, Groovy lets you
+write your own custom meta-annotation processors (covered next) and lets you write
 whatever checking logic you like within AST transforms - which are a frequent target for
 aggregating. Having said that, by simply setting the `mode`, a number of commonly
 expected scenarios are handled automatically for you within any extra coding.

@@ -281,7 +281,7 @@ There are also variations of `consumeProcessOutput` that make use of `StringBuff
 `OutputStream` etc... For a complete list, please read the
 http://docs.groovy-lang.org/latest/html/groovy-jdk/java/lang/Process.html[GDK API for java.lang.Process]
 
-In addition, these is a `pipeTo` command (mapped to `|`
+In addition, there is a `pipeTo` command (mapped to `|`
 to allow overloading) which lets the output stream of one process be fed
 into the input stream of another process.
 
