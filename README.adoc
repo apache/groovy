@@ -80,14 +80,14 @@ Apache Groovy uses Git. The official Git repository is at:
 
     https://gitbox.apache.org/repos/asf/groovy.git
 
-And a mirror is hosted on Github:
+And a mirror is hosted on GitHub:
 
     https://github.com/apache/groovy
 
-The Github mirror is read-only and provides convenience to users and developers to explore the code and for the
-community to accept contributions via Github Pull Requests.
+The GitHub mirror is read-only and provides convenience to users and developers to explore the code and for the
+community to accept contributions via GitHub Pull Requests.
 
-Simply `git clone` the repo (or the repo you forked via the github website) and you will have the complete source.
+Simply `git clone` the repo (or the repo you forked via the GitHub website) and you will have the complete source.
 
 === Unpacking the src distribution
 
@@ -100,7 +100,7 @@ use it to execute one bootstrap step.
 ==== Bootstrapping Gradle
 
 As mentioned in the previous paragraph, if you download the source distribution
-you need to bootstrap Gradle. This isn't needed if you clone from the Github repo.
+you need to bootstrap Gradle. This isn't needed if you clone from the GitHub repo.
 
 Each version of Groovy is built and tested using a specific version of Gradle.
 That version is specified by the `gradle_version` property defined in the `gradle.properties`
