@@ -24,7 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Records declared and referenced variabes for a given scope.  Helps determine
+ * Records declared and referenced variables for a given scope.  Helps determine
  * variable sharing across closure and method boundaries.
  */
 public class VariableScope {
