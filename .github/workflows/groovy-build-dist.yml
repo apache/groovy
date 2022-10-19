@@ -30,6 +30,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean -y >/dev/null 2>&1
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
