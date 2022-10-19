@@ -981,8 +981,8 @@ include::../test/JmxTest.groovy[tags=listener_mbean,indent=0]
 
 In the sample above, we see the **syntax for adding listeners to an exported MBean**.
 
-- Fist, a **timer is exported** and started.
-- Then an **MBean is declared that will listen to the timer** event and do something meaningful.
+- First, a **timer is exported** and started.
+- Then, an **MBean is declared that will listen to the timer** event and do something meaningful.
 - The **"heartbeat:"** name is arbitrary and has no correlation to the timer declared above.
 - The **source** of the event **is specified using the "from:" attribute**.
 
@@ -1005,7 +1005,7 @@ jmx.listener(
 Here is the description of the **listener()** node attributes:
 
 - event: An optional string that identifies the JMX event type to listen for.
-- from (required): The JMX ObjectName of the component to listen to. This can be specified as a string or an instance of ObjectName
+- from (required): The JMX ObjectName of the component to listen to. This can be specified as a string or an instance of ObjectName.
 - call: The closure to execute when the event is captured. This can also be specified as a Groovy method pointer.
 
 Here is an example of JmxBuilder's listener node:
