@@ -32,11 +32,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Free disk space
         run: |
-          echo "Listing 20 largest packages"
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 20
+#          echo "Listing 20 largest packages"
+#          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 20
 
           echo "Removing large unused packages"
-          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable mongodb-mongosh hhvm google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable google-chrome-stable powershell mono-devel >/dev/null 2>&1
           sudo apt-get autoclean -y >/dev/null 2>&1
           sudo apt-get clean -y >/dev/null 2>&1
           sudo apt-get autoremove -y >/dev/null 2>&1
