@@ -46,11 +46,11 @@ jobs:
           sudo df -h
       - name: Set up JDK
         uses: actions/setup-java@v3
-      - uses: actions/checkout@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
+      - uses: actions/checkout@v3
       - uses: gradle/gradle-build-action@v2
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
