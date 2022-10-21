@@ -51,7 +51,6 @@ jobs:
           java-version: ${{ matrix.java }}
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: gradle/gradle-build-action@v2
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 90
