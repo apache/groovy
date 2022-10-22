@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -41,7 +40,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
-import org.codehaus.groovy.classgen.asm.BinaryExpressionWriter;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -52,7 +50,6 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -66,9 +63,12 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
@@ -82,7 +82,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     private final AtomicInteger labelCounter = new AtomicInteger();
     private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY);
-
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
         super(wc);
@@ -106,7 +105,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
 
         ClassNode top = operandStack.getTopOperand();
-        if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top)||char_TYPE.equals(top))) {
+        if (isPrimitiveType(top) && (isNumberType(top) || char_TYPE.equals(top))) {
             MethodVisitor mv = controller.getMethodVisitor();
             visitInsnByType(top, mv, ICONST_1, LCONST_1, FCONST_1, DCONST_1);
             if ("next".equals(method)) {
@@ -312,7 +311,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                         setterMethod = new MethodNode(
                                 setter,
                                 ACC_PUBLIC,
-                                ClassHelper.VOID_TYPE,
+                                VOID_TYPE,
                                 new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
                                 ClassNode.EMPTY_ARRAY,
                                 EmptyStatement.INSTANCE
@@ -392,41 +391,31 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
-    protected void assignToArray(final Expression parent, final Expression receiver, final Expression subscript, final Expression rhsValueLoader) {
+    @Override
+    protected void assignToArray(final Expression origin, final Expression receiver, final Expression subscript, final Expression rhsValueLoader) {
         WriterController controller = getController();
-        ClassNode current = controller.getClassNode();
-        ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, current);
+        ClassNode currentClass = controller.getClassNode();
+        ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, currentClass);
 
-        ClassNode arrayComponentType = arrayType.getComponentType();
-        int operationType = getOperandType(arrayComponentType);
-        BinaryExpressionWriter bew = binExpWriter[operationType];
+        if (receiverType.isArray() && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
+            super.assignToArray(origin, receiver, subscript, rhsValueLoader);
 
-        if (bew.arraySet(true) && arrayType.isArray()) {
-            super.assignToArray(parent, receiver, subscript, rhsValueLoader);
-        } else {
-            /*
-             * This code path is needed because ACG creates array access expressions
-             */
-
-            // GROOVY-6061
-            if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
-                rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
-                        controller.getTypeChooser().resolveType(parent, current));
+        } else { // this code path is needed because ACG creates array access expressions
+            if (rhsValueLoader instanceof VariableSlotLoader && origin instanceof BinaryExpression) { // GROOVY-6061
+                rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getTypeChooser().resolveType(origin, currentClass));
             }
-            // GROOVY-9771
-            receiver.visit(new StaticCompilationVisitor(controller.getSourceUnit(), current));
 
             // replace assignment to a subscript operator with a method call
             // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
-            ArgumentListExpression ale = new ArgumentListExpression(subscript, rhsValueLoader);
-            MethodCallExpression mce = new MethodCallExpression(receiver, "putAt", ale);
-            mce.setSourcePosition(parent);
+            ArgumentListExpression args = new ArgumentListExpression(subscript, rhsValueLoader);
+            MethodCallExpression call = new MethodCallExpression(receiver, "putAt", args);
+            call.setSourcePosition(origin);
 
             OperandStack operandStack = controller.getOperandStack();
-            int height = operandStack.getStackLength();
-            mce.visit(controller.getAcg());
+            int len = operandStack.getStackLength();
+            call.visit(controller.getAcg());
             operandStack.pop();
-            operandStack.remove(operandStack.getStackLength() - height);
+            operandStack.remove(operandStack.getStackLength() - len);
 
             // return value of assignment
             rhsValueLoader.visit(controller.getAcg());

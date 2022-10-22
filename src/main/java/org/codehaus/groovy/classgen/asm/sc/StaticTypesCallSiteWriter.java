@@ -22,7 +22,6 @@ import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -58,7 +57,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -86,7 +84,9 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
@@ -378,39 +378,38 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
             Expression pexp;
             if (controller.isInClosure()) {
-                MethodCallExpression mce = new MethodCallExpression(
-                        new VariableExpression("this"),
-                        "getThisObject",
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
-                mce.setImplicitThis(true);
-                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                pexp = new CastExpression(controller.getOutermostClass(),mce);
+                MethodCallExpression call = callThisX("getThisObject");
+                call.setImplicitThis(true);
+                call.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                call.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
+                pexp = new CastExpression(controller.getOutermostClass(), call);
             } else {
-                pexp = new PropertyExpression(
-                        new ClassExpression(outerClass),
-                        "this"
-                );
-                ((PropertyExpression)pexp).setImplicitThis(true);
+                pexp = new PropertyExpression(classX(outerClass), "this");
             }
             pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
             pexp.setSourcePosition(receiver);
             return makeGetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, safe, true);
         }
         ClassNode classNode = controller.getClassNode();
-        if (field != null && Modifier.isPrivate(field.getModifiers()) && !receiverType.equals(classNode)
-                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))) {
+        if (field != null && field.isPrivate() && !receiverType.equals(classNode)
+                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
+                    || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
             Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
-            if (accessors!=null) {
+            if (accessors != null) {
                 MethodNode methodNode = accessors.get(fieldName);
-                if (methodNode!=null) {
-                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
-                            new ArgumentListExpression(field.isStatic() ? new ConstantExpression(null) : receiver));
-                    mce.setMethodTarget(methodNode);
-                    mce.setSafe(safe);
-                    mce.setImplicitThis(implicitThis);
-                    mce.visit(controller.getAcg());
+                if (methodNode != null) {
+                    Expression thisObject;
+                    if (field.isStatic()) {
+                        thisObject = nullX();
+                    } else if (!ExpressionUtils.isThisExpression(receiver)) {
+                        thisObject = receiver;
+                    } else { // GROOVY-7304, GROOVY-9771, GROOVY-9872, et al.
+                        thisObject = new PropertyExpression(classX(receiverType), "this");
+                    }
+
+                    MethodCallExpression methodCall = callX(classX(receiverType), methodNode.getName(), thisObject);
+                    methodCall.setMethodTarget(methodNode);
+                    methodCall.visit(controller.getAcg());
                     return true;
                 }
             }
@@ -560,7 +559,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 }
                 mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));
                 if (safe) {
-                    if (ClassHelper.isPrimitiveType(replacementType)) {
+                    if (isPrimitiveType(replacementType)) {
                         operandStack.replace(replacementType);
                         operandStack.box();
                         replacementType = operandStack.getTopOperand();
