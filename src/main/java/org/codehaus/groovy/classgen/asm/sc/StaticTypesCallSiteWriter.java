@@ -360,10 +360,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (accessors != null) {
                     MethodNode methodNode = accessors.get(fieldName);
                     if (methodNode != null) {
-                        MethodCallExpression call = callX(receiver, methodNode.getName(), args(field.isStatic() ? nullX() : receiver));
-                        call.setImplicitThis(implicitThis);
+                        Expression thisObject;
+                        if (field.isStatic()) {
+                            thisObject = nullX();
+                        } else if (!isThisExpression(receiver)) {
+                            thisObject = receiver;
+                        } else { // GROOVY-7304, GROOVY-9771, GROOVY-9872
+                            thisObject = propX(classX(receiverType), "this");
+                        }
+
+                        MethodCallExpression call = callX(classX(receiverType), methodNode.getName(), thisObject);
                         call.setMethodTarget(methodNode);
-                        call.setSafe(safe);
                         call.visit(controller.getAcg());
                         return true;
                     }
@@ -387,7 +394,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     expr = castX(thisType, call);
                 } else {
                     expr = propX(classX(outerClass), "this");
-                    ((PropertyExpression) expr).setImplicitThis(true);
                 }
                 expr.setSourcePosition(receiver);
                 expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, thisType);

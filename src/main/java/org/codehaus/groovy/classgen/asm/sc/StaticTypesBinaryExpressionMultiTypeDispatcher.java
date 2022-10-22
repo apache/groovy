@@ -44,7 +44,6 @@ import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
-import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -378,17 +377,11 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
         if (receiverType.isArray() && !safe && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
             super.assignToArray(enclosing, receiver, subscript, rhsValueLoader, safe);
-        } else {
-            /*
-             * This code path is needed because ACG creates array access expressions
-             */
 
-            // GROOVY-6061
-            if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) {
+        } else { // this code path is needed because ACG creates array access expressions
+            if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) { // GROOVY-6061
                 rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
             }
-            // GROOVY-9771
-            receiver.visit(new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode()));
 
             // replace assignment to a subscript operator with a method call
             // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
