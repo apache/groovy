@@ -391,12 +391,10 @@ public class ArrayGroovyMethods {
      */
     public static BigDecimal average(byte[] self) {
         long s = 0;
-        int count = 0;
         for (byte v : self) {
             s += v;
-            count++;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
     }
 
     /**
@@ -409,12 +407,10 @@ public class ArrayGroovyMethods {
      */
     public static BigDecimal average(short[] self) {
         long s = 0;
-        int count = 0;
         for (short v : self) {
             s += v;
-            count++;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
     }
 
     /**
@@ -427,12 +423,10 @@ public class ArrayGroovyMethods {
      */
     public static BigDecimal average(int[] self) {
         long s = 0;
-        int count = 0;
         for (int v : self) {
             s += v;
-            count++;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
     }
 
     /**
@@ -445,12 +439,10 @@ public class ArrayGroovyMethods {
      */
     public static BigDecimal average(long[] self) {
         long s = 0;
-        int count = 0;
         for (long v : self) {
             s += v;
-            count++;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
     }
 
     /**
@@ -463,12 +455,10 @@ public class ArrayGroovyMethods {
      */
     public static double average(float[] self) {
         double s = 0.0d;
-        int count = 0;
         for (float v : self) {
             s += v;
-            count++;
         }
-        return s / count;
+        return s / self.length;
     }
 
     /**
@@ -481,12 +471,10 @@ public class ArrayGroovyMethods {
      */
     public static double average(double[] self) {
         double s = 0.0d;
-        int count = 0;
         for (double v : self) {
             s += v;
-            count++;
         }
-        return s / count;
+        return s / self.length;
     }
 
     //-------------------------------------------------------------------------
