@@ -443,7 +443,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             def builder = new StreamingJsonBuilder(w)
             builder.people {
                 person {
-                    firstName 'Guillame'
+                    firstName 'Guillaume'
                     lastName 'Laforge'
                     // Maps are valid values for objects too
                     address(
@@ -456,7 +456,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
                 }
             }
 
-            assert w.toString() == '{"people":{"person":{"firstName":"Guillame","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
+            assert w.toString() == '{"people":{"person":{"firstName":"Guillaume","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
         }
     }
 

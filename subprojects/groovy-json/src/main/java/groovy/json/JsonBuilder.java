@@ -63,7 +63,7 @@ import java.util.Map;
  *       // creates a data structure made of maps (Json object) and lists (Json array)
  *       assert root instanceof Map
  *
- *       assert builder.toString() == '{"people":{"person":{"firstName":"Guillame","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
+ *       assert builder.toString() == '{"people":{"person":{"firstName":"Guillaume","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
  * </code></pre>
  *
  * @since 1.8.0
