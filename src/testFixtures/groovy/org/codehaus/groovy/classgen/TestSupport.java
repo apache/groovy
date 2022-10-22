@@ -76,7 +76,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected void assertSetProperty(Object bean, String property, Object newValue) throws Exception {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getWriteMethod();
-        assertTrue("has setter method", method != null);
+        assertNotNull("has setter method", method);
         Object[] args = {newValue};
         Object value = invokeMethod(bean, method, args);
         assertEquals("should return null", null, value);
@@ -86,7 +86,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected void assertGetProperty(Object bean, String property, Object expected) throws Exception {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getReadMethod();
-        assertTrue("has getter method", method != null);
+        assertNotNull("has getter method", method);
 
         Object[] args = { };
         Object value = invokeMethod(bean, method, args);
@@ -118,7 +118,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected void assertField(Class aClass, String name, int modifiers, ClassNode type) throws Exception {
         Field field = aClass.getDeclaredField(name);
-        assertTrue("Found field called: " + name, field != null);
+        assertNotNull("Found field called: " + name, field);
         assertEquals("Name", name, field.getName());
         assertEquals("Type", type.getName(), field.getType().getName());
         assertEquals("Modifiers", modifiers, field.getModifiers());
@@ -165,7 +165,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected GroovyObject compile(String fileName) throws Exception {
         Class<?> groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
-        assertTrue(object != null);
+        assertNotNull(object);
         return object;
     }
 }
