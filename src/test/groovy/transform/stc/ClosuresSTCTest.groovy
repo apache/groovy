@@ -904,21 +904,61 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6343
-    void testAccessStaticFieldFromNestedClosures() {
+    void testAccessStaticFieldFromNestedClosure() {
         assertScript '''
             class A {
-
               public static final CONST = "a"
 
-              public static List doSomething() {
-                return (0..1).collect{ int x ->
-                  (0..1).collect{ int y ->
+              static List doSomething() {
+                return (0..1).collect { int x ->
+                  (0..1).collect { int y ->
                     return CONST
                   }
                 }
               }
             }
-            A.doSomething()
+            def result = A.doSomething()
+            assert result == [['a','a'],['a','a']]
+        '''
+    }
+
+    // GROOVY-9089
+    void testOwnerVersusDelegateFromNestedClosure() {
+        String declarations = '''
+            class A {
+                def p = 'outer delegate'
+                def m() { return this.p }
+            }
+            class B {
+                def p = 'inner delegate'
+                def m() { return this.p }
+            }
+            void outer(@DelegatesTo(value=A, strategy=Closure.DELEGATE_FIRST) Closure block) {
+                new A().with(block)
+            }
+            void inner(@DelegatesTo(value=B, strategy=Closure.DELEGATE_FIRST) Closure block) {
+                new B().with(block)
+            }
+        '''
+
+        assertScript declarations + '''
+            outer {
+                inner {
+                    assert m() == 'inner delegate'
+                    assert owner.m() == 'outer delegate'
+                    assert delegate.m() == 'inner delegate'
+                }
+            }
+        '''
+
+        assertScript declarations + '''
+            outer {
+                inner {
+                    assert p == 'inner delegate'
+                    assert owner.p == 'outer delegate'
+                    assert delegate.p == 'inner delegate'
+                }
+            }
         '''
     }
 
