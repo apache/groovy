@@ -115,6 +115,10 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     private MethodCallExpression currentCall;
 
+    public MethodCallExpression getCurrentCall() {
+        return currentCall;
+    }
+
     public StaticInvocationWriter(final WriterController wc) {
         super(wc);
     }
@@ -350,7 +354,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             return true;
         }
 
-        Expression fixedReceiver = null;
+        Expression  fixedReceiver = receiver;
         boolean fixedImplicitThis = implicitThis;
         if (target.isProtected()) {
             ClassNode node = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
@@ -383,8 +387,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         }
         if (receiver != null && !isSuperExpression(receiver)) {
-            // in order to avoid calls to castToType, which is the dynamic behaviour, we make sure that we call CHECKCAST instead then replace the top operand type
-            return super.writeDirectMethodCall(target, fixedImplicitThis, new CheckcastReceiverExpression(fixedReceiver != null ? fixedReceiver : receiver, target), args);
+            // in order to avoid calls to castToType, which is the dynamic behaviour, make sure that we call CHECKCAST instead then replace the top operand type
+            if (currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) fixedReceiver = new CheckcastReceiverExpression(fixedReceiver, target);
+            return super.writeDirectMethodCall(target, fixedImplicitThis, fixedReceiver, args);
         }
         return super.writeDirectMethodCall(target, implicitThis, receiver, args);
     }
@@ -477,7 +482,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 } else {
                     controller.getSourceUnit().addFatalError("Binding failed" +
                             " for arguments [" + argumentList.stream().map(arg -> typeChooser.resolveType(arg, classNode).toString(false)).collect(Collectors.joining(", ")) + "]" +
-                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", getCurrentCall());
+                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", currentCall);
                 }
             }
             for (int i = 0; i < nArgs; i += 1) {
@@ -750,10 +755,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return type;
         }
-    }
-
-    public MethodCallExpression getCurrentCall() {
-        return currentCall;
     }
 
     @Override
