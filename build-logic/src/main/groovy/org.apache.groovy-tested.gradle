@@ -106,7 +106,7 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
     def excludes = []
 
     // if no network available, disable Grapes
-    if (!providers.systemProperty('junit.network').forUseAtConfigurationTime().getOrNull()) {
+    if (!providers.systemProperty('junit.network').getOrNull()) {
         excludes << 'groovy/grape/'
     }
 

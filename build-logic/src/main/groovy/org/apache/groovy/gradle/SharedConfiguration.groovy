@@ -60,20 +60,20 @@ class SharedConfiguration {
                         Logger logger,
                         StartParameter startParameter
     ) {
-        groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
-        groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
-        javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
-        groovycMaxMemory = providers.gradleProperty("groovycMain_mx").forUseAtConfigurationTime()
-        javadocMaxMemory = providers.gradleProperty("javaDoc_mx").forUseAtConfigurationTime()
-        isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") }
+        groovyVersion = providers.gradleProperty("groovyVersion")
+        groovyBundleVersion = providers.gradleProperty("groovyBundleVersion")
+        javacMaxMemory = providers.gradleProperty("javacMain_mx")
+        groovycMaxMemory = providers.gradleProperty("groovycMain_mx")
+        javadocMaxMemory = providers.gradleProperty("javaDoc_mx")
+        isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") } as Provider<Boolean>
         buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
         installationDirectory = providers.gradleProperty("groovy_installPath")
                 .orElse(providers.systemProperty("installDirectory"))
         isRunningOnCI = detectCi(rootProjectDirectory, logger)
         artifactory = new Artifactory(layout, providers, logger)
         signing = new Signing(this, objects, providers)
-        binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline").forUseAtConfigurationTime()
-        hasCodeCoverage = providers.gradleProperty("coverage").forUseAtConfigurationTime()
+        binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline")
+        hasCodeCoverage = providers.gradleProperty("coverage")
                 .map { Boolean.valueOf(it) }
                 .orElse(
                         providers.provider { startParameter.taskNames.any { it =~ /jacoco/ } }
@@ -81,9 +81,9 @@ class SharedConfiguration {
                 .orElse(false)
         targetJavaVersion = providers.gradleProperty("targetJavaVersion")
         groovyTargetBytecodeVersion = providers.gradleProperty("groovyTargetBytecodeVersion")
-        File javaHome = new File(providers.systemProperty('java.home').forUseAtConfigurationTime().get())
-        String javaVersion = providers.systemProperty('java.version').forUseAtConfigurationTime().get()
-        String userdir = providers.systemProperty('user.dir').forUseAtConfigurationTime().get()
+        File javaHome = new File(providers.systemProperty('java.home').get())
+        String javaVersion = providers.systemProperty('java.version').get()
+        String userdir = providers.systemProperty('user.dir').get()
         logger.lifecycle "Using Java from $javaHome (version ${javaVersion})"
         logger.lifecycle "user.dir: ${userdir}"
     }
@@ -102,7 +102,7 @@ class SharedConfiguration {
         final Provider<String> repoKey
 
         Artifactory(ProjectLayout layout, ProviderFactory providers, Logger logger) {
-            def artifactoryProperties = providers.fileContents(artifactoryFile(providers, layout)).asText.forUseAtConfigurationTime().map {
+            def artifactoryProperties = providers.fileContents(artifactoryFile(providers, layout)).asText.map {
                 def props = new Properties()
                 props.load(new StringReader(it))
                 props
@@ -114,7 +114,7 @@ class SharedConfiguration {
             logger.lifecycle "ArtifactoryUser user: ${username.getOrElse("not defined")}"
         }
 
-        private Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
+        private static Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
             providers.provider {
                 // try to read artifactory.properties
                 Directory base = layout.projectDirectory
@@ -127,9 +127,9 @@ class SharedConfiguration {
             }
         }
 
-        private Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
-            return providers.gradleProperty(gradlePropertyName).forUseAtConfigurationTime()
-                    .orElse(providers.environmentVariable(envVarName).forUseAtConfigurationTime())
+        private static Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
+            return providers.gradleProperty(gradlePropertyName)
+                    .orElse(providers.environmentVariable(envVarName))
                     .orElse(properties.map { it.getProperty(propertyName) })
         }
     }
@@ -154,11 +154,11 @@ class SharedConfiguration {
                     providers.gradleProperty("signing.password")
             )
             useGpgCmd = providers.gradleProperty("usegpg")
-                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+                    .map { Boolean.valueOf(it) }.orElse(false)
             forceSign = providers.gradleProperty("forceSign")
-                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+                    .map { Boolean.valueOf(it) }.orElse(false)
             trySign = providers.gradleProperty("trySign")
-                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+                    .map { Boolean.valueOf(it) }.orElse(false)
             this.config = config
         }
 
