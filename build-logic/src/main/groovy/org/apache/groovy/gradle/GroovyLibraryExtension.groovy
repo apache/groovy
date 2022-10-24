@@ -41,7 +41,6 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskContainer
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 
 import javax.inject.Inject
@@ -107,7 +106,7 @@ class GroovyLibraryExtension {
     ) {
         grooid.set(true)
         def grooidJar = tasks.register("grooidJar", JarJarTask) {
-            TaskProvider<JarJarTask> jarjar = (TaskProvider<JarJarTask>) tasks.named("jarjar")
+            def jarjar = tasks.named("jarjar", JarJarTask)
             it.dependsOn(jarjar)
             it.from.set(jarjar.flatMap { it.outputFile })
             if (librariesToRepackage) {
@@ -126,7 +125,7 @@ class GroovyLibraryExtension {
             it.createManifest = false
             it.includedResources = resources
             it.outputFile.set(layout.buildDirectory.file(
-                    tasks.named('jar').map { Jar jar ->
+                    tasks.named('jar', Jar).map { jar ->
                         "libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar"
                     }
             ))

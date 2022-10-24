@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.transform.CompileStatic
+
 // Check if dependency resolution is happening at configuration time
 def resolvingAllowed = false
 int pcount = allprojects.size()
@@ -42,7 +44,7 @@ allprojects { p ->
     p.configurations.metaClass = new ContainerMetaclassClass(p.configurations.metaClass, checkResolution)
 }
 
-@groovy.transform.CompileStatic
+@CompileStatic
 class ContainerMetaclassClass extends DelegatingMetaClass {
     Closure configuration
 

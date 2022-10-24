@@ -110,12 +110,12 @@ configurations {
     }
     codenarc {
         resolutionStrategy.dependencySubstitution {
-            substitute module("org.codehaus.groovy:groovy") with project(":")
-            substitute module("org.codehaus.groovy:groovy-ant") with project(":groovy-ant")
-            substitute module("org.codehaus.groovy:groovy-templates") with project(":groovy-templates")
-            substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
-            substitute module("org.codehaus.groovy:groovy-json") with project(":groovy-json")
-            substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
+            substitute module("org.codehaus.groovy:groovy") using project(":")
+            substitute module("org.codehaus.groovy:groovy-ant") using project(":groovy-ant")
+            substitute module("org.codehaus.groovy:groovy-templates") using project(":groovy-templates")
+            substitute module("org.codehaus.groovy:groovy-xml") using project(":groovy-xml")
+            substitute module("org.codehaus.groovy:groovy-json") using project(":groovy-json")
+            substitute module("org.codehaus.groovy:groovy-groovydoc") using project(":groovy-groovydoc")
         }
 
         exclude module: 'groovy-all'
@@ -318,7 +318,7 @@ afterEvaluate {
 }
 
 @CompileStatic
-Configuration createConsumableConfiguration(ObjectFactory objects,
+static Configuration createConsumableConfiguration(ObjectFactory objects,
                                             TaskContainer tasks,
                                             ConfigurationContainer container,
                                             String name,

@@ -1,3 +1,5 @@
+import groovy.swing.SwingBuilder
+
 plugins {
     id 'maven-publish'
     id 'signing'
@@ -765,7 +767,7 @@ publishing {
                 licenses {
                     license {
                         name = 'The Apache Software License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
                         distribution = 'repo'
                     }
                 }
@@ -826,7 +828,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 def promptUser(String prompt) {
     def response = ''
     if (System.console() == null) {
-        new groovy.swing.SwingBuilder().edt {
+        new SwingBuilder().edt {
             dialog(modal: true, // pause build
                     title: 'Response required', // dialog title
                     alwaysOnTop: true,
