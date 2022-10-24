@@ -1223,13 +1223,11 @@ public abstract class StaticTypeCheckingSupport {
         return raw;
     }
 
-    private static Collection<MethodNode> removeCovariantsAndInterfaceEquivalents(final Collection<MethodNode> collection) {
-        List<MethodNode> toBeRemoved = new ArrayList<>();
-        List<MethodNode> list = new ArrayList<>(new LinkedHashSet<>(collection));
+    private static List<MethodNode> removeCovariantsAndInterfaceEquivalents(final Collection<MethodNode> collection) {
+        List<MethodNode> list = new ArrayList<>(new LinkedHashSet<>(collection)), toBeRemoved = new ArrayList<>();
         for (int i = 0, n = list.size(); i < n - 1; i += 1) {
             MethodNode one = list.get(i);
-            if (toBeRemoved.contains(one)) continue;
-            for (int j = i + 1; j < list.size(); j++) {
+            for (int j = i + 1; j < n && !toBeRemoved.contains(one); j += 1) {
                 MethodNode two = list.get(j);
                 if (toBeRemoved.contains(two)) continue;
                 if (one.getParameters().length == two.getParameters().length) {
@@ -1256,11 +1254,10 @@ public abstract class StaticTypeCheckingSupport {
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
-                            // GROOVY-8638, GROOVY-10120: unless bridge method (synthetic variant) overrides
                             if (twoDC.isInterface() ? oneDC.implementsInterface(twoDC) : oneDC.isDerivedFrom(twoDC)) {
-                                toBeRemoved.add(isSynthetic(one, two) ? one : two);
+                                toBeRemoved.add(two);
                             } else if (oneDC.isInterface() ? twoDC.isInterface() : twoDC.isDerivedFrom(oneDC)) {
-                                toBeRemoved.add(isSynthetic(two, one) ? two : one);
+                                toBeRemoved.add(one);
                             }
                         }
                     }

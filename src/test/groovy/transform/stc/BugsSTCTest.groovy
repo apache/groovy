@@ -1038,6 +1038,33 @@ Printer
         '''
     }
 
+    // GROOVY-10109
+    void testInvokePublicMethodFromInaccessibleBase() {
+        assertScript '''
+            new StringBuilder().with {
+                assert length() == 0 // access error
+            }
+        '''
+    }
+
+    void testInvokeSuperMethodFromCovariantOverride() {
+        assertScript '''
+            abstract class A { int i = 0
+                def m(CharSequence cs) {
+                    i += 1
+                }
+            }
+            class C extends A {
+                def m(String s) {
+                    super.m(s)
+                    i += 1
+                }
+            }
+            def n = new C().m("")
+            assert n == 2
+        '''
+    }
+
     // GROOVY-10424
     void testPrivateInnerClassOptimizedBooleanExpr1() {
         assertScript '''
