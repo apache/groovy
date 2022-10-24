@@ -33,7 +33,7 @@ class Versions {
     @Inject
     Versions(SharedConfiguration sharedConfiguration, ProviderFactory providers, ProjectLayout layout) {
         versions = providers.fileContents(layout.projectDirectory.file("versions.properties"))
-                .asText.forUseAtConfigurationTime()
+                .asText
                 .map({
                     Properties props = new Properties()
                     props.put("groovy", sharedConfiguration.groovyVersion.get())
