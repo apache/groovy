@@ -1116,6 +1116,15 @@ Printer
         '''
     }
 
+    // GROOVY-10109
+    void testInvokePublicMethodFromInaccessibleBase() {
+        assertScript '''
+            new StringBuilder().with {
+                assert length() == 0 // access error
+            }
+        '''
+    }
+
     void testInvokeSuperMethodFromCovariantOverride() {
         assertScript '''
             abstract class A { int i = 0
