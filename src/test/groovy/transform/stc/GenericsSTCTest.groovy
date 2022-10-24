@@ -529,14 +529,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8638, GROOVY-10120
     void testReturnTypeInferenceWithMethodGenerics18() {
-        String guava = '''
+        assertScript '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
-        '''
 
-        assertScript guava + '''
             ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
 
             Map<String, Collection<Integer>> map = mmap.asMap()
@@ -546,8 +543,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 Collection<Integer> values = entry.value
             }
         '''
+    }
 
-        shouldFailWithMessages guava + '''
+    // GROOVY-8638
+    void testReturnTypeInferenceWithMethodGenerics18a() {
+        shouldFailWithMessages '''
+            @Grab('com.google.guava:guava:31.1-jre')
+            import com.google.common.collect.*
+
+            def mmap = (ListMultimap<String, Integer>) ArrayListMultimap.create()
+            Map<String, Set<Integer>> map = mmap.asMap()
+        ''',
+        'Cannot assign java.util.Map <String, java.util.Collection> to: java.util.Map <String, Set>'
+    }
+
+    // GROOVY-10120
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenerics18b() {
+        shouldFailWithMessages '''
+            @Grab('com.google.guava:guava:31.1-jre')
+            import com.google.common.collect.*
+
             ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
             Map<String, Set<Integer>> map = mmap.asMap() // ArrayListMultimap#asMap() is bridge and lacks generics
         ''',
