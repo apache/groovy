@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -2136,6 +2137,13 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * @deprecated Use {@link #evaluateExpression(Expression, CompilerConfiguration, GroovyClassLoader)} instead
+     */
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+        return evaluateExpression(expr, config, null);
+    }
+
+    /**
      * A helper method that can be used to evaluate expressions as found in annotation
      * parameters. For example, it will evaluate a constant, be it referenced directly as
      * an integer or as a reference to a field.
@@ -2146,8 +2154,8 @@ public abstract class StaticTypeCheckingSupport {
      * @param config the compiler configuration
      * @return the result of the expression
      */
-    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
-        String className = "Expression$"+UUID.randomUUID().toString().replace('-', '$');
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config, GroovyClassLoader groovyClassLoader) {
+        String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
         ClassNode classNode = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
         addGeneratedMethod(classNode, "eval", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
 
@@ -2157,7 +2165,7 @@ public abstract class StaticTypeCheckingSupport {
         copyConf.setScriptBaseClass(null);
         copyConf.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
 
-        CompilationUnit cu = new CompilationUnit(copyConf);
+        CompilationUnit cu = new CompilationUnit(copyConf, null, groovyClassLoader);
         try {
             cu.addClassNode(classNode);
             cu.compile(Phases.CLASS_GENERATION);
