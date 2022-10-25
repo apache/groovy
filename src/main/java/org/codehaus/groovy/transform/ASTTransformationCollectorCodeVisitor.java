@@ -184,7 +184,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                 Expression mode = annotation.getMember("mode");
                 modes.put(index, Optional.ofNullable(mode)
                     .map(exp -> evaluateExpression(exp, source.getConfiguration(), source.getClassLoader()))
-                    .map(val -> (AnnotationCollectorMode) val)
+                    .map(val -> AnnotationCollectorMode.valueOf(val.toString()))
                     .orElse(AnnotationCollectorMode.DUPLICATE)
                 );
 
