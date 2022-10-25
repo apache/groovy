@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -2182,6 +2183,13 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
+     * @deprecated Use {@link #evaluateExpression(Expression, CompilerConfiguration, GroovyClassLoader)} instead
+     */
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+        return evaluateExpression(expr, config, null);
+    }
+
+    /**
      * A helper method that can be used to evaluate expressions as found in annotation
      * parameters. For example, it will evaluate a constant, be it referenced directly as
      * an integer or as a reference to a field.
@@ -2192,14 +2200,14 @@ public abstract class StaticTypeCheckingSupport {
      * @param config the compiler configuration
      * @return the result of the expression
      */
-    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config, GroovyClassLoader groovyClassLoader) {
         Expression ce = expr instanceof CastExpression ? ((CastExpression) expr).getExpression() : expr;
         if (ce instanceof ConstantExpression) {
             if (expr.getType().equals(ce.getType()))
                 return ((ConstantExpression) ce).getValue();
         } else if (ce instanceof ListExpression) {
             if (expr.getType().isArray() && expr.getType().getComponentType().equals(STRING_TYPE))
-                return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config)).toArray(String[]::new);
+                return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config, groovyClassLoader)).toArray(String[]::new);
         }
 
         String className = "Expression$"+UUID.randomUUID().toString().replace('-', '$');
@@ -2212,7 +2220,7 @@ public abstract class StaticTypeCheckingSupport {
         cc.setScriptBaseClass(null);
         cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
 
-        CompilationUnit cu = new CompilationUnit(cc);
+        CompilationUnit cu = new CompilationUnit(cc, null, groovyClassLoader);
         try {
             cu.addClassNode(classNode);
             cu.compile(Phases.CLASS_GENERATION);

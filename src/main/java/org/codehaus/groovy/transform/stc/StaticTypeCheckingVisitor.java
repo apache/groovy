@@ -3252,7 +3252,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression type = annotation.getMember("type");
                 Integer stInt = Closure.OWNER_FIRST;
                 if (strategy != null) {
-                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration());
+                    SourceUnit sourceUnit = getSourceUnit();
+                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), sourceUnit.getConfiguration(), sourceUnit.getClassLoader());
                 }
                 if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                     if (genericTypeIndex != null) {
@@ -3680,7 +3681,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (annotations != null && !annotations.isEmpty()) {
             Expression strategy = annotations.get(0).getMember("strategy");
             if (strategy != null) {
-                return (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration());
+                SourceUnit sourceUnit = getSourceUnit();
+                return (Integer) evaluateExpression(castX(Integer_TYPE, strategy), sourceUnit.getConfiguration(), sourceUnit.getClassLoader());
             }
         }
         return Closure.OWNER_FIRST;

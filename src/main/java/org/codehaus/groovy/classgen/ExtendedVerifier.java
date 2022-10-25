@@ -374,7 +374,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                         for (AnnotationNode annotation : repeatable.getAnnotations()) {
                             if (annotation.getClassNode().getName().equals("java.lang.annotation.Retention")) {
                                 Expression value = annotation.getMember("value"); assert value != null;
-                                Object retention = evaluateExpression(value, source.getConfiguration());
+                                Object retention = evaluateExpression(value, source.getConfiguration(), source.getClassLoader());
                                 collector.setRuntimeRetention(retention != null && retention.toString().equals("RUNTIME"));
                                 break;
                             }
