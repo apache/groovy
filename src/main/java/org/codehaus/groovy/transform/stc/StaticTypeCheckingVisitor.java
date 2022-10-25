@@ -2711,66 +2711,53 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call);
             return;
         }
-
         if (extension.beforeMethodCall(call)) {
             extension.afterMethodCall(call);
             return;
         }
-
-        ClassNode receiver = call.getOwnerType();
-        ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
-
-        visitMethodCallArguments(receiver, argumentList, false, null);
-        ClassNode[] args = getArgumentTypes(argumentList);
-
         try {
-            // method call receivers are :
-            //   - possible "with" receivers
-            //   - the actual receiver as found in the method call expression
-            //   - any of the potential receivers found in the instanceof temporary table
-            // in that order
-            List<Receiver<String>> receivers = new LinkedList<>();
-            addReceivers(receivers, makeOwnerList(new ClassExpression(receiver)), false);
-            List<MethodNode> mn = null;
-            Receiver<String> chosenReceiver = null;
-            for (Receiver<String> currentReceiver : receivers) {
-                mn = findMethod(currentReceiver.getType(), name, args);
-                if (!mn.isEmpty()) {
-                    if (mn.size() == 1) {
-                        // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
-                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0).getParameters());
-                        typeCheckMethodsWithGenericsOrFail(currentReceiver.getType(), args, mn.get(0), call);
-                    }
-                    chosenReceiver = currentReceiver;
-                    break;
+            ClassNode receiver = call.getOwnerType();
+            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
+
+            boolean closuresVisited = false; // visit *after* method has been chosen
+            visitMethodCallArguments(receiver, argumentList, closuresVisited, null);
+            ClassNode[] args = getArgumentTypes(argumentList);
+
+            List<MethodNode> mn = findMethod(receiver, name, args);
+            if (!mn.isEmpty()) {
+                if (mn.size() == 1) {
+                    // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
+                    resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0).getParameters());
+                    typeCheckMethodsWithGenericsOrFail(receiver, args, mn.get(0), call);
                 }
             }
             if (mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
-            boolean callArgsVisited = false;
             if (mn.isEmpty()) {
                 addNoMatchingMethodError(receiver, name, args, call);
             } else {
                 mn = disambiguateMethods(mn, receiver, args, call);
-                if (mn.size() == 1) {
+                if (mn.size() != 1) {
+                    addAmbiguousErrorMessage(mn, name, args, call);
+                } else {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate); callArgsVisited = true;
-                        ClassNode rt = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
+                        closuresVisited = true; // now visit closure/lambda arguments with selected method
+                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
+
+                        ClassNode rt = inferReturnTypeGenerics(receiver, directMethodCallCandidate, argumentList);
                         if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
                             returnType = rt;
                     }
                     storeType(call, returnType);
                     storeTargetMethod(call, directMethodCallCandidate);
-                } else {
-                    addAmbiguousErrorMessage(mn, name, args, call);
                 }
             }
 
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            if (!callArgsVisited) {
+            if (!closuresVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
             if (target != null) { Parameter[] params = target.getParameters();
@@ -5053,7 +5040,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (!name.endsWith("init>")) { // also search for extension methods
-            findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
+            methods.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiver, name));
         }
         methods = filterMethodsByVisibility(methods, typeCheckingContext.getEnclosingClassNode());
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
