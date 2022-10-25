@@ -63,6 +63,9 @@ class HistoryCommand extends ComplexCommandSupport {
         return null
     }
 
+    /**
+     * history show - shows a list of indexes and past commands
+     */
     def do_show = {
         Iterator<History.Entry> histIt = history.iterator()
         while (histIt.hasNext()) {
@@ -90,14 +93,14 @@ class HistoryCommand extends ComplexCommandSupport {
     }
 
     /**
-     * history show shows a list of indexes and past commands. recall serves to rerun one of those by their index.
-     * There is is moving window of indexes, so the first valid index will usually be greater than zero.
+     * history recall - serves to rerun a command from the history by its index.
+     * There is a moving window of indexes, so the first valid index will usually be greater than zero.
      */
     def do_recall = {args ->
         String line
 
         if (!args || ((List)args).size() != 1) {
-            fail('History recall requires a single history identifer')
+            fail('History recall requires a single history identifier')
         }
 
         String ids = ((List<String>)args)[0]

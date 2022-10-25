@@ -93,7 +93,7 @@ public class IndyInterface {
     }
 
     /**
-     * LOOKUP constant used for for example unreflect calls
+     * LOOKUP constant used for example in unreflect calls
      */
     public static final MethodHandles.Lookup LOOKUP = org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
 

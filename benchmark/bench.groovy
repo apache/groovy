@@ -100,7 +100,7 @@ void horizontalBreak() {
 }
 
 boolean prepare(bench, ending) {
-    // copy file to exec folder it it exists
+    // copy file to exec folder if it exists
     def orig = new File("bench/$bench$ending")
     if (!orig.exists()) return false;
 

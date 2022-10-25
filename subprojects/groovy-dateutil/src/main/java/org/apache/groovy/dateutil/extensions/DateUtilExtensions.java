@@ -635,7 +635,7 @@ public class DateUtilExtensions {
     }
 
     /**
-     * <p>Return a string representation of the date and time time portion of
+     * <p>Return a string representation of the date and time portion of
      * this Date instance, according to the locale-specific format used by
      * {@link java.text.DateFormat}.  This method uses the {@link java.text.DateFormat#SHORT}
      * preset for the day portion and {@link java.text.DateFormat#MEDIUM} for the time
