@@ -3383,7 +3383,7 @@ include::../test/metaprogramming/MacroVariableSubstitutionTest.groovy[tags=md5tr
 
 <1> We need a reference to a variable expression
 <2> If using a class outside the standard packages we should add any needed imports or use the qualified name. When
-using the qualified named of a given static method you need to make sure it's resolved in the proper compile phase. In
+using the qualified name of a given static method you need to make sure it's resolved in the proper compile phase. In
 this particular case we're instructing the macro to resolve it at the SEMANTIC_ANALYSIS phase, which is the first compile phase
 with type information.
 <3> In order to substitute any `expression` inside the macro we need to use the `$v` method. `$v` receives a closure as an
