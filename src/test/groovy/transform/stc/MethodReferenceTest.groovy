@@ -246,6 +246,18 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-10791
+    void testBiConsumerCI() {
+        assertScript shell, '''
+            @CompileStatic
+            def <T> void test(List<T> list, Consumer<? super T> todo) {
+                BiConsumer<List<T>, Consumer<? super T>> binder = List::forEach // default method of Iterator
+                binder.accept(list, todo)
+            }
+            test(['works']) { assert it == 'works' }
+        '''
+    }
+
     @Test // class::instanceMethod
     void testBinaryOperatorCI() {
         assertScript shell, '''
