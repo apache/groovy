@@ -52,6 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
@@ -281,9 +282,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
         List<MethodNode> methods = type.getMethods(name);
+        // GROOVY-10791: include interface default methods in search
+        for (ClassNode cn : getInterfacesAndSuperInterfaces(type)) {
+            for (MethodNode mn : cn.getDeclaredMethods(name)) {
+                if (mn.isDefault()) methods.add(mn);
+            }
+        }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
-        methods = filterMethodsByVisibility(methods, controller.getClassNode());
-        return methods;
+        return filterMethodsByVisibility(methods, controller.getClassNode());
     }
 
     private void addFatalError(final String msg, final ASTNode node) {
