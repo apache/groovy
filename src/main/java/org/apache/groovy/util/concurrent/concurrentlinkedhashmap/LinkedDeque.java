@@ -399,7 +399,7 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     E cursor;
 
     /**
-     * Creates an iterator that can can traverse the deque.
+     * Creates an iterator that can traverse the deque.
      *
      * @param start the initial element to begin traversal from
      */

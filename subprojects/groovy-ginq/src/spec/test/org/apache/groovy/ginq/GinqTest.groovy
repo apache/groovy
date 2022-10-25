@@ -752,7 +752,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - from innerjoin innerjoin leftjoin select - 1"() {
+    void "testGinq - from innerjoin leftjoin select - 1"() {
         assertGinqScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [2, 3, 4, 5, 6, 7]
@@ -1082,10 +1082,10 @@ class GinqTest {
                 }
             }
 
-            def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'), 
+            def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'),
                           new Person('Peter', 'Yang', 30, 'Male'), new Person('Rose', 'Yang', 30, 'Female')]
-            def luckyInfoList = [new LuckyInfo('Sun', 'Male', true), new LuckyInfo('Yang', 'Female', true), 
-                                 new LuckyInfo('Yang', 'Male', false)]        
+            def luckyInfoList = [new LuckyInfo('Sun', 'Male', true), new LuckyInfo('Yang', 'Female', true),
+                                 new LuckyInfo('Yang', 'Male', false)]
 
             assert ['Daniel', 'Linda', 'Rose'] == GQ {
                 from p in persons
@@ -1988,7 +1988,7 @@ class GinqTest {
             assert [[2, 2], [3, 3]] == GQ {
                 from n1 in nums1
                 fulljoin n2 in nums2 on n1 == n2
-                where n1 != null && n2 != null 
+                where n1 != null && n2 != null
                 select n1, n2
             }.toList()
         '''
@@ -2028,7 +2028,7 @@ class GinqTest {
             assert [[2, 2], [3, 3]] == GQ {
                 from n1 in nums1
                 fullhashjoin n2 in nums2 on n1 == n2
-                where n1 != null && n2 != null 
+                where n1 != null && n2 != null
                 select n1, n2
             }.toList()
         '''
@@ -2697,7 +2697,7 @@ class GinqTest {
                 }
             }
 
-            def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'), 
+            def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'),
                           new Person('Peter', 'Yang', 30, 'Male'), new Person('Rose', 'Yang', 30, 'Female')]
 
             assert [['Male', 30, 35], ['Female', 21, 30]] == GQ {
@@ -3357,7 +3357,7 @@ class GinqTest {
     @Test
     void "testGinq - GINQ examples - 1"() {
         assertGinqScript '''
-            def expected = 
+            def expected =
                 [['1 * 1 = 1', '', '', '', '', '', '', '', ''],
                  ['1 * 2 = 2', '2 * 2 = 4', '', '', '', '', '', '', ''],
                  ['1 * 3 = 3', '2 * 3 = 6', '3 * 3 = 9', '', '', '', '', '', ''],
@@ -3468,7 +3468,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[0, 1], [1, 2], [2, 3]] == GQ {
 // tag::ginq_tips_05[]
-                from n in [1, 2, 3] 
+                from n in [1, 2, 3]
                 select _rn, n
 // end::ginq_tips_05[]
             }.toList()
@@ -3605,7 +3605,7 @@ class GinqTest {
                 select (
                     from m in [2, 3, 4]
                     where m == n
-                    select m   
+                    select m
                 ) as sqr
             }.toList()
         '''
@@ -3620,7 +3620,7 @@ class GinqTest {
                 select n, (
                     from m in [2, 3, 4]
                     where m == n
-                    select m   
+                    select m
                 ) as sqr
             }.toList()
 // end::ginq_nested_04[]
@@ -3636,7 +3636,7 @@ class GinqTest {
                 select n, (
                     from m in [2, 3, 4]
                     where m == n && m == k
-                    select m   
+                    select m
                 ) as sqr
             }.toList()
         '''
@@ -3651,7 +3651,7 @@ class GinqTest {
                 select (
                     from m in [2, 3, 4]
                     where m == n && m == k
-                    select m   
+                    select m
                 )
             }.toList()
         '''
@@ -3666,7 +3666,7 @@ class GinqTest {
                 select n, (
                     from m in [2, 3, 4]
                     where m == n && m == k
-                    select m   
+                    select m
                 )
             }.toList()
         '''
@@ -3682,7 +3682,7 @@ class GinqTest {
                     from m in [2, 3, 4]
                     where m == n
                     limit 1
-                    select m   
+                    select m
                 )
             }.toList()
 // end::ginq_nested_03[]
@@ -3698,12 +3698,12 @@ class GinqTest {
                     from m in [2, 3, 4]
                     where m == n
                     limit 1
-                    select m   
+                    select m
                 ), (
                     from m in [3, 4, 5]
                     where m == n
                     limit 1
-                    select m   
+                    select m
                 )
             }.toList()
         '''
@@ -3718,12 +3718,12 @@ class GinqTest {
                     from m in [2, 3, 4]
                     where m == n
                     limit 1
-                    select m   
+                    select m
                 ) as sqr1, (
                     from m in [3, 4, 5]
                     where m == n
                     limit 1
-                    select m   
+                    select m
                 ) as sqr2
             }.toList()
         '''
@@ -3738,7 +3738,7 @@ class GinqTest {
                     select n, (
                         from m in [2, 3, 4]
                         where m == n
-                        select m   
+                        select m
                     ) as sqr
                 )
                 select v.n, v.sqr
@@ -3754,7 +3754,7 @@ class GinqTest {
                 select (
                     from m in [2, 3, 4]
                     where m > n
-                    select sum(m)  
+                    select sum(m)
                 )
             }.toList()
         '''
@@ -4035,7 +4035,7 @@ class GinqTest {
 // tag::ginq_aggfunction_01[]
             assert [[1, 3, 2, 2, 6, 3, 3, 6]] == GQ {
                 from n in [1, 2, 3]
-                select min(n), max(n), avg(n), median(n), sum(n), count(n), count(), 
+                select min(n), max(n), avg(n), median(n), sum(n), count(n), count(),
                         agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
 // end::ginq_aggfunction_01[]
@@ -5037,7 +5037,7 @@ class GinqTest {
     @Test
     void "testGinq - parallel - 4"() {
         assertGinqScript '''
-            assert [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], 
+            assert [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5],
                     [5, 6], [6, 7], [7, 8], [8, 9], [9, 10]] == GQ(parallel:true) {
                 from n in 1..10
                 select _rn, n
@@ -5048,7 +5048,7 @@ class GinqTest {
     @Test
     void "testGinq - parallel - 5"() {
         assertGinqScript '''
-            assert [[0, 0, 1], [1, 1, 2], [2, 2, 3], [3, 3, 4], [4, 4, 5], 
+            assert [[0, 0, 1], [1, 1, 2], [2, 2, 3], [3, 3, 4], [4, 4, 5],
                     [5, 5, 6], [6, 6, 7], [7, 7, 8], [8, 8, 9], [9, 9, 10]] == GQ(parallel:true) {
                 from n in 1..10
                 select _rn, (rowNumber() over(orderby n)), n
@@ -5605,8 +5605,8 @@ class GinqTest {
     void "testGinq - window - 42"() {
         assertGinqScript '''
 // tag::ginq_winfunction_23[]
-            assert [[1, 2, 2, 2, 1, 1], [1, 2, 2, 2, 1, 1], 
-                    [2, 2, 2, 4, 2, 2], [2, 2, 2, 4, 2, 2], 
+            assert [[1, 2, 2, 2, 1, 1], [1, 2, 2, 2, 1, 1],
+                    [2, 2, 2, 4, 2, 2], [2, 2, 2, 4, 2, 2],
                     [3, 2, 2, 6, 3, 3], [3, 2, 2, 6, 3, 3]] == GQ {
                 from n in [1, 1, 2, 2, 3, 3]
                 select n, (count() over(partitionby n)),
@@ -5637,11 +5637,11 @@ class GinqTest {
     void "testGinq - window - 44"() {
         assertGinqScript '''
 // tag::ginq_winfunction_25[]
-            assert [['a', 1, 1], ['b', 2, 2], ['b', 2, 2], 
-                    ['c', 4, 3], ['c', 4, 3], ['d', 6, 4], 
+            assert [['a', 1, 1], ['b', 2, 2], ['b', 2, 2],
+                    ['c', 4, 3], ['c', 4, 3], ['d', 6, 4],
                     ['e', 7, 5]] == GQ {
                 from s in ['a', 'b', 'b', 'c', 'c', 'd', 'e']
-                select s, 
+                select s,
                     (rank() over(orderby s)),
                     (denseRank() over(orderby s))
             }.toList()
@@ -5656,8 +5656,8 @@ class GinqTest {
             assert [[2, 6, 3, 1, 3, 4], [1, 6, 3, 1, 3, 4],
                     [3, 6, 3, 1, 3, 4], [null, 6, 3, 1, 3, 4]] == GQ {
                 from n in [2, 1, 3, null]
-                select n, (sum(n) over()), 
-                          (max(n) over()), 
+                select n, (sum(n) over()),
+                          (max(n) over()),
                           (min(n) over()),
                           (count(n) over()),
                           (count() over())
@@ -5711,8 +5711,8 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 3, 2, 1, 2, 1.5, 1.5], [2, 6, 3, 1, 3, 2, 2], [3, 5, 3, 2, 2, 2.5, 2.5]] == GQ {
                 from n in [1, 2, 3]
-                select n, (sum(n) over(orderby n rows -1, 1)), 
-                          (max(n) over(orderby n rows -1, 1)), 
+                select n, (sum(n) over(orderby n rows -1, 1)),
+                          (max(n) over(orderby n rows -1, 1)),
                           (min(n) over(orderby n rows -1, 1)),
                           (count(n) over(orderby n rows -1, 1)),
                           (avg(n) over(orderby n rows -1, 1)),
@@ -5762,7 +5762,7 @@ class GinqTest {
 // tag::ginq_winfunction_32[]
             assert [[1, 0, 0], [2, 1, 1], [5, 0, 0], [5, 0, 0]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range -2, -1)), 
+                select n, (count() over(orderby n in desc range -2, -1)),
                           (sum(n) over(orderby n in desc range -2, -1))
             }.toList()
 // end::ginq_winfunction_32[]
@@ -5786,7 +5786,7 @@ class GinqTest {
 // tag::ginq_winfunction_31[]
             assert [[1, 1, 2], [2, 0, 0], [5, 0, 0], [5, 0, 0]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range 1, 2)), 
+                select n, (count() over(orderby n in desc range 1, 2)),
                           (sum(n) over(orderby n in desc range 1, 2))
             }.toList()
 // end::ginq_winfunction_31[]
@@ -5799,7 +5799,7 @@ class GinqTest {
 // tag::ginq_winfunction_29[]
             assert [[1, 3, 12], [2, 2, 10], [5, 0, 0], [5, 0, 0]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n range 1, null)), 
+                select n, (count() over(orderby n range 1, null)),
                           (sum(n) over(orderby n range 1, null))
             }.toList()
 // end::ginq_winfunction_29[]
@@ -5811,7 +5811,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 3, 12], [2, 2, 10], [5, 0, 0], [5, 0, 0]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range 1, null)), 
+                select n, (count() over(orderby n in desc range 1, null)),
                           (sum(n) over(orderby n in desc range 1, null))
             }.toList()
         '''
@@ -5823,7 +5823,7 @@ class GinqTest {
 // tag::ginq_winfunction_30[]
             assert [[1, 2, 3], [2, 2, 3], [5, 4, 13], [5, 4, 13]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n range null, 1)), 
+                select n, (count() over(orderby n range null, 1)),
                           (sum(n) over(orderby n range null, 1))
             }.toList()
 // end::ginq_winfunction_30[]
@@ -5835,7 +5835,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 2, 3], [2, 2, 3], [5, 4, 13], [5, 4, 13]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range null, 1)), 
+                select n, (count() over(orderby n in desc range null, 1)),
                           (sum(n) over(orderby n in desc range null, 1))
             }.toList()
         '''
@@ -5846,7 +5846,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 4, 13], [2, 4, 13], [5, 4, 13], [5, 4, 13]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n range null, null)), 
+                select n, (count() over(orderby n range null, null)),
                           (sum(n) over(orderby n range null, null))
             }.toList()
         '''
@@ -5857,7 +5857,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 4, 13], [2, 4, 13], [5, 4, 13], [5, 4, 13]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range null, null)), 
+                select n, (count() over(orderby n in desc range null, null)),
                           (sum(n) over(orderby n in desc range null, null))
             }.toList()
         '''
@@ -5893,7 +5893,7 @@ class GinqTest {
 // tag::ginq_winfunction_33[]
             assert [[1, 2, 3], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n range -1, 1)), 
+                select n, (count() over(orderby n range -1, 1)),
                           (sum(n) over(orderby n range -1, 1))
             }.toList()
 // end::ginq_winfunction_33[]
@@ -5905,7 +5905,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 2, 3], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
                 from n in [1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range -1, 1)), 
+                select n, (count() over(orderby n in desc range -1, 1)),
                           (sum(n) over(orderby n in desc range -1, 1))
             }.toList()
         '''
@@ -5916,7 +5916,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 3, 4], [1, 3, 4], [2, 3, 4], [5, 2, 10], [5, 2, 10]] == GQ {
                 from n in [1, 1, 2, 5, 5]
-                select n, (count() over(orderby n range -1, 1)), 
+                select n, (count() over(orderby n range -1, 1)),
                           (sum(n) over(orderby n range -1, 1))
             }.toList()
         '''
@@ -5927,7 +5927,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[1, 3, 4], [1, 3, 4], [2, 3, 4], [5, 2, 10], [5, 2, 10]] == GQ {
                 from n in [1, 1, 2, 5, 5]
-                select n, (count() over(orderby n in desc range -1, 1)), 
+                select n, (count() over(orderby n in desc range -1, 1)),
                           (sum(n) over(orderby n in desc range -1, 1))
             }.toList()
         '''
@@ -6058,8 +6058,8 @@ class GinqTest {
     void "testGinq - window - 78"() {
         assertGinqScript '''
 // tag::ginq_winfunction_35[]
-            assert [[1, 0.816496580927726], 
-                    [2, 0.816496580927726], 
+            assert [[1, 0.816496580927726],
+                    [2, 0.816496580927726],
                     [3, 0.816496580927726]] == GQ {
                 from n in [1, 2, 3]
                 select n, (stdev(n) over())
@@ -6084,8 +6084,8 @@ class GinqTest {
     void "testGinq - window - 80"() {
         assertGinqScript '''
 // tag::ginq_winfunction_37[]
-            assert [[1, 0.6666666666666667], 
-                    [2, 0.6666666666666667], 
+            assert [[1, 0.6666666666666667],
+                    [2, 0.6666666666666667],
                     [3, 0.6666666666666667]] == GQ {
                 from n in [1, 2, 3]
                 select n, (var(n) over())
@@ -6111,8 +6111,8 @@ class GinqTest {
         assertGinqScript '''
 // tag::ginq_winfunction_39[]
             assert [[1, 0], [2, 0], [3, 0],
-                    [4, 1], [5, 1], 
-                    [6, 2], [7, 2],[8, 2], 
+                    [4, 1], [5, 1],
+                    [6, 2], [7, 2],[8, 2],
                     [9, 3], [10, 3]] == GQ {
                 from n in 1..10
                 select n, (ntile(4) over(orderby n))
@@ -6141,7 +6141,7 @@ class GinqTest {
         assertGinqScript '''
             assert [[3, 1, 1], [3, 1, 1], [2, 3, 2], [2, 3, 2], [1, 5, 3]] == GQ {
                 from n in [3, 3, 2, 2, 1]
-                select n, 
+                select n,
                     (rank() over(orderby n in desc)),
                     (denseRank() over(orderby n in desc))
             }.toList()
