@@ -21,6 +21,8 @@ package groovy.operator
 import groovy.test.GroovyTestCase
 
 class BigIntegerOperationsTest extends GroovyTestCase {
+    def x, y
+
     void testAssign() {
         BigInteger foo
         foo = (byte) 20
@@ -57,6 +59,27 @@ class BigIntegerOperationsTest extends GroovyTestCase {
         d *= d
         assert (long)d != d
         assert (BigInteger) d == d
+    }
+
+    void testPlus() {
+        x = 2G + 3G
+        assert x instanceof BigInteger
+        assert x == 5G
+    }
+
+    void testMultiply() {
+        x = 2G * 3G
+        assert x instanceof BigInteger
+        assert x == 6G
+    }
+
+    void testMod() {
+        x = 100G % 3
+        assert x == 1G
+
+        y = 11G
+        y %= 3
+        assert y == 2G
     }
 
     void testAsOperatorPrecisionLoss() {
