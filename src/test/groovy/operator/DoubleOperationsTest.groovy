@@ -20,61 +20,70 @@ package groovy.operator
 
 import groovy.test.GroovyTestCase
 
-class DoubleOperationTest extends GroovyTestCase {
+class DoubleOperationsTest extends GroovyTestCase {
 
     def x
     def y
 
     void testPlus() {
-        x = 2.1 + 2.1
-        assert x == 4.2
+        x = 2.1d + 2.1d
+        assert x == 4.2d
 
-        x = 3 + 2.2
-        assert x == 5.2
+        x = 3d + 2.2d
+        assert x == 5.2d
 
-        x = 2.2 + 4
-        assert x == 6.2
+        x = 2.2d + 4d
+        assert x == 6.2d
 
-        y = x + 1
-        assert y == 7.2
+        y = x + 1d
+        assert y == 7.2d
 
-        def z = y + x + 1 + 2
-        assert z == 16.4
+        def z = y + x + 1d + 2d
+        assert z == 16.4d
     }
 
     void testMinus() {
-        x = 6 - 2.2
-        assert x == 3.8
+        x = 6d - 2.2d
+        assert x == 3.8d
 
-        x = 5.8 - 2
-        assert x == 3.8
+        x = 5.8d - 2d
+        assert x == 3.8d
 
-        y = x - 1
-        assert y == 2.8
+        y = x - 1d
+        assert y == 2.8d
     }
 
     void testMultiply() {
-        x = 3 * 2.0
-        assert x == 6.0
+        x = 3d * 2.0d
+        assert x == 6.0d
 
-        x = 3.0 * 2
-        assert x == 6.0
+        x = 3.0d * 2d
+        assert x == 6.0d
 
-        x = 3.0 * 2.0
-        assert x == 6.0
-        y = x * 2
-        assert y == 12.0
+        x = 3.0d * 2.0d
+        assert x == 6.0d
+        y = x * 2d
+        assert y == 12.0d
     }
 
     void testDivide() {
-        x = 80.0 / 4
-        assert x == 20.0, "x = " + x
+        x = 80.0d / 4d
+        assert x == 20.0d, "x = " + x
 
-        x = 80 / 4.0
-        assert x == 20.0, "x = " + x
+        x = 80d / 4.0d
+        assert x == 20.0d, "x = " + x
 
-        y = x / 2
-        assert y == 10.0, "y = " + y
+        y = x / 2d
+        assert y == 10.0d, "y = " + y
+    }
+
+    void testMod() {
+        x = 100d % 3
+        assert x == 1d
+
+        y = 11d
+        y %= 3d
+        assert y == 2d
     }
 
     void testMethodNotFound() {

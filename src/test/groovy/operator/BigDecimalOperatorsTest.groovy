@@ -47,7 +47,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     }
 
     void testMinus() {
-        x = 1.1-0.01
+        x = 1.1 - 0.01
         assert x == 1.09
 
         x = 6 - 2.2
@@ -98,6 +98,16 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 11.33333333333 , "y = " + y
     }
 
+    void testMod() {
+        x = 100.0 % 3
+
+        assert x == 1
+
+        y = 5.5
+        y %= 2.0
+        assert y == 1.5
+    }
+
     BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}
 
     // test for Groovy-1250
@@ -146,14 +156,14 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     // -------------------------------------------------------
     // GROOVY-5102
     // we need both variants, since one seems to disable prim opts
-    public void testMath1() {
+    void testMath1() {
         assert BigDecimal == (3/2).getClass()
         assert BigDecimal == (7.0/8.0).getClass()
         assert BigDecimal == (new BigDecimal(3.0)/new BigDecimal(2.0)).getClass()
         true
     }
 
-    public void testMath2() {
+    void testMath2() {
         assert BigDecimal == (3/2).getClass()
         assert BigDecimal == (7.0/8.0).getClass()
         assert BigDecimal == (new BigDecimal(3.0)/new BigDecimal(2.0)).getClass()
@@ -161,7 +171,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     // -------------------------------------------------------
 
     // GROOVY-5173
-    public void testBDPrimOptFields() {
+    void testBDPrimOptFields() {
         assertScript """
             class BigDecimalBug {
 
@@ -179,6 +189,5 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
             bug.testAdvanceAvailable()
         """
     }
-
 
 }

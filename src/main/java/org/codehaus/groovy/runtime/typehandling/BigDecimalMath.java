@@ -91,4 +91,9 @@ public final class BigDecimalMath extends NumberMath {
     protected Number unaryPlusImpl(Number left) {
         return toBigDecimal(left);
     }
+
+    @Override
+    protected Number modImpl(Number left, Number right) {
+        return toBigDecimal(left).remainder(toBigDecimal(right));
+    }
 }
