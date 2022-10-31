@@ -81,6 +81,7 @@ public class ImportCustomizerFactory extends AbstractFactory {
         if (node instanceof ImportCustomizer) {
             Closure clone = (Closure) childContent.clone();
             clone.setDelegate(new ImportHelper((ImportCustomizer) node));
+            clone.setResolveStrategy(Closure.DELEGATE_FIRST);
             clone.call();
         }
         return false;
