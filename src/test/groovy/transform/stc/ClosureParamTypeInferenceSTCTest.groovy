@@ -1293,7 +1293,37 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incorrect number of parameters. Expected 1 but found 2'
     }
 
-    void testInferenceWithSAMTypeCoercion() {
+    // GROOVY-7141
+    void testInferenceWithSAMTypeCoercion1() {
+        String sam = '''
+            @FunctionalInterface
+            interface I {
+                String foo(String s)
+            }
+        '''
+        assertScript sam + '''
+            def impl = [foo: { it.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+        assertScript sam + '''
+            def impl = [foo: { s -> s.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+        assertScript sam + '''
+            def impl = [foo: { String s -> s.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+        assertScript '''
+            def impl = [apply: { it.toUpperCase() }] as java.util.function.Function<String,String>
+            String result = impl.apply('bar')
+            assert result == 'BAR'
+        '''
+    }
+
+    void testInferenceWithSAMTypeCoercion2() {
         assertScript '''
             interface Action<T> {
                 void execute(T thing)
