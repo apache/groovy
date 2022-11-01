@@ -647,7 +647,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (variable != null) {
                 ClassNode inferredType = getInferredTypeFromTempInfo(variable, (ClassNode) variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
-                if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
+                if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getOriginType())) {
                     vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
                 }
             }
@@ -1033,6 +1033,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void processFunctionalInterfaceAssignment(final ClassNode lhsType, final Expression rhsExpression) {
         if (rhsExpression instanceof ClosureExpression) {
             MethodNode abstractMethod = findSAM(lhsType);
+            ClosureExpression closure = (ClosureExpression) rhsExpression;
             Map<GenericsType, GenericsType> mappings = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), lhsType);
 
             ClassNode[] samParameterTypes = extractTypesFromParameters(abstractMethod.getParameters());
@@ -1042,13 +1043,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            Parameter[] closureParameters = getParametersSafe((ClosureExpression) rhsExpression);
-            if (closureParameters.length == samParameterTypes.length || (1 == samParameterTypes.length && hasImplicitParameter((ClosureExpression) rhsExpression))) {
-                for (int i = 0; i < closureParameters.length; i += 1) {
+            Parameter[] closureParameters = getParametersSafe(closure);
+            if (samParameterTypes.length == 1 && hasImplicitParameter(closure)) {
+                Variable it = closure.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
+                closureParameters = new Parameter[] {it instanceof Parameter ? (Parameter) it : new Parameter(DYNAMIC_TYPE, "")};
+            }
+
+            int n = closureParameters.length;
+            if (n == samParameterTypes.length) {
+                for (int i = 0; i < n; i += 1) {
                     Parameter parameter = closureParameters[i];
                     if (parameter.isDynamicTyped()) {
                         parameter.setType(samParameterTypes[i]);
-                        parameter.setOriginType(samParameterTypes[i]);
                     }
                 }
             } else {
@@ -1061,6 +1067,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 returnType = GenericsUtils.findActualTypeByGenericsPlaceholderName(returnType.getUnresolvedName(), mappings);
             }
             storeInferredReturnType(rhsExpression, returnType);
+
+        } else if (rhsExpression instanceof MapExpression) { // GROOVY-7141
+            List<MapEntryExpression> spec = ((MapExpression) rhsExpression).getMapEntryExpressions();
+            if (spec.size() == 1 && spec.get(0).getValueExpression() instanceof ClosureExpression
+                    && findSAM(lhsType).getName().equals(spec.get(0).getKeyExpression().getText())) {
+                processFunctionalInterfaceAssignment(lhsType, spec.get(0).getValueExpression());
+            }
         }
     }
 
@@ -5918,7 +5931,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             this.parameter = parameter;
             ClassNode inferredType = getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
             if (inferredType == null) {
-                setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, parameter.getOriginType());
+                setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, parameter.getType());
             }
         }
 

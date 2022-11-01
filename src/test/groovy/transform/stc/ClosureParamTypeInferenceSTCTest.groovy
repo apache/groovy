@@ -1181,7 +1181,31 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferenceWithSAMTypeCoercion() {
+    // GROOVY-7141
+    void testInferenceWithSAMTypeCoercion1() {
+        String sam = '''
+            interface I {
+                String foo(String s)
+            }
+        '''
+        assertScript sam + '''
+            def impl = [foo: { it.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+        assertScript sam + '''
+            def impl = [foo: { s -> s.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+        assertScript sam + '''
+            def impl = [foo: { String s -> s.toUpperCase() }] as I
+            String result = impl.foo('bar')
+            assert result == 'BAR'
+        '''
+    }
+
+    void testInferenceWithSAMTypeCoercion2() {
         assertScript '''import java.util.concurrent.Callable
             interface Action<T> {
                 void execute(T thing)
