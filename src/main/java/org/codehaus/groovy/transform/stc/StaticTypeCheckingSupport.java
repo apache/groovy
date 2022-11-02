@@ -2185,6 +2185,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #evaluateExpression(Expression, CompilerConfiguration, GroovyClassLoader)} instead
      */
+    @Deprecated
     public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
         return evaluateExpression(expr, config, null);
     }
