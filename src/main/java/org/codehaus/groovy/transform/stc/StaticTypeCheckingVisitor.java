@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
 import groovy.lang.Tuple2;
+import groovy.lang.GroovyClassLoader;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import groovy.transform.TypeChecked;
@@ -3099,7 +3100,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private ClassLoader getTransformLoader() {
+    private GroovyClassLoader getTransformLoader() {
         return Optional.ofNullable(typeCheckingContext.getCompilationUnit()).map(CompilationUnit::getTransformLoader).orElseGet(() -> getSourceUnit().getClassLoader());
     }
 
@@ -3252,8 +3253,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression type = annotation.getMember("type");
                 Integer stInt = Closure.OWNER_FIRST;
                 if (strategy != null) {
-                    SourceUnit sourceUnit = getSourceUnit();
-                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), sourceUnit.getConfiguration(), sourceUnit.getClassLoader());
+                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration(), getTransformLoader());
                 }
                 if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                     if (genericTypeIndex != null) {
@@ -3681,8 +3681,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (annotations != null && !annotations.isEmpty()) {
             Expression strategy = annotations.get(0).getMember("strategy");
             if (strategy != null) {
-                SourceUnit sourceUnit = getSourceUnit();
-                return (Integer) evaluateExpression(castX(Integer_TYPE, strategy), sourceUnit.getConfiguration(), sourceUnit.getClassLoader());
+                return (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration(), getTransformLoader());
             }
         }
         return Closure.OWNER_FIRST;
