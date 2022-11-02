@@ -2220,7 +2220,7 @@ public abstract class StaticTypeCheckingSupport {
         cc.setScriptBaseClass(null);
         cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
 
-        CompilationUnit cu = new CompilationUnit(cc, null, new GroovyClassLoader(groovyClassLoader));
+        CompilationUnit cu = new CompilationUnit(cc, null, groovyClassLoader);
         try {
             cu.addClassNode(classNode);
             cu.compile(Phases.CLASS_GENERATION);
@@ -2231,7 +2231,9 @@ public abstract class StaticTypeCheckingSupport {
         } catch (ReflectiveOperationException e) {
             throw new GroovyBugError(e);
         } finally {
-            closeQuietly(cu.getClassLoader());
+            if (groovyClassLoader == null) {
+                closeQuietly(cu.getClassLoader());
+            }
         }
     }
 
