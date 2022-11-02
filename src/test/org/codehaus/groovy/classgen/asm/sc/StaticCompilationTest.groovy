@@ -23,7 +23,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
-class StaticCompilationTest extends AbstractBytecodeTestCase {
+final class StaticCompilationTest extends AbstractBytecodeTestCase {
 
     void testEmptyMethod() {
         def bytecode = compile(method: 'm', '''
@@ -213,7 +213,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
-/*    void testPlusPlus() {
+    void _testPlusPlus() {
         assert compile(method: 'm', '''
             @groovy.transform.CompileStatic
             void m() {
@@ -225,7 +225,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
-    void testMinusMinus() {
+    void _testMinusMinus() {
         assert compile(method: 'm', '''
             @groovy.transform.CompileStatic
             void m() {
@@ -237,7 +237,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
-    void testPlusEquals() {
+    void _testPlusEquals() {
         assert compile(method: 'm', '''
             @groovy.transform.CompileStatic
             int m() {
@@ -253,7 +253,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         ])
     }
 
-    void testPlusEqualsFromArgs() {
+    void _testPlusEqualsFromArgs() {
         assert compile(method: 'm', '''
             @groovy.transform.CompileStatic
             void m(int i, int j) {
@@ -265,7 +265,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 "IADD",
                 "ISTORE"
         ])
-    }*/
+    }
 
     void testFlow() {
         assert compile(method: 'm', '''
@@ -720,5 +720,52 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'java/lang/String.toUpperCase()Ljava/lang/String;'
         ])
         assertScript(code)
+    }
+
+    // GROOVY-6925
+    void testOuterSCInnerSTC() {
+        assert compile(classNamePattern: 'C', method: 'test', '''
+            import groovy.transform.*
+            import static org.codehaus.groovy.control.CompilePhase.*
+            import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*
+
+            @CompileStatic
+            class C {
+                Object myObject() {
+                    Integer.valueOf(1)
+                }
+                // TODO: package this into an annotation
+                @ASTTest(phase=CANONICALIZATION, value={
+                    node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.FALSE)
+                })
+                void test() {
+                    String myString = myObject()
+                }
+            }
+        ''').hasStrictSequence([
+            'ALOAD 0',
+            'INVOKEDYNAMIC invoke(LC;)Ljava/lang/Object;' // not INVOKEVIRTUAL
+        ])
+
+        def err = shouldFail '''
+            import groovy.transform.*
+            import static org.codehaus.groovy.control.CompilePhase.*
+            import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*
+
+            @CompileStatic
+            class C {
+                Object myObject() {
+                    Integer.valueOf(1)
+                }
+                // TODO: package this into an annotation
+                @ASTTest(phase=CANONICALIZATION, value={
+                    node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.FALSE)
+                })
+                void test() {
+                    Number myNumber = myObject()
+                }
+            }
+        '''
+        assert err =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
     }
 }
