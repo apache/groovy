@@ -187,6 +187,51 @@ class EnumTest extends CompilableTestSupport {
         assert allColors[2] == GroovyColors3161.green
     }
 
+    // GROOVY-7025
+    void testStaticEnumFieldFromInit() {
+        def err = shouldNotCompile '''
+            enum E {
+                FOO('bar');
+                private static final Set<String> names = []
+                E(String name) {
+                    names.add(name)
+                }
+            }
+        '''
+        assert err =~ /Cannot refer to the static enum field 'names' within an initializer/
+
+        shouldCompile '''
+            enum E {
+                FOO;
+                private static final String ONE = 1
+                private final value
+                E() {
+                    value = 1 + ONE
+                }
+            }
+        '''
+        shouldCompile '''
+            enum E {
+                FOO;
+                private static final int ONE = 1
+                private final value
+                E() {
+                    value = 1 + ONE
+                }
+            }
+        '''
+        shouldNotCompile '''
+            enum E {
+                FOO;
+                private static int ONE = 1
+                private final value
+                E() {
+                    value = 1 + ONE
+                }
+            }
+        '''
+    }
+
     // GROOVY-3283
     void testImportStaticMoreThanOneEnum() {
         assertScript """
