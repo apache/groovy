@@ -331,7 +331,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkVariableContextAccess(final Variable variable, final Expression expression) {
-        if (variable.isInStaticContext() || !currentScope.isInStaticContext()) return;
+        if (variable.isInStaticContext()) {
+            if (inConstructor && currentClass.isEnum() && variable instanceof FieldNode
+                    && currentClass.equals(((FieldNode) variable).getDeclaringClass())) { // GROOVY-7025
+                if (!isFinal(variable.getModifiers()) || !(ClassHelper.isStaticConstantInitializerType(variable.getOriginType())
+                        || "String".equals(variable.getOriginType().getName()))) { // TODO: String requires constant initializer
+                    addError("Cannot refer to the static enum field '" + variable.getName() + "' within an initializer", expression);
+                }
+            }
+            return;
+        }
+
+        if (!currentScope.isInStaticContext()) return;
 
         addError(variable.getName() + " is declared in a dynamic context, but you tried to access it from a static context.", expression);
 
@@ -340,10 +351,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     //--------------------------------------------------------------------------
+
     /**
      * Sets the current class node context.
      */
-    public void prepareVisit(ClassNode node) {
+    public void prepareVisit(final ClassNode node) {
         currentClass = node;
         currentScope.setClassScope(node);
     }
