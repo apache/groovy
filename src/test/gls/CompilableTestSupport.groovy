@@ -18,24 +18,33 @@
  */
 package gls
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 
-@CompileStatic
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly
+
+@AutoFinal @CompileStatic
 abstract class CompilableTestSupport extends GroovyTestCase {
-    protected shouldNotCompile(String script) {
+
+    protected String shouldNotCompile(String script) {
+        def gcl = new GroovyClassLoader()
         try {
-            GroovyClassLoader gcl = new GroovyClassLoader()
-            gcl.parseClass(script, getTestClassName())
-        } catch (CompilationFailedException cfe) {
-            return cfe.message
+            gcl.parseClass(script, testClassName)
+        } catch (CompilationFailedException ex) {
+            return ex.message
+        } finally {
+            closeQuietly(gcl)
         }
-        fail("the compilation succeeded but should have failed")
+        fail('the compilation succeeded but should have failed')
     }
 
     protected void shouldCompile(String script) {
-        GroovyClassLoader gcl = new GroovyClassLoader()
-        gcl.parseClass(script, getTestClassName())
-        assert true
+        def gcl = new GroovyClassLoader()
+        try {
+            gcl.parseClass(script, testClassName)
+        } finally {
+            closeQuietly(gcl)
+        }
     }
 }

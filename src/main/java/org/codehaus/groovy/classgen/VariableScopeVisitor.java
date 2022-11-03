@@ -296,17 +296,24 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         checkVariableContextAccess(member, pe);
     }
 
-    private void checkVariableContextAccess(Variable v, Expression expr) {
-        if (v.isInStaticContext() || !currentScope.isInStaticContext()) return;
+    private void checkVariableContextAccess(final Variable variable, final Expression expression) {
+        if (variable.isInStaticContext()) {
+            if (inConstructor && currentClass.isEnum() && variable instanceof FieldNode
+                    && currentClass.equals(((FieldNode) variable).getDeclaringClass())) { // GROOVY-7025
+                if (!isFinal(variable.getModifiers()) || !(ClassHelper.isStaticConstantInitializerType(variable.getOriginType())
+                        || "String".equals(variable.getOriginType().getName()))) { // TODO: String requires constant initializer
+                    addError("Cannot refer to the static enum field '" + variable.getName() + "' within an initializer", expression);
+                }
+            }
+            return;
+        }
 
-        String msg = v.getName() +
-                " is declared in a dynamic context, but you tried to" +
-                " access it from a static context.";
-        addError(msg, expr);
+        if (!currentScope.isInStaticContext()) return;
+
+        addError(variable.getName() + " is declared in a dynamic context, but you tried to access it from a static context.", expression);
 
         // declare a static variable to be able to continue the check
-        DynamicVariable v2 = new DynamicVariable(v.getName(), currentScope.isInStaticContext());
-        currentScope.putDeclaredVariable(v2);
+        currentScope.putDeclaredVariable(new DynamicVariable(variable.getName(), currentScope.isInStaticContext()));
     }
 
     // ------------------------------
