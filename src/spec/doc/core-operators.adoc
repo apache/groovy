@@ -890,8 +890,8 @@ The table below lists all groovy operators in order of precedence.
 | 3 | `++` {nbsp} `--` {nbsp} `+` {nbsp} `-` | pre inc/decrement, unary plus, unary minus
 | 4 | `*` {nbsp} `/` {nbsp} `%` | multiply, div, remainder
 | 5 | `+` {nbsp} `-` | addition, subtraction
-| 6 | `\<\<` {nbsp} `>>` {nbsp} `>>>` {nbsp} `..` {nbsp} `..\<` | left/right (unsigned) shift, inclusive/exclusive range
-| 7 | `\<` {nbsp} `\<=` {nbsp} `>` {nbsp} `>=` {nbsp} `in` &0#160; `!in` {nbsp} `instanceof` {nbsp} `!instanceof` {nbsp} `as` | less/greater than/or equal, in, not in, instanceof, not instanceof, type coercion
+| 6 | `<<` {nbsp} `>>` {nbsp} `>>>` {nbsp} `..` {nbsp} `..<` {nbsp} `<..<` {nbsp} `<..` | left/right (unsigned) shift, inclusive/exclusive ranges
+| 7 | `<` {nbsp} `\<=` {nbsp} `>` {nbsp} `>=` {nbsp} `in` {nbsp} `!in` {nbsp} `instanceof` {nbsp} `!instanceof` {nbsp} `as` | less/greater than/or equal, in, not in, instanceof, not instanceof, type coercion
 | 8 | `==` {nbsp} `!=` {nbsp} `\<\=>` {nbsp} `===` {nbsp} `!==` | equals, not equals, compare to, identical to, not identical to
 |   | `=~` {nbsp} `==~` | regex find, regex match
 | 9 | `&` | binary/bitwise and
@@ -902,7 +902,7 @@ The table below lists all groovy operators in order of precedence.
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
 | 15 | `=` {nbsp} `\**=` {nbsp} `*=` {nbsp} `/=` {nbsp} `%=` {nbsp} `+=` {nbsp} `-=` {nbsp} +
-`\<\<=` {nbsp} `>>=` {nbsp} `>>>=` {nbsp} `&=` {nbsp} `^=` {nbsp} `\|=` {nbsp} {nbsp} `?=` | various assignments
+`<\<=` {nbsp} `>>=` {nbsp} `>>>=` {nbsp} `&=` {nbsp} `^=` {nbsp} `\|=` {nbsp} {nbsp} `?=` | various assignments
 |======================
 
 [[Operator-Overloading]]
