@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.test.GroovyTestCase
+import groovy.test.NotYetImplemented
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
@@ -545,7 +546,7 @@ final class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::staticMethod
-    void testFunctionCS_RHS() {
+    void testFunctionCS4() {
         assertScript '''
             import java.util.function.Function
             import java.util.stream.Collectors
@@ -554,7 +555,6 @@ final class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 Function<Integer, Integer> f = Math::abs
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
-
                 assert [1, 2, 3] == result
             }
 
@@ -563,7 +563,7 @@ final class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::staticMethod
-    void testFunctionCS_RHS_NOTYPE() {
+    void testFunctionCS5() {
         assertScript '''
             import java.util.stream.Collectors
 
@@ -571,11 +571,85 @@ final class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
-
                 assert [1, 2, 3] == result
             }
 
             p()
+        '''
+    }
+
+    // class::staticMethod -- GROOVY-9813
+    @NotYetImplemented
+    void testFunctionCS6() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void p() {
+                java.util.function.Supplier<List> zero = Arrays::asList
+                def list = zero.get()
+                assert list.isEmpty()
+            }
+
+            p()
+        '''
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void p() {
+                java.util.function.Function<Integer, List> one = Arrays::asList
+                def list = one.apply(1)
+                assert list.size() == 1
+                assert list[0] == 1
+            }
+
+            p()
+        '''
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void p() {
+                java.util.function.BiFunction<Integer, Integer, List> two = Arrays::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
+
+            p()
+        '''
+    }
+
+    // class::staticMethod -- GROOVY-10807
+    void testFunctionCS7() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                public static Comparator<String> c = Comparator.<String,String>comparing(C::m)
+                static String m(String string) {
+                    return string
+                }
+            }
+
+            List<String> list = ['foo','bar','baz']
+            list.sort(C.c)
+
+            assert list == ['bar','baz','foo']
+        '''
+    }
+
+    // class::staticMethod
+    @NotYetImplemented
+    void testFunctionCS8() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                public static Comparator<String> c = Comparator.comparing(C::m)
+                static String m(String string) {
+                    return string
+                }
+            }
+
+            List<String> list = ['foo','bar','baz']
+            list.sort(C.c)
+
+            assert list == ['bar','baz','foo']
         '''
     }
 
@@ -741,6 +815,7 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
+    // class::unknown
     void testMethodNotFound1() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic

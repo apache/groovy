@@ -2942,7 +2942,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression emc = typeCheckingContext.getEnclosingMethodCall();
                 if (emc instanceof MethodCallExpression) {
                     MethodCallExpression mce = (MethodCallExpression) emc;
-                    if (mce.getArguments() == arguments) {
+                    if (mce.getArguments() == arguments // GROOVY-10807 ::
+                        || expression.getCode() == GENERATED_EMPTY_STATEMENT){
                         GenericsType[] typeArguments = mce.getGenericsTypes();
                         if (typeArguments != null) {
                             int n = typeParameters.length;
