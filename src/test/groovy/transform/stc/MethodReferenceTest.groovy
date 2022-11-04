@@ -783,7 +783,44 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod, actually class::staticMethod
+    @Test // class::staticMethod -- GROOVY-10807
+    void testFunctionCS7() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                public static Comparator<String> c = Comparator.<String,String>comparing(C::m)
+                static String m(String string) {
+                    return string
+                }
+            }
+
+            List<String> list = ['foo','bar','baz']
+            list.sort(C.c)
+
+            assert list == ['bar','baz','foo']
+        '''
+    }
+
+    @groovy.test.NotYetImplemented
+    @Test // class::staticMethod
+    void testFunctionCS8() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                public static Comparator<String> c = Comparator.comparing(C::m)
+                static String m(String string) {
+                    return string
+                }
+            }
+
+            List<String> list = ['foo','bar','baz']
+            list.sort(C.c)
+
+            assert list == ['bar','baz','foo']
+        '''
+    }
+
+    @Test // class::instanceGroovyMethod
     void testFunctionCI_DGM() {
         assertScript shell, '''
             @CompileStatic
@@ -795,7 +832,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod
+    @Test // class::staticGroovyMethod
     void testFunctionCS_DGSM() {
         assertScript shell, '''
             @CompileStatic
@@ -807,7 +844,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod
+    @Test // class::instanceGroovyMethod
     void testFunctionCI_SHADOW_DGM() {
         assertScript shell, '''
             @CompileStatic
@@ -820,7 +857,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod
+    @Test // class::staticGroovyMethod
     void testFunctionCS_MULTI_DGSM() {
         assertScript shell, '''
             @CompileStatic
