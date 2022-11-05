@@ -263,21 +263,40 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Expected parameter of type java.util.List <java.lang.String> but got java.util.List <Date>'
     }
 
-    void testFromStringWithDirectGenericPlaceholder() {
+    void testFromStringWithTypeParameter1() {
         assertScript '''import groovy.transform.stc.FromString
             def <T> void foo(T t, @ClosureParams(value=FromString,options="T") Closure cl) { cl.call(t) }
             foo('hey') { println it.toUpperCase() }
         '''
     }
 
-    void testFromStringWithGenericPlaceholder() {
+    void testFromStringWithTypeParameter2() {
         assertScript '''import groovy.transform.stc.FromString
             def <T> void foo(T t, @ClosureParams(value=FromString,options="java.util.List<T>") Closure cl) { cl.call([t,t]) }
             foo('hey') { List<String> str -> str.each { println it.toUpperCase() } }
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClass() {
+    // GROOVY-7789
+    void testFromStringWithTypeParameter3() {
+        assertScript '''import groovy.transform.stc.FromString
+            class Monad<T> {  private final Closure c
+                Monad(@ClosureParams(value=FromString, options='T') Closure c) {
+                    this.c = c
+                }
+                def call(T t) {
+                    c.call(t)
+                }
+            }
+            def <U> Monad<U> wrap(@ClosureParams(value=FromString, options='U') Closure c) {
+                new Monad<>(c)
+            }
+            def list_size = this.<List>wrap({ list -> list.size() })
+            assert list_size([]) == 0
+        '''
+    }
+
+    void testFromStringWithTypeParameterFromClass() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T> {
                 void foo(@ClosureParams(value=FromString,options="java.util.List<T>") Closure cl) { cl.call(['hey','ya']) }
@@ -287,7 +306,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenerics() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenerics() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T,U> {
                 void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
@@ -297,7 +316,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignature() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignature() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T,U> {
                 void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
@@ -307,7 +326,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQN() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQN() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T,U> {
                 void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call(['hey','ya']) }
@@ -317,7 +336,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClass() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClass() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo {
                 void bar() {
@@ -332,7 +351,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClassAndTwoArgs() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQNAndReferenceToSameUnitClassAndTwoArgs() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo {
                 void bar() {
@@ -347,7 +366,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFromStringWithGenericPlaceholderFromClassWithTwoGenericsAndPolymorphicSignature() {
+    void testFromStringWithTypeParameterFromClassWithTwoGenericsAndPolymorphicSignature() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo {
                 void bar() {
@@ -380,6 +399,20 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, Date zip, String city -> println all.toUpperCase() }
         ''',
         'Expected parameter of type java.lang.String but got java.util.Date'
+    }
+
+    void testFromStringInSameSourceUnit() {
+        assertScript '''import groovy.transform.stc.FromString
+            def <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
+                cl(val)
+            }
+            doSomething('foo') {
+                println it.toUpperCase()
+            }
+            doSomething(new Date()) {
+                println it.time
+            }
+        '''
     }
 
     void testStringGroovyMethodsFindMethodWithList() {
@@ -1178,20 +1211,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             def map = [a:'A'].withDefault { it.toUpperCase() }
             assert map.b=='B'
-        '''
-    }
-
-    void testFromStringInSameSourceUnit() {
-        assertScript '''import groovy.transform.stc.FromString
-            def <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
-                cl(val)
-            }
-            doSomething('foo') {
-                println it.toUpperCase()
-            }
-            doSomething(new Date()) {
-                println it.time
-            }
         '''
     }
 

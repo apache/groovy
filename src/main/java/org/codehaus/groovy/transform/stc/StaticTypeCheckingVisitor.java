@@ -3138,6 +3138,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             genericTypes[i] = new GenericsType(signature[i]);
         }
         dummyResultNode.setGenericsTypes(genericTypes);
+
         MethodNode dummyMN = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
         dummyMN = new MethodNode(
                 dummyMN.getName(),
@@ -3164,7 +3165,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             dummyMN.setDeclaringClass(orig.getDeclaringClass());
             dummyMN.setGenericsTypes(orig.getGenericsTypes());
         }
-        ClassNode returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments);
+
+        GenericsType[] typeArguments = null; // GROOVY-7789
+        Expression emc = typeCheckingContext.getEnclosingMethodCall();
+        if (emc instanceof MethodCallExpression) {
+            MethodCallExpression call = (MethodCallExpression) emc;
+            if (arguments == call.getArguments()) typeArguments = call.getGenericsTypes();
+        }
+
+        ClassNode returnType = inferReturnTypeGenerics(receiver, dummyMN, arguments, typeArguments);
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         ClassNode[] inferred = new ClassNode[returnTypeGenerics.length];
         for (int i = 0, n = returnTypeGenerics.length; i < n; i += 1) {
