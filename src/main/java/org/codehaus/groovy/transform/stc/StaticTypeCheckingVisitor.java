@@ -3209,7 +3209,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             methodNode.setGenericsTypes(selectedMethod.getGenericsTypes());
         }
 
-        returnType = inferReturnTypeGenerics(receiver, methodNode, arguments);
+        GenericsType[] typeArguments = null; // GROOVY-7789
+        Expression emc = typeCheckingContext.getEnclosingMethodCall();
+        if (emc instanceof MethodCallExpression) {
+            MethodCallExpression call = (MethodCallExpression) emc;
+            if (arguments == call.getArguments()) typeArguments = call.getGenericsTypes();
+        }
+
+        returnType = inferReturnTypeGenerics(receiver, methodNode, arguments, typeArguments);
         GenericsType[] returnTypeGenerics = returnType.getGenericsTypes();
         for (int i = 0, n = returnTypeGenerics.length; i < n; i += 1) {
             GenericsType gt = returnTypeGenerics[i];
