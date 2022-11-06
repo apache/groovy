@@ -81,6 +81,30 @@ final class ConstructorDelegationTest {
         '''
     }
 
+    @Test // GROOVY-9857
+    void testImplicitSuperConstructorCallChecks() {
+        String base = '''
+            abstract class A {
+                A(boolean b) {
+                }
+            }
+        '''
+
+        def err = shouldFail CompilationFailedException, base + '''
+            class C extends A {
+                C() {
+                }
+            }
+        '''
+        assert err =~ /Implicit super constructor A\(\) is undefined. Must explicitly invoke another constructor./
+
+        err = shouldFail CompilationFailedException, base + '''
+            class C extends A {
+            }
+        '''
+        assert err =~ /Implicit super constructor A\(\) is undefined for generated constructor. Must define an explicit constructor./
+    }
+
     @Test
     void testConstructorDelegationWithThisOrSuperInArgs() {
         // all 4 cases below were compiling earlier but giving VerifyError at runtime

@@ -65,6 +65,7 @@ class TemplateASTTransformer extends CompilationCustomizer {
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         if (classNode.isScriptBody()) {
             classNode.setSuperClass(ClassHelper.make(config.getBaseTemplateClass()));
+            classNode.getDeclaredConstructors().clear();
             createConstructor(classNode);
             transformRunMethod(classNode, source);
             VariableScopeVisitor visitor = new VariableScopeVisitor(source);
