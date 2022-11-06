@@ -575,10 +575,11 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getCompileStack().init(node.getVariableScope(), parameters);
         controller.getCallSiteWriter().makeSiteEntry();
 
+        ClassNode cn = controller.getClassNode();
         MethodVisitor mv = controller.getMethodVisitor();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
-            if (code != null && controller.getClassNode().getOuterClass() != null) {
+            if (code != null && cn.getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
                 if (code instanceof BlockStatement) {
@@ -590,6 +591,15 @@ public class AsmClassGenerator extends ClassGenerator {
             if (!hasCallToSuper) {
                 if (code != null) { // GROOVY-9373
                     controller.visitLineNumber(code.getLineNumber());
+                }
+                if (cn.getSuperClass().getDeclaredConstructor(Parameter.EMPTY_ARRAY) == null) { ASTNode where = node; // GROOVY-9857
+                    String error = "Implicit super constructor " + cn.getSuperClass().getNameWithoutPackage() + "() is undefined";
+                    if (node.getLineNumber() > 0) error += ". Must explicitly invoke another constructor.";
+                    else {
+                        error += " for generated constructor. Must define an explicit constructor.";
+                        where = cn;
+                    }
+                    addError(error, where);
                 }
                 // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
