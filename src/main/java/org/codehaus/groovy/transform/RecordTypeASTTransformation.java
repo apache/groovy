@@ -30,7 +30,6 @@ import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -65,8 +64,14 @@ import java.util.stream.Collectors;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.TUPLE_CLASSES;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -93,7 +98,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafeWithGenerics;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -109,18 +114,18 @@ import static org.objectweb.asm.Opcodes.IRETURN;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class RecordTypeASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
-    private CompilationUnit compilationUnit;
+
     private static final ClassNode ARRAYLIST_TYPE = makeWithoutCaching(ArrayList.class, false);
+    private static final ClassNode ILLEGAL_ARGUMENT = makeWithoutCaching(IllegalArgumentException.class);
+    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode NAMED_PARAM_TYPE = make(NamedParam.class);
+    private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
+
     private static final String COMPONENTS = "components";
     private static final String COPY_WITH = "copyWith";
     private static final String GET_AT = "getAt";
-    private static final ClassNode ILLEGAL_ARGUMENT = makeWithoutCaching(IllegalArgumentException.class);
-    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final String NAMED_ARGS = "namedArgs";
-    private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
-    private static final int PUBLIC_FINAL = ACC_PUBLIC | ACC_FINAL;
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
-    private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
     private static final String SIZE = "size";
     private static final String TO_LIST = "toList";
     private static final String TO_MAP = "toMap";
@@ -129,51 +134,71 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
+    private CompilationUnit compilationUnit;
+
     @Override
     public String getAnnotationName() {
         return MY_TYPE_NAME;
     }
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
+
+    protected GroovyClassLoader getTransformLoader() {
+        return compilationUnit != null ? compilationUnit.getTransformLoader() : sourceUnit.getClassLoader();
+    }
+
+    /**
+     * Indicates that the given classnode is a native JVM record class.
+     * For classes being compiled, this will only be valid after the
+     * {@code RecordTypeASTTransformation} transform has been invoked.
+     */
+    @Incubating
+    public static boolean recordNative(final ClassNode node) {
+        return node.getUnresolvedSuperClass() != null && RECORD_CLASS_NAME.equals(node.getUnresolvedSuperClass().getName());
+    }
+
+    @Override
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(anno.getClassNode())) return;
-
-        if (parent instanceof ClassNode) {
-            final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
-            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
-            if (handler == null) return;
-            if (!handler.validateAttributes(this, anno)) return;
-            doProcessRecordType((ClassNode) parent, handler);
+        if (parent instanceof ClassNode && MY_TYPE.equals(anno.getClassNode())) {
+            PropertyHandler handler = PropertyHandler.createPropertyHandler(this, getTransformLoader(), (ClassNode) parent);
+            if (handler != null && handler.validateAttributes(this, anno)) {
+                doProcessRecordType((ClassNode) parent, handler);
+            }
         }
     }
 
-    private void doProcessRecordType(ClassNode cNode, PropertyHandler handler) {
+    //--------------------------------------------------------------------------
+
+    private void doProcessRecordType(final ClassNode cNode, final PropertyHandler handler) {
         if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
-            cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+            cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
         List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
         AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
         RecordTypeMode mode = getMode(options, "mode");
-        boolean isPostJDK16 = false;
+        boolean isAtLeastJDK16 = false;
         String message = "Expecting JDK16+ but unable to determine target bytecode";
         if (sourceUnit != null) {
             CompilerConfiguration config = sourceUnit.getConfiguration();
             String targetBytecode = config.getTargetBytecode();
-            isPostJDK16 = CompilerConfiguration.isPostJDK16(targetBytecode);
+            isAtLeastJDK16 = isAtLeast(targetBytecode, CompilerConfiguration.JDK16);
             message = "Expecting JDK16+ but found " + targetBytecode;
         }
-        boolean isNative = isPostJDK16 && mode != RecordTypeMode.EMULATE;
+        boolean isNative = (isAtLeastJDK16 && mode != RecordTypeMode.EMULATE);
         if (isNative) {
             String sName = cNode.getUnresolvedSuperClass().getName();
             // don't expect any parent to be set at this point but we only check at grammar
             // level when using the record keyword so do a few more sanity checks here
-            if (!sName.equals("java.lang.Object") && !sName.equals(RECORD_CLASS_NAME)) {
+            if (!sName.equals(OBJECT) && !sName.equals(RECORD_CLASS_NAME)) {
                 addError("Invalid superclass for native record found: " + sName, cNode);
             }
-            cNode.setSuperClass(ClassHelper.makeWithoutCaching(RECORD_CLASS_NAME));
+            cNode.setSuperClass(compilationUnit.getClassNodeResolver().resolveName(RECORD_CLASS_NAME, compilationUnit).getClassNode());
             cNode.setModifiers(cNode.getModifiers() | Opcodes.ACC_RECORD);
             final List<PropertyNode> pList = getInstanceProperties(cNode);
             if (!pList.isEmpty()) {
@@ -185,7 +210,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
                 type.setGenericsTypes(pType.getGenericsTypes());
                 RecordComponentNode rec = new RecordComponentNode(cNode, pNode.getName(), type, pNode.getAnnotations());
-                rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+                rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
                 cNode.getRecordComponents().add(rec);
             }
         } else if (mode == RecordTypeMode.NATIVE) {
@@ -208,7 +233,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
         // 0L serialVersionUID by default
         if (cNode.getDeclaredField("serialVersionUID") == null) {
-            cNode.addField("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, ClassHelper.long_TYPE, constX(0L));
+            cNode.addField("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(0L));
         }
 
         if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
@@ -261,30 +286,18 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
 
         if ((options == null || !memberHasValue(options, SIZE, Boolean.FALSE)) && !hasDeclaredMethod(cNode, SIZE, 0)) {
-            addGeneratedMethod(cNode, SIZE, PUBLIC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
+            addGeneratedMethod(cNode, SIZE, ACC_PUBLIC | ACC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
         }
-    }
-
-    /**
-     * Indicates that the given classnode is a native JVM record class.
-     * For classes being compiled, this will only be valid after the
-     * {@code RecordTypeASTTransformation} transform has been invoked.
-     */
-    @Incubating
-    public static boolean recordNative(ClassNode node) {
-        return node.getUnresolvedSuperClass() != null &&
-                "java.lang.Record".equals(node.getUnresolvedSuperClass().getName());
     }
 
     private void createComponents(ClassNode cNode, List<PropertyNode> pList) {
         if (pList.size() > 16) { // Groovy currently only goes to Tuple16
             addError("Record has too many components for a components() method", cNode);
         }
-        ClassNode tupleClass = getClass(cNode, "groovy.lang.Tuple" + pList.size());
-        if (tupleClass == null) return;
+        ClassNode tuple = makeWithoutCaching(TUPLE_CLASSES[pList.size()], false);
         Statement body;
         if (pList.isEmpty()) {
-            body = returnS(propX(classX(tupleClass), "INSTANCE"));
+            body = returnS(propX(classX(tuple), "INSTANCE"));
         } else {
             List<GenericsType> gtypes = new ArrayList<>();
             ArgumentListExpression args = new ArgumentListExpression();
@@ -292,19 +305,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 args.addExpression(callThisX(pNode.getName()));
                 gtypes.add(new GenericsType(getWrapper(pNode.getType())));
             }
-            tupleClass.setGenericsTypes(gtypes.toArray(GenericsType.EMPTY_ARRAY));
-            body = returnS(ctorX(tupleClass, args));
+            tuple.setGenericsTypes(gtypes.toArray(GenericsType.EMPTY_ARRAY));
+            body = returnS(ctorX(tuple, args));
         }
-        addGeneratedMethod(cNode, COMPONENTS, PUBLIC_FINAL, tupleClass, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
-    }
-
-    private ClassNode getClass(ClassNode cNode, String tupleName) {
-        try {
-            return ClassHelper.makeWithoutCaching(Class.forName(tupleName)).getPlainNodeReference();
-        } catch(ClassNotFoundException cnfe) {
-            addError("Unable to find Tuple class '" + tupleName + "'", cNode);
-            return null;
-        }
+        addGeneratedMethod(cNode, COMPONENTS, ACC_PUBLIC | ACC_FINAL, tuple, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createToList(ClassNode cNode, List<PropertyNode> pList) {
@@ -313,7 +317,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             args.add(callThisX(pNode.getName()));
         }
         Statement body = returnS(ctorX(ARRAYLIST_TYPE.getPlainNodeReference(), listX(args)));
-        addGeneratedMethod(cNode, TO_LIST, PUBLIC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, TO_LIST, ACC_PUBLIC | ACC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createToMap(ClassNode cNode, List<PropertyNode> pList) {
@@ -323,7 +327,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             entries.add(mapEntryX(name, callThisX(name)));
         }
         Statement body = returnS(ctorX(LHMAP_TYPE.getPlainNodeReference(), args(mapX(entries))));
-        addGeneratedMethod(cNode, TO_MAP, PUBLIC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, TO_MAP, ACC_PUBLIC | ACC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createGetAt(ClassNode cNode, List<PropertyNode> pList) {
@@ -332,7 +336,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         for (int j = 0; j < pList.size(); j++) {
             body.addCase(caseS(constX(j), returnS(callThisX(pList.get(j).getName()))));
         }
-        addGeneratedMethod(cNode, GET_AT, PUBLIC_FINAL, ClassHelper.OBJECT_TYPE.getPlainNodeReference(), params(param(int_TYPE, "i")), ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, GET_AT, ACC_PUBLIC | ACC_FINAL, OBJECT_TYPE, params(param(int_TYPE, "i")), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createCopyWith(ClassNode cNode, List<PropertyNode> pList) {
@@ -353,12 +357,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             mapParam.addAnnotation(namedParam);
         }
         Statement body = returnS(ctorX(cNode.getPlainNodeReference(), args));
-        addGeneratedMethod(cNode, COPY_WITH, PUBLIC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, COPY_WITH, ACC_PUBLIC | ACC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordToString(ClassNode cNode) {
-        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.STRING_TYPE, new ClassNode[]{cNode});
-        Statement body = stmt(bytecodeX(ClassHelper.STRING_TYPE, mv -> {
+        String desc = BytecodeHelper.getMethodDescriptor(STRING_TYPE, new ClassNode[]{cNode});
+        Statement body = stmt(bytecodeX(STRING_TYPE, mv -> {
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitInvokeDynamicInsn("toString", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
                     mv.visitInsn(ARETURN);
@@ -366,12 +370,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "toString", PUBLIC_FINAL, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "toString", ACC_PUBLIC | ACC_FINAL, STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordEquals(ClassNode cNode) {
-        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.boolean_TYPE, new ClassNode[]{cNode, ClassHelper.OBJECT_TYPE});
-        Statement body = stmt(bytecodeX(ClassHelper.boolean_TYPE, mv -> {
+        String desc = BytecodeHelper.getMethodDescriptor(boolean_TYPE, new ClassNode[]{cNode, OBJECT_TYPE});
+        Statement body = stmt(bytecodeX(boolean_TYPE, mv -> {
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitVarInsn(ALOAD, 1);
                     mv.visitInvokeDynamicInsn("equals", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
@@ -380,12 +384,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "equals", PUBLIC_FINAL, ClassHelper.boolean_TYPE, params(param(ClassHelper.OBJECT_TYPE, "other")), ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "equals", ACC_PUBLIC | ACC_FINAL, boolean_TYPE, params(param(OBJECT_TYPE, "other")), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordHashCode(ClassNode cNode) {
-        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.int_TYPE, new ClassNode[]{cNode});
-        Statement body = stmt(bytecodeX(ClassHelper.int_TYPE, mv -> {
+        String desc = BytecodeHelper.getMethodDescriptor(int_TYPE, new ClassNode[]{cNode});
+        Statement body = stmt(bytecodeX(int_TYPE, mv -> {
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitInvokeDynamicInsn("hashCode", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
                     mv.visitInsn(IRETURN);
@@ -393,7 +397,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "hashCode", PUBLIC_FINAL, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "hashCode", ACC_PUBLIC | ACC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private Object[] createBootstrapMethodArguments(ClassNode cNode) {
@@ -490,10 +494,5 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 pNode.setGetterBlock(getter);
             }
         }
-    }
-
-    @Override
-    public void setCompilationUnit(CompilationUnit unit) {
-        this.compilationUnit = unit;
     }
 }
