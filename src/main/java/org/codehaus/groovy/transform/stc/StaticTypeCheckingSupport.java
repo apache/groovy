@@ -2217,10 +2217,10 @@ public abstract class StaticTypeCheckingSupport {
     public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config, /*@Nullable*/ final GroovyClassLoader loader) {
         Expression ce = expr instanceof CastExpression ? ((CastExpression) expr).getExpression() : expr;
         if (ce instanceof ConstantExpression) {
-            if (expr.getType().equals(ce.getType()))
-                return ((ConstantExpression) ce).getValue();
+            if (expr.getType().equals(getWrapper(ce.getType())) || ((ConstantExpression) ce).isNullExpression())
+                return ((ConstantExpression) ce).getValue(); // boolean, number, string, or null
         } else if (ce instanceof ListExpression) {
-            if (expr.getType().isArray() && expr.getType().getComponentType().equals(STRING_TYPE))
+            if (expr.getType().isArray() && isStringType(expr.getType().getComponentType()))
                 return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config, loader)).toArray(String[]::new);
         }
 
