@@ -57,31 +57,32 @@ class DefaultCommandsRegistrar {
     }
 
     void register() {
+        def commands = [
+            new HelpCommand(shell),
+            new ExitCommand(shell),
+            new ImportCommand(shell),
+            new DisplayCommand(shell),
+            new ClearCommand(shell),
+            new ShowCommand(shell),
+            new InspectCommand(shell),
+            new PurgeCommand(shell),
+            new EditCommand(shell),
+            new LoadCommand(shell),
+            new SaveCommand(shell),
+            new RecordCommand(shell),
+            new HistoryCommand(shell),
+            new AliasCommand(shell),
+            new SetCommand(shell),
+            new GrabCommand(shell),
+            new RegisterCommand(shell),
+        ]
 
-        for (Command classname in [
-                new HelpCommand(shell),
-                new ExitCommand(shell),
-                new ImportCommand(shell),
-                new DisplayCommand(shell),
-                new ClearCommand(shell),
-                new ShowCommand(shell),
-                new InspectCommand(shell),
-                new PurgeCommand(shell),
-                new EditCommand(shell),
-                new LoadCommand(shell),
-                new SaveCommand(shell),
-                new RecordCommand(shell),
-                new HistoryCommand(shell),
-                new AliasCommand(shell),
-                new SetCommand(shell),
-                new GrabCommand(shell),
-                // does not do anything
-                //new ShadowCommand(shell),
-                new RegisterCommand(shell),
-                new DocCommand(shell)
-        ]) {
-            shell.register(classname)
+        if (!System.getProperty("groovysh.disableDocCommand").toBoolean()) {
+            commands.add(new DocCommand(shell))
         }
 
+        for (Command classname in commands) {
+            shell.register(classname)
+        }
     }
 }
