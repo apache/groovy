@@ -130,7 +130,7 @@ To build you will need:
 
 To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
-    gradlew clean dist
+    ./gradlew clean dist
 
 [NOTE]
 The gradlew command automatically downloads the correct Gradle version if needed, you do not need to download it first.
@@ -139,31 +139,31 @@ This will generate a distribution similar to the zip you can download on the Gro
 
 To build everything and launch unit tests, use:
 
-    gradlew test
+    ./gradlew test
 
 If you want to launch one unit test, use this. <TestClassName> is like `groovy.GroovyMethodsTest`.
 
-    gradlew :test --tests <TestClassName>
+    ./gradlew :test --tests <TestClassName>
 
 To build from IntelliJ IDEA:
 
-    gradlew jar idea
+    ./gradlew jar idea
 
 Then open the generated project in IDEA.
 
 To build from Eclipse:
 
-    gradlew jar eclipse
+    ./gradlew jar eclipse
 
 Then open the generated project and the generated subprojects in Eclipse. But be aware that Eclipse tends to be more limited in its ability to reproduce a Gradle build structure. The generated project files may contain a circular dependency which may or may not prevent Eclipse from using them. It depends on the Eclipse version, if this is an issue or not.
 
 To build the documentation (Groovy Language Documentation):
 
-    gradlew asciidoc
+    ./gradlew asciidoc
 
 All code samples of the documentation guide are pulled from actual test cases. To run a single documentation test case, take for example `src/spec/test/semantics/PowerAssertTest.groovy`
 
-    gradlew testSinglePowerAssertTest
+    ./gradlew testSinglePowerAssertTest
 
 [NOTE]
 The omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.
@@ -171,7 +171,7 @@ The omission of package name: class is `semantics.PowerAssertTest` but only `Pow
 == Verifying dependencies
 To generate the missing verification metadata when add/bump dependencies:
 
-    gradlew --write-verification-metadata pgp,sha512 --dry-run
+    ./gradlew --write-verification-metadata pgp,sha512 --dry-run
 
 then compare `verification-metadata.xml` with the generated `verification-metadata.dryrun.xml`, and merge the missing verification metadata into `verification-metadata.xml`
 after the result of the above operation is reviewed.
