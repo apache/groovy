@@ -77,7 +77,7 @@ class DefaultCommandsRegistrar {
             new RegisterCommand(shell),
         ]
 
-        if (!System.getProperty("groovysh.disableDocCommand").toBoolean()) {
+        if (!System.getProperty("groovysh.disableDocCommand")?.toBoolean()) {
             commands.add(new DocCommand(shell))
         }
 
