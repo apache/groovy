@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import groovy.lang.GroovyClassLoader;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,6 +31,7 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -107,6 +109,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
@@ -2136,28 +2139,55 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * A helper method that can be used to evaluate expressions as found in annotation
-     * parameters. For example, it will evaluate a constant, be it referenced directly as
-     * an integer or as a reference to a field.
+     * Evaluates expressions as found in annotation parameters.  For example, it
+     * will evaluate a constant, be it referenced directly as an integer or as a
+     * reference to a field.
      * <p>
-     * If this method throws an exception, then the expression cannot be evaluated on its own.
+     * If the expression cannot be evaluated on its own, an exception is thrown.
      *
      * @param expr   the expression to be evaluated
      * @param config the compiler configuration
      * @return the result of the expression
+     * @throws GroovyBugError
      */
     public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+        return evaluateExpression(expr, config, null);
+    }
+
+    /**
+     * Evaluates expressions as found in annotation parameters.  For example, it
+     * will evaluate a constant, be it referenced directly as an integer or as a
+     * reference to a field.
+     * <p>
+     * If the expression cannot be evaluated on its own, an exception is thrown.
+     *
+     * @param expr   the expression to be evaluated
+     * @param config the compiler configuration
+     * @param loader the compiler class loader
+     * @return the result of the expression
+     * @throws GroovyBugError
+     */
+    public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config, /*@Nullable*/ final GroovyClassLoader loader) {
+        Expression ce = expr instanceof CastExpression ? ((CastExpression) expr).getExpression() : expr;
+        if (ce instanceof ConstantExpression) {
+            if (expr.getType().equals(ce.getType()))
+                return ((ConstantExpression) ce).getValue();
+        } else if (ce instanceof ListExpression) {
+            if (expr.getType().isArray() && expr.getType().getComponentType().equals(STRING_TYPE))
+                return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config, loader)).toArray(String[]::new);
+        }
+
         String className = "Expression$"+UUID.randomUUID().toString().replace('-', '$');
         ClassNode classNode = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
         addGeneratedMethod(classNode, "eval", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
 
-        CompilerConfiguration copyConf = new CompilerConfiguration(config);
-        // disable preview features so class can be executed by this JVM
-        copyConf.setPreviewFeatures(false);
-        copyConf.setScriptBaseClass(null);
-        copyConf.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
+        // adjust configuration so class can be executed by this JVM
+        CompilerConfiguration cc = new CompilerConfiguration(config);
+        cc.setPreviewFeatures(false);
+        cc.setScriptBaseClass(null);
+        cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
 
-        CompilationUnit cu = new CompilationUnit(copyConf);
+        CompilationUnit cu = new CompilationUnit(cc, null, loader);
         try {
             cu.addClassNode(classNode);
             cu.compile(Phases.CLASS_GENERATION);
@@ -2168,7 +2198,8 @@ public abstract class StaticTypeCheckingSupport {
         } catch (ReflectiveOperationException e) {
             throw new GroovyBugError(e);
         } finally {
-            org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly(cu.getClassLoader());
+            if (loader == null)
+                closeQuietly(cu.getClassLoader());
         }
     }
 
