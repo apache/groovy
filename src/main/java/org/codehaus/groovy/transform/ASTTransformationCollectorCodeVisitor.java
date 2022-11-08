@@ -183,7 +183,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             if (annotation.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
                 Expression mode = annotation.getMember("mode");
                 modes.put(index, Optional.ofNullable(mode)
-                    .map(exp -> evaluateExpression(exp, source.getConfiguration()))
+                    .map(exp -> evaluateExpression(exp, source.getConfiguration(), transformLoader))
                     .map(val -> (AnnotationCollectorMode) val)
                     .orElse(AnnotationCollectorMode.DUPLICATE)
                 );
@@ -191,7 +191,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                 Expression processor = annotation.getMember("processor");
                 AnnotationCollectorTransform act = null;
                 if (processor != null) {
-                    String className = (String) evaluateExpression(processor, source.getConfiguration());
+                    String className = (String) evaluateExpression(processor, source.getConfiguration(), transformLoader);
                     Class<?> klass = loadTransformClass(className, alias);
                     if (klass != null) {
                         try {
