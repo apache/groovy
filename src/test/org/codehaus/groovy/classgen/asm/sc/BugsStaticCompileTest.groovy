@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
@@ -49,8 +50,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-5512
     void testCreateRangeInInnerClass() {
-        def shell = new GroovyShell()
-        shell.evaluate '''
+        new GroovyShell().evaluate '''
             class Outer {
                 static class Inner {
                     @groovy.transform.CompileStatic
@@ -72,12 +72,10 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             import groovy.transform.CompileStatic;
 
             class CompilerBugs {
-
               public static void main(String[] args) {
                 int expected = 0
                 assertEquals(expected, args.length)
               }
-
             }
         '''
     }
@@ -85,36 +83,36 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5529
     void testStaticCompilationOfClosureWhenSingleMethodAnnotated() {
         new GroovyShell().evaluate '''import groovy.transform.ASTTest
-        import static org.codehaus.groovy.control.CompilePhase.*
+            import static org.codehaus.groovy.control.CompilePhase.*
 
-        interface Row {
-            int getKey()
-        }
-
-        class RowImpl implements Row {
-            int getKey() { 1 }
-        }
-
-        @groovy.transform.CompileStatic
-        def test() {
-            def rows = [new RowImpl(), new RowImpl(), new RowImpl()]
-
-            rows.each { Row row ->
-                println row.key
+            interface Row {
+                int getKey()
             }
-        }
 
-        test()
+            class RowImpl implements Row {
+                int getKey() { 1 }
+            }
+
+            @groovy.transform.CompileStatic
+            def test() {
+                def rows = [new RowImpl(), new RowImpl(), new RowImpl()]
+
+                rows.each { Row row ->
+                    println row.key
+                }
+            }
+
+            test()
         '''
     }
 
     // GROOVY-5536
     void testShouldNotThrowVerifyErrorWithNullDereferenceInIf() {
         assertScript '''
-                boolean getDescriptorForPlugin(File pluginDir) {
-                    if (pluginDir?.exists()) { true } else { false }
-                }
-                assert getDescriptorForPlugin(null) == false
+            boolean getDescriptorForPlugin(File pluginDir) {
+                if (pluginDir?.exists()) { true } else { false }
+            }
+            assert getDescriptorForPlugin(null) == false
         '''
     }
 
@@ -138,7 +136,8 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-
     void testPowerShouldNotThrowVerifyError() {
-        assertScript '''int squarePlusOne(int num) {
+        assertScript '''
+            int squarePlusOne(int num) {
                 num ** num + 1
             }
             assert squarePlusOne(2) == 5
@@ -148,17 +147,17 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5570
     void testShouldNotThrowVerifyErrorRegisterContainsWrongType() {
         assertScript '''
-                void foo() {
-                boolean idx = false
-                def cl = { idx }
-                }
-            '''
+            void foo() {
+            boolean idx = false
+            def cl = { idx }
+            }
+        '''
         assertScript '''
-                void foo() {
-                int idx = 0
-                def cl = { idx }
-                }
-            '''
+            void foo() {
+            int idx = 0
+            def cl = { idx }
+            }
+        '''
     }
 
     // GROOVY-5572
@@ -271,61 +270,61 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5613
     void testNullSafeAssignment() {
         assertScript '''
-        class A {
-            int x = -1
-        }
-        A a = new A()
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-        })
-        def x = a?.x
+            class A {
+                int x = -1
+            }
+            A a = new A()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def x = a?.x
         '''
     }
 
     void testNullSafeAssignmentWithLong() {
         assertScript '''
-        class A {
-            long x = -1
-        }
-        A a = new A()
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
-        })
-        def x = a?.x
+            class A {
+                long x = -1
+            }
+            A a = new A()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
+            })
+            def x = a?.x
         '''
     }
 
     void testNullSafeAssignmentWithChar() {
         assertScript '''
-        class A {
-            char x = 'a'
-        }
-        A a = new A()
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == Character_TYPE
-        })
-        def x = a?.x
-        assert x == 'a'
+            class A {
+                char x = 'a'
+            }
+            A a = new A()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Character_TYPE
+            })
+            def x = a?.x
+            assert x == 'a'
         '''
     }
 
     void testCallStaticallyImportedMethodWithNullSafeArgument() {
         assertScript '''import static java.lang.Math.abs
-        class A {
-            int x = -1
-        }
-        def a = new A()
-        def x = a?.x
-        assert abs(a?.x) == 1
+            class A {
+                int x = -1
+            }
+            def a = new A()
+            def x = a?.x
+            assert abs(a?.x) == 1
         '''
     }
 
     void testClosureAsInterfaceArgument() {
         assertScript '''
-                Closure c = { Integer x, Integer y -> x <=> y }
-                def list = [ 3,1,5,2,4 ]
-                assert ((Collection)list).sort(c) == [1,2,3,4,5]
-            '''
+            Closure c = { Integer x, Integer y -> x <=> y }
+            def list = [ 3,1,5,2,4 ]
+            assert ((Collection)list).sort(c) == [1,2,3,4,5]
+        '''
     }
 
     void testInferredTypeForInteger() {
@@ -351,35 +350,35 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testPostfixIncInteger() {
         assertScript '''
-                Integer x = 0
-                x++
-                x++
-                assert x == 2
-                assert x++ == 2
-                assert x == 3
-            '''
+            Integer x = 0
+            x++
+            x++
+            assert x == 2
+            assert x++ == 2
+            assert x == 3
+        '''
     }
 
     void testPostfixDecInt() {
         assertScript '''
-                int x = 0
-                x--
-                x--
-                assert x == -2
-                assert x-- == -2
-                assert x == -3
-            '''
+            int x = 0
+            x--
+            x--
+            assert x == -2
+            assert x-- == -2
+            assert x == -3
+        '''
     }
 
     void testPostfixDecInteger() {
         assertScript '''
-                Integer x = 0
-                x--
-                x--
-                assert x == -2
-                assert x-- == -2
-                assert x == -3
-            '''
+            Integer x = 0
+            x--
+            x--
+            assert x == -2
+            assert x-- == -2
+            assert x == -3
+        '''
     }
 
     void testPrefixIncPrimitiveInteger() {
@@ -395,33 +394,33 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testPrefixIncInteger() {
         assertScript '''
-                Integer x = 0
-                ++x
-                ++x
-                assert x == 2
-                assert ++x == 3
-                assert x == 3
-            '''
+            Integer x = 0
+            ++x
+            ++x
+            assert x == 2
+            assert ++x == 3
+            assert x == 3
+        '''
     }
 
     void testPrefixDecInt() {
         assertScript '''
-                int x = 0
-                --x
-                --x
-                assert --x == -3
-                assert x == -3
-            '''
+            int x = 0
+            --x
+            --x
+            assert --x == -3
+            assert x == -3
+        '''
     }
 
     void testPrefixDecInteger() {
         assertScript '''
-                Integer x = 0
-                --x
-                --x
-                assert --x == -3
-                assert x == -3
-            '''
+            Integer x = 0
+            --x
+            --x
+            assert --x == -3
+            assert x == -3
+        '''
     }
 
     void testShouldSkipSpreadOperator() {
@@ -446,15 +445,15 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5672
     void testTypeCheckedPlusCompileStatic() {
         new GroovyShell().evaluate '''import groovy.transform.CompileStatic
-        import groovy.transform.TypeChecked
+            import groovy.transform.TypeChecked
 
-        @TypeChecked
-        @CompileStatic
-        class SampleClass {
-            def a = "some string"
-            def b = a.toString()
-        }
-        new SampleClass()
+            @TypeChecked
+            @CompileStatic
+            class SampleClass {
+                def a = "some string"
+                def b = a.toString()
+            }
+            new SampleClass()
         '''
     }
 
@@ -479,79 +478,86 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testIncrementOperatorOnInt() {
         assertScript '''
-                int incInt(int n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt(5) == 7'''
+            int incInt(int n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt(5) == 7
+        '''
     }
 
     void testIncrementOperatorOnShort() {
         assertScript '''
-                short incInt(short n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt((short)5) == 7'''
+            short incInt(short n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt((short)5) == 7
+        '''
     }
 
     void testIncrementOperatorOnByte() {
         assertScript '''
-                byte incInt(byte n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt((byte)5) == 7'''
+            byte incInt(byte n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt((byte)5) == 7
+        '''
     }
 
     void testIncrementOperatorOnLong() {
         assertScript '''
-                long incInt(long n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt(5) == 7'''
+            long incInt(long n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt(5) == 7
+        '''
     }
 
     void testIncrementOperatorOnFloat() {
         assertScript '''
-                float incInt(float n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt(5) == 7'''
+            float incInt(float n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt(5) == 7
+        '''
     }
 
     void testIncrementOperatorOnDouble() {
         assertScript '''
-                double incInt(double n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt(5) == 7'''
+            double incInt(double n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt(5) == 7
+        '''
     }
 
     void testIncrementOperatorOnChar() {
         assertScript '''
-                char incInt(char n) {
-                    def result = n
-                    ++result
-                    result++
-                    return result
-                }
-                assert  incInt((char)'a') == (char)('c')'''
+            char incInt(char n) {
+                def result = n
+                ++result
+                result++
+                return result
+            }
+            assert  incInt((char)'a') == (char)('c')
+        '''
     }
 
     void testIncrementField() {
@@ -570,13 +576,13 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5789
     void testLoopWithIncrement() {
         assertScript '''
-        int execute() {
-            // using a list, so that if the loop is endless, the test eventually fails with OOM
-            List<Integer> list = new LinkedList<Integer>()
-            for (def i = 0; i < 4; ++i) { println i; list << i }
-            list.size()
-        }
-        assert execute() == 4
+            int execute() {
+                // using a list, so that if the loop is endless, the test eventually fails with OOM
+                List<Integer> list = new LinkedList<Integer>()
+                for (def i = 0; i < 4; ++i) { println i; list << i }
+                list.size()
+            }
+            assert execute() == 4
         '''
     }
 
@@ -588,7 +594,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             }
             assert m(1) == true
             assert m(4) == false
-            '''
+        '''
     }
 
     // GROOVY-5814
@@ -650,16 +656,16 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-5804
     void testNegateSharedBooleanInClosure() {
         assertScript '''
-                boolean x = false
-                def cl = {
-                    if (!x) {
-                        assert true
-                    } else {
-                        assert false
-                    }
+            boolean x = false
+            def cl = {
+                if (!x) {
+                    assert true
+                } else {
+                    assert false
                 }
-                cl()
-            '''
+            }
+            cl()
+        '''
     }
 
     void testCallClosureInInnerClass() {
@@ -712,7 +718,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testSuperMethodCallInSkippedSection() {
         assertScript '''import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
+            import groovy.transform.TypeCheckingMode
             class Top {
                 public int foo() { 123 }
             }
@@ -732,7 +738,8 @@ import groovy.transform.TypeCheckingMode
             def foo(Object o) {
                 o[0]
             }
-        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testStaticCompileWithPattern() {
@@ -745,25 +752,26 @@ import groovy.transform.TypeCheckingMode
             def value = fieldMatcher[0]
             // should not pass
             def str = value[0]
-        ''', 'Cannot find matching method java.lang.Object#getAt(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
     void testChainedNullSafePropertyOnMap() {
         assertScript '''
-        Map<String, Map<String,Map<String,Integer>>> m=[:]
-        // this is ok
-        assert m?.a == null
-        assert m?.a?.b == null
-        assert m?.a?.b?.c == null
-        assert m?.a?.b?.c?.intValue() == null
+            Map<String, Map<String,Map<String,Integer>>> m=[:]
+            // this is ok
+            assert m?.a == null
+            assert m?.a?.b == null
+            assert m?.a?.b?.c == null
+            assert m?.a?.b?.c?.intValue() == null
         '''
     }
 
     void testNullSafePropertyOnList() {
         assertScript '''
-        List<Class> classes = null
-        // this is ok
-        assert classes?.name == null
+            List<Class> classes = null
+            // this is ok
+            assert classes?.name == null
         '''
     }
 
@@ -784,21 +792,21 @@ import groovy.transform.TypeCheckingMode
     // GROOVY-6101
     void testShouldNotGenerateInvalidClassWithNullSafeInvocationOnMethodReturningPrimitiveType() {
         assertScript '''
-        class Piece {
-            int x() { 333 }
-        }
-
-        void foo() {
-            Piece[] pieces = [new Piece(), null] as Piece[]
-            int sum = 0
-            for (int i=0;i<pieces.length;i++) {
-                if (pieces[i]?.x()) {
-                    sum += pieces[i].x()
-                }
+            class Piece {
+                int x() { 333 }
             }
-            assert sum == 333
-        }
-        foo()
+
+            void foo() {
+                Piece[] pieces = [new Piece(), null] as Piece[]
+                int sum = 0
+                for (int i=0;i<pieces.length;i++) {
+                    if (pieces[i]?.x()) {
+                        sum += pieces[i].x()
+                    }
+                }
+                assert sum == 333
+            }
+            foo()
         '''
     }
 
@@ -841,7 +849,6 @@ import groovy.transform.TypeCheckingMode
 
             def b = new Groovy5921()
             b.doSomething()
-
         '''
     }
 
@@ -857,7 +864,6 @@ import groovy.transform.TypeCheckingMode
 
             def b = new Groovy5921()
             b.doSomething()
-
         '''
     }
 
@@ -873,7 +879,6 @@ import groovy.transform.TypeCheckingMode
 
             def b = new Groovy5921()
             b.doSomething()
-
         '''
     }
 
@@ -889,7 +894,6 @@ import groovy.transform.TypeCheckingMode
 
             def b = new Groovy5921()
             b.doSomething()
-
         '''
     }
 
@@ -931,8 +935,7 @@ import groovy.transform.TypeCheckingMode
 
     // GROOVY-6095
     void testServletError() {
-        def shell = new GroovyShell()
-        shell.evaluate '''
+        new GroovyShell().evaluate '''
             @Grab('javax.servlet:javax.servlet-api:3.0.1')
             import groovy.transform.CompileStatic
 
@@ -959,67 +962,67 @@ import groovy.transform.TypeCheckingMode
     // GROOVY-6137
     void testIsCaseShouldBeNullSafe() {
         assertScript '''
-        def isCaseNullCS(a, b) {
-            a in b
-        }
-        assert isCaseNullCS(1, null) == false
-        assert isCaseNullCS(null, 1) == false
-        assert isCaseNullCS(1,1) == true
-        assert isCaseNullCS(1,2) == false
-        assert isCaseNullCS(2,1) == false
+            def isCaseNullCS(a, b) {
+                a in b
+            }
+            assert isCaseNullCS(1, null) == false
+            assert isCaseNullCS(null, 1) == false
+            assert isCaseNullCS(1,1) == true
+            assert isCaseNullCS(1,2) == false
+            assert isCaseNullCS(2,1) == false
         '''
     }
 
     // GROOVY-6242
     void testGetAtBigInt() {
         assertScript '''
-class Sequence {
-    public Sequence() {}
-    static BigInteger getAt(final int index) { 1G }
-    static BigInteger getAt(final BigInteger index) { getAt(index as int) }
-}
+            class Sequence {
+                public Sequence() {}
+                static BigInteger getAt(final int index) { 1G }
+                static BigInteger getAt(final BigInteger index) { getAt(index as int) }
+            }
 
-class Iterator implements java.util.Iterator {
-    private BigInteger currentIndex = 0G
-    private final Sequence sequence
-    Iterator(final Sequence s) { sequence = s }
-    boolean hasNext() { return true }
-    @ASTTest(phase=INSTRUCTION_SELECTION,value={
-        def expr = node.code.statements[0].expression
-        def indexType = expr.rightExpression.getNodeMetaData(INFERRED_TYPE)
-        assert indexType == make(BigInteger)
-    })
-    BigInteger next() { sequence[currentIndex++] }
-    void remove() { throw new UnsupportedOperationException() }
-}
+            class Iterator implements java.util.Iterator {
+                private BigInteger currentIndex = 0G
+                private final Sequence sequence
+                Iterator(final Sequence s) { sequence = s }
+                boolean hasNext() { return true }
+                @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                    def expr = node.code.statements[0].expression
+                    def indexType = expr.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                    assert indexType == make(BigInteger)
+                })
+                BigInteger next() { sequence[currentIndex++] }
+                void remove() { throw new UnsupportedOperationException() }
+            }
 
-def it = new Iterator(new Sequence())
-assert it.next() == 1G
-'''
+            def it = new Iterator(new Sequence())
+            assert it.next() == 1G
+        '''
     }
 
     // GROOVY-6243
     void testSwapUsingMultipleAssignment() {
         assertScript '''
-        def swap(result,next) {
-            print "($result,$next) -> "
-            (result, next) =  [next, result]
-            println "($result,$next)"
-            [result, next]
-        }
+            def swap(result,next) {
+                print "($result,$next) -> "
+                (result, next) =  [next, result]
+                println "($result,$next)"
+                [result, next]
+            }
 
-        assert swap(0,1) == [1,0]
-        assert swap('a','b') == ['b','a']
-        assert swap('a', 1) == [1, 'a']
-        def o1 = new Object()
-        def o2 = new Date()
-        assert swap(o1,o2) == [o2, o1]
+            assert swap(0,1) == [1,0]
+            assert swap('a','b') == ['b','a']
+            assert swap('a', 1) == [1, 'a']
+            def o1 = new Object()
+            def o2 = new Date()
+            assert swap(o1,o2) == [o2, o1]
         '''
     }
 
     // GROOVY-5882
     void testMod() {
-        assertScript """
+        assertScript '''
             int foo(Map<Integer, Object> markers, int i) {
                 int res = 0
                 for (e in markers.entrySet()) {
@@ -1028,9 +1031,9 @@ assert it.next() == 1G
                 return res
             }
             assert foo([(1):null,(2):null,(3):null],2)==2
-        """
+        '''
 
-        assertScript """
+        assertScript '''
             int foo(Map<Integer, Object> markers, int i) {
                 int res = 0
                 for (e in markers.entrySet()) {
@@ -1040,8 +1043,8 @@ assert it.next() == 1G
                 return res
             }
             assert foo([(1):null,(2):null,(3):null],2)==2
-        """
-        assertScript """
+        '''
+        assertScript '''
             int foo(Map<Integer, Object> markers, int i) {
                 int res = 0
                 for (e in markers.entrySet()) {
@@ -1050,7 +1053,7 @@ assert it.next() == 1G
                 return res
             }
             assert foo([(1):null,(2):null,(3):null],2)==2
-        """
+        '''
     }
 
     void testSuperCallShouldBeDirect() {
@@ -1089,7 +1092,7 @@ assert it.next() == 1G
               println seq.next?.longValue()
             }
             assert seq.next == 5
-'''
+        '''
     }
 
     void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive() {
@@ -1109,7 +1112,7 @@ assert it.next() == 1G
               println seq.next?.longValue()
             }
             assert seq.next == 5
-'''
+        '''
     }
 
     void testNullSafeOperatorShouldNotCallMethodTwice1Arg() {
@@ -1129,7 +1132,7 @@ assert it.next() == 1G
               println seq.getNext(2)?.longValue()
             }
             assert seq.getNext(2) == 10
-'''
+        '''
     }
 
     void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive1Arg() {
@@ -1149,7 +1152,7 @@ assert it.next() == 1G
               println seq.getNext(2)?.longValue()
             }
             assert seq.getNext(2) == 10
-'''
+        '''
     }
 
     void testShouldAllowSubscriptOperatorOnSet() {
@@ -1182,21 +1185,20 @@ assert it.next() == 1G
     // GROOVY-6552
     void testShouldNotThrowClassCastException() {
         assertScript '''import java.util.concurrent.Callable
-
-    String text(Class clazz) {
-        new Callable<String>() {
-            String call() throws Exception {
+            String text(Class clazz) {
                 new Callable<String>() {
                     String call() throws Exception {
-                        clazz.getName()
+                        new Callable<String>() {
+                            String call() throws Exception {
+                                clazz.getName()
+                            }
+                        }.call()
                     }
                 }.call()
             }
-        }.call()
-    }
 
-    assert text(String) == 'java.lang.String'
-    '''
+            assert text(String) == 'java.lang.String'
+        '''
     }
 
     // GROOVY-6851
@@ -1214,19 +1216,19 @@ assert it.next() == 1G
                 }
             }
             new GrailsHomeWorkspaceReader()
-            '''
+        '''
     }
 
     // GROOVY-6342
     void testShouldNotThrowNPEIfElvisOperatorIsUsedInsideTernary() {
-        assertScript '''class Inner {
-    int somestuff
-}
-Inner inner = null
-int someInt = inner?.somestuff ?: 0
-println someInt
-
-'''
+        assertScript '''
+            class Inner {
+                int somestuff
+            }
+            Inner inner = null
+            int someInt = inner?.somestuff ?: 0
+            println someInt
+        '''
     }
 
     void testAccessOuterClassMethodFromInnerClassConstructor() {
@@ -1312,21 +1314,21 @@ println someInt
 
     void testStaticMethodFromInnerClassConstructor() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        private class Inner extends Parent {
-           static String a = 'ok'
-           Inner() { super(getA()) }
-        }
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                private class Inner extends Parent {
+                   static String a = 'ok'
+                   Inner() { super(getA()) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer()
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer()
+            assert o.test() == 'ok'
+        '''
     }
 
     // GROOVY-6876
@@ -1340,7 +1342,7 @@ println someInt
                 }
             }
             assert new Foo().method() == -1L
-            '''
+        '''
 
         assertScript '''
             class Foo {
@@ -1357,7 +1359,7 @@ println someInt
             class Foo {
                 long rankOrderingOrId
                 void setRankOrderingOrId(long rankOrderingOrId) {
-                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1 : rankOrderingOrId
+                    this.rankOrderingOrId = rankOrderingOrId < 0 ? -1L : rankOrderingOrId
                 }
             }
             def f = new Foo()
@@ -1383,19 +1385,19 @@ println someInt
     void testShouldNotThrowIncompatibleClassChangeError() {
         try {
             assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6924Support
-            class Test {
-                static void foo() {
-                    Groovy6924Support bean = new Groovy6924Support()
-                    bean.with {
-                        foo = 'foo'
-                        bar = 'bar'
+                class Test {
+                    static void foo() {
+                        Groovy6924Support bean = new Groovy6924Support()
+                        bean.with {
+                            foo = 'foo'
+                            bar = 'bar'
+                        }
+                        String val = "$bean.foo and $bean.bar"
+                        assert val == 'foo and bar'
                     }
-                    String val = "$bean.foo and $bean.bar"
-                    assert val == 'foo and bar'
                 }
-            }
-            Test.foo()
-        '''
+                Test.foo()
+            '''
         } finally {
             assert astTrees['Test$_foo_closure1'][1].contains('INVOKEVIRTUAL org/codehaus/groovy/classgen/asm/sc/Groovy6924Support.setFoo (Ljava/lang/String;)V')
         }
@@ -1523,6 +1525,14 @@ println someInt
             }
 
             test()
+        '''
+    }
+
+    // GROOVY-10819
+    @NotYetImplemented
+    void testClassVersusObjectMethods() {
+        assertScript '''
+            assert String.getMetaClass() != Class.getMetaClass()
         '''
     }
 }
