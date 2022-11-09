@@ -27,33 +27,34 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  * POJO call site
  *   metaclass - cached
  *   method - not cached
-*/
-public class PojoMetaClassSite extends MetaClassSite{
+ */
+public class PojoMetaClassSite extends MetaClassSite {
+
     private final ClassInfo classInfo;
     private final int version;
 
-    public PojoMetaClassSite(CallSite site, MetaClass metaClass) {
+    public PojoMetaClassSite(final CallSite site, final MetaClass metaClass) {
         super(site, metaClass);
         classInfo = ClassInfo.getClassInfo(metaClass.getTheClass());
         version = classInfo.getVersion();
     }
 
     @Override
-    public Object call(Object receiver, Object[] args) throws Throwable {
-        if(checkCall(receiver)) {
-          try{
-              return metaClass.invokeMethod(receiver, name, args);
-          } catch (GroovyRuntimeException gre) {
-              throw ScriptBytecodeAdapter.unwrap(gre);
-          }
+    public Object call(final Object receiver, final Object[] args) throws Throwable {
+        if (checkCall(receiver)) {
+            try {
+                return metaClass.invokeMethod(receiver, name, args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         } else {
-          return CallSiteArray.defaultCall(this, receiver, args);
+            return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
 
-    protected final boolean checkCall(Object receiver) {
-        return  receiver!=null &&
-                receiver.getClass() == metaClass.getTheClass() &&
-                version == classInfo.getVersion(); // metaClass is still valid
+    protected final boolean checkCall(final Object receiver) {
+        return receiver != null
+            && receiver.getClass() == metaClass.getTheClass()
+            && version == classInfo.getVersion(); // metaClass is still valid
     }
 }

@@ -1057,7 +1057,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 } else if (ownerClass != Class.class) { // not "new"; maybe it's a reference to a Class method
                     try {
-                        return InvokerHelper.getMetaClass(owner).invokeMethod(Class.class, owner, methodName, arguments, false, false);
+                        MetaClass cmc = registry.getMetaClass(Class.class);
+                        return cmc.invokeMethod(Class.class, owner, methodName, arguments, false, false);
 
                     } catch (MissingMethodExceptionNoStack nope) {
                     }
@@ -1670,8 +1671,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
         if (method == null && theClass != Class.class) {
-            MetaClass classMetaClass = registry.getMetaClass(Class.class);
-            method = classMetaClass.pickMethod(methodName, arguments);
+            MetaClass cmc = registry.getMetaClass(Class.class);
+            method = cmc.pickMethod(methodName, arguments);
         }
         if (method == null) {
             method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments));
@@ -2009,14 +2010,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = genericGetMethod;
         }
 
-        if (method == null) {
+        if (method != null) {
             //------------------------------------------------------------------
-            // special cases
+            // executing the method
             //------------------------------------------------------------------
-            // TODO: maybe these special cases should be special MetaClasses
-            if (theClass != Class.class && object instanceof Class) {
-                MetaClass mc = registry.getMetaClass(Class.class);
-                return mc.getProperty(Class.class, object, name, useSuper, false);
+            MetaMethod metaMethod = VM_PLUGIN.transformMetaMethod(this, method);
+            return metaMethod.doMethodInvoke(object, arguments);
+        } else {
+            //------------------------------------------------------------------
+            // special cases -- maybe these cases should be special MetaClasses!
+            //------------------------------------------------------------------
+            if (isStatic) {
+                MetaClass cmc = registry.getMetaClass(Class.class);
+                return cmc.getProperty(Class.class, object, name, false, false);
             }
             if (object instanceof Collection) {
                 return DefaultGroovyMethods.getAt((Collection<?>) object, name);
@@ -2029,18 +2035,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // TODO: one day we could try return the previously registered Closure listener for easy removal
                 return null;
             }
-        } else {
-            //------------------------------------------------------------------
-            // executing the method
-            //------------------------------------------------------------------
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-            return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
         //----------------------------------------------------------------------
         // missing property protocol
         //----------------------------------------------------------------------
-        if (isStatic || object instanceof Class) {
+        if (object instanceof Class) {
             return invokeStaticMissingProperty(object, name, null, true);
         }
         return invokeMissingProperty(object, name, null, true);
@@ -2136,8 +2136,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return new MetaProperty(name, Object.class) {
                 @Override
                 public Object getProperty(Object object) {
-                    MetaClass mc = registry.getMetaClass(Class.class);
-                    return mc.getProperty(Class.class, object, name, useSuper, false);
+                    MetaClass cmc = registry.getMetaClass(Class.class);
+                    return cmc.getProperty(Class.class, object, name, false, false);
                 }
 
                 @Override
@@ -2796,9 +2796,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // handling of static
         //----------------------------------------------------------------------
-        boolean isStatic = theClass != Class.class && object instanceof Class;
+        boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
-            MetaClass mc = registry.getMetaClass((Class) object);
+            MetaClass mc = registry.getMetaClass((Class<?>) object);
             mc.getProperty(sender, object, name, useSuper, fromInsideClass);
             return;
         }
@@ -2936,7 +2936,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (mp != null) {
             throw new ReadOnlyPropertyException(name, theClass);
         }
-        if ((isStatic || object instanceof Class) && !"metaClass".equals(name)) {
+        if (object instanceof Class && !"metaClass".equals(name)) {
             invokeStaticMissingProperty(object, name, newValue, false);
         } else {
             invokeMissingProperty(object, name, newValue, false);
@@ -3010,14 +3010,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
-        boolean isStatic = theClass != Class.class && object instanceof Class;
+        boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
-            MetaClass mc = registry.getMetaClass((Class) object);
+            MetaClass mc = registry.getMetaClass((Class<?>) object);
             return mc.getAttribute(sender, object, attribute, useSuper);
         }
 
         MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
-
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
@@ -3052,15 +3051,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
-        boolean isStatic = theClass != Class.class && object instanceof Class;
+        boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
-            MetaClass mc = registry.getMetaClass((Class) object);
+            MetaClass mc = registry.getMetaClass((Class<?>) object);
             mc.setAttribute(sender, object, attribute, newValue, useSuper, fromInsideClass);
             return;
         }
 
         MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
-
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;

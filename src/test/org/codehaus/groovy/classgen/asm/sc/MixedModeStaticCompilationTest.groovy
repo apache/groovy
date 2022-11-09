@@ -31,262 +31,229 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicMethodCall() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                int bar() {
-                    foo() + baz()
-                }
-                int baz() {
-                    456
-                }
-                this.metaClass.foo = { 123 }
-                assert bar() == 579
-            '''
-        } finally {
-            // println astTrees
-        }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            int bar() {
+                foo() + baz()
+            }
+            int baz() {
+                456
+            }
+            this.metaClass.foo = { 123 }
+            assert bar() == 579
+        '''
     }
 
     void testDynamicMethodCallInsideClosure() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                int bar() {
-                    def cl = { foo() + baz() }
-                    cl()
-                }
-                int baz() {
-                    456
-                }
-                this.metaClass.foo = { 123 }
-                assert bar() == 579
-            '''
-        } finally {
-//            println astTrees
-        }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            int bar() {
+                def cl = { foo() + baz() }
+                cl()
+            }
+            int baz() {
+                456
+            }
+            this.metaClass.foo = { 123 }
+            assert bar() == 579
+        '''
     }
 
     void testDynamicMethodCallWithStaticCallArgument() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                int bar() {
-                    twice(baz())
-                }
-                int baz() {
-                    456
-                }
-                this.metaClass.twice = { 2*it }
-                assert bar() == 912
-            '''
-        } finally {
-            // println astTrees
-        }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            int bar() {
+                twice(baz())
+            }
+            int baz() {
+                456
+            }
+            this.metaClass.twice = { 2*it }
+            assert bar() == 912
+        '''
     }
 
     void testDynamicMethodCallOnField() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                class Holder {
-                    def delegate
-                    int bar() {
-                        2*delegate.baz()
-                    }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            class Holder {
+                def delegate
+                int bar() {
+                    2*delegate.baz()
                 }
-                class Baz {
-                    int baz() { 456 }
-                }
-                def holder = new Holder(delegate: new Baz())
-                assert holder.bar() == 912
-            '''
-        } finally {
-            // println astTrees
-        }
+            }
+            class Baz {
+                int baz() { 456 }
+            }
+            def holder = new Holder(delegate: new Baz())
+            assert holder.bar() == 912
+        '''
     }
 
     void testDynamicProperty() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                int value(String str) {
-                    str.val
-                }
-                @Category(String)
-                class StringCategory {
-                    int getVal() { this.length() }
-                }
-                use (StringCategory) {
-                    assert value('abc') == 3
-                }
-            '''
-        } finally {
-            // println astTrees
-        }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            int value(String str) {
+                str.val
+            }
+            @Category(String)
+            class StringCategory {
+                int getVal() { this.length() }
+            }
+            use (StringCategory) {
+                assert value('abc') == 3
+            }
+        '''
     }
 
     void testDynamicPropertyMixedWithStatic() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                class Holder {
-                    int offset() { 2 }
-                    int value(String str) {
-                        str.val + offset()
-                    }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            class Holder {
+                int offset() { 2 }
+                int value(String str) {
+                    str.val + offset()
                 }
-                @Category(String)
-                class StringCategory {
-                    int getVal() { this.length() }
-                }
-                def holder = new Holder()
-                use (StringCategory) {
-                    assert holder.value('abc') == 5
-                }
-            '''
-        } finally {
-            // println astTrees
-        }
+            }
+            @Category(String)
+            class StringCategory {
+                int getVal() { this.length() }
+            }
+            def holder = new Holder()
+            use (StringCategory) {
+                assert holder.value('abc') == 5
+            }
+        '''
     }
 
     void testDynamicPropertyAsStaticArgument() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                class Holder {
-                    int twice(int v) { 2*v }
-                    int value(String str) {
-                        twice(str.val)
-                    }
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            class Holder {
+                int twice(int v) { 2*v }
+                int value(String str) {
+                    twice(str.val)
                 }
-                @Category(String)
-                class StringCategory {
-                    int getVal() { this.length() }
-                }
-                def holder = new Holder()
-                use (StringCategory) {
-                    assert holder.value('abc') == 6
-                }
-            '''
-        } finally {
-            // println astTrees
-        }
+            }
+            @Category(String)
+            class StringCategory {
+                int getVal() { this.length() }
+            }
+            def holder = new Holder()
+            use (StringCategory) {
+                assert holder.value('abc') == 6
+            }
+        '''
     }
 
     void testDynamicVariable() {
-        try {
-            shell.setVariable("myVariable", 123)
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                int value() {
-                    myVariable
-                }
-                assert value() == 123
-            '''
-        } finally {
-            // println astTrees
-        }
+        shell.setVariable('myVariable', 123)
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            int value() {
+                myVariable
+            }
+            assert value() == 123
+        '''
     }
 
     void testDynamicVariableMixedWithStaticCall() {
-        try {
-            shell.setVariable("myVariable", 123)
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                class Holder {
-                    def binding
-                    def propertyMissing(String name) { binding.getVariable(name) }
-                    int value() {
-                        myVariable + offset()
-                    }
-                    int offset() { 123 }
+        shell.setVariable('myVariable', 123)
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            class Holder {
+                def binding
+                def propertyMissing(String name) { binding.getVariable(name) }
+                int value() {
+                    myVariable + offset()
                 }
-                def h = new Holder(binding:binding)
-                assert h.value() == 246
-            '''
-        } finally {
-            // println astTrees
-        }
+                int offset() { 123 }
+            }
+            def h = new Holder(binding:binding)
+            assert h.value() == 246
+        '''
     }
 
     void testDynamicVariableAsStaticCallParameter() {
-        try {
-            shell.setVariable("myVariable", 123)
-            assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                class Holder {
-                    def binding
-                    def propertyMissing(String name) { binding.getVariable(name) }
-                    int value() {
-                        twice(myVariable)
-                    }
-                    int twice(int x) { 2*x }
+        shell.setVariable('myVariable', 123)
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            class Holder {
+                def binding
+                def propertyMissing(String name) { binding.getVariable(name) }
+                int value() {
+                    twice(myVariable)
                 }
-                def h = new Holder(binding:binding)
-                assert h.value() == 246
-            '''
-        } finally {
-            // println astTrees
-        }
+                int twice(int x) { 2*x }
+            }
+            def h = new Holder(binding:binding)
+            assert h.value() == 246
+        '''
     }
 
     void testAllowMetaClass() {
         assertScript '''import groovy.transform.CompileStatic
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             void test() {
+                assert String.metaClass !== Class.metaClass
+                assert String.metaClass !== Class.getMetaClass()
+                assert String.getMetaClass() !== Class.getMetaClass()
                 String.metaClass.up = { -> (delegate as String).toUpperCase() }
             }
-            test()
-            assert 'aaa'.up() == 'AAA'
+            try {
+                test()
+                assert 'aaa'.up() == 'AAA'
+            } finally {
+                GroovySystem.getMetaClassRegistry().removeMetaClass(String)
+            }
         '''
     }
 
     void testRecognizeStaticMethodCall() {
         assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
-                Map<String, Integer> foo() {
-                    String.map()
-                }
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
-                List<Integer> bar() {
-                    Date.list()
-                }
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
+            Map<String, Integer> foo() {
+                String.map()
+            }
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
+            List<Integer> bar() {
+                Date.list()
+            }
+            try {
                 String.metaClass.static.map = { [a: 1, b:2 ]}
                 Date.metaClass.static.list = { [1,2] }
                 assert foo().values().sort() == bar()
+            } finally {
+                GroovySystem.getMetaClassRegistry().removeMetaClass(Date)
+                GroovySystem.getMetaClassRegistry().removeMetaClass(String)
+            }
         '''
     }
 
     void testDynamicBuilder() {
-        try {
-            assertScript '''import groovy.transform.CompileStatic
-                import groovy.xml.MarkupBuilder
+        assertScript '''import groovy.transform.CompileStatic
+            import groovy.xml.MarkupBuilder
 
-                @CompileStatic(extensions='groovy/transform/sc/MixedModeDynamicBuilder.groovy')
-                String render(List<String> items) {
-                    def sw = new StringWriter()
-                    def mb = new MarkupBuilder(sw)
-                    mb.html {
-                        body {
-                            ul {
-                                items.each { String item ->
-                                    li("Item ${item.toUpperCase()}")
-                                }
+            @CompileStatic(extensions='groovy/transform/sc/MixedModeDynamicBuilder.groovy')
+            String render(List<String> items) {
+                def sw = new StringWriter()
+                def mb = new MarkupBuilder(sw)
+                mb.html {
+                    body {
+                        ul {
+                            items.each { String item ->
+                                li("Item ${item.toUpperCase()}")
                             }
                         }
                     }
-
-                    sw
                 }
-                def list = ['Chocolate','Milk','Butter']
-                def rendered = render(list).replaceAll(/[\r\n]|[ ]{2,}/,'')
-                assert rendered == '<html><body><ul><li>Item CHOCOLATE</li><li>Item MILK</li><li>Item BUTTER</li></ul></body></html>'
-                '''
-        } finally {
-//            println astTrees
-        }
 
+                sw
+            }
+            def list = ['Chocolate','Milk','Butter']
+            def rendered = render(list).replaceAll(/[\r\n]|[ ]{2,}/,'')
+            assert rendered == '<html><body><ul><li>Item CHOCOLATE</li><li>Item MILK</li><li>Item BUTTER</li></ul></body></html>'
+        '''
     }
 
     void testDynamicClassWithStaticConstructorAndInitialization() {

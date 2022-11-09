@@ -30,6 +30,7 @@ class Groovy3873Bug extends GroovyTestCase {
             def list = []
             assert list.noSuchMethod()
         } finally {
+            List.metaClass = null
             ExpandoMetaClass.disableGlobally()
         }
     }
