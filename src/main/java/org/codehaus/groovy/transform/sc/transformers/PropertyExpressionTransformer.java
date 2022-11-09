@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 
 class PropertyExpressionTransformer {
@@ -36,19 +35,17 @@ class PropertyExpressionTransformer {
     }
 
     Expression transformPropertyExpression(final PropertyExpression pe) {
-        if (isThisOrSuper(pe.getObjectExpression())) { // TODO: all obj exp
-            MethodNode dmct = pe.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-            // NOTE: BinaryExpressionTransformer handles the setter
-            if (dmct != null && dmct.getParameters().length == 0) {
-                MethodCallExpression mce = callX(scTransformer.transform(pe.getObjectExpression()), dmct.getName());
-                mce.setImplicitThis(pe.isImplicitThis());
-                mce.setSpreadSafe(pe.isSpreadSafe());
-                mce.setMethodTarget(dmct);
-                mce.setSourcePosition(pe);
-                mce.copyNodeMetaData(pe);
-                mce.setSafe(pe.isSafe());
-                return mce;
-            }
+        MethodNode dmct = pe.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        // NOTE: BinaryExpressionTransformer handles the setter
+        if (dmct != null && dmct.getParameters().length == 0) {
+            MethodCallExpression mce = callX(scTransformer.transform(pe.getObjectExpression()), dmct.getName());
+            mce.setImplicitThis(pe.isImplicitThis());
+            mce.setMethodTarget(dmct);
+            mce.setSourcePosition(pe);
+            mce.setSpreadSafe(pe.isSpreadSafe());
+            mce.setSafe(pe.isSafe());
+            mce.copyNodeMetaData(pe);
+            return mce;
         }
 
         return scTransformer.superTransform(pe);

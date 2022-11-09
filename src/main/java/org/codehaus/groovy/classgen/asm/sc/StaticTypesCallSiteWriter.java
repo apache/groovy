@@ -75,7 +75,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
@@ -91,7 +90,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
@@ -220,24 +218,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 MethodCallExpression call = callX(receiver, getterName);
                 call.setImplicitThis(false);
                 call.setMethodTarget(getterMethod);
-                call.setSafe(safe);
-                call.setSourcePosition(receiver);
-                call.visit(controller.getAcg());
-                return;
-            }
-        }
-
-        // GROOVY-5568: we would be facing a DGM call, but instead of foo.getText(), have foo.text
-        List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, isserName, ClassNode.EMPTY_ARRAY);
-        methods.removeIf(dgm -> !isPrimitiveBoolean(dgm.getReturnType()));
-        findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY, methods);
-        if (!methods.isEmpty()) {
-            List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
-            if (methodNodes.size() == 1) {
-                MethodNode getter = methodNodes.get(0);
-                MethodCallExpression call = callX(receiver, getter.getName());
-                call.setImplicitThis(false);
-                call.setMethodTarget(getter);
                 call.setSafe(safe);
                 call.setSourcePosition(receiver);
                 call.visit(controller.getAcg());
