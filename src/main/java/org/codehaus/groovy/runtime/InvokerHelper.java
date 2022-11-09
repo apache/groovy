@@ -561,10 +561,13 @@ public class InvokerHelper {
     }
 
     public static MetaClass getMetaClass(Object object) {
-        if (object instanceof GroovyObject)
+        if (object instanceof GroovyObject) {
             return ((GroovyObject) object).getMetaClass();
-        else
+        } else if (object instanceof Class) {
+            return metaRegistry.getMetaClass((Class<?>) object); // GROOVY-10819
+        } else {
             return ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object);
+        }
     }
 
     public static MetaClass getMetaClass(Class cls) {

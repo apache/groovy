@@ -134,7 +134,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::emc[]
 
         // tag::emc4[]
-        GroovySystem.metaClassRegistry.setMetaClass(java.lang.String, null)
+        GroovySystem.metaClassRegistry.removeMetaClass(String)
         // end::emc4[]
     }
 

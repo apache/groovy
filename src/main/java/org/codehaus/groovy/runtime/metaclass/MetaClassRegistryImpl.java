@@ -270,27 +270,26 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     public MetaClass getMetaClass(Object obj) {
-        return ClassInfo.getClassInfo(obj.getClass()).getMetaClass(obj);
+        Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
+        return ClassInfo.getClassInfo(theClass).getMetaClass(obj);
     }
 
     /**
-     * if oldMc is null, newMc will replace whatever metaclass was used before.
-     * if oldMc is not null, then newMc will be used only if the stored mc is
-     * the same as oldMc
+     * If oldMC is null, newMC will replace whatever MC is present.
+     * Otherwise, newMC will be used only if the stored MC is the same as oldMC
      */
-    private void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {
-        final ClassInfo info = ClassInfo.getClassInfo(theClass);
-
+    private void setMetaClass(Class theClass, MetaClass oldMC, MetaClass newMC) {
+        ClassInfo info = ClassInfo.getClassInfo(theClass);
         MetaClass mc = null;
         info.lock();
         try {
             mc = info.getStrongMetaClass();
-            info.setStrongMetaClass(newMc);
+            info.setStrongMetaClass(newMC);
         } finally {
             info.unlock();
         }
-        if ((oldMc == null && mc != newMc) || (oldMc != null && mc != newMc && mc != oldMc)) {
-            fireConstantMetaClassUpdate(null, theClass, mc, newMc);
+        if ((oldMC == null && mc != newMC) || (oldMC != null && mc != newMC && mc != oldMC)) {
+            fireConstantMetaClassUpdate(null, theClass, mc, newMC);
         }
     }
 
@@ -299,34 +298,25 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         setMetaClass(theClass, null, null);
     }
 
-    /**
-     * Registers a new MetaClass in the registry to customize the type
-     *
-     * @param theClass
-     * @param theMetaClass
-     */
     @Override
     public void setMetaClass(Class theClass, MetaClass theMetaClass) {
-        setMetaClass(theClass,null,theMetaClass);
+        setMetaClass(theClass, null, theMetaClass);
     }
 
-
     public void setMetaClass(Object obj, MetaClass theMetaClass) {
-        Class theClass = obj.getClass ();
-        final ClassInfo info = ClassInfo.getClassInfo(theClass);
-        MetaClass oldMC = null;
+        Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
+        ClassInfo info = ClassInfo.getClassInfo(theClass);
+        MetaClass mc = null;
         info.lock();
         try {
-            oldMC = info.getPerInstanceMetaClass(obj);
+            mc = info.getPerInstanceMetaClass(obj);
             info.setPerInstanceMetaClass(obj, theMetaClass);
         }
         finally {
             info.unlock();
         }
-
-        fireConstantMetaClassUpdate(obj, theClass, oldMC, theMetaClass);
+        fireConstantMetaClassUpdate(obj, theClass, mc, theMetaClass);
     }
-
 
     public boolean useAccessible() {
         return useAccessible;
