@@ -855,10 +855,21 @@ public class GenericsUtils {
             GenericsType[] targetGenericsTypes = parameterizedType.redirect().getGenericsTypes();
             if (targetGenericsTypes != null) {
                 GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
-                if (sourceGenericsTypes == null) sourceGenericsTypes = EMPTY_GENERICS_ARRAY;
                 map = new LinkedHashMap<>();
-                for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
-                    map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
+                if (sourceGenericsTypes == null) {
+                    //We have no sourceGenerics, so we need to return the erasures for the raw types.
+                    // If the generic has upper bounds use the first one, else use Object (Groovy-10813)
+                    for (GenericsType targetGenericsType : targetGenericsTypes) {
+                        map.put(targetGenericsType,
+                                targetGenericsType.getUpperBounds() != null ?
+                                    targetGenericsType.getUpperBounds()[0].asGenericsType() :
+                                    ClassHelper.OBJECT_TYPE.asGenericsType()
+                        );
+                    }
+                } else {
+                    for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
+                        map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
+                    }
                 }
             }
         }

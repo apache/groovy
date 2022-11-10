@@ -1709,4 +1709,24 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert i == 1
         '''
     }
+
+    void testGroovy10813() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void testClosure(){
+                java.util.function.Consumer c = x -> print(x)
+                c.accept('hello world!')
+            }
+            testClosure()
+        '''
+        assertScript '''
+            interface A<T extends String>{void accept(T input);}
+            @groovy.transform.CompileStatic
+            void testClosure(){
+                A c = x -> print(x)
+                c.accept('hello world!')
+            }
+            testClosure()
+        '''
+    }
 }

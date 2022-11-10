@@ -275,4 +275,61 @@ final class GenericsUtilsTest {
 
         assert ClassHelper.Integer_TYPE == typeInfo[1]
     }
+
+    @Test
+    void testParameterizeSAMWithRawType() {
+        def classNodeList = compile '''
+            import java.util.function.*
+            interface T extends BinaryOperator {}
+        '''
+        ClassNode samType = findClassNode('T', classNodeList).interfaces.find { it.name == 'java.util.function.BinaryOperator' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert 2 == typeInfo.v1.length
+        assert ClassHelper.OBJECT_TYPE == typeInfo.v1[0]
+        assert ClassHelper.OBJECT_TYPE == typeInfo.v1[1]
+
+        assert ClassHelper.OBJECT_TYPE == typeInfo.v2
+    }
+
+    @Test
+    void testParameterizeSAMWithRawTypeWithUpperBound() {
+        def classNodeList = compile '''
+            interface A<T extends String> {
+                T apply(T input);
+            }
+            class B implements A{
+                @Override
+                String apply(String input) {
+                    return null
+                }
+            }
+        '''
+        ClassNode samType = findClassNode('B', classNodeList).interfaces.find { it.name == 'A' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert 1 == typeInfo.v1.length
+        assert ClassHelper.STRING_TYPE == typeInfo.v1[0]
+        assert ClassHelper.STRING_TYPE == typeInfo.v2
+    }
+
+    @Test
+    void testParameterizeSAMWithRawTypeWithUpperBounds() {
+        def classNodeList = compile '''
+            interface A<T extends String, Object> {
+                T apply(T input);
+            }
+            interface B extends A{
+            }
+        '''
+        ClassNode samType = findClassNode('B', classNodeList).interfaces.find { it.name == 'A' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert 1 == typeInfo.v1.length
+        assert ClassHelper.STRING_TYPE == typeInfo.v1[0]
+        assert ClassHelper.STRING_TYPE == typeInfo.v2
+    }
 }
