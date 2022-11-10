@@ -1426,26 +1426,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     @CompileStatic
     private static Optional<String> findPrimaryClassName(String javaSrc) {
-        List<TypeDeclaration<?>> result = new LinkedList<>()
-        CompilationUnit compilationUnit = StaticJavaParser.parse(javaSrc)
-
+        CompilationUnit compilationUnit= StaticJavaParser.parse(javaSrc)
         for (TypeDeclaration<?> td : compilationUnit.getTypes()) {
-            if (!(td.isTopLevelType() && td.isClassOrInterfaceDeclaration() && td.getModifiers().contains(Modifier.publicModifier()))) continue
-
-            if (td.fullyQualifiedName.isPresent()) {
-                result << td
+            if (td.isPublic()
+                    && td.isTopLevelType()
+                    && td.isClassOrInterfaceDeclaration()
+                    && td.getFullyQualifiedName().isPresent()) {
+                return td.getFullyQualifiedName();
             }
         }
-
-        String className = null
-        if (!result.isEmpty()) {
-            Optional<String> optionalClassName = result.get(0).getFullyQualifiedName()
-            if (optionalClassName.isPresent()) {
-                className = optionalClassName.get()
-            }
-        }
-
-        return Optional.ofNullable(className)
+        return Optional.empty()
     }
 
     void compileAsJava(EventObject evt = null) {

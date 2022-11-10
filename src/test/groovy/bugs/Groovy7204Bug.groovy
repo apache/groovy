@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -57,13 +58,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -99,13 +98,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -145,13 +142,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -191,13 +186,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -237,13 +230,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -281,13 +272,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -323,13 +312,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -369,13 +356,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -415,13 +400,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -461,20 +444,18 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic6() {
         assertScript shell, '''
             @CompileStatic

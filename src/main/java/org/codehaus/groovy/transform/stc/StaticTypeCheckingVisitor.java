@@ -274,7 +274,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evalua
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
@@ -1653,8 +1652,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // GROOVY-5568: the property may be defined by DGM
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
-                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
-                for (MethodNode method : findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
+                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName);
+                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
                 if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) {
@@ -1833,10 +1832,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isStatic;
         if (member instanceof FieldNode) {
             isStatic = ((FieldNode) member).isStatic();
-        } else if (member instanceof MethodNode) {
-            isStatic = ((MethodNode) member).isStatic();
-        } else {
+        } else if (member instanceof PropertyNode) {
             isStatic = ((PropertyNode) member).isStatic();
+        } else { // assume member instanceof MethodNode
+            isStatic = member instanceof ExtensionMethodNode ? ((ExtensionMethodNode) member).isStaticExtension() : ((MethodNode) member).isStatic();
         }
         return (isStatic ? member : null);
     }
@@ -3347,7 +3346,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (dmd.getParent() == null) {
                     receivers.addAll(owners);
                 } else {
-                    //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
+                  //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
                     addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
                 }
             }
@@ -3357,7 +3356,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (dmd.getParent() == null) {
                 receivers.addAll(owners);
             } else {
-                //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
+              //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
                 addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
             }
             if (strategy == Closure.OWNER_FIRST) {
@@ -3368,6 +3367,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
+        if (isClassClassNodeWrappingConcreteType(delegate)) { // add Type from Class<Type>
+            addDelegateReceiver(receivers, delegate.getGenericsTypes()[0].getType(), path);
+        }
         if (receivers.stream().map(Receiver::getType).noneMatch(delegate::equals)) {
             receivers.add(new Receiver<>(delegate, path));
         }
@@ -3498,38 +3500,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<Receiver<String>> receivers = new ArrayList<>();
                 addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
 
+                MethodNode first = null;
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
                 for (Receiver<String> currentReceiver : receivers) {
-                    ClassNode receiverType = currentReceiver.getType();
-                    mn = findMethod(receiverType, name, args);
-
-                    // if receiver is "this" in a static context then only static methods are compatible
-                    // if not in a static context but the current receiver is a static class ensure that
-                    // all methods are either static or declared by the current receiver or a superclass
-                    if (!mn.isEmpty() && currentReceiver.getData() == null && (isThisObjectExpression || call.isImplicitThis())
-                            && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)) {
-                        // we create separate method lists just to be able to print out
-                        // a nice error message to the user
-                        // a method is accessible if it is static, or if we are not in a static context and it is
-                        // declared by the current receiver or a superclass
-                        List<MethodNode> accessibleMethods = new LinkedList<>();
-                        List<MethodNode> inaccessibleMethods = new LinkedList<>();
-                        for (final MethodNode node : mn) {
-                            if (node.isStatic() || (!typeCheckingContext.isInStaticContext
-                                    && implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))) {
-                                accessibleMethods.add(node);
-                            } else {
-                                inaccessibleMethods.add(node);
-                            }
-                        }
-                        mn = accessibleMethods;
-                        if (accessibleMethods.isEmpty()) {
-                            MethodNode node = inaccessibleMethods.get(0); // choose an arbitrary method to display an error message
-                            addStaticTypeError("Non-static method " + prettyPrintTypeName(node.getDeclaringClass()) + "#" + node.getName() + " cannot be called from static context", call);
+                    mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                    if (!mn.isEmpty()) {
+                        first = mn.get(0); // capture for error string
+                        // for "this" in a static context, only static methods are compatible
+                        if (currentReceiver.getData() == null && !isClassType(currentReceiver.getType())) {
+                            boolean staticThis = (isThisObjectExpression || call.isImplicitThis()) && typeCheckingContext.isInStaticContext;
+                            boolean staticThat = isClassClassNodeWrappingConcreteType(receiver); // GROOVY-10819, GROOVY-10820
+                            mn = allowStaticAccessToMember(mn, staticThis || staticThat);
                         }
                     }
-
                     if (!mn.isEmpty()) {
                         chosenReceiver = currentReceiver;
                         break;
@@ -3538,19 +3522,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn.isEmpty() && isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
                     mn = CLOSURE_TYPE.getDeclaredMethods(name);
                     if (!mn.isEmpty()) {
-                        chosenReceiver = Receiver.make(CLOSURE_TYPE);
                         objectExpression.removeNodeMetaData(INFERRED_TYPE);
                     }
                 }
                 if (mn.isEmpty()) {
                     mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
+                    if (mn.isEmpty() && first != null) mn.add(first); // non-static method error?
                 }
                 if (mn.isEmpty()) {
                     addNoMatchingMethodError(receiver, name, args, call);
                 } else {
-                    if (areCategoryMethodCalls(mn, name, args)) {
-                        addCategoryMethodCallError(call);
-                    }
+                    if (areCategoryMethodCalls(mn, name, args)) addCategoryMethodCallError(call);
 
                     {
                         ClassNode obj = chosenReceiver != null ? chosenReceiver.getType() : null;
@@ -3569,8 +3551,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (mn.size() == 1) {
                         MethodNode targetMethodCandidate = mn.get(0);
                         ClassNode declaringClass = targetMethodCandidate.getDeclaringClass();
-                        if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass)
-                                && objectExpression instanceof ClassExpression && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
+                        if (chosenReceiver == null) {
+                            chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
+                        }
+                        if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
+                                && chosenReceiver.getData() == null && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
                         } else if (targetMethodCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
                             String target = toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters()));
@@ -3579,9 +3564,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             } else {
                                 addStaticTypeError("Abstract method " + target + " cannot be called directly", call);
                             }
-                        }
-                        if (chosenReceiver == null) {
-                            chosenReceiver = Receiver.make(declaringClass);
                         }
                         // note second pass here to differentiate from extension that sets type
                         boolean mergeType = (call.getNodeMetaData(INFERRED_TYPE) != null);
@@ -5004,11 +4986,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     methods.add(callMethod);
                 }
             }
-            if (!receiver.isStaticClass() && receiver.getOuterClass() != null
-                    && typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
-                ClassNode outer = receiver.getOuterClass();
-                do { methods.addAll(findMethodsWithGenerated(outer, name));
-                } while (!outer.isStaticClass() && (outer = outer.getOuterClass()) != null);
+            if (typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
+                boolean staticOnly = Modifier.isStatic(receiver.getModifiers());
+                for (ClassNode outer = receiver; (outer = outer.getOuterClass()) != null;
+                        staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers())) {
+                    methods.addAll(allowStaticAccessToMember(findMethodsWithGenerated(outer, name), staticOnly));
+                }
             }
             if (methods.isEmpty()) {
                 addArrayMethods(methods, receiver, name, args);
@@ -5072,7 +5055,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (isClassClassNodeWrappingConcreteType(receiver)) { // GROOVY-6802, GROOVY-6803
+        if (isClassClassNodeWrappingConcreteType(receiver)) { // GROOVY-6802, GROOVY-6803, GROOVY-9415
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             if (!result.isEmpty()) return result;
         }
@@ -5935,11 +5918,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected void addNoMatchingMethodError(ClassNode receiver, final String name, final ClassNode[] args, final Expression call) {
-        if (isClassClassNodeWrappingConcreteType(receiver)) {
-            receiver = receiver.getGenericsTypes()[0].getType();
-        }
-        addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(receiver) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.", call);
+    protected void addNoMatchingMethodError(final ClassNode receiver, final String name, final ClassNode[] args, final Expression call) {
+        ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : receiver;
+        addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.", call);
     }
 
     protected void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {

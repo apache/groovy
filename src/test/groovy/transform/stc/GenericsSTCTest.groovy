@@ -58,7 +58,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = []
             list.add(1)
         ''',
-        'Cannot find matching method java.util.ArrayList#add(int)'
+        'Cannot call java.util.ArrayList#add(java.lang.String) with arguments [int]'
     }
 
     void testAddOnList2() {
@@ -134,7 +134,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
         ''',
-        'Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
+        'Cannot call java.util.LinkedList#add(java.lang.Integer) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
@@ -241,7 +241,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Number number = Optional.of(42).orElse(Double.NaN)
             assert number.intValue() == 42
         ''',
-        'Cannot find matching method java.util.Optional#orElse(double).'
+        'Cannot call java.util.Optional#orElse(java.lang.Integer) with arguments [double]'
     }
 
     void testReturnTypeInferenceWithMethodGenerics5() {
@@ -257,7 +257,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Number number = Optional.ofNullable((Integer) null).orElse(42d)
             assert number.intValue() == 42
         ''',
-        'Cannot find matching method java.util.Optional#orElse(double).'
+        'Cannot call java.util.Optional#orElse(java.lang.Integer) with arguments [double]'
     }
 
     void testReturnTypeInferenceWithMethodGenerics7() {
@@ -2061,7 +2061,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<String, Integer>()
             map.put('hello', new Object())
         ''',
-        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
+        'Cannot call java.util.HashMap#put(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
     }
 
     void testPutAtWithWrongValueType() {
@@ -2093,7 +2093,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>)',
+        'Cannot call java.util.Map#put(java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>) with arguments [java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]',
         'Cannot assign java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>> to: java.util.Map<java.lang.String, java.util.List<java.lang.String>>'
 
         assertScript '''
@@ -2870,7 +2870,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<Date, Date> map = new HashMap<>()
             map.put(123, new Date())
         ''',
-        'Cannot find matching method java.util.HashMap#put(int, java.util.Date). Please check if the declared type is correct and if the method exists.'
+        'Cannot call java.util.HashMap#put(java.util.Date, java.util.Date) with arguments [int, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalKeyUsingSquareBracket() {
         shouldFailWithMessages '''
@@ -2910,7 +2910,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<Date, Date> map = new HashMap<>()
             map.put(new Date(), 'foo')
         ''',
-        'Cannot find matching method java.util.HashMap#put(java.util.Date, java.lang.String). Please check if the declared type is correct and if the method exists.'
+        'Cannot call java.util.HashMap#put(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingSquareBracket() {
         shouldFailWithMessages '''
@@ -3301,8 +3301,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test(new Holder<Object>())
         ''',
         'Cannot call TypedProperty#eq(java.lang.String) with arguments [groovy.lang.GString]',
-        'Cannot find matching method TypedProperty#eq(int)', // chooseBestMethod removes "eq"
-        'Cannot find matching method TypedProperty#eq(java.lang.String)'
+        'Cannot call TypedProperty#eq(java.lang.String) with arguments [int]',
+        'Cannot call TypedProperty#eq(java.lang.Number) with arguments [java.lang.String]'
     }
 
     // GROOVY-5748
