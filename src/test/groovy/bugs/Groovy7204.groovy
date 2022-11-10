@@ -482,7 +482,7 @@ final class Groovy7204 {
             }
 
             @CompileStatic
-            def test() {
+            void test() {
                 Repository<String, Long> r = new Repository<String, Long>()
                 r.delete('foo')
             }
