@@ -473,7 +473,7 @@ final class Groovy7204 {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
@@ -482,7 +482,7 @@ final class Groovy7204 {
             }
 
             @CompileStatic
-            def test() {
+            void test() {
                 Repository<String, Long> r = new Repository<String, Long>()
                 r.delete('foo')
             }

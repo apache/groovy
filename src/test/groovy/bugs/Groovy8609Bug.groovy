@@ -26,121 +26,118 @@ final class Groovy8609Bug extends GroovyTestCase {
 
     void testUpperBoundWithGenerics() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E extends Map<String, Integer>> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0)
-            }
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E extends Map<String, Integer>> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0)
+                }
 
-            static void main(args) {
-                def list = new ArrayList<HashMap<String, Integer>>()
-                def record = new HashMap<String, Integer>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<HashMap<String, Integer>>()
+                    def record = new HashMap<String, Integer>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
     }
 
     void testUpperBoundWithoutGenerics() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E extends Map> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0);
-            }
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E extends Map> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0);
+                }
 
-            static void main(args) {
-                def list = new ArrayList<HashMap<String, Integer>>()
-                def record = new HashMap<String, Integer>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<HashMap<String, Integer>>()
+                    def record = new HashMap<String, Integer>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
     }
 
     void testNoUpperBound() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0);
-            }
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0);
+                }
 
-            static void main(args) {
-                def list = new ArrayList<HashMap<String, Integer>>()
-                def record = new HashMap<String, Integer>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<HashMap<String, Integer>>()
+                    def record = new HashMap<String, Integer>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
     }
 
     void testUpperBoundWithGenericsThroughWrongType() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E extends Map<String, Integer>> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0)
-            }
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E extends Map<String, Integer>> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0)
+                }
 
-            static void main(args) {
-                def list = new ArrayList<TreeMap<String, Integer>>()
-                def record = new TreeMap<String, Integer>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<TreeMap<String, Integer>>()
+                    def record = new TreeMap<String, Integer>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
-
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>)')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>]')
     }
 
     void testUpperBoundWithGenericsThroughWrongType2() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E extends Map<String, Integer>> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0)
-            }
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E extends Map<String, Integer>> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0)
+                }
 
-            static void main(args) {
-                def list = new ArrayList<HashMap<String, Long>>()
-                def record = new HashMap<String, Long>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<HashMap<String, Long>>()
+                    def record = new HashMap<String, Long>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
-
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>)')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>]')
     }
 
     void testUpperBoundWithGenericsThroughWrongType3() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        public class A<T extends List<E>, E extends Map<String, Integer>> {
-            E getFirstRecord(T recordList) {
-                return recordList.get(0)
-            }
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            public class A<T extends List<E>, E extends Map<String, Integer>> {
+                E getFirstRecord(T recordList) {
+                    return recordList.get(0)
+                }
 
-            static void main(args) {
-                def list = new ArrayList<HashMap<StringBuffer, Integer>>()
-                def record = new HashMap<StringBuffer, Integer>()
-                list.add(record)
-                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
-                assert record.is(a.getFirstRecord(list))
+                static void main(args) {
+                    def list = new ArrayList<HashMap<StringBuffer, Integer>>()
+                    def record = new HashMap<StringBuffer, Integer>()
+                    list.add(record)
+                    def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                    assert record.is(a.getFirstRecord(list))
+                }
             }
-        }
         '''
-
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>)')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>]')
     }
 }

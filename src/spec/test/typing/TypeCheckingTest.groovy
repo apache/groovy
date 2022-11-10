@@ -700,7 +700,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
             // end::flowtyping_typeconstraints_failure[]
             flowTypingWithExplicitType()
-        ''', '[Static type checking] - Cannot find matching method java.util.ArrayList#add(int)'
+        ''',
+        'Cannot call java.util.ArrayList#add(java.lang.String) with arguments [int]'
 
         assertScript '''
             // tag::flowtyping_typeconstraints_fixed[]

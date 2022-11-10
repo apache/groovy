@@ -56,7 +56,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             A a = new A()
             assert a.foo(1,1)==2
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallOnInstanceWithVarArgs() {
@@ -84,7 +85,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testMissingStaticMethod() {
         shouldFailWithMessages '''
             A.missing 'echo'
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testStaticMethodWithVarArgs() {
@@ -206,7 +208,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             B c = new B<Integer>()
             String[] args = ['a','b','c']
             assert c.identity(args) == args
-        ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
+        ''',
+        'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
     }
 
     // GROOVY-8909
@@ -222,7 +225,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             void m(Set<Integer> set) {
             }
             m([1,2,3,3])
-        ''', 'm(java.util.List<java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
+        ''',
+        'm(java.util.List<java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
     }
 
     // GROOVY-7106, GROOVY-7274, GROOVY-9844
@@ -384,7 +388,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             class Peer {
                 def foo() { new Main() }
             }
-        ''', '[Static type checking] - Cannot find matching method Main#<init>()'
+        ''',
+        'Cannot find matching method Main#<init>()'
     }
 
     // GROOVY-8509
@@ -512,7 +517,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar(null, new Date())
                 }
             }
-        ''', 'Reference to method is ambiguous'
+        ''',
+        'Reference to method is ambiguous'
     }
 
     // GROOVY-5175
@@ -572,7 +578,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 'Boolean'
             }
             ['foo',123,true].each { foo(it) }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testShouldNotFailThanksToInstanceOfChecks() {
@@ -660,7 +667,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     foo(it)
                 }
             }
-        ''', 'Reference to method is ambiguous'
+        ''',
+        'Reference to method is ambiguous'
     }
 
     void testShouldFailWithMultiplePossibleMethods2() {
@@ -679,7 +687,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     foo(argument)
                 }
             }
-        ''', 'Reference to method is ambiguous'
+        ''',
+        'Reference to method is ambiguous'
     }
 
     // GROOVY-5703
@@ -781,7 +790,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 it = new Date()
                 foo(it)
             }
-        ''', 'foo(java.util.Date)'
+        ''',
+        'foo(java.util.Date)'
     }
 
     void testShouldNotFailEvenIfVariableIsReassigned() {
@@ -832,7 +842,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return val.toUpperCase()
             }
             assert m(123) == 'HELLO'
-        ''', '#m(int)'
+        ''',
+        '#m(int)'
     }
 
     void testOneDefaultParamAndOneWithout() {
@@ -851,7 +862,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return val.toUpperCase() + append
             }
             m('test', new Object())
-        ''', 'm(java.lang.String, java.lang.Object)'
+        ''',
+        'm(java.lang.String, java.lang.Object)'
     }
 
     void testMultipleDefaultArgs() {
@@ -880,7 +892,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
             }
             m('f',123,'s', 'too many args')
-        ''', '#m(java.lang.String, int, java.lang.String, java.lang.String)'
+        ''',
+        '#m(java.lang.String, int, java.lang.String, java.lang.String)'
     }
 
     void testMultipleDefaultArgsWithMixedTypesAndWrongType() {
@@ -889,7 +902,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
             }
             m('hello') // no value set for "second"
-        ''', '#m(java.lang.String)'
+        ''',
+        '#m(java.lang.String)'
     }
 
     void testShouldNotFailWithAmbiguousMethodSelection() {
@@ -915,7 +929,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             float square(float x) { x*x }
             assert square(2.0d) == 4.0d
-        ''', '#square(double)'
+        ''',
+        '#square(double)'
     }
 
     void testShouldNotBeAbleToCallMethodUsingLongWithFloatOrDouble() {
@@ -923,31 +938,34 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             float square(long x) { x*x }
             assert square(2.0d) == 4.0d
             assert square(2.0f) == 4.0d
-        ''', '#square(double)', '#square(float)'
+        ''',
+        '#square(double)', '#square(float)'
     }
 
-    void testShouldNotAllowMethodCallFromStaticContext() {
-        shouldFailWithMessages '''
-            class A {
-                void instanceMethod() {}
-                static void staticMethod() {
-                    instanceMethod() // calling instance method from static context
-                }
-            }
-            A.staticMethod()
-        ''', 'Non-static method A#instanceMethod cannot be called from static context'
-    }
-
-    void testShouldNotAllowMethodCallFromStaticConstructor() {
+    void testShouldNotAllowMethodCallFromStaticInitializer() {
         shouldFailWithMessages '''
             class A {
                 void instanceMethod() {}
                 static {
-                    instanceMethod() // calling instance method from static context
+                    instanceMethod()
                 }
             }
             new A()
-        ''', 'Non-static method A#instanceMethod cannot be called from static context'
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticMethod() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+                static void staticMethod() {
+                    instanceMethod()
+                }
+            }
+            A.staticMethod()
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticField() {
@@ -957,7 +975,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 static FOO = instanceMethod()
             }
             new A()
-        ''', 'Non-static method A#instanceMethod cannot be called from static context'
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     // GROOVY-5495
@@ -1600,11 +1619,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testMoreExplicitErrorMessageOnStaticMethodNotFound() {
         shouldFailWithMessages '''
             Double.isFiniteMissing(2.0d)
-        ''', 'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
+        ''',
+        'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
 
         shouldFailWithMessages '''
             String.doSomething()
-        ''', 'Cannot find matching method java.lang.String#doSomething()'
+        ''',
+        'Cannot find matching method java.lang.String#doSomething()'
     }
 
     // GROOVY-6776
@@ -1615,7 +1636,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 foo null
             }
             bar()
-        ''', '#foo(int) with arguments [<unknown parameter type>]'
+        ''',
+        '#foo(int) with arguments [<unknown parameter type>]'
     }
 
     // GROOVY-6751
@@ -1637,49 +1659,58 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7987
+    void testNonStaticMethodViaStaticReceiver() {
+        shouldFailWithMessages '''
+            class Foo {
+                def m() {}
+            }
+            Foo.m()
+        ''',
+        'Non-static method Foo#m cannot be called from static context'
+    }
+
     // GROOVY-7813
     void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
         shouldFailWithMessages '''
             class Foo {
-                def bar() { 2 }
-
-                static class Baz {
-                    def doBar() { bar() }
+                def m() {}
+                static class Bar {
+                    void test() { m() }
                 }
             }
-            null
-        ''', 'Non-static method Foo#bar cannot be called from static context'
+        ''',
+        'Cannot find matching method Foo$Bar#m()'
     }
 
     void testStaticOuterMethodCanBeCalledFromStaticClass() {
         assertScript '''
             class Foo {
-                static def bar() { 2 }
-
-                static class Baz {
-                    def doBar() {
-                        bar()
+                static def sm() { 2 }
+                static class Bar {
+                    void test() {
+                        assert sm() == 2
                     }
                 }
             }
-            assert new Foo.Baz().doBar() == 2
+            new Foo.Bar().test()
         '''
     }
 
     void testInheritedMethodCanBeCalledFromStaticClass() {
         assertScript '''
-            class Bar {
-                def bar() { 1 }
+            class Foo {
+                def m() { 1 }
             }
 
-            class Foo {
-                static class Baz extends Bar {
-                    def doBar() {
-                        bar()
+            class Bar {
+                static class Baz extends Foo {
+                    void test() {
+                        assert m() == 1
                     }
                 }
             }
-            assert new Foo.Baz().doBar() == 1
+            new Bar.Baz().test()
         '''
     }
 
