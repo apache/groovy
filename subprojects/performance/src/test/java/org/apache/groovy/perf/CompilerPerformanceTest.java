@@ -30,8 +30,8 @@ import java.util.List;
 
 public class CompilerPerformanceTest {
     private final static String GROOVY_VERSION = GroovySystem.getVersion();
-    private final static int WARMUP = 200;
-    private final static int REPEAT = 1000;
+    private final static int WARMUP = 100;
+    private final static int REPEAT = 500;
 
     public static void main(String[] args) throws Exception {
         List<File> sources = new ArrayList<>();
@@ -53,30 +53,30 @@ public class CompilerPerformanceTest {
             }
         }
         ScriptCompilationExecuter executer = new ScriptCompilationExecuter(
-                sources.toArray(new File[sources.size()]),
-                classpath
+            sources.toArray(new File[sources.size()]),
+            classpath
         );
-        System.out.println("Using Groovy " + GROOVY_VERSION);
+        System.out.println("Showing compile times for Groovy " + GROOVY_VERSION);
 
         DescriptiveStatistics stats = new DescriptiveStatistics();
 
-        for (int i=0;i<WARMUP+REPEAT;i++) {
-            if (i%10 == 0) {
+        for (int i = 0; i < WARMUP + REPEAT; i++) {
+            if (i % 10 == 0) {
                 if (i < WARMUP) {
-                    System.out.println("Warmup #" + (i + 1));
+                    System.out.println("\nWarmup #" + (i + 1));
                 } else {
-                    System.out.println("Round #" + (i - WARMUP));
+                    System.out.println("\nRound # " + (i - WARMUP));
                 }
             }
             long dur = executer.execute();
             System.gc();
-            System.out.printf("Compile time = %dms%n", dur);
-            if (i>=WARMUP) {
+            System.out.printf("%dms ", dur);
+            if (i >= WARMUP) {
                 stats.addValue((double) dur);
             }
         }
 
-        System.out.println("Compilation took " + stats.getMean() + "ms ± " + stats.getStandardDeviation() + "ms");
+        System.out.println("\nCompilation took " + stats.getMean() + "ms ± " + stats.getStandardDeviation() + "ms");
         FileWriter wrt = new FileWriter(new File(outputFile), false);
         wrt.append(String.format("%s;%s;%s\n", GROOVY_VERSION, stats.getMean(), stats.getStandardDeviation()));
         wrt.close();
