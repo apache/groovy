@@ -260,7 +260,7 @@ final class InheritConstructorsTransformTest {
             assert op.toString() == '3|DOWN'
         '''
         assert err.message.contains('Cannot call OrderPublisher#<init>(java.util.Deque<java.lang.Integer>) with arguments [java.util.LinkedList<java.lang.String>]')
-        assert err.message.contains('Cannot find matching method OrderPublisher#<init>(java.util.Date)')
+        assert err.message.contains('Cannot call OrderPublisher#<init>(java.math.RoundingMode) with arguments [java.util.Date]')
         assert err.message.contains('Cannot call OrderPublisher#<init>(java.util.Set<java.math.RoundingMode>) with arguments [java.util.HashSet<java.util.Date>]')
     }
 

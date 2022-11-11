@@ -2312,7 +2312,7 @@ final class TraitASTTransformationTest {
             test()
         '''
 
-        assert err =~ 'Cannot find matching method Dummy#set\\(java.lang.String\\)'
+        assert err =~ /Cannot call Dummy#set\(App\) with arguments \[java.lang.String\]/
     }
 
     @Test

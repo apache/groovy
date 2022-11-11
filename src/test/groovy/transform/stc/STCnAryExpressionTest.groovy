@@ -257,13 +257,13 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
            'abc' < 1
         ''',
-        'Cannot find matching method java.lang.String#compareTo(int)'
+        'Cannot call java.lang.String#compareTo(java.lang.String) with arguments [int]'
     }
 
     void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc'.compareTo(1)
         ''',
-        'Cannot find matching method java.lang.String#compareTo(int)'
+        'Cannot call java.lang.String#compareTo(java.lang.String) with arguments [int]'
     }
 }

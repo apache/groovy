@@ -23,13 +23,13 @@ import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-final class Groovy7204Bug {
+final class Groovy7204 {
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports { star 'groovy.transform' }
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testTypeChecked1() {
         assertScript shell, '''
             @TypeChecked
@@ -69,7 +69,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testTypeChecked2() {
         assertScript shell, '''
             @TypeChecked
@@ -109,7 +109,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testTypeChecked3() {
         assertScript shell, '''
             @TypeChecked
@@ -153,7 +153,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testTypeChecked4() {
         assertScript shell, '''
             @TypeChecked
@@ -197,7 +197,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testTypeChecked5() {
         assertScript shell, '''
             @TypeChecked
@@ -241,9 +241,27 @@ final class Groovy7204Bug {
         '''
     }
 
+    @NotYetImplemented @Test
+    void testTypeChecked6() {
+        assertScript shell, '''
+            class Repository<T, S extends Serializable> {
+                void delete(T arg) { assert true }
+                void delete(S arg) { assert false: 'wrong method invoked' }
+            }
+
+            @TypeChecked
+            def test() {
+                Repository<String, Long> r = new Repository<String, Long>()
+                r.delete('foo')
+            }
+
+            test()
+        '''
+    }
+
     //
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic1() {
         assertScript shell, '''
             @CompileStatic
@@ -283,7 +301,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic2() {
         assertScript shell, '''
             @CompileStatic
@@ -323,7 +341,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic3() {
         assertScript shell, '''
             @CompileStatic
@@ -367,7 +385,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic4() {
         assertScript shell, '''
             @CompileStatic
@@ -411,7 +429,7 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test
     void testCompileStatic5() {
         assertScript shell, '''
             @CompileStatic
@@ -458,7 +476,6 @@ final class Groovy7204Bug {
     @NotYetImplemented @Test
     void testCompileStatic6() {
         assertScript shell, '''
-            @CompileStatic
             class Repository<T, S extends Serializable> {
                 void delete(T arg) { assert true }
                 void delete(S arg) { assert false: 'wrong method invoked' }
@@ -474,47 +491,64 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @NotYetImplemented @Test // GROOVY-8059
     void testCompileStatic7() {
         assertScript shell, '''
-            @CompileStatic
-            class Trie<T> {
+            abstract class A<K extends Serializable, V> {
+                void delete(K key) {}
+                void delete(V val) {}
+            }
+            class C extends A<String, Integer> {
             }
 
             @CompileStatic
-            class Base<T> {
-                protected List<Trie<T>> list
-
-                Base() {
-                    list = new ArrayList<Trie<T>>()
-                    list.add(new Trie<String>()) // should fail?
+            class Test {
+                Test() {
+                    def obj = new C()
+                    obj.delete(Integer.valueOf(1))
                 }
             }
 
-            @CompileStatic
-            class Derived extends Base<String> {
-                Trie<String> getFirstElement() {
-                    list.get(0)
-                }
-            }
-
-            assert new Derived().getFirstElement() instanceof Trie
+            new Test()
         '''
     }
 
     @Test
     void testCompileStatic8() {
         assertScript shell, '''
-            @CompileStatic
             class Trie<T> {
             }
 
             @CompileStatic
+            class Base<T> {
+                protected List<Trie<T>> list = []
+                Base() {
+                    list.add(new Trie<String>()) // should fail!!
+                }
+            }
+
+            @CompileStatic
+            class Test extends Base<String> {
+                Trie<String> getFirstElement() {
+                    list.get(0)
+                }
+            }
+
+            assert new Test().firstElement instanceof Trie
+        '''
+    }
+
+    @Test
+    void testCompileStatic9() {
+        assertScript shell, '''
+            class Trie<T> {
+            }
+
             class Base<T> extends ArrayList<Trie<T>> {
             }
 
-            @groovy.transform.CompileStatic
-            class Derived extends Base<String> {
+            @CompileStatic
+            class Test extends Base<String> {
                 Derived() {
                     add(new Trie<String>())
                 }
@@ -523,7 +557,7 @@ final class Groovy7204Bug {
                 }
             }
 
-            assert new Derived().firstElement instanceof Trie
+            assert new Test().firstElement instanceof Trie
         '''
     }
 }
