@@ -34,27 +34,36 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     void testBinaryStringPlusInt() {
         assertScript '''
             String str = 'a'
-            int str2 = 2
-            str+str2
+            int num = 2
+            str+num
         '''
     }
 
     void testBinaryObjectPlusInt() {
         shouldFailWithMessages '''
-            def str = new Object()
-            int str2 = 2
-            str+str2
+            def obj = new Object()
+            int num = 2
+            obj+num
         ''',
         'Cannot find matching method java.lang.Object#plus(int)'
     }
 
     void testBinaryIntPlusObject() {
         shouldFailWithMessages '''
-            def str = new Object()
-            int str2 = 2
-            str2+str
+            def obj = new Object()
+            int num = 2
+            num+obj
         ''',
         'Cannot find matching method int#plus(java.lang.Object)'
+    }
+
+    // GROOVY-10818
+    void testBinaryTimeDurationPlus() {
+        assertScript '''import groovy.time.*
+            TimeDuration td1 = new TimeDuration(0, 1, 20, 43, 0)
+            TimeDuration td2 = new TimeDuration(0, 0, 20, 17, 0)
+            Duration d = td1 + td2
+        '''
     }
 
     void testPrimitiveComparison() {
