@@ -76,6 +76,9 @@ class PerformanceTestsExtension {
         def groovyConf = configurations.create("groovyVersion$version") { Configuration it ->
             it.canBeResolved = true
             it.canBeConsumed = false
+            it.resolutionStrategy {
+                disableDependencyVerification()
+            }
             it.extendsFrom(configurations.getByName("stats"))
             it.attributes {
                 it.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
@@ -99,9 +102,9 @@ class PerformanceTestsExtension {
             it.dependencies.add(dependencies.create('commons-httpclient:commons-httpclient:3.1'))
             it.dependencies.add(dependencies.create('net.sf.jopt-simple:jopt-simple:5.0.4'))
             it.dependencies.add(dependencies.create('com.baulsupp.kolja:jcurses:0.9.5.3'))
-            it.dependencies.add(dependencies.create('mstor:mstor:0.9.9'))
+            it.dependencies.add(dependencies.create('org.mnode.mstor:mstor:1.0.2'))
             it.dependencies.add(dependencies.create('commons-lang:commons-lang:2.6'))
-            it.dependencies.add(dependencies.create('dnsjava:dnsjava:2.1.9'))
+            it.dependencies.add(dependencies.create('dnsjava:dnsjava:3.5.1'))
             it.dependencies.add(dependencies.create('net.sourceforge.expectj:expectj:2.0.7'))
             it.dependencies.add(dependencies.create('jline:jline:2.14.6'))
             it.dependencies.add(dependencies.create('prevayler:prevayler:2.02.005'))
