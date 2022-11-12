@@ -549,7 +549,7 @@ final class Groovy7204 {
 
             @CompileStatic
             class Test extends Base<String> {
-                Derived() {
+                Test() {
                     add(new Trie<String>())
                 }
                 Trie<String> getFirstElement() {
