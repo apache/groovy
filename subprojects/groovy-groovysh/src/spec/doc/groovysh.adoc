@@ -395,18 +395,71 @@ Create an alias.
 [[GroovyShell-doc]]
 ===== `doc`
 
-Opens a browser with documentation for the provided class. For example:
+Opens a browser with documentation for the provided class.
 
+For example, we can get both the Javadoc and GDK enhancements doc for `java.util.List` (shown running on JDK17):
+
+[subs=attributes]
 ----
 groovy:000> :doc java.util.List
-http://docs.oracle.com/javase/7/docs/api/java/util/List.html
-http://docs.groovy-lang.org/2.4.2-SNAPSHOT/html/groovy-jdk/java/util/List.html
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/java/util/List.html
 ----
 
-will open two windows (or tabs, depending on your browser):
+This will print the documentation URLs found and open two windows (or tabs, depending on your browser):
 
 * one for the JDK documentation
 * one for the GDK documentation
+
+By default, for Java classes, the `java.base` module is assumed. You can specify an optional module
+for other cases (shown running on JDK17):
+
+----
+groovy:000> :doc java.scripting javax.script.ScriptContext
+https://docs.oracle.com/en/java/javase/17/docs/api/java.scripting/javax/script/ScriptContext.html
+----
+
+For backwards compatibility, if no module is specified when searching for Java classes, and no class is found in the `java.base` module, an additional attempt is made to find documentation for the class in the JDK8 (pre-module) Javadoc:
+
+----
+groovy:000> :doc javax.script.ScriptContext
+https://docs.oracle.com/javase/8/docs/api/javax/script/ScriptContext.html
+----
+
+To get the Groovydoc for `groovy.ant.AntBuilder` and `groovy.xml.XmlSlurper`:
+
+[subs=attributes]
+----
+groovy:000> :doc groovy.ant.AntBuilder
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/ant/AntBuilder.html
+groovy:000> :doc groovy.xml.XmlSlurper
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/xml/XmlSlurper.html
+----
+
+To get both the Groovydoc and GDK enhancements doc for `groovy.lang.Closure` and `groovy.sql.GroovyResultSet`:
+
+[subs=attributes]
+----
+groovy:000> :doc groovy.lang.Closure
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/lang/Closure.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/lang/Closure.html
+groovy:000> :doc groovy.sql.GroovyResultSet
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/sql/GroovyResultSet.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/sql/GroovyResultSet.html
+----
+
+Documentation is also available for the GDK enhancements to primitive arrays and arrays of arrays:
+
+[subs=attributes]
+----
+groovy:000> :doc int[]
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/int%5B%5D.html
+groovy:000> :doc double[][]
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/double%5B%5D%5B%5D.html
+----
+
+NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI server,
+this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
 
 [[GroovyShell-set]]
 ===== `set`
