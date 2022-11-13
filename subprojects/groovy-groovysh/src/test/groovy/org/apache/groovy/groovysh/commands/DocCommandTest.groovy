@@ -36,10 +36,15 @@ class DocCommandTest extends CommandTestSupport {
     void testUrlsForJavaOnlyClass() {
         def command = docCommandWithSendHEADRequestReturnValueOf { !it.host.contains('docs.groovy-lang.org') }
 
+        // no module specified
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
-
         assert urls ==
-            [new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/org/ietf/jgss/GSSContext.html")]
+            [new URL("https://docs.oracle.com/javase/8/docs/api/org/ietf/jgss/GSSContext.html")]
+
+        // explicit module given
+        urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
+        assert urls ==
+            [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
     }
 
     void testUrlsForJavaClass() {
@@ -48,17 +53,17 @@ class DocCommandTest extends CommandTestSupport {
         def urls = command.urlsFor('java.util.List')
 
         assert urls ==
-                [new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html"),
-                 new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
+                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
     }
 
     void testUrlsForGroovyClass() {
         def command = docCommandWithSendHEADRequestReturnValueOf { true }
 
-        def urls = command.urlsFor('groovy.Dummy')
+        def urls = command.urlsFor('groovy.console.TextNode')
 
         assert urls ==
-                [new URL("http://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/Dummy.html")]
+                [new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/console/TextNode.html")]
     }
 
     void testUrlsForWithUnknownClass() {
