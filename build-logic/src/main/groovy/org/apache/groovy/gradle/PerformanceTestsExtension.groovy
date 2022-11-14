@@ -97,7 +97,7 @@ class PerformanceTestsExtension {
             it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-templates']) : (v.startsWith('4') ? "org.apache.groovy:groovy-templates:$v" : "org.codehaus.groovy:groovy-templates:$v")))
             it.dependencies.add(dependencies.create('org.cyberneko:html:1.9.8'))
             it.dependencies.add(dependencies.create('commons-net:commons-net:3.8.0'))
-            it.dependencies.add(dependencies.create('net.sourceforge.htmlunit:htmlunit:2.63.0'))
+            it.dependencies.add(dependencies.create('net.sourceforge.htmlunit:htmlunit:2.66.0'))
             it.dependencies.add(dependencies.create('berkeleydb:je:3.2.76'))
             it.dependencies.add(dependencies.create('commons-httpclient:commons-httpclient:3.1'))
             it.dependencies.add(dependencies.create('net.sf.jopt-simple:jopt-simple:5.0.4'))
