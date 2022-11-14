@@ -249,7 +249,7 @@ sonarqube {
     }
 }
 
-def UNSTABLE = /^([\d.-]+(alpha|beta|rc|m)[\d.-]+(groovy[\d.-]+)?|20030203.000550|20031129.200437|20040427|2004-03-19)$/
+def UNSTABLE = /^([\d.-]+(alpha|beta|rc|m)[\d.-]+(groovy[\d.-]+)?|20030203.000550|20031129.200437|200404\d\d|2004-03-19)$/
 // ignore non-stable releases
 tasks.named("dependencyUpdates")?.configure {
     gradleReleaseChannel = 'current'
