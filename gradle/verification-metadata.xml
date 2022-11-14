@@ -66,7 +66,7 @@
             <trusting group="commons-collections" name="commons-collections" version="3.2.2"/>
             <trusting group="commons-logging" name="commons-logging" version="1.2"/>
          </trusted-key>
-         <trusted-key id="120d6f34e627ed3a772ebbfe55c7e5e701832382" group="org.yaml" name="snakeyaml" version="1.31"/>
+         <trusted-key id="120d6f34e627ed3a772ebbfe55c7e5e701832382" group="org.yaml" name="snakeyaml" version="1.33"/>
          <trusted-key id="12d16069219c90212a974d119ae296fd02e9f65b" group="org.apache.commons" name="commons-math3" version="3.2"/>
          <trusted-key id="190d5a957ff22273e601f7a7c92c5fec70161c62">
             <trusting group="org.codehaus.plexus"/>
@@ -760,6 +760,11 @@
       <component group="org.sonatype.spice" name="spice-parent" version="17">
          <artifact name="spice-parent-17.pom">
             <pgp value="2bcbdd0f23ea1cafcc11d4860374cf2e8dd1bdfd"/>
+         </artifact>
+      </component>
+      <component group="org.yaml" name="snakeyaml" version="1.33">
+         <artifact name="snakeyaml-1.33.jar">
+            <pgp value="120d6f34e627ed3a772ebbfe55c7e5e701832382"/>
          </artifact>
       </component>
       <component group="org.ysb33r.gradle" name="grolifant" version="0.16.1">
