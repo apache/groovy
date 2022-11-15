@@ -110,6 +110,6 @@ public class CastExpression extends Expression {
 
     @Override
     public void setType(final ClassNode type) {
-        super.setType(type);
+        super.setType(java.util.Objects.requireNonNull(type)); // GROOVY-9739
     }
 }
