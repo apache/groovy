@@ -88,7 +88,7 @@ public class CastExpression extends Expression {
 
     @Override
     public String toString() {
-        return super.toString() +"[(" + getType().getName() + ") " + expression + "]";
+        return super.toString() + "[" + getText() + "]";
     }
 
     @Override
@@ -108,7 +108,10 @@ public class CastExpression extends Expression {
 
     @Override
     public String getText() {
-        return "(" + getType().toString(false) + ") " + expression.getText(); // TODO: add alternate for "as"?
+        if (isCoerce()) {
+            return expression.getText() + " as " + getType().toString(false);
+        }
+        return "(" + getType().toString(false) + ") " + expression.getText();
     }
 
     @Override
