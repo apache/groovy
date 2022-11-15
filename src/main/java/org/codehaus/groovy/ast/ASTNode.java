@@ -48,19 +48,21 @@ public class ASTNode implements NodeMetaDataHandler {
 
     private Map<?, ?> metaDataMap;
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
     }
 
     public String getText() {
-        return "<not implemented yet for class: " + getClass().getName() + ">";
+        Class<?> nodeType = getClass();
+        if (nodeType.isAnonymousClass()) nodeType = nodeType.getSuperclass();
+        return "<not implemented yet for class: " + nodeType.getName() + ">";
     }
 
     public int getLineNumber() {
         return lineNumber;
     }
 
-    public void setLineNumber(int lineNumber) {
+    public void setLineNumber(final int lineNumber) {
         this.lineNumber = lineNumber;
     }
 
@@ -68,7 +70,7 @@ public class ASTNode implements NodeMetaDataHandler {
         return columnNumber;
     }
 
-    public void setColumnNumber(int columnNumber) {
+    public void setColumnNumber(final int columnNumber) {
         this.columnNumber = columnNumber;
     }
 
@@ -76,7 +78,7 @@ public class ASTNode implements NodeMetaDataHandler {
         return lastLineNumber;
     }
 
-    public void setLastLineNumber(int lastLineNumber) {
+    public void setLastLineNumber(final int lastLineNumber) {
         this.lastLineNumber = lastLineNumber;
     }
 
@@ -84,7 +86,7 @@ public class ASTNode implements NodeMetaDataHandler {
         return lastColumnNumber;
     }
 
-    public void setLastColumnNumber(int lastColumnNumber) {
+    public void setLastColumnNumber(final int lastColumnNumber) {
         this.lastColumnNumber = lastColumnNumber;
     }
 
@@ -96,7 +98,7 @@ public class ASTNode implements NodeMetaDataHandler {
      *
      * @param node - the node used to configure the position information
      */
-    public void setSourcePosition(ASTNode node) {
+    public void setSourcePosition(final ASTNode node) {
         this.lineNumber = node.getLineNumber();
         this.columnNumber = node.getColumnNumber();
         this.lastLineNumber = node.getLastLineNumber();
@@ -107,7 +109,7 @@ public class ASTNode implements NodeMetaDataHandler {
      * Copies all node metadata from the other node to this one
      * @param other - the other node
      */
-    public void copyNodeMetaData(ASTNode other) {
+    public void copyNodeMetaData(final ASTNode other) {
         copyNodeMetaData((NodeMetaDataHandler) other);
     }
 
@@ -117,7 +119,7 @@ public class ASTNode implements NodeMetaDataHandler {
     }
 
     @Override
-    public void setMetaDataMap(Map<?, ?> metaDataMap) {
+    public void setMetaDataMap(final Map<?, ?> metaDataMap) {
         this.metaDataMap = metaDataMap;
     }
 }

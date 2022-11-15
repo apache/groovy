@@ -43,6 +43,11 @@ public abstract class BytecodeExpression extends Expression {
         setType(type);
     }
 
+    @Override
+    public String getText() {
+        return "<bytecode sequence>";
+    }
+
     public abstract void visit(MethodVisitor visitor);
 
     @Override
