@@ -56,9 +56,15 @@ class DocCommandTest extends CommandTestSupport {
 
         def urls = command.urlsFor('java.util.List')
 
-        assert urls ==
+        if (isAtLeastJdk('11.0')) {
+            assert urls ==
                 [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
                  new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
+        } else {
+            assert urls ==
+                [new URL("https://docs.oracle.com/javase/8/docs/api/java/util/List.html"),
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
+        }
     }
 
     void testUrlsForGroovyClass() {
