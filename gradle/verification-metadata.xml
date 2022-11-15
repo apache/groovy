@@ -143,7 +143,7 @@
          <trusted-key id="a6d6c97108b8585f91b158748671a8df71296252" group="^com[.]squareup($|([.].*))" regex="true"/>
          <trusted-key id="aa417737bd805456db3cbdde6601e5c08dccbb96" group="info.picocli" name="picocli"/>
          <trusted-key id="aa70c7c433d501636392ec02153e7a3c2b4e5118" group="org.eclipse.ee4j" name="project"/>
-         <trusted-key id="aaaa9d3f580c7223dbd1ff425746ee07d997ddb6" group="net.jqwik" name="jqwik-api" version="1.6.5"/>
+         <trusted-key id="aaaa9d3f580c7223dbd1ff425746ee07d997ddb6" group="net.jqwik" name="jqwik-api" version="1.7.1"/>
          <trusted-key id="b01128c8fd304fe48e6eed2c347cd0eaed975c5f" group="org.antlr"/>
          <trusted-key id="b1fc0e1fa329669191f8306f5bcee695141e6086">
             <trusting group="javax.enterprise"/>
