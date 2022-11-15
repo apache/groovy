@@ -20,6 +20,8 @@ package org.apache.groovy.groovysh.commands
 
 import org.apache.groovy.groovysh.Groovysh
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 /**
  * Tests for the {@link DocCommand} class.
  */
@@ -36,15 +38,17 @@ class DocCommandTest extends CommandTestSupport {
     void testUrlsForJavaOnlyClass() {
         def command = docCommandWithSendHEADRequestReturnValueOf { !it.host.contains('docs.groovy-lang.org') }
 
-        // no module specified
+        // no module specified for a class not in java.base
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
         assert urls ==
             [new URL("https://docs.oracle.com/javase/8/docs/api/org/ietf/jgss/GSSContext.html")]
 
         // explicit module given
-        urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
-        assert urls ==
-            [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
+        if (isAtLeastJdk('11.0')) {
+            urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
+            assert urls ==
+                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
+        }
     }
 
     void testUrlsForJavaClass() {
