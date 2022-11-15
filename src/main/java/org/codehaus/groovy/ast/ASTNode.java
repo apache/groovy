@@ -51,19 +51,21 @@ public class ASTNode {
     private int lastColumnNumber = -1;
     private ListHashMap metaDataMap = null;
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
     }
 
     public String getText() {
-        return "<not implemented yet for class: " + getClass().getName() + ">";
+        Class<?> nodeType = getClass();
+        if (nodeType.isAnonymousClass()) nodeType = nodeType.getSuperclass();
+        return "<not implemented yet for class: " + nodeType.getName() + ">";
     }
 
     public int getLineNumber() {
         return lineNumber;
     }
 
-    public void setLineNumber(int lineNumber) {
+    public void setLineNumber(final int lineNumber) {
         this.lineNumber = lineNumber;
     }
 
@@ -71,7 +73,7 @@ public class ASTNode {
         return columnNumber;
     }
 
-    public void setColumnNumber(int columnNumber) {
+    public void setColumnNumber(final int columnNumber) {
         this.columnNumber = columnNumber;
     }
 
@@ -79,7 +81,7 @@ public class ASTNode {
         return lastLineNumber;
     }
 
-    public void setLastLineNumber(int lastLineNumber) {
+    public void setLastLineNumber(final int lastLineNumber) {
         this.lastLineNumber = lastLineNumber;
     }
 
@@ -87,7 +89,7 @@ public class ASTNode {
         return lastColumnNumber;
     }
 
-    public void setLastColumnNumber(int lastColumnNumber) {
+    public void setLastColumnNumber(final int lastColumnNumber) {
         this.lastColumnNumber = lastColumnNumber;
     }
 
@@ -99,7 +101,7 @@ public class ASTNode {
      *
      * @param node - the node used to configure the position information
      */
-    public void setSourcePosition(ASTNode node) {
+    public void setSourcePosition(final ASTNode node) {
         this.lineNumber = node.getLineNumber();
         this.columnNumber = node.getColumnNumber();
         this.lastLineNumber = node.getLastLineNumber();
@@ -112,7 +114,7 @@ public class ASTNode {
      * @param key - the meta data key
      * @return the node meta data value for this key
      */
-    public <T> T getNodeMetaData(Object key) {
+    public <T> T getNodeMetaData(final Object key) {
         if (metaDataMap == null) {
             return (T) null;
         }
@@ -123,7 +125,7 @@ public class ASTNode {
      * Copies all node meta data from the other node to this one
      * @param other - the other node
      */
-    public void copyNodeMetaData(ASTNode other) {
+    public void copyNodeMetaData(final ASTNode other) {
         if (other.metaDataMap == null) {
             return;
         }
@@ -141,8 +143,8 @@ public class ASTNode {
      * @throws GroovyBugError if key is null or there is already meta
      *                        data under that key
      */
-    public void setNodeMetaData(Object key, Object value) {
-        Object old = putNodeMetaData(key,value);
+    public void setNodeMetaData(final Object key, final Object value) {
+        Object old = putNodeMetaData(key, value);
         if (old != null) throw new GroovyBugError("Tried to replace existing meta data on " + this + ".");
     }
 
@@ -154,7 +156,7 @@ public class ASTNode {
      * @return the old node meta data value for this key
      * @throws GroovyBugError if key is null
      */
-    public Object putNodeMetaData(Object key, Object value) {
+    public Object putNodeMetaData(final Object key, final Object value) {
         if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
         if (metaDataMap == null) {
             metaDataMap = new ListHashMap();
@@ -168,8 +170,8 @@ public class ASTNode {
      * @param key - the meta data key
      * @throws GroovyBugError if the key is null
      */
-    public void removeNodeMetaData(Object key) {
-        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
+    public void removeNodeMetaData(final Object key) {
+        if (key == null) throw new GroovyBugError("Tried to remove meta data with null key " + this + ".");
         if (metaDataMap == null) {
             return;
         }
@@ -181,7 +183,7 @@ public class ASTNode {
      * @return the node metadata. Always not null.
      */
     public Map<?,?> getNodeMetaData() {
-        if (metaDataMap==null) {
+        if (metaDataMap == null) {
             return Collections.emptyMap();
         }
         return Collections.unmodifiableMap(metaDataMap);
