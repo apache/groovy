@@ -42,7 +42,7 @@ rootProject.allprojects {
             def baseline = thisProject.configurations.create("${taskName}Baseline") {
                 dependencies.add(thisProject.dependencies.create(baselineCoords))
             }
-            baseLine.resolutionStrategy.disableDependencyVerification()
+            baseline.resolutionStrategy.disableDependencyVerification()
             def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
                 oldArchives.from(baseline)
                 newArchives.from(files(tasks.named("jarjar")))
