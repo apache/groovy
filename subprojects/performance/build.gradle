@@ -20,7 +20,7 @@ plugins {
     id 'org.apache.groovy-performance'
 }
 
-tasks.named('performanceTests').configure {
+tasks.named('performanceTests') {
     versions '2.5.19',
             '3.0.13',
             '4.0.6',
