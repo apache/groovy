@@ -73,7 +73,7 @@ class PerformanceTestsExtension {
 
     void version(String v) {
         def version = v.replace('.', '_')
-        def groovyConf = configurations.create("groovyVersion$version") { Configuration it ->
+        def groovyConf = configurations.create("perf_groovy_$version") { Configuration it ->
             it.canBeResolved = true
             it.canBeConsumed = false
             it.resolutionStrategy {
