@@ -1430,7 +1430,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param node      the class node for which we will try to find a matching constructor
      * @param arguments the constructor arguments
      */
-    protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode source) {
+    protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode origin) {
         if (isObjectType(node) || isDynamicTyped(node)) {
             // in that case, we are facing a list constructor assigned to a def or object
             return null;
@@ -1445,11 +1445,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // there will be a default hash map constructor added later
                 return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
             } else {
-                addStaticTypeError("No matching constructor found: " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
+                addNoMatchingMethodError(node, "<init>", arguments, origin);
                 return null;
             }
         } else if (constructors.size() > 1) {
-            addStaticTypeError("Ambiguous constructor call " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
+            addStaticTypeError("Ambiguous constructor call " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), origin);
             return null;
         }
         return constructors.get(0);
@@ -1945,12 +1945,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void visitInitialExpression(final Expression value, final Expression target, final ASTNode position) {
+    private void visitInitialExpression(final Expression value, final Expression target, final ASTNode origin) {
         if (value != null) {
             ClassNode lType = target.getType();
             applyTargetType(lType, value); // GROOVY-9977
 
-            typeCheckingContext.pushEnclosingBinaryExpression(assignX(target, value, position));
+            typeCheckingContext.pushEnclosingBinaryExpression(assignX(target, value, origin));
 
             value.visit(this);
             ClassNode rType = getType(value);
@@ -2720,43 +2720,54 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("cannot resolve dynamic method name at compile time.", call);
             return;
         }
+        ClassNode type = call.getOwnerType();
+        if (type.isEnum() && name.equals("$INIT")) { // GROOVY-10845: $INIT(Object[]) delegates to constructor
+            Expression target = typeCheckingContext.getEnclosingBinaryExpression().getLeftExpression();
+            ConstructorCallExpression cce = new ConstructorCallExpression(type, call.getArguments());
+            cce.setSourcePosition(((FieldExpression) target).getField());
+            visitConstructorCallExpression(cce);
+
+            MethodNode init = type.getDeclaredMethods("$INIT").get(0);
+            call.putNodeMetaData(INFERRED_TYPE, init.getReturnType());
+            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, init);
+            return;
+        }
         if (extension.beforeMethodCall(call)) {
             extension.afterMethodCall(call);
             return;
         }
         try {
-            ClassNode receiver = call.getOwnerType();
             ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
 
             boolean closuresVisited = false; // visit *after* method has been chosen
-            visitMethodCallArguments(receiver, argumentList, closuresVisited, null);
+            visitMethodCallArguments(type, argumentList, closuresVisited, null);
             ClassNode[] args = getArgumentTypes(argumentList);
 
-            List<MethodNode> mn = findMethod(receiver, name, args);
+            List<MethodNode> mn = findMethod(type, name, args);
             if (!mn.isEmpty()) {
                 if (mn.size() == 1) {
                     // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                     resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0).getParameters());
-                    typeCheckMethodsWithGenericsOrFail(receiver, args, mn.get(0), call);
+                    typeCheckMethodsWithGenericsOrFail(type, args, mn.get(0), call);
                 }
             }
             if (mn.isEmpty()) {
-                mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
+                mn = extension.handleMissingMethod(type, name, argumentList, args, call);
             }
             if (mn.isEmpty()) {
-                addNoMatchingMethodError(receiver, name, args, call);
+                addNoMatchingMethodError(type, name, args, call);
             } else {
-                mn = disambiguateMethods(mn, receiver, args, call);
+                mn = disambiguateMethods(mn, type, args, call);
                 if (mn.size() != 1) {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 } else {
                     MethodNode directMethodCallCandidate = mn.get(0);
                     ClassNode returnType = getType(directMethodCallCandidate);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        closuresVisited = true; // now visit closure/lambda arguments with selected method
-                        visitMethodCallArguments(receiver, argumentList, true, directMethodCallCandidate);
+                        closuresVisited = true; // visit closure/lambda arguments with selected method
+                        visitMethodCallArguments(type, argumentList, true, directMethodCallCandidate);
 
-                        ClassNode rt = inferReturnTypeGenerics(receiver, directMethodCallCandidate, argumentList);
+                        ClassNode rt = inferReturnTypeGenerics(type, directMethodCallCandidate, argumentList);
                         if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
                             returnType = rt;
                     }
@@ -2767,7 +2778,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!closuresVisited) {
-                visitMethodCallArguments(receiver, argumentList, true, target);
+                visitMethodCallArguments(type, argumentList, true, target);
             }
             if (target != null) { Parameter[] params = target.getParameters();
                 checkClosureMetadata(argumentList.getExpressions(), params);
@@ -5898,29 +5909,41 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    public void addError(final String msg, final ASTNode expr) {
-        Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
-        if ((DEBUG_GENERATED_CODE && expr.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
-            typeCheckingContext.getErrorCollector().addErrorAndContinue(msg + '\n', expr, getSourceUnit());
+    public void addError(final String msg, final ASTNode node) {
+        Long err = ((long) node.getLineNumber()) << 16 + node.getColumnNumber();
+        if ((DEBUG_GENERATED_CODE && node.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
+            typeCheckingContext.getErrorCollector().addErrorAndContinue(msg + '\n', node, getSourceUnit());
             typeCheckingContext.reportedErrors.add(err);
         }
     }
 
-    protected void addStaticTypeError(final String msg, final ASTNode expr) {
-        if (expr.getColumnNumber() > 0 && expr.getLineNumber() > 0) {
-            addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + msg, expr);
+    protected void addStaticTypeError(final String msg, final ASTNode node) {
+        if (node.getColumnNumber() > 0 && node.getLineNumber() > 0) {
+            addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + msg, node);
         } else {
             if (DEBUG_GENERATED_CODE) {
-                addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + "Error in generated code [" + expr.getText() + "] - " + msg, expr);
+                addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + "Error in generated code [" + node.getText() + "] - " + msg, node);
             }
             // ignore errors which are related to unknown source locations
             // because they are likely related to generated code
         }
     }
 
-    protected void addNoMatchingMethodError(final ClassNode receiver, final String name, final ClassNode[] args, final Expression call) {
-        ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : receiver;
-        addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.", call);
+    protected void addNoMatchingMethodError(final ClassNode receiver, final String name, ClassNode[] args, final Expression exp) {
+        addNoMatchingMethodError(receiver, name, args, (ASTNode)exp);
+    }
+
+    protected void addNoMatchingMethodError(final ClassNode receiver, final String name, ClassNode[] args, final ASTNode origin) {
+        String error;
+        if ("<init>".equals(name)) {
+            // remove implicit agruments [String, int] from enum constant construction
+            if (receiver.isEnum() && args.length >= 2) args = Arrays.copyOfRange(args, 2, args.length);
+            error = "Cannot find matching constructor " + prettyPrintTypeName(receiver) + toMethodParametersString("", args);
+        } else {
+            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : receiver;
+            error = "Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.";
+        }
+        addStaticTypeError(error, origin);
     }
 
     protected void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {

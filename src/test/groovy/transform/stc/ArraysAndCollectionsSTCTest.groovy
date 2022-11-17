@@ -1085,6 +1085,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             interface MVM<K, V> extends Map<K, List<V>> { }
             MVM map = [:] // no STC error; fails at runtime
         ''',
-        'No matching constructor found'
+        'Cannot find matching constructor MVM(java.util.LinkedHashMap)'
     }
 }

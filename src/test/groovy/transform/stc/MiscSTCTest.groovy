@@ -205,11 +205,63 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10845
+    void testEnumConstructorChecks() {
+        shouldFailWithMessages '''
+            enum E {
+                CONST()
+                E(String s) { }
+            }
+        ''',
+        'Cannot find matching constructor E()'
+
+        shouldFailWithMessages '''
+            enum E {
+                CONST(new Object())
+                E(String s) { }
+            }
+        ''',
+        'Cannot find matching constructor E(java.lang.Object)'
+
+        shouldFailWithMessages '''
+            enum E {
+                CONST(new Object())
+            }
+        ''',
+        'Cannot find matching constructor E(java.lang.Object)'
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def init = node.getDeclaredMethod("<clinit>").code.statements[0] // this.CONST = $INIT("CONST",0,"xx")
+                def dmct = init.expression.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert dmct != null
+                def type = init.expression.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type == node
+            })
+            enum E {
+                CONST('xx')
+                E(String s) { assert s == 'xx' }
+            }
+            E.CONST
+        '''
+
+        assertScript '''import groovy.transform.stc.SimpleType
+            enum E {
+                CONST({ assert it.toLowerCase() == 'const' })
+                E(@ClosureParams(value=SimpleType, options='java.lang.String') Closure c) {
+                    c.call(name())
+                }
+            }
+            E.CONST
+        '''
+    }
+
     void testMethodReturnTypeInferenceShouldNotWorkBecauseNotSameSourceUnit() {
         shouldFailWithMessages '''
             import groovy.transform.stc.MiscSTCTest.MiscSTCTestSupport as A
             A.foo().toInteger()
-        ''', 'Cannot find matching method java.lang.Object#toInteger()'
+        ''',
+        'Cannot find matching method java.lang.Object#toInteger()'
     }
 
     void testClassLiteralAsArgument() {
