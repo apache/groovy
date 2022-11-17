@@ -93,7 +93,10 @@
          <trusted-key id="314fe82e5a4c5377bca2edec5208812e1e4a6db0" group="com.gradle" name="gradle-enterprise-gradle-plugin" version="3.11.4"/>
          <trusted-key id="31fae244a81d64507b47182e1b2718089ce964b8" group="com.thoughtworks.qdox" name="qdox" version="1.12.1"/>
          <trusted-key id="32d98ffd50617f6ed7e6abd236feecf06c2da10b" group="biz.aQute.bnd" name="biz.aQute.bndlib" version="5.2.0"/>
-         <trusted-key id="34441e504a937f43eb0daef96a65176a0fb1cd0b" group="org.apache.groovy"/>
+         <trusted-key id="34441e504a937f43eb0daef96a65176a0fb1cd0b">
+            <trusting group="org.apache.groovy"/>
+            <trusting group="org.codehaus.groovy"/>
+         </trusted-key>
          <trusted-key id="3690c240ce51b4670d30ad1c38ee757d69184620" group="org.tukaani" name="xz" version="1.6"/>
          <trusted-key id="3f2a008a91d11a7fac4a0786f13d3e721d56bd54" group="org.reflections" name="reflections" version="0.10.2"/>
          <trusted-key id="3f999bb69041cf17e73bb1cec038787776a19d18" group="net.javacrumbs.json-unit"/>
