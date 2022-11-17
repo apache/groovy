@@ -23,29 +23,29 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-public class StaticMethodCallExpressionTransformer {
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+
+class StaticMethodCallExpressionTransformer {
+
     private final StaticCompilationTransformer transformer;
 
-    public StaticMethodCallExpressionTransformer(final StaticCompilationTransformer staticCompilationTransformer) {
-        transformer = staticCompilationTransformer;
+    StaticMethodCallExpressionTransformer(final StaticCompilationTransformer sct) {
+        transformer = sct;
     }
 
-    Expression transformStaticMethodCallExpression(final StaticMethodCallExpression orig) {
-        MethodNode target = (MethodNode) orig.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (target != null) {
-            MethodCallExpression call = new MethodCallExpression(
-                    new ClassExpression(orig.getOwnerType()),
-                    orig.getMethod(),
-                    orig.getArguments()
-            );
-            call.setMethodTarget(target);
-            call.setSourcePosition(orig);
-            call.copyNodeMetaData(orig);
-            return transformer.transform(call);
+    Expression transformStaticMethodCallExpression(final StaticMethodCallExpression smce) {
+        Object target = smce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target instanceof MethodNode) {
+            ClassExpression receiver = new ClassExpression(smce.getOwnerType().getPlainNodeReference());
+            MethodCallExpression mce = new MethodCallExpression(receiver, smce.getMethod(), smce.getArguments());
+            mce.setMethodTarget((MethodNode) target);
+            mce.setSourcePosition(smce);
+            mce.copyNodeMetaData(smce);
+
+            return transformer.transform(mce);
         }
-        return transformer.superTransform(orig);
-    }
 
+        return transformer.superTransform(smce);
+    }
 }
