@@ -727,6 +727,17 @@ public class GenericsUtils {
 
     private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED = Boolean.parseBoolean(getSystemPropertySafe("groovy.enable.parameterized.type.cache", "true"));
 
+    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(64);
+
+    /**
+     * Clears the parameterized type cache.
+     * <p>
+     * It is useful to IDE as the type being compiled are continuously being edited/altered, see GROOVY-8675
+     */
+    public static void clearParameterizedTypeCache() {
+        PARAMETERIZED_TYPE_CACHE.clearAll();
+    }
+
     /**
      * Convenience method for {@link #findParameterizedTypeFromCache(ClassNode, ClassNode, boolean)}
      * when the {@code tryToFindExactType} boolean is {@code false}.
@@ -749,7 +760,7 @@ public class GenericsUtils {
                 new ParameterizedTypeCacheKey(genericsClass, actualType),
                 key -> new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType(), tryToFindExactType)));
 
-        return sr == null ? null : sr.get();
+        return sr != null ? sr.get() : null;
     }
 
     /**
@@ -780,39 +791,32 @@ public class GenericsUtils {
         ClassNode type;
 
         while ((type = todo.poll()) != null) {
-            if (type.equals(genericsClass)) {
-                return type;
-            }
             if (done.add(type)) {
-                boolean parameterized = (type.getGenericsTypes() != null);
-                for (ClassNode cn : type.getInterfaces()) {
-                    if (parameterized)
-                        cn = parameterizeType(type, cn);
-                    todo.add(cn);
-                }
-                if (!actualType.isInterface()) {
+                if (!type.isInterface()) {
                     ClassNode cn = type.getUnresolvedSuperClass();
                     if (cn != null && cn.redirect() != ClassHelper.OBJECT_TYPE) {
-                        if (parameterized)
+                        if (hasUnresolvedGenerics(cn)) {
                             cn = parameterizeType(type, cn);
+                        }
+                        if (cn.equals(genericsClass)) {
+                            return cn;
+                        }
                         todo.add(cn);
                     }
+                }
+                for (ClassNode cn : type.getInterfaces()) {
+                    if (hasUnresolvedGenerics(cn)) {
+                        cn = parameterizeType(type, cn);
+                    }
+                    if (cn.equals(genericsClass)) {
+                        return cn;
+                    }
+                    todo.add(cn);
                 }
             }
         }
 
         return null;
-    }
-
-    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(64);
-
-    /**
-     * Clears the parameterized type cache.
-     * <p>
-     * It is useful to IDE as the type being compiled are continuously being edited/altered, see GROOVY-8675
-     */
-    public static void clearParameterizedTypeCache() {
-        PARAMETERIZED_TYPE_CACHE.clearAll();
     }
 
     /**
@@ -829,7 +833,7 @@ public class GenericsUtils {
      * so we need actual types:  T: String, S: Long
      */
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver) {
-        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false);
+        return correlateTypeParametersAndTypeArguments(declaringClass, actualReceiver, false);
     }
 
     /**
@@ -844,25 +848,42 @@ public class GenericsUtils {
      * @since 3.0.0
      */
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(final ClassNode declaringClass, final ClassNode actualReceiver) {
-        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, true);
+        return correlateTypeParametersAndTypeArguments(declaringClass, actualReceiver, true);
     }
 
-    private static Map<GenericsType, GenericsType> doMakeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
-        Map<GenericsType, GenericsType> map = Collections.emptyMap();
+    private static Map<GenericsType, GenericsType> correlateTypeParametersAndTypeArguments(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
         if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
             // declaringClass may be "List<T> -> List<E>" and parameterizedType may be "List<String> -> List<E>" or "List<> -> List<E>"
-            GenericsType[] targetGenericsTypes = parameterizedType.redirect().getGenericsTypes();
-            if (targetGenericsTypes != null) {
-                GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
-                if (sourceGenericsTypes == null) sourceGenericsTypes = EMPTY_GENERICS_ARRAY;
-                map = new LinkedHashMap<>();
-                for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
-                    map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
+            final GenericsType[] typeParameters = parameterizedType.redirect().getGenericsTypes();
+            if (typeParameters != null) {
+                final GenericsType[] typeArguments = parameterizedType.getGenericsTypes();
+                final int m = typeArguments == null ? 0 : typeArguments.length;
+                final int n = typeParameters.length;
+
+                Map<GenericsType, GenericsType> map = new LinkedHashMap<>();
+                for (int i = 0; i < n; i += 1) {
+                    map.put(typeParameters[i], i < m ? typeArguments[i] : erasure(typeParameters[i]));
                 }
+                return map;
             }
         }
-        return map;
+        return Collections.emptyMap();
+    }
+
+    /**
+     * @see org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport#extractType(GenericsType)
+     */
+    private static GenericsType erasure(GenericsType gt) {
+        ClassNode cn = gt.getType().redirect(); // discard the placeholder
+
+        if (gt.getType().getGenericsTypes() != null)
+            gt = gt.getType().getGenericsTypes()[0];
+
+        if (gt.getUpperBounds() != null)
+            cn = gt.getUpperBounds()[0]; // TODO: if length > 1 then union type?
+
+        return cn.asGenericsType();
     }
 
     /**

@@ -689,6 +689,31 @@ final class LambdaTest {
         }
     }
 
+    @Test // GROOVY-10813
+    void testConsumer11() {
+        ['CompileStatic', 'TypeChecked'].each { xform ->
+            assertScript """
+                @groovy.transform.${xform}
+                void test() {
+                    java.util.function.Consumer c = x -> print(x)
+                    c.accept('works')
+                }
+                test()
+            """
+            assertScript """
+                interface I<T extends CharSequence> {
+                    void accept(T t)
+                }
+                @groovy.transform.${xform}
+                void test() {
+                    I i = x -> print(x)
+                    i.accept('works')
+                }
+                test()
+            """
+        }
+    }
+
     @Test
     void testFunctionalInterface1() {
         assertScript shell, '''
