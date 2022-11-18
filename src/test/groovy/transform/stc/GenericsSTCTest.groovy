@@ -4166,6 +4166,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10846
+    void testClassLevelGenericsForPropertyRead() {
+        for (vis in ['','public','protected','@groovy.transform.PackageScope']) {
+            assertScript """
+                class A {
+                    $vis String b
+                }
+                class C<X extends A, Y extends List<X>> {
+                    void test(X x) {
+                        x.b = 'blah'
+                    }
+                }
+                A a = []
+                new C<A, List<A>>().test(a)
+                assert a.b == 'blah'
+            """
+        }
+    }
+
     // GROOVY-6919
     void testMethodLevelGenericsForPropertyRead() {
         assertScript '''
