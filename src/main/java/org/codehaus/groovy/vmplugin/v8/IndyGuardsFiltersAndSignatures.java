@@ -78,7 +78,7 @@ public class IndyGuardsFiltersAndSignatures {
     static {
         try {
             SAME_CLASS = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
-            SAME_CLASSES = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Object[].class, Object[].class));
+            SAME_CLASSES = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class[].class, Object[].class));
             SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
             IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
             UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
@@ -200,17 +200,15 @@ public class IndyGuardsFiltersAndSignatures {
 
     /**
      * Guard to check if the provided objects have the same
-     * class as the other provided objects.
+     * class as the provided classes.
      */
-    public static boolean sameClasses(Object[] cs, Object[] os) {
+    public static boolean sameClasses(Class<?>[] cs, Object[] os) {
         for (int i = 0; i < cs.length; i++) {
-            Object c = cs[i];
-            if (null == c) continue;
-
+            Class<?> c = cs[i];
             Object o = os[i];
             if (null == o) return false;
 
-            if (o.getClass() != c.getClass())
+            if (o.getClass() != c)
                 return false;
         }
         return true;
