@@ -48,12 +48,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -67,12 +67,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -87,12 +87,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -106,12 +106,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -126,12 +126,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -147,12 +147,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test
@@ -169,12 +169,12 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('Derived', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert 'Base' == result.name
+        assert result.name == 'Base'
         assert result.isUsingGenerics()
-        assert 2 == result.genericsTypes.length
-        assert 'java.lang.String' == result.genericsTypes[0].type.name
-        assert 'java.util.List'   == result.genericsTypes[1].type.name
-        assert target === result.redirect()
+        assert result.genericsTypes.length == 2
+        assert result.genericsTypes[0].type.name == 'java.lang.String'
+        assert result.genericsTypes[1].type.name == 'java.util.List'
+        assert result.redirect() === target
     }
 
     @Test // GROOVY-9945
@@ -220,9 +220,9 @@ final class GenericsUtilsTest {
 
         Map<GenericsType, GenericsType> m = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(target, source)
 
+        assert m.size() == 2
         assert m.entrySet().find { it.key.name == 'T' }.value.type.name == 'java.lang.String'
         assert m.entrySet().find { it.key.name == 'U' }.value.type.name == 'java.lang.Integer'
-        assert m.size() == 2
     }
 
     @Test
@@ -237,14 +237,14 @@ final class GenericsUtilsTest {
 
         Map<GenericsType, GenericsType> m = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(target, source)
 
+        assert m.size() == 3
         assert m.entrySet().find { it.key.name == 'R' }.value.type.name == 'java.lang.Boolean'
         assert m.entrySet().find { it.key.name == 'T' }.value.type.name == 'java.lang.Integer'
         assert m.entrySet().find { it.key.name == 'U' }.value.type.name == 'java.lang.String'
-        assert m.size() == 3
     }
 
     @Test
-    void testParameterizeSAM() {
+    void testParameterizeSAM1() {
         def classNodeList = compile '''
             import java.util.function.*
             interface T extends Function<String, Integer> {}
@@ -253,10 +253,10 @@ final class GenericsUtilsTest {
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
-        assert 1 == typeInfo[0].length
-        assert ClassHelper.STRING_TYPE == typeInfo[0][0]
+        assert typeInfo[0].length == 1
+        assert typeInfo[0][0] == ClassHelper.STRING_TYPE
 
-        assert ClassHelper.Integer_TYPE == typeInfo[1]
+        assert typeInfo[1] == ClassHelper.Integer_TYPE
     }
 
     @Test
@@ -269,10 +269,65 @@ final class GenericsUtilsTest {
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
-        assert 2 == typeInfo[0].length
-        assert ClassHelper.Integer_TYPE == typeInfo[0][0]
-        assert ClassHelper.Integer_TYPE == typeInfo[0][1]
+        assert typeInfo.v1.length == 2
+        assert typeInfo.v1[0] == ClassHelper.Integer_TYPE
+        assert typeInfo.v1[1] == ClassHelper.Integer_TYPE
 
-        assert ClassHelper.Integer_TYPE == typeInfo[1]
+        assert typeInfo.v2 == ClassHelper.Integer_TYPE
+    }
+
+    @Test // GROOVY-10813
+    void testParameterizeSAMWithRawType() {
+        def classNodeList = compile '''
+            interface I extends java.util.function.BinaryOperator {
+            }
+        '''
+        ClassNode samType = findClassNode('I', classNodeList).interfaces.find { it.name == 'java.util.function.BinaryOperator' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert typeInfo.v1.length == 2
+        assert typeInfo.v1[0].toString(false) == 'java.lang.Object'
+        assert typeInfo.v1[1].toString(false) == 'java.lang.Object'
+
+        assert typeInfo.v2.toString(false) == 'java.lang.Object'
+    }
+
+    @Test
+    void testParameterizeSAMWithRawTypeWithUpperBound() {
+        def classNodeList = compile '''
+            interface I<T extends CharSequence> {
+                T apply(T input);
+            }
+            abstract class A implements I {
+            }
+        '''
+        ClassNode samType = findClassNode('A', classNodeList).interfaces.find { it.name == 'I' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert typeInfo.v1.length == 1
+        assert typeInfo.v1[0].toString(false) == 'java.lang.CharSequence'
+
+        assert typeInfo.v2.toString(false) == 'java.lang.CharSequence'
+    }
+
+    @Test
+    void testParameterizeSAMWithRawTypeWithUpperBounds() {
+        def classNodeList = compile '''
+            interface I<T extends CharSequence & Serializable> {
+                T apply(T input);
+            }
+            abstract class A implements I {
+            }
+        '''
+        ClassNode samType = findClassNode('A', classNodeList).interfaces.find { it.name == 'I' }
+
+        def typeInfo = GenericsUtils.parameterizeSAM(samType)
+
+        assert typeInfo.v1.length == 1
+        assert typeInfo.v1[0].toString(false) == 'java.lang.CharSequence'
+
+        assert typeInfo.v2.toString(false) == 'java.lang.CharSequence'
     }
 }
