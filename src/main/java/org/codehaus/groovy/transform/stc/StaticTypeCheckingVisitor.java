@@ -3865,7 +3865,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addSelfTypes(cn, owners);
             }
         } else {
-            owners.add(Receiver.make(OBJECT_TYPE)); // T or T super Type
+            ClassNode cn = gt.getType().redirect(); // GROOVY-10846
+            owners.add(Receiver.make(cn)); // T or T super Type
         }
     }
 
