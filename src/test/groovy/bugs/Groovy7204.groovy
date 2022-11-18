@@ -18,11 +18,12 @@
  */
 package groovy.bugs
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-final class Groovy7204Bug {
+final class Groovy7204 {
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports { star 'groovy.transform' }
@@ -57,13 +58,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -99,13 +98,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -145,13 +142,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -191,13 +186,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -237,16 +230,32 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
+        '''
+    }
+
+    @NotYetImplemented @Test
+    void testTypeChecked6() {
+        assertScript shell, '''
+            class Repository<T, S extends Serializable> {
+                void delete(T arg) { assert true }
+                void delete(S arg) { assert false: 'wrong method invoked' }
+            }
+
+            @TypeChecked
+            def test() {
+                Repository<String, Long> r = new Repository<String, Long>()
+                r.delete('foo')
+            }
+
+            test()
         '''
     }
 
@@ -281,13 +290,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -323,13 +330,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -369,13 +374,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl implements MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -415,13 +418,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -461,13 +462,11 @@ final class Groovy7204Bug {
             class MyRepositoryImpl extends MyRepository {
                 @Override
                 public void delete(String arg) {
-                    System.out.println('String')
                     assert true
                 }
 
                 @Override
                 public void delete(Long arg) {
-                    System.out.println('Long')
                     assert false: 'wrong method invoked'
                 }
             }
@@ -477,7 +476,6 @@ final class Groovy7204Bug {
     @Test
     void testCompileStatic6() {
         assertScript shell, '''
-            @CompileStatic
             class Repository<T, S extends Serializable> {
                 void delete(T arg) { assert true }
                 void delete(S arg) { assert false: 'wrong method invoked' }
@@ -493,48 +491,65 @@ final class Groovy7204Bug {
         '''
     }
 
-    @Test
+    @Test // GROOVY-8059
     void testCompileStatic7() {
         assertScript shell, '''
-            @CompileStatic
-            class Trie<T> {
+            abstract class A<K extends Serializable, V> {
+                void delete(K key) {}
+                void delete(V val) {}
+            }
+            class C extends A<String, Integer> {
             }
 
             @CompileStatic
-            class Base<T> {
-                protected List<Trie<T>> list
-
-                Base() {
-                    list = new ArrayList<Trie<T>>()
-                    list.add(new Trie<String>()) // should fail?
+            class Test {
+                Test() {
+                    def obj = new C()
+                    obj.delete(Integer.valueOf(1))
                 }
             }
 
-            @CompileStatic
-            class Derived extends Base<String> {
-                Trie<String> getFirstElement() {
-                    list.get(0)
-                }
-            }
-
-            assert new Derived().getFirstElement() instanceof Trie
+            new Test()
         '''
     }
 
     @Test
     void testCompileStatic8() {
         assertScript shell, '''
-            @CompileStatic
             class Trie<T> {
             }
 
             @CompileStatic
+            class Base<T> {
+                protected List<Trie<T>> list = []
+                Base() {
+                    list.add(new Trie<String>()) // should fail!!
+                }
+            }
+
+            @CompileStatic
+            class Test extends Base<String> {
+                Trie<String> getFirstElement() {
+                    list.get(0)
+                }
+            }
+
+            assert new Test().firstElement instanceof Trie
+        '''
+    }
+
+    @Test
+    void testCompileStatic9() {
+        assertScript shell, '''
+            class Trie<T> {
+            }
+
             class Base<T> extends ArrayList<Trie<T>> {
             }
 
-            @groovy.transform.CompileStatic
-            class Derived extends Base<String> {
-                Derived() {
+            @CompileStatic
+            class Test extends Base<String> {
+                Test() {
                     add(new Trie<String>())
                 }
                 Trie<String> getFirstElement() {
@@ -542,7 +557,7 @@ final class Groovy7204Bug {
                 }
             }
 
-            assert new Derived().firstElement instanceof Trie
+            assert new Test().firstElement instanceof Trie
         '''
     }
 }
