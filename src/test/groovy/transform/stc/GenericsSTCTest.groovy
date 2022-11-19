@@ -1585,8 +1585,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10674
+    // GROOVY-10847
     void testDiamondInferrenceFromConstructor35() {
+        assertScript '''
+            class A<T, U> {
+            }
+            class B {
+              def <X extends A<Character, Boolean>, Y extends X> Object m(X x, Y y) {
+              }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.arguments[1].getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.Character, java.lang.Boolean>'
+            })
+            def c = new B().m(null, new A<>())
+        '''
+    }
+
+    // GROOVY-10674
+    void testDiamondInferrenceFromConstructor36() {
         assertScript '''
             class Foo<BB extends Bar<Byte>, X extends BB> {
                 X x

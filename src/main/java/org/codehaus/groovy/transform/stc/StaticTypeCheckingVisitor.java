@@ -1152,9 +1152,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 inferredType = type;
             }
-            if (inferredType.isGenericsPlaceHolder()) // GROOVY-10344: "T t = new C<>()"
+            // GROOVY-10344, GROOVY-10847: "T t = new C<>()" where "T" may extend another type parameter
+            while (inferredType.isGenericsPlaceHolder() && asBoolean(inferredType.getGenericsTypes())) {
                 inferredType = getCombinedBoundType(inferredType.getGenericsTypes()[0]);
-
+            }
             adjustGenerics(inferredType, cceType);
             storeType(cce, cceType);
         }
