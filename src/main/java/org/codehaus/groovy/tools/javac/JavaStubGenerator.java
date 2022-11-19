@@ -78,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
@@ -105,7 +106,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategor
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 
 public class JavaStubGenerator {
-    private final boolean java5;
+
     private final String encoding;
     private final boolean requireSuperResolved;
     private final File outputPath;
@@ -118,40 +119,34 @@ public class JavaStubGenerator {
         this(outputPath, false, Charset.defaultCharset().name());
     }
 
-    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, String encoding) {
-        this(outputPath, requireSuperResolved, true, encoding);
-    }
-
-    @Deprecated
-    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
-        this.outputPath = outputPath;
+    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final String encoding) {
         this.requireSuperResolved = requireSuperResolved;
-        this.java5 = java5;
+        this.outputPath = outputPath;
         this.encoding = encoding;
-        if (null != outputPath) outputPath.mkdirs(); // when outputPath is null, we generate stubs in memory
+
+        // when outputPath is null, generate stubs in memory
+        if (outputPath != null) outputPath.mkdirs();
     }
 
-    private static void mkdirs(File parent, String relativeFile) {
+    private static void mkdirs(final File parent, final String relativeFile) {
         int index = relativeFile.lastIndexOf('/');
         if (index == -1) return;
         File dir = new File(parent, relativeFile.substring(0, index));
         dir.mkdirs();
     }
 
-    public void generateClass(ClassNode classNode) throws FileNotFoundException {
-        // Only attempt to render our self if our super-class is resolved, else wait for it
+    public void generateClass(final ClassNode classNode) throws FileNotFoundException {
+        // only attempt to render if super-class is resolved; else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
             return;
         }
-
-        // owner should take care for us
-        if (classNode instanceof InnerClassNode)
+        // skip private class; they are not visible outside the file
+        if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) {
             return;
-
-        // don't generate stubs for private classes, as they are only visible in the same file
-        if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
-
-
+        }
+        if (classNode instanceof InnerClassNode) {
+            return;
+        }
         if (outputPath == null) {
             generateMemStub(classNode);
         } else {
@@ -357,7 +352,7 @@ public class JavaStubGenerator {
             if (classNode instanceof InnerClassNode)
                 className = className.substring(className.lastIndexOf('$') + 1);
             out.println(className);
-            printGenericsBounds(out, classNode, true);
+            printTypeParameters(out, classNode.getGenericsTypes());
 
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
@@ -730,7 +725,7 @@ public class JavaStubGenerator {
             printModifiers(out, modifiers & ~(clazz.isEnum() ? Opcodes.ACC_ABSTRACT : 0));
         }
 
-        printGenericsBounds(out, methodNode.getGenericsTypes());
+        printTypeParameters(out, methodNode.getGenericsTypes());
         out.print(" ");
         printType(out, methodNode.getReturnType());
         out.print(" ");
@@ -871,18 +866,29 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printType(PrintWriter out, ClassNode type) {
+    private void printType(final PrintWriter out, final ClassNode type) {
         if (type.isArray()) {
             printType(out, type.getComponentType());
             out.print("[]");
-        } else if (java5 && type.isGenericsPlaceHolder()) {
+        } else if (type.isGenericsPlaceHolder()) {
             out.print(type.getUnresolvedName());
         } else {
-            printGenericsBounds(out, type, false);
+            printTypeName(out, type);
+            if (!isCachedType(type)) {
+                printGenericsBounds(out, type.getGenericsTypes());
+            }
         }
     }
 
-    private void printTypeName(PrintWriter out, ClassNode type) {
+    private String getTypeName(final ClassNode type) {
+        String name = type.getName();
+        // check for an alias
+        ClassNode alias = currentModule.getImportType(name);
+        if (alias != null) name = alias.getName();
+        return name.replace('$', '.');
+    }
+
+    private void printTypeName(final PrintWriter out, final ClassNode type) {
         if (isPrimitiveType(type)) {
             if (isPrimitiveBoolean(type)) {
                 out.print("boolean");
@@ -904,32 +910,43 @@ public class JavaStubGenerator {
                 out.print("void");
             }
         } else {
-            String name = type.getName();
-            // check for an alias
-            ClassNode alias = currentModule.getImportType(name);
-            if (alias != null) name = alias.getName();
-            out.print(name.replace('$', '.'));
+            out.print(getTypeName(type));
         }
     }
 
-    private void printGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
-        if (!skipName) printTypeName(out, type);
-        if (java5 && !isCachedType(type)) {
-            printGenericsBounds(out, type.getGenericsTypes());
+    private void printTypeParameters(final PrintWriter out, final GenericsType[] typeParams) {
+        if (typeParams == null || typeParams.length == 0) return;
+        StringJoiner sj = new StringJoiner(", ", "<", ">");
+        for (GenericsType tp : typeParams) {
+            ClassNode[] bounds = tp.getUpperBounds();
+            if (bounds == null || bounds.length == 0) {
+                sj.add(tp.getName());
+            } else {
+                sj.add(tp.getName() + " extends " + Arrays.stream(bounds).map(cn -> {
+                    GenericsType[] typeArguments = cn.getGenericsTypes();
+                    if (typeArguments == null) return getTypeName(cn);
+
+                    StringJoiner parameterized = new StringJoiner(", ", getTypeName(cn) + "<", ">");
+                    for (GenericsType ta : typeArguments) {
+                        parameterized.add(ta.toString().replace('$', '.'));
+                    }
+                    return parameterized.toString();
+                }).collect(Collectors.joining(" & ")));
+            }
         }
+        out.print(sj.toString());
     }
 
-    private static void printGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
+    private static void printGenericsBounds(final PrintWriter out, final GenericsType[] genericsTypes) {
         if (genericsTypes == null || genericsTypes.length == 0) return;
-        out.print('<');
-        for (int i = 0; i < genericsTypes.length; i++) {
-            if (i != 0) out.print(", ");
-            out.print(genericsTypes[i].toString().replace("$","."));
+        StringJoiner sj = new StringJoiner(", ", "<", ">");
+        for (GenericsType gt : genericsTypes) {
+            sj.add(gt.toString().replace('$', '.'));
         }
-        out.print('>');
+        out.print(sj.toString());
     }
 
-    private void printParams(PrintWriter out, MethodNode methodNode) {
+    private void printParams(final PrintWriter out, final MethodNode methodNode) {
         out.print("(");
         Parameter[] parameters = methodNode.getParameters();
         if (parameters != null && parameters.length != 0) {
@@ -954,7 +971,6 @@ public class JavaStubGenerator {
     }
 
     private void printAnnotations(final PrintWriter out, final AnnotatedNode annotated) {
-        if (!java5) return;
         for (AnnotationNode annotation : annotated.getAnnotations()) {
             printAnnotation(out, annotation);
         }

@@ -182,25 +182,25 @@ abstract class StubTestCase extends GroovyTestCase {
 
                 println "Verifying the stubs"
             }
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             compileError = t
         } finally {
             try {
                 use (QDoxCategory) {
                     verifyStubs()
                 }
-            } catch(ex) {
+            } catch (AssertionError | RuntimeException e) {
                 if (compileError) {
-                    println "Unable to verify stubs: $ex.message\nPerhaps due to earlier error?"
+                    println "Unable to verify stubs: $e.message\nPerhaps due to earlier error?"
                     throw compileError
                 }
-                throw ex
+                throw e
             }
             if (sourceRootPath.getAbsolutePath() =~ 'stubgentests') {
                 sourceRootPath.deleteDir()
             }
         }
-
+        if (compileError) throw compileError
     }
 
     /**

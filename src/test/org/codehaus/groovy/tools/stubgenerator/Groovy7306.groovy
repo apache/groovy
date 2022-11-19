@@ -41,7 +41,7 @@ final class Groovy7306 extends StringSourcesStubTestCase {
             'Main.java': '''
                 public class Main {
                     public static void main(String[] args) {
-                        new C7306();
+                        new C7306(1234);
                     }
                 }
             ''',
