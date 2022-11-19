@@ -1537,6 +1537,128 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10699
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor33() {
+        assertScript '''
+            class A<T> {
+                A(B<T> b_of_t) {
+                }
+            }
+            class B<T> {
+                B(T t) {
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>(new B<>('str'))
+        '''
+
+        assertScript '''import java.util.function.Consumer
+            class C<T> {
+                C(Consumer<T> consumer_of_t) {
+                    consumer_of_t.accept(null)
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'C<java.lang.String>'
+            })
+            def y = new C<>((String s) -> { print(s); }) // error: Expected type Object for lambda parameter: s
+        '''
+
+        assertScript '''import java.util.function.Supplier
+            class D<T> {
+                D(Supplier<T> supplier_of_t) {
+                    T t = supplier_of_t.get()
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'D<java.lang.String>'
+            })
+            def z = new D<>(() -> 'str')
+        '''
+    }
+
+    // GROOVY-10698
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor34() {
+        assertScript '''
+            class A<T> {
+                A(T t, B<T> b_of_t) {
+                }
+            }
+            class B<U> {
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>('witness', new B<>()) // Cannot call A#<init>(Object,B<Object>) with arguments [String, B<T>]
+        '''
+    }
+
+    // GROOVY-10847
+    void testDiamondInferrenceFromConstructor35() {
+        assertScript '''
+            class A<T, U> {
+            }
+            class B {
+              def <X extends A<Character, Boolean>, Y extends X> Object m(X x, Y y) {
+              }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.arguments[1].getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A <java.lang.Character, java.lang.Boolean>'
+            })
+            def c = new B().m(null, new A<>())
+        '''
+    }
+
+    // GROOVY-10674
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor36() {
+        assertScript '''
+            class Foo<BB extends Bar<Byte>, X extends BB> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number> {
+            }
+
+            class Baz {
+                static Foo<Bar<Byte>, ? super Bar<Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
+        '''
+
+        assertScript '''
+            class Foo<BBQ extends Bar<Byte, ? extends Byte>, X extends BBQ> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number, S extends T> {
+            }
+
+            class Baz {
+                Foo<Bar<Byte,Byte>, ? super Bar<Byte,Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
