@@ -353,7 +353,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign java.util.Map <String, java.util.Collection> to: java.util.Map <String, Set>'
     }
 
-    @NotYetImplemented // GROOVY-10120
+    // GROOVY-10120
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics18b() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
         shouldFailWithMessages '''
@@ -366,7 +367,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign java.util.Map <String, java.util.Collection> to: java.util.Map <String, Set>'
     }
 
-    @NotYetImplemented // GROOVY-10339
+    // GROOVY-10339
+    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics21() {
         for (type in ['Character', 'Integer']) {
             shouldFailWithMessages """
@@ -513,7 +515,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9984
+    // GROOVY-9984
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor7a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -714,7 +717,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10080
+    // GROOVY-10080
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor11() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -898,7 +902,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10228
+    // GROOVY-10228
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor18() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1030,7 +1035,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10343
+    // GROOVY-10343
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor27() {
         assertScript '''
             class C<T1, T2 extends T1> {
@@ -1114,7 +1120,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10633
+    // GROOVY-10633
+    @NotYetImplemented
     void testDiamondInferrenceFromConstructor32() {
         assertScript '''
             class A<T, Y> {
@@ -1132,6 +1139,128 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 new A<>(x, '').f.m((T) null)
             }
             test()
+        '''
+    }
+
+    // GROOVY-10699
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor33() {
+        assertScript '''
+            class A<T> {
+                A(B<T> b_of_t) {
+                }
+            }
+            class B<T> {
+                B(T t) {
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>(new B<>('str'))
+        '''
+
+        assertScript '''import java.util.function.Consumer
+            class C<T> {
+                C(Consumer<T> consumer_of_t) {
+                    consumer_of_t.accept(null)
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'C<java.lang.String>'
+            })
+            def y = new C<>((String s) -> { print(s); }) // error: Expected type Object for lambda parameter: s
+        '''
+
+        assertScript '''import java.util.function.Supplier
+            class D<T> {
+                D(Supplier<T> supplier_of_t) {
+                    T t = supplier_of_t.get()
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'D<java.lang.String>'
+            })
+            def z = new D<>(() -> 'str')
+        '''
+    }
+
+    // GROOVY-10698
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor34() {
+        assertScript '''
+            class A<T> {
+                A(T t, B<T> b_of_t) {
+                }
+            }
+            class B<U> {
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A<java.lang.String>'
+            })
+            def x = new A<>('witness', new B<>()) // Cannot call A#<init>(Object,B<Object>) with arguments [String, B<T>]
+        '''
+    }
+
+    // GROOVY-10847
+    void testDiamondInferrenceFromConstructor35() {
+        assertScript '''
+            class A<T, U> {
+            }
+            class B {
+              def <X extends A<Character, Boolean>, Y extends X> Object m(X x, Y y) {
+              }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.arguments[1].getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'A <java.lang.Character, java.lang.Boolean>'
+            })
+            def c = new B().m(null, new A<>())
+        '''
+    }
+
+    // GROOVY-10674
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor36() {
+        assertScript '''
+            class Foo<BB extends Bar<Byte>, X extends BB> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number> {
+            }
+
+            class Baz {
+                static Foo<Bar<Byte>, ? super Bar<Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
+        '''
+
+        assertScript '''
+            class Foo<BBQ extends Bar<Byte, ? extends Byte>, X extends BBQ> {
+                X x
+                Foo(X x) {
+                    this.x = x
+                }
+            }
+            class Bar<T extends Number, S extends T> {
+            }
+
+            class Baz {
+                Foo<Bar<Byte,Byte>, ? super Bar<Byte,Byte>> foo = new Foo<>(new Bar<>())
+            }
+            new Baz()
         '''
     }
 
@@ -1979,7 +2108,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10648
+    // GROOVY-10648
+    @NotYetImplemented
     void testShouldUseMethodGenericType16() {
         assertScript '''
             def <T extends Number> Set<T> test(Iterable<T> iterable) {
@@ -2594,7 +2724,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10153
+    // GROOVY-10153
+    @NotYetImplemented
     void testCompatibleArgumentsForPlaceholders11() {
         ['A', 'B', 'C'].each { T ->
             assertScript """
@@ -3063,7 +3194,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10322
+    // GROOVY-10322
+    @NotYetImplemented
     void testShouldFindMethodEvenWithRepeatNames4() {
         assertScript '''
             class C<T> {
@@ -3107,7 +3239,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-5893
+    // GROOVY-5893
+    @NotYetImplemented
     void testPlusInClosure() {
         assertScript '''
         def list = [1, 2, 3]
@@ -4201,7 +4334,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10556
+    // GROOVY-10556
+    @NotYetImplemented
     void testSelfReferentialTypeParameter3() {
         ['(B) this', 'this as B'].each { self ->
             assertScript """
