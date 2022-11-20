@@ -32,7 +32,7 @@ import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
@@ -42,14 +42,15 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
@@ -191,10 +192,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> nonSourceAnnotations) {
-        for (Map.Entry<String, List<AnnotationNode>> next : nonSourceAnnotations.entrySet()) {
-            if (next.getValue().size() > 1) {
+        for (Map.Entry<String, List<AnnotationNode>> entry : nonSourceAnnotations.entrySet()) {
+            if (entry.getValue().size() > 1) {
                 ClassNode repeatable = null;
-                AnnotationNode repeatee = next.getValue().get(0);
+                AnnotationNode repeatee = entry.getValue().get(0);
                 for (AnnotationNode anno : repeatee.getClassNode().getAnnotations()) {
                     if (anno.getClassNode().getName().equals("java.lang.annotation.Repeatable")) {
                         Expression value = anno.getMember("value");
@@ -206,29 +207,32 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 }
                 if (repeatable != null) {
                     if (nonSourceAnnotations.containsKey(repeatable.getName())) {
-                        addError("Cannot specify duplicate annotation on the same member. Explicit " + repeatable.getName()
-                                + " found when creating implicit container for " + next.getKey(), node);
+                        addError("Cannot specify duplicate annotation on the same member. Explicit " + repeatable.getName() + " found when creating implicit container for " + entry.getKey(), node);
                     }
                     AnnotationNode collector = new AnnotationNode(repeatable);
-                    if (repeatee.hasRuntimeRetention()) {
+                    if (repeatee.hasClassRetention()) {
+                        collector.setClassRetention(true);
+                    } else if (repeatee.hasRuntimeRetention()) {
                         collector.setRuntimeRetention(true);
-                    } else if (repeatable.isResolved()) {
-                        Class<?> repeatableType = repeatable.getTypeClass();
-                        Retention retention = repeatableType.getAnnotation(Retention.class);
-                        collector.setRuntimeRetention(retention != null && retention.value().equals(RetentionPolicy.RUNTIME));
-                    } else {
-                        for (AnnotationNode annotation : repeatable.getAnnotations()) {
-                            if (annotation.getClassNode().getName().equals("java.lang.annotation.Retention")) {
-                                Expression value = annotation.getMember("value"); assert value != null;
-                                Object retention = evaluateExpression(value, source.getConfiguration());
-                                collector.setRuntimeRetention(retention != null && retention.toString().equals("RUNTIME"));
-                                break;
+                    } else { // load retention policy from annotation definition
+                        List<AnnotationNode> retention = repeatable.getAnnotations(makeCached(Retention.class));
+                        if (!retention.isEmpty()) {
+                            Object policy;
+                            Expression value = retention.get(0).getMember("value");
+                            if (value instanceof PropertyExpression) {
+                                policy = ((PropertyExpression) value).getPropertyAsString();
+                            } else { // NOTE: it is risky to evaluate the expression from repeatable's source this way:
+                                policy = evaluateExpression(value, source.getConfiguration(), source.getClassLoader());
+                            }
+                            if ("CLASS".equals(policy)) {
+                                collector.setClassRetention(true);
+                            } else if ("RUNTIME".equals(policy)) {
+                                collector.setRuntimeRetention(true);
                             }
                         }
                     }
-                    collector.addMember("value", new ListExpression(next.getValue().stream()
-                        .map(AnnotationConstantExpression::new).collect(Collectors.toList())));
-                    node.getAnnotations().removeAll(next.getValue());
+                    collector.addMember("value", listX(entry.getValue().stream().map(AnnotationConstantExpression::new).collect(toList())));
+                    node.getAnnotations().removeAll(entry.getValue());
                     node.addAnnotation(collector);
                 }
             }

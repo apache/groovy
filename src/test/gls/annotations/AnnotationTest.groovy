@@ -766,6 +766,32 @@ final class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testAnnotationWithRepeatableSupported2() {
+        for (policy in ['CLASS', 'SOURCE']) {
+            assertScript """
+                import java.lang.annotation.*
+
+                @Retention(RetentionPolicy.$policy)
+                @Repeatable(B)
+                @interface A {
+                    String value() default "foo"
+                }
+
+                @Retention(RetentionPolicy.$policy)
+                @interface B {
+                }
+
+                @A @A('bar')
+                class C {
+                }
+
+                // not available at run-time
+                assert C.getAnnotationsByType(A).length == 0
+                assert C.getAnnotationsByType(B).length == 0
+            """
+        }
+    }
+
     // GROOVY-9452
     void testDuplicationAnnotationOnClassWithParams() {
         def err = shouldFail '''
@@ -788,7 +814,6 @@ final class AnnotationTest extends CompilableTestSupport {
             @As([@A("c")])
             class Foo {}
         '''
-
         assert err =~ /Cannot specify duplicate annotation/
     }
 
