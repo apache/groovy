@@ -29,8 +29,10 @@ import org.codehaus.groovy.control.io.URLReaderSource;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.tools.Utilities;
 
 import java.io.File;
@@ -265,7 +267,7 @@ public class SourceUnit extends ProcessingUnit {
         return this.ast;
     }
 
-    //---------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // SOURCE SAMPLING
 
     /**
@@ -306,7 +308,7 @@ public class SourceUnit extends ProcessingUnit {
      * @param e the exception that occurred
      * @throws CompilationFailedException on error
      */
-    public void addException(Exception e) throws CompilationFailedException {
+    public void addException(final Exception e) throws CompilationFailedException {
         getErrorCollector().addException(e, this);
     }
 
@@ -319,24 +321,32 @@ public class SourceUnit extends ProcessingUnit {
      * @param se the exception, which should have line and column information
      * @throws CompilationFailedException on error
      */
-    public void addError(SyntaxException se) throws CompilationFailedException {
+    public void addError(final SyntaxException se) throws CompilationFailedException {
         getErrorCollector().addError(se, this);
     }
 
     /**
      * Convenience wrapper for {@link ErrorCollector#addFatalError(org.codehaus.groovy.control.messages.Message)}.
      *
-     * @param msg the error message
-     * @param node the AST node
+     * @param text the error message
+     * @param node for locating the offending code
      * @throws CompilationFailedException on error
      *
      * @since 3.0.0
      */
-    public void addFatalError(String msg, ASTNode node) throws CompilationFailedException {
-        getErrorCollector().addFatalError(Message.create(new SyntaxException(msg, node), this));
+    public void addFatalError(final String text, final ASTNode node) throws CompilationFailedException {
+        getErrorCollector().addFatalError(Message.create(new SyntaxException(text, node), this));
     }
 
-    public void addErrorAndContinue(SyntaxException se) {
+    /**
+     * @since 4.0.7
+     */
+    public void addWarning(final String text, final ASTNode node) {
+        Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
+        getErrorCollector().addWarning(new WarningMessage(WarningMessage.POSSIBLE_ERRORS, text, token, this));
+    }
+
+    public void addErrorAndContinue(final SyntaxException se) {
         getErrorCollector().addErrorAndContinue(se, this);
     }
 

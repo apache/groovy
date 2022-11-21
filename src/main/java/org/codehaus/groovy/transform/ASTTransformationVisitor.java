@@ -352,21 +352,20 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static void addPhaseOperationsForGlobalTransforms(CompilationUnit compilationUnit,
-            Map<String, URL> transformNames, boolean isFirstScan) {
+    private static void addPhaseOperationsForGlobalTransforms(CompilationUnit compilationUnit, Map<String, URL> transformNames, boolean isFirstScan) {
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
         for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
             try {
                 Class<?> gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
                 GroovyASTTransformation transformAnnotation = gTransClass.getAnnotation(GroovyASTTransformation.class);
                 if (transformAnnotation == null) {
-                    compilationUnit.getErrorCollector().addWarning(new WarningMessage(
+                    compilationUnit.getErrorCollector().addWarning(
                         WarningMessage.POSSIBLE_ERRORS,
                         "Transform Class " + entry.getKey() + " is specified as a global transform in " + entry.getValue().toExternalForm()
                         + " but it is not annotated by " + GroovyASTTransformation.class.getName()
                         + " the global transform associated with it may fail and cause the compilation to fail.",
                         null,
-                        null));
+                        null);
                     continue;
                 }
                 if (ASTTransformation.class.isAssignableFrom(gTransClass)) {

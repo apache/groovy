@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
@@ -53,8 +54,6 @@ import java.util.Set;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
-import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -73,11 +72,11 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
     private CompilationUnit compilationUnit;
 
-    static final Class MY_CLASS = MapConstructor.class;
-    static final ClassNode MY_TYPE = make(MY_CLASS);
+    static final Class<?> MY_CLASS = MapConstructor.class;
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode MAP_TYPE = makeWithoutCaching(Map.class, false);
-    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
+    private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
 
     @Override
     public String getAnnotationName() {
@@ -85,7 +84,12 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
     }
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
+
+    @Override
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
@@ -255,10 +259,5 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                 return null;
             }
         };
-    }
-
-    @Override
-    public void setCompilationUnit(CompilationUnit unit) {
-        this.compilationUnit = unit;
     }
 }

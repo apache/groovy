@@ -79,6 +79,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
@@ -280,13 +281,14 @@ public class JavaStubGenerator {
 
                 @Override
                 protected void addConstructor(Parameter[] params, ConstructorNode ctor, Statement code, ClassNode node) {
-                    if (code instanceof ExpressionStatement) { //GROOVY-4508
+                    if (!(code instanceof BlockStatement)) { // GROOVY-4508
                         Statement stmt = code;
                         code = new BlockStatement();
                         ((BlockStatement) code).addStatement(stmt);
                     }
                     ConstructorNode newCtor = new ConstructorNode(ctor.getModifiers(), params, ctor.getExceptions(), code);
                     newCtor.setDeclaringClass(node);
+                    markAsGenerated(node, newCtor);
                     constructors.add(newCtor);
                 }
 

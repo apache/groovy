@@ -18,27 +18,38 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyShellTestCase
+import org.junit.Test
 
-class TupleConstructorTransformTest extends GroovyShellTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+/**
+ * Tests for the {@code TupleConstructor} transform.
+ */
+final class TupleConstructorTransformTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports { star 'groovy.transform' }
+    }
+
+    @Test
     void testBasics() {
-        assertScript '''
-            @groovy.transform.TupleConstructor
+        assertScript shell, '''
+            @TupleConstructor(defaults=false)
             class Person {
-                String firstName
-                String lastName
+                String firstName, lastName
             }
 
             def p = new Person('John', 'Doe')
             assert p.firstName == 'John'
-            assert p.lastName == 'Doe'
+            assert p.lastName  == 'Doe'
         '''
     }
 
+    @Test
     void testCopyConstructor() {
-        assertScript '''
-            @groovy.transform.TupleConstructor(force=true)
+        assertScript shell, '''
+            @TupleConstructor(force=true)
             class Person {
                 String firstName, lastName
                 Person(Person that) {
@@ -48,17 +59,18 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
 
             def p = new Person('John', 'Doe')
             assert p.firstName == 'John'
-            assert p.lastName == 'Doe'
+            assert p.lastName  == 'Doe'
 
             p = new Person(p)
             assert p.firstName == 'John'
-            assert p.lastName == null
+            assert p.lastName  == null
         '''
     }
 
+    @Test
     void testFieldsAndInitializers() {
-        assertScript '''
-            @groovy.transform.TupleConstructor(includeFields=true)
+        assertScript shell, '''
+            @TupleConstructor(includeFields=true)
             class Person {
                 String firstName = 'John'
                 private String lastName = 'Doe'
@@ -67,18 +79,21 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
 
             def p = new Person()
             assert p.firstName == 'John'
-            assert p.lastName == 'Doe'
+            assert p.lastName  == 'Doe'
 
             p = new Person('Jane')
             assert p.firstName == 'Jane'
-            assert p.lastName == 'Doe'
+            assert p.lastName  == 'Doe'
+
+            p = new Person('Jane', 'Eyre')
+            assert p.firstName == 'Jane'
+            assert p.lastName  == 'Eyre'
         '''
     }
 
+    @Test
     void testFieldsAndNamesAndPost() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString(includeFields=true, includeNames=true)
             @TupleConstructor(post={ full = "$first $last" })
             class Person {
@@ -86,15 +101,13 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 private final String full
             }
 
-            assert new Person('Dierk', 'Koenig').toString() ==
-                'Person(first:Dierk, last:Koenig, full:Dierk Koenig)'
+            assert new Person('Dierk', 'Koenig').toString() == 'Person(first:Dierk, last:Koenig, full:Dierk Koenig)'
         '''
     }
 
+    @Test
     void testSuperPropsAndPreAndPost() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @TupleConstructor
             class Person {
                 String first, last
@@ -102,7 +115,7 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
 
             @CompileStatic // optional
             @ToString(includeSuperProperties=true)
-            @TupleConstructor(includeSuperProperties=true, pre={ super(first, last?.toLowerCase()) }, post = { this.first = this.first?.toUpperCase() })
+            @TupleConstructor(includeSuperProperties=true, pre={ super(first, last?.toLowerCase()) }, post={ this.first = this.first?.toUpperCase() })
             class Author extends Person {
                 String bookName
             }
@@ -113,9 +126,10 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-7522
-    void testExistingEmptyConstructorTakesPrecedence() {
-        assertScript '''
-            @groovy.transform.TupleConstructor
+    @Test
+    void testExistingConstructorTakesPrecedence() {
+        assertScript shell, '''
+            @TupleConstructor
             class Cat {
                 String name
                 int age
@@ -125,75 +139,74 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
             assert new Cat("Mr. Bigglesworth").name == null
             assert Cat.declaredConstructors.size() == 1
         '''
+        assertScript shell, '''
+            @TupleConstructor(force=true)
+            class Cat {
+                String name
+                int age
+                Cat(String name) {}
+            }
+
+            assert new Cat().name == null
+            assert new Cat("Mr. Bigglesworth").name == null
+            assert new Cat("Mr. Bigglesworth", 42).name == "Mr. Bigglesworth"
+            assert Cat.declaredConstructors.size() == 3 // (), (String) and (String,int)
+        '''
     }
 
+    @Test
     void testIncludesAndExcludesTogetherResultsInError() {
-        def message = shouldFail {
-            evaluate '''
-                import groovy.transform.TupleConstructor
-
-                @TupleConstructor(includes='surName', excludes='surName')
-                class Person {
-                    String surName
-                }
-
-                new Person("Doe")
-            '''
-        }
-        assert message.contains("Error during @TupleConstructor processing: Only one of 'includes' and 'excludes' should be supplied not both.")
+        def err = shouldFail shell, '''
+            @TupleConstructor(includes='surName', excludes='surName')
+            class Person {
+                String surName
+            }
+        '''
+        assert err.message.contains("Error during @TupleConstructor processing: Only one of 'includes' and 'excludes' should be supplied not both.")
     }
 
+    @Test
     void testIncludesWithInvalidPropertyNameResultsInError() {
-        def message = shouldFail {
-            evaluate '''
-                import groovy.transform.TupleConstructor
-
-                @TupleConstructor(includes='sirName')
-                class Person {
-                    String firstName
-                    String surName
-                }
-
-                def p = new Person("John", "Doe")
-            '''
-        }
-        assert message.contains("Error during @TupleConstructor processing: 'includes' property 'sirName' does not exist.")
+        def err = shouldFail shell, '''
+            @TupleConstructor(includes='sirName')
+            class Person {
+                String firstName
+                String surName
+            }
+        '''
+        assert err.message.contains("Error during @TupleConstructor processing: 'includes' property 'sirName' does not exist.")
     }
 
+    @Test
     void testExcludesWithInvalidPropertyNameResultsInError() {
-        def message = shouldFail {
-            evaluate '''
-                import groovy.transform.TupleConstructor
-
-                @TupleConstructor(excludes='sirName')
-                class Person {
-                    String firstName
-                    String surName
-                }
-
-                def p = new Person("John", "Doe")
-            '''
-        }
-        assert message.contains("Error during @TupleConstructor processing: 'excludes' property 'sirName' does not exist.")
+        def err = shouldFail shell, '''
+            @TupleConstructor(excludes='sirName')
+            class Person {
+                String firstName
+                String surName
+            }
+        '''
+        assert err.message.contains("Error during @TupleConstructor processing: 'excludes' property 'sirName' does not exist.")
     }
 
     // GROOVY-7523
+    @Test
     void testIncludesWithEmptyList() {
-        assertScript '''
-            @groovy.transform.TupleConstructor(includes=[])
+        assertScript shell, '''
+            @TupleConstructor(includes=[])
             class Cat {
                 String name
                 int age
             }
+
             assert Cat.declaredConstructors.size() == 1
         '''
     }
 
     // GROOVY-7524
+    @Test
     void testCombiningWithInheritConstructors() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @TupleConstructor
             class NameId {
                 String name
@@ -217,9 +230,9 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-7672
+    @Test
     void testMultipleUsages() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import java.awt.Color
 
             class Named {
@@ -245,11 +258,10 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-6454
+    @Test
     void testInternalFieldsAreIncludedIfRequested() {
-        assertScript '''
-            import groovy.transform.*
-
-            @TupleConstructor(allNames = true)
+        assertScript shell, '''
+            @TupleConstructor(allNames=true)
             class HasInternalName {
                 String $internal
             }
@@ -259,18 +271,17 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-7981
+    @Test
     void testVisibilityOptions() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static groovy.transform.options.Visibility.*
             import static java.lang.reflect.Modifier.isPrivate
 
             @VisibilityOptions(PRIVATE)
             @Immutable
-            @ASTTest(phase = CANONICALIZATION,
-                     value = {
-                         node.constructors.every { isPrivate(it.modifiers) }
-                     })
+            @ASTTest(phase=CANONICALIZATION, value={
+                node.constructors.every { isPrivate(it.modifiers) }
+            })
             class Person {
                 String first, last
                 int age
@@ -280,33 +291,32 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
             }
 
             @CompileStatic
-            def method() {
+            void test() {
                 def p = Person.makePerson(first: 'John', last: 'Smith', age: 20)
                 assert p.toString() == 'Person(John, Smith, 20)'
             }
-            method()
+            test()
         '''
     }
 
     // GROOVY-7981
+    @Test
     void testMultipleVisibilityOptions() {
-        assertScript '''
-            import groovy.transform.*
-            import java.lang.reflect.Modifier
+        assertScript shell, '''
             import static groovy.transform.options.Visibility.*
+            import static java.lang.reflect.Modifier.*
 
-            @VisibilityOptions(value = PROTECTED, id = 'first_only')
-            @VisibilityOptions(constructor = PRIVATE, id = 'age_only')
-            @TupleConstructor(visibilityId = 'first_only', includes = 'first', defaults = false, force = true)
-            @TupleConstructor(visibilityId = 'age_only', includes = 'age', defaults = false, force = true)
-            @ASTTest(phase = CANONICALIZATION,
-                     value = {
-                         assert node.constructors.size() == 2
-                         node.constructors.each {
-                             assert (it.typeDescriptor == 'void <init>(java.lang.String)' && it.modifiers == Modifier.PROTECTED) ||
-                             (it.typeDescriptor == 'void <init>(int)' && it.modifiers == Modifier.PRIVATE)
-                         }
-                     })
+            @VisibilityOptions(value=PROTECTED, id='first_only')
+            @VisibilityOptions(constructor=PRIVATE, id='age_only')
+            @TupleConstructor(visibilityId='first_only', includes='first', defaults=false, force=true)
+            @TupleConstructor(visibilityId='age_only', includes='age', defaults=false, force=true)
+            @ASTTest(phase=CANONICALIZATION, value={
+                assert node.constructors.size() == 2
+                node.constructors.each {
+                    assert (it.typeDescriptor == 'void <init>(java.lang.String)' && isProtected(it.modifiers)) ||
+                            (it.typeDescriptor == 'void <init>(int)' && isPrivate(it.modifiers))
+                }
+            })
             class Person {
                 String first, last
                 int age
@@ -315,15 +325,15 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                     assert new Person(42).age == 42
                 }
             }
+
             Person.test()
         '''
     }
 
     // GROOVY-8455, GROOVY-8453
+    @Test
     void testPropPsuedoPropAndFieldOrderIncludingInheritedMembers() {
-        assertScript '''
-            import groovy.transform.TupleConstructor
-
+        assertScript shell, '''
             class Basepubf{}
             class Basep{}
             class Basepp{}
@@ -371,27 +381,26 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
     }
 
     // GROOVY-10361
-    void testTupleConstructorDefaultsModes() {
-        assertScript '''
-            import groovy.transform.*
-            import static groovy.test.GroovyAssert.shouldFail
-
-            @TupleConstructor(defaultsMode = DefaultsMode.OFF, includeFields = true)
+    @Test
+    void testDefaultsMode() {
+        assertScript shell, '''
+            @TupleConstructor(defaultsMode=DefaultsMode.OFF, includeFields=true)
             class A {
                 String won
                 private int too
             }
-            assert A.declaredConstructors.toString() == '[public A(java.lang.String,int)]'
 
-            shouldFail """
-            @TupleConstructor(defaultsMode = DefaultsMode.OFF, includeFields = true)
+            assert A.declaredConstructors.toString() == '[public A(java.lang.String,int)]'
+        '''
+        shouldFail shell, '''
+            @TupleConstructor(defaultsMode=DefaultsMode.OFF, includeFields=true)
             class B {
                 String won = 'one'
                 private int too = 2
             }
-            """
-
-            @TupleConstructor(defaultsMode = DefaultsMode.AUTO, includeFields = true)
+        '''
+        assertScript shell, '''
+            @TupleConstructor(defaultsMode=DefaultsMode.AUTO, includeFields=true)
             class C {
                 String one = 'won'
                 int too = 2
@@ -405,8 +414,9 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 'public C(java.lang.String,int)',
                 'public C(int)'
             ].toSet()
-
-            @TupleConstructor(defaultsMode = DefaultsMode.ON, includeFields = true)
+        '''
+        assertScript shell, '''
+            @TupleConstructor(defaultsMode=DefaultsMode.ON, includeFields=true)
             class D {
                 String one = 'won'
                 int too = 2
@@ -422,22 +432,48 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 'public D()'
             ].toSet()
         '''
-        assertScript '''
-        import groovy.transform.*
-        @Canonical(defaultsMode=DefaultsMode.AUTO)
-        class Bar {
-            String a = 'a'
-            long b
-            Integer c = 24
-            short d
-            String e = 'e'
-        }
+        assertScript shell, '''
+            @Canonical(defaultsMode=DefaultsMode.AUTO)
+            class Bar {
+                String a = 'a'
+                long b
+                Integer c = 24
+                short d
+                String e = 'e'
+            }
 
-        short one = 1
-        assert new Bar(3L, one).toString() == 'Bar(a, 3, 24, 1, e)'
-        assert new Bar('A', 3L, one).toString() == 'Bar(A, 3, 24, 1, e)'
-        assert new Bar('A', 3L, 42, one).toString() == 'Bar(A, 3, 42, 1, e)'
-        assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar(A, 3, 42, 1, E)'
+            short one = 1
+            assert new Bar(3L, one).toString() == 'Bar(a, 3, 24, 1, e)'
+            assert new Bar('A', 3L, one).toString() == 'Bar(A, 3, 24, 1, e)'
+            assert new Bar('A', 3L, 42, one).toString() == 'Bar(A, 3, 42, 1, e)'
+            assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar(A, 3, 42, 1, E)'
+        '''
+    }
+
+    // GROOVY-10790
+    @Test
+    void testWithMapConstructor() {
+        assertScript shell, '''
+            @MapConstructor @TupleConstructor
+            @ToString
+            class Foo {
+                String bar, baz = 'z'
+            }
+
+            assert new Foo('x','y').toString() == 'Foo(x, y)'
+            assert new Foo('x').toString() == 'Foo(x, z)'
+            assert new Foo().toString() == 'Foo(null, z)'
+        '''
+        assertScript shell, ''' // multiple sources of no-arg constructor
+            @MapConstructor(noArg=true) @TupleConstructor
+            @ToString
+            class Foo {
+                String bar, baz = 'z'
+            }
+
+            assert new Foo('x','y').toString() == 'Foo(x, y)'
+            assert new Foo('x').toString() == 'Foo(x, z)'
+            assert new Foo().toString() == 'Foo(null, z)'
         '''
     }
 }

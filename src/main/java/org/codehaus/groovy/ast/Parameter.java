@@ -85,9 +85,9 @@ public class Parameter extends AnnotatedNode implements Variable {
         return defaultValue;
     }
 
-    public void setInitialExpression(Expression init) {
+    public void setInitialExpression(final Expression init) {
         defaultValue = init;
-        hasDefaultValue = defaultValue != null;
+        hasDefaultValue = (init != null);
     }
 
     @Override
