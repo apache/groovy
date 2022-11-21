@@ -137,7 +137,7 @@ final class TupleConstructorTransformTest {
             }
 
             assert new Cat("Mr. Bigglesworth").name == null
-            assert Cat.declaredConstructors.size() == 1
+            assert Cat.declaredConstructors.length == 1
         '''
         assertScript shell, '''
             @TupleConstructor(force=true)
@@ -150,7 +150,7 @@ final class TupleConstructorTransformTest {
             assert new Cat().name == null
             assert new Cat("Mr. Bigglesworth").name == null
             assert new Cat("Mr. Bigglesworth", 42).name == "Mr. Bigglesworth"
-            assert Cat.declaredConstructors.size() == 3 // (), (String) and (String,int)
+            assert Cat.declaredConstructors.length == 3 // (), (String) and (String,int)
         '''
     }
 
@@ -205,7 +205,7 @@ final class TupleConstructorTransformTest {
 
     // GROOVY-7524
     @Test
-    void testCombiningWithInheritConstructors() {
+    void testWithInheritConstructors() {
         assertScript shell, '''
             @TupleConstructor
             class NameId {
@@ -255,6 +255,26 @@ final class TupleConstructorTransformTest {
             assert new Cat().toString() == 'Cat(age:0)'
             assert Cat.constructors.size() == 4
         '''
+    }
+
+    // GROOVY-10789
+    @Test
+    void testMultipleUsage2() {
+        for (entry in [DUPLICATE:3, PREFER_COLLECTOR:1, PREFER_EXPLICIT:3, PREFER_EXPLICIT_MERGED:3]) {
+            assertScript shell, """import static groovy.transform.AnnotationCollectorMode.*
+                @TupleConstructor(defaults=false)
+                @AnnotationCollector(mode=$entry.key)
+                @interface Collector {
+                }
+
+                @Collector @TupleConstructor(defaults=true)
+                class Foo {
+                    String bar, baz
+                }
+
+                assert Foo.declaredConstructors.length == $entry.value
+            """
+        }
     }
 
     // GROOVY-6454
