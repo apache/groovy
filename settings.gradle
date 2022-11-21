@@ -95,8 +95,4 @@ rootProject.children.each { prj ->
 
 rootProject.name = 'groovy'
 
-GradleVersion gradleVersion = GradleVersion.current()
-GradleVersion gradle5_6 = GradleVersion.version('5.6')
-if (gradleVersion >= gradle5_6) {
-    enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
-}
+enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
