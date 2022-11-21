@@ -1045,4 +1045,20 @@ final class ImmutableTransformTest {
             assert new Foo().toString() == 'Foo(null, z)'
         '''
     }
+
+    // GROOVY-10108
+    @Test
+    void testSpecialNamedArgHandlingForMap() {
+        assertScript shell, '''
+            @Immutable(specialNamedArgHandling=false)
+            class Type {
+                Map<Long, String> data
+            }
+
+            Map<Long, String> data = [(1L):'foo', (2L):'bar']
+            def obj= new Type(data)
+
+            assert obj['data'][2L] == 'bar'
+        '''
+    }
 }

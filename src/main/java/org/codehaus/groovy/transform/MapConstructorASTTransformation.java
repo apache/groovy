@@ -48,18 +48,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -75,7 +72,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
     static final Class<?> MY_CLASS = MapConstructor.class;
     static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode MAP_TYPE = ClassHelper.makeWithoutCaching(Map.class, false);
+    private static final ClassNode MAP_TYPE = ClassHelper.MAP_TYPE.getPlainNodeReference();
     private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
 
     @Override
@@ -98,17 +95,17 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-            boolean includeFields = memberHasValue(anno, "includeFields", true);
-            boolean includeProperties = !memberHasValue(anno, "includeProperties", false);
-            boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
-            boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", true);
-            boolean includeStatic = memberHasValue(anno, "includeStatic", true);
-            boolean allProperties = memberHasValue(anno, "allProperties", true);
-            boolean noArg = memberHasValue(anno, "noArg", true);
-            boolean specialNamedArgHandling = !memberHasValue(anno, "specialNamedArgHandling", false);
+            boolean includeFields = memberHasValue(anno, "includeFields", Boolean.TRUE);
+            boolean includeProperties = !memberHasValue(anno, "includeProperties", Boolean.FALSE);
+            boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", Boolean.TRUE);
+            boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", Boolean.TRUE);
+            boolean includeStatic = memberHasValue(anno, "includeStatic", Boolean.TRUE);
+            boolean allProperties = memberHasValue(anno, "allProperties", Boolean.TRUE);
+            boolean noArg = memberHasValue(anno, "noArg", Boolean.TRUE);
+            boolean specialNamedArgHandling = !memberHasValue(anno, "specialNamedArgHandling", Boolean.FALSE);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
-            boolean allNames = memberHasValue(anno, "allNames", true);
+            boolean allNames = memberHasValue(anno, "allNames", Boolean.TRUE);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties))
                 return;
@@ -141,65 +138,54 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         }
     }
 
-    private static void createConstructors(AbstractASTTransformation xform, AnnotationNode anno, PropertyHandler handler, ClassNode cNode, boolean includeFields, boolean includeProperties,
-                                           boolean includeSuperProperties, boolean includeSuperFields, boolean noArg,
-                                           boolean allNames, boolean allProperties, boolean specialNamedArgHandling, boolean includeStatic,
-                                           List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source) {
+    private static void createConstructors(final AbstractASTTransformation xform, final AnnotationNode anno, final PropertyHandler handler, final ClassNode cNode,
+                                           final boolean includeFields, final boolean includeProperties, final boolean includeSuperProperties, final boolean includeSuperFields,
+                                           final boolean noArg, final boolean allNames, final boolean allProperties, final boolean specialNamedArgHandling, final boolean includeStatic,
+                                           final List<String> excludes, final List<String> includes, final ClosureExpression pre, final ClosureExpression post, final SourceUnit source) {
 
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
         cNode.getDeclaredConstructors().removeIf(next -> next.getFirstStatement() == null);
 
-        Set<String> names = new HashSet<String>();
-        List<PropertyNode> superList;
+        Set<String> names = new HashSet<>();
+        List<PropertyNode> properties;
         if (includeSuperProperties || includeSuperFields) {
-            superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, false, false, allNames, includeStatic);
+            properties = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, false, false, allNames, includeStatic);
         } else {
-            superList = new ArrayList<PropertyNode>();
+            properties = new ArrayList<>();
         }
-        List<PropertyNode> list = getAllProperties(names, cNode, cNode, includeProperties, includeFields, false, allProperties, false, false, false, allNames, includeStatic);
+        properties.addAll(getAllProperties(names, cNode, cNode, includeProperties, includeFields, false, allProperties, false, false, false, allNames, includeStatic));
 
-        Parameter map = param(MAP_TYPE, "args");
-        final BlockStatement body = new BlockStatement();
+        BlockStatement body = new BlockStatement();
         ClassCodeExpressionTransformer transformer = makeMapTypedArgsTransformer();
         if (pre != null) {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(pre);
             copyStatementsWithSuperAdjustment(transformed, body);
         }
-        final BlockStatement inner = new BlockStatement();
-        superList.addAll(list);
-
-        if (!handler.validateProperties(xform, body, cNode, superList)) {
+        if (!handler.validateProperties(xform, body, cNode, properties)) {
             return;
         }
 
-        boolean specialNamedArgCase = specialNamedArgHandling && ImmutableASTTransformation.isSpecialNamedArgCase(superList, true);
-        processProps(xform, anno, cNode, handler, allNames, excludes, includes, superList, map, inner);
+        BlockStatement inner = new BlockStatement();
+        Parameter map = new Parameter(MAP_TYPE, "args");
+        boolean specialNamedArgsCase = specialNamedArgHandling
+                && ImmutableASTTransformation.isSpecialNamedArgCase(properties, true);
+        processProps(xform, anno, cNode, handler, allNames, excludes, includes, properties, map, inner);
+        if (specialNamedArgsCase) map = new Parameter(LHMAP_TYPE, "args");
         body.addStatement(inner);
-        Parameter[] params = params(specialNamedArgCase ? new Parameter(LHMAP_TYPE, "args") : map);
         if (post != null) {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(post);
             body.addStatement(transformed.getCode());
         }
+
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        doAddConstructor(cNode, new ConstructorNode(modifiers, params, ClassNode.EMPTY_ARRAY, body));
-        if (noArg && !superList.isEmpty() && !hasNoArgConstructor(cNode)/* && !specialNamedArgCase*/) {
-            createNoArgConstructor(cNode, modifiers);
-        }
+        createConstructors(cNode, modifiers, map, body, noArg && !properties.isEmpty()/* && !specialNamedArgsCase*/);
     }
 
-    private static void doAddConstructor(final ClassNode cNode, final ConstructorNode constructorNode) {
-        markAsGenerated(cNode, constructorNode);
-        cNode.addConstructor(constructorNode);
-        // GROOVY-5814: Immutable is not compatible with @CompileStatic
-        Parameter argsParam = null;
-        for (Parameter p : constructorNode.getParameters()) {
-            if ("args".equals(p.getName())) {
-                argsParam = p;
-                break;
-            }
-        }
-        if (argsParam != null) {
-            final Parameter arg = argsParam;
+    private static void createConstructors(final ClassNode cNode, final int mods, final Parameter args, final Statement body, final boolean noArg) {
+        Parameter[] parameters = {args};
+        if (cNode.getDeclaredConstructor(parameters) == null) {
+            ConstructorNode ctor = addGeneratedConstructor(cNode, mods, parameters, ClassNode.EMPTY_ARRAY, body);
+            // GROOVY-5814: fix compatibility with @CompileStatic
             ClassCodeVisitorSupport variableExpressionFix = new ClassCodeVisitorSupport() {
                 @Override
                 protected SourceUnit getSourceUnit() {
@@ -210,11 +196,14 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                 public void visitVariableExpression(final VariableExpression expression) {
                     super.visitVariableExpression(expression);
                     if ("args".equals(expression.getName())) {
-                        expression.setAccessedVariable(arg);
+                        expression.setAccessedVariable(args);
                     }
                 }
             };
-            variableExpressionFix.visitConstructor(constructorNode);
+            variableExpressionFix.visitConstructor(ctor);
+        }
+        if (noArg && !hasNoArgConstructor(cNode)) {
+            addGeneratedConstructor(cNode, mods, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, stmt(ctorThisX(args(new MapExpression()))));
         }
     }
 
@@ -229,24 +218,17 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         }
     }
 
-    private static void createNoArgConstructor(ClassNode cNode, int modifiers) {
-        Statement body = stmt(ctorX(ClassNode.THIS, args(new MapExpression())));
-        ConstructorNode consNode = new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
-        markAsGenerated(cNode, consNode);
-        cNode.addConstructor(consNode);
-    }
-
     private static ClassCodeExpressionTransformer makeMapTypedArgsTransformer() {
         return new ClassCodeExpressionTransformer() {
             @Override
-            public Expression transform(Expression exp) {
+            public Expression transform(final Expression exp) {
                 if (exp instanceof ClosureExpression) {
                     ClosureExpression ce = (ClosureExpression) exp;
                     ce.getCode().visit(this);
                 } else if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;
                     if ("args".equals(ve.getName()) && ve.getAccessedVariable() instanceof DynamicVariable) {
-                        VariableExpression newVe = varX(param(MAP_TYPE, "args"));
+                        VariableExpression newVe = varX(new Parameter(MAP_TYPE, "args"));
                         newVe.setSourcePosition(ve);
                         return newVe;
                     }

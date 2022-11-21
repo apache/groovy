@@ -110,25 +110,22 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(anno.getClassNode())) return;
-
-        if (parent instanceof ClassNode) {
-            final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
-            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
-            if (handler == null || !handler.validateAttributes(this, anno)) return;
-            doMakeImmutable((ClassNode) parent, anno, handler);
+        AnnotatedNode parent = (AnnotatedNode) nodes[1];
+        if (MY_TYPE.equals(anno.getClassNode()) && parent instanceof ClassNode) { ClassNode type = (ClassNode) parent;
+            GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
+            PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, type);
+            if (handler != null
+                    && handler.validateAttributes(this, anno)
+                    && checkNotInterface(type, MY_TYPE_NAME))
+                doMakeImmutable(type, anno, handler);
         }
     }
 
-    private void doMakeImmutable(final ClassNode cNode, final AnnotationNode node, final PropertyHandler handler) {
-        List<PropertyNode> newProperties = new ArrayList<>();
-
+    private void doMakeImmutable(final ClassNode cNode, final AnnotationNode anno, final PropertyHandler handler) {
         String cName = cNode.getName();
-        if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-
-        final List<PropertyNode> pList = getInstanceProperties(cNode);
+        List<PropertyNode> newProperties = new ArrayList<>();
+        List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             adjustPropertyForImmutability(pNode, newProperties, handler);
         }
@@ -136,8 +133,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             cNode.getProperties().remove(pNode);
             addProperty(cNode, pNode);
         }
-        final List<FieldNode> fList = cNode.getFields();
-        for (FieldNode fNode : fList) {
+        for (FieldNode fNode : cNode.getFields()) {
             ensureNotPublic(this, cName, fNode);
         }
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
@@ -153,7 +149,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             if (unsupportedTupleAttribute(tupleCons, "force")) return;
         }
         if (hasExplicitConstructor(this, cNode)) return;
-        if (!pList.isEmpty() && memberHasValue(node, "copyWith", Boolean.TRUE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
+        if (!pList.isEmpty() && memberHasValue(anno, "copyWith", Boolean.TRUE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
             createCopyWith(cNode, pList);
         }
     }
@@ -409,6 +405,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
 
+    /**
+     * Called during named-arguments constructor execution to check given names.
+     */
     public static void checkPropNames(final Object instance, final Map<String, Object> args) {
         final MetaClass metaClass = InvokerHelper.getMetaClass(instance);
         for (String name : args.keySet()) {
