@@ -25,6 +25,7 @@ import groovy.transform.TupleConstructor;
 import groovy.transform.options.PropertyHandler;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -62,6 +63,7 @@ import java.util.Set;
 
 import static groovy.transform.DefaultsMode.OFF;
 import static groovy.transform.DefaultsMode.ON;
+import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
@@ -240,24 +242,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (!preBody.isEmpty()) {
             body.addStatements(preBody.getStatements());
         }
-
-        for (PropertyNode pNode : list) {
-            String name = pNode.getName();
-            FieldNode fNode = pNode.getField();
-            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
-            Parameter nextParam = createParam(fNode, name, defaultsMode, xform, makeImmutable);
-            if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
-                nextParam.addAnnotations(pNode.getAnnotations());
-                nextParam.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
-                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
-            }
-            params.add(nextParam);
-        }
-
-        if (includes != null) {
-            params.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
-        }
-
         for (PropertyNode pNode : list) {
             String name = pNode.getName();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
@@ -265,41 +249,62 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (propInit != null) {
                 body.addStatement(propInit);
             }
+            FieldNode fNode = pNode.getField();
+            Parameter param = createParam(fNode, name, defaultsMode, xform, makeImmutable);
+            if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
+                param.addAnnotations(pNode.getAnnotations());
+                param.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+            }
+            params.add(param);
         }
-
         if (post != null) {
             body.addStatement(post.getCode());
         }
 
+        if (includes != null) {
+            params.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
+        }
+
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        // add main tuple constructor; if any parameters have default values then Verifier will generate the other variants
-        ConstructorNode tupleCtor = addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
-        if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
-            tupleCtor.addAnnotations(cNode.getAnnotations());
-            tupleCtor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
-        }
-        if (namedVariant) {
-            BlockStatement inner = new BlockStatement();
-            Parameter mapParam = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS);
-            List<Parameter> genParams = new ArrayList<>();
-            genParams.add(mapParam);
-            ArgumentListExpression args = new ArgumentListExpression();
-            List<String> propNames = new ArrayList<>();
-            Map<Parameter, Expression> seen = new HashMap<>();
-            for (Parameter p : params) {
-                if (!processImplicitNamedParam(xform, tupleCtor, mapParam, inner, args, propNames, p, false, seen)) return;
+        Parameter[] signature = params.toArray(Parameter.EMPTY_ARRAY);
+        if (cNode.getDeclaredConstructor(signature) != null) {
+            if (sourceUnit != null) {
+                String warning = String.format(
+                    "%s specifies duplicate constructor: %s(%s)",
+                    xform.getAnnotationName(), cNode.getNameWithoutPackage(),
+                    params.stream().map(Parameter::getType).map(ClassNodeUtils::formatTypeName).collect(joining(",")));
+                sourceUnit.addWarning(warning, anno.getLineNumber() > 0 ? anno : cNode);
             }
-            NamedVariantASTTransformation.createMapVariant(xform, tupleCtor, anno, mapParam, genParams, cNode, inner, args, propNames);
-        }
+        } else {
+            // add main tuple constructor; if any parameters have default values, then Verifier will generate the variants
+            ConstructorNode tupleCtor = addGeneratedConstructor(cNode, modifiers, signature, ClassNode.EMPTY_ARRAY, body);
+            if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
+                tupleCtor.addAnnotations(cNode.getAnnotations());
+                tupleCtor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+            }
+            if (namedVariant) {
+                BlockStatement inner = new BlockStatement();
+                Parameter mapParam = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS);
+                List<Parameter> genParams = new ArrayList<>();
+                genParams.add(mapParam);
+                ArgumentListExpression args = new ArgumentListExpression();
+                List<String> propNames = new ArrayList<>();
+                Map<Parameter, Expression> seen = new HashMap<>();
+                for (Parameter p : params) {
+                    if (!processImplicitNamedParam(xform, tupleCtor, mapParam, inner, args, propNames, p, false, seen)) return;
+                }
+                NamedVariantASTTransformation.createMapVariant(xform, tupleCtor, anno, mapParam, genParams, cNode, inner, args, propNames);
+            }
 
-        if (sourceUnit != null && !body.isEmpty()) {
-            new VariableScopeVisitor(sourceUnit).visitClass(cNode);
-        }
+            if (sourceUnit != null && !body.isEmpty()) {
+                new VariableScopeVisitor(sourceUnit).visitClass(cNode);
+            }
 
-        if (body.isEmpty()) { // GROOVY-8868: retain empty constructor
-            body.addStatement(stmt(ConstantExpression.EMPTY_EXPRESSION));
+            if (body.isEmpty()) { // GROOVY-8868: retain empty constructor
+                body.addStatement(stmt(ConstantExpression.EMPTY_EXPRESSION));
+            }
         }
-
         // If the first param is def or a Map, named args might not work as expected so we add a hard-coded map constructor in this case
         // we don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)

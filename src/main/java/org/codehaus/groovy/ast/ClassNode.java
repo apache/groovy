@@ -618,8 +618,8 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public void addConstructor(ConstructorNode node) {
-        node.setDeclaringClass(this);
         ClassNode r = redirect();
+        node.setDeclaringClass(r);
         if (r.constructors == null)
             r.constructors = new ArrayList<>();
         r.constructors.add(node);
@@ -632,8 +632,8 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public void addMethod(MethodNode node) {
-        node.setDeclaringClass(this);
         ClassNode r = redirect();
+        node.setDeclaringClass(r);
         if (r.methodsList.isEmpty()) {
             r.methodsList = new ArrayList<>();
         }
