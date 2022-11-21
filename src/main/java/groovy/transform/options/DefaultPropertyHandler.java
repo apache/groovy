@@ -21,7 +21,6 @@ package groovy.transform.options;
 import groovy.transform.stc.POJO;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -74,9 +73,8 @@ public class DefaultPropertyHandler extends PropertyHandler {
     @Override
     public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         String name = pNode.getName();
-        FieldNode fNode = pNode.getField();
+        boolean hasSetter = cNode.getProperty(name) != null && !pNode.isFinal();
         boolean useSetters = xform.memberHasValue(anno, "useSetters", Boolean.TRUE);
-        boolean hasSetter = cNode.getProperty(name) != null && !fNode.isFinal();
         if (namedArgsMap != null) {
             return assignFieldS(useSetters, namedArgsMap, name);
         } else {

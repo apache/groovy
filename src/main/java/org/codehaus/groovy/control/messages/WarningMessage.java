@@ -28,18 +28,23 @@ import java.io.PrintWriter;
  * A class for warning messages.
  */
 public class WarningMessage extends LocatedMessage {
-    //---------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
     // WARNING LEVELS
 
-    public static final int NONE = 0;  // For querying, ignore all errors
-    public static final int LIKELY_ERRORS = 1;  // Warning indicates likely error
-    public static final int POSSIBLE_ERRORS = 2;  // Warning indicates possible error
-    public static final int PARANOIA = 3;  // Warning indicates paranoia on the part of the compiler
+    /** Ignore all (for querying) */
+    public static final int NONE = 0;
+    /** Warning indicates likely error */
+    public static final int LIKELY_ERRORS = 1;
+    /** Warning indicates possible error */
+    public static final int POSSIBLE_ERRORS = 2;
+    /** Warning indicates paranoia on the part of the compiler */
+    public static final int PARANOIA = 3;
 
     /**
      * Returns true if a warning would be relevant to the specified level.
      */
-    public static boolean isRelevant(int actual, int limit) {
+    public static boolean isRelevant(final int actual, final int limit) {
         return actual <= limit;
     }
 
@@ -47,23 +52,23 @@ public class WarningMessage extends LocatedMessage {
      * Returns true if this message is as or more important than the
      * specified importance level.
      */
-    public boolean isRelevant(int importance) {
+    public boolean isRelevant(final int importance) {
         return isRelevant(this.importance, importance);
     }
 
-    //---------------------------------------------------------------------------
-    // CONSTRUCTION AND DATA ACCESS
+    //--------------------------------------------------------------------------
 
-    private final int importance;  // The warning level, for filtering
+    /** The warning level (for filtering). */
+    private final int importance;
 
     /**
      * Creates a new warning message.
      *
      * @param importance the warning level
      * @param message    the message text
-     * @param context    context information for locating the offending source text
+     * @param context    for locating the offending source text
      */
-    public WarningMessage(int importance, String message, CSTNode context, SourceUnit owner) {
+    public WarningMessage(final int importance, final String message, final CSTNode context, final SourceUnit owner) {
         super(message, context, owner);
         this.importance = importance;
     }
@@ -73,18 +78,17 @@ public class WarningMessage extends LocatedMessage {
      *
      * @param importance the warning level
      * @param message    the message text
-     * @param data       additional data needed when generating the message
-     * @param context    context information for locating the offending source text
+     * @param data       data needed for generating the message
+     * @param context    for locating the offending source text
      */
-    public WarningMessage(int importance, String message, Object data, CSTNode context, SourceUnit owner) {
+    public WarningMessage(final int importance, final String message, final Object data, final CSTNode context, final SourceUnit owner) {
         super(message, data, context, owner);
         this.importance = importance;
     }
 
     @Override
-    public void write(PrintWriter writer, Janitor janitor) {
+    public void write(final PrintWriter writer, final Janitor janitor) {
         writer.print("warning: ");
         super.write(writer, janitor);
     }
-
 }

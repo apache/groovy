@@ -31,44 +31,37 @@ import java.io.PrintWriter;
 public abstract class Message {
 
     /**
-     * Writes the message to the specified PrintWriter.  The supplied
-     * ProcessingUnit is the unit that holds this Message.
+     * Creates a new {@code Message} from the specified text.
      */
-    public abstract void write(PrintWriter writer, Janitor janitor);
-
-    /**
-     * A synonym for write( writer, owner, null ).
-     */
-    public final void write(PrintWriter writer) {
-        write(writer, null);
-    }
-
-    //---------------------------------------------------------------------------
-    // FACTORY METHODS
-
-    /**
-     * Creates a new Message from the specified text.
-     */
-    public static Message create(String text, ProcessingUnit owner) {
+    public static Message create(final String text, final ProcessingUnit owner) {
         return new SimpleMessage(text, owner);
     }
 
     /**
-     * Creates a new Message from the specified text.
+     * Creates a new {@code Message} from the specified text and data.
      */
-    public static Message create(String text, Object data, ProcessingUnit owner) {
+    public static Message create(final String text, final Object data, final ProcessingUnit owner) {
         return new SimpleMessage(text, data, owner);
     }
 
     /**
-     * Creates a new Message from the specified SyntaxException.
+     * Creates a new {@code Message} from the specified {@code SyntaxException}.
      */
-    public static Message create(SyntaxException error, SourceUnit owner) {
+    public static Message create(final SyntaxException error, final SourceUnit owner) {
         return new SyntaxErrorMessage(error, owner);
     }
 
+    //--------------------------------------------------------------------------
+
+    /**
+     * Writes this message to the specified {@link PrintWriter}.
+     */
+    public abstract void write(PrintWriter writer, Janitor janitor);
+
+    /**
+     * Writes this message to the specified {@link PrintWriter}.
+     */
+    public final void write(final PrintWriter writer) {
+        write(writer, null);
+    }
 }
-
-
-
-

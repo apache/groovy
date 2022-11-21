@@ -93,6 +93,7 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
@@ -109,6 +110,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
@@ -987,7 +989,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List<ConstructorNode> constructors = new ArrayList<>(type.getDeclaredConstructors());
         addDefaultParameters(constructors, (arguments, params, method) -> {
             // GROOVY-9151: check for references to parameters that have been removed
-            List<Parameter> paramList = Arrays.asList(params);
             for (ListIterator<Expression> it = arguments.getExpressions().listIterator(); it.hasNext(); ) {
                 Expression argument = it.next();
                 if (argument instanceof CastExpression) {
@@ -997,9 +998,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     VariableExpression v = (VariableExpression) argument;
                     if (v.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) v.getAccessedVariable();
-                        if (p.hasInitialExpression() && !paramList.contains(p)
-                                && p.getInitialExpression() instanceof ConstantExpression) {
-                            // replace argument "(Type) param" with "(Type) <param's default>" for simple default value
+                        if (p.getInitialExpression() instanceof ConstantExpression && !Arrays.asList(params).contains(p)){
+                            // for simple default value, replace argument "(Type) param" with "(Type) <<param's default>>"
                             it.set(castX(method.getParameters()[it.nextIndex() - 1].getType(), p.getInitialExpression()));
                         }
                     }
@@ -1010,7 +1010,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) e.getAccessedVariable();
-                        if (p.hasInitialExpression() && !paramList.contains(p)) {
+                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
                             String error = String.format(
                                     "The generated constructor \"%s(%s)\" references parameter '%s' which has been replaced by a default value expression.",
                                     type.getNameWithoutPackage(),
@@ -1023,9 +1023,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             };
             visitor.visitArgumentlistExpression(arguments);
 
-            // delegate to original constructor using arguments derived from defaults
-            Statement code = new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, arguments));
-            addConstructor(params, (ConstructorNode) method, code, type);
+            ConstructorNode old = type.getDeclaredConstructor(params);
+            if (old == null || isGenerated(old)) { type.removeConstructor(old);
+                // delegate to original constructor using arguments derived from defaults
+                addConstructor(params, (ConstructorNode) method, stmt(ctorThisX(arguments)), type);
+            } else {
+                String warning = "Default argument(s) specify duplicate constructor: " +
+                        old.getTypeDescriptor().replace("void <init>", type.getNameWithoutPackage());
+                type.getModule().getContext().addWarning(warning, method.getLineNumber() > 0 ? method : type);
+            }
         });
     }
 
@@ -1088,10 +1094,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         for (Parameter parameter : parameters) {
-            if (parameter.hasInitialExpression()) {
-                // remove default expression and store it as node metadata
-                parameter.putNodeMetaData(Verifier.INITIAL_EXPRESSION,
-                        parameter.getInitialExpression());
+            Expression value = parameter.getInitialExpression();
+            if (value != null) {
+                // move the default expression from parameter to node metadata
+                parameter.putNodeMetaData(Verifier.INITIAL_EXPRESSION, value);
                 parameter.setInitialExpression(null);
             }
         }

@@ -45,7 +45,6 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static groovy.transform.DefaultsMode.AUTO;
 import static groovy.transform.DefaultsMode.OFF;
 import static groovy.transform.DefaultsMode.ON;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
@@ -70,7 +68,6 @@ import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
@@ -86,6 +83,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.makeImmutable;
 import static org.codehaus.groovy.transform.NamedVariantASTTransformation.processImplicitNamedParam;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -105,6 +103,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static final String NAMED_ARGS = "__namedArgs";
     private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode POJO_TYPE = ClassHelper.make(POJO.class);
+
+    @Override
+    public int priority() {
+        return 5;
+    }
 
     @Override
     public String getAnnotationName() {
@@ -172,18 +175,19 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                                           final boolean includeProperties, final boolean includeSuperFields, final boolean includeSuperProperties,
                                           final List<String> excludes, final List<String> includes, final boolean allNames, final boolean allProperties,
                                           final SourceUnit sourceUnit, final PropertyHandler handler, final ClosureExpression pre, final ClosureExpression post) {
-        boolean callSuper = xform.memberHasValue(anno, "callSuper", true);
-        boolean force = xform.memberHasValue(anno, "force", true);
+        boolean namedVariant = xform.memberHasValue(anno, "namedVariant", Boolean.TRUE);
+        boolean callSuper = xform.memberHasValue(anno, "callSuper", Boolean.TRUE);
         DefaultsMode defaultsMode = maybeDefaultsMode(anno, "defaultsMode");
         if (defaultsMode == null) {
-            if (anno.getMember("defaults") == null) {
-                defaultsMode = ON;
-            } else {
-                boolean defaults = !xform.memberHasValue(anno, "defaults", false);
-                defaultsMode = defaults ? ON : OFF;
-            }
+            boolean defaults = anno.getMember("defaults") == null
+                    || !xform.memberHasValue(anno, "defaults", Boolean.FALSE);
+            defaultsMode = defaults ? ON : OFF;
         }
-        boolean namedVariant = xform.memberHasValue(anno, "namedVariant", true);
+        boolean force = xform.memberHasValue(anno, "force", Boolean.TRUE);
+        boolean makeImmutable = makeImmutable(cNode);
+
+        // no processing if explicit constructor(s) found, unless forced or ImmutableBase is in play
+        if (!force && !makeImmutable && hasExplicitConstructor(null, cNode)) return;
 
         Set<String> names = new HashSet<>();
         List<PropertyNode> superList;
@@ -192,15 +196,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         } else {
             superList = new ArrayList<>();
         }
-
         List<PropertyNode> list = getAllProperties(names, cNode, includeProperties, includeFields, false, allProperties, false, true);
-
-        boolean makeImmutable = makeImmutable(cNode);
-        boolean specialNamedArgCase = (ImmutableASTTransformation.isSpecialNamedArgCase(list, defaultsMode == OFF) && superList.isEmpty()) ||
-                (ImmutableASTTransformation.isSpecialNamedArgCase(superList, defaultsMode == OFF) && list.isEmpty());
-
-        // no processing if existing constructors found unless forced or ImmutableBase in play
-        if (hasExplicitConstructor(null, cNode) && !force && !makeImmutable) return;
 
         List<Parameter> params = new ArrayList<>();
         List<Expression> superParams = new ArrayList<>();
@@ -216,23 +212,25 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         BlockStatement body = new BlockStatement();
 
-        List<PropertyNode> tempList = new ArrayList<>(list);
-        tempList.addAll(superList);
-        if (!handler.validateProperties(xform, body, cNode, tempList)) {
+        if (!handler.validateProperties(xform, body, cNode, plus(list, superList))) {
             return;
         }
+
+        boolean specialNamedArgCase = (superList.isEmpty() && ImmutableASTTransformation.isSpecialNamedArgCase(list, defaultsMode == OFF))
+                || (list.isEmpty() && ImmutableASTTransformation.isSpecialNamedArgCase(superList, defaultsMode == OFF));
 
         for (PropertyNode pNode : superList) {
             String name = pNode.getName();
             FieldNode fNode = pNode.getField();
-            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
-            params.add(createParam(fNode, name, defaultsMode, xform, makeImmutable));
-            if (callSuper) {
-                superParams.add(varX(name));
-            } else if (!superInPre && !specialNamedArgCase) {
-                Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
-                if (propInit != null) {
-                    body.addStatement(propInit);
+            if (!shouldSkipUndefinedAware(name, excludes, includes, allNames)) {
+                params.add(createParam(fNode, name, defaultsMode, xform, makeImmutable));
+                if (callSuper) {
+                    superParams.add(varX(name));
+                } else if (!superInPre && !specialNamedArgCase) {
+                    Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
+                    if (propInit != null) {
+                        body.addStatement(propInit);
+                    }
                 }
             }
         }
@@ -250,15 +248,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             Parameter nextParam = createParam(fNode, name, defaultsMode, xform, makeImmutable);
             if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
                 nextParam.addAnnotations(pNode.getAnnotations());
-                nextParam.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
-                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+                nextParam.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+                fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             }
             params.add(nextParam);
         }
 
         if (includes != null) {
-            Comparator<Parameter> includeComparator = Comparator.comparingInt(p -> includes.indexOf(p.getName()));
-            params.sort(includeComparator);
+            params.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
         }
 
         for (PropertyNode pNode : list) {
@@ -274,12 +271,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             body.addStatement(post.getCode());
         }
 
-        boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        ConstructorNode consNode = addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
+        // add main tuple constructor; if any parameters have default values then Verifier will generate the other variants
+        ConstructorNode tupleCtor = addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
         if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
-            consNode.addAnnotations(cNode.getAnnotations());
-            consNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", true);
+            tupleCtor.addAnnotations(cNode.getAnnotations());
+            tupleCtor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
         if (namedVariant) {
             BlockStatement inner = new BlockStatement();
@@ -290,26 +287,25 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             List<String> propNames = new ArrayList<>();
             Map<Parameter, Expression> seen = new HashMap<>();
             for (Parameter p : params) {
-                if (!processImplicitNamedParam(xform, consNode, mapParam, inner, args, propNames, p, false, seen)) return;
+                if (!processImplicitNamedParam(xform, tupleCtor, mapParam, inner, args, propNames, p, false, seen)) return;
             }
-            NamedVariantASTTransformation.createMapVariant(xform, consNode, anno, mapParam, genParams, cNode, inner, args, propNames);
+            NamedVariantASTTransformation.createMapVariant(xform, tupleCtor, anno, mapParam, genParams, cNode, inner, args, propNames);
         }
 
         if (sourceUnit != null && !body.isEmpty()) {
-            VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
-            scopeVisitor.visitClass(cNode);
+            new VariableScopeVisitor(sourceUnit).visitClass(cNode);
         }
 
-        // GROOVY-8868 don't want an empty body to cause the constructor to be deleted later
-        if (body.isEmpty()) {
-            body.addStatement(new ExpressionStatement(ConstantExpression.EMPTY_EXPRESSION));
+        if (body.isEmpty()) { // GROOVY-8868: retain empty constructor
+            body.addStatement(stmt(ConstantExpression.EMPTY_EXPRESSION));
         }
 
         // If the first param is def or a Map, named args might not work as expected so we add a hard-coded map constructor in this case
         // we don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
         // or if there is already a @MapConstructor annotation
-        if (!params.isEmpty() && defaultsMode != OFF && !hasMapCons && specialNamedArgCase) {
+        if (!params.isEmpty() && defaultsMode != OFF && specialNamedArgCase
+                && !AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE)) {
             ClassNode firstParamType = params.get(0).getType();
             if (params.size() > 1 || ClassHelper.isObjectType(firstParamType)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
@@ -318,31 +314,31 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
-    private static Parameter createParam(FieldNode fNode, String name, DefaultsMode defaultsMode, AbstractASTTransformation xform, boolean makeImmutable) {
+    private static Parameter createParam(final FieldNode fNode, final String name, final DefaultsMode defaultsMode, final AbstractASTTransformation xform, final boolean makeImmutable) {
         ClassNode fType = fNode.getType();
         ClassNode type = fType.getPlainNodeReference();
-        type.setGenericsPlaceHolder(fType.isGenericsPlaceHolder());
         type.setGenericsTypes(fType.getGenericsTypes());
+        type.setGenericsPlaceHolder(fType.isGenericsPlaceHolder());
+
+        Expression init = fNode.getInitialExpression();
         Parameter param = new Parameter(type, name);
-        if (defaultsMode == ON) {
-            param.setInitialExpression(providedOrDefaultInitialValue(fNode));
-        } else if (defaultsMode == AUTO && fNode.hasInitialExpression()) {
-            param.setInitialExpression(fNode.getInitialExpression());
-            fNode.setInitialValueExpression(null);
-        } else if (!makeImmutable && fNode.hasInitialExpression()) {
-            xform.addError("Error during " + MY_TYPE_NAME + " processing, default value processing disabled but default value found for '" + fNode.getName() + "'", fNode);
+        switch (defaultsMode) {
+          case ON:
+              if (init == null || (ClassHelper.isPrimitiveType(fType) && ExpressionUtils.isNullConstant(init)))
+                  init = defaultValueX(fType);
+              // falls through
+          case AUTO:
+              if (init != null) {
+                  param.setInitialExpression(init);
+                  fNode.setInitialValueExpression(null); // GROOVY-10238
+              }
+            break;
+          default:
+            if (init != null && !makeImmutable) {
+                xform.addError("Error during " + MY_TYPE_NAME + " processing, default value processing disabled but default value found for '" + fNode.getName() + "'", fNode);
+            }
         }
         return param;
-    }
-
-    private static Expression providedOrDefaultInitialValue(final FieldNode fNode) {
-        ClassNode fType = fNode.getType();
-        Expression init = fNode.getInitialExpression();
-        fNode.setInitialValueExpression(null); // GROOVY-10238
-        if (init == null || (ClassHelper.isPrimitiveType(fType) && ExpressionUtils.isNullConstant(init))) {
-            init = defaultValueX(fType);
-        }
-        return init;
     }
 
     public static void addSpecialMapConstructors(final int modifiers, final ClassNode cNode, final String message, final boolean addNoArg) {
@@ -351,8 +347,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         VariableExpression namedArgs = varX(NAMED_ARGS);
         namedArgs.setAccessedVariable(parameters[0]);
         code.addStatement(ifElseS(equalsNullX(namedArgs),
-                illegalArgumentBlock(message),
-                processArgsBlock(cNode, namedArgs)));
+                throwS(ctorX(ClassHelper.make(IllegalArgumentException.class), args(constX(message)))),
+                processNamedArgs(cNode, namedArgs)));
         addGeneratedConstructor(cNode, modifiers, parameters, ClassNode.EMPTY_ARRAY, code);
         // potentially add a no-arg constructor too
         if (addNoArg) {
@@ -362,17 +358,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
-    private static BlockStatement illegalArgumentBlock(final String message) {
-        return block(throwS(ctorX(ClassHelper.make(IllegalArgumentException.class), args(constX(message)))));
-    }
-
-    private static BlockStatement processArgsBlock(final ClassNode cNode, final VariableExpression namedArgs) {
+    private static BlockStatement processNamedArgs(final ClassNode cNode, final VariableExpression namedArgs) {
         BlockStatement block = new BlockStatement();
         List<PropertyNode> props = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (pNode.isStatic()) continue;
 
-            // if (namedArgs.containsKey(propertyName)) propertyNode= namedArgs.propertyName;
+            // if (namedArgs.containsKey(propertyName)) propertyNode = namedArgs.propertyName;
             MethodCallExpression containsProperty = callX(namedArgs, "containsKey", constX(pNode.getName()));
             containsProperty.setImplicitThis(false);
             block.addStatement(ifS(containsProperty, assignS(varX(pNode), propX(namedArgs, pNode.getName()))));
@@ -383,7 +375,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return block;
     }
 
-    private static DefaultsMode maybeDefaultsMode(AnnotationNode node, String name) {
+    private static DefaultsMode maybeDefaultsMode(final AnnotationNode node, final String name) {
         if (node != null) {
             final Expression member = node.getMember(name);
             if (member instanceof ConstantExpression) {
@@ -403,10 +395,5 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
         }
         return null;
-    }
-
-    @Override
-    public int priority() {
-        return 5;
     }
 }
