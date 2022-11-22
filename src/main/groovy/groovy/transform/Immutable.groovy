@@ -136,7 +136,7 @@ import java.lang.annotation.Target
  * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
- * &#64;Canonical
+ * &#64;Immutable(defaults=true, noArg=false)
  * class Building {
  *     String name
  *     int floors
@@ -165,7 +165,7 @@ import java.lang.annotation.Target
  * assert offices.size() == 2
  * assert offices.name.join(',') == 'Initech office,Wernham Hogg Paper Company'
  *
- * &#64;Canonical
+ * &#64;Immutable
  * &#64;ToString(excludes='age')  // Customize one of the transformations.
  * class Person {
  *     String name
