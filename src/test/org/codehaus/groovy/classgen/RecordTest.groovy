@@ -38,122 +38,10 @@ import static org.junit.Assume.assumeTrue
 final class RecordTest {
 
     @Test
-    void testNativeRecordOnJDK16ByDefault() {
+    void testNativeRecordOnJDK16_groovy() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        assertScript '''
-            record Person(String name) {}
-            assert Person.class.superclass == java.lang.Record
-        '''
-    }
-
-    @Test
-    void testRecordLikeOnJDK16withTargetBytecode15() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        def shell = new GroovyShell(new CompilerConfiguration(targetBytecode:'15'))
         assertScript shell, '''
-            record Person(String name) {}
-            assert Person.class.superclass != java.lang.Record
-        '''
-    }
-
-    @Test
-    void testAttemptedNativeRecordWithTargetBytecode15ShouldFail() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        def shell = new GroovyShell(new CompilerConfiguration(targetBytecode:'15'))
-        def err = shouldFail shell, '''import groovy.transform.*
-            @RecordType(mode=RecordTypeMode.NATIVE)
-            class Person {
-                String name
-            }
-        '''
-        assert err.message.contains('Expecting JDK16+ but found 15 when attempting to create a native record')
-    }
-
-    @Test
-    void testNativeRecordWithSuperClassShouldFail() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        def err = shouldFail '''import groovy.transform.*
-            @RecordType
-            class Person extends ArrayList {
-                String name
-            }
-        '''
-        assert err.message.contains('Invalid superclass for native record found: java.util.ArrayList')
-    }
-
-    @Test
-    void testNoNativeRecordOnJDK16WhenEmulating() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        assertScript '''import groovy.transform.*
-            @RecordOptions(mode=RecordTypeMode.EMULATE)
-            record Person(String name) {
-            }
-            assert Person.class.superclass != java.lang.Record
-        '''
-    }
-
-    @Test
-    void testRecordsDefaultParams() {
-        assertScript '''
-            record Bar (String a = 'a', long b, Integer c = 24, short d, String e = 'e') {
-            }
-            short one = 1
-            assert new Bar(3L, one).toString() == 'Bar[a=a, b=3, c=24, d=1, e=e]'
-            assert new Bar('A', 3L, one).toString() == 'Bar[a=A, b=3, c=24, d=1, e=e]'
-            assert new Bar('A', 3L, 42, one).toString() == 'Bar[a=A, b=3, c=42, d=1, e=e]'
-            assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar[a=A, b=3, c=42, d=1, e=E]'
-        '''
-    }
-
-    @Test
-    void testInnerRecordIsImplicitlyStatic() {
-        assertScript '''
-            class Test {
-                record Point(int i, int j) {
-                }
-            }
-            assert java.lang.reflect.Modifier.isStatic(Test$Point.modifiers)
-        '''
-    }
-
-    @Test
-    void testRecordWithDefaultParams() {
-        assertScript '''
-            record Point(int i = 5, int j = 10) {
-            }
-            assert new Point().toString() == 'Point[i=5, j=10]'
-            assert new Point(50).toString() == 'Point[i=50, j=10]'
-            assert new Point(50, 100).toString() == 'Point[i=50, j=100]'
-            assert new Point([:]).toString() == 'Point[i=5, j=10]'
-            assert new Point(i: 50).toString() == 'Point[i=50, j=10]'
-            assert new Point(j: 100).toString() == 'Point[i=5, j=100]'
-            assert new Point(i: 50, j: 100).toString() == 'Point[i=50, j=100]'
-        '''
-    }
-
-    @Test
-    void testRecordWithDefaultParamsAndMissingRequiredParam() {
-        assertScript '''import static groovy.test.GroovyAssert.shouldFail
-            record Point(int i = 5, int j, int k = 10) {
-            }
-            assert new Point(j: 100).toString() == 'Point[i=5, j=100, k=10]'
-            def err = shouldFail {
-                new Point(i: 50)
-            }
-            assert err.message.contains("Missing required named argument 'j'")
-        '''
-    }
-
-    @Test
-    void testNativeRecordOnJDK16plus() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        assertScript '''
             import java.lang.annotation.*
             import java.lang.reflect.RecordComponent
 
@@ -169,39 +57,40 @@ final class RecordTest {
             @Target([ElementType.TYPE_USE])
             @interface NotNull3 {}
 
-            record Person(@NotNull @NotNull2 String name, int age, @NotNull2 @NotNull3 List<String> locations, String[] titles) {}
+            record Person(@NotNull @NotNull2 String name, int age, @NotNull2 @NotNull3 List<String> locations, String[] titles) {
+            }
 
-            RecordComponent[] rcs = Person.class.getRecordComponents()
-            assert 4 == rcs.length
+            RecordComponent[] rcs = Person.getRecordComponents()
+            assert rcs.length == 4
 
-            assert 'name' == rcs[0].name && String.class == rcs[0].type
+            assert rcs[0].name == 'name' && rcs[0].type == String
             Annotation[] annotations = rcs[0].getAnnotations()
-            assert 2 == annotations.length
-            assert NotNull.class == annotations[0].annotationType()
-            assert NotNull2.class == annotations[1].annotationType()
+            assert annotations.length == 2
+            assert annotations[0].annotationType() == NotNull
+            assert annotations[1].annotationType() == NotNull2
             def typeAnnotations = rcs[0].getAnnotatedType().getAnnotations()
-            assert 1 == typeAnnotations.length
-            assert NotNull2.class == typeAnnotations[0].annotationType()
+            assert typeAnnotations.length == 1
+            assert typeAnnotations[0].annotationType() == NotNull2
 
-            assert 'age' == rcs[1].name && int.class == rcs[1].type
+            assert rcs[1].name == 'age' && rcs[1].type == int
 
-            assert 'locations' == rcs[2].name && List.class == rcs[2].type
-            assert 'Ljava/util/List<Ljava/lang/String;>;' == rcs[2].genericSignature
-            assert 'java.util.List<java.lang.String>' == rcs[2].genericType.toString()
+            assert rcs[2].name == 'locations' && rcs[2].type == List
+            assert rcs[2].genericSignature == 'Ljava/util/List<Ljava/lang/String;>;'
+            assert rcs[2].genericType.toString() == 'java.util.List<java.lang.String>'
             def annotations2 = rcs[2].getAnnotations()
-            assert 1 == annotations2.length
-            assert NotNull2.class == annotations2[0].annotationType()
+            assert annotations2.length == 1
+            assert annotations2[0].annotationType() == NotNull2
             def typeAnnotations2 = rcs[2].getAnnotatedType().getAnnotations()
-            assert 2 == typeAnnotations2.length
-            assert NotNull2.class == typeAnnotations2[0].annotationType()
-            assert NotNull3.class == typeAnnotations2[1].annotationType()
+            assert typeAnnotations2.length == 2
+            assert typeAnnotations2[0].annotationType() == NotNull2
+            assert typeAnnotations2[1].annotationType() == NotNull3
 
-            assert 'titles' == rcs[3].name && String[].class == rcs[3].type
+            assert rcs[3].name == 'titles' && rcs[3].type == String[]
         '''
     }
 
     @Test
-    void testNativeRecordOnJDK16plus_java() {
+    void testNativeRecordOnJDK16_java() {
         assumeTrue(isAtLeastJdk('16.0'))
 
         def sourceDir = File.createTempDir()
@@ -235,15 +124,15 @@ final class RecordTest {
             cu.addSources(a)
             cu.compile()
 
-            Class personClazz = loader.loadClass("Person")
-            Class notNullClazz = loader.loadClass("NotNull")
-            Class notNull2Clazz = loader.loadClass("NotNull2")
-            Class notNull3Clazz = loader.loadClass("NotNull3")
+            Class personClazz = loader.loadClass('Person')
+            Class notNullClazz = loader.loadClass('NotNull')
+            Class notNull2Clazz = loader.loadClass('NotNull2')
+            Class notNull3Clazz = loader.loadClass('NotNull3')
 
             def rcs = personClazz.recordComponents
             assert rcs.length == 4
 
-            assert rcs[0].name == 'name' && String.class == rcs[0].type
+            assert rcs[0].name == 'name' && rcs[0].type == String
             def annotations = rcs[0].annotations
             assert annotations.length == 2
             assert annotations[0].annotationType() == notNullClazz
@@ -252,9 +141,9 @@ final class RecordTest {
             assert typeAnnotations.length == 1
             assert notNull2Clazz == typeAnnotations[0].annotationType()
 
-            assert rcs[1].name == 'age'       && rcs[1].type == int.class
-            assert rcs[2].name == 'locations' && rcs[2].type == List.class
-            assert rcs[3].name == 'titles'    && rcs[3].type == String[].class
+            assert rcs[1].name == 'age'       && rcs[1].type == int
+            assert rcs[2].name == 'locations' && rcs[2].type == List
+            assert rcs[3].name == 'titles'    && rcs[3].type == String[]
 
             assert rcs[2].genericSignature == 'Ljava/util/List<Ljava/lang/String;>;'
             assert rcs[2].genericType as String == 'java.util.List<java.lang.String>'
@@ -287,55 +176,177 @@ final class RecordTest {
     private static void checkNativeRecordClassNode(ClassNode personClassNode, ClassNode notNullClassNode, ClassNode notNull2ClassNode, ClassNode notNull3ClassNode) {
         assert personClassNode.isRecord()
         def rcns = personClassNode.getRecordComponents()
-        assert 4 == rcns.size()
-        assert 'name' == rcns[0].name && ClassHelper.STRING_TYPE == rcns[0].type
+        assert rcns.size() == 4
+        assert rcns[0].name == 'name' && rcns[0].type == ClassHelper.STRING_TYPE
         List<AnnotationNode> annotationNodes = rcns[0].getAnnotations()
-        assert 2 == annotationNodes.size()
-        assert notNullClassNode == annotationNodes[0].getClassNode()
-        assert notNull2ClassNode == annotationNodes[1].getClassNode()
+        assert annotationNodes.size() == 2
+        assert annotationNodes[0].getClassNode() == notNullClassNode
+        assert annotationNodes[1].getClassNode() == notNull2ClassNode
         def typeAnnotationNodes = rcns[0].getType().getTypeAnnotations()
-        assert 1 == typeAnnotationNodes.size()
-        assert notNull2ClassNode == typeAnnotationNodes[0].getClassNode()
+        assert typeAnnotationNodes.size() == 1
+        assert typeAnnotationNodes[0].getClassNode() == notNull2ClassNode
 
-        assert 'age' == rcns[1].name && ClassHelper.int_TYPE == rcns[1].type
+        assert rcns[1].name == 'age' && rcns[1].type == ClassHelper.int_TYPE
 
-        assert 'locations' == rcns[2].name && ClassHelper.LIST_TYPE == rcns[2].type
+        assert rcns[2].name == 'locations' && rcns[2].type == ClassHelper.LIST_TYPE
         def genericsTypes = rcns[2].type.genericsTypes
-        assert 1 == genericsTypes.size()
-        assert ClassHelper.STRING_TYPE == genericsTypes[0].type
+        assert genericsTypes.size() == 1
+        assert genericsTypes[0].type == ClassHelper.STRING_TYPE
         def annotationNodes2 = rcns[2].getAnnotations()
-        assert 1 == annotationNodes2.size()
-        assert notNull2ClassNode == annotationNodes2[0].getClassNode()
+        assert annotationNodes2.size() == 1
+        assert annotationNodes2[0].getClassNode() == notNull2ClassNode
         def typeAnnotationNodes2 = rcns[2].getType().getTypeAnnotations()
-        assert 2 == typeAnnotationNodes2.size()
-        assert notNull2ClassNode == typeAnnotationNodes2[0].getClassNode()
-        assert notNull3ClassNode == typeAnnotationNodes2[1].getClassNode()
+        assert typeAnnotationNodes2.size() == 2
+        assert typeAnnotationNodes2[0].getClassNode() == notNull2ClassNode
+        assert typeAnnotationNodes2[1].getClassNode() == notNull3ClassNode
 
-        assert 'titles' == rcns[3].name && ClassHelper.make(String[].class) == rcns[3].type
+        assert rcns[3].name == 'titles' && rcns[3].type == ClassHelper.STRING_TYPE.makeArray()
+    }
+
+    //--------------------------------------------------------------------------
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            staticStar 'java.lang.reflect.Modifier'
+            staticMember 'groovy.test.GroovyAssert', 'shouldFail'
+            staticMember 'org.codehaus.groovy.ast.ClassHelper', 'make'
+        }
     }
 
     @Test
-    void testNativeRecordOnJDK16plus2_java() {
+    void testNativeRecordOnJDK16ByDefault() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        assertScript '''
-            import org.codehaus.groovy.ast.*
-
-            def cn = ClassHelper.make(jdk.net.UnixDomainPrincipal.class)
-            assert cn.isRecord()
-            def rcns = cn.getRecordComponents()
-            assert 2 == rcns.size()
-            assert 'user' == rcns[0].name && 'java.nio.file.attribute.UserPrincipal' == rcns[0].type.name
-            assert 'group' == rcns[1].name && 'java.nio.file.attribute.GroupPrincipal' == rcns[1].type.name
+        assertScript shell, '''
+            record Person(String name) {}
+            assert Person.superclass == java.lang.Record
         '''
     }
 
     @Test
-    void testNativeRecordOnJDK16plus2() {
+    void testRecordLikeOnJDK16withTargetBytecode15() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        assertScript '''
-            @groovy.transform.CompileStatic
+        shell.targetBytecode = '15'
+        assertScript shell, '''
+            record Person(String name) {}
+            assert Person.superclass != java.lang.Record
+        '''
+    }
+
+    @Test
+    void testAttemptedNativeRecordWithTargetBytecode15ShouldFail() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        shell.targetBytecode = '15'
+        def err = shouldFail shell, '''
+            @RecordType(mode=RecordTypeMode.NATIVE)
+            class Person {
+                String name
+            }
+        '''
+        assert err.message.contains('Expecting JDK16+ but found 15 when attempting to create a native record')
+    }
+
+    @Test
+    void testNativeRecordWithSuperClassShouldFail() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        def err = shouldFail shell, '''
+            @RecordType
+            class Person extends ArrayList {
+                String name
+            }
+        '''
+        assert err.message.contains('Invalid superclass for native record found: java.util.ArrayList')
+    }
+
+    @Test
+    void testNonNativeRecordOnJDK16WhenEmulating() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        assertScript shell, '''
+            @RecordOptions(mode=RecordTypeMode.EMULATE)
+            record Person(String name) {
+            }
+            assert Person.superclass != java.lang.Record
+        '''
+    }
+
+    @Test
+    void testRecordsDefaultParams() {
+        assertScript shell, '''
+            record Bar (String a = 'a', long b, Integer c = 24, short d, String e = 'e') {
+            }
+
+            short one = 1
+            assert new Bar(3L, one).toString() == 'Bar[a=a, b=3, c=24, d=1, e=e]'
+            assert new Bar('A', 3L, one).toString() == 'Bar[a=A, b=3, c=24, d=1, e=e]'
+            assert new Bar('A', 3L, 42, one).toString() == 'Bar[a=A, b=3, c=42, d=1, e=e]'
+            assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar[a=A, b=3, c=42, d=1, e=E]'
+        '''
+    }
+
+    @Test
+    void testInnerRecordIsImplicitlyStatic() {
+        assertScript shell, '''
+            class Test {
+                record Point(int i, int j) {
+                }
+            }
+            assert isStatic(Test$Point.modifiers)
+        '''
+    }
+
+    @Test
+    void testRecordWithDefaultParams() {
+        assertScript shell, '''
+            record Point(int i = 5, int j = 10) {
+            }
+            assert new Point().toString() == 'Point[i=5, j=10]'
+            assert new Point(50).toString() == 'Point[i=50, j=10]'
+            assert new Point(50, 100).toString() == 'Point[i=50, j=100]'
+            assert new Point([:]).toString() == 'Point[i=5, j=10]'
+            assert new Point(i: 50).toString() == 'Point[i=50, j=10]'
+            assert new Point(j: 100).toString() == 'Point[i=5, j=100]'
+            assert new Point(i: 50, j: 100).toString() == 'Point[i=50, j=100]'
+        '''
+    }
+
+    @Test
+    void testRecordWithDefaultParamsAndMissingRequiredParam() {
+        assertScript shell, '''
+            record Point(int i = 5, int j, int k = 10) {
+            }
+            assert new Point(j: 100).toString() == 'Point[i=5, j=100, k=10]'
+            def err = shouldFail {
+                new Point(i: 50)
+            }
+            assert err.message.contains("Missing required named argument 'j'")
+        '''
+    }
+
+    @Test
+    void testBinaryRecordClassNode() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        assertScript shell, '''
+            def cn = make(jdk.net.UnixDomainPrincipal)
+            assert cn.isRecord()
+            def rcns = cn.getRecordComponents()
+            assert rcns.size() == 2
+            assert rcns[0].name == 'user' && rcns[0].type.name == 'java.nio.file.attribute.UserPrincipal'
+            assert rcns[1].name == 'group' && rcns[1].type.name == 'java.nio.file.attribute.GroupPrincipal'
+        '''
+    }
+
+    @Test
+    void testManyRecordComponents() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        assertScript shell, '''
+            @CompileStatic
             record Record(String name, int x0, int x1, int x2, int x3, int x4,
                                     int x5, int x6, int x7, int x8, int x9, int x10, int x11, int x12, int x13, int x14,
                                     int x15, int x16, int x17, int x18, int x19, int x20) {
@@ -346,11 +357,10 @@ final class RecordTest {
 
             def r = new Record('someRecord', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
             def expected = 'Record[name=someRecord, x0=0, x1=-1, x2=2, x3=3, x4=4, x5=5, x6=6, x7=7, x8=8, x9=9, x10=10, x11=11, x12=12, x13=13, x14=14, x15=15, x16=16, x17=17, x18=18, x19=19, x20=20]'
-            assert expected == r.toString()
+            assert r.toString() == expected
         '''
 
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             @CompileStatic
             @ToString(includeNames=true)
             record Record(String name, int x0, int x1, int x2, int x3, int x4,
@@ -363,14 +373,13 @@ final class RecordTest {
 
             def r = new Record('someRecord', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
             def expected = 'Record(name:someRecord, x0:0, x1:-1, x2:2, x3:3, x4:4, x5:5, x6:6, x7:7, x8:8, x9:9, x10:10, x11:11, x12:12, x13:13, x14:14, x15:15, x16:16, x17:17, x18:18, x19:19, x20:20)'
-            assert expected == r.toString()
+            assert r.toString() == expected
         '''
     }
 
-
     @Test
     void testShallowImmutability() {
-        assertScript '''
+        assertScript shell, '''
             record HasItems(List items) { }
 
             def itemRec = new HasItems(['a', 'b'])
@@ -384,47 +393,50 @@ final class RecordTest {
 
     @Test
     void testCoerce() {
-        assertScript '''
-            @groovy.transform.CompileDynamic
-            record PersonDynamic(String name, int age) {}
-            record PersonStatic(String name, int age) {}
+        assertScript shell, '''
+            @CompileDynamic
+            record PersonDynamic(String name, int age) {
+            }
+            @CompileStatic
+            record PersonStatic(String name, int age) {
+            }
 
-            def testDynamic() {
+            void testDynamic() {
                 PersonDynamic p = ['Daniel', 37]
-                assert 'Daniel' == p.name()
-                assert 37 == p.age()
+                assert p.name() == 'Daniel'
+                assert p.age() == 37
 
                 PersonDynamic p2 = [age: 37, name: 'Daniel']
-                assert 'Daniel' == p2.name()
-                assert 37 == p2.age()
+                assert p2.name() == 'Daniel'
+                assert p2.age() == 37
 
                 PersonStatic p3 = ['Daniel', 37]
-                assert 'Daniel' == p3.name()
-                assert 37 == p3.age()
+                assert p3.name() == 'Daniel'
+                assert p3.age() == 37
 
                 PersonStatic p4 = [age: 37, name: 'Daniel']
-                assert 'Daniel' == p4.name()
-                assert 37 == p4.age()
+                assert p4.name() == 'Daniel'
+                assert p4.age() == 37
             }
             testDynamic()
 
-            @groovy.transform.CompileStatic
-            def testStatic() {
+            @CompileStatic
+            void testStatic() {
                 PersonStatic p = ['Daniel', 37]
-                assert 'Daniel' == p.name()
-                assert 37 == p.age()
+                assert p.name() == 'Daniel'
+                assert p.age() == 37
 
                 PersonStatic p2 = [age: 37, name: 'Daniel']
-                assert 'Daniel' == p2.name()
-                assert 37 == p2.age()
+                assert p2.name() == 'Daniel'
+                assert p2.age() == 37
 
                 PersonDynamic p3 = ['Daniel', 37]
-                assert 'Daniel' == p3.name()
-                assert 37 == p3.age()
+                assert p3.name() == 'Daniel'
+                assert p3.age() == 37
 
                 PersonDynamic p4 = [age: 37, name: 'Daniel']
-                assert 'Daniel' == p4.name()
-                assert 37 == p4.age()
+                assert p4.name() == 'Daniel'
+                assert p4.age() == 37
             }
             testStatic()
         '''
@@ -435,30 +447,30 @@ final class RecordTest {
         // inspired by:
         // https://inside.java/2020/07/20/record-serialization/
 
-        assertScript '''
-        @groovy.transform.ToString(includeNames=true, includeFields=true)
-        class RangeClass implements Serializable {
-            private final int lo
-            private final int hi
-            RangeClass(int lo, int hi) {
-                this.lo = lo
-                this.hi = hi
-                if (lo > hi) throw new IllegalArgumentException("$lo should not be greater than $hi")
+        assertScript shell, '''
+            @ToString(includeNames=true, includeFields=true)
+            class RangeClass implements Serializable {
+                private final int lo
+                private final int hi
+                RangeClass(int lo, int hi) {
+                    this.lo = lo
+                    this.hi = hi
+                    if (lo > hi) throw new IllegalArgumentException("$lo should not be greater than $hi")
+                }
+                // backdoor to emulate hacking of datastream
+                RangeClass(int[] pair) {
+                    this.lo = pair[0]
+                    this.hi = pair[1]
+                }
             }
-            // backdoor to emulate hacking of datastream
-            RangeClass(int[] pair) {
-                this.lo = pair[0]
-                this.hi = pair[1]
-            }
-        }
 
-        var data = File.createTempFile("serial", ".data")
-        var rc = [new RangeClass([5, 10] as int[]), new RangeClass([10, 5] as int[])]
-        data.withObjectOutputStream { out -> rc.each{ out << it } }
-        data.withObjectInputStream(getClass().classLoader) { in ->
-            assert in.readObject().toString() == 'RangeClass(lo:5, hi:10)'
-            assert in.readObject().toString() == 'RangeClass(lo:10, hi:5)'
-        }
+            var data = File.createTempFile("serial", ".data")
+            var rc = [new RangeClass([5, 10] as int[]), new RangeClass([10, 5] as int[])]
+            data.withObjectOutputStream { out -> rc.each{ out << it } }
+            data.withObjectInputStream(getClass().classLoader) { in ->
+                assert in.readObject().toString() == 'RangeClass(lo:5, hi:10)'
+                assert in.readObject().toString() == 'RangeClass(lo:10, hi:5)'
+            }
         '''
     }
 
@@ -466,9 +478,7 @@ final class RecordTest {
     void testNativeRecordSerialization() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        assertScript '''
-            import static groovy.test.GroovyAssert.shouldFail
-
+        assertScript shell, '''
             record RangeRecord(int lo, int hi) implements Serializable {
                 public RangeRecord {
                     if (lo > hi) throw new IllegalArgumentException("$lo should not be greater than $hi")
@@ -493,22 +503,61 @@ final class RecordTest {
 
     @Test
     void testCustomizedGetter() {
-        assertScript '''
+        assertScript shell, '''
             record Person(String name) {
                 String name() {
                     return "name: $name"
                 }
             }
 
-            assert 'name: Daniel' == new Person('Daniel').name()
+            assert new Person('Daniel').name() == 'name: Daniel'
         '''
     }
 
     @Test
-    void testGenerics() {
-        assertScript '''
-            import groovy.transform.CompileStatic
+    void testTupleConstructor() {
+        for (pair in [['RecordType', 'TupleConstructor'], ['defaults=false', 'defaultsMode=DefaultsMode.OFF']].combinations()) {
+            assertScript shell, """
+                @${pair[0]}(${pair[1]}, namedVariant=false)
+                record Person(String name, Date dob) {
+                    //Person(String,Date)
+                    //Person(String)  no!
+                    //Person(Map)     no!
+                    //Person()        no!
 
+                    public Person { // implies @TupleConstructor(pre={...})
+                        assert name.length() > 1
+                    }
+
+                    Person(Person that) {
+                        this(that.name(), that.dob())
+                    }
+
+                    //getAt(int i)
+                    //toList()
+                    //toMap()
+                }
+
+                assert Person.declaredConstructors.length == 2 // copy and tuple
+
+                def person = new Person('Frank Grimes', new Date())
+                def doppel = new Person(person)
+                shouldFail {
+                    new Person(name:'Frank Grimes', dob:null)
+                }
+                shouldFail {
+                    new Person('Frank Grimes')
+                }
+                shouldFail {
+                    new Person()
+                }
+            """
+        }
+    }
+
+    @Test
+    void testGenerics() {
+        assertScript shell, '''
             @CompileStatic
             record Person<T extends CharSequence>(T name, int age) {
                 Person {
@@ -518,38 +567,37 @@ final class RecordTest {
             }
 
             @CompileStatic
-            def test() {
+            void test() {
                 def p = new Person<String>('Daniel', 37)
-                assert 'daniel' == p.name().toLowerCase()
-                assert 'Person[name=Daniel, age=37]' == p.toString()
+                assert p.name().toLowerCase() == 'daniel'
+                assert p.toString() == 'Person[name=Daniel, age=37]'
 
                 def p2 = new Person<>('Daniel', 37)
-                assert 'daniel' == p2.name().toLowerCase()
-                assert 'Person[name=Daniel, age=37]' == p2.toString()
+                assert p2.name().toLowerCase() == 'daniel'
+                assert p2.toString() == 'Person[name=Daniel, age=37]'
 
-                try {
+                def err = shouldFail(IllegalArgumentException) {
                     new Person<String>('', 1)
-                } catch (IllegalArgumentException e) {
-                    assert 'name can not be empty' == e.message
                 }
+                assert err.message == 'name can not be empty'
 
-                try {
+                err = shouldFail(IllegalArgumentException) {
                     new Person<String>('Unknown', -1)
-                } catch (IllegalArgumentException e) {
-                    assert 'Invalid age: -1' == e.message
                 }
+                assert err.message == 'Invalid age: -1'
             }
 
             test()
         '''
     }
 
-    @Test // GROOVY-10548
+    // GROOVY-10548
+    @Test
     void testProperty() {
-        assertScript '''
+        assertScript shell, '''
             record Person(String name) {
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 def person = new Person('Frank Grimes')
                 assert person.name == 'Frank Grimes'
@@ -558,9 +606,10 @@ final class RecordTest {
         '''
     }
 
-    @Test // GROOVY-10679
+    // GROOVY-10679
+    @Test
     void testAnnotationPropogation() {
-        assertScript '''
+        assertScript shell, '''
             import java.lang.annotation.*
 
             @Target([ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.PARAMETER])
