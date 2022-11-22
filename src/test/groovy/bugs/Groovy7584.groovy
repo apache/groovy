@@ -18,41 +18,44 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy7584Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy7584 {
+
+    @Test
     void testTraitFieldModifiersAreRetained() {
-        assertScript """
+        assertScript '''
+            import groovy.transform.ToString
             import static java.lang.reflect.Modifier.*
 
             trait User {
                 final String name = 'Foo'
-                public static final boolean loggedIn = true
-                private transient final int ANSWER = 42
+                final private transient int answer = 42
+                final public static boolean LOGGED_IN = true
             }
 
-            @groovy.transform.ToString(includeFields=true, includeNames=true)
-            class Person implements User { }
-
-            def tos = new Person().toString()
-            assert tos.contains('name:Foo')
-            assert tos.contains('User__ANSWER:42')
-            assert tos.contains('User__name:Foo')
-
-            def loggedInField = Person.getDeclaredFields().find {
-                it.name.contains('loggedIn')
+            @ToString(allProperties=true, includeNames=true)
+            class Person implements User {
             }
-            assert isPublic(loggedInField.modifiers)
+
+            assert Person.User__LOGGED_IN
+            assert new Person().toString() == 'Person(name:Foo)'
+
+            def loggedInField = Person.declaredFields.find {
+                it.name.contains('LOGGED_IN')
+            }
             assert isFinal(loggedInField.modifiers)
+            assert isPublic(loggedInField.modifiers)
             assert isStatic(loggedInField.modifiers)
-            assert Person.User__loggedIn
 
-            def answerField = Person.getDeclaredFields().find {
-                it.name.contains('ANSWER')
+            def answerField = Person.declaredFields.find {
+                it.name.contains('answer')
             }
+            assert isFinal(answerField.modifiers)
             assert isPrivate(answerField.modifiers)
             assert isTransient(answerField.modifiers)
-            assert isFinal(answerField.modifiers)
-        """
+        '''
     }
 }

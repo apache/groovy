@@ -131,14 +131,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-            boolean includeFields = memberHasValue(anno, "includeFields", true);
-            boolean includeProperties = !memberHasValue(anno, "includeProperties", false);
-            boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", true);
-            boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
-            boolean allProperties = memberHasValue(anno, "allProperties", true);
+            boolean includeFields = memberHasValue(anno, "includeFields", Boolean.TRUE);
+            boolean includeProperties = !memberHasValue(anno, "includeProperties", Boolean.FALSE);
+            boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", Boolean.TRUE);
+            boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", Boolean.TRUE);
+            boolean allProperties = memberHasValue(anno, "allProperties", Boolean.TRUE);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
-            boolean allNames = memberHasValue(anno, "allNames", true);
+            boolean allNames = memberHasValue(anno, "allNames", Boolean.TRUE);
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false))
                 return;

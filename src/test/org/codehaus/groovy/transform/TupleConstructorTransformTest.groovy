@@ -125,6 +125,46 @@ final class TupleConstructorTransformTest {
         '''
     }
 
+    // GROOVY-7950
+    @Test
+    void testTraitPropsAndAllProperties() {
+        assertScript shell, '''
+            trait T {
+                Number n
+            }
+
+            @TupleConstructor(allProperties=true, includes='s,n')
+            class C implements T {
+                String s
+            }
+
+            def obj = new C('answer',42)
+            assert obj.s == 'answer'
+            assert obj.n == 42
+        '''
+    }
+
+    // GROOVY-8219
+    @Test
+    void testTraitPropsAndIncludeFields() {
+        assertScript shell, '''
+            trait T {
+                Number n = 42
+            }
+
+            @TupleConstructor(includeFields=true)
+            class C implements T {
+                String s = ''
+                public x
+            }
+
+            def obj = new C()
+            assert obj.n == 42
+            assert obj.s == ''
+            assert obj.x == null
+        '''
+    }
+
     // GROOVY-7522
     @Test
     void testExistingConstructorTakesPrecedence() {
@@ -350,7 +390,7 @@ final class TupleConstructorTransformTest {
         '''
     }
 
-    // GROOVY-8455, GROOVY-8453
+    // GROOVY-8453, GROOVY-8455
     @Test
     void testPropPsuedoPropAndFieldOrderIncludingInheritedMembers() {
         assertScript shell, '''
@@ -397,6 +437,21 @@ final class TupleConstructorTransformTest {
 
             assert Baz.constructors.max{ it.parameterTypes.size() }.toString() ==
                 'public Baz(Basep,Basepp,Basepubf,java.lang.Byte,Foop,Foopubf,java.lang.Short,Barp,Barpp,Barpubf,java.lang.Integer,Bazp,Bazpp,Bazpubf,java.lang.Long)'
+        '''
+    }
+
+    // GROOVY-8207
+    @Test
+    void testDefaults() {
+        assertScript shell, '''
+            @TupleConstructor(defaults=false, includeFields=true)
+            class C {
+                protected int f
+            }
+
+            def obj = new C(42)
+            assert obj.@f == 42
+            assert C.declaredConstructors.length == 1
         '''
     }
 

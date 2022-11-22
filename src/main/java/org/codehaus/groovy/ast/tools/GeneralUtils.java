@@ -540,23 +540,24 @@ public class GeneralUtils {
         }
         if (includeFields) {
             for (FieldNode fNode : cNode.getFields()) {
-                if ((fNode.isStatic() && !includeStatic) || fNode.isSynthetic() || cNode.getProperty(fNode.getName()) != null || names.contains(fNode.getName())) {
+                if ((fNode.isStatic() && !includeStatic) || fNode.isSynthetic()) {
                     continue;
                 }
-
-                // internal field
-                if (fNode.getName().contains("$") && !allNames) {
-                    continue;
-                }
-
                 if (fNode.isPrivate() && !cNode.equals(origType)) {
+                    continue;
+                }
+                String fName = fNode.getName();
+                if (names.contains(fName) || cNode.getProperty(fName) != null) {
+                    continue;
+                }
+                if (!allNames && (fName.contains("$") || fName.contains("__"))) { // "special"
                     continue;
                 }
                 if (fNode.isFinal() && fNode.getInitialExpression() != null && skipReadonly) {
                     continue;
                 }
-                result.add(new PropertyNode(fNode, fNode.getModifiers(), null, null));
-                names.add(fNode.getName());
+                names.add(fName);
+                result.add(new PropertyNode(fNode, fNode.getModifiers() & 0x1F, null, null));
             }
         }
         if (!(isObjectType(cNode)) && traverseSuperClasses && reverse) {

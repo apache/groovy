@@ -49,9 +49,9 @@ import java.util.List;
 import java.util.Map;
 
 import static groovy.transform.Undefined.isUndefined;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 public abstract class AbstractASTTransformation implements ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
@@ -366,7 +366,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         }
         final List<String> pNames = new ArrayList<>();
         for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, includeSuperProperties, includeStatic, allProperties)) {
-            pNames.add(pNode.getField().getName());
+            pNames.add(pNode.getName());
         }
         boolean result = true;
         if (includeFields || includeSuperFields) {
