@@ -153,7 +153,7 @@ import java.lang.annotation.Target
  * // arguments are not assigned.
  * def theOffice = new Building('Wernham Hogg Paper Company')
  * assert theOffice.floors == 0
- * theOffice.officeSpace = true
+ * assert theOffice.officeSpace == true
  *
  * def anotherOfficeSpace = new Building(name: 'Initech office', floors: 1, officeSpace: true)
  *
