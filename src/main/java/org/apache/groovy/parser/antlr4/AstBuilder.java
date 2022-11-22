@@ -1336,10 +1336,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
             classNode.addAnnotation(makeAnnotationNode(Trait.class));
         }
-        if (isRecord) {
-            classNode.addAnnotation(new AnnotationNode(RECORD_TYPE_CLASS)); // TODO: makeAnnotationNode(RecordType.class)
-        }
         classNode.addAnnotations(modifierManager.getAnnotations());
+        if (isRecord && classNode.getAnnotations().stream().noneMatch(a ->
+                        a.getClassNode().getName().equals(RECORD_TYPE_NAME))) {
+            classNode.addAnnotation(new AnnotationNode(ClassHelper.makeWithoutCaching(RECORD_TYPE_NAME))); // TODO: makeAnnotationNode(RecordType.class)
+        }
 
         if (isInterfaceWithDefaultMethods) {
             classNode.putNodeMetaData(IS_INTERFACE_WITH_DEFAULT_METHODS, Boolean.TRUE);
@@ -1578,8 +1579,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Void visitClassBodyDeclaration(final ClassBodyDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
-        Objects.requireNonNull(classNode, "classNode should not be null");
-
         if (asBoolean(ctx.memberDeclaration())) {
             ctx.memberDeclaration().putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
             this.visitMemberDeclaration(ctx.memberDeclaration());
@@ -1706,9 +1705,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public MethodNode visitCompactConstructorDeclaration(final CompactConstructorDeclarationContext ctx) {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
-        Objects.requireNonNull(classNode, "classNode should not be null");
 
-        if (!asBoolean(classNode.getAnnotations(RECORD_TYPE_CLASS))) {
+        if (classNode.getAnnotations().stream().noneMatch(a -> a.getClassNode().getName().equals(RECORD_TYPE_NAME))) {
             createParsingFailedException("Only record can have compact constructor", ctx);
         }
 
@@ -1723,14 +1721,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         Parameter[] header = classNode.getNodeMetaData(RECORD_HEADER);
-        Objects.requireNonNull(header, "record header should not be null");
-
         Statement code = this.visitMethodBody(ctx.methodBody());
         code.visit(new CodeVisitorSupport() {
             @Override
             public void visitPropertyExpression(final PropertyExpression expression) {
+                String receiverText = expression.getObjectExpression().getText();
                 String propertyName = expression.getPropertyAsString();
-                if (THIS_STR.equals(expression.getObjectExpression().getText()) && Arrays.stream(header).anyMatch(p -> p.getName().equals(propertyName))) {
+                if (THIS_STR.equals(receiverText) && Arrays.stream(header).anyMatch(p -> p.getName().equals(propertyName))) {
                     createParsingFailedException("Cannot assign a value to final variable '" + propertyName + "'", expression.getProperty());
                 }
                 super.visitPropertyExpression(expression);
@@ -4939,5 +4936,4 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
     private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
-    private static final ClassNode RECORD_TYPE_CLASS = ClassHelper.makeWithoutCaching(RECORD_TYPE_NAME);
 }
