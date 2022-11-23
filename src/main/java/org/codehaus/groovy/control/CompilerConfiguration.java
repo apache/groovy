@@ -98,7 +98,6 @@ public class CompilerConfiguration {
     public static final String JDK18 = "18";
     /** This (<code>"19"</code>) is the value for targetBytecode to compile for a JDK 19. */
     public static final String JDK19 = "19";
-
     /** This (<code>"20"</code>) is the value for targetBytecode to compile for a JDK 20. */
     public static final String JDK20 = "20";
 
@@ -465,10 +464,9 @@ public class CompilerConfiguration {
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
 
-        boolean memStubEnabled = Boolean.parseBoolean(getSystemPropertySafe("groovy.mem.stub", "false"));
-        if (memStubEnabled) {
+        if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
-            jointCompilationOptions.put(MEM_STUB, memStubEnabled);
+            jointCompilationOptions.put(MEM_STUB, Boolean.TRUE);
         }
     }
 
@@ -1067,7 +1065,7 @@ public class CompilerConfiguration {
     }
 
     private void setTargetBytecodeIfValid(final String version) {
-        int index = Arrays.binarySearch(ALLOWED_JDKS, !version.startsWith("1") ? "1." + version : version);
+        int index = Arrays.binarySearch(ALLOWED_JDKS, !version.startsWith("1") && !version.startsWith("2") ? "1." + version : version);
         if (index >= 0) {
             targetBytecode = ALLOWED_JDKS[index];
         } else {
