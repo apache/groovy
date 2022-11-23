@@ -228,7 +228,7 @@ final class RecordTest {
     void testRecordLikeOnJDK16withTargetBytecode15() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        shell.targetBytecode = '15'
+        shell.@config.targetBytecode = '15'
         assertScript shell, '''
             record Person(String name) {}
             assert Person.superclass != java.lang.Record
@@ -239,7 +239,7 @@ final class RecordTest {
     void testAttemptedNativeRecordWithTargetBytecode15ShouldFail() {
         assumeTrue(isAtLeastJdk('16.0'))
 
-        shell.targetBytecode = '15'
+        shell.@config.targetBytecode = '15'
         def err = shouldFail shell, '''
             @RecordType(mode=RecordTypeMode.NATIVE)
             class Person {
