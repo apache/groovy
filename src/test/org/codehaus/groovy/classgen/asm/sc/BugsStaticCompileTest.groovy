@@ -1521,6 +1521,14 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def source = node.rightExpression // "String.metaClass"
+                def target = source.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert target.declaringClass == CLASS_Type // not OBJECT_TYPE!
+            })
+            def smc = String.metaClass
+        '''
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def source = node.rightExpression // "String.getMetaClass()"
                 def target = source.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert target.declaringClass == CLASS_Type // not OBJECT_TYPE!

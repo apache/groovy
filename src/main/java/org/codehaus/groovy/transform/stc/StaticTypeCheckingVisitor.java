@@ -1657,6 +1657,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
+                if (staticOnlyAccess && receiver.getData() == null && !isClassType(receiver.getType())) {
+                    // GROOVY-10820: ensure static extension when property accessed in static manner
+                    methods.removeIf(method -> !((ExtensionMethodNode) method).isStaticExtension());
+                }
                 if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) {
                     methods.removeIf(method -> // GROOVY-10075: "List<Integer>" vs "List<String>"
                         !typeCheckMethodsWithGenerics(dgmReceiver, ClassNode.EMPTY_ARRAY, method)
