@@ -87,8 +87,10 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -4147,24 +4149,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 popAssignmentTracking(oldTracker);
             }
         } finally {
+            typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchStatement();
         }
     }
 
     @Override
     protected void afterSwitchConditionExpressionVisited(final SwitchStatement statement) {
+        typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = statement.getExpression();
         conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
     }
 
     @Override
-    public void visitCaseStatement(final CaseStatement statement) {
-        Expression expression = statement.getExpression();
-        if (expression instanceof ClosureExpression) { // GROOVY-9854: propagate the switch type
-            SwitchStatement switchStatement = typeCheckingContext.getEnclosingSwitchStatement();
-            ClassNode inf = switchStatement.getExpression().getNodeMetaData(TYPE);
-            expression.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{inf});
+    protected void afterSwitchCaseStatementsVisited(final SwitchStatement statement) {
+        // GROOVY-8411: if any "case Type:" then "default:" contributes condition type
+        if (!statement.getDefaultStatement().isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.peek().isEmpty())
+            pushInstanceOfTypeInfo(statement.getExpression(), new ClassExpression(statement.getExpression().getNodeMetaData(TYPE)));
+    }
 
+    @Override
+    public void visitCaseStatement(final CaseStatement statement) {
+        Expression selectable = typeCheckingContext.getEnclosingSwitchStatement().getExpression();
+        Expression expression = statement.getExpression();
+        if (expression instanceof ClassExpression) { // GROOVY-8411: refine the switch type
+            pushInstanceOfTypeInfo(selectable, expression);
+        } else if (expression instanceof ClosureExpression) { // GROOVY-9854: propagate the switch type
+            ClassNode inf = selectable.getNodeMetaData(TYPE);
+            expression.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{inf});
             Parameter[] params = ((ClosureExpression) expression).getParameters();
             if (params != null && params.length == 1) {
                 boolean lambda = (expression instanceof LambdaExpression);
@@ -4175,7 +4187,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         super.visitCaseStatement(statement);
-        restoreTypeBeforeConditional();
+        if (!maybeFallsThrough(statement.getCode())) {
+            typeCheckingContext.temporaryIfBranchTypeInformation
+                .peek().remove(extractTemporaryTypeInfoKey(selectable));
+            restoreTypeBeforeConditional(); // isolate assignment branch
+        }
+    }
+
+    private static boolean maybeFallsThrough(Statement statement) {
+        if (statement.isEmpty()) return true;
+        if (statement instanceof BlockStatement)
+            statement = last(((BlockStatement) statement).getStatements());
+        // end break, continue, return or throw
+        if (statement instanceof BreakStatement
+                || statement instanceof ContinueStatement
+                || !GeneralUtils.maybeFallsThrough(statement)) {
+            return false;
+        }
+        return true;
     }
 
     private void recordAssignment(final VariableExpression lhsExpr, final ClassNode rhsType) {

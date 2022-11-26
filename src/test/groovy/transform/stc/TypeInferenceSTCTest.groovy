@@ -532,7 +532,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     object.toUpperCase()
                 }
             }
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
     void testNotInstanceOf6() {
@@ -542,7 +543,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     object.toUpperCase()
                 }
             }
-        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+        ''',
+        'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
     // GROOVY-10217
@@ -609,7 +611,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             if (a instanceof A) {
                 a.x = '2'
             }
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testInstanceOfInferenceWithMissingProperty() {
@@ -621,7 +624,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             if (a instanceof A) {
                 a.y = 2
             }
-        ''', 'No such property: y for class: A'
+        ''',
+        'No such property: y for class: A'
     }
 
     // GROOVY-9967
@@ -700,7 +704,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with {
                 x = '2' // should be recognized as a.x at compile time and fail because of wrong type
             }
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testShouldNotFailWithWithTwoClasses() {
@@ -820,7 +825,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with {
                 method().toUpperCase()
             }
-        ''', 'Cannot find matching method int#toUpperCase()'
+        ''',
+        'Cannot find matching method int#toUpperCase()'
    }
 
     void testDeclarationTypeInference() {
@@ -1042,19 +1048,19 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testSwitchCaseAnalysis() {
+    void testSwitchCaseAnalysis1() {
         assertScript '''
             import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
 
             def method(int x) {
-                def returnValue= new Date()
+                def returnValue = new Date()
                 switch (x) {
-                    case 1:
-                        returnValue = 'string'
-                        break;
-                    case 2:
-                        returnValue = 1;
-                        break;
+                  case 1:
+                    returnValue = 'string'
+                    break
+                  case 2:
+                    returnValue = 42
+                    break
                 }
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     def type = node.getNodeMetaData(INFERRED_TYPE)
@@ -1071,30 +1077,108 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6215
     void testSwitchCaseAnalysis2() {
         assertScript '''
-            def processNumber(int x) {
-                def value = getValueForNumber(x)
-                value
-            }
-
             def getValueForNumber(int x) {
                 def valueToReturn
                 switch(x) {
-                    case 1:
-                        valueToReturn = 'One'
-                        break
-                    case 2:
-                        valueToReturn = []
-                        valueToReturn << 'Two'
-                        break
+                  case 1:
+                    valueToReturn = 'One'
+                    break
+                  case 2:
+                    valueToReturn = []
+                    valueToReturn << 'Two'
+                    break
                 }
                 valueToReturn
             }
+
             def v1 = getValueForNumber(1)
             def v2 = getValueForNumber(2)
             def v3 = getValueForNumber(3)
             assert v1 == 'One'
             assert v2 == ['Two']
             assert v3 == null
+        '''
+    }
+
+    // GROOVY-8411
+    void testSwitchCaseAnalysis3() {
+        shouldFailWithMessages '''
+            void test(something) {
+                switch (something) {
+                  case Class:
+                    break
+                  case File:
+                    something.canonicalName
+                }
+            }
+        ''',
+        'No such property: canonicalName for class: java.io.File'
+
+        shouldFailWithMessages '''
+            void test(something) {
+                switch (something) {
+                  case Class:
+                    break
+                  default:
+                    something.canonicalName
+                }
+            }
+        ''',
+        'No such property: canonicalName for class: java.lang.Object'
+/*
+        shouldFailWithMessages '''
+            void test(something) {
+                switch (something) {
+                  case Class:
+                  case File:
+                    something.toString()
+                  default:
+                    something.getCanonicalName()
+                }
+            }
+        ''',
+        'No such property: canonicalName for class: java.lang.Object'
+*/
+        shouldFailWithMessages '''
+            void test(something) {
+                switch (something) {
+                  case Class:
+                  case File:
+                    something.toString()
+                }
+                something.canonicalName
+            }
+        ''',
+        'No such property: canonicalName for class: java.lang.Object'
+
+        assertScript '''
+            void test(something) {
+                switch (something) {
+                  case Class.class:
+                    something.canonicalName
+                    break
+                  case File:
+                    something.canonicalPath
+                    break
+                  default:
+                    something?.toString()
+                }
+            }
+        '''
+
+        assertScript '''
+            void test(something) {
+                switch (something) {
+                  case Float:
+                  case Double:
+                  case Integer:
+                    something.doubleValue()
+                }
+            }
+            test(1)
+            test(1.1d)
+            test(1.1f)
+            test('11')
         '''
     }
 
@@ -1110,14 +1194,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
          BigInteger: 'BigInteger'
         ].each { orig, dest ->
             assertScript """
-            $orig b = 65 as $orig
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
-                assert type == make($dest)
-            })
-            def pp = ++b
-            println '++${orig} -> ' + pp.class + ' ' + pp
-            assert pp.class == ${dest}
+                $orig b = 65 as $orig
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                    assert type == make($dest)
+                })
+                def pp = ++b
+                println '++${orig} -> ' + pp.class + ' ' + pp
+                assert pp.class == ${dest}
             """
         }
     }
@@ -1134,14 +1218,14 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
          BigInteger: 'BigInteger'
         ].each { orig, dest ->
             assertScript """
-            $orig b = 65 as $orig
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
-                assert type == make($dest)
-            })
-            def pp = b++
-            println '${orig}++ -> ' + pp.class + ' ' + pp
-            assert pp.class == ${dest}
+                $orig b = 65 as $orig
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                    assert type == make($dest)
+                })
+                def pp = b++
+                println '${orig}++ -> ' + pp.class + ' ' + pp
+                assert pp.class == ${dest}
             """
         }
     }
@@ -1366,10 +1450,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testInferredTypeForPropertyThatResolvesToMethod() {
         assertScript '''
             import groovy.transform.*
-            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET
 
-            @CompileStatic
-            void meth() {
+            void test() {
                 def items = [1, 2] as LinkedList
 
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -1391,7 +1473,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 def alsoOne = items.peek()
             }
 
-            meth()
+            test()
         '''
     }
 
