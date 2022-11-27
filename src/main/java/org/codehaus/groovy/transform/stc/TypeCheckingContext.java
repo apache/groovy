@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -37,7 +36,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,14 +110,14 @@ public class TypeCheckingContext {
     //--------------------------------------------------------------------------
 
     /**
-     * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
-     * condition expression makes use of an instanceof check
+     * Stores information which is valid in the "then" branch of an if-then-else
+     * statement.  This is used when the if condition expression makes use of an
+     * {@code instanceof} check.
      */
     protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<>();
 
     public void pushTemporaryTypeInfo() {
-        Map<Object, List<ClassNode>> potentialTypes = new HashMap<>();
-        temporaryIfBranchTypeInformation.push(potentialTypes);
+        temporaryIfBranchTypeInformation.push(new HashMap<>());
     }
 
     public void popTemporaryTypeInfo() {
@@ -151,17 +149,6 @@ public class TypeCheckingContext {
      */
     protected Map<VariableExpression, List<ClassNode>> ifElseForWhileAssignmentTracker;
 
-    /**
-     * This field used for type derivation
-     * Check IfStatement matched pattern:
-     * Object var1;
-     * if (!(var1 instanceOf Runnable)){
-     * return
-     * }
-     * // Here var1 instance of Runnable
-     */
-    protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<>();
-
     protected Set<MethodNode> alreadyVisitedMethods = new HashSet<>();
 
     /**
@@ -188,7 +175,6 @@ public class TypeCheckingContext {
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
-    protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<>();
     protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
     // stores the current binary expression. This is used when assignments are made with a null object, for type inference

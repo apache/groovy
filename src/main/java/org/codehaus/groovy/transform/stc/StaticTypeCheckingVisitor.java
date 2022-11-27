@@ -795,10 +795,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitNotExpression(final NotExpression expression) {
-        // GROOVY-9455: !(x instanceof T) shouldn't propagate T as inferred type
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitNotExpression(expression);
-        typeCheckingContext.popTemporaryTypeInfo();
+        // GROOVY-9455: !(x instanceof T) shouldn't propagate T as inferred type
+        typeCheckingContext.temporaryIfBranchTypeInformation.pop().forEach(this::putNotInstanceOfTypeInfo);
     }
 
     @Override
@@ -938,8 +938,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-            } else if (op == KEYWORD_INSTANCEOF /*|| op == COMPARE_NOT_INSTANCEOF*/) {
+            } else if (op == KEYWORD_INSTANCEOF) {
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
+            } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
+                putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Collections.singleton(rightExpression.getType()));
             }
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);
@@ -1184,18 +1186,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         target.setGenericsTypes(genericsTypes);
-    }
-
-    /**
-     * Stores information about types when [objectOfInstanceof instanceof typeExpression] is visited.
-     *
-     * @param objectOfInstanceOf the expression which must be checked against instanceof
-     * @param typeExpression     the expression which represents the target type
-     */
-    protected void pushInstanceOfTypeInfo(final Expression objectOfInstanceOf, final Expression typeExpression) {
-        List<ClassNode> potentialTypes = typeCheckingContext.temporaryIfBranchTypeInformation.peek()
-            .computeIfAbsent(extractTemporaryTypeInfoKey(objectOfInstanceOf), key -> new LinkedList<>());
-        potentialTypes.add(typeExpression.getType());
     }
 
     private boolean typeCheckMultipleAssignmentAndContinue(final Expression leftExpression, Expression rightExpression) {
@@ -1456,37 +1446,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return null;
         }
         return constructors.get(0);
-    }
-
-    /**
-     * When instanceof checks are found in the code, we store temporary type
-     * information data in the {@link TypeCheckingContext#temporaryIfBranchTypeInformation}
-     * table. This method computes the key which must be used to store this type
-     * info.
-     *
-     * @param expression the expression for which to compute the key
-     * @return a key to be used for {@link TypeCheckingContext#temporaryIfBranchTypeInformation}
-     */
-    protected Object extractTemporaryTypeInfoKey(final Expression expression) {
-        return expression instanceof VariableExpression ? findTargetVariable((VariableExpression) expression) : expression.getText();
-    }
-
-    /**
-     * A helper method which determines which receiver class should be used in error messages when a field or attribute
-     * is not found. The returned type class depends on whether we have temporary type information available (due to
-     * instanceof checks) and whether there is a single candidate in that case.
-     *
-     * @param expr the expression for which an unknown field has been found
-     * @param type the type of the expression (used as fallback type)
-     * @return if temporary information is available and there's only one type, returns the temporary type class
-     * otherwise falls back to the provided type class.
-     */
-    protected ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> nodes = getTemporaryTypesForExpression(expr);
-            if (nodes != null && nodes.size() == 1) return nodes.get(0);
-        }
-        return type;
     }
 
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly) {
@@ -2382,29 +2341,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return argumentList.getExpressions().stream().map(exp ->
             isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getType(exp)
         ).toArray(ClassNode[]::new);
-    }
-
-    private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
-        if (expression instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
-            if (tempTypes != null && !tempTypes.isEmpty()) {
-                List<ClassNode> types = new ArrayList<>(tempTypes.size() + 1);
-                if (expressionType != null && !isObjectType(expressionType) // GROOVY-7333
-                        && tempTypes.stream().noneMatch(t -> implementsInterfaceOrIsSubclassOf(t, expressionType))) { // GROOVY-9769
-                    types.add(expressionType);
-                }
-                types.addAll(tempTypes);
-
-                if (types.isEmpty()) {
-                    return OBJECT_TYPE;
-                } else if (types.size() == 1) {
-                    return types.get(0);
-                } else {
-                    return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
-                }
-            }
-        }
-        return expressionType;
     }
 
     @Override
@@ -3927,19 +3863,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected List<ClassNode> getTemporaryTypesForExpression(final Expression objectExpression) {
-        List<ClassNode> classNodes = null;
-        int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
-        while (classNodes == null && depth > 0) {
-            Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            Object key = objectExpression instanceof ParameterVariableExpression
-                    ? ((ParameterVariableExpression) objectExpression).parameter
-                    : extractTemporaryTypeInfoKey(objectExpression);
-            classNodes = tempo.get(key);
-        }
-        return classNodes;
-    }
-
     protected void storeTargetMethod(final Expression call, final MethodNode target) {
         if (target == null) {
             call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET); return;
@@ -3996,146 +3919,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitIfElse(final IfStatement ifElse) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         try {
-            // create a new temporary element in the if-then-else type info
+            Statement thenPath = ifElse.getIfBlock(), elsePath = ifElse.getElseBlock();
+
+            // create a new scope for instanceof testing
             typeCheckingContext.pushTemporaryTypeInfo();
             visitStatement(ifElse);
             ifElse.getBooleanExpression().visit(this);
-            ifElse.getIfBlock().visit(this);
 
-            // pop if-then-else temporary type info
-            typeCheckingContext.popTemporaryTypeInfo();
+            thenPath.visit(this);
 
-            // GROOVY-6099: restore assignment info as before the if branch
+            Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+            // GROOVY-6099: isolate assignment tracking
             restoreTypeBeforeConditional();
 
-            ifElse.getElseBlock().visit(this);
+            // GROOVY-6429: reverse instanceof tracking
+            typeCheckingContext.pushTemporaryTypeInfo();
+            tti.forEach(this::putNotInstanceOfTypeInfo);
 
+            elsePath.visit(this);
+
+            typeCheckingContext.popTemporaryTypeInfo();
+            // GROOVY-8523: propagate tracking to outer scope; keep simple for now
+            if (elsePath.isEmpty() && !GeneralUtils.maybeFallsThrough(thenPath)) {
+                tti.forEach(this::putNotInstanceOfTypeInfo);
+            }
             // GROOVY-9786: if chaining: "if (...) x=?; else if (...) x=?;"
-            Map<VariableExpression, ClassNode> updates =
-                ifElse.getElseBlock().getNodeMetaData("assignments");
+            Map<VariableExpression, ClassNode> updates = elsePath.getNodeMetaData("assignments");
             if (updates != null) {
                 updates.forEach(this::recordAssignment);
             }
         } finally {
             ifElse.putNodeMetaData("assignments", popAssignmentTracking(oldTracker));
         }
-
-        if (!typeCheckingContext.enclosingBlocks.isEmpty()) {
-            BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
-            if (instanceOfExpression == null) {
-                instanceOfExpression = findNotInstanceOfReturnExpression(ifElse);
-            }
-            if (instanceOfExpression != null) {
-                visitInstanceofNot(instanceOfExpression);
-            }
-        }
-    }
-
-    protected void visitInstanceofNot(final BinaryExpression be) {
-        BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
-        assert currentBlock != null;
-        if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
-            // another instanceOf_not was before, no need store vars
-        } else {
-            // saving type of variables to restoring them after returning from block
-            Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-            getTypeCheckingContext().pushTemporaryTypeInfo();
-            typeCheckingContext.blockStatements2Types.put(currentBlock, oldTracker);
-        }
-        pushInstanceOfTypeInfo(be.getLeftExpression(), be.getRightExpression());
-    }
-
-    @Override
-    public void visitBlockStatement(final BlockStatement block) {
-        if (block != null) {
-            typeCheckingContext.enclosingBlocks.addFirst(block);
-        }
-        super.visitBlockStatement(block);
-        if (block != null) {
-            visitClosingBlock(block);
-        }
-    }
-
-    public void visitClosingBlock(final BlockStatement block) {
-        BlockStatement peekBlock = typeCheckingContext.enclosingBlocks.removeFirst();
-        boolean found = typeCheckingContext.blockStatements2Types.containsKey(peekBlock);
-        if (found) {
-            Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.blockStatements2Types.remove(peekBlock);
-            getTypeCheckingContext().popTemporaryTypeInfo();
-            popAssignmentTracking(oldTracker);
-        }
-    }
-
-    /**
-     * Check IfStatement matched pattern :
-     * Object var1;
-     * if (!(var1 instanceOf Runnable)) {
-     * return
-     * }
-     * // Here var1 instance of Runnable
-     * <p>
-     * Return expression , which contains instanceOf (without not)
-     * Return null, if not found
-     */
-    protected BinaryExpression findInstanceOfNotReturnExpression(final IfStatement ifElse) {
-        Statement elseBlock = ifElse.getElseBlock();
-        if (!(elseBlock instanceof EmptyStatement)) {
-            return null;
-        }
-        Expression conditionExpression = ifElse.getBooleanExpression().getExpression();
-        if (!(conditionExpression instanceof NotExpression)) {
-            return null;
-        }
-        NotExpression notExpression = (NotExpression) conditionExpression;
-        Expression expression = notExpression.getExpression();
-        if (!(expression instanceof BinaryExpression)) {
-            return null;
-        }
-        BinaryExpression instanceOfExpression = (BinaryExpression) expression;
-        int op = instanceOfExpression.getOperation().getType();
-        if (op != KEYWORD_INSTANCEOF) {
-            return null;
-        }
-        if (notReturningBlock(ifElse.getIfBlock())) {
-            return null;
-        }
-        return instanceOfExpression;
-    }
-
-    /**
-     * Check IfStatement matched pattern :
-     * Object var1;
-     * if (var1 !instanceOf Runnable) {
-     * return
-     * }
-     * // Here var1 instance of Runnable
-     * <p>
-     * Return expression , which contains instanceOf (without not)
-     * Return null, if not found
-     */
-    protected BinaryExpression findNotInstanceOfReturnExpression(final IfStatement ifElse) {
-        Statement elseBlock = ifElse.getElseBlock();
-        if (!(elseBlock instanceof EmptyStatement)) {
-            return null;
-        }
-        Expression conditionExpression = ifElse.getBooleanExpression().getExpression();
-        if (!(conditionExpression instanceof BinaryExpression)) {
-            return null;
-        }
-        BinaryExpression instanceOfExpression = (BinaryExpression) conditionExpression;
-        int op = instanceOfExpression.getOperation().getType();
-        if (op != COMPARE_NOT_INSTANCEOF) {
-            return null;
-        }
-        if (notReturningBlock(ifElse.getIfBlock())) {
-            return null;
-        }
-        return instanceOfExpression;
-    }
-
-    private static boolean notReturningBlock(final Statement statement) {
-        return statement.isEmpty() || !(statement instanceof BlockStatement)
-            || !(last(((BlockStatement) statement).getStatements()) instanceof ReturnStatement);
     }
 
     @Override
@@ -4222,6 +4037,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         });
     }
 
+    protected Map<VariableExpression, List<ClassNode>> pushAssignmentTracking() {
+        Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.ifElseForWhileAssignmentTracker;
+        typeCheckingContext.ifElseForWhileAssignmentTracker = new HashMap<>();
+        return oldTracker;
+    }
+
     protected Map<VariableExpression, ClassNode> popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
         Map<VariableExpression, ClassNode> assignments = new HashMap<>();
         typeCheckingContext.ifElseForWhileAssignmentTracker.forEach((var, types) -> {
@@ -4233,13 +4054,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         });
         typeCheckingContext.ifElseForWhileAssignmentTracker = oldTracker;
         return assignments;
-    }
-
-    protected Map<VariableExpression, List<ClassNode>> pushAssignmentTracking() {
-        // memorize current assignment context
-        Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.ifElseForWhileAssignmentTracker;
-        typeCheckingContext.ifElseForWhileAssignmentTracker = new HashMap<>();
-        return oldTracker;
     }
 
     @Override
@@ -4313,9 +4127,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression trueExpression = expression.getTrueExpression();
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, null);
         typeOfTrue = Optional.ofNullable(typeOfTrue).orElse(visitValueExpression(trueExpression));
-        typeCheckingContext.popTemporaryTypeInfo(); // instanceof doesn't apply to false branch
+        Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+
+        typeCheckingContext.pushTemporaryTypeInfo();
+        tti.forEach(this::putNotInstanceOfTypeInfo); // GROOVY-8412
         Expression falseExpression = expression.getFalseExpression();
         ClassNode typeOfFalse = visitValueExpression(falseExpression);
+        typeCheckingContext.popTemporaryTypeInfo();
 
         ClassNode resultType;
         if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) { // GROOVY-5523
@@ -4529,13 +4347,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<>());
                 assignedTypes.add(cn);
             }
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
-                if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
-                    // a type inference has been made on a variable whose type was defined in an instanceof block
-                    // erase available information with the new type
-                    temporaryTypesForExpression.clear();
-                }
+            List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
+            if (asBoolean(temporaryTypesForExpression)) {
+                // a type inference has been made on a variable whose type was defined in an instanceof block
+                // erase available information with the new type
+                temporaryTypesForExpression.clear();
             }
         }
     }
@@ -6102,6 +5918,86 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         BinaryExpression exp = (BinaryExpression) GeneralUtils.assignX(lhs, rhs);
         exp.setSourcePosition(pos);
         return exp;
+    }
+
+    //--------------------------------------------------------------------------
+    // temporaryIfBranchTypeInformation support; migrate to TypeCheckingContext?
+
+    /**
+     * Stores information about types when [objectOfInstanceof instanceof typeExpression] is visited.
+     *
+     * @param objectOfInstanceOf the expression to be checked against instanceof
+     * @param typeExpression     the expression which represents the target type
+     */
+    protected void pushInstanceOfTypeInfo(final Expression objectOfInstanceOf, final Expression typeExpression) {
+        Object ttiKey = extractTemporaryTypeInfoKey(objectOfInstanceOf); ClassNode type = typeExpression.getType();
+        typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(ttiKey, x -> new LinkedList<>()).add(type);
+    }
+
+    private void putNotInstanceOfTypeInfo(final Object key, final Collection<ClassNode> types) {
+        Object notKey = key instanceof Object[] ? ((Object[]) key)[1] : new Object[]{"!instanceof", key}; // stash negative type(s)
+        typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(notKey, x -> new LinkedList<>()).addAll(types);
+    }
+
+    /**
+     * Computes the key to use for {@link TypeCheckingContext#temporaryIfBranchTypeInformation}.
+     */
+    protected Object extractTemporaryTypeInfoKey(final Expression expression) {
+        return expression instanceof VariableExpression ? findTargetVariable((VariableExpression) expression) : expression.getText();
+    }
+
+    /**
+     * A helper method which determines which receiver class should be used in error messages when a field or attribute
+     * is not found. The returned type class depends on whether we have temporary type information available (due to
+     * instanceof checks) and whether there is a single candidate in that case.
+     *
+     * @param expr the expression for which an unknown field has been found
+     * @param type the type of the expression (used as fallback type)
+     * @return if temporary information is available and there's only one type, returns the temporary type class
+     * otherwise falls back to the provided type class.
+     */
+    protected ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
+        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+            List<ClassNode> types = getTemporaryTypesForExpression(expr);
+            if (types != null && types.size() == 1) return types.get(0);
+        }
+        return type;
+    }
+
+    protected List<ClassNode> getTemporaryTypesForExpression(final Expression expression) {
+        List<ClassNode> types = null;
+        int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
+        while (types == null && depth > 0) {
+            Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
+            Object key = expression instanceof ParameterVariableExpression
+                    ? ((ParameterVariableExpression) expression).parameter
+                    : extractTemporaryTypeInfoKey(expression);
+            types = tempo.get(key);
+        }
+        return types;
+    }
+
+    private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
+        if (expression instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+            List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
+            if (tempTypes != null && !tempTypes.isEmpty()) {
+                Set<ClassNode> types = new LinkedHashSet<>(tempTypes.size() + 1);
+                if (expressionType != null && !isObjectType(expressionType) // GROOVY-7333
+                        && tempTypes.stream().noneMatch(t -> implementsInterfaceOrIsSubclassOf(t, expressionType))) { // GROOVY-9769
+                    types.add(expressionType);
+                }
+                types.addAll(tempTypes);
+
+                if (types.isEmpty()) {
+                    return OBJECT_TYPE;
+                } else if (types.size() == 1) {
+                    return types.iterator().next();
+                } else {
+                    return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
+                }
+            }
+        }
+        return expressionType;
     }
 
     //--------------------------------------------------------------------------

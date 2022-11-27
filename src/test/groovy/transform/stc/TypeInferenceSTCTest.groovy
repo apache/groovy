@@ -412,139 +412,154 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8523
+    // GROOVY-6429
     void testNotInstanceof1() {
-        assertScript '''
-            class Test1 {
-                static int checkRes = 0
-
-                static void f1(Object var1) {
-                    if (!(var1 instanceof Runnable)){
-                        checkRes = 3
+        String types = '''
+            class C {
+            }
+            class D extends C {
+                def foo() { }
+            }
+        '''
+        for (test in ['!(x instanceof D)', 'x !instanceof D']) {
+            assertScript types + """
+                void p(x) {
+                    if ($test) {
+                        // ...
+                    } else {
+                        x.foo()
+                    }
+                }
+                p(new C())
+                p(new D())
+            """
+            assertScript types + """
+                void p(x) {
+                    if ($test) {
                         return
                     }
-                    f2(var1)
+                    assert x instanceof D
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def ecks = node.rightExpression.objectExpression
+                        def type = ecks.getNodeMetaData(INFERRED_TYPE)
+                        assert type.text == 'D' // not <UnionType:D+D>
+                    })
+                    def bar = x.foo()
                 }
-
-                static void f2(Runnable var2) {
-                    checkRes = 4
-                }
-            }
-
-            Runnable r = {}
-            Test1.f1(r)
-            assert Test1.checkRes == 4
-            Test1.f1(42)
-            assert Test1.checkRes == 3
-        '''
+                p(new C())
+                p(new D())
+            """
+        }
     }
 
     // GROOVY-8523
-    void testNotInstanceOf2() {
-        assertScript '''
-            class Test1 {
-                static int checkRes = 0
+    void testNotInstanceof2() {
+        for (test in ['!(x instanceof Runnable)', 'x !instanceof Runnable']) {
+            assertScript """
+                class Test {
+                    public static int result = 0
 
-                static void f1(Object var1) {
-                    if (var1 !instanceof Runnable){
-                        checkRes = 3
-                        return
+                    static void p(x) {
+                        if ($test) {
+                            result = 1
+                            return
+                        }
+                        q(x)
                     }
-                    f2(var1)
-                }
 
-                static void f2(Runnable var2) {
-                    checkRes = 4
+                    private static void q(Runnable r) {
+                        result = 2
+                    }
                 }
-            }
-
-            Runnable r = {}
-            Test1.f1(r)
-            assert Test1.checkRes == 4
-            Test1.f1(42)
-            assert Test1.checkRes == 3
-        '''
+                Test.p({->} as Runnable)
+                assert Test.result == 2
+                Test.p([''])
+                assert Test.result == 1
+            """
+        }
     }
 
     // GROOVY-8523
     void testNotInstanceOf3() {
-        assertScript '''
-            class Test1 {
-                static int checkRes = 0
+        for (test in ['!(x instanceof List)', 'x !instanceof List']) {
+            assertScript """
+                class Test {
+                    public static int result = 0
 
-                static void f1(Object var1) {
-                    if (!(var1 instanceof Runnable)){
-                        checkRes = 3
-                        return
+                    static void p(x) {
+                        if (x !instanceof Runnable) {
+                            result = 1
+                            return
+                        }
+                        if ($test) {
+                            result = 2
+                            return
+                        }
+                        q(x)
                     }
-                    if (!(var1 instanceof List)){
-                        checkRes = 5
-                        return
+
+                    private static void q(Runnable r) { // and List
+                        result = 3
                     }
-                    f2(var1)
                 }
-
-                static void f2(Runnable var2) {
-                    checkRes = 4
-                }
-            }
-
-            Runnable r = {}
-            Test1.f1(r)
-            assert Test1.checkRes == 5
-        '''
-    }
-
-    // GROOVY-8523
-    void testNotInstanceOf4() {
-        assertScript '''
-            class Test1 {
-                static int checkRes = 0
-
-                static void f1(Object var1) {
-                    if (!(var1 instanceof Runnable)){
-                        checkRes = 3
-                        return
-                    }
-                    if (!(var1 instanceof Thread)){
-                        checkRes = 5
-                        return
-                    }
-                    f2(var1)
-                }
-
-                static void f2(Runnable var2) {
-                    checkRes = 4
-                }
-            }
-
-            Runnable r = {}
-            Test1.f1(r)
-            assert Test1.checkRes == 5
-        '''
+                // TODO: List and Runnable
+                Test.p({->} as Runnable)
+                assert Test.result == 2
+                Test.p([''])
+                assert Test.result == 1
+            """
+        }
     }
 
     // GROOVY-9455
-    void testNotInstanceOf5() {
-        shouldFailWithMessages '''
-            void test(object) {
-                if (!(object instanceof String)) {
-                    object.toUpperCase()
+    void testNotInstanceOf4() {
+        for (test in ['!(x instanceof String)', 'x !instanceof String']) {
+            shouldFailWithMessages """
+                void p(x) {
+                    if ($test) {
+                        x.toUpperCase()
+                    }
                 }
-            }
-        ''',
-        'Cannot find matching method java.lang.Object#toUpperCase()'
+            """,
+            'Cannot find matching method java.lang.Object#toUpperCase()'
+        }
     }
 
-    void testNotInstanceOf6() {
-        shouldFailWithMessages '''
-            void test(object) {
-                if (object !instanceof String) {
-                    object.toUpperCase()
+    // GROOVY-9931
+    void testNotInstanceof5() {
+        for (test in ['!(x instanceof Number)', 'x !instanceof Number']) {
+            assertScript """
+                Number f(x) {
+                    if ($test) {
+                        return null
+                    } else {
+                        return x
+                    }
                 }
-            }
-        ''',
-        'Cannot find matching method java.lang.Object#toUpperCase()'
+                assert f(42) == 42
+                assert f('') == null
+            """
+        }
+    }
+
+    // GROOVY-8412
+    void testNotInstanceof6() {
+        for (test in ['!(x instanceof Number)', 'x !instanceof Number']) {
+            assertScript """
+                Number f(x) {
+                    return ($test) ? null : x
+                }
+                assert f(42) == 42
+                assert f('') == null
+            """
+            assertScript """
+                Number f(x) {
+                    return !!($test) ? null : x // multiple negation
+                }
+                assert f(42) == 42
+                assert f('') == null
+            """
+        }
     }
 
     // GROOVY-10217
