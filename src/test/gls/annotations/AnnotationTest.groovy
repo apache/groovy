@@ -1128,4 +1128,23 @@ final class AnnotationTest {
             }
         '''
     }
+
+    @Test // GROOVY-10857
+    void testAnnotationWithCircularReference() {
+        assertScript shell, '''
+            @A @Documented @Retention(RUNTIME) @Target(TYPE)
+            @interface A {
+            }
+            @A @Documented @Retention(RUNTIME) @Target([FIELD,METHOD,PARAMETER])
+            @interface B {
+            }
+            interface I<T> {
+                @B T m()
+            }
+            def obj = new I<Object>() {
+                def m() { return 0 }
+            }
+            assert obj.m() == 0
+        '''
+    }
 }
