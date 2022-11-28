@@ -18,105 +18,95 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyTestCase
 import groovy.test.NotYetImplemented
+import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
+import static groovy.test.GroovyAssert.shouldFail
 
-final class MethodReferenceTest extends GroovyTestCase {
+final class MethodReferenceTest {
 
-    // class::instanceMethod
+    private static final imports = '''\
+        import java.util.function.*
+        import java.util.stream.Collectors
+        import groovy.transform.CompileStatic
+    '''
+
+    @Test // class::instanceMethod
     void testFunctionCI() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
                 assert result == ['1', '2', '3']
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::instanceMethod
+    @Test // class::instanceMethod
     void testFunctionCI2() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
                 assert result == ['1', '2', '3']
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::instanceMethod -- GROOVY-10047
+    @Test // class::instanceMethod -- GROOVY-10047
     void testFunctionCI3() {
-        assertScript '''
-            import java.util.function.Function
-            import static java.util.stream.Collectors.toMap
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 List<String> list = ['a','bc','def']
                 Function<String,String> self = str -> str // help for toMap
-                def map = list.stream().collect(toMap(self, String::length))
-                assert map == [a: 1, bc: 2, 'def': 3]
+                def result = list.stream().collect(Collectors.toMap(self, String::length))
+                assert result == [a: 1, bc: 2, 'def': 3]
             }
 
-            p()
+            test()
         '''
 
-        assertScript '''
-            import java.util.function.Function
-            import static java.util.stream.Collectors.toMap
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 List<String> list = ['a','bc','def']
                 // TODO: inference for T in toMap(Function<? super T,...>, Function<? super T,...>)
-                def map = list.stream().collect(toMap(Function.<String>identity(), String::length))
-                assert map == [a: 1, bc: 2, 'def': 3]
+                def result = list.stream().collect(Collectors.toMap(Function.<String>identity(), String::length))
+                assert result == [a: 1, bc: 2, 'def': 3]
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::instanceMethod
+    @Test // class::instanceMethod
     void testFunctionCI4() {
-        def err = shouldFail '''
-            import static java.util.stream.Collectors.toList
-
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1, 2, 3].stream().map(String::toString).collect(toList())
-                assert result == ["1", "2", "3"]
+        def err = shouldFail imports + '''
+            @CompileStatic
+            void test() {
+                [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
             }
-
-            p()
         '''
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
-    // class::instanceMethod -- GROOVY-9814
+    @Test // class::instanceMethod -- GROOVY-9814
     void testFunctionCI5() {
-        assertScript '''
-            import java.util.function.*
-            import groovy.transform.*
-
+        assertScript imports + '''
             @CompileStatic
             class One { String id }
 
             @CompileStatic
             class Two extends One { }
 
-            @CompileStatic @Immutable(knownImmutableClasses=[Function])
+            @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
             class FunctionHolder<T> {
                 Function<T, ?> extractor
 
@@ -133,203 +123,350 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    // class::instanceMethod -- GROOVY-9853
+    @NotYetImplemented
+    @Test // class::instanceMethod -- GROOVY-9813
     void testFunctionCI6() {
-        assertScript '''
-            import java.util.function.*
-            @groovy.transform.CompileStatic
+        String head = imports + '''
+            @CompileStatic
+            class C {
+                def <T> List<T> asList(T... a) {
+                    return Arrays.asList(a)
+                }
+                static main(args) {
+        '''
+        String tail = '''
+                }
+            }
+        '''
+
+        shouldFail head + '''
+            Supplier<List> zero = C::asList
+        ''' + tail
+
+        assertScript head + '''
+            Function<C, List> one = C::asList
+            def list = one.apply(new C())
+            assert list.isEmpty()
+        ''' + tail
+
+        assertScript head + '''
+            BiFunction<C, Integer, List> two = C::asList
+            def list = two.apply(new C(),1)
+            assert list.size() == 1
+            assert list[0] == 1
+        ''' + tail
+    }
+
+    @Test // class::instanceMethod -- GROOVY-9853
+    void testFunctionCI7() {
+        assertScript imports + '''
+            @CompileStatic
             void test() {
                 ToIntFunction<CharSequence> f = CharSequence::size
                 int size = f.applyAsInt("")
                 assert size == 0
             }
+
             test()
         '''
 
-        assertScript '''
-            import java.util.function.*
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             void test() {
                 ToIntFunction<CharSequence> f = CharSequence::length
                 int length = f.applyAsInt("")
                 assert length == 0
             }
+
             test()
         '''
 
-        assertScript '''
-            import java.util.function.*
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             void test() {
                 Function<CharSequence,Integer> f = CharSequence::length
                 Integer length = f.apply("")
                 assert length == 0
             }
+
             test()
         '''
 
-        assertScript '''
-            import java.util.function.*
+        assertScript imports + '''
             import java.util.stream.IntStream
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 Function<CharSequence,IntStream> f = CharSequence::chars // default method
                 IntStream chars = f.apply("")
                 assert chars.count() == 0
             }
+
             test()
         '''
 
         if (!isAtLeastJdk('11.0')) return
 
-        assertScript '''
-            import java.util.function.*
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             void test() {
                 ToIntBiFunction<CharSequence,CharSequence> f = CharSequence::compare // static method
                 int result = f.applyAsInt("","")
                 assert result == 0
             }
+
             test()
         '''
     }
 
-    // class::instanceMethod -- GROOVY-10734
-    void testFunctionCI7() {
-        assertScript '''
+    @Test // class::instanceMethod -- GROOVY-10734
+    void testFunctionCI8() {
+        assertScript imports + '''
             class C {
                 String p
             }
-            @groovy.transform.CompileStatic
+
+            @CompileStatic
             Map test(Collection<C> items) {
                 items.stream().collect(
-                    java.util.stream.Collectors.groupingBy(C::getP) // Failed to find the expected method[getP(Object)] in the type[C]
+                    Collectors.groupingBy(C::getP) // Failed to find the expected method[getP(Object)] in the type[C]
                 )
             }
+
             def map = test([new C(p:'foo'), new C(p:'bar'), new C(p:'foo')])
             assert map.foo.size() == 2
             assert map.bar.size() == 1
         '''
     }
 
-    // class::instanceMethod -- GROOVY-9974
+    @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             void test(List<String> strings = ['']) {
                 strings.removeIf(String::isEmpty)
                 assert strings.isEmpty()
             }
+
             test()
         '''
     }
 
-    // class::instanceMethod -- GROOVY-10791
+    @Test // class::instanceMethod -- GROOVY-10791
     void testBiConsumerCI() {
-        assertScript '''
-            import java.util.function.*
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             def <T> void test(List<T> list, Consumer<? super T> todo) {
                 BiConsumer<List<T>, Consumer<? super T>> binder = List::forEach // default method of Iterator
                 binder.accept(list, todo)
             }
+
             test(['works']) { assert it == 'works' }
         '''
     }
 
-    // class::instanceMethod
+    @Test // class::instanceMethod
     void testBinaryOperatorCI() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::add)
-
-                assert 6.0G == result
+                assert result == 6.0G
             }
 
-            p()
+            test()
         '''
     }
 
-    // instance::instanceMethod
-    void testBinaryOperatorII() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                Adder adder = new Adder()
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-9813
+    void testFunctionII() {
+        String asList = '''
+            def <T> List<T> asList(T... a) {
+                return Arrays.asList(a)
+            }
+        '''
 
-                assert 6.0G == result
+        assertScript imports + asList + '''
+            @CompileStatic
+            void test() {
+                Supplier<List> zero = this::asList
+                def list = zero.get()
+                assert list.isEmpty()
             }
 
-            p()
+            test()
+        '''
 
-            @groovy.transform.CompileStatic
+        assertScript imports + asList + '''
+            @CompileStatic
+            void test() {
+                Function<Integer, List> one = this::asList
+                def list = one.apply(1)
+                assert list.size() == 1
+                assert list[0] == 1
+            }
+
+            test()
+        '''
+
+        assertScript imports + asList + '''
+            @CompileStatic
+            void test() {
+                BiFunction<Integer, Integer, List> two = this::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
+
+            test()
+        '''
+
+        assertScript imports + asList + '''
+            @CompileStatic
+            void test() { def that = this
+                BiFunction<Integer, Integer, List> two = that::asList
+                def list = two.apply(2,3)
+                assert list.size() == 2
+                assert list[0] == 2
+                assert list[1] == 3
+            }
+
+            test()
+        '''
+    }
+
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-10653
+    void testFunctionII2() {
+        assertScript imports + '''
+            class C {
+                List m(... args) {
+                    [this,*args]
+                }
+            }
+
+            @CompileStatic
+            void test(C c) {
+                BiFunction<Integer, Integer, List> two = c::m
+                def list = two.apply(1,2)
+                assert list.size() == 3
+                assert list[0] == c
+                assert list[1] == 1
+                assert list[2] == 2
+            }
+
+            test(new C())
+        '''
+    }
+
+    @NotYetImplemented
+    @Test // instance::instanceGroovyMethod -- GROOVY-10653
+    void testFunctionII3() {
+        assertScript imports + '''
+            @CompileStatic
+            int test(CharSequence chars) {
+                IntSupplier sizing = chars::size // from StringGroovyMethods
+                return sizing.getAsInt()
+            }
+
+            int size = test("foo")
+            assert size == 3
+        '''
+    }
+
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-10057
+    void testPredicateII() {
+        assertScript imports + '''
+            Class c = Integer
+            Predicate p
+
+            p = c::isInstance
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = c.&isInstance
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = o -> c.isInstance(o)
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = { c.isInstance(it) }
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+        '''
+    }
+
+    @Test // instance::instanceMethod
+    void testBinaryOperatorII() {
+        assertScript imports + '''
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
                 }
             }
+
+            @CompileStatic
+            void test() {
+                Adder adder = new Adder()
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
+                assert result == 6.0G
+            }
+
+            test()
         '''
     }
 
-    // instance::instanceMethod
+    @Test // instance::instanceMethod
     void testBinaryOperatorII_COMPATIBLE() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                Adder adder = new Adder()
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
             class Adder {
                 BigDecimal add(Number a, Number b) {
                     ((BigDecimal) a).add((BigDecimal) b)
                 }
             }
+
+            @CompileStatic
+            void test() {
+                Adder adder = new Adder()
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
+                assert result == 6.0G
+            }
+
+            test()
         '''
     }
 
-    // expression::instanceMethod
+    @Test // expression::instanceMethod
     void testBinaryOperatorII_EXPRESSION() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
             class Adder {
                 public BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
                 }
             }
+
+            @CompileStatic
+            void test() {
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
+                assert result == 6.0G
+            }
+
+            test()
         '''
     }
 
-    // expression::instanceMethod
+    @Test // expression::instanceMethod
     void testBinaryOperatorII_EXPRESSION2() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder().getThis()::add)
-
-                assert new BigDecimal(6) == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
@@ -339,65 +476,100 @@ final class MethodReferenceTest extends GroovyTestCase {
                     return this
                 }
             }
+
+            @CompileStatic
+            void test() {
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder().getThis()::add)
+                assert result == new BigDecimal(6)
+            }
+
+            test()
         '''
     }
 
-    // instance::staticMethod
+    @Test // instance::instanceMethod
+    void testBinaryOperatorII_RHS() {
+        assertScript imports + '''
+            class Adder {
+                BigDecimal add(BigDecimal a, BigDecimal b) {
+                    a.add(b)
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Adder adder = new Adder()
+                BinaryOperator<BigDecimal> b = adder::add
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
+                assert result == 6.0G
+            }
+
+            test()
+        '''
+    }
+
+    @Test // expression::instanceMethod
+    void testBinaryOperatorII_RHS2() {
+        assertScript imports + '''
+            class Adder {
+                BigDecimal add(BigDecimal a, BigDecimal b) {
+                    a.add(b)
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                BinaryOperator<BigDecimal> b = new Adder()::add
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
+                assert result == 6.0G
+            }
+
+            test()
+        '''
+    }
+
+    @Test // instance::staticMethod
     void testBinaryOperatorIS() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            class Adder {
+                static BigDecimal add(BigDecimal a, BigDecimal b) {
+                    a.add(b)
+                }
+            }
+
+            @CompileStatic
+            void test() {
                 Adder adder = new Adder()
                 def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
-
-                assert 6.0G == result
+                assert result == 6.0G
             }
 
-            p()
-
-            @groovy.transform.CompileStatic
-            class Adder {
-                static BigDecimal add(BigDecimal a, BigDecimal b) {
-                    a.add(b)
-                }
-            }
+            test()
         '''
     }
 
-    // expression::staticMethod
+    @Test // expression::staticMethod
     void testBinaryOperatorIS_EXPRESSION() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
             class Adder {
                 static BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
                 }
             }
+
+            @CompileStatic
+            void test() {
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
+                assert result == 6.0G
+            }
+
+            test()
         '''
     }
 
-    // expression::staticMethod
+    @Test // expression::staticMethod
     void testBinaryOperatorIS_EXPRESSION2() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, Adder.newInstance()::add)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
             class Adder {
                 static BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
@@ -407,43 +579,48 @@ final class MethodReferenceTest extends GroovyTestCase {
                     new Adder()
                 }
             }
-        '''
-    }
 
-    // arrayClass::new
-    void testFunctionCN() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1, 2, 3].stream().toArray(Integer[]::new)
-                assert result == new Integer[] { 1, 2, 3 }
+            @CompileStatic
+            void test() {
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, Adder.newInstance()::add)
+                assert result == 6.0G
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::new
-    void testFunctionCN2() {
-        assertScript '''
-            import static java.util.stream.Collectors.toList
-
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = ["1", "2", "3"].stream().map(Integer::new).collect(toList())
+    @Test // class::new
+    void testFunctionCN() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                def result = ["1", "2", "3"].stream().map(Integer::new).collect(Collectors.toList())
                 assert result == [1, 2, 3]
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::new -- GROOVY-10033
-    void testFunctionCN3() {
-        assertScript '''
-            import java.util.function.Function
+    @Test // class::new
+    void testFunctionCN2() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                Function<String, Integer> f = Integer::new
+                def result = ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
+                assert result == [1, 2, 3]
+            }
 
-            @groovy.transform.CompileStatic
+            test()
+        '''
+    }
+
+    @Test // class::new -- GROOVY-10033
+    void testFunctionCN3() {
+        assertScript imports + '''
+            @CompileStatic
             class C {
                 C(Function<String,Integer> f) {
                     def i = f.apply('42')
@@ -453,15 +630,14 @@ final class MethodReferenceTest extends GroovyTestCase {
                     new C(Integer::new)
                 }
             }
+
             C.test()
         '''
     }
 
-    // class::new -- GROOVY-10033
+    @Test // class::new -- GROOVY-10033
     void testFunctionCN4() {
-        assertScript '''
-            import java.util.function.Function
-
+        assertScript imports + '''
             class A {
                 A(Function<A,B> f) {
                     B b = f.apply(this)
@@ -473,7 +649,7 @@ final class MethodReferenceTest extends GroovyTestCase {
                     assert a != null
                 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             class X extends A {
               public X() {
                 super(Y::new)
@@ -489,41 +665,50 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    // class::staticMethod
-    void testFunctionCS() {
-        assertScript '''
-            import static java.util.stream.Collectors.toList
+    @Test // arrayClass::new
+    void testIntFunctionCN() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                IntFunction<Integer[]> f = Integer[]::new;
+                def result = [1, 2, 3].stream().toArray(f)
+                result == new Integer[] {1, 2, 3}
+            }
 
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1, -2, 3].stream().map(Math::abs).collect(toList())
+            test()
+        '''
+    }
+
+    @Test // class::staticMethod
+    void testFunctionCS() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod
+    @Test // class::staticMethod
     void testFunctionCS2() {
-        assertScript '''
-            import java.util.function.Function
-            import static java.util.stream.Collectors.toMap
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 List<String> list = ['x','y','z']
-                def map = list.stream().collect(toMap(Function.identity(), Collections::singletonList))
+                def map = list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
                 assert map == [x: ['x'], y: ['y'], z: ['z']]
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod -- GROOVY-9799
+    @Test // class::staticMethod -- GROOVY-9799
     void testFunctionCS3() {
-        assertScript '''
+        assertScript imports + '''
             class C {
                 String x
             }
@@ -535,7 +720,7 @@ final class MethodReferenceTest extends GroovyTestCase {
                 }
             }
 
-            @groovy.transform.CompileStatic
+            @CompileStatic
             def test(C c) {
                 Optional.of(c).map(D::from).get()
             }
@@ -545,81 +730,78 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    // class::staticMethod
+    @Test // class::staticMethod
     void testFunctionCS4() {
-        assertScript '''
-            import java.util.function.Function
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 Function<Integer, Integer> f = Math::abs
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod
+    @Test // class::staticMethod
     void testFunctionCS5() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod -- GROOVY-9813
     @NotYetImplemented
+    @Test // class::staticMethod -- GROOVY-9813
     void testFunctionCS6() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                java.util.function.Supplier<List> zero = Arrays::asList
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                Supplier<List> zero = Arrays::asList
                 def list = zero.get()
                 assert list.isEmpty()
             }
 
-            p()
+            test()
         '''
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                java.util.function.Function<Integer, List> one = Arrays::asList
+
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                Function<Integer, List> one = Arrays::asList
                 def list = one.apply(1)
                 assert list.size() == 1
                 assert list[0] == 1
             }
 
-            p()
+            test()
         '''
-        assertScript '''
-            @groovy.transform.CompileStatic
-            void p() {
-                java.util.function.BiFunction<Integer, Integer, List> two = Arrays::asList
+
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                BiFunction<Integer, Integer, List> two = Arrays::asList
                 def list = two.apply(2,3)
                 assert list.size() == 2
                 assert list[0] == 2
                 assert list[1] == 3
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod -- GROOVY-10807
+    @Test // class::staticMethod -- GROOVY-10807
     void testFunctionCS7() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             class C {
                 public static Comparator<String> c = Comparator.<String,String>comparing(C::m)
                 static String m(String string) {
@@ -634,11 +816,11 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    // class::staticMethod
     @NotYetImplemented
+    @Test // class::staticMethod
     void testFunctionCS8() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertScript imports + '''
+            @CompileStatic
             class C {
                 public static Comparator<String> c = Comparator.comparing(C::m)
                 static String m(String string) {
@@ -653,157 +835,51 @@ final class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    // instance::instanceMethod
-    void testBinaryOperatorII_RHS() {
-        assertScript '''
-            import java.util.function.BinaryOperator
-
-            @groovy.transform.CompileStatic
-            void p() {
-                Adder adder = new Adder()
-                BinaryOperator<BigDecimal> b = adder::add
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
-            class Adder {
-                BigDecimal add(BigDecimal a, BigDecimal b) {
-                    a.add(b)
-                }
-            }
-        '''
-    }
-
-    // expression::instanceMethod
-    void testBinaryOperatorII_RHS2() {
-        assertScript '''
-            import java.util.function.BinaryOperator
-
-            @groovy.transform.CompileStatic
-            void p() {
-                BinaryOperator<BigDecimal> b = new Adder()::add
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
-
-                assert 6.0G == result
-            }
-
-            p()
-
-            @groovy.transform.CompileStatic
-            class Adder {
-                BigDecimal add(BigDecimal a, BigDecimal b) {
-                    a.add(b)
-                }
-            }
-        '''
-    }
-
-    // class::new
-    void testFunctionCN_RHS() {
-        assertScript '''
-            import java.util.function.Function
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
-                Function<String, Integer> f = Integer::new
-                assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
-            }
-
-            p()
-        '''
-    }
-
-    // arrayClass::new
-    void testIntFunctionCN_RHS() {
-        assertScript '''
-            import java.util.function.IntFunction
-            import java.util.stream.Stream
-
-            @groovy.transform.CompileStatic
-            void p() {
-                IntFunction<Integer[]> f = Integer[]::new
-                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(f)
-            }
-
-            p()
-        '''
-    }
-
-    // class::instanceMethod
-    void testFunctionCI_WRONGTYPE() {
-        def err = shouldFail '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
-                def result = [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
-                assert 3 == result.size()
-                assert ['1', '2', '3'] == result
-            }
-
-            p()
-        '''
-        assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
-    }
-
-    // class::instanceMethod, actually class::staticMethod
+    @Test // class::instanceGroovyMethod
     void testFunctionCI_DGM() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = ['a', 'ab', 'abc'].stream().map(String::size).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod
+    @Test // class::staticGroovyMethod
     void testFunctionCS_DGSM() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::instanceMethod
+    @Test // class::instanceGroovyMethod
     void testFunctionCI_SHADOW_DGM() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [[a:1], [b:2], [c:3]].stream().map(Object::toString).collect(Collectors.toList())
-                assert 3 == result.size()
-                assert ['[a:1]', '[b:2]', '[c:3]'] == result
+                assert result.size() == 3
+                assert result == ['[a:1]', '[b:2]', '[c:3]']
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::staticMethod
+    @Test // class::staticGroovyMethod
     void testFunctionCS_MULTI_DGSM() {
-        assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
-            void p() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
 
@@ -811,41 +887,106 @@ final class MethodReferenceTest extends GroovyTestCase {
                 assert result.every(e -> e instanceof Thread)
             }
 
-            p()
+            test()
         '''
     }
 
-    // class::unknown
+    @Test
     void testMethodNotFound1() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic
-            void p() {
+        def err = shouldFail imports + '''
+            @CompileStatic
+            void test() {
                 [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
             }
         '''
-        assert err.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
+        assert err.message.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
     }
 
-    // GROOVY-9463
+    @Test // GROOVY-9463
     void testMethodNotFound2() {
-        def err = shouldFail '''
-            import java.util.function.Function
-
-            @groovy.transform.CompileStatic
-            void p() {
+        def err = shouldFail imports + '''
+            @CompileStatic
+            void test() {
                 Function<String,String> reference = String::toLowerCaseX
             }
         '''
-        assert err.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
+        assert err.message.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
     }
 
-    // GROOVY-10742
-    void testVoidMethodSelection() {
-        def err = shouldFail '''
-            import java.util.function.Function
+    @NotYetImplemented
+    @Test // GROOVY-10714
+    void testMethodSelection() {
+        assertScript imports + '''
+            class C {
+                String which
+                void m(int i) { which = 'int' }
+                void m(Number n) { which = 'Number' }
+            }
+            interface I {
+                I andThen(Consumer<? super Number> c)
+                I andThen(BiConsumer<? super Number, ?> bc)
+            }
+            @CompileStatic
+            void test(I i, C c) {
+                i = i.andThen(c::m) // "andThen" is ambiguous unless parameters of "m" overloads are taken into account
+            }
 
-            void foo(bar) { }
-            @groovy.transform.CompileStatic
+            C x= new C()
+            test(new I() {
+                I andThen(Consumer<? super Number> c) {
+                    c.accept(42)
+                    return this
+                }
+                I andThen(BiConsumer<? super Number, ?> bc) {
+                    bc.accept(42, null)
+                    return this
+                }
+            }, x)
+            assert x.which == 'Number'
+        '''
+    }
+
+    @Test // GROOVY-10813
+    void testMethodSelection2() {
+        for (spec in ['', '<?>', '<Object>', '<? extends Object>', '<? super String>']) {
+            assertScript imports + """
+                @CompileStatic
+                void test() {
+                    Consumer$spec c = this::print // overloads in Script and DefaultGroovyMethods
+                    c.accept('hello world!')
+                }
+
+                test()
+            """
+        }
+        for (spec in ['', '<?,?>', '<?,Object>', '<?,? extends Object>', '<?,? super String>']) {
+            assertScript imports + """
+                @CompileStatic
+                void test() {
+                    BiConsumer$spec c = Object::print
+                    c.accept(this, 'hello world!')
+                }
+
+                test()
+            """
+        }
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                BiConsumer<Script,?> c = Script::print
+                c.accept(this, 'hello world!')
+            }
+
+            test()
+        '''
+    }
+
+    @Test // GROOVY-10742
+    void testIncompatibleReturnType() {
+        def err = shouldFail imports + '''
+            void foo(bar) {
+            }
+            @CompileStatic
             void test() {
                 Function<Object,String> f = this::foo
             }
@@ -853,16 +994,14 @@ final class MethodReferenceTest extends GroovyTestCase {
         assert err =~ /Invalid return type: void is not convertible to java.lang.String/
     }
 
-    // GROOVY-10269
+    @Test // GROOVY-10269
     void testNotFunctionalInterface() {
-        def err = shouldFail '''
-            import java.util.function.Consumer
-
+        def err = shouldFail imports + '''
             void foo(Integer y) {
             }
             void bar(Consumer<Integer> x) {
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 bar(this::foo)
                 def baz = { Consumer<Integer> x -> }
@@ -872,19 +1011,17 @@ final class MethodReferenceTest extends GroovyTestCase {
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 
-    // GROOVY-10336
+    @Test // GROOVY-10336
     void testNotFunctionalInterface2() {
-        def err = shouldFail '''
-            import java.util.function.Supplier
-
+        def err = shouldFail imports + '''
             class C {
                 Integer m() { 1 }
             }
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void test() {
                 Supplier<Long> outer = () -> {
                     Closure<Long> inner = (Object o, Supplier<Integer> s) -> 2L
-                    inner(new Object(), new C()::m)
+                    inner(new Object(), new C()::m) // TODO: resolve call(Object,Supplier<Integer>)
                 }
             }
         '''
