@@ -18,41 +18,67 @@
  */
 package org.apache.groovy.contracts.util
 
+import org.apache.groovy.contracts.annotations.meta.Precondition
+import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilePhase
-import org.apache.groovy.contracts.annotations.meta.Precondition
-import org.apache.groovy.contracts.tests.basic.BaseTestClass
 import org.junit.Test
-import static org.junit.Assert.assertEquals
 
-class AnnotationUtilsTests extends BaseTestClass {
-
-    def source = '''
-    @Contracted
-    package tests
-
-    import groovy.contracts.*
-
-    class Tester {
-
-        @Requires({ param != null })
-        def method(def param) {}
-
-    }'''
+final class AnnotationUtilsTests extends BaseTestClass {
 
     @Test
-    void find_annotations_with_meta_annos() {
-        AstBuilder astBuilder = new AstBuilder()
-        def astNodes = astBuilder.buildFromString(CompilePhase.SEMANTIC_ANALYSIS, false, source)
+    void hasMetaAnnotations1() {
+        def astNodes = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, false, '''
+            @Contracted
+            package tests
+
+            import groovy.contracts.*
+
+            class Tester {
+                @Requires({ param != null })
+                def method(def param) {
+                }
+            }
+        ''')
 
         ClassNode classNode = astNodes[1]
-        MethodNode methodNode = classNode.getMethod("method", [new Parameter(ClassHelper.makeWithoutCaching("java.lang.Object"), "param")] as Parameter[])
+        MethodNode methodNode = classNode.getMethod('method', new Parameter(ClassHelper.OBJECT_TYPE, 'param'))
+        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(methodNode, Precondition.getName())
 
-        def annotationNodes = AnnotationUtils.hasMetaAnnotations(methodNode, Precondition.class.getName())
-        assertEquals(1, annotationNodes.size())
+        assert annotationNodes.size() == 1
+    }
+
+    @Test // GROOVY-10857
+    void hasMetaAnnotations2() {
+        def astNodes = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, false, '''
+            import java.lang.annotation.*
+            import static java.lang.annotation.ElementType.*
+            import static java.lang.annotation.RetentionPolicy.*
+
+            @A @Documented @Retention(RUNTIME) @Target(TYPE)
+            @interface A {
+            }
+            @A @Documented @Retention(RUNTIME) @Target([FIELD,METHOD,PARAMETER])
+            @interface B {
+            }
+            interface I<T> {
+                @B T m()
+            }
+        ''')
+
+        ClassNode classNode = astNodes[3] // interface I
+        MethodNode methodNode = classNode.getMethod('m')
+        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(methodNode, 'A')
+
+        assert annotationNodes.size() == 1
+
+        annotationNodes = AnnotationUtils.hasMetaAnnotations(methodNode, Precondition.getName())
+
+        assert annotationNodes.isEmpty()
     }
 }

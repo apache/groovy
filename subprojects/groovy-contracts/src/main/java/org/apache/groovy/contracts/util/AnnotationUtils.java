@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.MethodNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <p>Helper methods for reading/getting {@link org.codehaus.groovy.ast.AnnotationNode} instances.</p>
@@ -113,20 +114,29 @@ public class AnnotationUtils {
      * @return a list of {@link AnnotationNode} instances which implement the given <tt>metaAnnotationClass</tt>
      */
     public static List<AnnotationNode> hasMetaAnnotations(AnnotatedNode annotatedNode, String metaAnnotationClassName) {
-
-        ArrayList<AnnotationNode> result = new ArrayList<AnnotationNode>();
+        List<AnnotationNode> result = new ArrayList<>();
+        Set<ClassNode> seen = new java.util.HashSet<>();
+        ClassNode type = ClassHelper.makeWithoutCaching(metaAnnotationClassName);
 
         for (AnnotationNode annotationNode : annotatedNode.getAnnotations()) {
-            if (CandidateChecks.isRuntimeClass(annotationNode.getClassNode())) continue;
-
-            // is the annotation marked with the given meta annotation?
-            List<AnnotationNode> metaAnnotations = annotationNode.getClassNode().getAnnotations(ClassHelper.makeWithoutCaching(metaAnnotationClassName));
-            if (metaAnnotations.isEmpty()) {
-                metaAnnotations = hasMetaAnnotations(annotationNode.getClassNode(), metaAnnotationClassName);
-            }
-
-            if (metaAnnotations.size() > 0) result.add(annotationNode);
+            if (hasMetaAnnotation(annotationNode.getClassNode(), type, seen))
+                result.add(annotationNode);
         }
+
         return result;
+    }
+
+    private static boolean hasMetaAnnotation(ClassNode annotationType, ClassNode metaAnnotationType, Set<ClassNode> cycleCheck) {
+        if (!CandidateChecks.isRuntimeClass(annotationType) && cycleCheck.add(annotationType)) {
+            if (!annotationType.getAnnotations(metaAnnotationType).isEmpty()) {
+                return true;
+            }
+            for (AnnotationNode annotationNode : annotationType.getAnnotations()) {
+                if (hasMetaAnnotation(annotationNode.getClassNode(), metaAnnotationType, cycleCheck)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
