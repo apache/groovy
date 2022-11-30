@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh
 
 import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
@@ -42,6 +43,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
     final CommandsMultiCompleter completer
     WrappedInputStream  wrappedInputStream
 
+    @CompileDynamic
     InteractiveShellRunner(Groovysh shell, Closure prompt) {
         super(shell)
 
@@ -75,7 +77,8 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         def filenameCompleter = new FileNameCompleter(false)
 
         reader.addCompleter(completer)
-        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter))
+        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(
+                shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter))
     }
 
     @Override
@@ -92,7 +95,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         super.run()
     }
 
-    @Override
+    @Override @CompileDynamic
     protected String readLine() {
         try {
             if (Boolean.valueOf(Preferences.get(Groovysh.AUTOINDENT_PREFERENCE_KEY))) {
@@ -127,8 +130,8 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         // we save the evicted line in case someone wants to use it with history recall
         if (shell instanceof Groovysh) {
             def history = shell.history
-            shell.historyFull = (history != null) && (history.size() >= history.maxSize)
-            if (shell.historyFull) {
+            shell.historyFull = history != null && history.size() >= history.maxSize
+            if (shell.isHistoryFull()) {
                 def first = history.first()
                 if (first) {
                     shell.evictedLine = first.value()
