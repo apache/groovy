@@ -40,11 +40,7 @@ import org.apache.groovy.groovysh.commands.SetCommand
 import org.apache.groovy.groovysh.commands.ShowCommand
 
 /**
- * Registers {@link Command} classes from an XML file like:
- * <commands>
- *  <command>org.apache.groovy.groovysh.commands.HelpCommand</command>
- * ...
- * </commands>
+ * Registers default {@link Command} instances.
  */
 class DefaultCommandsRegistrar {
 
@@ -52,12 +48,11 @@ class DefaultCommandsRegistrar {
 
     DefaultCommandsRegistrar(final Shell shell) {
         assert shell != null
-
         this.shell = shell
     }
 
     void register() {
-        def commands = [
+        List<Command> commands = [
             new HelpCommand(shell),
             new ExitCommand(shell),
             new ImportCommand(shell),
@@ -77,12 +72,12 @@ class DefaultCommandsRegistrar {
             new RegisterCommand(shell),
         ]
 
-        if (!System.getProperty("groovysh.disableDocCommand")?.toBoolean()) {
+        if (!Boolean.getBoolean('groovysh.disableDocCommand')) {
             commands.add(new DocCommand(shell))
         }
 
-        for (Command classname in commands) {
-            shell.register(classname)
+        for (command in commands) {
+            shell.register(command)
         }
     }
 }

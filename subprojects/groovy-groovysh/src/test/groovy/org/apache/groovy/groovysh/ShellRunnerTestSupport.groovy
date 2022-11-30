@@ -25,41 +25,37 @@ import jline.console.ConsoleReader
 import org.codehaus.groovy.tools.shell.IO
 
 /**
- * Support for testing {@link Command} instances.
+ * Support for testing {@link ShellRunner} instances.
  */
 abstract class ShellRunnerTestSupport extends GroovyTestCase {
 
-    protected IO testio
     protected BufferedOutputStream mockOut
     protected BufferedOutputStream mockErr
+    protected IO testio
 
     protected MockFor shellMocker
     protected StubFor readerStubber
 
     @Override
-    void setUp() {
+    protected void setUp() {
         super.setUp()
+
         mockOut = new BufferedOutputStream(new ByteArrayOutputStream())
         mockErr = new BufferedOutputStream(new ByteArrayOutputStream())
         testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
         testio.verbosity = IO.Verbosity.QUIET
-        // setup mock and stub with calls expected from InteractiveShellRunner Constructor
 
         shellMocker = new MockFor(Groovysh)
-        // when run with compileStatic
-        shellMocker.demand.getClass(0..1) {Groovysh}
-        shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
+        // Groovysh constructor
+        shellMocker.demand.getClass(1) { Groovysh }
+        shellMocker.demand.getIo(0..21) { testio }
+        shellMocker.demand.register(18) { it }
+        // InteractiveShellRunner constructor
         shellMocker.demand.getIo(2) { testio }
-        shellMocker.demand.getRegistry(1) {new Object() {def commands() {[]} }}
-        shellMocker.demand.getHistory(1) {new Serializable(){def size() {0}; def getMaxSize() {1}}}
-        shellMocker.demand.setHistoryFull(1) {}
-        shellMocker.demand.getHistoryFull(1) {false}
-        // adding number of commands from xml file
-        for (i in 1..19) {
-            shellMocker.demand.getIo(0..1) { testio }
-            shellMocker.demand.add(0..1) { testio }
-            shellMocker.demand.getIo(0..1) { testio }
-        }
+        shellMocker.demand.getRegistry(1) { new Object() { def commands() {[]} } }
+        shellMocker.demand.getHistory(1) { new Serializable() { def size() {0}; def getMaxSize() {1} } }
+        shellMocker.demand.setHistoryFull(1) { }
+        shellMocker.demand.getHistoryFull(1) { false }
 
         readerStubber = new StubFor(ConsoleReader)
         readerStubber.demand.setExpandEvents {}

@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.Binding;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -41,13 +40,11 @@ import java.util.stream.Collectors;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
@@ -377,17 +374,13 @@ public class ModuleNode extends ASTNode {
         // In practice this will always be true because currently this visitor is run before the AST transformations
         // (like @BaseScript) that could change this.  But this is cautious and anticipates possible compiler changes.
         if (classNode.getSuperClass().getDeclaredConstructor(params(param(ClassHelper.BINDING_TYPE, "context"))) != null) {
-            stmt = stmt(ctorX(ClassNode.SUPER, args(varX("context"))));
+            stmt = stmt(ctorSuperX(args(varX("context"))));
         } else {
             // Fallback for non-standard base "script" classes with no context (Binding) constructor.
             stmt = stmt(callX(varX("super"), "setBinding", args(varX("context"))));
         }
 
-        classNode.addConstructor(
-            ACC_PUBLIC,
-            finalParam(ClassHelper.make(Binding.class), "context"),
-            ClassNode.EMPTY_ARRAY,
-            stmt);
+        classNode.addConstructor(ACC_PUBLIC, finalParam(ClassHelper.BINDING_TYPE, "context"), ClassNode.EMPTY_ARRAY, stmt);
 
         for (MethodNode method : methods) {
             if (method.isAbstract()) {
@@ -413,8 +406,8 @@ public class ModuleNode extends ASTNode {
                     ClassNode argType = node.getParameters()[0].getType();
                     ClassNode retType = node.getReturnType();
 
-                    argTypeMatches = (isObjectType(argType) || argType.getName().contains("String[]"));
-                    retTypeMatches = (isPrimitiveVoid(retType) || isObjectType(retType));
+                    argTypeMatches = (ClassHelper.isObjectType(argType) || argType.getName().contains("String[]"));
+                    retTypeMatches = (ClassHelper.isPrimitiveVoid(retType) || ClassHelper.isObjectType(retType));
                     if (retTypeMatches && argTypeMatches) {
                         if (found) {
                             throw new RuntimeException("Repetitive main method found.");
