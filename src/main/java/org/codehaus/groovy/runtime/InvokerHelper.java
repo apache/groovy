@@ -74,8 +74,6 @@ import java.util.regex.Pattern;
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
  */
 public class InvokerHelper {
-    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
-
     public static final Object[] EMPTY_ARGS = {};
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
     protected static final Class[] EMPTY_TYPES = {};
@@ -424,41 +422,54 @@ public class InvokerHelper {
     }
 
     static class NullScript extends Script {
-        public NullScript() { this(new Binding()); }
         public NullScript(Binding context) { super(context); }
+        public NullScript() { this(new Binding()); }
         public Object run() { return null; }
     }
 
-    public static Script createScript(Class scriptClass, Binding context) {
-        Script script;
-
+    @SuppressWarnings("unchecked")
+    public static Script createScript(final Class scriptClass, final Binding context) {
         if (scriptClass == null) {
-            script = new NullScript(context);
-        } else {
-            try {
-                if (Script.class.isAssignableFrom(scriptClass)) {
-                    script = newScript(scriptClass, context);
-                } else {
-                    final GroovyObject object = (GroovyObject) scriptClass.getDeclaredConstructor().newInstance();
-                    // it could just be a class, so let's wrap it in a Script
-                    // wrapper; though the bindings will be ignored
-                    script = new Script(context) {
+            return new NullScript(context);
+        }
+
+        try {
+            Script script;
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                script = newScript(scriptClass, context);
+            } else {
+                try {
+                    Class<?> glBinding = scriptClass.getClassLoader().loadClass(Binding.class.getName());
+                    Constructor<?> contextualConstructor = scriptClass.getDeclaredConstructor(glBinding);
+                    final Object object = contextualConstructor.newInstance(
+                        glBinding.getDeclaredConstructor(Map.class).newInstance(context.getVariables()));
+                    // adapt "new ScriptClass(binding).run()" to Script
+                    script = new Script() {
+                        @Override
                         public Object run() {
-                            Object argsToPass = EMPTY_MAIN_ARGS;
+                            return InvokerHelper.invokeMethod(object, "run", EMPTY_ARGUMENTS);
+                        }
+                    };
+                } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ignore) {
+                    final Object object = scriptClass.getDeclaredConstructor().newInstance();
+                    // adapt "new ScriptClass().main(args)" to Script
+                    script = new Script(context) {
+                        @Override
+                        public Object run() {
+                            Object[] mainArgs = {new String[0]};
                             try {
                                 Object args = getProperty("args");
                                 if (args instanceof String[]) {
-                                    argsToPass = args;
+                                    mainArgs[0] = args;
                                 }
                             } catch (MissingPropertyException e) {
                                 // They'll get empty args since none exist in the context.
                             }
-                            object.invokeMethod(MAIN_METHOD_NAME, argsToPass);
-                            return null;
+                            return InvokerHelper.invokeMethod(object, MAIN_METHOD_NAME, mainArgs);
                         }
                     };
-                    Map variables = context.getVariables();
                     MetaClass mc = getMetaClass(object);
+                    Map variables = context.getVariables();
                     for (Object o : variables.entrySet()) {
                         Map.Entry entry = (Map.Entry) o;
                         String key = entry.getKey().toString();
@@ -466,13 +477,11 @@ public class InvokerHelper {
                         setPropertySafe(key.startsWith("_") ? script : object, mc, key, entry.getValue());
                     }
                 }
-            } catch (Exception e) {
-                throw new GroovyRuntimeException(
-                        "Failed to create Script instance for class: "
-                                + scriptClass + ". Reason: " + e, e);
             }
+            return script;
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e, e);
         }
-        return script;
     }
 
     public static Script newScript(Class<?> scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException {
