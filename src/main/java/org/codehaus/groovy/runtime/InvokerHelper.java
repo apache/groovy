@@ -417,30 +417,45 @@ public class InvokerHelper {
 
     static class NullScript extends Script {
 
-        public NullScript() {
-            this(new Binding());
-        }
         public NullScript(Binding context) {
             super(context);
+        }
+
+        public NullScript() {
+            this(new Binding());
         }
 
         @Override
         public Object run() {
             return null;
         }
-
     }
-    public static Script createScript(Class scriptClass, Binding context) {
-        Script script;
 
+    @SuppressWarnings("unchecked")
+    public static Script createScript(final Class scriptClass, final Binding context) {
         if (scriptClass == null) {
-            script = new NullScript(context);
-        } else {
-            try {
-                if (Script.class.isAssignableFrom(scriptClass)) {
-                    script = newScript(scriptClass, context);
-                } else {
-                    // wrap call "ScriptClass.main(args)" with a Script instance
+            return new NullScript(context);
+        }
+
+        try {
+            Script script;
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                script = newScript(scriptClass, context);
+            } else {
+                try {
+                    Class<?> glBinding = scriptClass.getClassLoader().loadClass(Binding.class.getName());
+                    Constructor<?> contextualConstructor = scriptClass.getDeclaredConstructor(glBinding);
+                    Object binding = glBinding.getDeclaredConstructor(Map.class).newInstance(context.getVariables());
+                    Object scriptx = contextualConstructor.newInstance(binding);
+                    // adapt "new ScriptClass(binding).run()" to Script
+                    script = new Script() {
+                        @Override
+                        public Object run() {
+                            return InvokerHelper.invokeMethod(scriptx, "run", EMPTY_ARGUMENTS);
+                        }
+                    };
+                } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ignore) {
+                    // adapt "ScriptClass.main(args)" to Script
                     script = new Script(context) {
                         @Override
                         public Object run() {
@@ -465,11 +480,11 @@ public class InvokerHelper {
                         }
                     });
                 }
-            } catch (Exception e) {
-                throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e, e);
             }
+            return script;
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e, e);
         }
-        return script;
     }
 
     public static Script newScript(Class<? extends Script> scriptClass, Binding context) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
