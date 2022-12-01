@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -141,7 +142,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (!isClassExpression) {
             if (isConstructorReference) { // TODO: move this check to the parser
-                controller.getSourceUnit().addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
+                addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
             } else if (methodRefMethod.isStatic() && !targetIsArgument) {
                 // "string"::valueOf refers to static method, so instance is superfluous
                 typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
@@ -190,9 +191,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (methodNode == null) {
             String error = String.format("Failed to find the expected method[%s(%s)] in the type[%s]",
                     methodName, Arrays.stream(samParameters).map(e -> e.getType().getText()).collect(joining(",")), targetType.getText());
-            controller.getSourceUnit().addFatalError(error, methodReference);
+            addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
-            controller.getSourceUnit().addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
+            addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
@@ -380,6 +381,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
         return filterMethodsByVisibility(methods, controller.getClassNode());
+    }
+
+    private void addFatalError(final String msg, final ASTNode node) {
+        controller.getSourceUnit().addFatalError(msg, node);
     }
 
     //--------------------------------------------------------------------------

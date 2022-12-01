@@ -30,8 +30,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             } catch (Throwable t) {
                 def newTrace = []
                 def clean = newTrace.toArray(newTrace as StackTraceElement[])
-                // doing twice, because bug showed that the more you call the array coercion, the more the error
-                // gets stupid :
+                // doing twice, because bug showed that the more you call the array coercion, the more the error gets stupid:
                 // Cannot call java.util.List#toArray([Ljava.lang.Object;) with arguments [[Ljava.lang.StackTraceElement; -> [Ljava.lang.StackTraceElement;]
                 // Cannot call java.util.List#toArray([[Ljava.lang.Object;) with arguments [[Ljava.lang.StackTraceElement; -> [Ljava.lang.StackTraceElement;]
                 // Cannot call java.util.List#toArray([[[Ljava.lang.Object;) with arguments [[Ljava.lang.StackTraceElement; -> [Ljava.lang.StackTraceElement;]
@@ -103,10 +102,10 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
         shouldFailWithMessages '''
             Class c = []
-        ''', 'No matching constructor found: java.lang.Class()'
+        ''', 'Cannot find matching constructor java.lang.Class()'
         shouldFailWithMessages '''
             Class c = [:]
-        ''', 'No matching constructor found: java.lang.Class(java.util.LinkedHashMap)'
+        ''', 'Cannot find matching constructor java.lang.Class(java.util.LinkedHashMap)'
     }
 
     // GROOVY-6803

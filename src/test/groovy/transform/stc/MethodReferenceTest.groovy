@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -67,8 +68,8 @@ final class MethodReferenceTest {
             void test() {
                 List<String> list = ['a','bc','def']
                 Function<String,String> self = str -> str // help for toMap
-                def map = list.stream().collect(Collectors.toMap(self, String::length))
-                assert map == [a: 1, bc: 2, 'def': 3]
+                def result = list.stream().collect(Collectors.toMap(self, String::length))
+                assert result == [a: 1, bc: 2, 'def': 3]
             }
 
             test()
@@ -606,7 +607,7 @@ final class MethodReferenceTest {
         assertScript shell, '''
             @CompileStatic
             void test() {
-                Function<String, Integer> f = Integer::new
+                Function<String, Integer> f = Integer::new // deprcated; parseInt/valueOf
                 def result = ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
                 assert result == [1, 2, 3]
             }
@@ -813,7 +814,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @groovy.test.NotYetImplemented
+    @NotYetImplemented
     @Test // class::staticMethod
     void testFunctionCS8() {
         assertScript shell, '''
@@ -838,7 +839,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = ['a', 'ab', 'abc'].stream().map(String::size).collect(Collectors.toList())
-                assert [1, 2, 3] == result
+                assert result == [1, 2, 3]
             }
 
             test()
@@ -864,7 +865,6 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [[a:1], [b:2], [c:3]].stream().map(Object::toString).collect(Collectors.toList())
-                assert result.size() == 3
                 assert result == ['[a:1]', '[b:2]', '[c:3]']
             }
 
@@ -971,6 +971,16 @@ final class MethodReferenceTest {
             void test() {
                 BiConsumer<Script,?> c = Script::print
                 c.accept(this, 'hello world!')
+            }
+
+            test()
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Supplier<String> s = 'x'::toString
+                def result = s.get()
+                assert result == 'x'
             }
 
             test()

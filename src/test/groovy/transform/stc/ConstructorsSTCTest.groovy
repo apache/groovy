@@ -39,7 +39,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             import java.awt.Dimension
             Dimension d = [100]
-        ''', 'No matching constructor found: java.awt.Dimension(int)'
+        ''',
+        'Cannot find matching constructor java.awt.Dimension(int)'
     }
 
     void testWrongNumberOfArgumentsWithDefaultConstructor() {
@@ -49,7 +50,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
               new X("f")
             }
             println foo()
-        ''', 'Cannot find matching method X#<init>(java.lang.String)'
+        ''',
+        'Cannot find matching constructor X(java.lang.String)'
     }
 
     void testCreateArrayWithDefaultConstructor() {
@@ -64,7 +66,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             import java.awt.Dimension
             Dimension d = ['100','200']
-        ''', 'No matching constructor found: java.awt.Dimension(java.lang.String, java.lang.String)'
+        ''',
+        'Cannot find matching constructor java.awt.Dimension(java.lang.String, java.lang.String)'
     }
 
     void testConstructFromListAndVariables() {
@@ -93,7 +96,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             import java.awt.Dimension
             List args = [100,200]
             Dimension d = args // not supported
-        ''', 'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type java.awt.Dimension'
+        ''',
+        'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type java.awt.Dimension'
     }
 
     void testConstructFromMap() {

@@ -1414,7 +1414,7 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType gt = GenericsUtils.buildWildcardType(parameterType);
             if (!gt.isCompatibleWith(argumentType)) {
                 boolean samCoercion = isSAMType(parameterType) && argumentType.equals(CLOSURE_TYPE);
-                if (!samCoercion) return false;
+                if (!samCoercion) return false; // else assume parameters and return checked earlier
             }
         } else if (parameterType.isArray() && argumentType.isArray()) {
             // verify component type

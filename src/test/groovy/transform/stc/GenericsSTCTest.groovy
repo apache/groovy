@@ -4046,13 +4046,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6233
     void testConstructorArgumentsAgainstGenerics() {
         shouldFailWithMessages '''
-            class Foo<T>{  Foo(T a, T b){} }
-            def bar() {
-                Foo<Map> f = new Foo<Map>("a",1)
+            class C<T> {
+                C(T a, T b) {
+                }
             }
-            bar()
+            def c_of_map = new C<Map>("a", 1)
         ''',
-        'Cannot find matching method Foo#<init>(java.lang.String, int)'
+        'Cannot find matching constructor C(java.lang.String, int)'
     }
 
     // GROOVY-5742

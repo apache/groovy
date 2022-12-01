@@ -389,7 +389,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 def foo() { new Main() }
             }
         ''',
-        'Cannot find matching method Main#<init>()'
+        'Cannot find matching constructor Main()'
     }
 
     // GROOVY-8509
@@ -1202,7 +1202,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             new C(*['A','B'])
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot find matching method '
+        'Cannot find matching constructor C(java.lang.String)'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
