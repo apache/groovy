@@ -2408,9 +2408,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             String nameText = nameExpr.getText();
 
             if ("new".equals(nameText)) {
-                ClassNode receiverType = getType(expression.getExpression());
-                if (isClassClassNodeWrappingConcreteType(receiverType)) {
-                    storeType(expression, wrapClosureType(receiverType));
+                ClassNode type = getType(expression.getExpression());
+                if (isClassClassNodeWrappingConcreteType(type)){
+                    type = type.getGenericsTypes()[0].getType();
+                    storeType(expression,wrapClosureType(type));
                 }
                 return;
             }
@@ -2454,7 +2455,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             storeType(expression, closureType);
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
-            } else if (!(expression instanceof MethodReferenceExpression)) {
+            } else if (!(expression instanceof MethodReferenceExpression)
+                    || this.getClass() == StaticTypeCheckingVisitor.class) {
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
                 if (isClassClassNodeWrappingConcreteType(type)) type = type.getGenericsTypes()[0].getType();
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
@@ -3674,13 +3676,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int nParameters = parameters.length;
         if (nParameters > 0) {
             ClassNode firstParamType = dynamicType();
-            // GROOVY-10734: Type::instanceMethod has implied first param
-            List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
-            if (candidates != null && !candidates.isEmpty()) {
-                ClassNode objExpType = getType(methodReference.getExpression());
-                if (isClassClassNodeWrappingConcreteType(objExpType)
-                        && candidates.stream().allMatch(mn -> !mn.isStatic())) {
-                    firstParamType = objExpType.getGenericsTypes()[0].getType();
+            ClassNode sourceExprType = getType(methodReference.getExpression());
+            if (isClassClassNodeWrappingConcreteType(sourceExprType) && !"new".equals(methodReference.getMethodName().getText())) {
+                // GROOVY-10734: Type::instanceMethod has implied first param
+                List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
+                if (candidates != null && !candidates.isEmpty() && candidates.stream().allMatch(mn ->
+                        !(mn instanceof ExtensionMethodNode ? ((ExtensionMethodNode) mn).isStaticExtension() : mn.isStatic()))) {
+                    firstParamType = sourceExprType.getGenericsTypes()[0].getType();
                 }
             }
             parameters = new Parameter[nParameters];
@@ -4560,28 +4562,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode inferSAMTypeGenericsInAssignment(final ClassNode samType, final MethodNode abstractMethod, final ClassNode closureType, final ClosureExpression closureExpression) {
-        // if the sam type or closure type do not provide generics information,
-        // we cannot infer anything, thus we simply return the provided samUsage
-        GenericsType[] samTypeGenerics = samType.getGenericsTypes();
-        GenericsType[] closureGenerics = closureType.getGenericsTypes();
-        if (samTypeGenerics == null || closureGenerics == null) return samType;
-
-        // extract the generics from the return type
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-        extractGenericsConnections(connections, wrapTypeIfNecessary(getInferredReturnType(closureExpression)), abstractMethod.getReturnType());
 
-        // next we get the block parameter types and set the generics
-        // information just like before
-        // TODO: add vargs handling
+        // extract generics from the closure return type
+        ClassNode closureReturnType = isClosureWithType(closureType)
+                ? getCombinedBoundType(closureType.getGenericsTypes()[0])
+                : wrapTypeIfNecessary(getInferredReturnType(closureExpression));
+        extractGenericsConnections(connections, closureReturnType, abstractMethod.getReturnType());
+
+        // extract generics from the closure parameters
         if (closureExpression.isParameterSpecified()) {
             Parameter[] closureParams = closureExpression.getParameters();
-            Parameter[] methodParams = abstractMethod.getParameters();
+            Parameter[]  methodParams =    abstractMethod.getParameters();
             for (int i = 0, n = Math.min(closureParams.length, methodParams.length); i < n; i += 1) {
-                ClassNode closureParamType = closureParams[i].getType();
-                ClassNode methodParamType = methodParams[i].getType();
-                extractGenericsConnections(connections, closureParamType, methodParamType);
+                extractGenericsConnections(connections, closureParams[i].getType(), methodParams[i].getType());
             }
         }
+
         return applyGenericsContext(connections, samType.redirect());
     }
 

@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -603,7 +604,7 @@ final class MethodReferenceTest {
         assertScript shell, '''
             @CompileStatic
             void test() {
-                Function<String, Integer> f = Integer::new
+                Function<String, Integer> f = Integer::new // deprcated; parseInt/valueOf
                 def result = ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
                 assert result == [1, 2, 3]
             }
@@ -725,6 +726,7 @@ final class MethodReferenceTest {
         '''
     }
 
+    @NotYetImplemented
     @Test // class::staticMethod
     void testFunctionCS4() {
         assertScript shell, '''
@@ -810,7 +812,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @groovy.test.NotYetImplemented
+    @NotYetImplemented
     @Test // class::staticMethod
     void testFunctionCS8() {
         assertScript shell, '''
@@ -983,7 +985,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-10742
+    @Test // GROOVY-10742, GROOVY-10858
     void testIncompatibleReturnType() {
         def err = shouldFail shell, '''
             void foo(bar) {
@@ -993,7 +995,15 @@ final class MethodReferenceTest {
                 Function<Object,String> f = this::foo
             }
         '''
-        assert err =~ /Invalid return type: void is not convertible to java.lang.String/
+        assert err =~ /Cannot assign java.util.function.Function<java.lang.Object, java.lang.Void> to: java.util.function.Function<java.lang.Object, java.lang.String>/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            void test() {
+                Function<Object,Number> f = Object::toString
+            }
+        '''
+        assert err =~ /Cannot assign java.util.function.Function<java.lang.Object, java.lang.String> to: java.util.function.Function<java.lang.Object, java.lang.Number>/
     }
 
     @Test // GROOVY-10269
