@@ -189,8 +189,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private void validate(final MethodReferenceExpression methodReference, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
         if (methodNode == null) {
-            String error = String.format("Failed to find the expected method[%s(%s)] in the type[%s]",
-                    methodName, Arrays.stream(samParameters).map(e -> e.getType().getText()).collect(joining(",")), targetType.getText());
+            String error;
+            if (!(methodReference.getExpression() instanceof ClassExpression)) {
+                error = "Failed to find method '%s(%s)'";
+            } else {
+                error = "Failed to find class method '%s(%s)'";
+                if (samParameters.length > 0)
+                    error += " or instance method '%1$s(" + Arrays.stream(samParameters).skip(1).map(e -> e.getType().toString(false)).collect(joining(",")) + ")'";
+            }
+            error = String.format(error + " for the type: %s", methodName, Arrays.stream(samParameters).map(e -> e.getType().toString(false)).collect(joining(",")), targetType.toString(false));
             addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);

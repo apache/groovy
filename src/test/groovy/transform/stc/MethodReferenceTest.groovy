@@ -232,7 +232,7 @@ final class MethodReferenceTest {
             @CompileStatic
             Map test(Collection<C> items) {
                 items.stream().collect(
-                    Collectors.groupingBy(C::getP) // Failed to find the expected method[getP(Object)] in the type[C]
+                    Collectors.groupingBy(C::getP)
                 )
             }
 
@@ -896,7 +896,7 @@ final class MethodReferenceTest {
                 [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
             }
         '''
-        assert err.message.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
+        assert err.message.contains("Failed to find class method 'addx(java.math.BigDecimal,java.math.BigDecimal)' or instance method 'addx(java.math.BigDecimal)' for the type: java.math.BigDecimal")
     }
 
     @Test // GROOVY-9463
@@ -907,7 +907,7 @@ final class MethodReferenceTest {
                 Function<String,String> reference = String::toLowerCaseX
             }
         '''
-        assert err.message.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
+        assert err.message.contains("Failed to find class method 'toLowerCaseX(java.lang.String)' or instance method 'toLowerCaseX()' for the type: java.lang.String")
     }
 
     @Test // GROOVY-10714
@@ -985,6 +985,17 @@ final class MethodReferenceTest {
 
             test()
         '''
+    }
+
+    @Test // GROOVY-10813, GROOVY-10858
+    void testMethodSelection3() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            void test() {
+                Supplier<String> s = Object::toString // all options require an object
+            }
+        '''
+        assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
     }
 
     @Test // GROOVY-10742
