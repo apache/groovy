@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -141,7 +142,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (!isClassExpression) {
             if (isConstructorReference) { // TODO: move this check to the parser
-                controller.getSourceUnit().addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
+                addFatalError("Constructor reference must be TypeName::new", methodReferenceExpression);
             } else if (methodRefMethod.isStatic() && !targetIsArgument) {
                 // "string"::valueOf refers to static method, so instance is superfluous
                 typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
@@ -188,11 +189,18 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private void validate(final MethodReferenceExpression methodReference, final ClassNode targetType, final String methodName, final MethodNode methodNode, final Parameter[] samParameters, final ClassNode samReturnType) {
         if (methodNode == null) {
-            String error = String.format("Failed to find the expected method[%s(%s)] in the type[%s]",
-                    methodName, Arrays.stream(samParameters).map(e -> e.getType().getText()).collect(joining(",")), targetType.getText());
-            controller.getSourceUnit().addFatalError(error, methodReference);
+            String error;
+            if (!(methodReference.getExpression() instanceof ClassExpression)) {
+                error = "Failed to find method '%s(%s)'";
+            } else {
+                error = "Failed to find class method '%s(%s)'";
+                if (samParameters.length > 0)
+                    error += " or instance method '%1$s(" + Arrays.stream(samParameters).skip(1).map(e -> e.getType().toString(false)).collect(joining(",")) + ")'";
+            }
+            error = String.format(error + " for the type: %s", methodName, Arrays.stream(samParameters).map(e -> e.getType().toString(false)).collect(joining(",")), targetType.toString(false));
+            addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
-            controller.getSourceUnit().addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
+            addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
@@ -380,6 +388,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
         return filterMethodsByVisibility(methods, controller.getClassNode());
+    }
+
+    private void addFatalError(final String msg, final ASTNode node) {
+        controller.getSourceUnit().addFatalError(msg, node);
     }
 
     //--------------------------------------------------------------------------

@@ -1801,9 +1801,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (member instanceof PropertyNode) {
             isStatic = ((PropertyNode) member).isStatic();
         } else { // assume member instanceof MethodNode
-            isStatic = member instanceof ExtensionMethodNode ? ((ExtensionMethodNode) member).isStaticExtension() : ((MethodNode) member).isStatic();
+            isStatic = isStaticInContext((MethodNode) member);
         }
         return (isStatic ? member : null);
+    }
+
+    /**
+     * Is the method called in a static or non-static manner?
+     */
+    private boolean isStaticInContext(final MethodNode method) {
+        return method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).isStaticExtension() : method.isStatic();
     }
 
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
@@ -2427,12 +2434,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 candidates = findMethodsWithGenerated(receiverType, nameText);
                 // GROOVY-10741: check for reference to a property node's method
                 MethodNode generated = findPropertyMethod(receiverType, nameText);
-                if (generated != null && candidates.stream().noneMatch(mn -> mn.getName().equals(generated.getName()))){
+                if (generated != null && candidates.stream().noneMatch(m -> m.getName().equals(generated.getName()))) {
                     candidates.add(generated);
                 }
                 candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
-                candidates = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
 
+                if (candidates.size() > 1) {
+                    candidates = filterMethodCandidates(candidates, expression.getExpression(), expression.getNodeMetaData(CLOSURE_ARGUMENTS));
+                }
                 if (!candidates.isEmpty()) {
                     break;
                 }
@@ -2483,6 +2492,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return null;
+    }
+
+    private List<MethodNode> filterMethodCandidates(final List<MethodNode> candidates, final Expression objectOrType, /*@Nullable*/ ClassNode[] signature) {
+        List<MethodNode> result = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
+        // assignment or parameter target type may help reduce the list
+        if (result.size() > 1 && signature != null) {
+            ClassNode type = getType(objectOrType);
+            if (!isClassClassNodeWrappingConcreteType(type)) {
+                result = chooseBestMethod(type, result, signature);
+            } else {
+                type = type.getGenericsTypes()[0].getType(); // Class<Type> --> Type
+                Map<Boolean, List<MethodNode>> staticAndNonStatic = result.stream().collect(Collectors.partitioningBy(this::isStaticInContext));
+
+                result = new ArrayList<>(result.size());
+                result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.TRUE), signature));
+                if (!staticAndNonStatic.get(Boolean.FALSE).isEmpty()) {
+                    if (signature.length > 0) signature= Arrays.copyOfRange(signature, 1, signature.length);
+                    result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.FALSE), signature));
+                }
+            }
+        }
+        return result;
     }
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
@@ -3680,8 +3711,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isClassClassNodeWrappingConcreteType(sourceExprType) && !"new".equals(methodReference.getMethodName().getText())) {
                 // GROOVY-10734: Type::instanceMethod has implied first param
                 List<MethodNode> candidates = methodReference.getNodeMetaData(MethodNode.class);
-                if (candidates != null && !candidates.isEmpty() && candidates.stream().allMatch(mn ->
-                        !(mn instanceof ExtensionMethodNode ? ((ExtensionMethodNode) mn).isStaticExtension() : mn.isStatic()))) {
+                if (candidates != null && !candidates.isEmpty() && candidates.stream().allMatch(mn -> !isStaticInContext(mn))) {
                     firstParamType = sourceExprType.getGenericsTypes()[0].getType();
                 }
             }
