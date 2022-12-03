@@ -1782,34 +1782,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * This method is used to filter search results in which null means "no match",
-     * to filter out illegal access to instance members from a static context.
+     * Filters search result to prevent access to instance members from a static
+     * context.
      * <p>
-     * Return null if the given member is not static, but we want to access in
-     * a static way (staticOnly=true). If we want to access in a non-static way
-     * we always return the member, since then access to static members and
+     * Return null if the given member is not static, but we want to access in a
+     * static way (staticOnly=true). If we want to access in a non-static way we
+     * always return the member, since then access to static members and
      * non-static members is allowed.
+     *
+     * @return {@code member} or null
      */
     @SuppressWarnings("unchecked")
-    private <T> T allowStaticAccessToMember(T member, boolean staticOnly) {
-        if (member == null) return null;
-        if (!staticOnly) return member;
-        boolean isStatic;
-        if (member instanceof Variable) {
-            Variable v = (Variable) member;
-            isStatic = Modifier.isStatic(v.getModifiers());
-        } else if (member instanceof List) {
-            List<MethodNode> list = (List<MethodNode>) member;
-            if (list.size() == 1) {
-                return (T) Collections.singletonList(allowStaticAccessToMember(list.get(0), staticOnly));
+    private <T> T allowStaticAccessToMember(final T member, final boolean staticOnly) {
+        if (member == null || !staticOnly) return member;
+
+        if (member instanceof List) {
+            List<MethodNode> list = new ArrayList<>();
+            for (MethodNode m : (List<MethodNode>) member) {
+                if (allowStaticAccessToMember(m, true) != null) list.add(m);
             }
-            return (T) Collections.emptyList();
-        } else {
-            MethodNode mn = (MethodNode) member;
-            isStatic = mn.isStatic();
+            return (T) list;
         }
-        if (staticOnly && !isStatic) return null;
-        return member;
+
+        boolean isStatic;
+        if (member instanceof FieldNode) {
+            isStatic = ((FieldNode) member).isStatic();
+        } else if (member instanceof PropertyNode) {
+            isStatic = ((PropertyNode) member).isStatic();
+        } else { // assume member instanceof MethodNode
+            isStatic = isStaticInContext((MethodNode) member);
+        }
+        return (isStatic ? member : null);
+    }
+
+    /**
+     * Is the method called in a static or non-static manner?
+     */
+    private boolean isStaticInContext(final MethodNode method) {
+        return method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).isStaticExtension() : method.isStatic();
     }
 
     private void storeWithResolve(ClassNode typeToResolve, ClassNode receiver, ClassNode declaringClass, boolean isStatic, PropertyExpression expressionToStoreOn) {
@@ -2520,9 +2530,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             String nameText = nameExpr.getText();
 
             if ("new".equals(nameText)) {
-                ClassNode receiverType = getType(expression.getExpression());
-                if (isClassClassNodeWrappingConcreteType(receiverType)) {
-                    storeType(expression, wrapClosureType(receiverType));
+                ClassNode type = getType(expression.getExpression());
+                if (isClassClassNodeWrappingConcreteType(type)){
+                    type = type.getGenericsTypes()[0].getType();
+                    storeType(expression,wrapClosureType(type));
                 }
                 return;
             }
@@ -2551,7 +2562,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
                 }
                 candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
-                candidates = filterMethodsByVisibility(candidates);
+
+                if (candidates.size() > 1) {
+                    candidates = filterMethodCandidates(candidates, expression.getExpression(), (ClassNode[]) expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS));
+                }
                 if (!candidates.isEmpty()) {
                     break;
                 }
@@ -2583,7 +2597,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else { // GROOVY-9463
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
                 if (isClassClassNodeWrappingConcreteType(type)) type = type.getGenericsTypes()[0].getType();
-                addStaticTypeError("Cannot find matching method " + type.getText() + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
+                addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
     }
@@ -2612,6 +2626,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return null;
+    }
+
+    private List<MethodNode> filterMethodCandidates(final List<MethodNode> candidates, final Expression objectOrType, /*@Nullable*/ ClassNode[] signature) {
+        List<MethodNode> result = filterMethodsByVisibility(candidates);
+        // assignment or parameter target type may help reduce the list
+        if (result.size() > 1 && signature != null) {
+            ClassNode type = getType(objectOrType);
+            if (!isClassClassNodeWrappingConcreteType(type)) {
+                result = chooseBestMethod(type, result, signature);
+            }/* else {
+                type = type.getGenericsTypes()[0].getType(); // Class<Type> --> Type
+                Map<Boolean, List<MethodNode>> staticAndNonStatic = result.stream().collect(Collectors.partitioningBy(this::isStaticInContext));
+
+                result = new ArrayList<>(result.size());
+                result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.TRUE), signature));
+                if (!staticAndNonStatic.get(Boolean.FALSE).isEmpty()) {
+                    if (signature.length > 0) signature= Arrays.copyOfRange(signature, 1, signature.length);
+                    result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.FALSE), signature));
+                }
+            }*/
+        }
+        return result;
     }
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
