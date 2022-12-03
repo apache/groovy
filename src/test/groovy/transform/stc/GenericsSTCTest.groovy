@@ -781,7 +781,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testReturnTypeInferenceWithMethodGenerics29() {
         String named = 'class Named { String name }'
 
-        for (expr in ['Named.&getName', 'Named::getName', '{Named named -> named.getName()}', '(Named named) -> named.getName()']) {
+        for (expr in ['Named.&getName', '{Named named -> named.getName()}', '(Named named) -> named.getName()']) {
             assertScript named + """
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
                     def type = node.getNodeMetaData(INFERRED_TYPE)
