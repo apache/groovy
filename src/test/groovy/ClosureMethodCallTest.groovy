@@ -18,66 +18,75 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
-class ClosureMethodCallTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ClosureMethodCallTest {
+
+    @Test
     void testCallingClosureWithMultipleArguments() {
         def foo
         def closure = { a, b -> foo = "hello ${a} and ${b}".toString() }
 
-        closure("james", "bob")
+        closure('james', 'bob')
 
-        assert foo == "hello james and bob"
+        assert foo == 'hello james and bob'
 
-        closure.call("sam", "james")
+        closure.call('sam', 'james')
 
-        assert foo == "hello sam and james"
+        assert foo == 'hello sam and james'
     }
 
+    @Test // GROOVY-2266
     void testClosureCallMethodWithObjectArray() {
-        // GROOVY-2266
         def args = [1] as Object[]
         def closure = { x -> x[0] }
         assert closure.call(args) == 1
     }
 
+    @Test
     void testClosureWithStringArrayCastet() {
         def doSomething = { list -> list }
 
-        String[] x = ["hello", "world"]
-        String[] y = ["hello", "world"]
+        String[] x = ['hello', 'world']
+        String[] y = ['hello', 'world']
 
         assert doSomething(x as String[]) == x
         assert doSomething(y) == y
     }
 
+    @Test
     void testClosureAsLocalVar() {
         def local = { Map params -> params.x * params.y }
         assert local(x: 2, y: 3) == 6
     }
 
+    @Test
     void testClosureDirectly() {
         assert { Map params -> params.x * params.y }(x: 2, y: 3) == 6
     }
 
     def attribute
 
+    @Test
     void testClosureAsAttribute() {
         attribute = { Map params -> params.x * params.y }
         assert attribute(x: 2, y: 3) == 6
     }
 
+    @Test
     void testSystemOutPrintlnAsAClosure() {
         def closure = System.out.&println
-        closure("Hello world")
+        closure('Hello world')
     }
 
-    //GROOVY-6819
-    void test() {
+    @Test // GROOVY-6819
+    void testFixForIncompatibleClassChangeError() {
         assertScript '''
             class Foo {
                 static justcallme(Closure block) {
@@ -94,7 +103,7 @@ class ClosureMethodCallTest extends GroovyTestCase {
         '''
     }
 
-    //GROOVY-9140
+    @Test // GROOVY-9140
     void testCorrectErrorForClassInstanceMethodReference() {
         assertScript '''
             class Y {
@@ -104,15 +113,16 @@ class ClosureMethodCallTest extends GroovyTestCase {
             ref = Y.&m
             assert ref(new Y()) == 1
         '''
+
         shouldFail MissingMethodException, '''
             class Y {
                 def m() {1}
             }
 
             ref = Y.&m
-            assert ref(new Y()) == 1
             assert ref() == 1
         '''
+
         shouldFail MissingMethodException, '''
             class Y {
                 def m() {1}
@@ -123,19 +133,19 @@ class ClosureMethodCallTest extends GroovyTestCase {
         '''
     }
 
-    //GROOVY-9397
+    @Test // GROOVY-9397
     void testRespondsToIsThreadSafe() {
-      final Executor executor = Executors.newCachedThreadPool()
-      try {
-        final Closure action = { -> }
-        // ensure that executing the closure and calling respondsTo
-        // concurrently doesn't throw an exception.
-        for (int i = 0; i < 500; ++i) {
-          executor.execute(action)
-          executor.execute(() -> action.respondsTo('test'))
+        final Executor executor = Executors.newCachedThreadPool()
+        try {
+            final Closure action = { -> }
+            // ensure that executing the closure and calling respondsTo
+            // concurrently doesn't throw an exception.
+            for (int i = 0; i < 500; ++i) {
+                executor.execute(action)
+                executor.execute(() -> action.respondsTo('test'))
+            }
+        } finally {
+            executor.shutdownNow();
         }
-      } finally {
-        executor.shutdownNow();
-      }
     }
 }
