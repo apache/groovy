@@ -18,42 +18,47 @@
  */
 package org.apache.groovy.util.concurrent
 
-import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap
 import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 class ManagedIdentityConcurrentMapTest {
     @Test
     void testRemovingEntriesFromMapAfterGC() {
-        def m = new ManagedIdentityConcurrentMap<Object, String>()
-        def k1 = new Object()
-        m.put(k1, "a")
-        def k2 = new Object()
-        m.put(k2, "b")
-        def k3 = new Object()
-        m.put(k3, "c")
+        assertScript '''
+            import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap
 
-        assert 3 == m.size()
+            def m = new ManagedIdentityConcurrentMap<Object, String>()
+            def k1 = new Object()
+            m.put(k1, "a")
+            def k2 = new Object()
+            m.put(k2, "b")
+            def k3 = new Object()
+            m.put(k3, "c")
 
-        // the related entries should be removed after GC happens
-        k1 = null
-        k2 = null
-        k3 = null
+            assert 3 == m.size()
 
-        // finalize via GC, which is hard to predicate though it will happen at last
-        for (int i = 0; i < 20; i++) {
-            System.gc()
+            // the related entries should be removed after GC happens
+            k1 = null
+            k2 = null
+            k3 = null
 
-            if (m.values().size() == 0) {
-                break
+            // finalize via GC, which is hard to predicate though it will happen at last
+            for (int i = 0; i < 20; i++) {
+                System.gc()
+
+                if (m.values().size() == 0) {
+                    break
+                }
+
+                Thread.sleep(100)
             }
 
-            Thread.sleep(100)
-        }
-
-        def k4 = new Object()
-        assert "d" == m.getOrPut(k4, "d")
-        assert "d" == m.getOrPut(k4, "e")
-        assert [k4] == (m.keySet() as List)
-        assert ["d"] == (m.values() as List)
+            def k4 = new Object()
+            assert "d" == m.getOrPut(k4, "d")
+            assert "d" == m.getOrPut(k4, "e")
+            assert [k4] == (m.keySet() as List)
+            assert ["d"] == (m.values() as List)
+        '''
     }
 }
