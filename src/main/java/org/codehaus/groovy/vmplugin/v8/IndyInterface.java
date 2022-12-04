@@ -21,6 +21,7 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.invoke.CallSite;
@@ -292,17 +293,19 @@ public class IndyInterface {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandleWrapper mhw =
-                doWithCallSite(
-                        callSite, arguments,
-                        (cs, receiver) ->
-                                cs.getAndPut(
-                                        receiver.getClass().getName(),
-                                        c -> {
-                                            MethodHandleWrapper fbMhw = fallbackSupplier.get();
-                                            return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
-                                        }
-                                )
-                );
+                bypassCache(arguments)
+                    ? NULL_METHOD_HANDLE_WRAPPER
+                    : doWithCallSite(
+                            callSite, arguments,
+                            (cs, receiver) ->
+                                    cs.getAndPut(
+                                            receiver.getClass().getName(),
+                                            c -> {
+                                                MethodHandleWrapper fbMhw = fallbackSupplier.get();
+                                                return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
+                                            }
+                                    )
+                    );
 
         if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
             mhw = fallbackSupplier.get();
@@ -316,6 +319,11 @@ public class IndyInterface {
         }
 
         return mhw.getCachedMethodHandle().invokeExact(arguments);
+    }
+
+    private static boolean bypassCache(Object[] arguments) {
+        final Object receiver = arguments[0];
+        return null != receiver && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
     }
 
     /**
