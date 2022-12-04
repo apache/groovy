@@ -28,9 +28,9 @@ final class MethodReferenceTest {
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports {
-            normal 'groovy.transform.CompileStatic'
-            normal 'java.util.stream.Collectors'
+            star 'groovy.transform'
             star 'java.util.function'
+            normal 'java.util.stream.Collectors'
         }
     }
 
@@ -94,8 +94,6 @@ final class MethodReferenceTest {
             void test() {
                 [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
             }
-
-            test()
         '''
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
@@ -103,13 +101,11 @@ final class MethodReferenceTest {
     @Test // class::instanceMethod -- GROOVY-9814
     void testFunctionCI5() {
         assertScript shell, '''
-            @CompileStatic
             class One { String id }
 
-            @CompileStatic
             class Two extends One { }
 
-            @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
+            @CompileStatic @Immutable(knownImmutableClasses=[Function])
             class FunctionHolder<T> {
                 Function<T, ?> extractor
 
@@ -957,6 +953,21 @@ final class MethodReferenceTest {
             }
         '''
         assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
+    }
+
+    @Test // GROOVY-10859
+    void testDynamicMethodSelection() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript shell, """
+                $tag
+                void test() {
+                    def result = [[]].stream().flatMap(List::stream).toList()
+                    assert result.isEmpty()
+                }
+
+                test()
+            """
+        }
     }
 
     @Test // GROOVY-10742, GROOVY-10858

@@ -1010,76 +1010,63 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
     }
 
-    private Object invokeMethodClosure(Object object, Object[] arguments) {
-        MethodClosure mc = (MethodClosure) object;
-
-        Object owner = mc.getOwner();
-        String methodName = mc.getMethod();
+    private Object invokeMethodClosure(final MethodClosure object, final Object[] arguments) {
+        Object owner = object.getOwner();
+        String method = object.getMethod();
         boolean ownerIsClass = (owner instanceof Class);
         Class ownerClass = ownerIsClass ? (Class) owner : owner.getClass();
         final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
 
         try {
-            return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
+            return ownerMetaClass.invokeMethod(ownerClass, owner, method, arguments, false, false);
 
-        } catch (MissingMethodExceptionNoStack | InvokerInvocationException | IllegalArgumentException e) {
-            if (ownerIsClass) {
-                if (MethodClosure.NEW.equals(methodName)) { // CONSTRUCTOR REFERENCE
-                    if (!ownerClass.isArray()) {
-                        return ownerMetaClass.invokeConstructor(arguments);
-
-                    } else {
-                        if (arguments.length == 0) {
-                            throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
-                        }
-
-                        int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
-
-                        if (arguments.length > arrayDimension) {
-                            throw new GroovyRuntimeException("The length[" + arguments.length + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
-                        }
-
-                        int[] sizeArray = new int[arguments.length];
-
-                        for (int i = 0, n = sizeArray.length; i < n; i += 1) {
-                            Object argument = arguments[i];
-                            if (argument instanceof Integer) {
-                                sizeArray[i] = (Integer) argument;
-                            } else {
-                                sizeArray[i] = Integer.parseInt(String.valueOf(argument));
-                            }
-                        }
-
-                        Class arrayType = arguments.length == arrayDimension
-                                ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
-                                : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - arguments.length));
-                        return Array.newInstance(arrayType, sizeArray);
-                    }
-                } else if (ownerClass != Class.class) { // not "new"; maybe it's a reference to a Class method
-                    try {
-                        MetaClass cmc = registry.getMetaClass(Class.class);
-                        return cmc.invokeMethod(Class.class, owner, methodName, arguments, false, false);
-
-                    } catch (MissingMethodExceptionNoStack nope) {
-                    }
-                }
-            }
-
-            // METHOD REFERENCE
-            // if the owner is a class and the method closure can be related to some instance method(s),
-            // try to invoke method with adjusted arguments -- first argument is instance of owner type;
-            // otherwise re-throw the exception
-            if (!(ownerIsClass && (Boolean) mc.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS))) {
+        } catch (MissingMethodException | InvokerInvocationException | IllegalArgumentException e) { // TODO: What if method throws IllegalArgumentException?
+            if (!ownerIsClass) {
                 throw e;
             }
+            if (MethodClosure.NEW.equals(method)) {
+              // CONSTRUCTOR REFERENCE
 
-            if (arguments.length < 1 || !ownerClass.isAssignableFrom(arguments[0].getClass())) {
-                return invokeMissingMethod(object, methodName, arguments);
+                if (!ownerClass.isArray())
+                    return ownerMetaClass.invokeConstructor(arguments);
+
+                int nArguments = arguments.length;
+                if (nArguments == 0) {
+                    throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
+                }
+                int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
+                if (arrayDimension < nArguments) {
+                    throw new GroovyRuntimeException("The length[" + nArguments + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
+                }
+                Class elementType = arrayDimension == nArguments
+                        ? ArrayTypeUtils.elementType(ownerClass)
+                        : ArrayTypeUtils.elementType(ownerClass, arrayDimension - nArguments);
+                return Array.newInstance(elementType, Arrays.stream(arguments).mapToInt(argument ->
+                    argument instanceof Integer ? (Integer) argument : Integer.parseInt(String.valueOf(argument))
+                ).toArray());
+            } else {
+              // METHOD REFERENCE
+
+                // if the owner is a class and the method closure can be related to some instance method(s)
+                // try to invoke method with adjusted arguments -- first argument is instance of owner type
+                if (arguments.length > 0 && ownerClass.isAssignableFrom(arguments[0].getClass())
+                        && (Boolean) object.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS)) {
+                    try {
+                        Object newReceiver = arguments[0];
+                        Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+                        return ownerMetaClass.invokeMethod(ownerClass, newReceiver, method, newArguments, false, false);
+                    } catch (MissingMethodException ignore) {}
+                }
+
+                if (ownerClass != Class.class) { // maybe it's a reference to a Class method
+                    try {
+                        MetaClass cmc = registry.getMetaClass(Class.class);
+                        return cmc.invokeMethod(Class.class, owner, method, arguments, false, false);
+                    } catch (MissingMethodException ignore) {}
+                }
+
+                return invokeMissingMethod(object, method, arguments);
             }
-
-            Object newReceiver = arguments[0];
-            Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
-            return ownerMetaClass.invokeMethod(ownerClass, newReceiver, methodName, newArguments, false, false);
         }
     }
 
@@ -1221,7 +1208,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
-                    return this.invokeMethodClosure(object, arguments);
+                    return this.invokeMethodClosure((MethodClosure) object, arguments);
                 } else if (objectClass == CurriedClosure.class) {
                     final CurriedClosure cc = (CurriedClosure) object;
                     // change the arguments for an uncurried call
