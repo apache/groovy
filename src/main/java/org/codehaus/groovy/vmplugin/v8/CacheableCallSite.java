@@ -38,7 +38,7 @@ public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 4);
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
-    private volatile MethodHandleWrapper latestHitMethodHandleWrapper = null;
+    private volatile SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference = null;
     private final AtomicLong fallbackCount = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
@@ -58,30 +58,29 @@ public class CacheableCallSite extends MutableCallSite {
 
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
         MethodHandleWrapper result = null;
+        SoftReference<MethodHandleWrapper> resultSoftReference;
         synchronized (lruCache) {
-            final SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference = lruCache.get(className);
-            if (null != methodHandleWrapperSoftReference) {
-                result = methodHandleWrapperSoftReference.get();
-
-                if (null == result) {
-                    removeAllStaleEntriesOfLruCache();
-                }
+            resultSoftReference = lruCache.get(className);
+            if (null != resultSoftReference) {
+                result = resultSoftReference.get();
+                if (null == result) removeAllStaleEntriesOfLruCache();
             }
 
             if (null == result) {
                 result = valueProvider.provide(className);
-                lruCache.put(className, new SoftReference<>(result));
+                resultSoftReference = new SoftReference<>(result);
+                lruCache.put(className, resultSoftReference);
             }
         }
-        final MethodHandleWrapper lhmh = latestHitMethodHandleWrapper;
+        final SoftReference<MethodHandleWrapper> mhwsr = methodHandleWrapperSoftReference;
+        final MethodHandleWrapper methodHandleWrapper = null == mhwsr ? null : mhwsr.get();
 
-        if (lhmh == result) {
+        if (methodHandleWrapper == result) {
             result.incrementLatestHitCount();
         } else {
             result.resetLatestHitCount();
-            if (null != lhmh) lhmh.resetLatestHitCount();
-
-            latestHitMethodHandleWrapper = result;
+            if (null != methodHandleWrapper) methodHandleWrapper.resetLatestHitCount();
+            methodHandleWrapperSoftReference = resultSoftReference;
         }
 
         return result;
@@ -91,13 +90,9 @@ public class CacheableCallSite extends MutableCallSite {
         synchronized (lruCache) {
             final SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference;
             methodHandleWrapperSoftReference = lruCache.put(name, new SoftReference<>(mhw));
-            if (null == methodHandleWrapperSoftReference) {
-                return null;
-            }
+            if (null == methodHandleWrapperSoftReference) return null;
             final MethodHandleWrapper methodHandleWrapper = methodHandleWrapperSoftReference.get();
-            if (null == methodHandleWrapper) {
-                removeAllStaleEntriesOfLruCache();
-            }
+            if (null == methodHandleWrapper) removeAllStaleEntriesOfLruCache();
             return methodHandleWrapper;
         }
     }
