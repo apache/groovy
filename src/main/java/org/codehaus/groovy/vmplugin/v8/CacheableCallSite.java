@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.ref.SoftReference;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,8 +42,8 @@ public class CacheableCallSite extends MutableCallSite {
     private final AtomicLong fallbackCount = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
-    private final Map<String, MethodHandleWrapper> lruCache =
-            new LinkedHashMap<String, MethodHandleWrapper>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+    private final Map<String, SoftReference<MethodHandleWrapper>> lruCache =
+            new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
                 private static final long serialVersionUID = 7785958879964294463L;
 
                 @Override
@@ -56,9 +57,21 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
-        final MethodHandleWrapper result;
+        MethodHandleWrapper result = null;
         synchronized (lruCache) {
-            result = lruCache.computeIfAbsent(className, valueProvider::provide);
+            final SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference = lruCache.get(className);
+            if (null != methodHandleWrapperSoftReference) {
+                result = methodHandleWrapperSoftReference.get();
+
+                if (null == result) {
+                    removeAllStaleEntriesOfLruCache();
+                }
+            }
+
+            if (null == result) {
+                result = valueProvider.provide(className);
+                lruCache.put(className, new SoftReference<>(result));
+            }
         }
         final MethodHandleWrapper lhmh = latestHitMethodHandleWrapper;
 
@@ -76,8 +89,21 @@ public class CacheableCallSite extends MutableCallSite {
 
     public MethodHandleWrapper put(String name, MethodHandleWrapper mhw) {
         synchronized (lruCache) {
-            return lruCache.put(name, mhw);
+            final SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference;
+            methodHandleWrapperSoftReference = lruCache.put(name, new SoftReference<>(mhw));
+            if (null == methodHandleWrapperSoftReference) {
+                return null;
+            }
+            final MethodHandleWrapper methodHandleWrapper = methodHandleWrapperSoftReference.get();
+            if (null == methodHandleWrapper) {
+                removeAllStaleEntriesOfLruCache();
+            }
+            return methodHandleWrapper;
         }
+    }
+
+    private void removeAllStaleEntriesOfLruCache() {
+        lruCache.values().removeIf(v -> null == v.get());
     }
 
     public long incrementFallbackCount() {
