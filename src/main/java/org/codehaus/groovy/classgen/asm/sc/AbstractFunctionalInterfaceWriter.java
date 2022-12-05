@@ -42,18 +42,16 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE
  * @since 3.0.0
  */
 public interface AbstractFunctionalInterfaceWriter {
-    String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
-    default ClassNode getFunctionalInterfaceType(Expression expression) {
+    default ClassNode getFunctionalInterfaceType(final Expression expression) {
         ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
-
-        if (null == type) {
+        if (type == null) {
             type = expression.getNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE);
         }
         return type;
     }
 
-    default String createMethodDescriptor(MethodNode abstractMethodNode) {
+    default String createMethodDescriptor(final MethodNode abstractMethodNode) {
         return BytecodeHelper.getMethodDescriptor(
                 abstractMethodNode.getReturnType().getTypeClass(),
                 Arrays.stream(abstractMethodNode.getParameters())
@@ -62,7 +60,7 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    default Handle createBootstrapMethod(boolean isInterface, boolean serializable) {
+    default Handle createBootstrapMethod(final boolean isInterface, final boolean serializable) {
         if (serializable) {
             return new Handle(
                     Opcodes.H_INVOKESTATIC,
@@ -82,7 +80,7 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final boolean serializable) {
+    default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final Parameter[] parameters, final boolean serializable) {
         Object[] arguments = !serializable ? new Object[3] : new Object[]{null, null, null, 5, 0};
 
         arguments[0] = Type.getType(abstractMethodDesc);
@@ -95,13 +93,12 @@ public interface AbstractFunctionalInterfaceWriter {
                 methodOwner.isInterface());
 
         arguments[2] = Type.getType(
-                BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(),
-                (Parameter[]) methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)));
+                BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters));
 
         return arguments;
     }
 
-    default ClassNode convertParameterType(ClassNode targetType, ClassNode parameterType, ClassNode inferredType) {
+    default ClassNode convertParameterType(final ClassNode targetType, final ClassNode parameterType, final ClassNode inferredType) {
         if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
         }
@@ -132,14 +129,11 @@ public interface AbstractFunctionalInterfaceWriter {
         return type;
     }
 
-    default Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
+    default Parameter prependParameter(final List<Parameter> parameterList, final String parameterName, final ClassNode parameterType) {
         Parameter parameter = new Parameter(parameterType, parameterName);
-
-        parameter.setOriginType(parameterType);
         parameter.setClosureSharedVariable(false);
-
-        methodParameterList.add(0, parameter);
-
+        parameter.setOriginType(parameterType);
+        parameterList.add(0, parameter);
         return parameter;
     }
 }

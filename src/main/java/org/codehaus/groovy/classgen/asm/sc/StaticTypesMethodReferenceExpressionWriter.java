@@ -138,20 +138,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         String methodDesc = BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(),
                 isClassExpression ? Parameter.EMPTY_ARRAY : new Parameter[]{new Parameter(typeOrTargetRefType, "__METHODREF_EXPR_INSTANCE")});
 
-        methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
-        try {
-            Handle bootstrapMethod = createBootstrapMethod(classNode.isInterface(), false);
-            Object[] bootstrapArgs = createBootstrapMethodArguments(
-                    createMethodDescriptor(abstractMethod),
-                    referenceKind,
-                    methodRefMethod.getDeclaringClass(),
-                    methodRefMethod,
-                    false
-            );
-            controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, methodDesc, bootstrapMethod, bootstrapArgs);
-        } finally {
-            methodRefMethod.removeNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
-        }
+        Handle bootstrapMethod = createBootstrapMethod(classNode.isInterface(), false);
+        Object[] bootstrapArgs = createBootstrapMethodArguments(
+                createMethodDescriptor(abstractMethod),
+                referenceKind,
+                methodRefMethod.getDeclaringClass(),
+                methodRefMethod,
+                parametersWithExactType,
+                false
+        );
+        controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, methodDesc, bootstrapMethod, bootstrapArgs);
 
         if (isClassExpression) {
             controller.getOperandStack().push(functionalInterfaceType);

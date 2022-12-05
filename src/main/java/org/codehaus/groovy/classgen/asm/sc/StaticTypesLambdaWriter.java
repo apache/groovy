@@ -62,7 +62,6 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
@@ -134,7 +133,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 abstractMethod.getName(),
                 createAbstractMethodDesc(functionalInterface.redirect(), lambdaClass),
                 createBootstrapMethod(enclosingClass.isInterface(), expression.isSerializable()),
-                createBootstrapMethodArguments(createMethodDescriptor(abstractMethod), H_INVOKEVIRTUAL, lambdaClass, lambdaMethod, expression.isSerializable())
+                createBootstrapMethodArguments(createMethodDescriptor(abstractMethod), H_INVOKEVIRTUAL, lambdaClass, lambdaMethod, lambdaMethod.getParameters(), expression.isSerializable())
         );
         if (expression.isSerializable()) {
             mv.visitTypeInsn(CHECKCAST, "java/io/Serializable");
@@ -281,6 +280,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
 
+        expression.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
+
         MethodNode doCallMethod = lambdaClass.addMethod(
                 "doCall",
                 ACC_PUBLIC,
@@ -289,15 +290,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 ClassNode.EMPTY_ARRAY,
                 expression.getCode()
         );
-        doCallMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
-        expression.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
         doCallMethod.setSourcePosition(expression);
-
         return doCallMethod;
     }
 
     private Parameter[] createParametersWithExactType(final LambdaExpression expression, final MethodNode abstractMethod) {
-        Parameter[] targetParameters = cloneParams(abstractMethod.getParameters());
+        Parameter[] targetParameters = abstractMethod.getParameters();
         Parameter[] parameters = getParametersSafe(expression);
         for (int i = 0, n = parameters.length; i < n; i += 1) {
             Parameter targetParameter = targetParameters[i];
