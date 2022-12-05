@@ -65,14 +65,15 @@ final class DelegateTransformTest {
 
     @Test // GROOVY-10439
     void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner() {
-        assertScript '''
+        def err = shouldFail '''
             class C extends ArrayList<String> {
                 @Delegate List<Number> numbers // List<String> takes precedence
             }
             new C(numbers:[1,2,3])
         '''
+        assert err =~ /The return type of java.lang.Number remove\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
 
-        def err = shouldFail '''
+        err = shouldFail '''
             class C extends ArrayList<String> {
                 @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
             }

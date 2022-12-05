@@ -68,7 +68,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -133,12 +132,6 @@ public class Java8 implements VMPlugin {
             default:
                 throw new GroovyBugError("unsupported Retention " + value);
         }
-    }
-
-    private static void setMethodDefaultValue(final MethodNode mn, final Method m) {
-        ConstantExpression cExp = new ConstantExpression(m.getDefaultValue());
-        mn.setCode(new ReturnStatement(cExp));
-        mn.setAnnotationDefault(true);
     }
 
     @Override
@@ -415,29 +408,32 @@ public class Java8 implements VMPlugin {
             Class<?> clazz = classNode.getTypeClass();
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
-                ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), ret, classNode, null);
+                ClassNode rt = makeClassNode(compileUnit, f.getGenericType(), f.getType());
+                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, null);
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
             }
             Method[] methods = clazz.getDeclaredMethods();
             for (Method m : methods) {
-                ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
+                ClassNode rt = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
                 Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
-                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
-                mn.setSynthetic(m.isSynthetic());
-                setMethodDefaultValue(mn, m);
+                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), rt, params, exceptions, null);
                 setAnnotationMetaData(m.getAnnotations(), mn);
+                if (m.getDefaultValue() != null) {
+                    mn.setAnnotationDefault(true); // GROOVY-10862
+                    mn.setCode(new ReturnStatement(new ConstantExpression(m.getDefaultValue(), true)));
+                }
                 mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
+                mn.setSynthetic(m.isSynthetic());
                 classNode.addMethod(mn);
             }
-            Constructor[] constructors = clazz.getDeclaredConstructors();
-            for (Constructor ctor : constructors) {
-                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), getConstructorParameterAnnotations(ctor), ctor);
-                ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
-                ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
-                setAnnotationMetaData(ctor.getAnnotations(), cn);
+            Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+            for (Constructor<?> c : constructors) {
+                Parameter[] params = makeParameters(compileUnit, c.getGenericParameterTypes(), c.getParameterTypes(), getConstructorParameterAnnotations(c), c);
+                ClassNode[] exceptions = makeClassNodes(compileUnit, c.getGenericExceptionTypes(), c.getExceptionTypes());
+                ConstructorNode cn = classNode.addConstructor(c.getModifiers(), params, exceptions, null);
+                setAnnotationMetaData(c.getAnnotations(), cn);
             }
 
             Class<?> sc = clazz.getSuperclass();
@@ -640,14 +636,14 @@ public class Java8 implements VMPlugin {
     @Override
     @Deprecated
     @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
-    public <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
+    public <T> T doPrivileged(final java.security.PrivilegedAction<T> action) {
         throw new UnsupportedOperationException("doPrivileged is no longer supported");
     }
 
     @Override
     @Deprecated
     @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
-    public <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException {
+    public <T> T doPrivileged(final java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException {
         throw new UnsupportedOperationException("doPrivileged is no longer supported");
     }
 
@@ -682,7 +678,7 @@ public class Java8 implements VMPlugin {
 
     private Object getInvokeSpecialHandleFallback(final Method method, final Object receiver) {
         if (!method.isAccessible()) {
-            doPrivilegedInternal((PrivilegedAction<Object>) () -> {
+            doPrivilegedInternal(() -> {
                 ReflectionUtils.trySetAccessible(method);
                 return null;
             });
@@ -694,11 +690,11 @@ public class Java8 implements VMPlugin {
             throw new GroovyBugError(e);
         }
     }
+
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivilegedInternal(PrivilegedAction<T> action) {
+    private static <T> T doPrivilegedInternal(final java.security.PrivilegedAction<T> action) {
         return java.security.AccessController.doPrivileged(action);
     }
-
 
     @Override
     public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {

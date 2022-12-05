@@ -55,6 +55,23 @@ final class MethodNodeTest {
         assert result.endsWith('java.lang.String[] foo(int, int[]) from java.lang.Object]')
     }
 
+    @Test // GROOVY-10862
+    void testAnnotationDefault() {
+        MethodNode mn = ClassHelper.OBJECT_TYPE.getMethod('toString')
+
+        assert !mn.hasAnnotationDefault()
+        assert mn.getCode() == null
+
+        mn = ClassHelper.DEPRECATED_TYPE.getMethod('since')
+
+        assert mn.hasAnnotationDefault()
+        assert mn.getCode() != null
+        mn.code.expression.with {
+            assert type == ClassHelper.STRING_TYPE
+            assert value == ''
+        }
+    }
+
     @Test
     void testIsDynamicReturnType1() {
         def methodNode = new MethodNode('foo', 0, ClassHelper.dynamicType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)

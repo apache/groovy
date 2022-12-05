@@ -21,22 +21,18 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test for GROOVY-6085
  */
-class InnerAnnotationStubTest extends StringSourcesStubTestCase {
+final class InnerAnnotationStubTest extends StringSourcesStubTestCase {
 
     Map<String, String> provideSources() {
         [
-                'JacksonAnnotationTest.groovy': '''
-                @JsonSubTypes.Type
+            'JacksonAnnotationTest.groovy': '''
+                @JsonSubTypes.Type(Object)
                 @AnnoWithEnum(AnnoWithEnum.Include.NON_NULL)
-                class JacksonAnnotationTest { }
-
+                class JacksonAnnotationTest {
+                }
             ''',
-
-                'JsonSubTypes.java': '''
-                import java.lang.annotation.ElementType;
-                import java.lang.annotation.Retention;
-                import java.lang.annotation.RetentionPolicy;
-                import java.lang.annotation.Target;
+            'JsonSubTypes.java': '''
+                import java.lang.annotation.*;
 
                 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
                 @Retention(RetentionPolicy.RUNTIME)
@@ -49,18 +45,14 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
                     }
                 }
             ''',
-
-                'AnnoWithEnum.java': '''
-                import java.lang.annotation.ElementType;
-                import java.lang.annotation.Retention;
-                import java.lang.annotation.RetentionPolicy;
-                import java.lang.annotation.Target;
+            'AnnoWithEnum.java': '''
+                import java.lang.annotation.*;
 
                 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
                 @Retention(RetentionPolicy.RUNTIME)
                 public @interface AnnoWithEnum {
                     public Include value() default Include.ALWAYS;
-                    public enum Include {  ALWAYS,  NON_NULL,  NON_EMPTY; }
+                    public enum Include { ALWAYS, NON_NULL, NON_EMPTY; }
                 }
             '''
         ]
@@ -68,7 +60,7 @@ class InnerAnnotationStubTest extends StringSourcesStubTestCase {
 
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('JacksonAnnotationTest')
-        assert stubSource.contains('@JsonSubTypes.Type')
+        assert stubSource.contains('@JsonSubTypes.Type(value=java.lang.Object.class)')
         assert stubSource.contains('@AnnoWithEnum(value=AnnoWithEnum.Include.NON_NULL)')
     }
 }

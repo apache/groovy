@@ -133,12 +133,10 @@ public class AnnotationVisitor {
 
     private boolean checkIfMandatoryAnnotationValuesPassed(final AnnotationNode node) {
         boolean ok = true;
-        ClassNode classNode = node.getClassNode();
-        for (MethodNode mn : classNode.getMethods()) {
-            String methodName = mn.getName();
-            // if the annotation attribute has a default, getCode() returns a ReturnStatement with the default value
-            if (mn.getCode() == null && !node.getMembers().containsKey(methodName)) {
-                addError("No explicit/default value found for annotation attribute '" + methodName + "'", node);
+        for (MethodNode mn : node.getClassNode().getMethods()) {
+            if (!mn.hasAnnotationDefault() && !node.getMembers().containsKey(mn.getName()) && !"dataVariableNames".equals(mn.getName())) {
+                // TODO: https://github.com/spockframework/spock/issues/1549               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                addError("No explicit/default value found for annotation attribute '" + mn.getName() + "'", node);
                 ok = false;
             }
         }
