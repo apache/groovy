@@ -98,7 +98,7 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>]')
+        assert err.contains('Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>)')
     }
 
     void testUpperBoundWithGenericsThroughWrongType2() {
@@ -118,7 +118,7 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>]')
+        assert err.contains('Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>)')
     }
 
     void testUpperBoundWithGenericsThroughWrongType3() {
@@ -138,6 +138,6 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>]')
+        assert err.contains('Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>)')
     }
 }

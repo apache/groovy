@@ -473,7 +473,7 @@ final class Groovy7204 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testCompileStatic6() {
         assertScript shell, '''
             class Repository<T, S extends Serializable> {
