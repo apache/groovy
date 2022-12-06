@@ -3446,7 +3446,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
                 for (Receiver<String> currentReceiver : receivers) {
-                    mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                    mn = findMethod(currentReceiver.getType(), name, args);
                     if (!mn.isEmpty()) {
                         first = mn.get(0); // capture for error string
                         // for "this" in a static context, only static methods are compatible
