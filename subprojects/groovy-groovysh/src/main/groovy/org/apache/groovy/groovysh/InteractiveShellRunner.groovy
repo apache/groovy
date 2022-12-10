@@ -21,6 +21,7 @@ package org.apache.groovy.groovysh
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.CandidateListCompletionHandler
+import jline.console.completer.Completer
 import jline.console.completer.CompletionHandler
 import jline.console.history.FileHistory
 import org.apache.groovy.groovysh.completion.FileNameCompleter
@@ -162,9 +163,9 @@ class CommandsMultiCompleter
         extends AggregateCompleter {
     protected final Logger log = Logger.create(this.class)
 
-    List/*<Completer>*/ list = []
+    List<Completer> list = []
 
-    private boolean dirty = false
+    private boolean dirty
 
     def add(final Command command) {
         assert command

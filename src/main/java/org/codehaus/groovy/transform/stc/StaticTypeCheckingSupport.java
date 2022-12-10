@@ -1777,25 +1777,26 @@ public abstract class StaticTypeCheckingSupport {
         // both have generics
         for (int i = 0, n = usage.length; i < n; i += 1) {
             GenericsType ui = usage[i], di = declaration[i];
-            if (di.isPlaceholder()) {
+            if (di.isPlaceholder()) {     // di like "T"
                 storeGenericsConnection(connections, di.getName(), ui);
-            } else if (di.isWildcard()) {
+            } else if (di.isWildcard()) { // di like "?", "? super T", "? extends T", ...
                 ClassNode lowerBound = di.getLowerBound(), upperBounds[] = di.getUpperBounds();
-                if (ui.isWildcard()) {
+                if (ui.isWildcard()) {    // ui like "?", "? super Type" or "? extends Type"
                     extractGenericsConnections(connections, ui.getLowerBound(), lowerBound);
                     extractGenericsConnections(connections, ui.getUpperBounds(), upperBounds);
                 } else if (!isUnboundedWildcard(di)) {
                     ClassNode boundType = lowerBound != null ? lowerBound : upperBounds[0];
-                    if (boundType.isGenericsPlaceHolder() // GROOVY-9998
-                            && boundType != ui.getType()) { // GROOVY-10765
+                    if (boundType.isGenericsPlaceHolder()) { // di like "? extends/super T"
+                        // 6731,7992,8983,9998,10047,10499,10749,10765,...
+                        ui = new GenericsType(ui.getType()); // erase type
+                        if (lowerBound != null) ui.setWildcard(true); // weak
                         String placeholderName = boundType.getUnresolvedName();
-                        ui = new GenericsType(ui.getType()); ui.setWildcard(true);
                         storeGenericsConnection(connections, placeholderName, ui);
-                    } else { // di like "? super Collection<T>" and ui like "List<Type>"
+                    } else { // di like "? extends Iterable<T>" and ui like "List<Type>"
                         extractGenericsConnections(connections, ui.getType(), boundType);
                     }
                 }
-            } else {
+            } else { // di like "List<T>", "List<Type>", "List<? extends T>", ...
                 extractGenericsConnections(connections, ui.getType(), di.getType());
             }
         }
@@ -1948,10 +1949,11 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType.getType();
     }
 
-    static GenericsType getCombinedGenericsType(GenericsType gt1, GenericsType gt2) {
-        // GROOVY-9998, GROOVY-10499: unpack "?" that is from "? extends T"
-        if (isUnboundedWildcard(gt1)) gt1 = gt1.getType().asGenericsType();
-        if (isUnboundedWildcard(gt2)) gt2 = gt2.getType().asGenericsType();
+    static GenericsType getCombinedGenericsType(final GenericsType gt1, final GenericsType gt2) {
+        // GROOVY-7992, GROOVY-10765: "? super T" for gt1 or gt2?
+        if (isUnboundedWildcard(gt1) != isUnboundedWildcard(gt2))
+            return isUnboundedWildcard(gt2) ? gt1 : gt2;
+        // GROOVY-10315, GROOVY-10317, GROOVY-10339, ...
         ClassNode cn1 = GenericsUtils.makeClassSafe0(CLASS_Type, gt1);
         ClassNode cn2 = GenericsUtils.makeClassSafe0(CLASS_Type, gt2);
         ClassNode lub = lowestUpperBound(cn1, cn2);
