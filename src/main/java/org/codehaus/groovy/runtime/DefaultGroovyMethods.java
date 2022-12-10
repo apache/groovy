@@ -6077,7 +6077,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static byte sum(byte[] self) {
@@ -6089,7 +6089,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static short sum(short[] self) {
@@ -6101,7 +6101,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static int sum(int[] self) {
@@ -6113,7 +6113,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static long sum(long[] self) {
@@ -6125,7 +6125,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static char sum(char[] self) {
@@ -6137,7 +6137,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static float sum(float[] self) {
@@ -6149,7 +6149,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
      *
      * @param self The array of values to add together
-     * @return The sum of all of the items
+     * @return The sum of all the items
      * @since 2.4.2
      */
     public static double sum(double[] self) {
@@ -6221,7 +6221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static byte sum(byte[] self, byte initialValue) {
@@ -6238,7 +6238,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static short sum(short[] self, short initialValue) {
@@ -6255,7 +6255,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static int sum(int[] self, int initialValue) {
@@ -6272,7 +6272,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static long sum(long[] self, long initialValue) {
@@ -6289,7 +6289,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static char sum(char[] self, char initialValue) {
@@ -6306,7 +6306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static float sum(float[] self, float initialValue) {
@@ -6323,7 +6323,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all of the items.
+     * @return The sum of all the items.
      * @since 2.4.2
      */
     public static double sum(double[] self, double initialValue) {
@@ -6774,7 +6774,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of boolean
@@ -6788,7 +6788,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of byte
@@ -6802,7 +6802,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of char
@@ -6816,7 +6816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of double
@@ -6830,7 +6830,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of float
@@ -6844,7 +6844,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of int
@@ -6858,7 +6858,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of long
@@ -6872,7 +6872,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
+     * item in this array, with the given String as a separator between each
      * item.
      *
      * @param self      an array of short
