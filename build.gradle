@@ -85,9 +85,9 @@ dependencies {
     implementation "org.ow2.asm:asm-tree:${versions.asm}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation "me.champeau.openbeans:openbeans:${versions.openbeans}"
-    implementation "com.tunnelvisionlabs:antlr4-runtime:${versions.antlr4}"
+    implementation "me.sunlan:antlr4-runtime:${versions.antlr4}"
 
-    antlr "com.tunnelvisionlabs:antlr4:${versions.antlr4}"
+    antlr "me.sunlan:antlr4:${versions.antlr4}"
 
     loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
 
