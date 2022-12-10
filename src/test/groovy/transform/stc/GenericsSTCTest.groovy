@@ -686,8 +686,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10622
+    // GROOVY-7992
     void testReturnTypeInferenceWithMethodGenerics26() {
+        assertScript '''
+            List<String> strings = ['foo','bar','baz']
+            Comparator<Object> cmp = { o1, o2 -> o1.toString() <=> o2.toString() }
+
+            @groovy.transform.ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.String>'
+            })
+            def result = strings.sort(false, cmp) // List<T> sort(Iterable<T>,boolean,Comparator<? super T>)
+            assert result == ['bar', 'baz', 'foo']
+        '''
+    }
+
+    // GROOVY-10622
+    void testReturnTypeInferenceWithMethodGenerics27() {
         String types = '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<X> {
@@ -720,7 +735,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10637
-    void testReturnTypeInferenceWithMethodGenerics27() {
+    void testReturnTypeInferenceWithMethodGenerics28() {
         assertScript '''
             class Outer extends groovy.transform.stc.MyBean<Inner> {
                 static class Inner {
@@ -737,7 +752,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10646
-    void testReturnTypeInferenceWithMethodGenerics28() {
+    void testReturnTypeInferenceWithMethodGenerics29() {
         String types = '''
             class Model {
             }
@@ -778,7 +793,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10749
-    void testReturnTypeInferenceWithMethodGenerics29() {
+    void testReturnTypeInferenceWithMethodGenerics30() {
         String named = 'class Named { String name }'
 
         for (expr in ['Named.&getName', '{Named named -> named.getName()}', '(Named named) -> named.getName()']) {

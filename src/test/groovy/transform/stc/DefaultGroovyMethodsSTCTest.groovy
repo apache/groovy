@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : default groovy methods.
  */
@@ -240,7 +238,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-7992
+    // GROOVY-7992
     void testMaxWithComparatorAcceptingSuperclass() {
         assertScript '''
             List<Number> numbers = [1,2,3]
