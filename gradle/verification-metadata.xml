@@ -96,6 +96,7 @@
             <trusting group="org.checkerframework" name="checker-qual" version="3.5.0"/>
          </trusted-key>
          <trusted-key id="28118c070cb22a0175a2e8d43d12ca2ac19f3181" group="^com[.]fasterxml[.]jackson($|([.].*))" regex="true"/>
+         <trusted-key id="2b547c530d62b57973f5e8997f5cafc87b6c2a89" group="me.sunlan"/>
          <trusted-key id="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb">
             <trusting group="commons-codec"/>
             <trusting group="commons-io"/>
