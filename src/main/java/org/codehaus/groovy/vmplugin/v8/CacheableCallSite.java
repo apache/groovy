@@ -38,7 +38,7 @@ public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 4);
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
-    private volatile SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference = null;
+    private volatile SoftReference<MethodHandleWrapper> latestHitMethodHandleWrapperSoftReference = null;
     private final AtomicLong fallbackCount = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
@@ -72,7 +72,7 @@ public class CacheableCallSite extends MutableCallSite {
                 lruCache.put(className, resultSoftReference);
             }
         }
-        final SoftReference<MethodHandleWrapper> mhwsr = methodHandleWrapperSoftReference;
+        final SoftReference<MethodHandleWrapper> mhwsr = latestHitMethodHandleWrapperSoftReference;
         final MethodHandleWrapper methodHandleWrapper = null == mhwsr ? null : mhwsr.get();
 
         if (methodHandleWrapper == result) {
@@ -80,7 +80,7 @@ public class CacheableCallSite extends MutableCallSite {
         } else {
             result.resetLatestHitCount();
             if (null != methodHandleWrapper) methodHandleWrapper.resetLatestHitCount();
-            methodHandleWrapperSoftReference = resultSoftReference;
+            latestHitMethodHandleWrapperSoftReference = resultSoftReference;
         }
 
         return result;
