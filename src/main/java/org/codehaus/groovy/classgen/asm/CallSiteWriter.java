@@ -165,58 +165,58 @@ public class CallSiteWriter {
         mv.visitEnd();
     }
 
-    private void generateCreateCallSiteArray() { 
-        List<String> callSiteInitMethods = new LinkedList<String>(); 
-        int index = 0; 
-        int methodIndex = 0; 
-        final int size = callSites.size(); 
-        final int maxArrayInit = 5000; 
+    private void generateCreateCallSiteArray() {
+        List<String> callSiteInitMethods = new LinkedList<String>();
+        int index = 0;
+        int methodIndex = 0;
+        final int size = callSites.size();
+        final int maxArrayInit = 5000;
         // create array initialization methods
-        while (index < size) { 
-            methodIndex++; 
-            String methodName = "$createCallSiteArray_" + methodIndex; 
-            callSiteInitMethods.add(methodName); 
+        while (index < size) {
+            methodIndex++;
+            String methodName = "$createCallSiteArray_" + methodIndex;
+            callSiteInitMethods.add(methodName);
             MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, methodName, "([Ljava/lang/String;)V", null, null);
             controller.setMethodVisitor(mv);
-            mv.visitCode(); 
-            int methodLimit = size; 
+            mv.visitCode();
+            int methodLimit = size;
             // check if the next block is over the max allowed
-            if ((methodLimit - index) > maxArrayInit) { 
-                methodLimit = index + maxArrayInit; 
-            } 
-            for (; index < methodLimit; index++) { 
-                mv.visitVarInsn(ALOAD, 0); 
-                mv.visitLdcInsn(index); 
-                mv.visitLdcInsn(callSites.get(index)); 
-                mv.visitInsn(AASTORE); 
-            } 
-            mv.visitInsn(RETURN); 
-            mv.visitMaxs(2,1); 
-            mv.visitEnd(); 
+            if ((methodLimit - index) > maxArrayInit) {
+                methodLimit = index + maxArrayInit;
+            }
+            for (; index < methodLimit; index++) {
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitLdcInsn(index);
+                mv.visitLdcInsn(callSites.get(index));
+                mv.visitInsn(AASTORE);
+            }
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
         // create base createCallSiteArray method
         MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, CREATE_CSA_METHOD, GET_CALLSITEARRAY_DESC, null, null);
         controller.setMethodVisitor(mv);
-        mv.visitCode(); 
-        mv.visitLdcInsn(size); 
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/String"); 
-        mv.visitVarInsn(ASTORE, 0); 
-        for (String methodName : callSiteInitMethods) { 
+        mv.visitCode();
+        mv.visitLdcInsn(size);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+        mv.visitVarInsn(ASTORE, 0);
+        for (String methodName : callSiteInitMethods) {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), methodName, "([Ljava/lang/String;)V", false);
-        } 
+        }
 
-        mv.visitTypeInsn(NEW, CALLSITE_ARRAY_CLASS); 
-        mv.visitInsn(DUP); 
-        controller.getAcg().visitClassExpression(new ClassExpression(controller.getClassNode())); 
+        mv.visitTypeInsn(NEW, CALLSITE_ARRAY_CLASS);
+        mv.visitInsn(DUP);
+        controller.getAcg().visitClassExpression(new ClassExpression(controller.getClassNode()));
 
         mv.visitVarInsn(ALOAD, 0);
 
         mv.visitMethodInsn(INVOKESPECIAL, CALLSITE_ARRAY_CLASS, "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V", false);
-        mv.visitInsn(ARETURN); 
-        mv.visitMaxs(0,0); 
-        mv.visitEnd(); 
-    } 
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
 
     private int allocateIndex(String name) {
         callSites.add(name);

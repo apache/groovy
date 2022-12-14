@@ -138,7 +138,7 @@ public class VerifyClass extends MatchingTask {
                         mv.visitLabel(null);
                     }
                 }
-                mv.visitMaxs(method.maxStack, method.maxLocals);
+                mv.visitMaxs(0, 0);
             }
         }
         return !failed;

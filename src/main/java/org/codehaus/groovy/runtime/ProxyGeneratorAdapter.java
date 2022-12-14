@@ -125,8 +125,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
     private static final AtomicLong proxyCounter = new AtomicLong();
 
-    private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<>());
-    private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<>());
+    private static final List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<>());
+    private static final List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<>());
     private static final Set<String> GROOVYOBJECT_METHOD_NAMES;
     static {
         Set<String> names = new HashSet<>();
@@ -463,7 +463,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitFieldInsn(GETFIELD, proxyName, "metaClass", "Lgroovy/lang/MetaClass;");
             mv.visitInsn(ARETURN);
-            mv.visitMaxs(2, 1);
+            mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
 
@@ -481,7 +481,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             mv.visitInsn(RETURN);
             Label l2 = new Label();
             mv.visitLabel(l2);
-            mv.visitMaxs(2, 2);
+            mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
     }
@@ -552,7 +552,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHOD_NAMES.contains(name) && !isImplemented(superClass, name, desc)) {
             MethodVisitor mv = super.visitMethod(access & ~ACC_ABSTRACT, name, desc, signature, exceptions);
             mv.visitCode();
-            Type[] args = Type.getArgumentTypes(desc);
             if (emptyBody) {
                 Type returnType = Type.getReturnType(desc);
                 if (returnType == Type.VOID_TYPE) {
@@ -576,7 +575,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
                             mv.visitInsn(ACONST_NULL);
                     }
                     mv.visitInsn(getReturnInsn(returnType));
-                    mv.visitMaxs(2, registerLen(args) + 1);
+                    mv.visitMaxs(0, 0);
                 }
             } else {
                 // for compatibility with the legacy proxy generator, we should throw an UnsupportedOperationException
@@ -585,7 +584,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
                 mv.visitInsn(DUP);
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "()V", false);
                 mv.visitInsn(ATHROW);
-                mv.visitMaxs(2, registerLen(args) + 1);
+                mv.visitMaxs(0, 0);
             }
             mv.visitEnd();
         }
@@ -599,7 +598,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         mv.visitIntInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass));
         mv.visitInsn(ARETURN);
-        mv.visitMaxs(1, 1);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
         return null;
     }
@@ -645,8 +644,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", desc, false);
         mv.visitInsn(RETURN);
-        int max = idx + 1 + (generateDelegateField ? 1 : 0);
-        mv.visitMaxs(max, max);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
         return null;
     }
@@ -703,7 +701,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
         unwrapResult(mv, desc);
-        mv.visitMaxs(size, registerLen(args) + 1);
+        mv.visitMaxs(0, 0);
 
         return mv;
     }
@@ -713,14 +711,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 //        TraceMethodVisitor tmv = new TraceMethodVisitor(mv);
 //        mv = tmv;
         mv.visitCode();
-        int stackSize = 0;
         // method body should be:
         //  this.$delegate$closure$methodName.call(new Object[] { method arguments })
         Type[] args = Type.getArgumentTypes(desc);
         int arrayStore = args.length + 1;
         BytecodeHelper.pushConstant(mv, args.length);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object"); // stack size = 1
-        stackSize = 1;
         int idx = 1;
         for (int i = 0; i < args.length; i++) {
             Type arg = args[i];
@@ -729,7 +725,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             // primitive types must be boxed
             boxPrimitiveType(mv, idx, arg);
             idx += registerLen(arg);
-            stackSize = Math.max(4, 3 + registerLen(arg));
             mv.visitInsn(AASTORE); // store value into array
         }
         mv.visitVarInsn(ASTORE, arrayStore); // store array
@@ -753,10 +748,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         mv.visitVarInsn(ALOAD, arrayStore);
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(this.getClass()), "ensureClosure", "(Ljava/lang/Object;)Lgroovy/lang/Closure;", false);
         mv.visitVarInsn(ALOAD, arrayIndex); // load argument array
-        stackSize++;
         mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "call", "([Ljava/lang/Object;)Ljava/lang/Object;", false); // call closure
         unwrapResult(mv, desc);
-        mv.visitMaxs(stackSize, arrayStore + 1);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
 //        System.out.println("tmv.getText() = " + tmv.getText());
         return null;
