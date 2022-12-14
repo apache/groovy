@@ -38,7 +38,7 @@ class DocCommandTest extends CommandTestSupport {
     void testUrlsForJavaOnlyClass() {
         def command = docCommandWithSendHEADRequestReturnValueOf { !it.host.contains('docs.groovy-lang.org') }
 
-        // no module specified for a class not in java.base
+        // no module specified
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')
         assert urls ==
             [new URL("https://docs.oracle.com/javase/8/docs/api/org/ietf/jgss/GSSContext.html")]
@@ -46,8 +46,8 @@ class DocCommandTest extends CommandTestSupport {
         // explicit module given
         if (isAtLeastJdk('11.0')) {
             urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
-            assert urls ==
-                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
+            assert urls == [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")] ||
+                   urls == [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
         }
     }
 
@@ -59,6 +59,9 @@ class DocCommandTest extends CommandTestSupport {
         if (isAtLeastJdk('11.0')) {
             assert urls ==
                 [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
+               urls ==
+                [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
                  new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
         } else {
             assert urls ==
