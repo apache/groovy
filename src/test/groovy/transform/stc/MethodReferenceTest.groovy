@@ -741,7 +741,7 @@ final class MethodReferenceTest {
         assertScript shell, '''
             @CompileStatic
             void test() {
-                def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
+                def f = Math::abs // No explicit type defined, so it is actually a method closure
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
@@ -845,7 +845,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()
@@ -871,10 +871,10 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
 
                 result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()

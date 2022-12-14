@@ -74,9 +74,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     @Override
     public void writeMethodReferenceExpression(final MethodReferenceExpression methodReferenceExpression) {
-        ClassNode  functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
-        MethodNode abstractMethod = ClassHelper.findSAM(functionalInterfaceType);
-        if (abstractMethod == null || !functionalInterfaceType.isInterface()) {
+        // functional interface target is required for native method reference generation
+        ClassNode  functionalType = methodReferenceExpression.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE);
+        MethodNode abstractMethod = ClassHelper.findSAM(functionalType);
+        if (abstractMethod == null || !functionalType.isInterface()) {
             // generate the default bytecode -- most likely a method closure
             super.writeMethodReferenceExpression(methodReferenceExpression);
             return;
@@ -104,7 +105,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         validate(methodReferenceExpression, typeOrTargetRefType, methodRefName, methodRefMethod, parametersWithExactType,
-                resolveClassNodeGenerics(extractPlaceholders(functionalInterfaceType), null, abstractMethod.getReturnType()));
+                resolveClassNodeGenerics(extractPlaceholders(functionalType), null, abstractMethod.getReturnType()));
 
         if (isExtensionMethod(methodRefMethod)) {
             ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
@@ -162,7 +163,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         String methodName = abstractMethod.getName();
-        String methodDesc = BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(),
+        String methodDesc = BytecodeHelper.getMethodDescriptor(functionalType.redirect(),
                 isClassExpression ? Parameter.EMPTY_ARRAY : new Parameter[]{new Parameter(typeOrTargetRefType, "__METHODREF_EXPR_INSTANCE")});
 
         Handle bootstrapMethod = createBootstrapMethod(classNode.isInterface(), false);
@@ -177,9 +178,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         controller.getMethodVisitor().visitInvokeDynamicInsn(methodName, methodDesc, bootstrapMethod, bootstrapArgs);
 
         if (isClassExpression) {
-            controller.getOperandStack().push(functionalInterfaceType);
+            controller.getOperandStack().push(functionalType);
         } else {
-            controller.getOperandStack().replace(functionalInterfaceType, 1);
+            controller.getOperandStack().replace(functionalType, 1);
         }
     }
 

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -41,7 +42,6 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -56,7 +56,6 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZEDLAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -65,6 +64,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -86,8 +87,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
 
-    private final StaticTypesClosureWriter staticTypesClosureWriter;
     private final Map<Expression, ClassNode> lambdaClassNodes = new HashMap<>();
+    private final StaticTypesClosureWriter staticTypesClosureWriter;
 
     public StaticTypesLambdaWriter(final WriterController controller) {
         super(controller);
@@ -96,19 +97,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     @Override
     public void writeLambda(final LambdaExpression expression) {
-        ClassNode functionalInterface = getFunctionalInterfaceType(expression);
-        if (functionalInterface == null || !functionalInterface.isInterface()) {
+        // functional interface target is required for native lambda generation
+        ClassNode  functionalType = expression.getNodeMetaData(PARAMETER_TYPE);
+        MethodNode abstractMethod = ClassHelper.findSAM(functionalType);
+        if (abstractMethod == null || !functionalType.isInterface()) {
+            // generate bytecode for closure
             super.writeLambda(expression);
             return;
         }
 
-        MethodNode abstractMethod = findSAM(functionalInterface.redirect());
-        if (abstractMethod == null) {
-            super.writeLambda(expression);
-            return;
-        }
-
-        if (!expression.isSerializable() && functionalInterface.implementsInterface(SERIALIZABLE_TYPE)) {
+        if (!expression.isSerializable() && functionalType.implementsInterface(SERIALIZABLE_TYPE)) {
             expression.setSerializable(true);
         }
 
@@ -130,7 +128,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitInvokeDynamicInsn(
                 abstractMethod.getName(),
-                createAbstractMethodDesc(functionalInterface.redirect(), lambdaClass),
+                createAbstractMethodDesc(functionalType.redirect(), lambdaClass),
                 createBootstrapMethod(enclosingClass.isInterface(), expression.isSerializable()),
                 createBootstrapMethodArguments(createMethodDescriptor(abstractMethod), H_INVOKEVIRTUAL, lambdaClass, lambdaMethod, lambdaMethod.getParameters(), expression.isSerializable())
         );
@@ -138,8 +136,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             mv.visitTypeInsn(CHECKCAST, "java/io/Serializable");
         }
 
-        OperandStack operandStack = controller.getOperandStack();
-        operandStack.replace(functionalInterface.redirect(), 1);
+        controller.getOperandStack().replace(functionalType.redirect(), 1);
     }
 
     private static Parameter[] createDeserializeLambdaMethodParams() {
@@ -295,7 +292,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         for (int i = 0, n = parameters.length; i < n; i += 1) {
             Parameter targetParameter = targetParameters[i];
             Parameter parameter = parameters[i];
-            ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            ClassNode inferredType = parameter.getNodeMetaData(INFERRED_TYPE);
             if (inferredType != null) {
                 ClassNode type = convertParameterType(targetParameter.getType(), parameter.getType(), inferredType);
                 parameter.setOriginType(type);

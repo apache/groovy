@@ -78,8 +78,8 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIS
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.DADD;
 import static org.objectweb.asm.Opcodes.DCONST_1;
@@ -201,9 +201,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             }
         } else {
             Expression rightExpression = expression.getRightExpression();
-            if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
-                rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
-            }
+            if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)
+                rightExpression.getNodeMetaData(PARAMETER_TYPE, x -> leftExpression.getNodeMetaData(INFERRED_TYPE));
         }
         // GROOVY-5620: spread-safe operator on LHS is not supported
         if (leftExpression instanceof PropertyExpression

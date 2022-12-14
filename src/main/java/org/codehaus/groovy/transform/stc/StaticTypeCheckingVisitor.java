@@ -320,6 +320,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLU
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
@@ -984,6 +985,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 LambdaExpression lambda = constructLambdaExpressionForMethodReference(target, (MethodReferenceExpression) source);
 
                 inferParameterAndReturnTypesOfClosureOnRHS(target, lambda);
+                source.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                 source.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambda.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
             }
         }
@@ -1016,6 +1018,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("Wrong number of parameters for method target " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
         }
 
+        rhsExpression.putNodeMetaData(PARAMETER_TYPE, lhsType);
         storeInferredReturnType(rhsExpression, typeInfo.getV2());
     }
 
@@ -2816,9 +2819,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitClosures == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
+                ClassNode targetType = null;
                 if (visitClosures && nthParameter != -1) { // GROOVY-10636: vargs call
                     Parameter target = parameters[Math.min(i, nthParameter)];
-                    ClassNode targetType = target.getType();
+                    targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
                         targetType = targetType.getComponentType();
 
@@ -2846,6 +2850,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
+
+                MethodNode sam = findSAM(targetType);
+                if (sam != null) {
+                    Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, selectedMethod, arguments);
+                    targetType = applyGenericsContext(context, targetType);
+                    expression.putNodeMetaData(PARAMETER_TYPE, targetType);
+                }
             }
             if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
                 checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);

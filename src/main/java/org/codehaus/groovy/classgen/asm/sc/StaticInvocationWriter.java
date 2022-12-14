@@ -35,7 +35,9 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -515,10 +517,13 @@ public class StaticInvocationWriter extends InvocationWriter {
         return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(parameterType));
     }
 
-    private void visitArgument(final Expression argumentExpr, final ClassNode parameterType) {
-        argumentExpr.putNodeMetaData(StaticTypesMarker.PARAMETER_TYPE, parameterType);
-        argumentExpr.visit(controller.getAcg());
-        if (!isNullConstant(argumentExpr)) {
+    private void visitArgument(final Expression argument, final ClassNode parameterType) {
+        if (argument instanceof LambdaExpression || argument instanceof MethodReferenceExpression) {
+            // ensure target type available to the argument expression's bytecode generator
+            argument.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE, x -> parameterType);
+        }
+        argument.visit(controller.getAcg());
+        if (!isNullConstant(argument)) {
             controller.getOperandStack().doGroovyCast(parameterType);
         }
     }
