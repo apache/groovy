@@ -2299,10 +2299,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void despreadList(final List<Expression> expressions, final boolean wrap) {
-        List<Expression> spreadIndexes = new ArrayList<>();
-        List<Expression> spreadExpressions = new ArrayList<>();
-        List<Expression> normalArguments = new ArrayList<>();
-        for (int i = 0, n = expressions.size(); i < n; i += 1) {
+        final int expressionCnt = expressions.size();
+        List<Expression> spreadIndexes = new ArrayList<>(expressionCnt);
+        List<Expression> spreadExpressions = new ArrayList<>(expressionCnt);
+        List<Expression> normalArguments = new ArrayList<>(expressionCnt);
+
+        for (int i = 0; i < expressionCnt; i += 1) {
             Expression expr = expressions.get(i);
             if (!(expr instanceof SpreadExpression)) {
                 normalArguments.add(expr);
