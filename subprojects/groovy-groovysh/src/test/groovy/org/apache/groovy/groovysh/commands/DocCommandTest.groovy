@@ -43,8 +43,8 @@ class DocCommandTest extends CommandTestSupport {
 
         // explicit module given
         urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
-        assert urls ==
-            [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
+        assert urls == [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")] ||
+               urls == [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
     }
 
     void testUrlsForJavaClass() {
@@ -54,6 +54,9 @@ class DocCommandTest extends CommandTestSupport {
 
         assert urls ==
                 [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
+               urls ==
+                [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
                  new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
     }
 
