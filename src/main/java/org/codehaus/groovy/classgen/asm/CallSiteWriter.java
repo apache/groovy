@@ -191,7 +191,7 @@ public class CallSiteWriter {
                 mv.visitInsn(AASTORE);
             }
             mv.visitInsn(RETURN);
-            mv.visitMaxs(2,1);
+            mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
         // create base createCallSiteArray method
@@ -214,7 +214,7 @@ public class CallSiteWriter {
 
         mv.visitMethodInsn(INVOKESPECIAL, CALLSITE_ARRAY_CLASS, "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V", false);
         mv.visitInsn(ARETURN);
-        mv.visitMaxs(0,0);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
 

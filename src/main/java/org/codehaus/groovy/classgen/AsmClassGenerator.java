@@ -1514,7 +1514,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitFieldInsn(PUTSTATIC,controller.getInternalClassName(),staticFieldName,"Ljava/lang/Class;");
             mv.visitLabel(l0);
             mv.visitInsn(ARETURN);
-            mv.visitMaxs(0,0);
+            mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
 
@@ -1536,7 +1536,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V", false);
         mv.visitInsn(ATHROW);
         mv.visitTryCatchBlock(l0, l2, l2, "java/lang/ClassNotFoundException"); // br using l2 as the 2nd param seems create the right table entry
-        mv.visitMaxs(3, 2);
+        mv.visitMaxs(0, 0);
     }
 
     @Override
@@ -1956,7 +1956,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     }
                     operandStack.remove(methodBlockSize);
                     mv.visitInsn(RETURN);
-                    mv.visitMaxs(0,0);
+                    mv.visitMaxs(0, 0);
                     mv.visitEnd();
                 }
                 mv = oldMv;
