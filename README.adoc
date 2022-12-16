@@ -31,6 +31,7 @@ The Groovy development team
 :github-ci: https://github.com/apache/groovy/actions?query=branch%3Amaster
 :sonarcloud: https://sonarcloud.io/dashboard?id=apache_groovy
 :jdk: https://www.oracle.com/technetwork/java/javase/downloads
+:codecov: https://codecov.io/gh/apache/groovy
 //:bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
 //:bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
 :apache-license-icon: https://img.shields.io/badge/license-APL2-blue.svg
@@ -38,6 +39,7 @@ The Groovy development team
 :apache-groovy-twitter-icon: https://img.shields.io/twitter/follow/ApacheGroovy.svg?style=social
 :apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
 :jdk-icon: https://img.shields.io/badge/java-11+-4c7e9f.svg
+:codecov-icon: https://codecov.io/gh/apache/groovy/branch/master/graph/badge.svg
 //:bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
 :opencollective-link: https://opencollective.com/friends-of-groovy
 :sponsors-silver-img: https://opencollective.com/friends-of-groovy/tiers/silver-sponsor.svg?avatarHeight=45&width=890
@@ -45,14 +47,16 @@ The Groovy development team
 :backers-monthly-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?avatarHeight=36&width=890
 :backers-all-img: https://opencollective.com/friends-of-groovy/backers.svg?avatarHeight=32&width=890
 
+
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
 image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
 image:{build-icon}[teamcity build status, link={groovy-ci}]
 image:{github-build-icon}[github build status, link={github-ci}]
-image:{sonarcloud-icon}[maintainability rating, link={sonarcloud}]
-//image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
+image:{codecov-icon}[codecov, link={codecov}]
+// image:{sonarcloud-icon}[maintainability rating, link={sonarcloud}]
+// image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
 image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
 
 {groovy-www}[Groovy] is a powerful multi-faceted programming language for the JVM platform.

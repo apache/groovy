@@ -1,0 +1,57 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Build and test for coverage
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+        java: [17]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Free disk space
+        run: |
+          echo "Removing large unused packages"
+          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable google-chrome-stable powershell mono-devel >/dev/null 2>&1
+          sudo apt-get autoclean -y >/dev/null 2>&1
+          sudo apt-get clean -y >/dev/null 2>&1
+          sudo apt-get autoremove -y >/dev/null 2>&1
+
+          echo "Removing large unused files/directories"
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /usr/local/lib/node_modules /usr/local/share/powershell /usr/local/share/chromium
+          sudo rm -rf /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" /usr/local/graalvm /usr/local/.ghcup
+
+          sudo df -h
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          check-latest: true
+      - uses: gradle/gradle-build-action@v2
+      - name: Test with Gradle
+        run: ./gradlew -Pcoverage=true jacocoAllReport
+        timeout-minutes: 60
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
