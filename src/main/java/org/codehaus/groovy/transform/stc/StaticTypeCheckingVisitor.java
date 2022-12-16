@@ -2470,13 +2470,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
 
-                // GROOVY-10734: Type::instanceMethod has implied first parameter type
                 ClassNode[] arguments = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                if (asBoolean(arguments) && !isStaticInContext(candidates.get(0))
-                        &&  expression.getExpression() instanceof ClassExpression
-                        && (receiverType.isDerivedFrom(arguments[0])
-                            || receiverType.implementsInterface(arguments[0]))) {
-                    arguments[0] = receiverType;
+                if (arguments != null && arguments.length > 0) {
+                    ClassNode[] parameters = collateMethodReferenceParameterTypes(expression, candidates.get(0));
+                    for (int i = 0; i < arguments.length; i += 1) {
+                        ClassNode at = arguments[i], pt = parameters[Math.min(i, parameters.length - 1)];
+                        if (!pt.equals(at) && (at.isInterface() ? pt.implementsInterface(at) : pt.isDerivedFrom(at)))
+                            arguments[i] = parameters[i]; // GROOVY-10734, GROOVY-10807: method refines expected type
+                    }
                 }
             } else if (!(expression instanceof MethodReferenceExpression)
                     || this.getClass() == StaticTypeCheckingVisitor.class) {

@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -805,8 +804,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @NotYetImplemented
-    @Test // class::staticMethod
+    @Test // class::staticMethod -- GROOVY-10807
     void testFunctionCS8() {
         assertScript shell, '''
             @CompileStatic
