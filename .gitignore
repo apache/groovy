@@ -23,3 +23,5 @@ out/
 .project
 bin/
 .jqwik-database
+
+.muse
