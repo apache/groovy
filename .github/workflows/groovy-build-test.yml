@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-20.04]
         java: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     runs-on: ${{ matrix.os }}
     steps:
