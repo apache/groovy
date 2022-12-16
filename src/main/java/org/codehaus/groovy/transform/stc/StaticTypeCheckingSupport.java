@@ -1495,7 +1495,7 @@ public abstract class StaticTypeCheckingSupport {
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
         // thus for each argument, we try to find the connected generics first
-        Map<GenericsTypeName, GenericsType> connections = new LinkedHashMap<>();
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
         extractGenericsConnections(connections, wrappedArgument, type);
 
         // each new connection must comply with previous connections

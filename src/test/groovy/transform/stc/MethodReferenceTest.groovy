@@ -643,14 +643,14 @@ final class MethodReferenceTest {
             }
             @CompileStatic
             class X extends A {
-              public X() {
-                super(Y::new)
-              }
-              private static class Y extends B {
-                Y(A a) {
-                  super(a)
+                public X() {
+                    super(Y::new)
                 }
-              }
+                private static class Y extends B {
+                    Y(A a) {
+                      super(a)
+                    }
+                }
             }
 
             new X()
@@ -970,7 +970,7 @@ final class MethodReferenceTest {
         }
     }
 
-    @Test // GROOVY-10742, GROOVY-10858
+    @Test // GROOVY-10742
     void testIncompatibleReturnType() {
         def err = shouldFail shell, '''
             void foo(bar) {
@@ -980,15 +980,7 @@ final class MethodReferenceTest {
                 Function<Object,String> f = this::foo
             }
         '''
-        assert err =~ /Cannot assign java.util.function.Function<java.lang.Object, java.lang.Void> to: java.util.function.Function<java.lang.Object, java.lang.String>/
-
-        err = shouldFail shell, '''
-            @CompileStatic
-            void test() {
-                Function<Object,Number> f = Object::toString
-            }
-        '''
-        assert err =~ /Cannot assign java.util.function.Function<java.lang.Object, java.lang.String> to: java.util.function.Function<java.lang.Object, java.lang.Number>/
+        assert err =~ /Invalid return type: void is not convertible to java.lang.String/
     }
 
     @Test // GROOVY-10269

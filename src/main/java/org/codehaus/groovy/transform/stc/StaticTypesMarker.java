@@ -30,9 +30,9 @@ public enum StaticTypesMarker {
     DECLARATION_INFERRED_TYPE,
     /** used to store inferred return type for methods and closures */
     INFERRED_RETURN_TYPE,
-    /** used to store closure argument types on a variable expression */
+    /** used to store expected closure argument types on an expression */
     CLOSURE_ARGUMENTS,
-    /** used to tell that a property expression refers to a readonly property */
+    /** used to tell that a property expression refers to a read-only property */
     READONLY_PROPERTY,
     /** used to store the default expression for a parameter */
     INITIAL_EXPRESSION,
@@ -52,12 +52,8 @@ public enum StaticTypesMarker {
     DYNAMIC_RESOLUTION,
     /** used to store the list of MOP methods that still have to be generated */
     SUPER_MOP_METHOD_REQUIRED,
-    /** used to store the parameter type information of method invocation on an expression */
+    /** used to store the parameter type of method invocation on an expression */
     PARAMETER_TYPE,
-    /** used to store the function interface type information on an expression */
-    INFERRED_FUNCTIONAL_INTERFACE_TYPE,
-    /** used to store the constructed lambda expression for method reference and constructor reference */
-    CONSTRUCTED_LAMBDA_EXPRESSION,
     /** used to store the condition expression type of the switch-case statement */
     SWITCH_CONDITION_EXPRESSION_TYPE,
     /** used to store the result of {@link StaticTypeCheckingVisitor#getType} */

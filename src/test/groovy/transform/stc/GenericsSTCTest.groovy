@@ -302,7 +302,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert result == [ 42 ]
         '''
 
-        ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
+        for (cast in ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }']) {
             assertScript """
                 Set<Number> f() {
                     Collections.<Number>singleton(42)
@@ -458,7 +458,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8409
     void testReturnTypeInferenceWithMethodGenerics14() {
-        ['R', 'S', 'T', 'U'].each { t -> // BiFunction uses R, T and U
+        for (t in ['R', 'S', 'T', 'U']) { // BiFunction uses R, T and U
             assertScript """
                 def <$t> $t applyFunction(java.util.function.BiFunction<Date, URL, $t> action) {
                     $t result = action.apply(new Date(), new URL('https://www.example.com'))
@@ -874,7 +874,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6232
     void testDiamondInferrenceFromConstructor5() {
-        ['"a",new Object()', 'new Object(),"b"', '"a","b"'].each { args ->
+        for (args in ['"a",new Object()', 'new Object(),"b"', '"a","b"']) {
             assertScript """
                 class C<T> {
                     C(T x, T y) {
@@ -1402,9 +1402,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10368
     void testDiamondInferrenceFromConstructor25() {
-        ['T', 'T extends Number', 'T extends Object'].each {
+        for (t in ['T', 'T extends Number', 'T extends Object']) {
             assertScript """
-                class C<$it> {
+                class C<$t> {
                     C(p) {
                     }
                 }
@@ -1564,7 +1564,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 def type = node.getNodeMetaData(INFERRED_TYPE)
                 assert type.toString(false) == 'C<java.lang.String>'
             })
-            def y = new C<>((String s) -> { print(s); }) // error: Expected type Object for lambda parameter: s
+            def y = new C<>((String s) -> { print(s) }) // error: Expected type Object for lambda parameter: s
         '''
 
         assertScript '''import java.util.function.Supplier
@@ -2265,7 +2265,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8961, GROOVY-9915
     void testShouldUseMethodGenericType3() {
-        ['', 'static'].each { mods ->
+        for (mods in ['', 'static']) {
             assertScript """
                 $mods void setX(List<String> strings) {
                 }
@@ -2304,7 +2304,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-9734, GROOVY-9915
     void testShouldUseMethodGenericType4() {
-        ['', 'static'].each { mods ->
+        for (mods in ['', 'static']) {
             assertScript """
                 $mods void m(List<String> strings) {
                 }
@@ -2392,7 +2392,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert opt.get() == 42
         '''
         // same as above but with separate type parameter name for each location
-        ['D.&wrap', 'Collections.&singleton', '{x -> [x].toSet()}', '{Collections.singleton(it)}'].each { toSet ->
+        for (toSet in ['D.&wrap', 'Collections.&singleton', '{x -> [x].toSet()}', '{Collections.singleton(it)}']) {
             assertScript """
                 abstract class A<I,O> {
                     abstract O apply(I input)
@@ -3158,7 +3158,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10482
     void testCompatibleArgumentsForPlaceholders6() {
-        ['', 'def', 'public', 'static', '@Deprecated'].each {
+        for (it in ['', 'def', 'public', 'static', '@Deprecated']) {
             assertScript """
                 class Foo<X> {
                     Foo(X x) {
@@ -3176,7 +3176,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10499
     void testCompatibleArgumentsForPlaceholders7() {
-        ['?', 'Y', '? extends Y'].each {
+        for (it in ['?', 'Y', '? extends Y']) {
             assertScript """
                 class Foo<X> {
                     Foo(X x) {
@@ -3247,14 +3247,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10153
     void testCompatibleArgumentsForPlaceholders11() {
-        ['A', 'B', 'C'].each { T ->
+        for (t in ['A', 'B', 'C']) {
             assertScript """
                 class A {}
                 class B extends A {}
                 class C extends B {}
                 class Foo<T extends A> {}
 
-                Foo<? super C> foo = new Foo<$T>()
+                Foo<? super C> foo = new Foo<$t>()
                 //  ^ lower bound is C (explicit); upper bound is A (implicit)
             """
         }
@@ -3268,7 +3268,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '#test(int, java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
-    @NotYetImplemented // GROOVY-7720
+    // GROOVY-7720
+    @NotYetImplemented
     void testIncompatibleArgumentsForPlaceholders2() {
         shouldFailWithMessages '''
             class Consumer<T> {
@@ -3803,7 +3804,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5893
     void testPlusInClosure() {
-        ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable'].each { type ->
+        for (type in ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable']) {
             assertScript """
                 List<Integer> list = [1, 2, 3]
 
@@ -4621,7 +4622,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testContravariantMethodResolutionWithImplicitCoercion2() {
-        ['public', 'static'].each { modifier ->
+        for (modifier in ['public', 'static']) {
             assertScript """
                 $modifier <I, O> void transform(java.util.function.Function<? super I, ? extends O> function) {
                     function.apply('')
@@ -4868,7 +4869,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9821
-        ['.', '?.', '*.'].each { op ->
+        for (op in ['.', '?.', '*.']) {
             File parentDir = File.createTempDir()
             config.with {
                 targetDirectory = File.createTempDir()
@@ -5043,7 +5044,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10556
     void testSelfReferentialTypeParameter3() {
-        ['(B) this', 'this as B'].each { self ->
+        for (self in ['(B) this', 'this as B']) {
             assertScript """
                 abstract class A<B extends A<B,X>,X> {
                     B m() {
