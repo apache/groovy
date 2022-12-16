@@ -224,9 +224,7 @@ final class MethodReferenceTest {
 
             @CompileStatic
             Map test(Collection<C> items) {
-                items.stream().collect(
-                    Collectors.<C,String>groupingBy(C::getP)
-                )
+                items.stream().collect(Collectors.groupingBy(C::getP))
             }
 
             def map = test([new C(p:'foo'), new C(p:'bar'), new C(p:'foo')])

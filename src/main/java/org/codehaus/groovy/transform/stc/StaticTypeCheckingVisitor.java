@@ -2469,6 +2469,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             storeType(expression, closureType);
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
+
+                // GROOVY-10734: Type::instanceMethod has implied first parameter type
+                ClassNode[] arguments = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+                if (asBoolean(arguments) && !isStaticInContext(candidates.get(0))
+                        &&  expression.getExpression() instanceof ClassExpression
+                        && (receiverType.isDerivedFrom(arguments[0])
+                            || receiverType.implementsInterface(arguments[0]))) {
+                    arguments[0] = receiverType;
+                }
             } else if (!(expression instanceof MethodReferenceExpression)
                     || this.getClass() == StaticTypeCheckingVisitor.class) {
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
@@ -5336,6 +5345,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             // parameters and return type correspond to the SAM's
                             for (int j = 0; j < p.length && j < q.length; j += 1) {
                                 if (!isDynamicTyped(p[j]))
+                                    // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
                                     extractGenericsConnections(connections, wrapTypeIfNecessary(p[j]), q[j]);
                             }
                             extractGenericsConnections(connections, returnType, samParamsAndReturnType.getV2());
