@@ -921,8 +921,11 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    static int getPrimitiveDistance(ClassNode primA, ClassNode primB) {
-        return Math.abs(NUMBER_TYPES.get(primA) - NUMBER_TYPES.get(primB));
+    private static final Integer NON_NUMBER_DEFAULT = 9; // GROOVY-10869: boolean, char, ...
+
+    static int getPrimitiveDistance(final ClassNode primA, final ClassNode primB) {
+        return Math.abs(NUMBER_TYPES.getOrDefault(primA, NON_NUMBER_DEFAULT)
+                      - NUMBER_TYPES.getOrDefault(primB, NON_NUMBER_DEFAULT));
     }
 
     static int getDistance(final ClassNode receiver, final ClassNode compare) {
@@ -1524,7 +1527,7 @@ public abstract class StaticTypeCheckingSupport {
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
         // thus for each argument, we try to find the connected generics first
-        Map<GenericsTypeName, GenericsType> connections = new LinkedHashMap<>();
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
         extractGenericsConnections(connections, wrappedArgument, type);
 
         // each new connection must comply with previous connections

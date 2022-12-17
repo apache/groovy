@@ -1187,12 +1187,21 @@ Printer
         '''
     }
 
+    // GROOVY-10869
+    void testBigDecimalCompareNullPointerException1() {
+        assertScript '''
+            class C<T> {
+                C(T x) { }
+                <T extends Short> T m(T x) { x }
+            }
+            C<Integer> obj = new C<Integer>(-76)
+            boolean cond = 5.0 > obj.m(new C<Integer>(95).m(null))
+        '''
+    }
+
     // GROOVY-9999
     void testMathSqrt() {
         assertScript '''
-            import groovy.transform.TypeChecked
-
-            @TypeChecked
             def test() {
                Math.sqrt(Math.PI*2)
             }
