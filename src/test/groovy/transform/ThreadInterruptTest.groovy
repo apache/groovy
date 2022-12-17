@@ -397,6 +397,23 @@ final class ThreadInterruptTest {
             shouldFail(shell, InterruptedException, script)
         }
     }
+
+    // GROOVY-10877
+    @Test
+    void testThreadInterruptOnRecord() {
+        assertScript '''
+            @groovy.transform.ThreadInterrupt
+            record Point(int x, int y) {
+                String report() {
+                    "$x, $y"
+                }
+            }
+
+            def p = new Point(1, 2)
+            assert 'Point[x=1, y=2]' == p.toString()
+            assert '1, 2' == p.report()
+        '''
+    }
 }
 
 //--------------------------------------------------------------------------
