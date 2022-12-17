@@ -966,7 +966,7 @@ final class MethodReferenceTest {
         }
     }
 
-    @Test // GROOVY-10742
+    @Test // GROOVY-10742, GROOVY-10858
     void testIncompatibleReturnType() {
         def err = shouldFail shell, '''
             void foo(bar) {
@@ -977,6 +977,24 @@ final class MethodReferenceTest {
             }
         '''
         assert err =~ /Invalid return type: void is not convertible to java.lang.String/
+
+        err = shouldFail shell, '''
+            @CompileStatic
+            void test() {
+                Function<Object,Number> f = Object::toString
+            }
+        '''
+        assert err =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
+
+        err = shouldFail shell, '''
+            def m(Function<Object,Number> f) {
+            }
+            @CompileStatic
+            void test() {
+                m(Object::toString)
+            }
+        '''
+        assert err =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
     }
 
     @Test // GROOVY-10269

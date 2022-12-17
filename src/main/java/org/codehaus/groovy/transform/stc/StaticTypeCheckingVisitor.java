@@ -2467,6 +2467,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             ClassNode closureType = wrapClosureType(returnType);
                             closureType.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters); // GROOVY-10714
                             storeType(expression, closureType);
+                            // GROOVY-10858: check method return type
+                            ClassNode targetType = expression.getNodeMetaData(PARAMETER_TYPE);
+                            if (!returnType.isGenericsPlaceHolder() && isSAMType(targetType)) {
+                                targetType = GenericsUtils.parameterizeSAM(targetType).getV2();
+                                if (!isPrimitiveVoid(targetType) && !checkCompatibleAssignmentTypes(targetType, returnType, null, false)) // TODO: ext.handleIncompatibleReturnType
+                                    addStaticTypeError("Invalid return type: " + prettyPrintType(returnType) + " is not convertible to " + prettyPrintType(targetType), expression);
+                            }
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
 
