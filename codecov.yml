@@ -24,6 +24,8 @@ comment:
   require_head: yes
 
 coverage:
+  precision: 4
+  round: nearest
   status:
     patch:
       default:
