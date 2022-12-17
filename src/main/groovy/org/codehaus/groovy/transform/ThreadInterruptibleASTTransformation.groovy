@@ -85,7 +85,8 @@ class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTrans
 
     @Override
     void visitMethod(MethodNode node) {
-        if (checkOnMethodStart && !node.isSynthetic() && !node.isAbstract()) {
+        if (checkOnMethodStart && !node.isSynthetic() && !node.isAbstract()
+            && !(node.getDeclaringClass().isRecord() && node.annotations?.any(e -> 'groovy.transform.Generated' == e.classNode.name))) {
             def code = node.code
             node.code = wrapBlock(code)
         }
