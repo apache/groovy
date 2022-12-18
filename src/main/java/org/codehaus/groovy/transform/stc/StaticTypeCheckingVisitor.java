@@ -1044,8 +1044,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
         VariableExpression receiver = varX("%", setterInfo.receiverType);
-        // for "x op= y" expression, find type as if it was "x = x op y"
+        receiver.setType(setterInfo.receiverType); // same as origin type
+
+        Function<Expression, MethodNode> setterCall = (value) -> {
+            typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
+            try {
+                MethodCallExpression call = callX(receiver, setterInfo.name, value);
+                call.setImplicitThis(false);
+                visitMethodCallExpression(call);
+                return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            } finally {
+                typeCheckingContext.popEnclosingBinaryExpression();
+            }
+        };
+
+        Function<MethodNode, ClassNode> setterType = (setter) -> {
+            ClassNode type = setter.getParameters()[0].getOriginType();
+            if (!setter.isStatic() && !(setter instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
+                type = applyGenericsContext(extractPlaceHolders(setterInfo.receiverType, setter.getDeclaringClass()), type);
+            }
+            return type;
+        };
+
         Expression valueExpression = rightExpression;
+        // for "x op= y", find type as if it was "x = x op y"
         if (isCompoundAssignment(expression)) {
             Token op = ((BinaryExpression) expression).getOperation();
             if (op.getType() == ELVIS_EQUAL) { // GROOVY-10419: "x ?= y"
@@ -1055,26 +1077,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 valueExpression = binX(leftExpression, op, rightExpression);
             }
         }
-
-        Function<Expression, MethodNode> setterCall = right -> {
-            typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
-            try {
-                MethodCallExpression call = new MethodCallExpression(receiver, setterInfo.name, right);
-                call.setImplicitThis(false);
-                visitMethodCallExpression(call);
-                return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            } finally {
-                typeCheckingContext.popEnclosingBinaryExpression();
-            }
-        };
-
-        Function<MethodNode, ClassNode> setterType = setter -> {
-            ClassNode type = setter.getParameters()[0].getOriginType();
-            if (!setter.isStatic() && !(setter instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
-                type = applyGenericsContext(extractPlaceHolders(setterInfo.receiverType, setter.getDeclaringClass()), type);
-            }
-            return type;
-        };
 
         MethodNode methodTarget = setterCall.apply(valueExpression);
         if (methodTarget == null && !isCompoundAssignment(expression)) {
@@ -2742,13 +2744,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode[] args = getArgumentTypes(argumentList);
 
             List<MethodNode> mn = findMethod(type, name, args);
-            if (!mn.isEmpty()) {
-                if (mn.size() == 1) {
-                    // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
-                    resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0).getParameters());
-                    typeCheckMethodsWithGenericsOrFail(type, args, mn.get(0), call);
-                }
-            }
             if (mn.isEmpty()) {
                 mn = extension.handleMissingMethod(type, name, argumentList, args, call);
             }
@@ -2759,26 +2754,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn.size() != 1) {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 } else {
-                    MethodNode directMethodCallCandidate = mn.get(0);
-                    ClassNode returnType = getType(directMethodCallCandidate);
+                    MethodNode targetMethod = mn.get(0);
+                    // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
+                    resolvePlaceholdersFromImplicitTypeHints(args, argumentList, targetMethod.getParameters());
+                    typeCheckMethodsWithGenericsOrFail(type, args, targetMethod, call);
+
+                    ClassNode returnType = getType(targetMethod);
                     if (returnType.isUsingGenerics() && !returnType.isEnum()) {
                         closuresVisited = true; // visit closure/lambda arguments with selected method
-                        visitMethodCallArguments(type, argumentList, true, directMethodCallCandidate);
+                        visitMethodCallArguments(type, argumentList, true, targetMethod);
 
-                        ClassNode rt = inferReturnTypeGenerics(type, directMethodCallCandidate, argumentList);
+                        ClassNode rt = inferReturnTypeGenerics(type, targetMethod, argumentList);
                         if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
                             returnType = rt;
                     }
                     storeType(call, returnType);
-                    storeTargetMethod(call, directMethodCallCandidate);
+                    storeTargetMethod(call, targetMethod);
                 }
             }
 
-            MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!closuresVisited) {
-                visitMethodCallArguments(type, argumentList, true, target);
+                final MethodNode targetMethod = !mn.isEmpty() ? mn.get(0) : null;
+                visitMethodCallArguments(type, argumentList, true, targetMethod);
             }
-            if (target != null) { Parameter[] params = target.getParameters();
+            if (mn.size() == 1) { Parameter[] params = mn.get(0).getParameters();
                 checkClosureMetadata(argumentList.getExpressions(), params);
                 checkForbiddenSpreadArgument(argumentList, params);
             } else {
@@ -5394,25 +5393,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Given method call like "m(Collections.emptyList())", the type of the call
-     * argument is {@code List<T>} without explicit type arguments. Knowing the
-     * method target of "m", {@code T} could be resolved.
+     * argument is {@code List<T>} without explicit type arguments. Now, knowing
+     * the method target of "m", {@code T} could be resolved.
      */
     private void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
         int np = parameterArray.length;
         for (int i = 0, n = actuals.length; np > 0 && i < n; i += 1) {
-            Expression a = argumentList.getExpression(i);
             Parameter p = parameterArray[Math.min(i, np - 1)];
-
-            ClassNode at = actuals[i], pt = p.getOriginType();
+            ClassNode pt = p.getOriginType(), at = actuals[i];
             if (!isUsingGenericsOrIsArrayUsingGenerics(pt)) continue;
             if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+
+            var a = argumentList.getExpression(i);
 
             if (a instanceof ListExpression) {
                 actuals[i] = getLiteralResultType(pt, at, ArrayList_TYPE);
             } else if (a instanceof MapExpression) {
                 actuals[i] = getLiteralResultType(pt, at, LinkedHashMap_TYPE);
             } else if (a instanceof ConstructorCallExpression) {
-                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-10086
+                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-8974, GROOVY-9983, GROOVY-10086, et al.
             } else if (a instanceof TernaryExpression && at.getGenericsTypes() != null && at.getGenericsTypes().length == 0) {
                 // GROOVY-9983: double diamond scenario -- "m(flag ? new Type<>(...) : new Type<>(...))"
                 typeCheckingContext.pushEnclosingBinaryExpression(assignX(varX(p), a, a));
