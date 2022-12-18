@@ -293,7 +293,7 @@ public class IndyInterface {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandleWrapper mhw =
-                bypassCache(arguments)
+                bypassCache(spreadCall, arguments)
                     ? NULL_METHOD_HANDLE_WRAPPER
                     : doWithCallSite(
                             callSite, arguments,
@@ -321,7 +321,8 @@ public class IndyInterface {
         return mhw.getCachedMethodHandle().invokeExact(arguments);
     }
 
-    private static boolean bypassCache(Object[] arguments) {
+    private static boolean bypassCache(Boolean spreadCall, Object[] arguments) {
+        if (spreadCall) return true;
         final Object receiver = arguments[0];
         return null != receiver && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
     }
