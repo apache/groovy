@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.control.Janitor;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.powerassert.SourceText;
 import org.codehaus.groovy.runtime.powerassert.SourceTextNotAvailableException;
 import org.codehaus.groovy.syntax.Token;
@@ -48,8 +47,6 @@ import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 
 public class AssertionWriter {
-    // assert
-    private static final MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
 
     private static class AssertionTracker {
         int recorderIndex;
@@ -223,9 +220,12 @@ public class AssertionWriter {
         }
     }
 
-    private void throwAssertError() { // TODO: GROOVY-10878
-        assertFailedMethod.call(controller.getMethodVisitor());
-        controller.getOperandStack().remove(2); // assertFailed called with 2 arguments
+    private void throwAssertError() {
+        // GROOVY-10878: call method that returns throwable, then throw it from here for better coverage metrics
+        controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper",
+                "createAssertError", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/AssertionError;", false);
+        controller.getMethodVisitor().visitInsn(ATHROW); // throw AssertionError
+        controller.getOperandStack().remove(2); // two call arguments
     }
 
     //--------------------------------------------------------------------------

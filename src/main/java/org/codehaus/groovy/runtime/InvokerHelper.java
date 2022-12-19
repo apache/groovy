@@ -402,11 +402,18 @@ public class InvokerHelper {
         return answer;
     }
 
-    public static void assertFailed(Object expression, Object message) {
+    public static void assertFailed(final Object expression, final Object message) {
+        throw createAssertError(expression, message);
+    }
+
+    /**
+     * @since 4.0.7
+     */
+    public static AssertionError createAssertError(final Object expression, final Object message) {
         if (message == null || "".equals(message)) {
-            throw new PowerAssertionError(expression.toString());
+            return new PowerAssertionError(expression.toString());
         }
-        throw new AssertionError(message + ". Expression: " + expression);
+        return new AssertionError(message + ". Expression: " + expression);
     }
 
     public static Object runScript(Class scriptClass, String[] args) {
