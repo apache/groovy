@@ -98,19 +98,11 @@ import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.ArrayIterator;
-import org.codehaus.groovy.util.BooleanArrayIterator;
-import org.codehaus.groovy.util.ByteArrayIterator;
-import org.codehaus.groovy.util.CharArrayIterator;
 import org.codehaus.groovy.util.DoubleArrayIterable;
-import org.codehaus.groovy.util.DoubleArrayIterator;
-import org.codehaus.groovy.util.FloatArrayIterator;
 import org.codehaus.groovy.util.IntArrayIterable;
-import org.codehaus.groovy.util.IntArrayIterator;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
 import org.codehaus.groovy.util.LongArrayIterable;
-import org.codehaus.groovy.util.LongArrayIterator;
-import org.codehaus.groovy.util.ShortArrayIterator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -161,6 +153,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -4003,6 +3996,413 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             addEntry(collector, transform.call(element));
         }
         return collector;
+    }
+
+    /**
+     * A variant of collectEntries for Iterators with separate functions for transforming the keys and values.
+     * The supplied collector map is used as the destination for transformed entries.
+     *
+     * @param self           an Iterator
+     * @param collector      the Map into which the transformed entries are put
+     * @param keyTransform   a function for transforming Iterator elements into keys
+     * @param valueTransform a function for transforming Iterator elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, Map<K, V> collector, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        while (self.hasNext()) {
+            E element = self.next();
+            addEntry(collector, Tuple2.tuple(keyTransform.apply(element), valueTransform.apply(element)));
+        }
+        return collector;
+    }
+
+    /**
+     * A variant of collectEntries for Iterators with separate functions for transforming the keys and values.
+     *
+     * @param self           an Iterator
+     * @param keyTransform   a function for transforming Iterator elements into keys
+     * @param valueTransform a function for transforming Iterator elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return collectEntries(self, new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for Iterables with separate functions for transforming the keys and values.
+     * The supplied collector map is used as the destination for transformed entries.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.collectEntries([clojure:7], String::toLowerCase, String::size) ==
+     *     [clojure:7, groovy:6, java:4, kotlin:6, scala:5]
+     * </pre>
+     *
+     * @param self           an Iterable
+     * @param collector      the Map into which the transformed entries are put
+     * @param keyTransform   a function for transforming Iterable elements into keys
+     * @param valueTransform a function for transforming Iterable elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Map<K, V> collector, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return collectEntries(self.iterator(), collector, keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for Iterables with separate functions for transforming the keys and values.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.collectEntries(String::toLowerCase, String::size) ==
+     *     [groovy:6, java:4, kotlin:6, scala:5]
+     * </pre>
+     *
+     * @param self           an Iterable
+     * @param keyTransform   a function for transforming Iterable elements into keys
+     * @param valueTransform a function for transforming Iterable elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return collectEntries(self.iterator(), new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
+     * The supplied collector map is used as the destination for transformed entries.
+     *
+     * @param self           an array
+     * @param collector      the Map into which the transformed entries are put
+     * @param keyTransform   a function for transforming array elements into keys
+     * @param valueTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return collectEntries(new ArrayIterator<>(self), collector, keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
+     * <pre class="groovyTestCase">
+     * String[] languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * def firstLetter = s {@code ->} s[0]
+     * assert languages.collectEntries(firstLetter, String::size) == [G:6, J:4, K:6, S:5]
+     * </pre>
+     *
+     * @param self           an array
+     * @param keyTransform   a function for transforming array elements into keys
+     * @param valueTransform a function for transforming array elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return collectEntries(new ArrayIterator<>(self), new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for Maps with separate functions for transforming the keys and values.
+     * The supplied collector map is used as the destination for transformed entries.
+     *
+     * @param self           a Map
+     * @param collector      the Map into which the transformed entries are put
+     * @param keyTransform   a function for transforming Map keys
+     * @param valueTransform a function for transforming Map values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, Map<K, V> collector, Function<? super X, K> keyTransform, Function<? super Y, V> valueTransform) {
+        for (Map.Entry<X, Y> entry : self.entrySet()) {
+            addEntry(collector, Tuple2.tuple(keyTransform.apply(entry.getKey()), valueTransform.apply(entry.getValue())));
+        }
+        return collector;
+    }
+
+    /**
+     * A variant of collectEntries for Maps with separate functions for transforming the keys and values.
+     *
+     * @param self           a Map
+     * @param keyTransform   a function for transforming Map keys
+     * @param valueTransform a function for transforming Map values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, Function<? super X, K> keyTransform, Function<? super Y, V> valueTransform) {
+        return collectEntries(self, new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedValues for Iterators.
+     *
+     * @param keys           an Iterator
+     * @param collector      the Map into which the transformed entries are put
+     * @param valueTransform a function for transforming Iterator elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedValues(Iterable, Map, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(Iterator<K> keys, Map<K, V> collector, Function<? super K, V> valueTransform) {
+        return collectEntries(keys, collector, Function.identity(), valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedValues for Iterators.
+     *
+     * @param keys           an Iterator
+     * @param valueTransform a function for transforming Iterator elements into values
+     * @return a Map of the transformed entries
+     * @see #withCollectedValues(Iterable, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(Iterator<K> keys, Function<? super K, V> valueTransform) {
+        return withCollectedValues(keys, new LinkedHashMap<>(), valueTransform);
+    }
+
+    /**
+     * Transform Iterable elements into Map entries with keys unchanged
+     * and values transformed using the supplied function.
+     * The supplied collector map is used as the destination for transformed entries.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.withCollectedValues([Clojure:7], String::size) ==
+     *     [Clojure:7, Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * </pre>
+     * This method is a convenience method for {@link #collectEntries(Iterable, Map, Function, Function)}
+     * with the {@code keyTransform} replaced by {@code Function.identity()} or {Closure.IDENTITY}.
+     *
+     * @param keys           an Iterable
+     * @param collector      the Map into which the transformed entries are put
+     * @param valueTransform a function for transforming Iterable elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(Iterable<K> keys, Map<K, V> collector, Function<? super K, V> valueTransform) {
+        return collectEntries(keys.iterator(), collector, Function.identity(), valueTransform);
+    }
+
+    /**
+     * Transform Iterable elements into Map entries with keys unchanged
+     * and values transformed using the supplied function.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.withCollectedValues(String::size) ==
+     *     [Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * </pre>
+     * This method is a convenience method for {@link #collectEntries(Iterable, Function, Function)}
+     * with the {@code keyTransform} replaced by {@code Function.identity()} or {Closure.IDENTITY}.
+     *
+     * @param keys           an Iterable
+     * @param valueTransform a function for transforming Iterable elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(Iterable<K> keys, Function<? super K, V> valueTransform) {
+        return withCollectedValues(keys.iterator(), new LinkedHashMap<>(), valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedValues for arrays.
+     *
+     * @param keys           an array
+     * @param collector      the Map into which the transformed entries are put
+     * @param valueTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(K[] keys, Map<K, V> collector, Function<? super K, V> valueTransform) {
+        return collectEntries(new ArrayIterator<>(keys), collector, Function.identity(), valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedValues for arrays.
+     *
+     * @param keys           an array
+     * @param valueTransform a function for transforming array elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(K[] keys, Function<? super K, V> valueTransform) {
+        return withCollectedValues(new ArrayIterator<>(keys), new LinkedHashMap<>(), valueTransform);
+    }
+
+    /**
+     * Transform a Maps' values leaving the keys unchanged.
+     * Similar to {@link #withCollectedValues(Iterable, Map, Function)} but for Maps.
+     * <pre class="groovyTestCase">
+     * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * def squared = e {@code ->} e ** 2
+     * assert lengths.collectValues([Clojure:49], squared) ==
+     *     [Clojure:49, Groovy:36, Java:16, Kotlin:36, Scala:25]
+     * </pre>
+     *
+     * @param keys           a Map
+     * @param collector      the Map into which the transformed entries are put
+     * @param valueTransform a function for transforming Map values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> collectValues(Map<K, V> keys, Map<K, V> collector, Function<? super V, V> valueTransform) {
+        for (Map.Entry<K, V> entry : keys.entrySet()) {
+            addEntry(collector, Tuple2.tuple(entry.getKey(), valueTransform.apply(entry.getValue())));
+        }
+        return collector;
+    }
+
+    /**
+     * Transform a Maps' values leaving the keys unchanged.
+     * Similar to {@link #withCollectedValues(Iterable, Function)} but for Maps.
+     * <pre class="groovyTestCase">
+     * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * def squared = e {@code ->} e ** 2
+     * assert lengths.collectValues(squared) == [Groovy:36, Java:16, Kotlin:36, Scala:25]
+     * </pre>
+     *
+     * @param keys           a Map
+     * @param valueTransform a function for transforming Map values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> collectValues(Map<K, V> keys, Function<? super V, V> valueTransform) {
+        return collectValues(keys, new LinkedHashMap<>(), valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedKeys for Iterators.
+     *
+     * @param values       an Iterator
+     * @param collector    the Map into which the transformed entries are put
+     * @param keyTransform a function for transforming Iterator elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedKeys(Iterable, Map, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(Iterator<V> values, Map<K, V> collector, Function<? super V, K> keyTransform) {
+        return collectEntries(values, collector, keyTransform, Function.identity());
+    }
+
+    /**
+     * A variant of withCollectedKeys for Iterators.
+     *
+     * @param values       an Iterator
+     * @param keyTransform a function for transforming Iterator elements into values
+     * @return a Map of the transformed entries
+     * @see #withCollectedKeys(Iterable, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(Iterator<V> values, Function<? super V, K> keyTransform) {
+        return withCollectedKeys(values, new LinkedHashMap<>(), keyTransform);
+    }
+
+    /**
+     * Transform Iterable elements into Map entries with values unchanged
+     * and keys transformed using the supplied function.
+     * The supplied map is used as the destination for transformed entries.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * def firstLetter = s {@code ->} s[0]
+     * assert languages.withCollectedKeys([C:'Clojure'], firstLetter) ==
+     *     [C:'Clojure', G:'Groovy', J:'Java', K:'Kotlin', S:'Scala']
+     * </pre>
+     * This method is a convenience method for {@link #collectEntries(Iterable, Map, Function, Function)}
+     * with the {@code valueTransform} replaced by {@code Function.identity()} or {Closure.IDENTITY}.
+     *
+     * @param values       an Iterable that will become the added entry values
+     * @param collector    the Map into which the transformed entries are put
+     * @param keyTransform a function for transforming Iterator elements into keys
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(Iterable<V> values, Map<K, V> collector, Function<? super V, K> keyTransform) {
+        return collectEntries(values.iterator(), collector, keyTransform, Function.identity());
+    }
+
+    /**
+     * Transform Iterable elements into Map entries with values unchanged
+     * and keys transformed using the supplied function.
+     * <pre class="groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * def firstLetter = s {@code ->} s[0]
+     * assert languages.withCollectedKeys(firstLetter) ==
+     *     [G:'Groovy', J:'Java', K:'Kotlin', S:'Scala']
+     * </pre>
+     * This method is a convenience method for {@link #collectEntries(Iterable, Function, Function)}
+     * with the {@code valueTransform} replaced by {@code Function.identity()} or {Closure.IDENTITY}.
+     *
+     * @param values       an Iterable that will become the added entry values
+     * @param keyTransform a function for transforming Iterator elements into keys
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(Iterable<V> values, Function<? super V, K> keyTransform) {
+        return withCollectedKeys(values.iterator(), new LinkedHashMap<>(), keyTransform);
+    }
+
+    /**
+     * A variant of withCollectedKeys for arrays.
+     *
+     * @param values       an array
+     * @param collector    the Map into which the transformed entries are put
+     * @param keyTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedKeys(Iterable, Map, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(V[] values, Map<K, V> collector, Function<? super V, K> keyTransform) {
+        return collectEntries(new ArrayIterator<>(values), collector, keyTransform, Function.identity());
+    }
+
+    /**
+     * A variant of withCollectedKeys for arrays.
+     *
+     * @param values       an array
+     * @param keyTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedKeys(Iterable, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(V[] values, Function<? super V, K> keyTransform) {
+        return withCollectedKeys(new ArrayIterator<>(values), new LinkedHashMap<>(), keyTransform);
+    }
+
+    /**
+     * Transform a Maps' keys leaving the values unchanged.
+     * Similar to {@link #withCollectedKeys(Iterable, Map, Function)} but for Maps.
+     * <pre class="groovyTestCase">
+     * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * def firstLetter = s {@code ->} s[0]
+     * assert lengths.collectKeys([C:7], firstLetter) == [C:7, G:6, J:4, K:6, S:5]
+     * </pre>
+     *
+     * @param keys         a Map
+     * @param collector    the Map into which the transformed entries are put
+     * @param keyTransform a function for transforming Map keys
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> collectKeys(Map<K, V> keys, Map<K, V> collector, Function<? super K, K> keyTransform) {
+        for (Map.Entry<K, V> entry : keys.entrySet()) {
+            addEntry(collector, Tuple2.tuple(keyTransform.apply(entry.getKey()), entry.getValue()));
+        }
+        return collector;
+    }
+
+    /**
+     * Transform a Maps' keys leaving the values unchanged.
+     * Similar to {@link #withCollectedKeys(Iterable, Function)} but for Maps.
+     * <pre class="groovyTestCase">
+     * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
+     * def firstLetter = s {@code ->} s[0]
+     * assert lengths.collectKeys(firstLetter) == [G:6, J:4, K:6, S:5]
+     * </pre>
+     *
+     * @param keys         a Map
+     * @param keyTransform a function for transforming Map keys
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> collectKeys(Map<K, V> keys, Function<? super K, K> keyTransform) {
+        return collectKeys(keys, new LinkedHashMap<>(), keyTransform);
     }
 
     /**
