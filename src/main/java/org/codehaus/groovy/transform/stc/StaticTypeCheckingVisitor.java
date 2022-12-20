@@ -2739,45 +2739,50 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(call.getArguments());
 
-            boolean closuresVisited = false; // visit *after* method has been chosen
-            visitMethodCallArguments(type, argumentList, closuresVisited, null);
-            ClassNode[] args = getArgumentTypes(argumentList);
+            boolean functorsVisited = false; // visit *after* method selection
+            visitMethodCallArguments(type, argumentList, functorsVisited, null);
 
-            List<MethodNode> mn = findMethod(type, name, args);
-            if (mn.isEmpty()) {
-                mn = extension.handleMissingMethod(type, name, argumentList, args, call);
-            }
-            if (mn.isEmpty()) {
-                addNoMatchingMethodError(type, name, args, call);
-            } else {
-                mn = disambiguateMethods(mn, type, args, call);
-                if (mn.size() != 1) {
-                    addAmbiguousErrorMessage(mn, name, args, call);
+            {
+                ClassNode[] args = getArgumentTypes(argumentList);
+                List<MethodNode> opts = findMethod(type, name, args);
+                if (opts.isEmpty()) {
+                    opts = extension.handleMissingMethod(type, name, argumentList, args, call);
+                }
+                if (opts.isEmpty()) {
+                    addNoMatchingMethodError(type, name, args, call);
                 } else {
-                    MethodNode targetMethod = mn.get(0);
-                    // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
-                    resolvePlaceholdersFromImplicitTypeHints(args, argumentList, targetMethod.getParameters());
-                    typeCheckMethodsWithGenericsOrFail(type, args, targetMethod, call);
+                    opts = disambiguateMethods(opts, type, args, call);
+                    if (opts.size() != 1) {
+                        addAmbiguousErrorMessage(opts, name, args, call);
+                    } else {
+                        MethodNode targetMethod = opts.get(0);
+                        storeTargetMethod(call, targetMethod); // trigger onMethodSelection
+                        if (call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET) == targetMethod) {
+                            // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
+                            resolvePlaceholdersFromImplicitTypeHints(args, argumentList, targetMethod.getParameters());
+                            typeCheckMethodsWithGenericsOrFail(type, args, targetMethod, call);
 
-                    ClassNode returnType = getType(targetMethod);
-                    if (returnType.isUsingGenerics() && !returnType.isEnum()) {
-                        closuresVisited = true; // visit closure/lambda arguments with selected method
-                        visitMethodCallArguments(type, argumentList, true, targetMethod);
-
-                        ClassNode rt = inferReturnTypeGenerics(type, targetMethod, argumentList);
-                        if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType))
-                            returnType = rt;
+                            ClassNode returnType = getType(targetMethod);
+                            if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
+                                functorsVisited = true; // visit functional argument(s) with selected method
+                                visitMethodCallArguments(type, argumentList, functorsVisited, targetMethod);
+                                ClassNode rt = inferReturnTypeGenerics(type, targetMethod, argumentList);
+                                if (rt != null && implementsInterfaceOrIsSubclassOf(rt, returnType)) {
+                                    returnType = rt;
+                                }
+                            }
+                            storeType(call, returnType);
+                        }
                     }
-                    storeType(call, returnType);
-                    storeTargetMethod(call, targetMethod);
                 }
             }
 
-            if (!closuresVisited) {
-                final MethodNode targetMethod = !mn.isEmpty() ? mn.get(0) : null;
-                visitMethodCallArguments(type, argumentList, true, targetMethod);
+            // type-checking extension may have changed or cleared target method
+            MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (!functorsVisited) {
+                visitMethodCallArguments(type, argumentList, true, target);
             }
-            if (mn.size() == 1) { Parameter[] params = mn.get(0).getParameters();
+            if (target != null) { Parameter[] params = target.getParameters();
                 checkClosureMetadata(argumentList.getExpressions(), params);
                 checkForbiddenSpreadArgument(argumentList, params);
             } else {
@@ -2819,7 +2824,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         startMethodInference(directMethodCallCandidate, collector);
     }
 
-    protected void visitMethodCallArguments(final ClassNode receiver, final ArgumentListExpression arguments, final boolean visitClosures, final MethodNode selectedMethod) {
+    protected void visitMethodCallArguments(final ClassNode receiver, final ArgumentListExpression arguments, final boolean visitFunctors, final MethodNode selectedMethod) {
         Parameter[] parameters;
         List<Expression> expressions = new ArrayList<>();
         if (selectedMethod instanceof ExtensionMethodNode) {
@@ -2834,8 +2839,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int nthParameter = parameters.length - 1;
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
-            if (visitClosures == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
-                if (visitClosures && nthParameter != -1) { // GROOVY-10636: vargs call
+            if (visitFunctors == (expression instanceof ClosureExpression || expression instanceof MethodPointerExpression)) {
+                if (visitFunctors && nthParameter != -1) { // GROOVY-10636: vargs call
                     Parameter target = parameters[Math.min(i, nthParameter)];
                     ClassNode targetType = target.getType();
                     if (targetType.isArray() && i >= nthParameter)
@@ -3443,7 +3448,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression callArguments = call.getArguments();
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
 
-        // visit functional arguments *after* method has been chosen
+        // visit functional arguments *after* target method selection
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         boolean isThisObjectExpression = isThisExpression(objectExpression);
@@ -3469,7 +3474,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         try {
             ClassNode[] args = getArgumentTypes(argumentList);
-            boolean callArgsVisited = false;
+            boolean functorsVisited = false;
             if (isCallOnClosure) {
                 if (fieldNode != null) {
                     GenericsType[] genericsTypes = getType(fieldNode).getGenericsTypes();
@@ -3575,37 +3580,42 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
 
-                    if (mn.size() == 1) {
-                        MethodNode targetMethodCandidate = mn.get(0);
-                        ClassNode declaringClass = targetMethodCandidate.getDeclaringClass();
+out:                if (mn.size() != 1) {
+                        addAmbiguousErrorMessage(mn, name, args, call);
+                    } else {
+                        MethodNode targetMethod = mn.get(0);
+                        // note second pass to differentiate from extension that sets type
+                        boolean mergeType = (call.getNodeMetaData(INFERRED_TYPE) != null);
+                        storeTargetMethod(call, targetMethod); // trigger onMethodSelection
+                        if (call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET) != targetMethod) {
+                            break out; // type-checking script intervention
+                        }
+                        ClassNode declaringClass = targetMethod.getDeclaringClass();
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
                         }
-                        if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
+                        if (!targetMethod.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
                                 && chosenReceiver.getData() == null && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
-                            addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
-                        } else if (targetMethodCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
-                            String target = toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters()));
-                            if (Traits.hasDefaultImplementation(targetMethodCandidate)) { // GROOVY-10494
+                            addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
+                        } else if (targetMethod.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
+                            String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
+                            if (Traits.hasDefaultImplementation(targetMethod)) { // GROOVY-10494
                                 addStaticTypeError("Default method " + target + " requires qualified super", call);
                             } else {
                                 addStaticTypeError("Abstract method " + target + " cannot be called directly", call);
                             }
                         }
-                        // note second pass here to differentiate from extension that sets type
-                        boolean mergeType = (call.getNodeMetaData(INFERRED_TYPE) != null);
-                        storeTargetMethod(call, targetMethodCandidate);
 
-                        visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethodCandidate); callArgsVisited = true;
+                        visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethod); functorsVisited = true;
 
-                        ClassNode returnType = getType(targetMethodCandidate);
+                        ClassNode returnType = getType(targetMethod);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethodCandidate, callArguments, call.getGenericsTypes());
+                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
                             if (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType))
                                 returnType = irtg;
                         }
                         // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
-                        if (targetMethodCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
+                        if (targetMethod == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
                             DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
                             if (md != null) {
                                 returnType = md.getType();
@@ -3614,14 +3624,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
-                        Parameter[] parameters = targetMethodCandidate.getParameters();
-                        if (chosenReceiver.getType().getGenericsTypes() != null && !targetMethodCandidate.isStatic() && !(targetMethodCandidate instanceof ExtensionMethodNode)) {
-                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(chosenReceiver.getType(), targetMethodCandidate, argumentList);
+                        Parameter[] parameters = targetMethod.getParameters();
+                        if (chosenReceiver.getType().getGenericsTypes() != null && !targetMethod.isStatic() && !(targetMethod instanceof ExtensionMethodNode)) {
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(chosenReceiver.getType(), targetMethod, argumentList);
                             parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                         }
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
 
-                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, targetMethodCandidate, call)) {
+                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, targetMethod, call)) {
                             String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
@@ -3630,7 +3640,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             receiver = chosenReceiver.getType();
                             if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
-                                storeType(call, adjustWithTraits(targetMethodCandidate, receiver, args, returnType));
+                                storeType(call, adjustWithTraits(targetMethod, receiver, args, returnType));
 
                             if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isClosureSharedVariable()) {
                                 // if the object expression is a closure shared variable, we will have to perform a second pass
@@ -3639,8 +3649,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         } else {
                             call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                         }
-                    } else {
-                        addAmbiguousErrorMessage(mn, name, args, call);
                     }
                 }
             }
@@ -3652,8 +3660,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            // type-checking extension may have changed or cleared target method
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            if (!callArgsVisited) {
+            if (!functorsVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
             if (target != null) { Parameter[] params = target.getParameters();
