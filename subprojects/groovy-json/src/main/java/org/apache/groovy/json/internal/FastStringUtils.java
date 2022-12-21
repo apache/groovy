@@ -55,9 +55,6 @@ public class FastStringUtils {
     }
 
     private static FastStringService getService() {
-        if (ServiceHolder.INSTANCE == null) {
-            throw new RuntimeException("Unable to load FastStringService");
-        }
         return ServiceHolder.INSTANCE;
     }
 
