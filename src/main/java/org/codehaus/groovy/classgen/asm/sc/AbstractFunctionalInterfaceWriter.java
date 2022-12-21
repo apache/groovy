@@ -42,6 +42,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE
  * @since 3.0.0
  */
 public interface AbstractFunctionalInterfaceWriter {
+    @Deprecated
+    String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
     default ClassNode getFunctionalInterfaceType(final Expression expression) {
         ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
@@ -78,6 +80,11 @@ public interface AbstractFunctionalInterfaceWriter {
                 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
                 isInterface
         );
+    }
+
+    @Deprecated
+    default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final boolean serializable) {
+        return createBootstrapMethodArguments(abstractMethodDesc, insn, methodOwner, methodNode, methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE), serializable);
     }
 
     default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final Parameter[] parameters, final boolean serializable) {
