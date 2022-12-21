@@ -47,7 +47,10 @@ public class FastStringUtils {
                     }
                 }
             }
-            return found;
+            if (found != null) {
+                return found;
+            }
+            return new DefaultFastStringService();
         }
     }
 
