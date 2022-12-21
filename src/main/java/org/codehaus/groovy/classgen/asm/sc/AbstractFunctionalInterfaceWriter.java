@@ -42,6 +42,8 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getMethodDescripto
  * @since 3.0.0
  */
 public interface AbstractFunctionalInterfaceWriter {
+    @Deprecated
+    String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
     default String createMethodDescriptor(final MethodNode method) {
         return getMethodDescriptor(method.getReturnType(), method.getParameters());
@@ -56,6 +58,11 @@ public interface AbstractFunctionalInterfaceWriter {
                              : "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
                 false // GROOVY-8299, GROOVY-8989, GROOVY-11265
         );
+    }
+
+    @Deprecated
+    default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final boolean serializable) {
+        return createBootstrapMethodArguments(abstractMethodDesc, insn, methodOwner, methodNode, methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE), serializable);
     }
 
     default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final Parameter[] parameters, final boolean serializable) {
