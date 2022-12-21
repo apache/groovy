@@ -198,6 +198,22 @@ public class IndyGuardsFiltersAndSignatures {
         return o.getClass() == c;
     }
 
+    /* No longer used - for backwards compatibility only */
+    @Deprecated
+    public static boolean sameClasses(Object[] cs, Object[] os) {
+        for (int i = 0; i < cs.length; i++) {
+            Object c = cs[i];
+            if (null == c) continue;
+
+            Object o = os[i];
+            if (null == o) return false;
+
+            if (o.getClass() != c.getClass())
+                return false;
+        }
+        return true;
+    }
+
     /**
      * Guard to check if the provided objects have the same
      * class as the provided classes.
