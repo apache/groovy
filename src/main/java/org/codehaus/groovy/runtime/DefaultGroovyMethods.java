@@ -3285,7 +3285,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size) {
-        return collate((Iterable<T>)Arrays.asList(self), size, true);
+        return collate(self, size, true);
     }
 
     /**
@@ -3317,7 +3317,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step) {
-        return collate((Iterable<T>)Arrays.asList(self), size, step, true);
+        return collate(self, size, step, true);
     }
 
     /**
@@ -3349,7 +3349,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
-        return collate((Iterable<T>)Arrays.asList(self), size, size, keepRemainder);
+        return collate(self, size, size, keepRemainder);
     }
 
     /**
@@ -3407,7 +3407,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
-        return collate((Iterable<T>)Arrays.asList(self), size, step, keepRemainder);
+        final List<List<T>> answer;
+        if (size <= 0) {
+            answer = new ArrayList<>(1);
+            answer.add(Arrays.asList(self));
+        } else {
+            if (step == 0) throw new IllegalArgumentException("step cannot be zero");
+            final int selfSize = self.length;
+            answer = new ArrayList<>(step < 0 ? 1 : (selfSize / step + 1));
+            for (int pos = 0; pos < selfSize && pos > -1; pos += step) {
+                if (!keepRemainder && pos > selfSize - size) {
+                    break;
+                }
+                List<T> element = new ArrayList<>(size);
+                for (int offs = pos; offs < pos + size && offs < selfSize; offs++) {
+                    element.add(self[offs]);
+                }
+                answer.add(element);
+            }
+        }
+        return answer;
     }
 
     /**
