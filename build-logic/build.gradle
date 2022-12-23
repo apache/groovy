@@ -34,3 +34,7 @@ dependencies {
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.13'
     implementation 'me.champeau.gradle:jmh-gradle-plugin:0.5.3'
 }
+
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
