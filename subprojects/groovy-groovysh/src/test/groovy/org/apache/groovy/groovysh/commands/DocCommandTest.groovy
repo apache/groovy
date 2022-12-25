@@ -82,7 +82,8 @@ class DocCommandTest extends CommandTestSupport {
         def urls = command.urlsFor('groovy.console.TextNode')
 
         assert urls ==
-                [new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/console/TextNode.html")]
+                [new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/console/TextNode.html")] ||
+               !urls
     }
 
     void testUrlsForWithUnknownClass() {
