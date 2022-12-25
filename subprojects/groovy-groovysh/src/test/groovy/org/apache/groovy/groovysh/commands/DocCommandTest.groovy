@@ -60,13 +60,19 @@ class DocCommandTest extends CommandTestSupport {
             assert urls ==
                 [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
                  new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
-               urls ==
+                urls ==
                 [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
-                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
+                urls ==
+                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html")] ||
+                urls ==
+                [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html")]
         } else {
             assert urls ==
                 [new URL("https://docs.oracle.com/javase/8/docs/api/java/util/List.html"),
-                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")]
+                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
+                urls ==
+                [new URL("https://docs.oracle.com/javase/8/docs/api/java/util/List.html")]
         }
     }
 
