@@ -1600,9 +1600,8 @@ public class ArrayGroovyMethods {
     // join
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of boolean
      * @param separator a String separator
@@ -1614,9 +1613,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of byte
      * @param separator a String separator
@@ -1628,9 +1626,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of char
      * @param separator a String separator
@@ -1642,9 +1639,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of short
      * @param separator a String separator
@@ -1656,9 +1652,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of int
      * @param separator a String separator
@@ -1670,9 +1665,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of long
      * @param separator a String separator
@@ -1684,9 +1678,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of float
      * @param separator a String separator
@@ -1698,9 +1691,8 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Concatenates the string representation of each
-     * items in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
      *
      * @param self      an array of double
      * @param separator a String separator
