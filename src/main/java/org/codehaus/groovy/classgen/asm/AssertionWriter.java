@@ -127,7 +127,6 @@ public class AssertionWriter {
             throwAssertError();
 
             mv.visitLabel(tryEnd);
-            mv.visitJumpInsn(GOTO, afterAssert);
 
             // catch-all block to clear value recorder
             Label catchAll = new Label();
