@@ -18,55 +18,43 @@
  */
 package org.apache.groovy.groovysh
 
-import jline.console.ConsoleReader
 import jline.console.completer.CandidateListCompletionHandler
 
 class ErrorDisplayTest extends ShellRunnerTestSupport {
 
     void testInput() {
-        readerStubber.demand.readLine { 'foo' }
+        readerStubber.demand.readLine {'foo'}
         readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
-        shellMocker.use {
-            readerStubber.use {
-                Groovysh shellMock = new Groovysh()
-                ConsoleReader readerStub = new ConsoleReader()
-
-                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { '>' })
-                shellRunner.reader = readerStub
-                // assert no exception
+        readerStubber.use {
+            shellMocker.use {
+                def shellRunner = new InteractiveShellRunner(new Groovysh(), {'>'})
                 shellRunner.run()
+                // no exception
             }
         }
     }
 
     void testError() {
-        readerStubber.demand.readLine { throw new StringIndexOutOfBoundsException() }
+        readerStubber.demand.readLine {throw new StringIndexOutOfBoundsException()}
         readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
-        shellMocker.use {
-            readerStubber.use {
-                Groovysh shellMock = new Groovysh()
-                ConsoleReader readerStub = new ConsoleReader()
-
-                InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, { '>' })
-                shellRunner.reader = readerStub
-                // assert no exception
+        readerStubber.use {
+            shellMocker.use {
+                def shellRunner = new InteractiveShellRunner(new Groovysh(), {'>'})
                 shellRunner.run()
+                // no exception
             }
         }
     }
 
     void testError2() {
-        readerStubber.demand.readLine { throw new Throwable('MockException') }
+        readerStubber.demand.readLine {throw new Throwable('MockException')}
         readerStubber.demand.getCompletionHandler {new CandidateListCompletionHandler()}
-        shellMocker.use { readerStubber.use {
-            Groovysh shellMock = new Groovysh()
-            ConsoleReader readerStub = new ConsoleReader()
-
-            InteractiveShellRunner shellRunner = new InteractiveShellRunner(shellMock, {'>'})
-            shellRunner.reader = readerStub
-            // assert no exception
-            shellRunner.run()
-        }}
+        readerStubber.use {
+            shellMocker.use {
+                def shellRunner = new InteractiveShellRunner(new Groovysh(), {'>'})
+                shellRunner.run()
+                // no exception
+            }
+        }
     }
-
 }

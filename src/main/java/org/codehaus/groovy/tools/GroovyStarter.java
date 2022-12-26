@@ -19,9 +19,8 @@
 package org.codehaus.groovy.tools;
 
 import java.io.FileInputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
+import java.util.Arrays;
 
 /**
  * Helper class to initialize the Groovy runtime.
@@ -31,6 +30,14 @@ public class GroovyStarter {
     static void printUsage() {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
+    }
+
+    public static void main(String[] args) {
+        try {
+            rootLoader(args);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
     public static void rootLoader(String[] args) {
@@ -72,7 +79,7 @@ public class GroovyStarter {
                     break;
                 default:
                     break label;
-            }            
+            }
         }
 
         // this allows to override the commandline conf
@@ -84,9 +91,8 @@ public class GroovyStarter {
             exit("no configuration file or main class specified");
         }
 
-        // copy arguments for main class 
-        String[] newArgs = new String[args.length-argsOffset];
-        System.arraycopy(args, 0 + argsOffset, newArgs, 0, newArgs.length);
+        // copy arguments for main class
+        String[] mainArgs = Arrays.copyOfRange(args, argsOffset, args.length);
         // load configuration file
         if (conf!=null) {
             try {
@@ -98,23 +104,23 @@ public class GroovyStarter {
         }
         // create loader and execute main class
         ClassLoader loader = getLoader(lc);
-        Method m=null;
+        Method m = null;
         try {
-            Class c = loader.loadClass(lc.getMainClass());
+            Class<?> c = loader.loadClass(lc.getMainClass());
             m = c.getMethod("main", String[].class);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e1) {
-            exit(e1);
+        } catch (ReflectiveOperationException | SecurityException e2) {
+            exit(e2);
         }
         try {
-            m.invoke(null, new Object[]{newArgs});
-        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e3) {
+            m.invoke(null, new Object[]{mainArgs});
+        } catch (ReflectiveOperationException | IllegalArgumentException e3) {
             exit(e3);
         }
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static RootLoader getLoader(LoaderConfiguration lc) {
-        return java.security.AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
+    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
+    private static ClassLoader getLoader(LoaderConfiguration lc) {
+        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<ClassLoader>) () -> new RootLoader(lc));
     }
 
     private static void exit(Exception e) {
@@ -122,16 +128,8 @@ public class GroovyStarter {
         System.exit(1);
     }
 
-    private static void exit(String msg) {
-        System.err.println(msg);
+    private static void exit(String text) {
+        System.err.println(text);
         System.exit(1);
-    }
-
-    public static void main(String[] args) {
-        try {
-            rootLoader(args);
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
     }
 }

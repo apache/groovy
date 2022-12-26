@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.groovysh
 
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.CandidateListCompletionHandler
@@ -33,58 +36,55 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
  */
+@AutoFinal @CompileStatic
 class InteractiveShellRunner extends ShellRunner implements Runnable {
+
     ConsoleReader reader
-
     final Closure prompt
-
     final CommandsMultiCompleter completer
-    WrappedInputStream wrappedInputStream
+    WrappedInputStream  wrappedInputStream
 
-    InteractiveShellRunner(final Groovysh shell, final Closure prompt) {
+    @CompileDynamic
+    InteractiveShellRunner(Groovysh shell, Closure prompt) {
         super(shell)
 
         this.prompt = prompt
         this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
         this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
 
-        CompletionHandler currentCompletionHandler = this.reader.getCompletionHandler()
+        CompletionHandler currentCompletionHandler = reader.getCompletionHandler()
         if (currentCompletionHandler instanceof CandidateListCompletionHandler) {
-            // have to downcast because methods not part of the interface
-            ((CandidateListCompletionHandler) currentCompletionHandler).setStripAnsi(true)
-            ((CandidateListCompletionHandler) currentCompletionHandler).setPrintSpaceAfterFullCompletion(false)
+            currentCompletionHandler.setStripAnsi(true)
+            currentCompletionHandler.setPrintSpaceAfterFullCompletion(false)
         }
 
-
         // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
-        this.reader.expandEvents = false
-
+        reader.expandEvents = false
 
         // complete groovysh commands, display, import, ... as first word in line
-        this.completer = new CommandsMultiCompleter()
-        reader.addCompleter(this.completer)
+        completer = new CommandsMultiCompleter()
 
         def reflectionCompleter = new org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter(shell)
 
         def classnameCompleter = new org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter(shell)
 
-        def identifierCompleters = [
-                new org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter(),
-                new org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter(shell),
-                classnameCompleter,
-                new org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter(shell),
+        List<org.apache.groovy.groovysh.completion.antlr4.IdentifierCompleter> identifierCompleters = [
+            new org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter(),
+            new org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter(shell),
+            classnameCompleter,
+            new org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter(shell)
         ]
 
         def filenameCompleter = new FileNameCompleter(false)
 
-        def completerArgs = [shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter]
-
-        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(*completerArgs))
+        reader.addCompleter(completer)
+        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(
+                shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter))
     }
 
     @Override
     void run() {
-        for (Command command in shell.registry.commands()) {
+        for (command in shell.registry.commands()) {
             completer.add(command)
         }
 
@@ -96,20 +96,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         super.run()
     }
 
-    void setHistory(final FileHistory history) {
-        reader.history = history
-        def dir = history.file.parentFile
-
-        if (!dir.exists()) {
-            dir.mkdirs()
-
-            log.debug("Created base directory for history file: $dir")
-        }
-
-        log.debug("Using history file: $history.file")
-    }
-
-    @Override
+    @Override @CompileDynamic
     protected String readLine() {
         try {
             if (Boolean.valueOf(Preferences.get(Groovysh.AUTOINDENT_PREFERENCE_KEY))) {
@@ -144,8 +131,8 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         // we save the evicted line in case someone wants to use it with history recall
         if (shell instanceof Groovysh) {
             def history = shell.history
-            shell.historyFull = (history != null) && (history.size() >= history.maxSize)
-            if (shell.historyFull) {
+            shell.historyFull = history != null && history.size() >= history.maxSize
+            if (shell.isHistoryFull()) {
                 def first = history.first()
                 if (first) {
                     shell.evictedLine = first.value()
@@ -154,20 +141,33 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         }
     }
 
+    void setHistory(FileHistory history) {
+        reader.history = history
+        def dir = history.file.parentFile
+
+        if (!dir.exists()) {
+            dir.mkdirs()
+
+            log.debug("Created base directory for history file: $dir")
+        }
+
+        log.debug("Using history file: $history.file")
+    }
 }
 
 /**
  * Completer for interactive shells.
  */
-class CommandsMultiCompleter
-        extends AggregateCompleter {
-    protected final Logger log = Logger.create(this.class)
+@AutoFinal @CompileStatic
+class CommandsMultiCompleter extends AggregateCompleter {
+
+    protected final Logger log = Logger.create(getClass())
 
     List<Completer> list = []
 
     private boolean dirty
 
-    def add(final Command command) {
+    def add(Command command) {
         assert command
 
         //
@@ -194,7 +194,7 @@ class CommandsMultiCompleter
     }
 
     @Override
-    int complete(final String buffer, final int pos, final List cand) {
+    int complete(String buffer, int pos, List cand) {
         assert buffer != null
 
         //
