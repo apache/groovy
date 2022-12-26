@@ -20,6 +20,9 @@ package org.apache.groovy.groovysh
 
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
@@ -47,6 +50,7 @@ import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  */
+@AutoFinal @CompileStatic
 class Main {
     final Groovysh groovysh
 
@@ -70,7 +74,8 @@ class Main {
      * create a Main instance, configures it according to CLI arguments, and starts the shell.
      * @param main must have a Groovysh member that has an IO member.
      */
-    static void main(final String[] args) {
+    @CompileDynamic
+    static void main(String[] args) {
         MessageSource messages = new MessageSource(Main)
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
                 header: messages['cli.option.header'])
@@ -149,10 +154,13 @@ class Main {
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
-        def configuration = new CompilerConfiguration(System.getProperties())
-        configuration.setParameters((boolean) options.hasOption("pa"))
 
-        List<String> filenames = options.arguments()
+        start(io, evalString, options.arguments(), options.hasOption('pa'))
+    }
+
+    private static void start(IO io, String evalString, List<String> filenames, boolean parameters) {
+        def configuration = new CompilerConfiguration(System.getProperties())
+        configuration.setParameters(parameters)
         Main main = new Main(io, configuration)
         main.startGroovysh(evalString, filenames)
     }
@@ -183,10 +191,8 @@ class Main {
             }
         }
 
-
-        SecurityManager psm = System.getSecurityManager()
+        final SecurityManager psm = System.getSecurityManager()
         System.setSecurityManager(new NoExitSecurityManager())
-
         try {
             code = shell.run(evalString, filenames)
         }
@@ -205,6 +211,7 @@ class Main {
      * @param type: one of 'auto', 'unix', ('win', 'windows'), ('false', 'off', 'none')
      * @param suppressColor only has effect when ansi is enabled
      */
+    @AutoFinal(enabled=false)
     static void setTerminalType(String type, boolean suppressColor) {
         assert type != null
 
@@ -232,6 +239,7 @@ class Main {
                 // Should never happen
                 throw new IllegalArgumentException("Invalid Terminal type: $type")
         }
+
         if (enableAnsi) {
             installAnsi() // must be called before IO(), since it modifies System.in
             Ansi.enabled = !suppressColor
@@ -254,8 +262,7 @@ class Main {
     }
 
     @Deprecated
-    static void setSystemProperty(final String nameValue) {
+    static void setSystemProperty(String nameValue) {
         setSystemPropertyFrom(nameValue)
     }
 }
-

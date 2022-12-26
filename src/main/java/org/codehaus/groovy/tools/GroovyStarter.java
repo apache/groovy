@@ -19,10 +19,10 @@
 package org.codehaus.groovy.tools;
 
 import java.io.FileInputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 
 /**
  * Helper class to initialize the Groovy runtime.
@@ -33,12 +33,19 @@ public class GroovyStarter {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
     }
-    
-    
+
+    public static void main(String[] args) {
+        try {
+            rootLoader(args);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
     public static void rootLoader(String[] args) {
         String conf = System.getProperty("groovy.starter.conf",null);
         final LoaderConfiguration lc = new LoaderConfiguration();
-        
+
         // evaluate parameters
         boolean hadMain=false, hadConf=false, hadCP=false;
         int argsOffset = 0;
@@ -74,7 +81,7 @@ public class GroovyStarter {
                     break;
                 default:
                     break label;
-            }            
+            }
         }
 
         // this allows to override the commandline conf
@@ -85,10 +92,9 @@ public class GroovyStarter {
         if (lc.getMainClass()==null && conf==null) {
             exit("no configuration file or main class specified");
         }
-        
-        // copy arguments for main class 
-        String[] newArgs = new String[args.length-argsOffset];
-        System.arraycopy(args, 0 + argsOffset, newArgs, 0, newArgs.length);
+
+        // copy arguments for main class
+        String[] mainArgs = Arrays.copyOfRange(args, argsOffset, args.length);
         // load configuration file
         if (conf!=null) {
             try {
@@ -100,35 +106,27 @@ public class GroovyStarter {
         }
         // create loader and execute main class
         ClassLoader loader = AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
-        Method m=null;
+        Method m = null;
         try {
-            Class c = loader.loadClass(lc.getMainClass());
+            Class<?> c = loader.loadClass(lc.getMainClass());
             m = c.getMethod("main", String[].class);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e1) {
-            exit(e1);
+        } catch (ReflectiveOperationException | SecurityException e2) {
+            exit(e2);
         }
         try {
-            m.invoke(null, new Object[]{newArgs});
-        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e3) {
+            m.invoke(null, new Object[]{mainArgs});
+        } catch (ReflectiveOperationException | IllegalArgumentException e3) {
             exit(e3);
         }
     }
-    
+
     private static void exit(Exception e) {
         e.printStackTrace();
         System.exit(1);
     }
-    
-    private static void exit(String msg) {
-        System.err.println(msg);
+
+    private static void exit(String text) {
+        System.err.println(text);
         System.exit(1);
-    }
-    
-    public static void main(String[] args) {
-        try {
-            rootLoader(args);
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
     }
 }

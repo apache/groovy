@@ -40,11 +40,7 @@ import org.apache.groovy.groovysh.commands.SetCommand
 import org.apache.groovy.groovysh.commands.ShowCommand
 
 /**
- * Registers {@link Command} classes from an XML file like:
- * <commands>
- *  <command>org.apache.groovy.groovysh.commands.HelpCommand</command>
- * ...
- * </commands>
+ * Registers default {@link Command} instances.
  */
 class DefaultCommandsRegistrar {
 
@@ -52,36 +48,36 @@ class DefaultCommandsRegistrar {
 
     DefaultCommandsRegistrar(final Shell shell) {
         assert shell != null
-
         this.shell = shell
     }
 
     void register() {
+        List<Command> commands = [
+            new HelpCommand(shell),
+            new ExitCommand(shell),
+            new ImportCommand(shell),
+            new DisplayCommand(shell),
+            new ClearCommand(shell),
+            new ShowCommand(shell),
+            new InspectCommand(shell),
+            new PurgeCommand(shell),
+            new EditCommand(shell),
+            new LoadCommand(shell),
+            new SaveCommand(shell),
+            new RecordCommand(shell),
+            new HistoryCommand(shell),
+            new AliasCommand(shell),
+            new SetCommand(shell),
+            new GrabCommand(shell),
+            new RegisterCommand(shell),
+        ]
 
-        for (Command classname in [
-                new HelpCommand(shell),
-                new ExitCommand(shell),
-                new ImportCommand(shell),
-                new DisplayCommand(shell),
-                new ClearCommand(shell),
-                new ShowCommand(shell),
-                new InspectCommand(shell),
-                new PurgeCommand(shell),
-                new EditCommand(shell),
-                new LoadCommand(shell),
-                new SaveCommand(shell),
-                new RecordCommand(shell),
-                new HistoryCommand(shell),
-                new AliasCommand(shell),
-                new SetCommand(shell),
-                new GrabCommand(shell),
-                // does not do anything
-                //new ShadowCommand(shell),
-                new RegisterCommand(shell),
-                new DocCommand(shell)
-        ]) {
-            shell.register(classname)
+        if (!Boolean.getBoolean('groovysh.disableDocCommand')) {
+            commands.add(new DocCommand(shell))
         }
 
+        for (command in commands) {
+            shell.register(command)
+        }
     }
 }

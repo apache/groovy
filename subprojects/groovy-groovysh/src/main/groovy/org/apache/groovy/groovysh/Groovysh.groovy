@@ -18,7 +18,11 @@
  */
 package org.apache.groovy.groovysh
 
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
@@ -30,7 +34,6 @@ import org.apache.groovy.groovysh.util.PackageHelper
 import org.apache.groovy.groovysh.util.PackageHelperImpl
 import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
 import org.apache.groovy.groovysh.util.XmlCommandRegistrar
-import org.apache.groovy.parser.antlr4.Antlr4PluginFactory
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -45,17 +48,18 @@ import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern
 
+import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT
+
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *
  * The set of available commands can be modified by placing a file in the classpath named
  * <code>org/codehaus/groovy/tools/shell/commands.xml</code>
  *
- * See {@link XmlCommandRegistrar}
+ * @see XmlCommandRegistrar
  */
+@AutoFinal @CompileStatic
 class Groovysh extends Shell {
-
-    private static final MessageSource messages = new MessageSource(Groovysh)
 
     private static final Pattern TYPEDEF_PATTERN = ~'^\\s*((?:public|protected|private|static|abstract|final)\\s+)*(?:class|enum|interface).*'
     private static final Pattern METHODDEF_PATTERN = ~'^\\s*((?:public|protected|private|static|abstract|final|synchronized)\\s+)*[a-zA-Z_.]+[a-zA-Z_.<>]+\\s+[a-zA-Z_]+\\(.*'
@@ -71,6 +75,9 @@ class Groovysh extends Shell {
     // after how many prefix characters we start displaying all metaclass methods
     public static final String METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY = 'meta-completion-prefix-length'
 
+    private static final MessageSource messages = new MessageSource(Groovysh)
+
+    //
 
     final BufferManager buffers = new BufferManager()
 
@@ -87,59 +94,57 @@ class Groovysh extends Shell {
 
     FileHistory history
 
-    boolean historyFull  // used as a workaround for GROOVY-2177
+    boolean historyFull // used as a workaround for GROOVY-2177
 
-    String evictedLine  // remembers the command which will get evicted if history is full
+    String evictedLine // remembers the command which will get evicted if history is full
 
     PackageHelper packageHelper
+
     private CompilerConfiguration configuration
 
-    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
-        this(classLoader, binding, io, registrar, CompilerConfiguration.DEFAULT)
-    }
-
-    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
-        this(classLoader, binding, io, registrar, configuration, new Interpreter(classLoader, binding, configuration))
-    }
-
-    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration, Interpreter interpreter) {
-        super(io)
-        assert classLoader
-        assert binding
-        def actualRegistrar = registrar ?: createDefaultRegistrar(classLoader)
-        parser = new Parser()
-        interp = interpreter
-        actualRegistrar.call(this)
-        this.packageHelper = new PackageHelperImpl(classLoader)
-        this.configuration = configuration
-    }
-
-    private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
-        return {Groovysh shell ->
-            URL xmlCommandResource = getClass().getResource('commands.xml')
+    private static Closure createDefaultRegistrar(ClassLoader classLoader) {
+        return { Groovysh groovysh ->
+            URL xmlCommandResource = groovysh.getClass().getResource('commands.xml')
             if (xmlCommandResource != null) {
-                def r = new XmlCommandRegistrar(shell, classLoader)
-                r.register(xmlCommandResource)
+                def registrar = new XmlCommandRegistrar(groovysh, classLoader)
+                registrar.register(xmlCommandResource)
             } else {
-                new DefaultCommandsRegistrar(shell).register()
+                def registrar = new DefaultCommandsRegistrar(groovysh)
+                registrar.register()
             }
         }
     }
 
-    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
-        this(classLoader, binding, io, null)
+    //--------------------------------------------------------------------------
+
+    Groovysh(ClassLoader classLoader, Binding binding, IO io, @ClosureParams(value=SimpleType, options='org.apache.groovy.groovysh.Groovysh') Closure registrar, CompilerConfiguration configuration, Interpreter interpreter) {
+        super(io)
+        assert classLoader
+        assert binding
+        def theRegistrar = registrar ?: createDefaultRegistrar(classLoader)
+        interp = interpreter
+        parser = new Parser()
+        theRegistrar.call(this)
+        packageHelper = new PackageHelperImpl(classLoader)
+        this.configuration = configuration
     }
 
-    Groovysh(final Binding binding, final IO io) {
-        this(Thread.currentThread().contextClassLoader, binding, io)
+    Groovysh(ClassLoader classLoader, Binding binding, IO io, @ClosureParams(value=SimpleType, options='org.apache.groovy.groovysh.Groovysh') Closure registrar = null, CompilerConfiguration configuration = DEFAULT) {
+        this(classLoader, binding, io, registrar, configuration, new Interpreter(classLoader, binding, configuration))
     }
 
-    Groovysh(final IO io) {
+    // ClassLoader,Binding,IO variants (drop left-to-right)
+
+    Groovysh(Binding binding, IO io) {
+        this(Thread.currentThread().getContextClassLoader(), binding, io)
+    }
+
+    Groovysh(IO io, CompilerConfiguration cc) {
+        this(Thread.currentThread().getContextClassLoader(), new Binding(), io, null, cc)
+    }
+
+    Groovysh(IO io) {
         this(new Binding(), io)
-    }
-
-    Groovysh(final IO io, CompilerConfiguration configuration) {
-        this(Thread.currentThread().contextClassLoader, new Binding(), io, null, configuration)
     }
 
     Groovysh() {
@@ -154,11 +159,11 @@ class Groovysh extends Shell {
      * Execute a single line, where the line may be a command or Groovy code (complete or incomplete).
      */
     @Override
-    Object execute(final String line) {
+    Object execute(String line) {
         assert line != null
 
         // Ignore empty lines
-        if (line.trim().size() == 0) {
+        if (line.trim().isEmpty()) {
             return null
         }
 
@@ -179,7 +184,7 @@ class Groovysh extends Shell {
         }
 
         // Otherwise treat the line as Groovy
-        List<String> current = new ArrayList<String>(buffers.current())
+        List<String> current = new ArrayList<>(buffers.current())
 
         // Append the line to the current buffer
         current << line
@@ -243,7 +248,6 @@ class Groovysh extends Shell {
         return result
     }
 
-    @CompileStatic
     private boolean isIncompleteCaseOfAntlr4(MultipleCompilationErrorsException t) {
         // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
         (
@@ -260,16 +264,15 @@ class Groovysh extends Shell {
      * @param strings
      * @return
      */
-    @CompileStatic
-    static boolean isTypeOrMethodDeclaration(final List<String> buffer) {
-        final String joined = buffer.join('')
+    static boolean isTypeOrMethodDeclaration(List<String> buffer) {
+        String joined = buffer.join('')
         return joined.matches(TYPEDEF_PATTERN) || joined.matches(METHODDEF_PATTERN)
     }
 /*
      * to simulate an interpreter mode, this method wraps the statements into a try/finally block that
      * stores bound variables like unbound variables
      */
-    private Object evaluateWithStoredBoundVars(String importsSpec, final List<String> current) {
+    private Object evaluateWithStoredBoundVars(String importsSpec, List<String> current) {
         Object result
         String variableBlocks = null
         // To make groovysh behave more like an interpreter, we need to retrieve all bound
@@ -295,23 +298,21 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         setLastResult(result = interp.evaluate(buff))
 
         if (variableBlocks) {
-            Map<String, Object> boundVarValues = interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
+            def boundVarValues = (Map<String, Object>) interp.context.getVariable(COLLECTED_BOUND_VARS_MAP_VARNAME)
             boundVarValues.each({ String name, Object value -> interp.context.setVariable(name, value) })
         }
 
         return result
     }
 
-
-
-    protected Object executeCommand(final String line) {
+    protected Object executeCommand(String line) {
         return super.execute(line)
     }
 
     /**
      * Display the given buffer.
      */
-    void displayBuffer(final List buffer) {
+    void displayBuffer(List buffer) {
         assert buffer
 
         buffer.eachWithIndex { line, index ->
@@ -329,16 +330,15 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     // Prompt
     //
 
-    private final AnsiRenderer prompt = new AnsiRenderer()
-
-    /*
-        Builds the command prompt name in 1 of 3 ways:
-           1.  Checks the groovysh.prompt property passed into groovysh script.   -Dgroovysh.prompt="hello"
-           2.  Checks an environment variable called GROOVYSH_PROMPT.             export GROOVYSH_PROMPT
-           3.  If no value is defined returns the default groovy shell prompt.
-
-        The code will always assume you want the line number in the prompt.  To implement differently overhead the render
-        prompt variable.
+    /**
+     * Builds the command prompt name in 1 of 3 ways:
+     * <ol>
+     * <li>Checks the groovysh.prompt property passed into groovysh script: {@code -Dgroovysh.prompt="hello"}
+     * <li>Checks an environment variable called GROOVYSH_PROMPT: {@code export GROOVYSH_PROMPT}
+     * <li>If no value is defined returns the default groovy shell prompt.
+     * </ol>
+     * The code will always assume you want the line number in the prompt. To
+     * implement differently overhead the render prompt variable.
      */
     private String buildPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
@@ -366,42 +366,40 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             return ''
         }
         StringBuilder src = new StringBuilder()
-        for (String line : buffer) {
+        for (String line: buffer) {
             src.append(line).append('\n')
         }
 
         int curlyLevel
-        boolean antlr4ParserEnabled = configuration.getPluginFactory() instanceof Antlr4PluginFactory
-        if (antlr4ParserEnabled) {
+        if (configuration.getPluginFactory() instanceof org.apache.groovy.parser.antlr4.Antlr4PluginFactory) {
             def lexer = org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
             curlyLevel = lexer.countCurlyLevel()
         } else {
             // not sure whether the same Lexer instance could be reused.
             def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
-
             // read all tokens
             try {
                 while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {
                 }
-            } catch (Exception ignore) { // TokenStreamException for antlr2
-                // pass
+            } catch (Exception e) { // TokenStreamException for antlr2
+                // ignore
             }
             curlyLevel = lexer.getParenLevel()
         }
-        int parenIndent = curlyLevel * indentSize
+        int curlyIndent = curlyLevel * indentSize
 
         // dedent after closing brackets
-        return ' ' * Math.max(parenIndent, 0)
+        return ' ' * Math.max(curlyIndent, 0)
     }
 
-    public String renderPrompt() {
-        return prompt.render(buildPrompt())
+    String renderPrompt() {
+        return AnsiRenderer.render(buildPrompt())
     }
 
     /**
      * Format the given number suitable for rendering as a line number column.
      */
-    protected String formatLineNumber(final int num) {
+    protected String formatLineNumber(int num) {
         assert num >= 0
 
         // Make a %03d-like string for the line number
@@ -419,29 +417,25 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
     /**
-     * Loads file from within user groovy state directory
-     * @param filename
+     * Loads file from within user groovy state directory.
      */
-    protected void loadUserScript(final String filename) {
+    @CompileDynamic
+    protected void loadUserScript(String filename) {
         assert filename
 
-        File file = new File(getUserStateDirectory(), filename)
-
+        def file = new File(getUserStateDirectory(), filename)
         if (file.exists()) {
-            Command command = registry[LoadCommand.COMMAND_NAME] as Command
-
+            def command = registry[LoadCommand.COMMAND_NAME] as Command
             if (command) {
                 log.debug("Loading user-script: $file")
 
                 // Disable the result hook for profile scripts
                 def previousHook = resultHook
                 resultHook = { result -> /* nothing */}
-
                 try {
                     command.load(file.toURI().toURL())
                 }
                 finally {
-                    // Restore the result hook
                     resultHook = previousHook
                 }
             } else {
@@ -454,30 +448,30 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     // Recording
     //
 
-    protected void maybeRecordInput(final String line) {
-        RecordCommand record = registry[RecordCommand.COMMAND_NAME]
-
+    protected void maybeRecordInput(String line) {
+        def record = (RecordCommand) registry[RecordCommand.COMMAND_NAME]
         if (record != null) {
             record.recordInput(line)
         }
     }
 
-    protected void maybeRecordResult(final Object result) {
-        RecordCommand record = registry[RecordCommand.COMMAND_NAME]
-
+    protected void maybeRecordResult(Object result) {
+        def record = (RecordCommand) registry[RecordCommand.COMMAND_NAME]
         if (record != null) {
             record.recordResult(result)
         }
     }
 
     protected void maybeRecordError(Throwable cause) {
-        RecordCommand record = registry[RecordCommand.COMMAND_NAME]
-
+        def record = (RecordCommand) registry[RecordCommand.COMMAND_NAME]
         if (record != null) {
+            Throwable error
             if (getPreference(SANITIZE_PREFERENCE_KEY, 'false')) {
-                cause = StackTraceUtils.deepSanitize(cause)
+                error = StackTraceUtils.deepSanitize(cause)
+            } else {
+                error = cause
             }
-            record.recordError(cause)
+            record.recordError(error)
         }
     }
 
@@ -496,12 +490,12 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
     Closure resultHook = defaultResultHook
 
-    private void setLastResult(final Object result) {
+    private void setLastResult(Object result) {
         if (resultHook == null) {
             throw new IllegalStateException('Result hook is not set')
         }
 
-        resultHook.call((Object) result)
+        resultHook.call(result)
 
         interp.context['_'] = result
 
@@ -517,10 +511,10 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
 
         if (cause instanceof MultipleCompilationErrorsException) {
-            Writer data = new org.apache.groovy.io.StringBuilderWriter();
-            PrintWriter writer = new PrintWriter(data);
+            Writer data = new org.apache.groovy.io.StringBuilderWriter()
+            PrintWriter writer = new PrintWriter(data)
             ErrorCollector collector = ((MultipleCompilationErrorsException) cause).getErrorCollector()
-            Iterator<Message> msgIterator = collector.getErrors().iterator()
+            Iterator<? extends Message> msgIterator = collector.getErrors().iterator()
             while (msgIterator.hasNext()) {
                 Message errorMsg = msgIterator.next()
                 errorMsg.write(writer)
@@ -532,7 +526,6 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         } else {
             io.err.println("@|bold,red ${cause.message}|@")
 
-
             maybeRecordError(cause)
 
             if (log.debug) {
@@ -541,13 +534,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             }
             else {
                 boolean sanitize = getPreference(SANITIZE_PREFERENCE_KEY, 'false')
-
                 // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
-                if (!io.verbose && sanitize) {
-                    cause = StackTraceUtils.deepSanitize(cause)
-                }
-
-                def trace = cause.stackTrace
+                def trace = (sanitize && !io.verbose ? StackTraceUtils.deepSanitize(cause) : cause).stackTrace
 
                 def buff = new StringBuilder()
 
@@ -572,7 +560,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                     io.err.println(buff)
 
-                    Groovysh.reset(buff) // Reset the buffer
+                    buff.setLength(0) // Reset the buffer
                     if (doBreak) {
                         io.err.println('        @|bold ...|@')
                         break
@@ -582,19 +570,14 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
     }
 
-    @CompileStatic
-    private static void reset(StringBuilder buff) {
-        buff.setLength(0)
-    }
-
     // protected for mocking in tests
-    protected String getPreference(final String key, final String theDefault) {
+    protected String getPreference(String key, String theDefault) {
         return Preferences.get(key, theDefault)
     }
 
     Closure errorHook = defaultErrorHook
 
-    private void displayError(final Throwable cause) {
+    private void displayError(Throwable cause) {
         if (errorHook == null) {
             throw new IllegalStateException('Error hook is not set')
         }
@@ -609,38 +592,36 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
     /**
-     * Run Interactive Shell with optional initial script and files to load
+     * Run the Interactive Shell with optional initial script and files to load.
      */
-    int run(final String evalString, final List<String> filenames) {
+    int run(String evalString, List<String> filenames) {
         List<String> startCommands = []
-
-        if (evalString != null && evalString.trim().size() > 0) {
+        if (evalString?.trim()) {
             startCommands.add(evalString)
         }
-        if (filenames != null && filenames.size() > 0) {
-            startCommands.addAll(filenames.collect({String it -> "${LoadCommand.COMMAND_NAME} $it"}))
+        if (filenames) {
+            filenames.each {
+                startCommands.add("${LoadCommand.COMMAND_NAME} $it".toString())
+            }
         }
         return run(startCommands.join('\n'))
     }
 
     /**
-     * Run Interactive Shell with initial command
+     * Run the Interactive Shell with initial command.
      */
-    int run(final String commandLine) {
+    int run(String commandLine) {
         def code
-
         try {
             loadUserScript('groovysh.profile')
             loadUserScript('groovysh.rc')
 
             // Setup the interactive runner
-            runner = new InteractiveShellRunner(
-                    this,
-                    this.&renderPrompt as Closure)
+            runner = new InteractiveShellRunner(this, this.&renderPrompt)
 
             // if args were passed in, just execute as a command
             // (but cygwin gives an empty string, so ignore that)
-            if (commandLine != null && commandLine.trim().size() > 0) {
+            if (commandLine?.trim()) {
                 runner.wrappedInputStream.insert(commandLine + '\n')
             }
 
@@ -657,25 +638,20 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             // And let 'er rip... :-)
             runner.run()
 
-
             code = 0
         } catch (ExitNotification n) {
-            log.debug("Exiting w/code: ${n.code}")
-
             code = n.code
-        }
-        catch (Throwable t) {
+            log.debug("Exiting w/code: $code")
+        } catch (Throwable t) {
+            code = 1
             io.err.println(messages.format('info.fatal', t))
             t.printStackTrace(io.err)
-
-            code = 1
         }
 
         assert code != null // This should never happen
 
         return code
     }
-
 
     /**
      * maybe displays log information and a welcome message
