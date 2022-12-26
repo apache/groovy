@@ -21,53 +21,36 @@ package org.codehaus.groovy.tools.shell
 import groovy.mock.interceptor.MockFor
 import org.codehaus.groovy.tools.shell.completion.IdentifierCompletor
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
-import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
 
 abstract class CompletorTestSupport extends GroovyTestCase {
 
-    BufferManager bufferManager = new BufferManager()
-    IO testio
     ByteArrayOutputStream mockOut
     ByteArrayOutputStream mockErr
-    MockFor groovyshMocker
-    MockFor packageHelperMocker
-    PackageHelper mockPackageHelper
+    IO testio
 
     MockFor reflectionCompletorMocker
-
+    MockFor packageHelperMocker
     MockFor idCompletorMocker
+    MockFor groovyshMocker
 
     @Override
-    void setUp() {
+    protected void setUp() {
         super.setUp()
         mockOut = new ByteArrayOutputStream()
-
         mockErr = new ByteArrayOutputStream()
+        testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
 
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
         reflectionCompletorMocker = new MockFor(ReflectionCompletor)
-
+        packageHelperMocker = new MockFor(PackageHelperImpl)
         idCompletorMocker = new MockFor(IdentifierCompletor)
 
         groovyshMocker = new MockFor(Groovysh)
-        groovyshMocker.demand.getClass(0..1) { Groovysh }
-        groovyshMocker.demand.createDefaultRegistrar { { shell -> null } }
-        groovyshMocker.demand.getIo(0..2) { testio }
-        packageHelperMocker = new MockFor(PackageHelperImpl)
-        def registry = new CommandRegistry()
-        groovyshMocker.demand.getRegistry(0..1) { registry }
-        packageHelperMocker.demand.getContents(6) { ['java', 'test'] }
-        groovyshMocker.demand.getIo(0..2) { testio }
-        for (i in 1..19) {
-            groovyshMocker.demand.getIo(0..1) { testio }
-            groovyshMocker.demand.add(0..1) {}
-            groovyshMocker.demand.getIo(0..1) { testio }
-        }
-        groovyshMocker.demand.getRegistry(0..1) { registry }
-        groovyshMocker.demand.getBuffers(0..2) {bufferManager}
+        // no-arg constructor
+        groovyshMocker.demand.getClass( 1) { Groovysh }
+        groovyshMocker.demand.getIo(0..21) { testio }
+        groovyshMocker.demand.register(18) { it }
+        // new command
+        groovyshMocker.demand.getIo( 0..3) { testio }
     }
 }

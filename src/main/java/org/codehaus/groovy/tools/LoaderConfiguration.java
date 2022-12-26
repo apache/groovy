@@ -19,7 +19,6 @@
 package org.codehaus.groovy.tools;
 
 import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -142,12 +141,17 @@ public class LoaderConfiguration {
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");
         if (!configScripts.isEmpty()) {
-            System.setProperty("groovy.starter.configscripts", DefaultGroovyMethods.join((Iterable)configScripts, ","));
+            StringBuilder sb = new StringBuilder();
+            for (String configScript : configScripts) {
+                if (sb.length() > 0) sb.append(',');
+                sb.append(configScript);
+            }
+            System.setProperty("groovy.starter.configscripts", sb.toString());
         }
     }
 
     /*
-    * Expands the properties inside the given string to it's values.
+    * Expands the properties inside the given string to their values.
     */
     private static String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
@@ -170,7 +174,7 @@ public class LoaderConfiguration {
             if (propertyIndexStart == -1) break;
             result.append(str, propertyIndexEnd, propertyIndexStart);
 
-            propertyIndexEnd = str.indexOf("}", propertyIndexStart);
+            propertyIndexEnd = str.indexOf('}', propertyIndexStart);
             if (propertyIndexEnd == -1) break;
 
             String propertyKey = str.substring(propertyIndexStart + 2, propertyIndexEnd);
@@ -192,9 +196,9 @@ public class LoaderConfiguration {
         }
 
         if (propertyIndexStart == -1 || propertyIndexStart >= str.length()) {
-            result.append(str.substring(propertyIndexEnd));
+            result.append(str, propertyIndexEnd, str.length());
         } else if (propertyIndexEnd == -1) {
-            result.append(str.substring(propertyIndexStart));
+            result.append(str, propertyIndexStart, str.length());
         }
 
         return result.toString();

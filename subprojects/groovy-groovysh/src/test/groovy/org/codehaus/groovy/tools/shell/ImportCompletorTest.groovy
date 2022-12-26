@@ -17,22 +17,23 @@
  *  under the License.
  */
 package org.codehaus.groovy.tools.shell
+
 import groovy.mock.interceptor.MockFor
-import jline.console.completer.ArgumentCompleter
 import jline.console.completer.Completer
-import jline.console.completer.NullCompleter
-import jline.console.completer.StringsCompleter
 import org.codehaus.groovy.tools.shell.commands.ImportCommand
 import org.codehaus.groovy.tools.shell.commands.ImportCompleter
 import org.codehaus.groovy.tools.shell.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
+
 /**
  * as opposed to MockFor, traditional custom mocking allows @CompileStatic for the class under Test
  */
 class MockPackageHelper implements PackageHelper {
+
     Set<String> mockContents
+
     MockPackageHelper(Collection<String> mockContents) {
-        this.mockContents = new HashSet<String>(mockContents)
+        this.mockContents = mockContents.toSet()
     }
 
     @Override
@@ -41,16 +42,16 @@ class MockPackageHelper implements PackageHelper {
     }
 
     @Override
-    void reset() { }
+    void reset() {
+    }
 }
 
-class ImportCompleterUnitTest extends GroovyTestCase {
+final class ImportCompleterUnitTest extends GroovyTestCase {
 
     private MockFor preferencesMocker
 
-
     @Override
-    void setUp() {
+    protected void setUp() {
         super.setUp()
         preferencesMocker = new MockFor(Preferences)
     }
@@ -137,7 +138,6 @@ class ImportCompleterUnitTest extends GroovyTestCase {
         assert !'java.util.*'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
         assert !'java.util.T'.matches(ImportCompleter.LOWERCASE_IMPORT_ITEM_PATTERN)
     }
-
 
     private void assertCompletionCandidatesMatch(
             final PackageHelper packageHelper,
@@ -278,7 +278,9 @@ class ImportCompleterUnitTest extends GroovyTestCase {
     }
 }
 
-class ImportCompleterTest extends CompletorTestSupport {
+final class ImportCompleterTest extends CompletorTestSupport {
+
+    private PackageHelper mockPackageHelper
 
     void testEmpty() {
         mockPackageHelper = new MockPackageHelper(['java', 'test'])

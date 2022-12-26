@@ -23,12 +23,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
- * RootLoader does have it's own classpath. When searching for a
+ * RootLoader does have its own classpath. When searching for a
  * class or resource this classpath will be used. Parent
  * Classloaders are ignored first. If a class or resource
  * can't be found in the classpath of the RootLoader, then parent is
@@ -45,7 +44,7 @@ import java.util.Map;
  * classloader does know a class which depends on a class only
  * a child of this loader does know, then you won't be able to
  * load the class. To load the class the child is not allowed
- * to redirect it's search for the class to the parent first.
+ * to redirect its search for the class to the parent first.
  * That way the child can load the class. If the child does not
  * have all classes to do this, this fails of course.
  * <p>
@@ -73,58 +72,61 @@ import java.util.Map;
  * instance will solve that problem.
  */
 public class RootLoader extends URLClassLoader {
-    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
-    private final Map<String, Class> customClasses = new HashMap<>();
+
     private static final String ORG_W3C_DOM_NODE = "org.w3c.dom.Node";
+    private final Map<String, Class<?>> customClasses = new HashMap<>();
 
     /**
-     * constructs a new RootLoader without classpath
+     * Constructs a {@code RootLoader} without classpath.
      *
      * @param parent the parent Loader
      */
-    public RootLoader(ClassLoader parent) {
-        this(EMPTY_URL_ARRAY, parent);
+    public RootLoader(final ClassLoader parent) {
+        this(new URL[0], parent);
     }
 
     /**
-     * constructs a new RootLoader with a parent loader and an
-     * array of URLs as classpath
+     * Constructs a {@code RootLoader} with a parent loader and an array of URLs
+     * as its classpath.
      */
-    public RootLoader(URL[] urls, ClassLoader parent) {
+    public RootLoader(final URL[] urls, final ClassLoader parent) {
         super(urls, parent);
-        // major hack here...!
+        // major hack here!!
         try {
             customClasses.put(ORG_W3C_DOM_NODE, super.loadClass(ORG_W3C_DOM_NODE, false));
-        } catch (Exception e) { /* ignore */ }
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     private static ClassLoader chooseParent() {
         ClassLoader cl = RootLoader.class.getClassLoader();
-        if (cl != null) return cl;
-        return ClassLoader.getSystemClassLoader();
+        if (cl == null)
+            cl = ClassLoader.getSystemClassLoader();
+        return cl;
     }
 
     /**
-     * constructs a new RootLoader with a {@link LoaderConfiguration}
-     * object which holds the classpath
+     * Constructs a {@code RootLoader} with a {@link LoaderConfiguration} object
+     * which holds the classpath.
      */
-    public RootLoader(LoaderConfiguration lc) {
+    public RootLoader(final LoaderConfiguration lc) {
         this(chooseParent());
+
         Thread.currentThread().setContextClassLoader(this);
-        URL[] urls = lc.getClassPathUrls();
-        for (URL url : urls) {
+
+        for (URL url : lc.getClassPathUrls()) {
             addURL(url);
         }
         // TODO M12N eventually defer this until later when we have a full Groovy
         // environment and use normal Grape.grab()
         String groovyHome = System.getProperty("groovy.home");
-        List<String> grabUrls = lc.getGrabUrls();
-        for (String grabUrl : grabUrls) {
-            Map<String, Object> grabParts = GrapeUtil.getIvyParts(grabUrl);
-            String group = grabParts.get("group").toString();
-            String module = grabParts.get("module").toString();
-            String name = grabParts.get("module").toString() + "-" + grabParts.get("version") + ".jar";
-            File jar = new File(groovyHome + "/repo/" + group + "/" + module + "/jars/" + name);
+        for (String url : lc.getGrabUrls()) {
+            Map<String, Object> grabParts = GrapeUtil.getIvyParts(url);
+            String group   = (String) grabParts.get("group");
+            String module  = (String) grabParts.get("module");
+            String version = (String) grabParts.get("version");
+            File jar = new File(groovyHome + "/repo/" + group + "/" + module + "/jars/" + module + "-" + version + ".jar");
             try {
                 addURL(jar.toURI().toURL());
             } catch (MalformedURLException e) {
@@ -134,47 +136,53 @@ public class RootLoader extends URLClassLoader {
     }
 
     /**
-     * loads a class using the name of the class
+     * {@inheritDoc}
      */
-    protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
-        Class c = this.findLoadedClass(name);
+    @Override
+    protected synchronized Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+        Class<?> c = findLoadedClass(name);
         if (c != null) return c;
         c = customClasses.get(name);
         if (c != null) return c;
 
         try {
-            c = oldFindClass(name);
-        } catch (ClassNotFoundException cnfe) {
-            // IGNORE
+            c = super.findClass(name);
+        } catch (ClassNotFoundException e) {
+            // ignore
         }
-        if (c == null) c = super.loadClass(name, resolve);
+        if (c == null)
+            c = super.loadClass(name, resolve);
 
-        if (resolve) resolveClass(c);
+        if (resolve)
+            resolveClass(c);
 
         return c;
     }
 
     /**
-     * returns the URL of a resource, or null if it is not found
+     * {@inheritDoc}
      */
-    public URL getResource(String name) {
+    @Override
+    public URL getResource(final String name) {
         URL url = findResource(name);
-        if (url == null) url = super.getResource(name);
+        if (url == null)
+            url = super.getResource(name);
         return url;
     }
 
     /**
-     * adds an url to the classpath of this classloader
+     * {@inheritDoc}
      */
-    public void addURL(URL url) {
+    @Override
+    public void addURL(final URL url) {
         super.addURL(url);
     }
 
-    private Class oldFindClass(String name) throws ClassNotFoundException {
-        return super.findClass(name);
-    }
-
-    protected Class findClass(String name) throws ClassNotFoundException {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Class<?> findClass(final String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
     }
 }

@@ -18,29 +18,31 @@
  */
 package org.codehaus.groovy.tools.shell
 
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.tools.shell.util.Logger
 
-import java.lang.reflect.Method
+interface Evaluator {
+    Object evaluate(Collection<String> strings)
+}
 
 /**
  * Helper to interpret a source buffer.
  */
-class Interpreter implements Evaluator
-{
+@AutoFinal @CompileStatic
+class Interpreter implements Evaluator {
+
     static final String SCRIPT_FILENAME = 'groovysh_evaluate'
 
-    private final Logger log = Logger.create(this.class)
+    private final Logger log = Logger.create(getClass())
 
     private final GroovyShell shell
 
-    Interpreter(final ClassLoader classLoader, final Binding binding) {
-        this(classLoader, binding, null)
-    }
-
-    Interpreter(final ClassLoader classLoader, final Binding binding, CompilerConfiguration configuration) {
+    Interpreter(ClassLoader classLoader, Binding binding, CompilerConfiguration configuration = null) {
         assert classLoader
         assert binding
         if (configuration != null) {
@@ -50,35 +52,36 @@ class Interpreter implements Evaluator
         }
     }
 
+    GroovyClassLoader getClassLoader() {
+        return shell.getClassLoader()
+    }
+
     Binding getContext() {
         // GROOVY-9584: leave as call to getter not property access to avoid potential context variable in binding
         return shell.getContext()
-    }
-
-    GroovyClassLoader getClassLoader() {
-        return shell.classLoader
     }
 
     GroovyShell getShell() {
         return shell
     }
 
-    @Override
-    def evaluate(final Collection<String> buffer) {
+    //--------------------------------------------------------------------------
+
+    @Override @CompileDynamic
+    Object evaluate(Collection<String> buffer) {
         assert buffer
 
-        def source = buffer.join(Parser.NEWLINE)
+        String source = buffer.join(Parser.NEWLINE)
 
-        def result
+        Object result = null
 
-        Class type
+        Class type = null
         try {
-            Script script = shell.parse(source, SCRIPT_FILENAME)
-            type = script.getClass()
-
+            type = shell.parseClass(new GroovyCodeSource(source, SCRIPT_FILENAME, GroovyShell.DEFAULT_CODE_BASE))
+            Script script = InvokerHelper.createScript(type, context)
             log.debug("Compiled script: $script")
 
-            if (type.declaredMethods.any {Method it -> it.name == 'main' }) {
+            if (type.getDeclaredMethods().any { it.name == 'main' }) {
                 result = script.run()
             }
 
@@ -86,28 +89,23 @@ class Interpreter implements Evaluator
             log.debug("Evaluation result: ${InvokerHelper.toString(result)} (${result?.getClass()})")
 
             // Keep only the methods that have been defined in the script
-            type.declaredMethods.each { Method m ->
-                if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$') || m.name.startsWith('$'))) {
-                    log.debug("Saving method definition: $m.name")
-
-                    context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
+            type.getDeclaredMethods().each { m ->
+                String name = m.name
+                if (!(name == 'main' || name == 'run' || name.startsWith('super$') || name.startsWith('class$') || name.startsWith('$'))) {
+                    log.debug("Saving script method definition: $name")
+                    context[name] = new MethodClosure(script, name)
                 }
             }
-        }
-        finally {
-            // Remove the script class generated
+        } finally {
+            // Remove the generated script class
             if (type?.name) {
-                classLoader.removeClassCacheEntry(type?.name)
+                classLoader.removeClassCacheEntry(type.name)
             }
 
-            // Remove the inline closures from the cache as well
+            // Remove the inline closures as well
             classLoader.removeClassCacheEntry('$_run_closure')
         }
 
         return result
     }
-}
-
-interface Evaluator {
-    def evaluate(final Collection<String> buffer)
 }
