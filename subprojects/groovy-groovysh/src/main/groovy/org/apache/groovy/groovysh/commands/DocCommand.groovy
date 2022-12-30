@@ -188,6 +188,25 @@ class DocCommand extends CommandSupport {
     }
 
     protected boolean sendHEADRequest(URL url, String path = null) {
+        IOException ioe
+        // try at most 3 times
+        for (int i = 0; i < 3; i++) {
+            try {
+                return doSendHEADRequest(url, path)
+            } catch (SocketTimeoutException e) {
+                ioe = e
+            } catch (IOException e) {
+                ioe = e
+                break
+            }
+        }
+
+        if (ioe) fail "Sending a HEAD request to $url failed (${e}). Please check your network settings."
+
+        return false
+    }
+
+    private boolean doSendHEADRequest(URL url, String path = null) {
         HttpURLConnection conn = null
         try {
             conn = url.openConnection() as HttpURLConnection
@@ -200,14 +219,9 @@ class DocCommand extends CommandSupport {
             // if no path given (legacy calls from third parties), treat all redirects as suspicious
             boolean successfulRedirect = path ? conn.URL.toString().endsWith(path) : url.toString() == conn.URL.toString()
             return code == 200 && successfulRedirect
-        } catch (IOException e) {
-            fail "Sending a HEAD request to $url failed (${e}). Please check your network settings."
         } finally {
-            if (null != conn) {
-                conn.disconnect()
-            }
+            conn?.disconnect()
         }
     }
-
 }
 
