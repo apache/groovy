@@ -201,7 +201,7 @@ class DocCommand extends CommandSupport {
             }
         }
 
-        if (ioe) fail "Sending a HEAD request to $url failed (${e}). Please check your network settings."
+        if (ioe) fail "Sending a HEAD request to $url failed (${ioe}). Please check your network settings."
 
         return false
     }
