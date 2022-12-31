@@ -117,9 +117,9 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
             "addShutdownHook", "any", "any", "asBoolean", "asType", "collect", "collect", "collect",
             "dump", "each", "eachWithIndex", "every", "every", "find", "find", "findAll", "findAll",
             "findIndexOf", "findIndexOf", "findIndexValues", "findIndexValues", "findLastIndexOf",
-            "findLastIndexOf", "findResult", "findResult", "getAt", "getMetaClass", "getMetaPropertyValues",
-            "getProperties", "grep", "grep", "hasProperty", "identity", "inject", "inject", "inspect",
-            "invokeMethod", "is", "isCase", "isNotCase", "iterator", "metaClass", "print", "print",
+            "findLastIndexOf", "findResult", "findResult", "findResult", "findResult", "getAt", "getMetaClass",
+            "getMetaPropertyValues", "getProperties", "grep", "grep", "hasProperty", "identity", "inject", "inject",
+            "inspect", "invokeMethod", "is", "isCase", "isNotCase", "iterator", "metaClass", "print", "print",
             "printf", "printf", "println", "println", "println", "putAt", "respondsTo", "respondsTo",
             "setMetaClass", "split", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
             "with", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
