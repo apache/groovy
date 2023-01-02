@@ -115,14 +115,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testListInferrenceWithNullElems() {
+    void testListInferenceWithNullElems() {
         assertScript '''
             List<String> strings = ['a', null]
             assert strings == ['a',null]
         '''
     }
 
-    void testListInferrenceWithAllNullElems() {
+    void testListInferenceWithAllNullElems() {
         assertScript '''
             List<String> strings = [null, null]
             assert strings == [null,null]
@@ -824,7 +824,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructor1() {
+    void testDiamondInferenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
                 U method() { }
@@ -834,13 +834,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructor2() {
+    void testDiamondInferenceFromConstructor2() {
         assertScript '''
             Set<Long> set = new HashSet<>()
         '''
     }
 
-    void testDiamondInferrenceFromConstructor3() {
+    void testDiamondInferenceFromConstructor3() {
         assertScript '''
             new HashSet<>(Arrays.asList(0L))
         '''
@@ -864,7 +864,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7419
-    void testDiamondInferrenceFromConstructor4() {
+    void testDiamondInferenceFromConstructor4() {
         assertScript '''
             Map<Thread.State, Object> map = new EnumMap<>(Thread.State)
             assert map.size() == 0
@@ -873,7 +873,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6232
-    void testDiamondInferrenceFromConstructor5() {
+    void testDiamondInferenceFromConstructor5() {
         for (args in ['"a",new Object()', 'new Object(),"b"', '"a","b"']) {
             assertScript """
                 class C<T> {
@@ -886,7 +886,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9948
-    void testDiamondInferrenceFromConstructor6() {
+    void testDiamondInferenceFromConstructor6() {
         assertScript '''
             class C<T> {
                 T p
@@ -901,7 +901,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9948
-    void testDiamondInferrenceFromConstructor7() {
+    void testDiamondInferenceFromConstructor7() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -914,7 +914,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9984
-    void testDiamondInferrenceFromConstructor7a() {
+    void testDiamondInferenceFromConstructor7a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -927,7 +927,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9956
-    void testDiamondInferrenceFromConstructor8() {
+    void testDiamondInferenceFromConstructor8() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -942,7 +942,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9996
-    void testDiamondInferrenceFromConstructor8a() {
+    void testDiamondInferenceFromConstructor8a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -959,7 +959,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10011
-    void testDiamondInferrenceFromConstructor8b() {
+    void testDiamondInferenceFromConstructor8b() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -977,7 +977,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructor9() {
+    void testDiamondInferenceFromConstructor9() {
         assertScript '''
             abstract class A<X> { }
             @groovy.transform.TupleConstructor(defaults=false)
@@ -1010,7 +1010,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9972
-    void testDiamondInferrenceFromConstructor9a() {
+    void testDiamondInferenceFromConstructor9a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1069,7 +1069,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructor9b() {
+    void testDiamondInferenceFromConstructor9b() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1100,7 +1100,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9963
-    void testDiamondInferrenceFromConstructor10() {
+    void testDiamondInferenceFromConstructor10() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1114,7 +1114,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10080
-    void testDiamondInferrenceFromConstructor11() {
+    void testDiamondInferenceFromConstructor11() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1134,7 +1134,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10086
-    void testDiamondInferrenceFromConstructor12() {
+    void testDiamondInferenceFromConstructor12() {
         shouldFailWithMessages '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1151,7 +1151,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9970
-    void testDiamondInferrenceFromConstructor13() {
+    void testDiamondInferenceFromConstructor13() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T extends B> {
@@ -1173,7 +1173,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9983
-    void testDiamondInferrenceFromConstructor14() {
+    void testDiamondInferenceFromConstructor14() {
         String types = '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T> {
@@ -1220,7 +1220,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10114
-    void testDiamondInferrenceFromConstructor14a() {
+    void testDiamondInferenceFromConstructor14a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T> {
@@ -1239,7 +1239,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9995
-    void testDiamondInferrenceFromConstructor15() {
+    void testDiamondInferenceFromConstructor15() {
         [
             ['Closure<A<Long>>', 'java.util.concurrent.Callable<A<Long>>'],
             ['new A<>(42L)', 'return new A<>(42L)']
@@ -1259,7 +1259,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10283
-    void testDiamondInferrenceFromConstructor16() {
+    void testDiamondInferenceFromConstructor16() {
         assertScript '''
             class A<T1, T2> {
             }
@@ -1277,7 +1277,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10291
-    void testDiamondInferrenceFromConstructor17() {
+    void testDiamondInferenceFromConstructor17() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<X> {
@@ -1298,7 +1298,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10228
-    void testDiamondInferrenceFromConstructor18() {
+    void testDiamondInferenceFromConstructor18() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -1314,7 +1314,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10323
-    void testDiamondInferrenceFromConstructor19() {
+    void testDiamondInferenceFromConstructor19() {
         assertScript '''
             class C<T> {
             }
@@ -1325,7 +1325,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10324
-    void testDiamondInferrenceFromConstructor20() {
+    void testDiamondInferenceFromConstructor20() {
         assertScript '''
             class C<T> {
             }
@@ -1336,7 +1336,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10310
-    void testDiamondInferrenceFromConstructor21() {
+    void testDiamondInferenceFromConstructor21() {
         assertScript '''
             @groovy.transform.TupleConstructor
             class A<T> {
@@ -1353,7 +1353,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10344
-    void testDiamondInferrenceFromConstructor22() {
+    void testDiamondInferenceFromConstructor22() {
         assertScript '''
             class C<X,Y> {
             }
@@ -1366,7 +1366,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10230
-    void testDiamondInferrenceFromConstructor23() {
+    void testDiamondInferenceFromConstructor23() {
         assertScript '''
             class A {
                 def <T extends C<Number,Number>> T m(T t) {
@@ -1387,7 +1387,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10351
-    void testDiamondInferrenceFromConstructor24() {
+    void testDiamondInferenceFromConstructor24() {
         assertScript '''
             class C<T> {
                 C(T one, D<T,? extends T> two) {
@@ -1401,7 +1401,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10368
-    void testDiamondInferrenceFromConstructor25() {
+    void testDiamondInferenceFromConstructor25() {
         for (t in ['T', 'T extends Number', 'T extends Object']) {
             assertScript """
                 class C<$t> {
@@ -1416,7 +1416,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10367
-    void testDiamondInferrenceFromConstructor26() {
+    void testDiamondInferenceFromConstructor26() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<X, Y extends X> { // works without Y
@@ -1430,7 +1430,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10343
-    void testDiamondInferrenceFromConstructor27() {
+    void testDiamondInferenceFromConstructor27() {
         assertScript '''
             class C<T1, T2 extends T1> {
                 T1 p
@@ -1447,7 +1447,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10316
-    void testDiamondInferrenceFromConstructor28() {
+    void testDiamondInferenceFromConstructor28() {
         assertScript '''
             class A<T> {
                 A(T t) {
@@ -1463,7 +1463,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10624
-    void testDiamondInferrenceFromConstructor29() {
+    void testDiamondInferenceFromConstructor29() {
         assertScript '''
             class A<T> {
             }
@@ -1475,7 +1475,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10266
-    void testDiamondInferrenceFromConstructor30() {
+    void testDiamondInferenceFromConstructor30() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T> {
@@ -1495,7 +1495,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10662
-    void testDiamondInferrenceFromConstructor31() {
+    void testDiamondInferenceFromConstructor31() {
         assertScript '''
             class A<X, T> {
                 A(T t, X x) {}
@@ -1514,7 +1514,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10633
-    void testDiamondInferrenceFromConstructor32() {
+    void testDiamondInferenceFromConstructor32() {
         assertScript '''
             class A<T, Y> {
                 public B<Y> f
@@ -1535,7 +1535,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10699
-    void testDiamondInferrenceFromConstructor33() {
+    void testDiamondInferenceFromConstructor33() {
         assertScript '''
             class A<T> {
                 A(B<T> b_of_t) {
@@ -1583,7 +1583,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10698
-    void testDiamondInferrenceFromConstructor34() {
+    void testDiamondInferenceFromConstructor34() {
         assertScript '''
             class A<T> {
                 A(T t, B<T> b_of_t) {
@@ -1601,7 +1601,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10847
-    void testDiamondInferrenceFromConstructor35() {
+    void testDiamondInferenceFromConstructor35() {
         assertScript '''
             class A<T, U> {
             }
@@ -1619,7 +1619,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10674
-    void testDiamondInferrenceFromConstructor36() {
+    void testDiamondInferenceFromConstructor36() {
         assertScript '''
             class Foo<BB extends Bar<Byte>, X extends BB> {
                 X x
@@ -1650,6 +1650,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 Foo<Bar<Byte,Byte>, ? super Bar<Byte,Byte>> foo = new Foo<>(new Bar<>())
             }
             new Baz()
+        '''
+    }
+
+    // GROOVY-10890
+    void testDiamondInferenceFromConstructor37() {
+        assertScript '''
+            enum A { X }
+            enum B { Y }
+            void m(Map<A,B> map) {}
+            void test(Map<A,B> map) {
+                m(new EnumMap<>(map))
+            }
+            test([(A.X): B.Y])
         '''
     }
 
