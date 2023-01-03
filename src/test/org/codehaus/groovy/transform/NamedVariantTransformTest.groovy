@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.transform.CompileStatic
-import groovy.transform.NamedVariant
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -28,15 +26,15 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * Tests for the {@code @NamedVariant} transformation.
  */
-@CompileStatic
 final class NamedVariantTransformTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports { star 'groovy.transform', 'org.codehaus.groovy.ast' }
+    }
 
     @Test
     void testMethod() {
-        assertScript '''
-            import groovy.transform.*
-            import org.codehaus.groovy.ast.*
-
+        assertScript shell, '''
             @ASTTest(phase=CANONICALIZATION, value={
                 def method = node.getMethod('m', new Parameter(ClassHelper.MAP_TYPE, 'map'))
                 use(org.apache.groovy.ast.tools.AnnotatedNodeUtils) {
@@ -57,9 +55,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testNamedParam() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Animal {
                 String type
                 String name
@@ -84,9 +80,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testNamedParamWithRename() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString(includeNames=true)
             class Color {
                 Integer r, g, b
@@ -103,9 +97,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testNamedParamConstructor() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString(includeNames=true, includeFields=true)
             class Color {
                 @NamedVariant
@@ -123,8 +115,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testConstructorVisibility() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static groovy.transform.options.Visibility.*
 
             class Color {
@@ -146,9 +137,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testNamedParamInnerClass() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Foo {
                 int adjust
                 @ToString(includeNames = true)
@@ -181,9 +170,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testGeneratedMethodsSkipped() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Storm { String front }
             class Switch { String back }
 
@@ -195,8 +182,7 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-9158, GROOVY-10497
     void testNamedParamWithDefaultArgument() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static groovy.test.GroovyAssert.shouldFail
 
             @NamedVariant(coerce=true)
@@ -228,8 +214,7 @@ final class NamedVariantTransformTest {
             }
         '''
 
-        assertScript '''
-            import groovy.transform.*
+        assertScript shell, '''
             import static groovy.test.GroovyAssert.shouldFail
 
             @NamedVariant
@@ -247,9 +232,7 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-10176
     void testNamedParamWithPrimitiveValues() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @ToString(includeNames=true)
             class Color {
                 int r, g, b
@@ -274,9 +257,7 @@ final class NamedVariantTransformTest {
     @Test
     void testNamedParamRequiredVersusOptional() {
         // check dynamic case
-        def err = shouldFail '''
-            import groovy.transform.*
-
+        def err = shouldFail shell, '''
             class Color {
                 int r, g, b
             }
@@ -291,8 +272,7 @@ final class NamedVariantTransformTest {
         assert err =~ /Missing required named argument 'color'/
 
         // also check static error (GROOVY-10484)
-        err = shouldFail '''
-            import groovy.transform.*
+        err = shouldFail shell, '''
             class Color {
                 int r, g, b
             }
@@ -310,9 +290,7 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-9183
     void testNamedDelegateWithPrimitiveValues() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             class Color {
                 int r, g, b
             }
@@ -331,9 +309,7 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-10261
     void testNamedVariantWithDefaultArguments() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             @TupleConstructor(defaults=false)
             @ToString(includeNames=true)
             class Color {
@@ -354,9 +330,7 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-9183, GROOVY-10500
     void testNamedDelegateWithPropertyDefaults() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript shell, '''
             class RowMapper {
                 final Settings settings
 
@@ -394,29 +368,47 @@ final class NamedVariantTransformTest {
         '''
     }
 
-    @NamedVariant // GROOVY-10561
-    String fileInSourceSet(String language = 'java', String extension = language) {
-        return "$language -> .$extension"
-    }
-
-    @NamedVariant // GROOVY-10561
-    String foo(String a = 'a', String b = a, String c = (String) a) {
-        return "$a $b $c"
-    }
-
     @Test // GROOVY-10561
     void testReferenceToEarlierParam() {
-        assert fileInSourceSet() == 'java -> .java'
-        assert fileInSourceSet('groovy') == 'groovy -> .groovy'
-        assert fileInSourceSet(language: 'kotlin', extension: 'kt') == 'kotlin -> .kt'
-        assert fileInSourceSet(language: 'groovy') == 'groovy -> .groovy'
+        assertScript shell, '''
+            @NamedVariant
+            String fileInSourceSet(String language = 'java', String extension = language) {
+                return "$language -> .$extension"
+            }
+
+            assert fileInSourceSet() == 'java -> .java'
+            assert fileInSourceSet('groovy') == 'groovy -> .groovy'
+            assert fileInSourceSet(language: 'groovy') == 'groovy -> .groovy'
+            assert fileInSourceSet(language: 'kotlin', extension: 'kt') == 'kotlin -> .kt'
+        '''
     }
 
     @Test // GROOVY-10561
     void testEarlierParamInExpression() {
-        assert foo() == 'a a a'
-        assert foo('c') == 'c c c'
-        assert foo('c', 'd') == 'c d c'
-        assert foo('c', 'd', 'e') == 'c d e'
+        assertScript shell, '''
+            @NamedVariant
+            String foo(String a = 'a', String b = a, String c = (String) a) {
+                return "$a $b $c"
+            }
+
+            assert foo() == 'a a a'
+            assert foo('c') == 'c c c'
+            assert foo('c', 'd') == 'c d c'
+            assert foo('c', 'd', 'e') == 'c d e'
+        '''
+    }
+
+    @Test // GROOVY-10889
+    void testDefaultValueCastIsRetained() {
+        assertScript shell, '''
+            @NamedVariant
+            Tuple2<Integer,Set<String>> createSampleData(Integer integer = 0, Set<String> strings = [] as Set) {
+                Tuple.tuple(integer, strings)
+            }
+
+            def pair = createSampleData(integer: 1)
+            assert pair[0] == 1
+            assert pair[1] == Collections.emptySet()
+        '''
     }
 }
