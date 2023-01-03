@@ -892,54 +892,47 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
      '''
     }
 
-    void testInferenceForDGM_injectOnCollectionWithInitialValue() {
+    void testInferenceForDGM_injectOnMap() {
         assertScript '''
-            assert ['a','bb','ccc'].inject(0) { acc, str -> acc += str.length(); acc } == 6
+            assert [a:1,b:2].inject(0) { acc, entry -> acc += entry.value; acc} == 3
+            assert [a:1,b:2].inject(0) { acc, k, v -> acc += v; acc} == 3
         '''
     }
-
-    void testInferenceForDGM_injectOnArrayWithInitialValue() {
-        assertScript '''
-            String[] array = ['a','bb','ccc']
-            assert array.inject(0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-
-    void testInferenceForDGM_injectOnIteratorWithInitialValue() {
-        assertScript '''
-            assert ['a','bb','ccc'].iterator().inject(0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-
-    void testInferenceForDGM_injectOnCollection() {
-        assertScript '''
-            assert ['a','bb','ccc'].inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
-        '''
-    }
-
     void testInferenceForDGM_injectOnArray() {
         assertScript '''
             String[] array = ['a','bb','ccc']
             assert array.inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
         '''
     }
-
-    void testInferenceForDGM_injectOnCollectionWithInitialValueDirect() {
-        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
-            assert DGM.inject(['a','bb','ccc'],0) { acc, str -> acc += str.length(); acc } == 6
+    void testInferenceForDGM_injectOnArrayWithInitialValue() {
+        assertScript '''
+            String[] array = ['a','bb','ccc']
+            assert array.inject(0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
-
+    void testInferenceForDGM_injectOnIteratorWithInitialValue() {
+        assertScript '''
+            assert ['a','bb','ccc'].iterator().inject(0) { acc, str -> acc += str.length(); acc } == 6
+        '''
+    }
+    void testInferenceForDGM_injectOnCollection() {
+        assertScript '''
+            assert ['a','bb','ccc'].inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
+        '''
+    }
     void testInferenceForDGM_injectOnCollectionDirect() {
         assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
             assert DGM.inject(['a','bb','ccc']) { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
         '''
     }
-
-    void testDGM_injectOnMap() {
+    void testInferenceForDGM_injectOnCollectionWithInitialValue() {
         assertScript '''
-            assert [a:1,b:2].inject(0) { acc, entry -> acc += entry.value; acc} == 3
-            assert [a:1,b:2].inject(0) { acc, k, v -> acc += v; acc} == 3
+            assert ['a','bb','ccc'].inject(0) { acc, str -> acc += str.length(); acc } == 6
+        '''
+    }
+    void testInferenceForDGM_injectOnCollectionWithInitialValueDirect() {
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+            assert DGM.inject(['a','bb','ccc'], 0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
 
