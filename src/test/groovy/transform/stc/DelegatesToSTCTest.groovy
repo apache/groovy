@@ -748,6 +748,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6956
     void testDelegatesToNestedGenericType() {
         assertScript '''
             trait Configurable<ConfigObject> {

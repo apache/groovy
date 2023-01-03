@@ -5294,8 +5294,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
-            for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
-
             Parameter[] parameters = method.getParameters();
             final int  nParameters = parameters.length;
 
@@ -5332,16 +5330,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             if (isVargs && lastArg && paramType.isArray() && !argumentType.isArray()) {
                                 paramType = paramType.getComponentType();
                             }
-
                             Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
                             extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
-                            extractGenericsConnectionsForSuperClassAndInterfaces(resolvedPlaceholders, connections);
-
-                            applyGenericsConnections(connections, resolvedPlaceholders);
+                            for (Map.Entry<GenericsTypeName, GenericsType> connection : connections.entrySet()) {
+                                GenericsTypeName name = connection.getKey();
+                                GenericsType   type = connection.getValue();
+                                type = resolvedPlaceholders.put(name, type);
+                                if (type != null) // keep original value!
+                                    resolvedPlaceholders.put(name, type);
+                            }
                         }
                     }
                 }
+                // in case of "<T, U extends Type<T>>", we can learn about "T" from a resolved "U"
+                extractGenericsConnectionsForBoundTypes(methodGenericTypes, resolvedPlaceholders);
             }
+
+            for (GenericsType tp : methodGenericTypes) {
+                GenericsTypeName name = new GenericsTypeName(tp.getName());
+                if (!resolvedPlaceholders.containsKey(name)) {
+                    // GROOVY-8409, GROOVY-10343, et al.: provide "no type witness" mapping for parameter
+                    ClassNode[] bounds = applyGenericsContext(resolvedPlaceholders, tp.getUpperBounds());
+                    GenericsType gt = new GenericsType(tp.getType(), bounds, null);
+                    gt.putNodeMetaData(GenericsType.class, tp); // record origin
+                    resolvedPlaceholders.put(name, gt);
+                }
+            }
+
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
         }
 
@@ -5404,7 +5419,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // connect E:T from source to E:Type from target
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
                 for (Map.Entry<GenericsTypeName, GenericsType> e : source.entrySet()) {
-                    if (e.getValue() == placeholder) {
+                    if (e.getValue().getNodeMetaData(GenericsType.class) == placeholder) {
                         GenericsType gt = target.get(e.getKey());
                         // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
                         if (gt != null && isAssignableTo(gt.getType(), placeholder.getType())) {
@@ -5419,43 +5434,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static void extractGenericsConnectionsForSuperClassAndInterfaces(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> connections) {
-        for (GenericsType value : new HashSet<GenericsType>(connections.values())) {
-            if (!value.isPlaceholder() && !value.isWildcard()) {
-                ClassNode valueType = value.getType();
-                List<ClassNode> deepNodes = new LinkedList<ClassNode>();
-                ClassNode unresolvedSuperClass = valueType.getUnresolvedSuperClass();
-                if (unresolvedSuperClass != null && unresolvedSuperClass.isUsingGenerics()) {
-                    deepNodes.add(unresolvedSuperClass);
-                }
-                for (ClassNode node : valueType.getUnresolvedInterfaces()) {
-                    if (node.isUsingGenerics()) {
-                        deepNodes.add(node);
-                    }
-                }
-                if (!deepNodes.isEmpty()) {
-                    for (GenericsType genericsType : resolvedPlaceholders.values()) {
-                        ClassNode lowerBound = genericsType.getLowerBound();
-                        if (lowerBound != null) {
-                            for (ClassNode deepNode : deepNodes) {
-                                if (lowerBound.equals(deepNode)) {
-                                    extractGenericsConnections(connections, deepNode, lowerBound);
-                                }
-                            }
-                        }
-                        ClassNode[] upperBounds = genericsType.getUpperBounds();
-                        if (upperBounds != null) {
-                            for (ClassNode upperBound : upperBounds) {
-                                for (ClassNode deepNode : deepNodes) {
-                                    if (upperBound.equals(deepNode)) {
-                                        extractGenericsConnections(connections, deepNode, upperBound);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    private static void extractGenericsConnectionsForBoundTypes(final GenericsType[] spec, final Map<GenericsTypeName, GenericsType> target) {
+        if (spec.length < 2) return;
+        for (GenericsType tp : spec) {
+            ClassNode[] bounds = tp.getUpperBounds();
+            if (bounds == null || bounds.length == 0) continue;
+
+            GenericsTypeName key = new GenericsTypeName(tp.getName());
+            GenericsType value = target.get(key); // look for specific resolved type
+            if (value == null || value.isPlaceholder() || value.isWildcard()) continue;
+
+            Map<GenericsTypeName, GenericsType> inner = new HashMap<>();
+            for (ClassNode bound : bounds) {
+                extractGenericsConnections(inner,value.getType(),bound);
             }
+
+            // GROOVY-10890: target putAllIfAbsent inner
+            for (GenericsTypeName k : target.keySet()) {
+                inner.remove(k);
+            }
+            target.putAll(inner);
         }
     }
 
