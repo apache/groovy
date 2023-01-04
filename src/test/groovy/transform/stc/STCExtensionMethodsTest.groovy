@@ -53,26 +53,27 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
             def impl = new MetaClassImpl(String)
             impl.initialize()
             String.metaClass = impl
-            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-            // ensure that the module isn't loaded
-            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.3' }
+            try {
+                ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+                // ensure that the module isn't loaded
+                assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
 
-            // find jar resource
-            def jarURL = this.class.getResource('/jars')
-            assert jarURL
+                def jarURL = this.class.getResource('/jars')
+                assert jarURL
 
-            def resolver = "@GrabResolver(name='local',root='$jarURL')"
+                assertScript """@GrabResolver(name='local',root='$jarURL')
+                    @Grab('module-test:module-test:1.4;changing=true')
+                    import org.codehaus.groovy.runtime.m12n.*
 
-            assertScript resolver + """
-                @Grab('module-test:module-test:1.4')
-                import org.codehaus.groovy.runtime.m12n.*
-
-                // the following methods are added by the Grab test module
-                def str = 'This is a string'
-                assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
-                // a static method added to String thanks to a @Grab extension
-                assert String.answer2() == 42
-            """
+                    // the following methods are added by the Grab test module
+                    def str = 'This is a string'
+                    assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
+                    // a static method added to String thanks to a @Grab extension
+                    assert String.answer2() == 42
+                """
+            } finally {
+                String.metaClass = null
+            }
         '''
     }
 

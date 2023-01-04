@@ -5100,6 +5100,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10887
+    void testSelfReferentialTypeParameter6() {
+        assertScript '''
+            @Grab('org.springframework.integration:spring-integration-groovy:5.5.15')
+            import org.springframework.integration.channel.AbstractMessageChannel
+            import org.springframework.integration.dsl.MessageChannelSpec
+            import org.springframework.integration.dsl.MessageChannels
+            @Grab('org.springframework:spring-messaging:5.3.24')
+            import org.springframework.messaging.MessageChannel
+
+            def <AMC extends AbstractMessageChannel, MCS extends MessageChannelSpec<MCS,AMC>> MCS mark(MCS self) {
+                self.interceptor(null) // returns self
+            }
+            MessageChannel make() {
+                mark(MessageChannels.publishSubscribe(true).minSubscribers(2)).get()
+            }
+        '''
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
