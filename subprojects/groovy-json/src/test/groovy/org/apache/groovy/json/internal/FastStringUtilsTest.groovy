@@ -18,20 +18,23 @@
  */
 package org.apache.groovy.json.internal
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class FastStringUtilsTest extends GroovyTestCase {
+final class FastStringUtilsTest {
 
+    @Test
     void testToCharArray() {
         char[] result = FastStringUtils.toCharArray("String")
         assert result == ['S', 't', 'r', 'i', 'n', 'g'] as char[]
     }
 
+    @Test
     void testToCharArrayFromCharSequence() {
         char[] result = FastStringUtils.toCharArray("String".subSequence(0, "String".length()))
         assert result == ['S', 't', 'r', 'i', 'n', 'g'] as char[]
     }
 
+    @Test
     void testNoCopyStringFromChars() {
         char[] input = ['S', 't', 'r', 'i', 'n', 'g'] as char[]
         String result = FastStringUtils.noCopyStringFromChars(input)
