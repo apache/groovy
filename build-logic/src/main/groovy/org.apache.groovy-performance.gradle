@@ -24,7 +24,7 @@ plugins {
     id 'groovy'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-internal'
-    id 'me.champeau.gradle.jmh'
+    id 'me.champeau.jmh'
 }
 
 project.extensions.create("performanceTests", PerformanceTestsExtension, objects, tasks, configurations, dependencies, sourceSets)
@@ -50,10 +50,10 @@ dependencies {
 jmh {
     jmhVersion = versions.jmh
     if (project.hasProperty('benchInclude')) {
-        include = ['.*' + project.benchInclude + '.*']
+        includes = ['.*' + project.benchInclude + '.*']
     }
     includeTests = true
-    duplicateClassesStrategy = 'WARN'
+    duplicateClassesStrategy = DuplicatesStrategy.WARN
 }
 
 tasks.named('jmhClasses') {
