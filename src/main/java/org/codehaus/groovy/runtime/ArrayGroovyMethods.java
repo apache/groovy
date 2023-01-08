@@ -35,8 +35,10 @@ import org.codehaus.groovy.util.LongArrayIterator;
 import org.codehaus.groovy.util.ShortArrayIterator;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.NoSuchElementException;
 
 /**
  * This class defines new groovy methods which appear on primitive arrays inside the Groovy environment.
@@ -1618,6 +1620,151 @@ public class ArrayGroovyMethods {
     // findResults
     //-------------------------------------------------------------------------
     // first
+
+    /**
+     * Returns the first item from the boolean array.
+     * <pre class="groovyTestCase">
+     *     boolean[] flags = [true, false]
+     *     assert flags.first() == true
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static boolean first(boolean[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the byte array.
+     * <pre class="groovyTestCase">
+     *     byte[] bytes = [1, 2, 3]
+     *     assert bytes.first() == 1
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static byte first(byte[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the char array.
+     * <pre class="groovyTestCase">
+     *     char[] chars = ['a', 'b', 'c']
+     *     assert chars.first() == 'a'
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static char first(char[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the short array.
+     * <pre class="groovyTestCase">
+     *     short[] shorts = [10, 20, 30]
+     *     assert shorts.first() == 10
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static short first(short[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the int array.
+     * <pre class="groovyTestCase">
+     *     int[] ints = [1, 3, 5]
+     *     assert ints.first() == 1
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static int first(int[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the long array.
+     * <pre class="groovyTestCase">
+     *     long[] longs = [2L, 4L, 6L]
+     *     assert longs.first() == 2L
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static long first(long[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the float array.
+     * <pre class="groovyTestCase">
+     *     float[] floats = [2.0f, 4.0f, 6.0f]
+     *     assert floats.first() == 2.0f
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static float first(float[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the double array.
+     * <pre class="groovyTestCase">
+     *     double[] doubles = [10.0d, 20.0d, 30.0d]
+     *     assert doubles.first() == 10.0d
+     * </pre>
+     * An alias for {@code head()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static double first(double[] self) {
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
     //-------------------------------------------------------------------------
     // flatten
     //-------------------------------------------------------------------------
@@ -1711,10 +1858,308 @@ public class ArrayGroovyMethods {
     // groupBy
     //-------------------------------------------------------------------------
     // head
+
+    /**
+     * Returns the first item from the boolean array.
+     * <pre class="groovyTestCase">
+     *     boolean[] flags = [true, false]
+     *     assert flags.head() == true
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static boolean head(boolean[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the byte array.
+     * <pre class="groovyTestCase">
+     *     byte[] bytes = [1, 2, 3]
+     *     assert bytes.head() == 1
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static byte head(byte[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the char array.
+     * <pre class="groovyTestCase">
+     *     char[] chars = ['a', 'b', 'c']
+     *     assert chars.head() == 'a'
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static char head(char[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the short array.
+     * <pre class="groovyTestCase">
+     *     short[] shorts = [10, 20, 30]
+     *     assert shorts.head() == 10
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static short head(short[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the int array.
+     * <pre class="groovyTestCase">
+     *     int[] ints = [1, 3, 5]
+     *     assert ints.head() == 1
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static int head(int[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the long array.
+     * <pre class="groovyTestCase">
+     *     long[] longs = [2L, 4L, 6L]
+     *     assert longs.head() == 2L
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static long head(long[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the float array.
+     * <pre class="groovyTestCase">
+     *     float[] floats = [2.0f, 4.0f, 6.0f]
+     *     assert floats.head() == 2.0f
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static float head(float[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the double array.
+     * <pre class="groovyTestCase">
+     *     double[] doubles = [10.0d, 20.0d, 30.0d]
+     *     assert doubles.head() == 10.0d
+     * </pre>
+     * An alias for {@code first()}.
+     *
+     * @param self an array
+     * @return the first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static double head(double[] self) {
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
     //-------------------------------------------------------------------------
     // indexed
     //-------------------------------------------------------------------------
     // init
+
+    /**
+     * Returns the items from the boolean array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     boolean[] flags = [true, false, true]
+     *     def result = flags.init()
+     *     assert result == [true, false]
+     *     assert flags.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static boolean[] init(boolean[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the byte array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     byte[] bytes = [1, 2, 3]
+     *     def result = bytes.init()
+     *     assert result == [1, 2]
+     *     assert bytes.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static byte[] init(byte[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the char array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     char[] chars = ['a', 'b', 'c']
+     *     def result = chars.init()
+     *     assert result == ['a', 'b']
+     *     assert chars.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static char[] init(char[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the short array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     short[] shorts = [10, 20, 30]
+     *     def result = shorts.init()
+     *     assert result == [10, 20]
+     *     assert shorts.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static short[] init(short[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the int array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     int[] ints = [1, 3, 5]
+     *     def result = ints.init()
+     *     assert result == [1, 3]
+     *     assert ints.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static int[] init(int[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the long array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     long[] longs = [2L, 4L, 6L]
+     *     def result = longs.init()
+     *     assert result == [2L, 4L]
+     *     assert longs.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static long[] init(long[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the float array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     float[] floats = [2.0f, 4.0f, 6.0f]
+     *     def result = floats.init()
+     *     assert result == [2.0f, 4.0f]
+     *     assert floats.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static float[] init(float[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
+    /**
+     * Returns the items from the double array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     double[] doubles = [10.0d, 20.0d, 30.0d]
+     *     def result = doubles.init()
+     *     assert result == [10.0d, 20.0d]
+     *     assert doubles.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static double[] init(double[] self) {
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
     //-------------------------------------------------------------------------
     // inject
     //-------------------------------------------------------------------------
@@ -1828,6 +2273,143 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // last
+
+    /**
+     * Returns the last item from the boolean array.
+     * <pre class="groovyTestCase">
+     *     boolean[] flags = [true, false, true]
+     *     assert flags.last() == true
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static boolean last(boolean[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the byte array.
+     * <pre class="groovyTestCase">
+     *     byte[] bytes = [1, 2, 3]
+     *     assert bytes.last() == 3
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static byte last(byte[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the char array.
+     * <pre class="groovyTestCase">
+     *     char[] chars = ['a', 'b', 'c']
+     *     assert chars.last() == 'c'
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static char last(char[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the short array.
+     * <pre class="groovyTestCase">
+     *     short[] shorts = [10, 20, 30]
+     *     assert shorts.last() == 30
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static short last(short[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the int array.
+     * <pre class="groovyTestCase">
+     *     int[] ints = [1, 3, 5]
+     *     assert ints.last() == 5
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static int last(int[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the long array.
+     * <pre class="groovyTestCase">
+     *     long[] longs = [2L, 4L, 6L]
+     *     assert longs.last() == 6L
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static long last(long[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the float array.
+     * <pre class="groovyTestCase">
+     *     float[] floats = [2.0f, 4.0f, 6.0f]
+     *     assert floats.last() == 6.0f
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static float last(float[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the double array.
+     * <pre class="groovyTestCase">
+     *     double[] doubles = [10.0d, 20.0d, 30.0d]
+     *     assert doubles.last() == 30.0d
+     * </pre>
+     *
+     * @param self an array
+     * @return the last element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static double last(double[] self) {
+        throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
     //-------------------------------------------------------------------------
     // max
 
@@ -1986,7 +2568,6 @@ public class ArrayGroovyMethods {
     // split
     //-------------------------------------------------------------------------
     // sum
-
     /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
@@ -2190,10 +2771,164 @@ public class ArrayGroovyMethods {
         return s;
     }
 
+
     //-------------------------------------------------------------------------
     // swap
     //-------------------------------------------------------------------------
     // tail
+    /**
+     * Returns the items from the boolean array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     boolean[] flags = [true, false, true]
+     *     def result = flags.tail()
+     *     assert result == [false, true]
+     *     assert flags.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static boolean[] tail(boolean[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the byte array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     byte[] bytes = [1, 2, 3]
+     *     def result = bytes.tail()
+     *     assert result == [2, 3]
+     *     assert bytes.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static byte[] tail(byte[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the char array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     char[] chars = ['a', 'b', 'c']
+     *     def result = chars.tail()
+     *     assert result == ['b', 'c']
+     *     assert chars.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static char[] tail(char[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the short array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     short[] shorts = [10, 20, 30]
+     *     def result = shorts.tail()
+     *     assert result == [20, 30]
+     *     assert shorts.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static short[] tail(short[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the int array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     int[] ints = [1, 3, 5]
+     *     def result = ints.tail()
+     *     assert result == [3, 5]
+     *     assert ints.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static int[] tail(int[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the long array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     long[] longs = [2L, 4L, 6L]
+     *     def result = longs.tail()
+     *     assert result == [4L, 6L]
+     *     assert longs.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static long[] tail(long[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the float array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     float[] floats = [2.0f, 4.0f, 6.0f]
+     *     def result = floats.tail()
+     *     assert result == [4.0f, 6.0f]
+     *     assert floats.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static float[] tail(float[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+    /**
+     * Returns the items from the double array excluding the first item.
+     * <pre class="groovyTestCase">
+     *     double[] doubles = [10.0d, 20.0d, 30.0d]
+     *     def result = doubles.tail()
+     *     assert result == [20.0d, 30.0d]
+     *     assert doubles.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws NoSuchElementException if the array is empty
+     * @since 5.0.0
+     */
+    public static double[] tail(double[] self) {
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
+
     //-------------------------------------------------------------------------
     // take
     //-------------------------------------------------------------------------
@@ -2212,7 +2947,6 @@ public class ArrayGroovyMethods {
     // toSpreadMap
     //-------------------------------------------------------------------------
     // toString
-
     /**
      * Returns the string representation of the given array.
      *
@@ -2300,6 +3034,7 @@ public class ArrayGroovyMethods {
     public static String toString(double[] self) {
         return FormatHelper.toString(self);
     }
+
 
     //-------------------------------------------------------------------------
     // toUnique
@@ -2514,4 +3249,16 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // union
+
+    private static void throwNoSuchElementIfEmpty(int size, String method) {
+        if (size == 0) {
+            throw new NoSuchElementException("Cannot access " + method + "() for an empty array");
+        }
+    }
+
+    private static void throwUnsupportedOperationIfEmpty(int size, String method) {
+        if (size == 0) {
+            throw new UnsupportedOperationException("Accessing " + method + "() is unsupported for an empty array");
+        }
+    }
 }
