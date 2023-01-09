@@ -10213,7 +10213,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @return the last item from the List
-     * @throws NoSuchElementException if the list is empty and you try to access the last() item.
+     * @throws NoSuchElementException if you try to access last() for an empty List
      * @since 1.5.5
      */
     public static <T> T last(List<T> self) {
@@ -10237,7 +10237,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return the last item from the Iterable
-     * @throws NoSuchElementException if the Iterable is empty and you try to access the last() item.
+     * @throws NoSuchElementException if you try to access last() for an empty Iterable
      * @since 1.8.7
      */
     public static <T> T last(Iterable<T> self) {
@@ -10261,7 +10261,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the last item from the array
-     * @throws NoSuchElementException if the array is empty and you try to access the last() item.
+     * @throws NoSuchElementException if you try to access last() for an empty array
      * @since 1.7.3
      */
     public static <T> T last(T[] self) {
@@ -10282,7 +10282,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @return the first item from the List
-     * @throws NoSuchElementException if the list is empty and you try to access the first() item.
+     * @throws NoSuchElementException if you try to access first() for an empty List
      * @since 1.5.5
      */
     public static <T> T first(List<T> self) {
@@ -10306,7 +10306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return the first item from the Iterable
-     * @throws NoSuchElementException if the Iterable is empty and you try to access the first() item.
+     * @throws NoSuchElementException if you try to access first() for an empty Iterable
      * @since 1.8.7
      */
     public static <T> T first(Iterable<T> self) {
@@ -10326,7 +10326,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the first item from the array
-     * @throws NoSuchElementException if the array is empty and you try to access the first() item.
+     * @throws NoSuchElementException if you try to access first() for an empty array
      * @since 1.7.3
      */
     public static <T> T first(T[] self) {
@@ -10350,7 +10350,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return the first item from the Iterable
-     * @throws NoSuchElementException if the Iterable is empty and you try to access the head() item.
+     * @throws NoSuchElementException if you try to access head() for an empty iterable
      * @since 2.4.0
      */
     public static <T> T head(Iterable<T> self) {
@@ -10365,7 +10365,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @return the first item from the List
-     * @throws NoSuchElementException if the list is empty and you try to access the head() item.
+     * @throws NoSuchElementException if you try to access head() for an empty List
      * @since 1.5.5
      */
     public static <T> T head(List<T> self) {
@@ -10379,7 +10379,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the first item from the Object array
-     * @throws NoSuchElementException if the array is empty and you try to access the head() item.
+     * @throws NoSuchElementException if you try to access head() for an empty array
      * @since 1.7.3
      */
     public static <T> T head(T[] self) {
@@ -10396,7 +10396,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @return a List without its first element
-     * @throws NoSuchElementException if the List is empty and you try to access the tail()
+     * @throws NoSuchElementException if you try to access tail() for an empty List
      * @since 1.5.6
      */
     public static <T> List<T> tail(List<T> self) {
@@ -10413,7 +10413,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a SortedSet
      * @return a SortedSet without its first element
-     * @throws NoSuchElementException if the SortedSet is empty and you try to access the tail()
+     * @throws NoSuchElementException if you try to access tail() for an empty SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> tail(SortedSet<T> self) {
@@ -10444,7 +10444,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return a collection without its first element
-     * @throws NoSuchElementException if the iterable is empty and you try to access the tail()
+     * @throws NoSuchElementException if you try to access tail() for an empty Iterable
      * @since 2.4.0
      */
     public static <T> Collection<T> tail(Iterable<T> self) {
@@ -10468,7 +10468,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty and you try to access the tail()
+     * @throws NoSuchElementException if you try to access tail() for an empty array
      * @since 1.7.3
      */
     public static <T> T[] tail(T[] self) {
@@ -10483,7 +10483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the original iterator
      * @return the iterator without its first element
-     * @throws NoSuchElementException if the array is empty and you try to access the tail()
+     * @throws NoSuchElementException if you try to access tail() for an exhausted/empty Iterator
      * @since 1.8.1
      */
     public static <T> Iterator<T> tail(Iterator<T> self) {
@@ -10518,7 +10518,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return a Collection without its last element
-     * @throws NoSuchElementException if the iterable is empty and you try to access init()
+     * @throws NoSuchElementException if you try to access init() for an empty Iterable
      * @since 2.4.0
      */
     public static <T> Collection<T> init(Iterable<T> self) {
@@ -10546,7 +10546,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @return a List without its last element
-     * @throws NoSuchElementException if the List is empty and you try to access init()
+     * @throws NoSuchElementException if you try to access init() for an empty List
      * @since 2.4.0
      */
     public static <T> List<T> init(List<T> self) {
@@ -10563,7 +10563,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a SortedSet
      * @return a SortedSet without its last element
-     * @throws NoSuchElementException if the SortedSet is empty and you try to access init()
+     * @throws NoSuchElementException if you try to access init() for an empty SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> init(SortedSet<T> self) {
@@ -10580,7 +10580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterator
      * @return an Iterator without the last element from the original Iterator
-     * @throws NoSuchElementException if the iterator is empty and you try to access init()
+     * @throws NoSuchElementException if you try to access init() for an exhausted/empty Iterator
      * @since 2.4.0
      */
     public static <T> Iterator<T> init(Iterator<T> self) {
@@ -10636,7 +10636,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty and you try to access the init() item.
+     * @throws NoSuchElementException if you try to access init() for an empty array
      * @since 2.4.0
      */
     public static <T> T[] init(T[] self) {
