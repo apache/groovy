@@ -37,28 +37,40 @@ println 'Today is day ' + cal.get(Calendar.DAY_OF_YEAR) + ' of the current year.
 //     http://joda-time.sourceforge.net/
 // there is a special Grails (grails.org) time DSL (see below)
 //----------------------------------------------------------------------------------
+import static java.util.Calendar.*
+import java.time.*
+println "Today is day ${cal[DAY_OF_YEAR]} of the current year."
+println LocalDateTime.now()
+// => 2022-08-24T17:59:41.359654800
+println "Today is day ${LocalDateTime.now().dayOfYear} of the current year."
 
 // @@PLEAC@@_3.1
 //----------------------------------------------------------------------------------
-cal = Calendar.instance
-Y = cal.get(Calendar.YEAR)
-M = cal.get(Calendar.MONTH) + 1
-D = cal.get(Calendar.DATE)
+cal = instance
+Y = cal.get(YEAR)
+M = cal.get(MONTH) + 1
+D = cal.get(DATE)
 println "The current date is $Y $M $D"
 // => The current date is 2006 04 28
 //----------------------------------------------------------------------------------
+(_E, Y, M, _WY, _WM, D) = instance
+println "The current date is $Y $M $D"
+// => The current date is 2022 07 24
+(Y, M, D) = instance[1, 2, 5]
+println "The current date is $Y $M $D"
+// => The current date is 2022 07 24
 
 // @@PLEAC@@_3.2
 //----------------------------------------------------------------------------------
 // create a calendar with current time and time zone
-cal = Calendar.instance
+cal = instance
 // set time zone using long or short timezone values
 cal.timeZone = TimeZone.getTimeZone("America/Los_Angeles")
 cal.timeZone = TimeZone.getTimeZone("UTC")
 // set date fields one at a time
-cal.set(Calendar.MONTH, Calendar.DECEMBER)
+cal[MONTH] = DECEMBER
 // or several together
-//calendar.set(year, month - 1, day, hour, minute, second)
+//cal.set(year, month - 1, day, hour, minute, second)
 // get time in seconds since EPOCH
 long time = cal.time.time / 1000
 println time
@@ -68,17 +80,11 @@ println time
 // @@PLEAC@@_3.3
 //----------------------------------------------------------------------------------
 // create a calendar with current time and time zone
-cal = Calendar.instance
+cal = instance
 // set time
 cal.time = new Date(time * 1000)
 // get date fields
-println('Dateline: '
-    + cal.get(Calendar.HOUR_OF_DAY) + ':'
-    + cal.get(Calendar.MINUTE) + ':'
-    + cal.get(Calendar.SECOND) + '-'
-    + cal.get(Calendar.YEAR) + '/'
-    + (cal.get(Calendar.MONTH) + 1) + '/'
-    + cal.get(Calendar.DATE))
+println "Dateline: ${cal[HOUR_OF_DAY]}:${cal[MINUTE]}:${cal[SECOND]}-${cal[YEAR]}/${cal[MONTH]}/${cal[DAY_OF_MONTH]}"
 // => Dateline: 7:33:16-2007/1/1
 //----------------------------------------------------------------------------------
 
@@ -90,25 +96,25 @@ long after = time + difference
 long before = time - difference
 
 // any field of a calendar is incrementable via add() and roll() methods
-cal = Calendar.instance
+cal = instance
 df = new SimpleDateFormat()
 printCal = {cal -> df.format(cal.time)}
 cal.set(2000, 0, 1, 00, 01, 0)
 assert printCal(cal) == '1/01/00 00:01'
 // roll minute back by 2 but don't adjust other fields
-cal.roll(Calendar.MINUTE, -2)
+cal.roll(MINUTE, -2)
 assert printCal(cal) == '1/01/00 00:59'
 // adjust hour back 1 and adjust other fields if needed
-cal.add(Calendar.HOUR, -1)
+cal.add(HOUR, -1)
 assert printCal(cal) == '31/12/99 23:59'
 
 // larger example
 cal.timeZone = TimeZone.getTimeZone("UTC")
 cal.set(1973, 0, 18, 3, 45, 50)
-cal.add(Calendar.DATE, 55)
-cal.add(Calendar.HOUR_OF_DAY, 2)
-cal.add(Calendar.MINUTE, 17)
-cal.add(Calendar.SECOND, 5)
+cal.add(DAY_OF_MONTH, 55)
+cal.add(HOUR_OF_DAY, 2)
+cal.add(MINUTE, 17)
+cal.add(SECOND, 5)
 assert printCal(cal) == '14/03/73 16:02'
 
 // alternatively, work with epoch times
@@ -144,7 +150,7 @@ weeks      = (difference - days)    /  7
 println "($weeks weeks, $days days, $hours:$minutes:$seconds)"
 // => (438 weeks, 4 days, 23:49:35)
 //----------------------------------------------------------------------------------
-cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+cal = getInstance(TimeZone.getTimeZone("UTC"))
 cal.set(1981, 5, 16)  // 16 Jun 1981
 date1 = cal.time
 cal.set(1973, 0, 18)  // 18 Jan 1973
@@ -157,11 +163,11 @@ assert days == 3071
 // @@PLEAC@@_3.6
 //----------------------------------------------------------------------------------
 // create a calendar with current time and time zone
-cal = Calendar.instance
+cal = instance
 cal.set(1981, 5, 16)
-yearDay = cal.get(Calendar.DAY_OF_YEAR);
-year = cal.get(Calendar.YEAR);
-yearWeek = cal.get(Calendar.WEEK_OF_YEAR);
+yearDay = cal.get(DAY_OF_YEAR);
+year = cal.get(YEAR);
+yearWeek = cal.get(WEEK_OF_YEAR);
 df1 = new SimpleDateFormat("dd/MMM/yy")
 df2 = new SimpleDateFormat("EEEE")
 print(df1.format(cal.time) + ' was a ' + df2.format(cal.time))
