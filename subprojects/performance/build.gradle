@@ -20,10 +20,10 @@ plugins {
     id 'org.apache.groovy-performance'
 }
 
-tasks.named('performanceTests') {
-    versions '2.5.19',
-            '3.0.13',
-            '4.0.6',
+performanceTests {
+    versions '2.5.20',
+            '3.0.14',
+            '4.0.7',
             'current'
 
     testFiles project.files("src/files") +
