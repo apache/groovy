@@ -63,6 +63,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
+import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
@@ -146,10 +147,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitDeclarationExpression(DeclarationExpression expression) {
-        VariableExpression varx = expression.getVariableExpression();
-        if (varx != null) {
-            visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
-            ClassNode type = varx.getType();
+        visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
+        if (expression.isMultipleAssignmentDeclaration()) {
+            expression.getTupleExpression().forEach(e -> visitTypeAnnotations(e.getType()));
+        } else {
+            ClassNode type = expression.getLeftExpression().getType();
             visitTypeAnnotations(type);
             extractTypeUseAnnotations(expression.getAnnotations(), type, LOCAL_VARIABLE_TARGET);
         }
@@ -393,7 +395,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private static void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
-        if (visited.getClassNode().isResolved() && visited.getClassNode().getName().equals("java.lang.Deprecated")) {
+        if (visited.getClassNode().isResolved() && visited.getClassNode().equals(DEPRECATED_TYPE)) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
                 mn.setModifiers(mn.getModifiers() | Opcodes.ACC_DEPRECATED);

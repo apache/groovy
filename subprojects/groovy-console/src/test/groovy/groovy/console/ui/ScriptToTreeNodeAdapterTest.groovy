@@ -258,7 +258,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         startsWith('BlockStatement'),
                         startsWith('ExpressionStatement'),
                         eq('Declaration - def (x, y) = [1, 2]'),
-                        eq('ArgumentList - (x, y)'),
+                        eq('Tuple - (x, y)'),
                 ]
         )
     }
