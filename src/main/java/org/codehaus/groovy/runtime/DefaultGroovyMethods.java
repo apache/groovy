@@ -7156,73 +7156,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return min(new ArrayIterator<>(self));
     }
 
-    /**
-     * Adds min() method to int arrays.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * int[] nums = [10, 20, 30]
-     * assert 10 == nums.min()
-     * </pre>
-     *
-     * @param self an int array
-     * @return the minimum value
-     * @see #min(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static int min(int[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty int[]");
-        }
-        int answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            int value = self[i];
-            if (value < answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
-    /**
-     * Adds min() method to long arrays.
-     *
-     * @param self a long array
-     * @return the minimum value
-     * @see #min(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static long min(long[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty long[]");
-        }
-        long answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            long value = self[i];
-            if (value < answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
-    /**
-     * Adds min() method to double arrays.
-     *
-     * @param self a double array
-     * @return the minimum value
-     * @see #min(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static double min(double[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty double[]");
-        }
-        double answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            double value = self[i];
-            if (value < answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
     /**
@@ -7499,73 +7445,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return max(new ArrayIterator<>(self));
     }
 
-    /**
-     * Adds max() method to int arrays.
-     *
-     * @param self an int array
-     * @return the maximum value
-     * @see #max(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static int max(int[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty int[]");
-        }
-        int answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            int value = self[i];
-            if (value > answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
-    /**
-     * Adds max() method to long arrays.
-     *
-     * @param self a long array
-     * @return the maximum value
-     * @see #max(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static long max(long[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty long[]");
-        }
-        long answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            long value = self[i];
-            if (value > answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
-    /**
-     * Adds max() method to double arrays.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * double[] nums = [1.1d, 2.2d, 3.3d]
-     * assert 3.3d == nums.max()
-     * </pre>
-     *
-     * @param self a double array
-     * @return the maximum value
-     * @see #max(Object[])
-     * @since 3.0.8
-     */
+    @Deprecated
     public static double max(double[] self) {
-        Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty double[]");
-        }
-        double answer = self[0];
-        for (int i = 1; i < self.length; i++) {
-            double value = self[i];
-            if (value > answer) answer = value;
-        }
-        return answer;
+        return ArrayGroovyMethods.max(self);
     }
 
     /**

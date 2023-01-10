@@ -36,6 +36,7 @@ import org.codehaus.groovy.util.ShortArrayIterator;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This class defines new groovy methods which appear on primitive arrays inside the Groovy environment.
@@ -1829,8 +1830,142 @@ public class ArrayGroovyMethods {
     // last
     //-------------------------------------------------------------------------
     // max
+
+    /**
+     * Adds max() method to int arrays.
+     *
+     * @param self an int array
+     * @return the maximum value
+     * @since 3.0.8
+     */
+    public static int max(int[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call max() on empty int[]");
+        }
+        int answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int value = self[i];
+            if (value > answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
+     * Adds max() method to long arrays.
+     *
+     * @param self a long array
+     * @return the maximum value
+     * @since 3.0.8
+     */
+    public static long max(long[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call max() on empty long[]");
+        }
+        long answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long value = self[i];
+            if (value > answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
+     * Adds max() method to double arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] nums = [1.1d, 2.2d, 3.3d]
+     * assert 3.3d == nums.max()
+     * </pre>
+     *
+     * @param self a double array
+     * @return the maximum value
+     * @since 3.0.8
+     */
+    public static double max(double[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call max() on empty double[]");
+        }
+        double answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double value = self[i];
+            if (value > answer) answer = value;
+        }
+        return answer;
+    }
+
     //-------------------------------------------------------------------------
     // min
+
+    /**
+     * Adds min() method to int arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, 30]
+     * assert 10 == nums.min()
+     * </pre>
+     *
+     * @param self an int array
+     * @return the minimum value
+     * @since 3.0.8
+     */
+    public static int min(int[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call min() on empty int[]");
+        }
+        int answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int value = self[i];
+            if (value < answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
+     * Adds min() method to long arrays.
+     *
+     * @param self a long array
+     * @return the minimum value
+     * @since 3.0.8
+     */
+    public static long min(long[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call min() on empty long[]");
+        }
+        long answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long value = self[i];
+            if (value < answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
+     * Adds min() method to double arrays.
+     *
+     * @param self a double array
+     * @return the minimum value
+     * @since 3.0.8
+     */
+    public static double min(double[] self) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) {
+            throw new UnsupportedOperationException("Can't call min() on empty double[]");
+        }
+        double answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double value = self[i];
+            if (value < answer) answer = value;
+        }
+        return answer;
+    }
+
     //-------------------------------------------------------------------------
     // minus
     //-------------------------------------------------------------------------
