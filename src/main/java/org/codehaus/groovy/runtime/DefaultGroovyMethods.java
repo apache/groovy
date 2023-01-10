@@ -15270,124 +15270,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(int[] self, Object value) {
-        for (int next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(long[] self, Object value) {
-        for (long next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(short[] self, Object value) {
-        for (short next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(char[] self, Object value) {
-        for (char next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.8.6
-     */
+    @Deprecated
     public static boolean contains(boolean[] self, Object value) {
-        for (boolean next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
+        return ArrayGroovyMethods.contains(self, value);
     }
 
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(double[] self, Object value) {
-        for (double next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
-    public static boolean contains(float[] self, Object value) {
-        for (float next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks whether the array contains the given value.
-     *
-     * @param self  the array we are searching
-     * @param value the value being searched for
-     * @return true if the array contains the value
-     * @since 1.8.6
-     */
+    @Deprecated
     public static boolean contains(byte[] self, Object value) {
-        for (byte next : self) {
-            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
-        }
-        return false;
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(char[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(short[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(int[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(long[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(float[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated
+    public static boolean contains(double[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
     }
 
     /**
