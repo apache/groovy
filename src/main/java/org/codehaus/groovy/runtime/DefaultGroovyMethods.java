@@ -5868,62 +5868,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return GroovyCollections.transpose(self);
     }
 
-    /**
-     * A transpose method for 2D int arrays.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * int[][] nums = [[10, 15, 20], [30, 35, 40]]
-     * int[][] expected = [[10, 30], [15, 35], [20, 40]]
-     * assert nums.transpose() == expected
-     * </pre>
-     *
-     * @param self a 2D int array
-     * @return the transposed 2D int array
-     * @since 3.0.8
-     */
+
+    @Deprecated
     public static int[][] transpose(int[][] self) {
-        int[][] result = new int[self[0].length][self.length];
-        for (int i = 0; i < self.length; i++) {
-            for (int j = 0; j < self[i].length; j++) {
-                result[j][i] = self[i][j];
-            }
-        }
-        return result;
+        return ArrayGroovyMethods.transpose(self);
     }
 
-    /**
-     * A transpose method for 2D long arrays.
-     *
-     * @param self a 2D long array
-     * @return the transposed 2D long array
-     * @since 3.0.8
-     */
+    @Deprecated
     public static long[][] transpose(long[][] self) {
-        long[][] result = new long[self[0].length][self.length];
-        for (int i = 0; i < self.length; i++) {
-            for (int j = 0; j < self[i].length; j++) {
-                result[j][i] = self[i][j];
-            }
-        }
-        return result;
+        return ArrayGroovyMethods.transpose(self);
     }
 
-    /**
-     * A transpose method for 2D double arrays.
-     *
-     * @param self a 2D double array
-     * @return the transposed 2D double array
-     * @since 3.0.8
-     */
+    @Deprecated
     public static double[][] transpose(double[][] self) {
-        double[][] result = new double[self[0].length][self.length];
-        for (int i = 0; i < self.length; i++) {
-            for (int j = 0; j < self[i].length; j++) {
-                result[j][i] = self[i][j];
-            }
-        }
-        return result;
+        return ArrayGroovyMethods.transpose(self);
     }
 
     /**

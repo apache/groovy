@@ -2048,6 +2048,213 @@ public class ArrayGroovyMethods {
     // toUnique
     //-------------------------------------------------------------------------
     // transpose
+
+    /**
+     * A transpose method for 2D boolean arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * boolean[][] bools = [[false, false], [true, true]]
+     * boolean[][] expected = [[false, true], [false, true]]
+     * def result = bools.transpose()
+     * assert result == expected
+     * assert bools.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D boolean array
+     * @return the transposed 2D boolean array
+     * @since 5.0.0
+     */
+    public static boolean[][] transpose(boolean[][] self) {
+        boolean[][] result = new boolean[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D byte arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * byte[][] bytes = [[1, 10], [2, 20]]
+     * byte[][] expected = [[1, 2], [10, 20]]
+     * def result = bytes.transpose()
+     * assert result == expected
+     * assert bytes.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D byte array
+     * @return the transposed 2D byte array
+     * @since 5.0.0
+     */
+    public static byte[][] transpose(byte[][] self) {
+        byte[][] result = new byte[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D char arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * char[][] chars = [['a', 'b'], ['A', 'B']]
+     * char[][] expected = [['a', 'A'], ['b', 'B']]
+     * def result = chars.transpose()
+     * assert result == expected
+     * assert chars.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D char array
+     * @return the transposed 2D char array
+     * @since 5.0.0
+     */
+    public static char[][] transpose(char[][] self) {
+        char[][] result = new char[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D short arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * boolean[][] shorts = [[false, false], [true, true]]
+     * boolean[][] expected = [[false, true], [false, true]]
+     * def result = shorts.transpose()
+     * assert result == expected
+     * assert shorts.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D short array
+     * @return the transposed 2D short array
+     * @since 5.0.0
+     */
+    public static short[][] transpose(short[][] self) {
+        short[][] result = new short[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D int arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[][] nums = [[10, 15, 20], [30, 35, 40]]
+     * int[][] expected = [[10, 30], [15, 35], [20, 40]]
+     * assert nums.transpose() == expected
+     * </pre>
+     *
+     * @param self a 2D int array
+     * @return the transposed 2D int array
+     * @since 3.0.8
+     */
+    public static int[][] transpose(int[][] self) {
+        int[][] result = new int[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D long arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[][] longs = [[1L, 3L, 5L], [2L, 4L, 6L]]
+     * long[][] expected = [[1L, 2L], [3L, 4L], [5L, 6L]]
+     * def result = longs.transpose()
+     * assert result == expected
+     * assert longs.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D long array
+     * @return the transposed 2D long array
+     * @since 3.0.8
+     */
+    public static long[][] transpose(long[][] self) {
+        long[][] result = new long[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D float arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[][] floats = [[1.0f, 10.0f], [2.0f, 20.0f]]
+     * float[][] expected = [[1.0f, 2.0f], [10.0f, 20.0f]]
+     * def result = floats.transpose()
+     * assert result == expected
+     * assert floats.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D float array
+     * @return the transposed 2D float array
+     * @since 5.0.0
+     */
+    public static float[][] transpose(float[][] self) {
+        float[][] result = new float[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A transpose method for 2D double arrays.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[][] doubles = [[1.0d, 10.0d], [2.0d, 20.0d]]
+     * double[][] expected = [[1.0d, 2.0d], [10.0d, 20.0d]]
+     * def result = doubles.transpose()
+     * assert result == expected
+     * assert doubles.class.componentType == result.class.componentType
+     * </pre>
+     *
+     * @param self a 2D double array
+     * @return the transposed 2D double array
+     * @since 3.0.8
+     */
+    public static double[][] transpose(double[][] self) {
+        double[][] result = new double[self[0].length][self.length];
+        for (int i = 0; i < self.length; i++) {
+            for (int j = 0; j < self[i].length; j++) {
+                result[j][i] = self[i][j];
+            }
+        }
+        return result;
+    }
+
     //-------------------------------------------------------------------------
     // union
 }
