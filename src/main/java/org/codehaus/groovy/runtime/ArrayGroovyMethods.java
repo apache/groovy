@@ -2074,6 +2074,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Zips an int[] with indices in (index, value) order starting from index 0.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, 30]
+     * assert [0: 10, 1: 20, 2: 30] == nums.indexed()
+     * </pre>
      *
      * @see #indexed(int[], int)
      * @since 3.0.8
@@ -2104,6 +2110,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Zips a long[] with indices in (index, value) order starting from index 0.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert [0: 10L, 1: 20L, 2: 30L] == nums.indexed()
+     * </pre>
      *
      * @see #indexed(long[], int)
      * @since 3.0.8
@@ -2114,6 +2126,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Zips a long[] with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert [5: 10L, 6: 20L, 7: 30L] == nums.indexed(5)
+     * </pre>
      *
      * @param self   a long[]
      * @param offset an index to start from
@@ -2127,6 +2145,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Zips a double[] with indices in (index, value) order starting from index 0.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert [0: 10.0d, 1: 20.0d, 2: 30.0d] == nums.indexed()
+     * </pre>
      *
      * @see #indexed(double[], int)
      * @since 3.0.8
@@ -2137,6 +2161,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Zips a double[] with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert [5: 10.0d, 6: 20.0d, 7: 30.0d] == nums.indexed(5)
+     * </pre>
      *
      * @param self   a double[]
      * @param offset an index to start from
@@ -2574,6 +2604,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Adds max() method to int arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [1, 3, 2]
+     * assert 3 == nums.max()
+     * </pre>
      *
      * @param self an int array
      * @return the maximum value
@@ -2592,6 +2628,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Adds max() method to long arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] nums = [1L, 3L, 2L]
+     * assert 3L == nums.max()
+     * </pre>
      *
      * @param self a long array
      * @return the maximum value
@@ -2613,7 +2655,7 @@ public class ArrayGroovyMethods {
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * double[] nums = [1.1d, 2.2d, 3.3d]
+     * double[] nums = [1.1d, 3.3d, 2.2d]
      * assert 3.3d == nums.max()
      * </pre>
      *
@@ -2640,7 +2682,7 @@ public class ArrayGroovyMethods {
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * int[] nums = [10, 20, 30]
+     * int[] nums = [20, 10, 30]
      * assert 10 == nums.min()
      * </pre>
      *
@@ -2661,6 +2703,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Adds min() method to long arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [20L, 10L, 30L]
+     * assert 10L == nums.min()
+     * </pre>
      *
      * @param self a long array
      * @return the minimum value
@@ -2679,6 +2727,12 @@ public class ArrayGroovyMethods {
 
     /**
      * Adds min() method to double arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [20.0d, 10.0d, 30.0d]
+     * assert 10.0d == nums.min()
+     * </pre>
      *
      * @param self a double array
      * @return the minimum value
@@ -3289,8 +3343,8 @@ public class ArrayGroovyMethods {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * boolean[][] shorts = [[false, false], [true, true]]
-     * boolean[][] expected = [[false, true], [false, true]]
+     * short[][] shorts = [[1, 10], [100, 1000]]
+     * short[][] expected = [[1, 100], [10, 1000]]
      * def result = shorts.transpose()
      * assert result == expected
      * assert shorts.class.componentType == result.class.componentType
