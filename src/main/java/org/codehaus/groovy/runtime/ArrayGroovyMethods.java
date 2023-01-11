@@ -925,7 +925,7 @@ public class ArrayGroovyMethods {
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
      * <pre class="groovyTestCase">
-     * long[] array = [10L, 20L, 20L 30L]
+     * long[] array = [10L, 20L, 20L, 30L]
      * assert array.count(20L) == 2
      * </pre>
      *
