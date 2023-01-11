@@ -28,52 +28,61 @@ import static groovy.test.GroovyAssert.shouldFail
 class ArrayGroovyMethodsTest {
 
     @Test
-    void testTailErrorCases() {
-        for (primType in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
-            def ex = shouldFail(NoSuchElementException) {
-                Eval.me("new $primType[0]").tail()
-            }
-            assert ex.message == "Cannot access tail() for an empty array"
-        }
+    void firstErrorCases() {
+        assertNoSuchElementForAllPrimitiveEmptyArrays('first')
     }
 
     @Test
-    void testInitErrorCases() {
-        for (primType in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
-            def ex = shouldFail(NoSuchElementException) {
-                Eval.me("new $primType[0]").init()
-            }
-            assert ex.message == "Cannot access init() for an empty array"
-        }
+    void headErrorCases() {
+        assertNoSuchElementForAllPrimitiveEmptyArrays('head')
     }
 
     @Test
-    void testLastErrorCases() {
-        for (primType in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
-            def ex = shouldFail(NoSuchElementException) {
-                Eval.me("new $primType[0]").last()
-            }
-            assert ex.message == "Cannot access last() for an empty array"
-        }
+    void initErrorCases() {
+        assertUnsupportedOperationForAllPrimitiveEmptyArrays('init')
     }
 
     @Test
-    void testFirstErrorCases() {
-        for (primType in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
-            def ex = shouldFail(NoSuchElementException) {
-                Eval.me("new $primType[0]").first()
-            }
-            assert ex.message == "Cannot access first() for an empty array"
-        }
+    void lastErrorCases() {
+        assertNoSuchElementForAllPrimitiveEmptyArrays('last')
     }
 
     @Test
-    void testHeadErrorCases() {
+    void maxErrorCases() {
+        assertUnsupportedOperationForGivenPrimitiveEmptyArrays('max', ['int', 'long', 'double'])
+    }
+
+    @Test
+    void minErrorCases() {
+        assertUnsupportedOperationForGivenPrimitiveEmptyArrays('max', ['int', 'long', 'double'])
+    }
+
+    @Test
+    void tailErrorCases() {
+        assertUnsupportedOperationForAllPrimitiveEmptyArrays('tail')
+    }
+
+    private static assertUnsupportedOperationForAllPrimitiveEmptyArrays(String method) {
+        assertUnsupportedOperationForGivenPrimitiveEmptyArrays(method,
+            ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double'])
+    }
+
+
+    private static assertUnsupportedOperationForGivenPrimitiveEmptyArrays(String method, ArrayList<String> types) {
+        for (primType in types) {
+            def ex = shouldFail(UnsupportedOperationException) {
+                Eval.me("new $primType[0]")."$method"()
+            }
+            assert ex.message == "Accessing $method() is unsupported for an empty array"
+        }
+    }
+
+    private static assertNoSuchElementForAllPrimitiveEmptyArrays(String method) {
         for (primType in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
             def ex = shouldFail(NoSuchElementException) {
-                Eval.me("new $primType[0]").head()
+                Eval.me("new $primType[0]")."$method"()
             }
-            assert ex.message == "Cannot access head() for an empty array"
+            assert ex.message == "Cannot access $method() for an empty array"
         }
     }
 

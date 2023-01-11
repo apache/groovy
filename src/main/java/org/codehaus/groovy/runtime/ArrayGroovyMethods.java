@@ -28,8 +28,10 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.BooleanArrayIterator;
 import org.codehaus.groovy.util.ByteArrayIterator;
 import org.codehaus.groovy.util.CharArrayIterator;
+import org.codehaus.groovy.util.DoubleArrayIterable;
 import org.codehaus.groovy.util.DoubleArrayIterator;
 import org.codehaus.groovy.util.FloatArrayIterator;
+import org.codehaus.groovy.util.IntArrayIterable;
 import org.codehaus.groovy.util.IntArrayIterator;
 import org.codehaus.groovy.util.LongArrayIterator;
 import org.codehaus.groovy.util.ShortArrayIterator;
@@ -91,6 +93,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (boolean item : self) {
             if (bcw.call(item)) return true;
@@ -116,6 +119,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(byte[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (byte item : self) {
             if (bcw.call(item)) return true;
@@ -141,6 +145,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(char[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (char item : self) {
             if (bcw.call(item)) return true;
@@ -166,6 +171,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(short[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (short item : self) {
             if (bcw.call(item)) return true;
@@ -191,6 +197,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(int[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (int item : self) {
             if (bcw.call(item)) return true;
@@ -216,6 +223,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(long[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (long item : self) {
             if (bcw.call(item)) return true;
@@ -241,6 +249,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(float[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (float item : self) {
             if (bcw.call(item)) return true;
@@ -266,6 +275,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean any(double[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (double item : self) {
             if (bcw.call(item)) return true;
@@ -274,7 +284,7 @@ public class ArrayGroovyMethods {
     }
 
     //-------------------------------------------------------------------------
-    // asBoolean (brought over from DefaultGroovyMethods)
+    // asBoolean
 
     /**
      * Coerces a boolean array to a boolean value.
@@ -383,7 +393,7 @@ public class ArrayGroovyMethods {
     //-------------------------------------------------------------------------
     // asType (skipped, as it is not needed)
     //-------------------------------------------------------------------------
-    // average (brought over from DefaultGroovyMethods)
+    // average
 
     /**
      * Calculates the average of the bytes in the array.
@@ -394,6 +404,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static BigDecimal average(byte[] self) {
+        Objects.requireNonNull(self);
         long s = 0;
         for (byte v : self) {
             s += v;
@@ -410,6 +421,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static BigDecimal average(short[] self) {
+        Objects.requireNonNull(self);
         long s = 0;
         for (short v : self) {
             s += v;
@@ -426,6 +438,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static BigDecimal average(int[] self) {
+        Objects.requireNonNull(self);
         long s = 0;
         for (int v : self) {
             s += v;
@@ -442,6 +455,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static BigDecimal average(long[] self) {
+        Objects.requireNonNull(self);
         long s = 0;
         for (long v : self) {
             s += v;
@@ -458,6 +472,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static double average(float[] self) {
+        Objects.requireNonNull(self);
         double s = 0.0d;
         for (float v : self) {
             s += v;
@@ -474,6 +489,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.0
      */
     public static double average(double[] self) {
+        Objects.requireNonNull(self);
         double s = 0.0d;
         for (double v : self) {
             s += v;
@@ -504,6 +520,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Boolean>> chop(boolean[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new BooleanArrayIterator(self), chopSizes);
     }
 
@@ -527,6 +544,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Byte>> chop(byte[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new ByteArrayIterator(self), chopSizes);
     }
 
@@ -550,6 +568,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Character>> chop(char[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new CharArrayIterator(self), chopSizes);
     }
 
@@ -573,6 +592,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Short>> chop(short[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new ShortArrayIterator(self), chopSizes);
     }
 
@@ -596,6 +616,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Integer>> chop(int[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new IntArrayIterator(self), chopSizes);
     }
 
@@ -619,6 +640,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Long>> chop(long[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new LongArrayIterator(self), chopSizes);
     }
 
@@ -642,6 +664,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Float>> chop(float[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new FloatArrayIterator(self), chopSizes);
     }
 
@@ -665,6 +688,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Double>> chop(double[] self, int... chopSizes) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes);
     }
 
@@ -688,6 +712,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(boolean[] self, Object value) {
+        Objects.requireNonNull(self);
         for (boolean next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -703,6 +728,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(byte[] self, Object value) {
+        Objects.requireNonNull(self);
         for (byte next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -718,6 +744,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(char[] self, Object value) {
+        Objects.requireNonNull(self);
         for (char next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -733,6 +760,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(short[] self, Object value) {
+        Objects.requireNonNull(self);
         for (short next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -748,6 +776,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(int[] self, Object value) {
+        Objects.requireNonNull(self);
         for (int next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -763,6 +792,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(long[] self, Object value) {
+        Objects.requireNonNull(self);
         for (long next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -778,6 +808,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(float[] self, Object value) {
+        Objects.requireNonNull(self);
         for (float next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -793,6 +824,7 @@ public class ArrayGroovyMethods {
      * @since 1.8.6
      */
     public static boolean contains(double[] self, Object value) {
+        Objects.requireNonNull(self);
         for (double next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
@@ -813,7 +845,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(boolean[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new BooleanArrayIterator(self), value);
     }
 
     /**
@@ -827,7 +860,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(byte[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new ByteArrayIterator(self), value);
     }
 
     /**
@@ -841,7 +875,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(char[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new CharArrayIterator(self), value);
     }
 
     /**
@@ -855,7 +890,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(short[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new ShortArrayIterator(self), value);
     }
 
     /**
@@ -869,7 +905,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(int[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new IntArrayIterable(self), value);
     }
 
     /**
@@ -883,7 +920,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(long[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new LongArrayIterator(self), value);
     }
 
     /**
@@ -897,7 +935,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(float[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new FloatArrayIterator(self), value);
     }
 
     /**
@@ -911,7 +950,8 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(double[] self, Object value) {
-        return DefaultGroovyMethods.count(InvokerHelper.asIterator(self), value);
+        Objects.requireNonNull(self);
+        return DefaultGroovyMethods.count(new DoubleArrayIterable(self), value);
     }
 
     //-------------------------------------------------------------------------
@@ -944,6 +984,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean[] each(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (boolean item : self) {
             closure.call(item);
         }
@@ -969,6 +1010,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte[] each(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (byte item : self) {
             closure.call(item);
         }
@@ -994,6 +1036,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char[] each(char[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (char item : self) {
             closure.call(item);
         }
@@ -1019,6 +1062,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short[] each(short[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (short item : self) {
             closure.call(item);
         }
@@ -1044,6 +1088,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int[] each(int[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (int item : self) {
             closure.call(item);
         }
@@ -1069,6 +1114,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long[] each(long[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (long item : self) {
             closure.call(item);
         }
@@ -1094,6 +1140,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float[] each(float[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (float item : self) {
             closure.call(item);
         }
@@ -1119,6 +1166,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double[] each(double[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        Objects.requireNonNull(self);
         for (double item : self) {
             closure.call(item);
         }
@@ -1164,6 +1212,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean[] eachWithIndex(boolean[] self, @ClosureParams(value = FromString.class, options = "Boolean,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1194,6 +1243,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte[] eachWithIndex(byte[] self, @ClosureParams(value = FromString.class, options = "Byte,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1224,6 +1274,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char[] eachWithIndex(char[] self, @ClosureParams(value = FromString.class, options = "Character,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1254,6 +1305,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short[] eachWithIndex(short[] self, @ClosureParams(value = FromString.class, options = "Short,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1284,6 +1336,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int[] eachWithIndex(int[] self, @ClosureParams(value = FromString.class, options = "Integer,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1314,6 +1367,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long[] eachWithIndex(long[] self, @ClosureParams(value = FromString.class, options = "Long,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1344,6 +1398,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float[] eachWithIndex(float[] self, @ClosureParams(value = FromString.class, options = "Float,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1374,6 +1429,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double[] eachWithIndex(double[] self, @ClosureParams(value = FromString.class, options = "Double,Integer") Closure closure) {
+        Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
             args[0] = self[i];
@@ -1635,6 +1691,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean first(boolean[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1653,6 +1710,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte first(byte[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1671,6 +1729,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char first(char[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1689,6 +1748,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short first(short[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1707,6 +1767,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int first(int[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1725,6 +1786,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long first(long[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1743,6 +1805,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float first(float[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1761,6 +1824,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double first(double[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "first");
         return self[0];
     }
@@ -1779,6 +1843,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(boolean[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1789,6 +1854,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(byte[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1799,6 +1865,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(char[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1809,6 +1876,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(short[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1819,6 +1887,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(int[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1829,6 +1898,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(long[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1839,6 +1909,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(float[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1849,6 +1920,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static IntRange getIndices(double[] self) {
+        Objects.requireNonNull(self);
         return new IntRange(false, 0, self.length);
     }
 
@@ -1873,6 +1945,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean head(boolean[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1891,6 +1964,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte head(byte[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1909,6 +1983,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char head(char[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1927,6 +2002,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short head(short[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1945,6 +2021,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int head(int[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1963,6 +2040,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long head(long[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1981,6 +2059,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float head(float[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -1999,6 +2078,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double head(double[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
     }
@@ -2019,11 +2099,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static boolean[] init(boolean[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2038,11 +2119,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static byte[] init(byte[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2057,11 +2139,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static char[] init(char[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2076,11 +2159,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static short[] init(short[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2095,11 +2179,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static int[] init(int[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2114,11 +2199,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static long[] init(long[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2133,11 +2219,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static float[] init(float[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2152,11 +2239,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its last element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static double[] init(double[] self) {
-        throwNoSuchElementIfEmpty(self.length, "init");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "init");
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
@@ -2177,6 +2265,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(boolean[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new BooleanArrayIterator(self), separator);
     }
 
@@ -2190,6 +2279,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(byte[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new ByteArrayIterator(self), separator);
     }
 
@@ -2203,6 +2293,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(char[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new CharArrayIterator(self), separator);
     }
 
@@ -2216,6 +2307,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(short[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new ShortArrayIterator(self), separator);
     }
 
@@ -2229,6 +2321,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(int[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new IntArrayIterator(self), separator);
     }
 
@@ -2242,6 +2335,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(long[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new LongArrayIterator(self), separator);
     }
 
@@ -2255,6 +2349,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(float[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new FloatArrayIterator(self), separator);
     }
 
@@ -2268,6 +2363,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(double[] self, String separator) {
+        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new DoubleArrayIterator(self), separator);
     }
 
@@ -2287,6 +2383,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean last(boolean[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2304,6 +2401,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte last(byte[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2321,6 +2419,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char last(char[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2338,6 +2437,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short last(short[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2355,6 +2455,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static int last(int[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2372,6 +2473,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static long last(long[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2389,6 +2491,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float last(float[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2406,6 +2509,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static double last(double[] self) {
+        Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
         return self[self.length - 1];
     }
@@ -2422,9 +2526,7 @@ public class ArrayGroovyMethods {
      */
     public static int max(int[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty int[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         int answer = self[0];
         for (int i = 1; i < self.length; i++) {
             int value = self[i];
@@ -2442,9 +2544,7 @@ public class ArrayGroovyMethods {
      */
     public static long max(long[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty long[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         long answer = self[0];
         for (int i = 1; i < self.length; i++) {
             long value = self[i];
@@ -2468,9 +2568,7 @@ public class ArrayGroovyMethods {
      */
     public static double max(double[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call max() on empty double[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         double answer = self[0];
         for (int i = 1; i < self.length; i++) {
             double value = self[i];
@@ -2497,9 +2595,7 @@ public class ArrayGroovyMethods {
      */
     public static int min(int[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty int[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         int answer = self[0];
         for (int i = 1; i < self.length; i++) {
             int value = self[i];
@@ -2517,9 +2613,7 @@ public class ArrayGroovyMethods {
      */
     public static long min(long[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty long[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         long answer = self[0];
         for (int i = 1; i < self.length; i++) {
             long value = self[i];
@@ -2537,9 +2631,7 @@ public class ArrayGroovyMethods {
      */
     public static double min(double[] self) {
         Objects.requireNonNull(self);
-        if (self.length == 0) {
-            throw new UnsupportedOperationException("Can't call min() on empty double[]");
-        }
+        throwUnsupportedOperationIfEmpty(self.length, "max");
         double answer = self[0];
         for (int i = 1; i < self.length; i++) {
             double value = self[i];
@@ -2577,6 +2669,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static byte sum(byte[] self) {
+        Objects.requireNonNull(self);
         return sum(self, (byte) 0);
     }
 
@@ -2589,6 +2682,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static char sum(char[] self) {
+        Objects.requireNonNull(self);
         return sum(self, (char) 0);
     }
 
@@ -2601,6 +2695,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static short sum(short[] self) {
+        Objects.requireNonNull(self);
         return sum(self, (short) 0);
     }
 
@@ -2613,6 +2708,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static int sum(int[] self) {
+        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
@@ -2625,6 +2721,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static long sum(long[] self) {
+        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
@@ -2637,6 +2734,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static float sum(float[] self) {
+        Objects.requireNonNull(self);
         return sum(self, (float) 0);
     }
 
@@ -2649,6 +2747,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static double sum(double[] self) {
+        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
@@ -2662,6 +2761,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static byte sum(byte[] self, byte initialValue) {
+        Objects.requireNonNull(self);
         byte s = initialValue;
         for (byte v : self) {
             s += v;
@@ -2679,6 +2779,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static char sum(char[] self, char initialValue) {
+        Objects.requireNonNull(self);
         char s = initialValue;
         for (char v : self) {
             s += v;
@@ -2696,6 +2797,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static short sum(short[] self, short initialValue) {
+        Objects.requireNonNull(self);
         short s = initialValue;
         for (short v : self) {
             s += v;
@@ -2713,6 +2815,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static int sum(int[] self, int initialValue) {
+        Objects.requireNonNull(self);
         int s = initialValue;
         for (int v : self) {
             s += v;
@@ -2730,6 +2833,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static long sum(long[] self, long initialValue) {
+        Objects.requireNonNull(self);
         long s = initialValue;
         for (long v : self) {
             s += v;
@@ -2747,6 +2851,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static float sum(float[] self, float initialValue) {
+        Objects.requireNonNull(self);
         float s = initialValue;
         for (float v : self) {
             s += v;
@@ -2764,6 +2869,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static double sum(double[] self, double initialValue) {
+        Objects.requireNonNull(self);
         double s = initialValue;
         for (double v : self) {
             s += v;
@@ -2787,11 +2893,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static boolean[] tail(boolean[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2806,11 +2913,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static byte[] tail(byte[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2825,11 +2933,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static char[] tail(char[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2844,11 +2953,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static short[] tail(short[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2863,11 +2973,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static int[] tail(int[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2882,11 +2993,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static long[] tail(long[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2901,11 +3013,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static float[] tail(float[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -2920,11 +3033,12 @@ public class ArrayGroovyMethods {
      *
      * @param self an array
      * @return an array without its first element
-     * @throws NoSuchElementException if the array is empty
+     * @throws UnsupportedOperationException if the array is empty
      * @since 5.0.0
      */
     public static double[] tail(double[] self) {
-        throwNoSuchElementIfEmpty(self.length, "tail");
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "tail");
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
@@ -3058,6 +3172,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean[][] transpose(boolean[][] self) {
+        Objects.requireNonNull(self);
         boolean[][] result = new boolean[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3084,6 +3199,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static byte[][] transpose(byte[][] self) {
+        Objects.requireNonNull(self);
         byte[][] result = new byte[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3110,6 +3226,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static char[][] transpose(char[][] self) {
+        Objects.requireNonNull(self);
         char[][] result = new char[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3136,6 +3253,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static short[][] transpose(short[][] self) {
+        Objects.requireNonNull(self);
         short[][] result = new short[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3160,6 +3278,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static int[][] transpose(int[][] self) {
+        Objects.requireNonNull(self);
         int[][] result = new int[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3186,6 +3305,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static long[][] transpose(long[][] self) {
+        Objects.requireNonNull(self);
         long[][] result = new long[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3212,6 +3332,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static float[][] transpose(float[][] self) {
+        Objects.requireNonNull(self);
         float[][] result = new float[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
@@ -3238,6 +3359,7 @@ public class ArrayGroovyMethods {
      * @since 3.0.8
      */
     public static double[][] transpose(double[][] self) {
+        Objects.requireNonNull(self);
         double[][] result = new double[self[0].length][self.length];
         for (int i = 0; i < self.length; i++) {
             for (int j = 0; j < self[i].length; j++) {
