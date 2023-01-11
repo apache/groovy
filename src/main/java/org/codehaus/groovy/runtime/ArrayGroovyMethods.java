@@ -24,6 +24,7 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.BooleanArrayIterator;
 import org.codehaus.groovy.util.ByteArrayIterator;
@@ -60,7 +61,8 @@ import java.util.NoSuchElementException;
  * aim to keep the method available from within Groovy.
  */
 public class ArrayGroovyMethods {
-    /* Arrangement of each method (skip any unapplicable types for the methods):
+    public static final String FIRST = "first";
+    /* Arrangement of each method (skip any inapplicable types for the methods):
      * 1. boolean[]
      * 2. byte[]
      * 3. char[]
@@ -94,7 +96,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the booleans matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (boolean item : self) {
@@ -120,7 +122,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the bytes matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(byte[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (byte item : self) {
@@ -146,7 +148,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the chars matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(char[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (char item : self) {
@@ -172,7 +174,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the shorts matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(short[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (short item : self) {
@@ -198,7 +200,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the ints matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(int[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (int item : self) {
@@ -224,7 +226,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the longs matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(long[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (long item : self) {
@@ -250,7 +252,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the floats matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(float[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (float item : self) {
@@ -276,7 +278,7 @@ public class ArrayGroovyMethods {
      * @return true if any iteration for the doubles matches the closure predicate
      * @since 5.0.0
      */
-    public static boolean any(double[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+    public static boolean any(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
         Objects.requireNonNull(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (double item : self) {
@@ -411,7 +413,7 @@ public class ArrayGroovyMethods {
         for (byte v : self) {
             s += v;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
+        return (BigDecimal) NumberNumberDiv.div(BigDecimal.valueOf(s), self.length);
     }
 
     /**
@@ -428,7 +430,7 @@ public class ArrayGroovyMethods {
         for (short v : self) {
             s += v;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
+        return (BigDecimal) NumberNumberDiv.div(BigDecimal.valueOf(s), self.length);
     }
 
     /**
@@ -445,7 +447,7 @@ public class ArrayGroovyMethods {
         for (int v : self) {
             s += v;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
+        return (BigDecimal) NumberNumberDiv.div(BigDecimal.valueOf(s), self.length);
     }
 
     /**
@@ -462,7 +464,7 @@ public class ArrayGroovyMethods {
         for (long v : self) {
             s += v;
         }
-        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(self.length));
+        return (BigDecimal) NumberNumberDiv.div(BigDecimal.valueOf(s), self.length);
     }
 
     /**
@@ -700,9 +702,9 @@ public class ArrayGroovyMethods {
     /**
      * Checks whether the array contains the given value.
      *
-     * @param self  the array within which we count the number of occurrences
+     * @param self  the array we are searching
      * @param value the value being searched for
-     * @return the number of occurrences
+     * @return true if the array contains the value
      * @since 1.8.6
      */
     public static boolean contains(boolean[] self, Object value) {
@@ -831,7 +833,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, true]
+     * assert array.count(true) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -845,7 +851,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * byte[] array = [10, 20, 20, 30]
+     * assert array.count(20) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -859,7 +869,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * char[] array = ['x', 'y', 'z', 'z', 'y']
+     * assert array.count('y') == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -873,7 +887,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * short[] array = [10, 20, 20, 30]
+     * assert array.count(20) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -887,7 +905,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * int[] array = [10, 20, 20, 30]
+     * assert array.count(20) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -901,7 +923,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * long[] array = [10L, 20L, 20L 30L]
+     * assert array.count(20L) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -915,7 +941,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * float[] array = [10.0f, 20.0f, 20.0f, 30.0f]
+     * assert array.count(20.0f) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -929,7 +959,11 @@ public class ArrayGroovyMethods {
     /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <code>compareTo(value) == 0</code>).
+     * <pre class="groovyTestCase">
+     * double[] array = [10.0d, 20.0d, 20.0d, 30.0d]
+     * assert array.count(20.0d) == 2
+     * </pre>
      *
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
@@ -969,7 +1003,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static boolean[] each(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static boolean[] each(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (boolean item : self) {
             closure.call(item);
@@ -995,7 +1029,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static byte[] each(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static byte[] each(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (byte item : self) {
             closure.call(item);
@@ -1021,7 +1055,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static char[] each(char[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static char[] each(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (char item : self) {
             closure.call(item);
@@ -1047,7 +1081,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static short[] each(short[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static short[] each(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (short item : self) {
             closure.call(item);
@@ -1073,7 +1107,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static int[] each(int[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static int[] each(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (int item : self) {
             closure.call(item);
@@ -1099,7 +1133,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static long[] each(long[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static long[] each(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (long item : self) {
             closure.call(item);
@@ -1125,7 +1159,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static float[] each(float[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static float[] each(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (float item : self) {
             closure.call(item);
@@ -1151,7 +1185,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static double[] each(double[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static double[] each(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         Objects.requireNonNull(self);
         for (double item : self) {
             closure.call(item);
@@ -1170,7 +1204,7 @@ public class ArrayGroovyMethods {
      * @see #each(byte[], groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+    public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         each(self, closure);
     }
 
@@ -1197,7 +1231,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static boolean[] eachWithIndex(boolean[] self, @ClosureParams(value = FromString.class, options = "Boolean,Integer") Closure closure) {
+    public static boolean[] eachWithIndex(boolean[] self, @ClosureParams(value = FromString.class, options = "Boolean,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1228,7 +1262,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static byte[] eachWithIndex(byte[] self, @ClosureParams(value = FromString.class, options = "Byte,Integer") Closure closure) {
+    public static byte[] eachWithIndex(byte[] self, @ClosureParams(value = FromString.class, options = "Byte,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1259,7 +1293,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static char[] eachWithIndex(char[] self, @ClosureParams(value = FromString.class, options = "Character,Integer") Closure closure) {
+    public static char[] eachWithIndex(char[] self, @ClosureParams(value = FromString.class, options = "Character,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1290,7 +1324,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static short[] eachWithIndex(short[] self, @ClosureParams(value = FromString.class, options = "Short,Integer") Closure closure) {
+    public static short[] eachWithIndex(short[] self, @ClosureParams(value = FromString.class, options = "Short,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1321,7 +1355,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static int[] eachWithIndex(int[] self, @ClosureParams(value = FromString.class, options = "Integer,Integer") Closure closure) {
+    public static int[] eachWithIndex(int[] self, @ClosureParams(value = FromString.class, options = "Integer,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1352,7 +1386,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static long[] eachWithIndex(long[] self, @ClosureParams(value = FromString.class, options = "Long,Integer") Closure closure) {
+    public static long[] eachWithIndex(long[] self, @ClosureParams(value = FromString.class, options = "Long,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1383,7 +1417,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static float[] eachWithIndex(float[] self, @ClosureParams(value = FromString.class, options = "Float,Integer") Closure closure) {
+    public static float[] eachWithIndex(float[] self, @ClosureParams(value = FromString.class, options = "Float,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1395,7 +1429,7 @@ public class ArrayGroovyMethods {
     }
 
     /**
-     * Iterates through an double[],
+     * Iterates through a double[],
      * passing each double and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
@@ -1414,7 +1448,7 @@ public class ArrayGroovyMethods {
      * @return the self array
      * @since 5.0.0
      */
-    public static double[] eachWithIndex(double[] self, @ClosureParams(value = FromString.class, options = "Double,Integer") Closure closure) {
+    public static double[] eachWithIndex(double[] self, @ClosureParams(value = FromString.class, options = "Double,Integer") Closure<?> closure) {
         Objects.requireNonNull(self);
         final Object[] args = new Object[2];
         for (int i = 0, n = self.length; i < n; i += 1) {
@@ -1666,8 +1700,8 @@ public class ArrayGroovyMethods {
     /**
      * Returns the first item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] flags = [true, false]
-     *     assert flags.first() == true
+     *     boolean[] array = [true, false]
+     *     assert array.first() == true
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1678,7 +1712,7 @@ public class ArrayGroovyMethods {
      */
     public static boolean first(boolean[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1697,7 +1731,7 @@ public class ArrayGroovyMethods {
      */
     public static byte first(byte[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1716,7 +1750,7 @@ public class ArrayGroovyMethods {
      */
     public static char first(char[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1735,7 +1769,7 @@ public class ArrayGroovyMethods {
      */
     public static short first(short[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1754,7 +1788,7 @@ public class ArrayGroovyMethods {
      */
     public static int first(int[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1773,7 +1807,7 @@ public class ArrayGroovyMethods {
      */
     public static long first(long[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1792,7 +1826,7 @@ public class ArrayGroovyMethods {
      */
     public static float first(float[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1811,7 +1845,7 @@ public class ArrayGroovyMethods {
      */
     public static double first(double[] self) {
         Objects.requireNonNull(self);
-        throwNoSuchElementIfEmpty(self.length, "first");
+        throwNoSuchElementIfEmpty(self.length, FIRST);
         return self[0];
     }
 
@@ -1920,8 +1954,8 @@ public class ArrayGroovyMethods {
     /**
      * Returns the first item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] flags = [true, false]
-     *     assert flags.head() == true
+     *     boolean[] array = [true, false]
+     *     assert array.head() == true
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2184,10 +2218,10 @@ public class ArrayGroovyMethods {
     /**
      * Returns the items from the boolean array excluding the last item.
      * <pre class="groovyTestCase">
-     *     boolean[] flags = [true, false, true]
-     *     def result = flags.init()
+     *     boolean[] array = [true, false, true]
+     *     def result = array.init()
      *     assert result == [true, false]
-     *     assert flags.class.componentType == result.class.componentType
+     *     assert array.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -2458,8 +2492,8 @@ public class ArrayGroovyMethods {
     /**
      * Returns the last item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] flags = [true, false, true]
-     *     assert flags.last() == true
+     *     boolean[] array = [true, false, true]
+     *     assert array.last() == true
      * </pre>
      *
      * @param self an array
@@ -2826,7 +2860,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static long sum(long[] self) {
-        return sum(self, 0);
+        return sum(self, 0L);
     }
 
     /**
@@ -2838,7 +2872,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static float sum(float[] self) {
-        return sum(self, (float) 0);
+        return sum(self, 0.0f);
     }
 
     /**
@@ -2850,7 +2884,7 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static double sum(double[] self) {
-        return sum(self, 0);
+        return sum(self, 0.0d);
     }
 
     /**
@@ -2982,15 +3016,192 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // swap
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([false, true, false, true] as boolean[]) == ([false, false, true, true] as boolean[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static boolean[] swap(boolean[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        boolean tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as byte[]) == ([1, 2, 3, 4] as byte[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static byte[] swap(byte[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        byte tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as char[]) == ([1, 2, 3, 4] as char[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static char[] swap(char[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        char tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as short[]) == ([1, 2, 3, 4] as short[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static short[] swap(short[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        short tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as int[]) == ([1, 2, 3, 4] as int[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static int[] swap(int[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        int tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as long[]) == ([1, 2, 3, 4] as long[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static long[] swap(long[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        long tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as float[]) == ([1, 2, 3, 4] as float[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static float[] swap(float[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        float tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
+    /**
+     * Swaps two elements at the specified positions.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert ([1, 3, 2, 4] as double[]) == ([1, 2, 3, 4] as double[]).swap(1, 2)
+     * </pre>
+     *
+     * @param self a boolean array
+     * @param i a position
+     * @param j a position
+     * @return self
+     * @since 2.4.0
+     */
+    public static double[] swap(double[] self, int i, int j) {
+        Objects.requireNonNull(self);
+        double tmp = self[i];
+        self[i] = self[j];
+        self[j] = tmp;
+        return self;
+    }
+
     //-------------------------------------------------------------------------
     // tail
     /**
      * Returns the items from the boolean array excluding the first item.
      * <pre class="groovyTestCase">
-     *     boolean[] flags = [true, false, true]
-     *     def result = flags.tail()
+     *     boolean[] array = [true, false, true]
+     *     def result = array.tail()
      *     assert result == [false, true]
-     *     assert flags.class.componentType == result.class.componentType
+     *     assert array.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3262,11 +3473,11 @@ public class ArrayGroovyMethods {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * boolean[][] bools = [[false, false], [true, true]]
+     * boolean[][] array = [[false, false], [true, true]]
      * boolean[][] expected = [[false, true], [false, true]]
-     * def result = bools.transpose()
+     * def result = array.transpose()
      * assert result == expected
-     * assert bools.class.componentType == result.class.componentType
+     * assert array.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self a 2D boolean array

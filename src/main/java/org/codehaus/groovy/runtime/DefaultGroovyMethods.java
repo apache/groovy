@@ -18127,172 +18127,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([false, true, false, true] as boolean[]) == ([false, false, true, true] as boolean[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static boolean[] swap(boolean[] self, int i, int j) {
-        boolean tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as byte[]) == ([1, 2, 3, 4] as byte[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static byte[] swap(byte[] self, int i, int j) {
-        byte tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as char[]) == ([1, 2, 3, 4] as char[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static char[] swap(char[] self, int i, int j) {
-        char tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as double[]) == ([1, 2, 3, 4] as double[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static double[] swap(double[] self, int i, int j) {
-        double tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as float[]) == ([1, 2, 3, 4] as float[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static float[] swap(float[] self, int i, int j) {
-        float tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as int[]) == ([1, 2, 3, 4] as int[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static int[] swap(int[] self, int i, int j) {
-        int tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as long[]) == ([1, 2, 3, 4] as long[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static long[] swap(long[] self, int i, int j) {
-        long tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
-    /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert ([1, 3, 2, 4] as short[]) == ([1, 2, 3, 4] as short[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self a boolean array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
+    @Deprecated
     public static short[] swap(short[] self, int i, int j) {
-        short tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
+        return ArrayGroovyMethods.swap(self, i,  j);
     }
 
     /**
