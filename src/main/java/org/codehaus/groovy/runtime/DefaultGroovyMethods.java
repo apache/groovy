@@ -3049,6 +3049,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static Number count(Iterator self, Object value) {
+        Objects.requireNonNull(self);
         long answer = 0;
         while (self.hasNext()) {
             if (DefaultTypeTransformation.compareEqual(self.next(), value)) {
@@ -7028,6 +7029,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static String join(Iterator<?> self, String separator) {
+        Objects.requireNonNull(self);
         if (separator == null) separator = "";
         StringBuilder buffer = new StringBuilder();
         boolean first = true;
@@ -9057,6 +9059,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
+        Objects.requireNonNull(self);
         Map<Integer, E> result = new LinkedHashMap<>();
         Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
         while (indexed.hasNext()) {
@@ -9066,80 +9069,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    /**
-     * Zips an int[] with indices in (index, value) order starting from index 0.
-     *
-     * @see #indexed(int[], int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Integer> indexed(int[] self) {
-        return indexed(self, 0);
+        return ArrayGroovyMethods.indexed(self);
     }
 
-    /**
-     * Zips an int[] with indices in (index, value) order.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * int[] nums = [10, 20, 30]
-     * assert [5: 10, 6: 20, 7: 30] == nums.indexed(5)
-     * assert ["1: 10", "2: 20", "3: 30"] == nums.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
-     * </pre>
-     *
-     * @param self   an Iterable
-     * @param offset an index to start from
-     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
-     * @see #indexed(Iterable, int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Integer> indexed(int[] self, int offset) {
-        return indexed(new IntArrayIterable(self), offset);
+        return ArrayGroovyMethods.indexed(self, offset);
     }
 
-    /**
-     * Zips a long[] with indices in (index, value) order starting from index 0.
-     *
-     * @see #indexed(long[], int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Long> indexed(long[] self) {
-        return indexed(self, 0);
+        return ArrayGroovyMethods.indexed(self);
     }
 
-    /**
-     * Zips a long[] with indices in (index, value) order.
-     *
-     * @param self   a long[]
-     * @param offset an index to start from
-     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
-     * @see #indexed(Iterable, int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Long> indexed(long[] self, int offset) {
-        return indexed(new LongArrayIterable(self), offset);
+        return ArrayGroovyMethods.indexed(self, offset);
     }
 
-    /**
-     * Zips a double[] with indices in (index, value) order starting from index 0.
-     *
-     * @see #indexed(double[], int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Double> indexed(double[] self) {
-        return indexed(self, 0);
+        return ArrayGroovyMethods.indexed(self);
     }
 
-    /**
-     * Zips a double[] with indices in (index, value) order.
-     *
-     * @param self   a double[]
-     * @param offset an index to start from
-     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
-     * @see #indexed(Iterable, int)
-     * @since 3.0.8
-     */
+    @Deprecated
     public static Map<Integer, Double> indexed(double[] self, int offset) {
-        return indexed(new DoubleArrayIterable(self), offset);
+        return ArrayGroovyMethods.indexed(self, offset);
     }
 
     /**
@@ -13192,6 +13149,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.2
      */
     public static <T> List<List<T>> chop(Iterator<T> self, int... chopSizes) {
+        Objects.requireNonNull(self);
         List<List<T>> result = new ArrayList<>();
         for (int nextSize : chopSizes) {
             int size = nextSize;

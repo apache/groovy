@@ -33,12 +33,14 @@ import org.codehaus.groovy.util.DoubleArrayIterator;
 import org.codehaus.groovy.util.FloatArrayIterator;
 import org.codehaus.groovy.util.IntArrayIterable;
 import org.codehaus.groovy.util.IntArrayIterator;
+import org.codehaus.groovy.util.LongArrayIterable;
 import org.codehaus.groovy.util.LongArrayIterator;
 import org.codehaus.groovy.util.ShortArrayIterator;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 
@@ -520,7 +522,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Boolean>> chop(boolean[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new BooleanArrayIterator(self), chopSizes);
     }
 
@@ -544,7 +545,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Byte>> chop(byte[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new ByteArrayIterator(self), chopSizes);
     }
 
@@ -568,7 +568,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Character>> chop(char[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new CharArrayIterator(self), chopSizes);
     }
 
@@ -592,7 +591,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Short>> chop(short[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new ShortArrayIterator(self), chopSizes);
     }
 
@@ -616,7 +614,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Integer>> chop(int[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new IntArrayIterator(self), chopSizes);
     }
 
@@ -640,7 +637,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Long>> chop(long[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new LongArrayIterator(self), chopSizes);
     }
 
@@ -664,7 +660,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Float>> chop(float[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new FloatArrayIterator(self), chopSizes);
     }
 
@@ -688,7 +683,6 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static List<List<Double>> chop(double[] self, int... chopSizes) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes);
     }
 
@@ -845,7 +839,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(boolean[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new BooleanArrayIterator(self), value);
     }
 
@@ -860,7 +853,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(byte[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new ByteArrayIterator(self), value);
     }
 
@@ -875,7 +867,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(char[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new CharArrayIterator(self), value);
     }
 
@@ -890,7 +881,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(short[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new ShortArrayIterator(self), value);
     }
 
@@ -905,7 +895,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(int[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new IntArrayIterable(self), value);
     }
 
@@ -920,7 +909,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(long[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new LongArrayIterator(self), value);
     }
 
@@ -935,7 +923,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(float[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new FloatArrayIterator(self), value);
     }
 
@@ -950,7 +937,6 @@ public class ArrayGroovyMethods {
      * @since 1.6.4
      */
     public static Number count(double[] self, Object value) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.count(new DoubleArrayIterable(self), value);
     }
 
@@ -2085,6 +2071,83 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // indexed
+
+    /**
+     * Zips an int[] with indices in (index, value) order starting from index 0.
+     *
+     * @see #indexed(int[], int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Integer> indexed(int[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an int[] with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, 30]
+     * assert [5: 10, 6: 20, 7: 30] == nums.indexed(5)
+     * assert ["1: 10", "2: 20", "3: 30"] == nums.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Iterable
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Integer> indexed(int[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new IntArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a long[] with indices in (index, value) order starting from index 0.
+     *
+     * @see #indexed(long[], int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Long> indexed(long[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips a long[] with indices in (index, value) order.
+     *
+     * @param self   a long[]
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Long> indexed(long[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new LongArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a double[] with indices in (index, value) order starting from index 0.
+     *
+     * @see #indexed(double[], int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Double> indexed(double[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips a double[] with indices in (index, value) order.
+     *
+     * @param self   a double[]
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 3.0.8
+     */
+    public static Map<Integer, Double> indexed(double[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new DoubleArrayIterable(self), offset);
+    }
+
     //-------------------------------------------------------------------------
     // init
 
@@ -2265,7 +2328,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(boolean[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new BooleanArrayIterator(self), separator);
     }
 
@@ -2279,7 +2341,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(byte[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new ByteArrayIterator(self), separator);
     }
 
@@ -2293,7 +2354,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(char[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new CharArrayIterator(self), separator);
     }
 
@@ -2307,7 +2367,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(short[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new ShortArrayIterator(self), separator);
     }
 
@@ -2321,7 +2380,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(int[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new IntArrayIterator(self), separator);
     }
 
@@ -2335,7 +2393,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(long[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new LongArrayIterator(self), separator);
     }
 
@@ -2349,7 +2406,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(float[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new FloatArrayIterator(self), separator);
     }
 
@@ -2363,7 +2419,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.1
      */
     public static String join(double[] self, String separator) {
-        Objects.requireNonNull(self);
         return DefaultGroovyMethods.join(new DoubleArrayIterator(self), separator);
     }
 
@@ -2669,7 +2724,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static byte sum(byte[] self) {
-        Objects.requireNonNull(self);
         return sum(self, (byte) 0);
     }
 
@@ -2682,7 +2736,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static char sum(char[] self) {
-        Objects.requireNonNull(self);
         return sum(self, (char) 0);
     }
 
@@ -2695,7 +2748,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static short sum(short[] self) {
-        Objects.requireNonNull(self);
         return sum(self, (short) 0);
     }
 
@@ -2708,7 +2760,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static int sum(int[] self) {
-        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
@@ -2721,7 +2772,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static long sum(long[] self) {
-        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
@@ -2734,7 +2784,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static float sum(float[] self) {
-        Objects.requireNonNull(self);
         return sum(self, (float) 0);
     }
 
@@ -2747,7 +2796,6 @@ public class ArrayGroovyMethods {
      * @since 2.4.2
      */
     public static double sum(double[] self) {
-        Objects.requireNonNull(self);
         return sum(self, 0);
     }
 
