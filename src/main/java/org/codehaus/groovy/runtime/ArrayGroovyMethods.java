@@ -80,15 +80,34 @@ public class ArrayGroovyMethods {
     // any
 
     /**
+     * Iterates over the contents of a boolean Array, and checks whether
+     * any element is true.
+     * <pre class="groovyTestCase">
+     * boolean[] array1 = [false, true]
+     * assert array1.any()
+     * boolean[] array2 = [false]
+     * assert !array2.any()
+     * </pre>
+     *
+     * @param self      the boolean array over which we iterate
+     * @return true if any iteration for the booleans matches the closure predicate
+     * @since 5.0.0
+     */
+    public static boolean any(boolean[] self) {
+        Objects.requireNonNull(self);
+        for (boolean item : self) {
+            if (item) return true;
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the contents of a boolean Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      boolean[] array = [false, true, false]
-     *      assert array.any{ true == it.booleanValue() }
-     * }
-     * test()
+     * boolean[] array = [true]
+     * assert array.any{ it }
+     * assert !array.any{ !it }
      * </pre>
      *
      * @param self      the boolean array over which we iterate
@@ -109,12 +128,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a byte Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      byte[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.byteValue() }
-     * }
-     * test()
+     * byte[] array = [0, 1, 2]
+     * assert array.any{ it > 1 }
+     * assert !array.any{ it > 3 }
      * </pre>
      *
      * @param self      the byte array over which we iterate
@@ -135,12 +151,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a char Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      char[] array = ['a' as char, 'b' as char, 'c' as char]
-     *      assert array.any{ 'a' as char == it.charValue() }
-     * }
-     * test()
+     * char[] array = ['a', 'b', 'c']
+     * assert array.any{ it <= 'a' }
+     * assert !array.any{ it < 'a' }
      * </pre>
      *
      * @param self      the char array over which we iterate
@@ -161,12 +174,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a short Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      short[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.shortValue() }
-     * }
-     * test()
+     * short[] array = [0, 1, 2]
+     * assert array.any{ it > 1 }
+     * assert !array.any{ it > 3 }
      * </pre>
      *
      * @param self      the char array over which we iterate
@@ -187,12 +197,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of an int Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      int[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.intValue() }
-     * }
-     * test()
+     * int[] array = [0, 1, 2]
+     * assert array.any{ it > 1 }
+     * assert !array.any{ it > 3 }
      * </pre>
      *
      * @param self      the int array over which we iterate
@@ -213,12 +220,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a long Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      long[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.longValue() }
-     * }
-     * test()
+     * long[] array = [0L, 1L, 2L]
+     * assert array.any{ it > 1L }
+     * assert !array.any{ it > 3L }
      * </pre>
      *
      * @param self      the long array over which we iterate
@@ -239,12 +243,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a float Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      float[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.floatValue() }
-     * }
-     * test()
+     * float[] array = [0.0f, 1.0f, 2.0f]
+     * assert array.any{ it > 1.5f }
+     * assert !array.any{ it > 2.5f }
      * </pre>
      *
      * @param self      the float array over which we iterate
@@ -265,12 +266,9 @@ public class ArrayGroovyMethods {
      * Iterates over the contents of a double Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      double[] array = [0, 1, 2]
-     *      assert array.any{ 0 == it.floatValue() }
-     * }
-     * test()
+     * double[] array = [0.0d, 1.0d, 2.0d]
+     * assert array.any{ it > 1.5d }
+     * assert !array.any{ it > 2.5d }
      * </pre>
      *
      * @param self      the double array over which we iterate
@@ -1464,6 +1462,14 @@ public class ArrayGroovyMethods {
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * boolean[] array1 = [true, false]
+     * boolean[] array2 = [true, false]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a boolean array
      * @param right the array being compared
@@ -1471,26 +1477,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(boolean[] left, boolean[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * byte[] array1 = [4, 8]
+     * byte[] array2 = [4, 8]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a byte array
      * @param right the array being compared
@@ -1498,26 +1497,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(byte[] left, byte[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * char[] array1 = ['a', 'b']
+     * char[] array2 = ['a', 'b']
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a char array
      * @param right the array being compared
@@ -1525,26 +1517,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(char[] left, char[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * short[] array1 = [4, 8]
+     * short[] array2 = [4, 8]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a short array
      * @param right the array being compared
@@ -1552,26 +1537,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(short[] left, short[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] array1 = [4, 8]
+     * int[] array2 = [4, 8]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  an int array
      * @param right the array being compared
@@ -1579,26 +1557,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(int[] left, int[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] array1 = [4L, 8L]
+     * long[] array2 = [4L, 8L]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a long array
      * @param right the array being compared
@@ -1606,26 +1577,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(long[] left, long[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] array1 = [4.0f, 8.0f]
+     * float[] array2 = [4.0f, 8.0f]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a float array
      * @param right the array being compared
@@ -1633,26 +1597,19 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(float[] left, float[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     /**
      * Compare the contents of this array to the contents of the given array.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] array1 = [4.0d, 8.0d]
+     * double[] array2 = [4.0d, 8.0d]
+     * assert array1 !== array2
+     * assert array1.equals(array2)
+     * </pre>
      *
      * @param left  a double array
      * @param right the array being compared
@@ -1660,22 +1617,7 @@ public class ArrayGroovyMethods {
      * @since 5.0.0
      */
     public static boolean equals(double[] left, double[] right) {
-        if (left == null) {
-            return right == null;
-        }
-        if (right == null) {
-            return false;
-        }
-        if (left == right) {
-            return true;
-        }
-        if (left.length != right.length) {
-            return false;
-        }
-        for (int i = 0; i < left.length; i++) {
-            if (left[i] != right[i]) return false;
-        }
-        return true;
+        return Arrays.equals(left, right);
     }
 
     //-------------------------------------------------------------------------
