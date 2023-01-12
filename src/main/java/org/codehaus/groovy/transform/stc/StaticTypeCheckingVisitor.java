@@ -5306,19 +5306,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             } else if (nParameters > 0) { // resolve type parameters from call arguments
                 List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
+                int nArguments = expressions.size();
                 boolean isVargs = isVargs(parameters);
-                if (expressions.size() >= nParameters) {
-                    for (int i = 0; i < nParameters; i += 1) {
+                if (isVargs ? nArguments >= nParameters-1 : nArguments == nParameters) {
+                    for (int i = 0; i < nArguments; i += 1) {
                         if (isNullConstant(expressions.get(i)))
                             continue; // GROOVY-9984: skip null
-                        boolean lastArg = (i == nParameters - 1);
-                        ClassNode paramType = parameters[i].getType();
                         ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
-                        while (paramType.isArray() && argumentType.isArray()) {
-                            paramType = paramType.getComponentType();
-                            argumentType = argumentType.getComponentType();
-                        }
-                        if (isUsingGenericsOrIsArrayUsingGenerics(paramType)) {
+                        ClassNode paramType = parameters[Math.min(i, nParameters-1)].getType();
+                        if (GenericsUtils.hasUnresolvedGenerics(paramType)) {
+                            // if supplying array param with multiple arguments or single non-array argument, infer using element type
+                            if (isVargs && (i >= nParameters || (i == nParameters-1 && (nArguments > nParameters || !argumentType.isArray())))) {
+                                paramType = paramType.getComponentType();
+                            }
                             if (argumentType.isDerivedFrom(CLOSURE_TYPE)) {
                                 MethodNode sam = findSAM(paramType);
                                 if (sam != null) { // implicit closure coercion in action!
@@ -5326,9 +5326,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                             : convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType,
                                                     applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
                                 }
-                            }
-                            if (isVargs && lastArg && paramType.isArray() && !argumentType.isArray()) {
-                                paramType = paramType.getComponentType();
                             }
                             Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
                             extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);

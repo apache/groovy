@@ -172,37 +172,152 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenerics() {
+    void testReturnTypeInferenceWithMethodGenerics1() {
         assertScript '''
-            List<Long> list = Arrays.asList([0L,0L] as Long[])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List <java.lang.Long>'
+            })
+            def list = Arrays.asList([1L,0L] as Long[])
+            assert list.size() == 2
+            assert list.get(0) == 1
+            assert list.get(1) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List <java.lang.Long>'
+            })
+            def list = Arrays.asList(1L,0L)
+            assert list.size() == 2
+            assert list.get(0) == 1
+            assert list.get(1) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List <java.lang.Long>'
+            })
+            def list = Arrays.asList(0L)
+            assert list.size() == 1
+            assert list.get(0) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List <java.lang.Object>'
+            })
+            def list = Arrays.asList()
+            assert list.size() == 0
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenericsAndVarArg() {
+    // GROOVY-10062
+    void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
-            List<Long> list = Arrays.asList(0L,0L)
-        '''
-    }
-
-    // GROOVY-8638
-    void testReturnTypeInferenceWithMethodGenericsAndBridge() {
-        assertScript '''
-            @Grab('com.google.guava:guava:19.0')
-            import com.google.common.collect.*
-
-            ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
-
-            Map<String, Collection<Integer>> map = mmap.asMap()
-            Set<Map.Entry<String, Collection<Integer>>> set = map.entrySet()
-            Iterator<Map.Entry<String, Collection<Integer>>> it = set.iterator()
-            while (it.hasNext()) { Map.Entry<String, Collection<Integer>> entry = it.next()
-                Collection<Integer> values = entry.value
+            def <T> T m(T t, ... zeroOrMore) {
             }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == Integer_TYPE
+            })
+            def obj = m(42)
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics3() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            Number number = Optional.of(42).get()
+            assert number.intValue() == 42
+        '''
+    }
+
+    // GROOVY-9796
+    void testReturnTypeInferenceWithMethodGenerics4() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        shouldFailWithMessages '''
+            Number number = Optional.of(42).orElse(Double.NaN)
+            assert number.intValue() == 42
+        ''',
+        'Cannot find matching method java.util.Optional#orElse(double).'
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics5() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            Number number = Optional.of((Number) 42).orElse(Double.NaN)
+            assert number.intValue() == 42
+        '''
+    }
+
+    // GROOVY-9796
+    void testReturnTypeInferenceWithMethodGenerics6() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        shouldFailWithMessages '''
+            Number number = Optional.ofNullable((Integer) null).orElse(42d)
+            assert number.intValue() == 42
+        ''',
+        'Cannot find matching method java.util.Optional#orElse(double).'
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics7() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            Number number = Optional.<Number>ofNullable((Integer) null).orElse(42d)
+            assert number.intValue() == 42
+        '''
+    }
+
+    // GROOVY-9033
+    void testReturnTypeInferenceWithMethodGenerics8() {
+        shouldFailWithMessages '''
+            List<String> test() {
+              def x = [].each { }
+              x.add(new Object())
+              return x // List<E>
+            }
+        ''',
+        'Incompatible generic argument types.' // Cannot assign java.util.List<java.lang.Object> to: java.util.List<java.lang.String>
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].toString() == 'java.lang.String'
+                assert type.genericsTypes[1].toString() == 'java.util.List<java.lang.Object>' // not List<E>
+            })
+            def map = [ key: [] ]
+        '''
+    }
+
+    // GROOVY-10049
+    void testReturnTypeInferenceWithMethodGenerics9() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            def <X> Set<X> f(Class<X> x) {
+                Collections.singleton(x.newInstance(42))
+            }
+            def <T extends Number> List<T> g(Class<T> t) {
+                f(t).stream().filter{n -> n.intValue() > 0}.toList()
+            }
+
+            def result = g(Integer)
+            assert result == [ 42 ]
         '''
     }
 
     // GROOVY-10051
-    void testReturnTypeInferenceWithMethodGenericsAndBounds() {
+    void testReturnTypeInferenceWithMethodGenerics10() {
         assertScript '''
             interface Handle {
                 Result getResult()
@@ -236,7 +351,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             assert getStrings(null,[]).isEmpty()
         '''
+    }
 
+    void testReturnTypeInferenceWithMethodGenerics1x() {
         assertScript '''
             interface Handle {
                 int getCount()
@@ -264,24 +381,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9033
-    void testReturnTypeInferenceWithMethodGenerics8() {
-        shouldFailWithMessages '''
-            List<String> test() {
-              def x = [].each { }
-              x.add(new Object())
-              return x // List<E>
-            }
-        ''',
-        'Incompatible generic argument types.' // Cannot assign java.util.List<java.lang.Object> to: java.util.List<java.lang.String>
-
+    // GROOVY-10067
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenerics11() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type.genericsTypes[0].toString() == 'java.lang.String'
-                assert type.genericsTypes[1].toString() == 'java.util.List<java.lang.Object>' // not List<E>
-            })
-            def map = [ key: [] ]
+            def <N extends Number> N getNumber() {
+                return (N) 42
+            }
+            def f(Integer i) {
+            }
+            def g(int i) {
+            }
+
+            Integer i = this.<Integer>getNumber()
+            f(this.<Integer>getNumber())
+            g(this.<Integer>getNumber())
+
+            i = (Integer) getNumber()
+            f((Integer) getNumber())
+            g((Integer) getNumber())
+
+            i = getNumber()
+            f(getNumber())
+            g(getNumber())
+
+            i = number
+            f(number)
+            g(number)
         '''
     }
 
@@ -309,6 +435,46 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8409
+    void testReturnTypeInferenceWithMethodGenerics14() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        for (t in ['R', 'S', 'T', 'U']) { // BiFunction uses R, T and U
+            assertScript """
+                def <$t> $t applyFunction(java.util.function.BiFunction<Date, URL, $t> action) {
+                    $t result = action.apply(new Date(), new URL('https://www.example.com'))
+                    return result
+                }
+
+                // GroovyCastException: Cannot cast object 'foo' with class 'java.lang.String' to class 'java.util.Date'
+                java.util.function.BiFunction<Date, URL, String> func = { Date d, URL u -> 'foo' }
+                def result = applyFunction(func)
+                assert result == 'foo'
+            """
+        }
+    }
+
+    // GROOVY-8409, GROOVY-10067
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenerics15() {
+        shouldFailWithMessages '''
+            List<CharSequence> list = ['x'].collect() // GROOVY-10074
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        shouldFailWithMessages '''
+            List<CharSequence> list = ['x'].stream().toList() // TODO: fix type param bound of StreamGroovyMethods#toList(Stream<T>)
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        assertScript '''
+            import static java.util.stream.Collectors.toList
+            List<CharSequence> list = ['x'].stream().collect(toList())
+        '''
+    }
+
     // GROOVY-7316, GROOVY-10256
     void testReturnTypeInferenceWithMethodGenerics16() {
         shouldFailWithMessages '''
@@ -329,7 +495,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               T p
               T m() {
                 Closure<T> x = { -> p }
-                x() // Cannot return value of type Object on method returning type T
+                x() // Cannot return value of type Object for method returning type T
               }
             }
             assert new C<>(42).m() == 42
@@ -338,6 +504,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testReturnTypeInferenceWithMethodGenerics18() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
@@ -356,6 +523,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8638
     void testReturnTypeInferenceWithMethodGenerics18a() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         shouldFailWithMessages '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
@@ -370,6 +538,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics18b() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         shouldFailWithMessages '''
             @Grab('com.google.guava:guava:31.1-jre')
             import com.google.common.collect.*
@@ -378,6 +547,60 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<String, Set<Integer>> map = mmap.asMap() // ArrayListMultimap#asMap() is bridge and lacks generics
         ''',
         'Cannot assign java.util.Map <String, java.util.Collection> to: java.util.Map <String, Set>'
+    }
+
+    // GROOVY-10222
+    void testReturnTypeInferenceWithMethodGenerics19() {
+        assertScript '''
+            class Task {
+                def <T> T exec(args) {
+                    args
+                }
+            }
+            class Test {
+                Task task
+                def <T> T exec(args) {
+                    task.exec(args) // Cannot return value of type #T for method returning T
+                }
+            }
+            String result = new Test(task: new Task()).exec('works')
+            assert result == 'works'
+        '''
+    }
+
+    // GROOVY-9500
+    void testReturnTypeInferenceWithMethodGenerics20() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            trait Entity<D> {
+            }
+
+            abstract class Path<F extends Entity, T extends Entity> implements Iterable<Path.Segment<F,T>> {
+                interface Segment<F, T> {
+                    F start()
+                    T end()
+                }
+
+                abstract F start()
+                T end() {
+                  end // Cannot return value of type Path$Segment<F,T> for method returning T
+                }
+                T end
+
+                @Override
+                void forEach(java.util.function.Consumer<? super Segment<F, T>> action) {
+                }
+                @Override
+                Spliterator<Segment<F, T>> spliterator() {
+                }
+                @Override
+                Iterator<Segment<F, T>> iterator() {
+                }
+            }
+
+            null
+        '''
     }
 
     // GROOVY-10339
@@ -436,6 +659,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10589
     void testReturnTypeInferenceWithMethodGenerics25() {
         if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         String pogo = '''
             @groovy.transform.TupleConstructor
             class Pogo {
