@@ -325,7 +325,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(byte[] array) {
-        return array != null && array.length > 0;
+        if (array == null) return false;
+        return array.length > 0;
     }
 
     /**
@@ -2307,7 +2308,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Support the subscript operator for a byte array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
-     * short[] array = [0, 10, 20, 30, 40]
+     * byte[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
      * assert array[-2..-1] == [30, 40]
      * assert array[-1..-2] == [40, 30]
@@ -4503,8 +4504,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // toSet
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [true, false, true]
+     * Set expected = [true, false]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a boolean array
      * @return a set containing the unique contents of this array.
@@ -4533,8 +4538,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * char[] array = 'xyzzy'.chars
+     * Set expected = ['x', 'y', 'z']
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a char array
      * @return a set containing the unique contents of this array.
@@ -4546,8 +4555,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * short[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a short array
      * @return a set containing the unique contents of this array.
@@ -4559,8 +4572,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * int[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array an int array
      * @return a set containing the unique contents of this array.
@@ -4572,8 +4589,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * long[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a long array
      * @return a set containing the unique contents of this array.
@@ -4585,8 +4606,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * float[] array = [1.0f, 2.0f, 3.0f, 2.0f, 1.0f]
+     * Set expected = [1.0f, 2.0f, 3.0f]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a float array
      * @return a set containing the unique contents of this array.
@@ -4598,8 +4623,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * double[] array = [1.0d, 2.0d, 3.0d, 2.0d, 1.0d]
+     * Set expected = [1.0d, 2.0d, 3.0d]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a double array
      * @return a set containing the unique contents of this array.
@@ -4613,11 +4642,14 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //-------------------------------------------------------------------------
     // toSorted
     //-------------------------------------------------------------------------
-    // toSpreadMap
-    //-------------------------------------------------------------------------
     // toString
+
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, false]
+     * assert array.toString() == '[false, true, false]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4644,6 +4676,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abcd'.chars
+     * assert array instanceof char[]
+     * assert array.toString() == 'abcd'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4655,6 +4692,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * short[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1, 2, 3, 2, 1]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4666,6 +4707,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * int[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1, 2, 3, 2, 1]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4677,6 +4722,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * long[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1, 2, 3, 2, 1]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4688,6 +4737,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * byte[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1.0, 2.0, 3.0, 2.0, 1.0]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
@@ -4699,6 +4752,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * double[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1.0, 2.0, 3.0, 2.0, 1.0]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
