@@ -38,12 +38,15 @@ import org.codehaus.groovy.util.LongArrayIterable;
 import org.codehaus.groovy.util.LongArrayIterator;
 import org.codehaus.groovy.util.ShortArrayIterator;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * This class defines new groovy methods which appear on primitive arrays inside the Groovy environment.
@@ -1793,6 +1796,111 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // flatten
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a boolean Array
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Boolean> flatten(boolean[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a byte Array
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Byte> flatten(byte[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a char Array
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Character> flatten(char[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a short Array
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Short> flatten(short[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self an int Array
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Integer> flatten(int[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a long Array to flatten
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Long> flatten(long[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a float Array to flatten
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Float> flatten(float[] self) {
+        return toList(self);
+    }
+
+    /**
+     * Flatten an array. This array is added to a new collection.
+     * It is an alias for {@code toList()} but allows algorithms to be written which also
+     * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     *
+     * @param self a double Array to flatten
+     * @return a Collection of the array elements
+     * @since 1.6.0
+     */
+    public static Collection<Double> flatten(double[] self) {
+        return toList(self);
+    }
+
     //-------------------------------------------------------------------------
     // getAt
     //-------------------------------------------------------------------------
@@ -2739,6 +2847,103 @@ public class ArrayGroovyMethods {
     // shuffled
     //-------------------------------------------------------------------------
     // size
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a boolean array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.5.0
+     */
+    public static int size(boolean[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a byte array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(byte[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a char array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(char[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a short array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(short[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array an int array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(int[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a long array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(long[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a float array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(float[] array) {
+        return Array.getLength(array);
+    }
+
+    /**
+     * Allows arrays to behave similar to collections.
+     *
+     * @param array a double array
+     * @return the length of the array
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
+     * @since 1.0
+     */
+    public static int size(double[] array) {
+        return Array.getLength(array);
+    }
+
     //-------------------------------------------------------------------------
     // sort
     //-------------------------------------------------------------------------
@@ -3137,6 +3342,7 @@ public class ArrayGroovyMethods {
 
     //-------------------------------------------------------------------------
     // tail
+
     /**
      * Returns the items from the boolean array excluding the first item.
      * <pre class="groovyTestCase">
@@ -3308,8 +3514,218 @@ public class ArrayGroovyMethods {
     // toArrayString
     //-------------------------------------------------------------------------
     // toList
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a boolean array
+     * @return a list containing the contents of this array.
+     * @since 1.6.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Boolean> toList(boolean[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a byte array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Byte> toList(byte[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a char array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Character> toList(char[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a short array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Short> toList(short[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array an int array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Integer> toList(int[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a long array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Long> toList(long[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a float array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Float> toList(float[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a double array
+     * @return a list containing the contents of this array.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Double> toList(double[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
     //-------------------------------------------------------------------------
     // toSet
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a boolean array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Boolean> toSet(boolean[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a byte array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Byte> toSet(byte[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a char array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Character> toSet(char[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a short array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Short> toSet(short[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array an int array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Integer> toSet(int[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a long array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Long> toSet(long[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a float array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Float> toSet(float[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
+    /**
+     * Converts this array to a Set, with each unique element
+     * added to the set.
+     *
+     * @param array a double array
+     * @return a set containing the unique contents of this array.
+     * @since 1.8.0
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<Double> toSet(double[] array) {
+        return DefaultGroovyMethods.toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+    }
+
     //-------------------------------------------------------------------------
     // toSorted
     //-------------------------------------------------------------------------

@@ -14672,300 +14672,124 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self.set(index, value);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a boolean array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.5.0
-     */
+    @Deprecated
     public static int size(boolean[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a byte array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(byte[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a char array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(char[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a short array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(short[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array an int array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(int[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a long array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(long[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a float array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(float[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Allows arrays to behave similar to collections.
-     * @param array a double array
-     * @return the length of the array
-     * @see java.lang.reflect.Array#getLength(java.lang.Object)
-     * @since 1.0
-     */
+    @Deprecated
     public static int size(double[] array) {
         return Array.getLength(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a byte array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Byte> toList(byte[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a boolean array
-     * @return a list containing the contents of this array.
-     * @since 1.6.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Boolean> toList(boolean[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a char array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Character> toList(char[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a short array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Short> toList(short[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array an int array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Integer> toList(int[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a long array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Long> toList(long[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a float array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Float> toList(float[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a List of the same size, with each element
-     * added to the list.
-     *
-     * @param array a double array
-     * @return a list containing the contents of this array.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Double> toList(double[] array) {
         return DefaultTypeTransformation.primitiveArrayToList(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a byte array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
-    public static Set<Byte> toSet(byte[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
-    }
-
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a boolean array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Boolean> toSet(boolean[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a char array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
+    public static Set<Byte> toSet(byte[] array) {
+        return ArrayGroovyMethods.toSet(array);
+    }
+
+    @Deprecated
     public static Set<Character> toSet(char[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a short array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Short> toSet(short[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array an int array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Integer> toSet(int[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a long array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Long> toSet(long[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a float array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Float> toSet(float[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
-    /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
-     *
-     * @param array a double array
-     * @return a set containing the unique contents of this array.
-     * @since 1.8.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Set<Double> toSet(double[] array) {
-        return toSet(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(array));
+        return ArrayGroovyMethods.toSet(array);
     }
 
     /**
