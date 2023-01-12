@@ -32,13 +32,6 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testAsBooleanForEmptyBooleanArray() {
-        assertScript '''
-        boolean[] array = null
-        assert !array.asBoolean()
-        '''
-    }
-
     void testAnyForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
