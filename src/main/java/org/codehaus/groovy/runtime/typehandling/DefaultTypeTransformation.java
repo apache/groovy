@@ -553,6 +553,7 @@ public class DefaultTypeTransformation {
      * @return the array as a List
      */
     public static List primitiveArrayToList(Object array) {
+        Objects.requireNonNull(array);
         int size = Array.getLength(array);
         List list = new ArrayList(size);
         for (int i = 0; i < size; i++) {

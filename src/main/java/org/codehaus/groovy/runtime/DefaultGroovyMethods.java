@@ -13857,98 +13857,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a boolean Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(boolean[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a byte Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(byte[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a char Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(char[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a short Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(short[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self an int Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(int[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a long Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+
+    @Deprecated
     public static Collection flatten(long[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a float Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(float[] self) {
         return flatten(toList(self), new ArrayList());
     }
 
-    /**
-     * Flatten an array. This array and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     *
-     * @param self a double Array to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
+    @Deprecated
     public static Collection flatten(double[] self) {
         return flatten(toList(self), new ArrayList());
     }
@@ -14165,439 +14110,164 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.rightShiftUnsigned(self, operand);
     }
 
-    //-------------------------------------------------------------------------
-    // Primitive type array methods
-
-    /**
-     * Support the subscript operator with a range for a byte array
-     *
-     * @param array a byte array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved bytes
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Byte> getAt(byte[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a char array
-     *
-     * @param array a char array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved chars
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Character> getAt(char[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a short array
-     *
-     * @param array a short array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved shorts
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Short> getAt(short[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for an int array
-     *
-     * @param array an int array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the ints at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Integer> getAt(int[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a long array
-     *
-     * @param array a long array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved longs
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Long> getAt(long[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a float array
-     *
-     * @param array a float array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved floats
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Float> getAt(float[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a double array
-     *
-     * @param array a double array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved doubles
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Double> getAt(double[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a range for a boolean array
-     *
-     * @param array a boolean array
-     * @param range a range indicating the indices for the items to retrieve
-     * @return list of the retrieved booleans
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Boolean> getAt(boolean[] array, Range range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a byte array
-     *
-     * @param array a byte array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved bytes
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Byte> getAt(byte[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Byte> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a char array
-     *
-     * @param array a char array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved chars
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Character> getAt(char[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Character> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a short array
-     *
-     * @param array a short array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved shorts
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Short> getAt(short[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Short> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for an int array
-     *
-     * @param array an int array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved ints
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Integer> getAt(int[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Integer> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a long array
-     *
-     * @param array a long array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved longs
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Long> getAt(long[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Long> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a float array
-     *
-     * @param array a float array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved floats
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Float> getAt(float[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Float> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a double array
-     *
-     * @param array a double array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved doubles
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Double> getAt(double[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Double> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an IntRange for a boolean array
-     *
-     * @param array a boolean array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved booleans
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Boolean> getAt(boolean[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Boolean> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? reverse(answer) : answer;
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a byte array
-     *
-     * @param array a byte array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved bytes
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Byte> getAt(byte[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a char array
-     *
-     * @param array a char array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved chars
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Character> getAt(char[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a short array
-     *
-     * @param array a short array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved shorts
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Short> getAt(short[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for an int array
-     *
-     * @param array an int array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved ints
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Integer> getAt(int[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a long array
-     *
-     * @param array a long array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved longs
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Long> getAt(long[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a float array
-     *
-     * @param array a float array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved floats
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Float> getAt(float[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a double array
-     *
-     * @param array a double array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved doubles
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Double> getAt(double[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with an ObjectRange for a byte array
-     *
-     * @param array a byte array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved bytes
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Boolean> getAt(boolean[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+        return ArrayGroovyMethods.getAt(array, range);
     }
 
-    /**
-     * Support the subscript operator with a collection for a byte array
-     *
-     * @param array a byte array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the bytes at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Byte> getAt(byte[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a char array
-     *
-     * @param array a char array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the chars at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Character> getAt(char[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a short array
-     *
-     * @param array a short array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the shorts at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Short> getAt(short[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for an int array
-     *
-     * @param array an int array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the ints at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Integer> getAt(int[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a long array
-     *
-     * @param array a long array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the longs at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Long> getAt(long[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a float array
-     *
-     * @param array a float array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the floats at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Float> getAt(float[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a double array
-     *
-     * @param array a double array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the doubles at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Double> getAt(double[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a boolean array
-     *
-     * @param array a boolean array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the booleans at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Boolean> getAt(boolean[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
+        return ArrayGroovyMethods.getAt(array, indices);
     }
 
     /**
@@ -14714,42 +14384,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     @Deprecated
     public static List<Byte> toList(byte[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Boolean> toList(boolean[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Character> toList(char[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Short> toList(short[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Integer> toList(int[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Long> toList(long[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Float> toList(float[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
     public static List<Double> toList(double[] array) {
-        return DefaultTypeTransformation.primitiveArrayToList(array);
+        return ArrayGroovyMethods.toList(array);
     }
 
     @Deprecated
@@ -14871,6 +14541,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the returned value from the array
      * @since 1.5.0
      */
+    @Deprecated
     protected static Object primitiveArrayGet(Object self, int idx) {
         return Array.get(self, normaliseIndex(idx, Array.getLength(self)));
     }
@@ -14884,6 +14555,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
+    @Deprecated
     protected static List primitiveArrayGet(Object self, Range range) {
         List answer = new ArrayList();
         for (Object next : range) {
@@ -14904,6 +14576,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
+    @Deprecated
     protected static List primitiveArrayGet(Object self, Collection indices) {
         List answer = new ArrayList();
         for (Object value : indices) {
