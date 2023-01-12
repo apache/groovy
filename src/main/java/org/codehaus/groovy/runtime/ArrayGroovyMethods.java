@@ -309,15 +309,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerces a byte array to a boolean value.
-     * A byte array is false if the array is null or of length 0,
+     * A byte array is false if the array is of length 0,
      * and true otherwise.
      * <pre class="groovyTestCase">
-     * byte[] array1 = null
+     * byte[] array1 = []
      * assert !array1
-     * byte[] array2 = []
-     * assert !array2
-     * byte[] array3 = [0]
-     * assert array3
+     * byte[] array2 = [0]
+     * assert array2
      * </pre>
      *
      * @param array an array
@@ -325,8 +323,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(byte[] array) {
-        if (array == null) return false;
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
