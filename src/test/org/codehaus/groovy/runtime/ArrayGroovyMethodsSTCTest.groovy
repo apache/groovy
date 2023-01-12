@@ -41,7 +41,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     void testAnyForCharArray() {
         assertScript '''
-        char[] array = ['a', 'b', 'c']
+        char[] array = 'abc'.chars
         assert array.any{ 'c' == it.charValue() }
         '''
     }
