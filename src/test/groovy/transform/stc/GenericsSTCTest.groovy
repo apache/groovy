@@ -216,7 +216,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10062
-    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
             def <T> T m(T t, ... zeroOrMore) {
