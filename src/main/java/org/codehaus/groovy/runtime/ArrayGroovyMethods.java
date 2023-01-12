@@ -1804,6 +1804,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true]
+     * assert array.flatten() == [false, true]
+     * </pre>
      *
      * @param self a boolean Array
      * @return a Collection of the array elements
@@ -1840,6 +1844,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 1]
+     * assert array.flatten() == [0, 1]
+     * </pre>
      *
      * @param self a byte Array
      * @return a Collection of the array elements
@@ -1876,6 +1884,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * char[] array = 'ab'.chars
+     * assert array.flatten() == ['a', 'b']
+     * </pre>
      *
      * @param self a char Array
      * @return a Collection of the array elements
@@ -1912,6 +1924,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 1]
+     * assert array.flatten() == [0, 1]
+     * </pre>
      *
      * @param self a short Array
      * @return a Collection of the array elements
@@ -1948,6 +1964,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 1]
+     * assert array.flatten() == [0, 1]
+     * </pre>
      *
      * @param self an int Array
      * @return a Collection of the array elements
@@ -1984,6 +2004,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 1L]
+     * assert array.flatten() == [0L, 1L]
+     * </pre>
      *
      * @param self a long Array to flatten
      * @return a Collection of the array elements
@@ -2020,6 +2044,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 1.0f]
+     * assert array.flatten() == [0.0f, 1.0f]
+     * </pre>
      *
      * @param self a float Array to flatten
      * @return a Collection of the array elements
@@ -2056,6 +2084,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 1.0d]
+     * assert array.flatten() == [0.0d, 1.0d]
+     * </pre>
      *
      * @param self a double Array to flatten
      * @return a Collection of the array elements
@@ -2090,6 +2122,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //-------------------------------------------------------------------------
     // getAt
+
+    /**
+     * Support the subscript operator for a boolean array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, false, true, false, true]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [false, false, false] // NumberRange
+     * assert array[(1..5.5).step(2)] == [true, true, true]    // NumberRange
+     * </pre>
+     *
+     * @param array a boolean array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved booleans
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Boolean> getAt(boolean[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
 
     /**
      * Support the subscript operator with a range for a byte array
@@ -2183,16 +2234,24 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a boolean array
+     * Support the subscript operator for a boolean array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, false, true, true, false]
+     * assert array[2..3] == [true, true]
+     * assert array[-2..-1] == [true, false]
+     * assert array[-1..-2] == [false, true]
+     * </pre>
      *
      * @param array a boolean array
-     * @param range a range indicating the indices for the items to retrieve
+     * @param range an IntRange indicating the indices for the items to retrieve
      * @return list of the retrieved booleans
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
-    public static List<Boolean> getAt(boolean[] array, Range range) {
-        return primitiveArrayGet(array, range);
+    public static List<Boolean> getAt(boolean[] array, IntRange range) {
+        RangeInfo info = subListBorders(array.length, range);
+        List<Boolean> answer = primitiveArrayGet(array, subListRange(info, range));
+        return info.reverse ? DefaultGroovyMethods.reverse(answer) : answer;
     }
 
     /**
@@ -2301,18 +2360,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a boolean array
+     * Support the subscript operator for a boolean array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, false, true, true, false]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [true, true]
+     * </pre>
      *
      * @param array a boolean array
-     * @param range an IntRange indicating the indices for the items to retrieve
-     * @return list of the retrieved booleans
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved bytes
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
-    public static List<Boolean> getAt(boolean[] array, IntRange range) {
-        RangeInfo info = subListBorders(array.length, range);
-        List<Boolean> answer = primitiveArrayGet(array, subListRange(info, range));
-        return info.reverse ? DefaultGroovyMethods.reverse(answer) : answer;
+    public static List<Boolean> getAt(boolean[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
     }
 
     /**
@@ -2407,16 +2469,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a byte array
+     * Support the subscript operator for a boolean array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, false, true, true, false]
+     * assert array[2, 3] == [true, true]
+     * assert array[0, 0..1, [1, [-1]]] == [false, false, false, false, false]
+     * </pre>
      *
-     * @param array a byte array
-     * @param range an ObjectRange indicating the indices for the items to retrieve
-     * @return list of the retrieved bytes
+     * @param array a boolean array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the booleans at the given indices
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
-    public static List<Boolean> getAt(boolean[] array, ObjectRange range) {
-        return primitiveArrayGet(array, range);
+    public static List<Boolean> getAt(boolean[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
     }
 
     /**
@@ -2510,24 +2578,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return primitiveArrayGet(array, indices);
     }
 
-    /**
-     * Support the subscript operator with a collection for a boolean array
-     *
-     * @param array a boolean array
-     * @param indices a collection of indices for the items to retrieve
-     * @return list of the booleans at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static List<Boolean> getAt(boolean[] array, Collection indices) {
-        return primitiveArrayGet(array, indices);
-    }
-
     //-------------------------------------------------------------------------
     // getIndices
 
     /**
      * Returns indices of the boolean array.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2539,6 +2598,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the byte array.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 1]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2550,6 +2613,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the char array.
+     * <pre class="groovyTestCase">
+     * char[] array = 'ab'.chars
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2561,6 +2628,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the short array.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 1]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2572,6 +2643,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the int array.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 1]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2583,6 +2658,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the long array.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 1L]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2594,6 +2673,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the float array.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 1.0f]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
@@ -2605,6 +2688,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the double array.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 1.0d]
+     * assert array.indices == 0..1
+     * </pre>
      *
      * @see DefaultGroovyMethods#getIndices(Object[])
      * @since 3.0.8
