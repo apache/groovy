@@ -309,8 +309,16 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerces a byte array to a boolean value.
-     * A byte array is false if the array is of length 0,
+     * A byte array is false if the array is null or of length 0,
      * and true otherwise.
+     * <pre class="groovyTestCase">
+     * byte[] array1 = null
+     * assert !array1
+     * byte[] array2 = []
+     * assert !array2
+     * byte[] array3 = [0]
+     * assert array3
+     * </pre>
      *
      * @param array an array
      * @return the array's boolean value
@@ -2143,7 +2151,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a byte array
+     * Support the subscript operator for a byte array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * byte[] array = [1, 3, 5, 7, 9, 11]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
+     * </pre>
      *
      * @param array a byte array
      * @param range a range indicating the indices for the items to retrieve
@@ -2156,7 +2170,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a char array
+     * Support the subscript operator for a char array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abcdef'.chars
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == ['a', 'c', 'e']  // NumberRange
+     * assert array[(1..5.5).step(2)] == ['b', 'd', 'f']  // NumberRange
+     * </pre>
      *
      * @param array a char array
      * @param range a range indicating the indices for the items to retrieve
@@ -2169,7 +2189,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a short array
+     * Support the subscript operator for a short array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * short[] array = [1, 3, 5, 7, 9, 11]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
+     * </pre>
      *
      * @param array a short array
      * @param range a range indicating the indices for the items to retrieve
@@ -2182,7 +2208,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for an int array
+     * Support the subscript operator for an int array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * int[] array = [1, 3, 5, 7, 9, 11]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
+     * </pre>
      *
      * @param array an int array
      * @param range a range indicating the indices for the items to retrieve
@@ -2195,7 +2227,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a long array
+     * Support the subscript operator for a long array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * long[] array = [1L, 3L, 5L, 7L, 9L, 11L]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1L, 5L, 9L]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3L, 7L, 11L]  // NumberRange
+     * </pre>
      *
      * @param array a long array
      * @param range a range indicating the indices for the items to retrieve
@@ -2208,7 +2246,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a float array
+     * Support the subscript operator for a float array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * float[] array = [1.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1.0f, 5.0f, 9.0f]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3.0f, 7.0f, 11.0f]  // NumberRange
+     * </pre>
      *
      * @param array a float array
      * @param range a range indicating the indices for the items to retrieve
@@ -2221,7 +2265,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a range for a double array
+     * Support the subscript operator for a double array with a range giving the desired indices.
+     * <pre class="groovyTestCase">
+     * double[] array = [1.0d, 3.0d, 5.0d, 7.0d, 9.0d, 11.0d]
+     * assert array[2..<2] == [] // EmptyRange
+     * assert array[(0..5.5).step(2)] == [1.0d, 5.0d, 9.0d]   // NumberRange
+     * assert array[(1..5.5).step(2)] == [3.0d, 7.0d, 11.0d]  // NumberRange
+     * </pre>
      *
      * @param array a double array
      * @param range a range indicating the indices for the items to retrieve
@@ -2255,7 +2305,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a byte array
+     * Support the subscript operator for a byte array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 10, 20, 30, 40]
+     * assert array[2..3] == [20, 30]
+     * assert array[-2..-1] == [30, 40]
+     * assert array[-1..-2] == [40, 30]
+     * </pre>
      *
      * @param array a byte array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2270,7 +2326,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a char array
+     * Support the subscript operator for a char array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abcdef'.chars
+     * assert array[2..3] == ['c', 'd']
+     * assert array[-2..-1] == ['e', 'f']
+     * assert array[-1..-2] == ['f', 'e']
+     * </pre>
      *
      * @param array a char array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2285,7 +2347,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a short array
+     * Support the subscript operator for a short array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 10, 20, 30, 40]
+     * assert array[2..3] == [20, 30]
+     * assert array[-2..-1] == [30, 40]
+     * assert array[-1..-2] == [40, 30]
+     * </pre>
      *
      * @param array a short array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2300,7 +2368,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for an int array
+     * Support the subscript operator for an int array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 10, 20, 30, 40]
+     * assert array[2..3] == [20, 30]
+     * assert array[-2..-1] == [30, 40]
+     * assert array[-1..-2] == [40, 30]
+     * </pre>
      *
      * @param array an int array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2315,7 +2389,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a long array
+     * Support the subscript operator for a long array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 10L, 20L, 30L, 40L]
+     * assert array[2..3] == [20L, 30L]
+     * assert array[-2..-1] == [30L, 40L]
+     * assert array[-1..-2] == [40L, 30L]
+     * </pre>
      *
      * @param array a long array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2330,7 +2410,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a float array
+     * Support the subscript operator for a float array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
+     * assert array[2..3] == [20.0f, 30.0f]
+     * assert array[-2..-1] == [30.0f, 40.0f]
+     * assert array[-1..-2] == [40.0f, 30.0f]
+     * </pre>
      *
      * @param array a float array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2345,7 +2431,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an IntRange for a double array
+     * Support the subscript operator for a double array with an IntRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
+     * assert array[2..3] == [20.0d, 30.0d]
+     * assert array[-2..-1] == [30.0d, 40.0d]
+     * assert array[-1..-2] == [40.0d, 30.0d]
+     * </pre>
      *
      * @param array a double array
      * @param range an IntRange indicating the indices for the items to retrieve
@@ -2378,7 +2470,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a byte array
+     * Support the subscript operator for a byte array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 10, 20, 30, 40]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20, 30]
+     * </pre>
      *
      * @param array a byte array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2391,7 +2488,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a char array
+     * Support the subscript operator for a boolean array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abcdef'.chars
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == ['c', 'd']
+     * </pre>
      *
      * @param array a char array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2404,7 +2506,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a short array
+     * Support the subscript operator for a short array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 10, 20, 30, 40]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20, 30]
+     * </pre>
      *
      * @param array a short array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2417,7 +2524,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for an int array
+     * Support the subscript operator for an int array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 10, 20, 30, 40]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20, 30]
+     * </pre>
      *
      * @param array an int array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2430,7 +2542,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a long array
+     * Support the subscript operator for a long array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 10L, 20L, 30L, 40L]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20L, 30L]
+     * </pre>
      *
      * @param array a long array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2443,7 +2560,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a float array
+     * Support the subscript operator for a float array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20.0f, 30.0f]
+     * </pre>
      *
      * @param array a float array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2456,7 +2578,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with an ObjectRange for a double array
+     * Support the subscript operator for a double array with an ObjectRange giving the desired indices.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
+     * def range = new ObjectRange(2, 3)
+     * assert array[range] == [20.0d, 30.0d]
+     * </pre>
      *
      * @param array a double array
      * @param range an ObjectRange indicating the indices for the items to retrieve
@@ -2488,7 +2615,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a byte array
+     * Support the subscript operator for a byte array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 2, 4, 6, 8]
+     * assert array[2, 3] == [4, 6]
+     * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
+     * </pre>
      *
      * @param array a byte array
      * @param indices a collection of indices for the items to retrieve
@@ -2501,7 +2634,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a char array
+     * Support the subscript operator for a char array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abcde'.chars
+     * assert array[2, 3] == ['c', 'd']
+     * assert array[1, 0..1, [0, [-1]]] == ['b', 'a', 'b', 'a', 'e']
+     * </pre>
      *
      * @param array a char array
      * @param indices a collection of indices for the items to retrieve
@@ -2514,7 +2653,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a short array
+     * Support the subscript operator for a short array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 2, 4, 6, 8]
+     * assert array[2, 3] == [4, 6]
+     * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
+     * </pre>
      *
      * @param array a short array
      * @param indices a collection of indices for the items to retrieve
@@ -2527,7 +2672,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for an int array
+     * Support the subscript operator for an int array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 2, 4, 6, 8]
+     * assert array[2, 3] == [4, 6]
+     * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
+     * </pre>
      *
      * @param array an int array
      * @param indices a collection of indices for the items to retrieve
@@ -2540,7 +2691,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a long array
+     * Support the subscript operator for a long array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 2L, 4L, 6L, 8L]
+     * assert array[2, 3] == [4L, 6L]
+     * assert array[1, 0..1, [0, [-1]]] == [2L, 0L, 2L, 0L, 8L]
+     * </pre>
      *
      * @param array a long array
      * @param indices a collection of indices for the items to retrieve
@@ -2553,7 +2710,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a float array
+     * Support the subscript operator for a float array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 2.0f, 4.0f, 6.0f, 8.0f]
+     * assert array[2, 3] == [4.0f, 6.0f]
+     * assert array[1, 0..1, [0, [-1]]] == [2.0f, 0.0f, 2.0f, 0.0f, 8.0f]
+     * </pre>
      *
      * @param array a float array
      * @param indices a collection of indices for the items to retrieve
@@ -2566,7 +2729,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator with a collection for a double array
+     * Support the subscript operator for a double array
+     * with a (potentially nested) collection giving the desired indices.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 2.0d, 4.0d, 6.0d, 8.0d]
+     * assert array[2, 3] == [4.0d, 6.0d]
+     * assert array[1, 0..1, [0, [-1]]] == [2.0d, 0.0d, 2.0d, 0.0d, 8.0d]
+     * </pre>
      *
      * @param array a double array
      * @param indices a collection of indices for the items to retrieve
@@ -3497,7 +3666,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * int[] nums = [20L, 10L, 30L]
+     * long[] nums = [20L, 10L, 30L]
      * assert 10L == nums.min()
      * </pre>
      *
@@ -3521,7 +3690,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
-     * int[] nums = [20.0d, 10.0d, 30.0d]
+     * double[] nums = [20.0d, 10.0d, 30.0d]
      * assert 10.0d == nums.min()
      * </pre>
      *
@@ -3556,7 +3725,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // size
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [true, false, true]
+     * assert array.size() == 3
+     * </pre>
      *
      * @param array a boolean array
      * @return the length of the array
@@ -3568,7 +3741,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a byte array
      * @return the length of the array
@@ -3580,7 +3753,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a char array
      * @return the length of the array
@@ -3592,7 +3765,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a short array
      * @return the length of the array
@@ -3604,7 +3777,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array an int array
      * @return the length of the array
@@ -3616,7 +3789,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a long array
      * @return the length of the array
@@ -3628,7 +3801,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a float array
      * @return the length of the array
@@ -3640,7 +3813,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows arrays to behave similar to collections.
+     * Provide arrays with a {@code size} method similar to collections.
      *
      * @param array a double array
      * @return the length of the array
@@ -4343,8 +4516,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this array to a Set, with each unique element
-     * added to the set.
+     * Converts this array to a Set, with each unique element added to the set.
+     * <pre class="groovyTestCase">
+     * byte[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toSet() == expected
+     * </pre>
      *
      * @param array a byte array
      * @return a set containing the unique contents of this array.
@@ -4452,6 +4629,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
+     * <pre class="groovyTestCase">
+     * byte[] array = [1, 2, 3, 2, 1]
+     * assert array.toString() == '[1, 2, 3, 2, 1]'
+     * </pre>
      *
      * @param self an array
      * @return the string representation
