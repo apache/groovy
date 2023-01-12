@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime
 
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
@@ -60,6 +61,32 @@ class ArrayGroovyMethodsTest {
     @Test
     void tailErrorCases() {
         assertUnsupportedOperationForAllPrimitiveEmptyArrays('tail')
+    }
+
+    @Test
+    void testAsBooleanForNullBooleanArray() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        def method() {
+            boolean[] array = null
+            assert !array.asBoolean()
+        }
+
+        method()
+        '''
+    }
+
+    @Test
+    void testAsBooleanForNullByteArray() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        def method() {
+            byte[] array = null
+            assert !array.asBoolean()
+        }
+
+        method()
+        '''
     }
 
     private static assertUnsupportedOperationForAllPrimitiveEmptyArrays(String method) {
