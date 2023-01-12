@@ -4738,7 +4738,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the string representation of the given array.
      * <pre class="groovyTestCase">
-     * byte[] array = [1, 2, 3, 2, 1]
+     * float[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1.0, 2.0, 3.0, 2.0, 1.0]'
      * </pre>
      *
