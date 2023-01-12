@@ -62,32 +62,6 @@ class ArrayGroovyMethodsTest {
         assertUnsupportedOperationForAllPrimitiveEmptyArrays('tail')
     }
 
-    @Test
-    void testAsBooleanForNullBooleanArray() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def method() {
-            boolean[] array = null
-            assert !array.asBoolean()
-        }
-
-        method()
-        '''
-    }
-
-    @Test
-    void testAsBooleanForNullByteArray() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def method() {
-            byte[] array = null
-            assert !array.asBoolean()
-        }
-
-        method()
-        '''
-    }
-
     private static assertUnsupportedOperationForAllPrimitiveEmptyArrays(String method) {
         assertUnsupportedOperationForGivenPrimitiveEmptyArrays(method,
             ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double'])

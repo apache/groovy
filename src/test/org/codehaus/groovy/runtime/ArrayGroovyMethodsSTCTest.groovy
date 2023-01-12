@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
-
 /**
  * STC Tests for ArrayGroovyMethods
  */
@@ -81,4 +80,27 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testAsBooleanForNullBooleanArray() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        def method() {
+            boolean[] array = null
+            assert !array.asBoolean()
+        }
+
+        method()
+        '''
+    }
+
+    void testAsBooleanForNullByteArray() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        def method() {
+            byte[] array = null
+            assert !array.asBoolean()
+        }
+
+        method()
+        '''
+    }
 }
