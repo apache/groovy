@@ -536,4 +536,20 @@ class NioExtensionsTest extends Specification {
         assert NioExtensions.getBytes(path) == [-2, -1, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33] as byte[]
     }
 
+    def testAsBoolean() {
+        setup:
+        def path = tempFile.toPath()
+
+        when:
+        path.write('Some text')
+
+        then:
+        assert path
+
+        when:
+        Files.delete(path)
+
+        then:
+        assert !path
+    }
 }

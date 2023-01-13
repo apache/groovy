@@ -22,6 +22,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
 
 class ResourceGroovyMethodsTest {
 
@@ -263,6 +265,16 @@ class ResourceGroovyMethodsTest {
         assertEquals("../b", ResourceGroovyMethods.relativePath(new File("a"), new File("b")))
         assertEquals("../../b", ResourceGroovyMethods.relativePath(new File("a/b"), new File("b")))
         assertEquals("", ResourceGroovyMethods.relativePath(new File("a"), new File("a")))
+    }
+
+    @Test
+    void test_asBoolean() {
+        File fileThatExists = temporaryFolder.newFile()
+        assertTrue(ResourceGroovyMethods.asBoolean(fileThatExists))
+
+        File fileThatDoesNotExist = temporaryFolder.newFile()
+        fileThatDoesNotExist.delete()
+        assertFalse(ResourceGroovyMethods.asBoolean(fileThatDoesNotExist))
     }
 
 	/**

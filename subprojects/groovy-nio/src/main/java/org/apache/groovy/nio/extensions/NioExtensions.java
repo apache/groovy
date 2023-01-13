@@ -59,6 +59,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
@@ -99,6 +100,31 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      */
     public static long size(Path self) throws IOException {
         return Files.size(self);
+    }
+
+    /**
+     * Coerce the path to a {@code boolean} value.
+     *
+     * @param path a {@code Path} object
+     * @return {@code true} if the file at the path exists, {@code false} otherwise
+     * @see Files#exists(Path, LinkOption...)
+     * @since 5.0.0
+     */
+    public static boolean asBoolean(final Path path) {
+        return Files.exists(path);
+    }
+
+    /**
+     * Tests whether the file at the path exists.
+     *
+     * @param path a {@code Path} object
+     * @param options options indicating how symbolic links are handled .
+     * @return {@code true} if the file exists; {@code false} if the file does not exist or its existence cannot be determined
+     * @see Files#exists(Path, LinkOption...)
+     * @since 5.0.0
+     */
+    public static boolean exists(final Path path, LinkOption... options) {
+        return Files.exists(path, options);
     }
 
     /**

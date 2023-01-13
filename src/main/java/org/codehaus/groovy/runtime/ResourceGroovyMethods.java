@@ -123,6 +123,17 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Coerce the file to a {@code boolean} value.
+     *
+     * @param file a {@code File}
+     * @return {@code true} if the file exists, {@code false} otherwise
+     * @since 5.0.0
+     */
+    public static boolean asBoolean(final File file) {
+        return file.exists();
+    }
+
+    /**
      * Create an object output stream for this file.
      *
      * @param file a file
