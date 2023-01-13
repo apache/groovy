@@ -64,29 +64,18 @@ class ArrayGroovyMethodsTest {
     }
 
     @Test
-    void testAsBooleanForNullBooleanArray() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def method() {
-            boolean[] array = null
-            assert !array.asBoolean()
+    void testArrayAsBooleanForNull() {
+        for (type in ['boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double']) {
+            assertScript """
+            @groovy.transform.CompileStatic
+            def method() {
+                $type[] array = null
+                assert !array.asBoolean()
+            }
+
+            method()
+            """
         }
-
-        method()
-        '''
-    }
-
-    @Test
-    void testAsBooleanForNullByteArray() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def method() {
-            byte[] array = null
-            assert !array.asBoolean()
-        }
-
-        method()
-        '''
     }
 
     private static assertUnsupportedOperationForAllPrimitiveEmptyArrays(String method) {

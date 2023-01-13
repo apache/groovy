@@ -323,8 +323,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.4
      */
     public static boolean asBoolean(byte[] array) {
-        if (array == null) return false;
-        return array.length > 0;
+        return array != null && array.length > 0;
     }
 
     /**
