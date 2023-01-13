@@ -701,7 +701,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
         Writer writer = null;
         try {
             Charset resolvedCharset = Charset.forName(charset);
-            boolean shouldWriteBom = writeBom && !self.toFile().exists();
+            boolean shouldWriteBom = writeBom && !Files.exists(self);
             OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
             if (shouldWriteBom) {
                 writeUTF16BomIfRequired(out, resolvedCharset);
@@ -819,7 +819,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     private static void appendBuffered(Path file, Object text, String charset, boolean writeBom) throws IOException {
         BufferedWriter writer = null;
         try {
-            boolean shouldWriteBom = writeBom && !file.toFile().exists();
+            boolean shouldWriteBom = writeBom && !Files.exists(file);
             writer = newWriter(file, charset, true);
             if (shouldWriteBom) {
                 writeUTF16BomIfRequired(writer, charset);
@@ -1627,7 +1627,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static BufferedWriter newWriter(Path self, String charset, boolean append, boolean writeBom) throws IOException {
-        boolean shouldWriteBom = writeBom && !self.toFile().exists();
+        boolean shouldWriteBom = writeBom && !Files.exists(self);
         if (append) {
             BufferedWriter writer = Files.newBufferedWriter(self, Charset.forName(charset), CREATE, APPEND);
             if (shouldWriteBom) {
