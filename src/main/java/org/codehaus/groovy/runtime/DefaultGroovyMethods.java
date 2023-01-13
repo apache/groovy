@@ -7196,6 +7196,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T min(Iterator<T> self, Comparator<? super T> comparator) {
+        Objects.requireNonNull(self);
         T answer = null;
         boolean first = true;
         while (self.hasNext()) {
@@ -7360,6 +7361,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (params != 1) {
             return min(self, new ClosureComparator<>(closure));
         }
+        Objects.requireNonNull(self);
         boolean first = true;
         T answer = null;
         Object answerValue = null;
