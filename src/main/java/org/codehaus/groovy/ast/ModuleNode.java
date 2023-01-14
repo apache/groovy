@@ -464,20 +464,22 @@ public class ModuleNode extends ASTNode {
 
     public void sortClasses() {
         if (isEmpty()) return;
-        List<ClassNode> sorted = new LinkedList<>(), todo = getClasses();
+        List<ClassNode> classes = getClasses();
+        if (classes.size() == 1) return;
+        List<ClassNode> ordered = new LinkedList<>();
         int level = 1;
-        while (!todo.isEmpty()) {
-            for (Iterator<ClassNode> it = todo.iterator(); it.hasNext(); ) {
-                ClassNode cn = it.next(), sc = cn;
+        while (!classes.isEmpty()) {
+            for (Iterator<ClassNode> it = classes.iterator(); it.hasNext(); ) {
+                ClassNode cn = it.next(), sc = cn.getSuperClass();
 
-                for (int i = 0; sc != null && i < level; i += 1) sc = sc.getSuperClass();
+                for (int i = 1; i < level && sc != null; i += 1) sc = sc.getSuperClass();
                 if (sc != null && sc.isPrimaryClassNode()) continue;
-                sorted.add(cn);
+                ordered.add(cn);
                 it.remove();
             }
             level += 1;
         }
-        this.classes = sorted;
+        this.classes = ordered;
     }
 
     public boolean hasImportsResolved() {

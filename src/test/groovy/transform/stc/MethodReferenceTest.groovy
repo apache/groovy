@@ -966,6 +966,27 @@ final class MethodReferenceTest {
         }
     }
 
+    @Test // GROOVY-10904
+    void testPropertyMethodLocation() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript shell, """
+                $tag
+                class Test {
+                    static class Profile {
+                        String foo, bar
+                    }
+
+                    Map<String, Profile> profiles = [new Profile()].stream()
+                        .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
+
+                    static main(args) {
+                        assert this.newInstance().getProfiles().size() == 1
+                    }
+                }
+            """
+        }
+    }
+
     @Test // GROOVY-10742, GROOVY-10858
     void testIncompatibleReturnType() {
         def err = shouldFail shell, '''
