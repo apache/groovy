@@ -1794,7 +1794,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (hasGroup(self)) {
                     // are we using groups?
                     // yes, so return the specified group as list
-                    List<String> list = new ArrayList<String>(self.groupCount());
+                    List<String> list = new ArrayList<String>(self.groupCount() + 1);
                     for (int i = 0; i <= self.groupCount(); i += 1) {
                         list.add(self.group(i));
                     }
