@@ -346,7 +346,13 @@ public class MetaClassHelper {
             Method sam;
             for (Class<?> c = ReflectionCache.autoboxType(argument); c != null && c != parameterClass; c = c.getSuperclass()) {
                 if (c == Closure.class && parameterClass.isInterface() && (sam = getSAMMethod(parameterClass)) != null) {
-                    if (getParameterCount(argument) == sam.getParameterCount()) objectDistance -= 1; // GROOVY-9881
+                    // In the case of multiple overloads, give preference to equal parameter count
+                    // with fuzzy matching of length for implicit arg Closures
+                    int paramCount = getParameterCount(argument);
+                    int samParamCount = sam.getParameterCount();
+                    if ((paramCount == samParamCount) ||                                   // GROOVY-9881
+                        (paramCount == -1 && (samParamCount == 0 || samParamCount == 1)))  // GROOVY-10905
+                        objectDistance -= 1;
                     objectDistance += 5; // ahead of Object but behind GroovyObjectSupport
                     break;
                 }
