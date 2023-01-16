@@ -275,6 +275,30 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10897
+    void testCallToSuper2() {
+        assertScript '''
+            interface A10897 {
+                def m()
+            }
+            interface B10897 extends A10897 {
+                @Override def m()
+            }
+            class C10897 implements A10897 {
+                @Override def m() { "C" }
+            }
+            class D10897 extends C10897 implements B10897 {
+            }
+            class E10897 extends D10897 {
+                @Override
+                def m() {
+                    "E then " + super.m()
+                }
+            }
+            assert new E10897().m() == 'E then C'
+        '''
+    }
+
     // GROOVY-10494
     void testCallToSuperDefault() {
         assertScript '''
