@@ -65,8 +65,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,17 +82,17 @@ public class JavaStubGenerator {
     private final boolean requireSuperResolved;
     private final File outputPath;
     private final List<String> toCompile = new ArrayList<String>();
-    private final ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
-    private final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
-    private final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final List<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final Map<String, MethodNode> propertyMethods = new LinkedHashMap<String, MethodNode>();
+
     private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
-        this.outputPath = outputPath;
-        this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
         this.encoding = encoding;
-        if (null != outputPath) outputPath.mkdirs();
+        this.outputPath = outputPath;
+        if (outputPath != null) outputPath.mkdirs();
+        this.requireSuperResolved = requireSuperResolved;
     }
 
     public JavaStubGenerator(final File outputPath) {
@@ -191,10 +191,10 @@ public class JavaStubGenerator {
                 }
 
                 @Override
-                public void visitProperty(PropertyNode node) {
+                public void visitProperty(PropertyNode pn) {
                     // GROOVY-8233 skip static properties for traits since they don't make the interface
-                    if (!node.isStatic() || !Traits.isTrait(node.getDeclaringClass())) {
-                        super.visitProperty(node);
+                    if (!pn.isStatic() || !Traits.isTrait(pn.getDeclaringClass())) {
+                        super.visitProperty(pn);
                     }
                 }
 
@@ -234,13 +234,10 @@ public class JavaStubGenerator {
                 }
 
                 private MethodNode doAddMethod(MethodNode method) {
-                    String sig = method.getTypeDescriptor();
-
-                    if (propertyMethodsWithSigs.containsKey(sig)) return method;
-
-                    propertyMethods.add(method);
-                    propertyMethodsWithSigs.put(sig, method);
-
+                    String key = method.getTypeDescriptor();
+                    if (!propertyMethods.containsKey(key)) {
+                        propertyMethods.put(key, method);
+                    }
                     return method;
                 }
 
@@ -316,26 +313,23 @@ public class JavaStubGenerator {
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
                 // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
-                propertyMethods.clear();
-                propertyMethodsWithSigs.clear();
                 constructors.clear();
+                propertyMethods.clear();
                 printClassContents(out, inner.next());
             }
 
             out.println("}");
         } finally {
-            propertyMethods.clear();
-            propertyMethodsWithSigs.clear();
-            constructors.clear();
             currentModule = null;
+            constructors.clear();
+            propertyMethods.clear();
         }
     }
 
     private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
         if (!isEnum) printConstructors(out, classNode);
 
-        @SuppressWarnings("unchecked")
-        List<MethodNode> methods = (List) propertyMethods.clone();
+        List<MethodNode> methods = new ArrayList<MethodNode>(propertyMethods.values());
         methods.addAll(classNode.getMethods());
         for (MethodNode method : methods) {
             if (isEnum && method.isSynthetic()) {
@@ -343,9 +337,8 @@ public class JavaStubGenerator {
                 String name = method.getName();
                 Parameter[] params = method.getParameters();
                 if (name.equals("values") && params.length == 0) continue;
-                if (name.equals("valueOf") &&
-                        params.length == 1 &&
-                        params[0].getType().equals(ClassHelper.STRING_TYPE)) {
+                if (name.equals("valueOf") && params.length == 1
+                        && params[0].getType().equals(ClassHelper.STRING_TYPE)) {
                     continue;
                 }
             }
@@ -361,7 +354,7 @@ public class JavaStubGenerator {
                 MethodNode traitMethod = correctToGenericsSpec(generics, traitOrigMethod);
                 MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
                 if (existingMethod != null) continue;
-                for (MethodNode propertyMethod : propertyMethods) {
+                for (MethodNode propertyMethod : propertyMethods.values()) {
                     if (propertyMethod.getName().equals(traitMethod.getName())) {
                         boolean sameParams = sameParameterTypes(propertyMethod, traitMethod);
                         if (sameParams) {
@@ -370,15 +363,14 @@ public class JavaStubGenerator {
                         }
                     }
                 }
-                if (existingMethod != null) continue;
-                boolean isCandidate = isCandidateTraitMethod(trait, traitMethod);
-                if (!isCandidate) continue;
-                printMethod(out, classNode, traitMethod);
+                if (existingMethod == null && isCandidateTraitMethod(trait, traitMethod)) {
+                    printMethod(out, classNode, traitMethod);
+                }
             }
         }
     }
 
-    private boolean isCandidateTraitMethod(ClassNode trait, MethodNode traitMethod) {
+    private boolean isCandidateTraitMethod(final ClassNode trait, final MethodNode traitMethod) {
         boolean precompiled = trait.redirect() instanceof DecompiledClassNode;
         if (!precompiled) return !traitMethod.isAbstract();
         List<MethodNode> helperMethods = Traits.findHelper(trait).getMethods();
@@ -410,103 +402,82 @@ public class JavaStubGenerator {
         return sameParams;
     }
 
-    private void printConstructors(PrintWriter out, ClassNode classNode) {
-        @SuppressWarnings("unchecked")
-        List<ConstructorNode> constrs = (List<ConstructorNode>) constructors.clone();
-        if (constrs != null) {
-            constrs.addAll(classNode.getDeclaredConstructors());
-            for (ConstructorNode constr : constrs) {
-                printConstructor(out, classNode, constr);
-            }
+    private void printConstructors(final PrintWriter out, final ClassNode classNode) {
+        List<ConstructorNode> constructors = new ArrayList<>(this.constructors);
+        constructors.addAll(classNode.getDeclaredConstructors());
+        for (ConstructorNode constructor : constructors) {
+            printConstructor(out, classNode, constructor);
         }
     }
 
-    private void printFields(PrintWriter out, ClassNode classNode) {
-        boolean isInterface = isInterfaceOrTrait(classNode);
+    private void printFields(final PrintWriter out, final ClassNode classNode) {
         List<FieldNode> fields = classNode.getFields();
-        if (fields == null) return;
-        List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
-        List<FieldNode> normalFields = new ArrayList<FieldNode>(fields.size());
-        for (FieldNode field : fields) {
-            boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
-            if (field.isEnum()) {
-                enumFields.add(field);
-            } else if (!isSynthetic) {
-                normalFields.add(field);
+        if (!fields.isEmpty()) {
+            List<FieldNode> enumFields = new LinkedList<FieldNode>();
+            List<FieldNode> normalFields = new LinkedList<FieldNode>();
+            for (FieldNode field : fields) {
+                if (field.isEnum()) {
+                    enumFields.add(field);
+                } else if (!field.isPrivate() && (field.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0) {
+                    normalFields.add(field);
+                }
             }
-        }
-        printEnumFields(out, enumFields);
-        for (FieldNode normalField : normalFields) {
-            printField(out, normalField, isInterface);
+            boolean interfaceOrTrait = isInterfaceOrTrait(classNode);
+
+            printEnumFields(out, enumFields);
+            for (FieldNode normalField : normalFields) {
+                printField(out, normalField, interfaceOrTrait);
+            }
         }
     }
 
-    private static void printEnumFields(PrintWriter out, List<FieldNode> fields) {
+    private static void printEnumFields(final PrintWriter out, final List<FieldNode> fields) {
         if (!fields.isEmpty()) {
-            boolean first = true;
+            int i = 0;
             for (FieldNode field : fields) {
-                if (!first) {
+                if (i++ != 0) {
                     out.print(", ");
-                } else {
-                    first = false;
                 }
                 out.print(field.getName());
             }
         }
-        out.println(";");
+        out.println(';');
     }
 
-    private void printField(PrintWriter out, FieldNode fieldNode, boolean isInterface) {
-        if ((fieldNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
-        printAnnotations(out, fieldNode);
-        if (!isInterface) {
-            printModifiers(out, fieldNode.getModifiers());
+    private void printField(final PrintWriter out, final FieldNode field, final boolean interfaceOrTrait) {
+        printAnnotations(out, field);
+        if (!interfaceOrTrait) {
+            printModifiers(out, field.getModifiers());
         }
-
-        ClassNode type = fieldNode.getType();
+        ClassNode type = field.getType();
         printType(out, type);
+        out.print(' ');
+        out.print(field.getName());
 
-        out.print(" ");
-        out.print(fieldNode.getName());
-        if (isInterface || (fieldNode.getModifiers() & Opcodes.ACC_FINAL) != 0) {
+        if (interfaceOrTrait || field.isFinal()) {
+            // GROOVY-5150: initialize field with a value so Java compiles correctly
             out.print(" = ");
-            Expression valueExpr = fieldNode.getInitialValueExpression();
-            if (valueExpr instanceof ConstantExpression) {
+            Expression valueExpr = field.getInitialValueExpression();
+            if (valueExpr instanceof ConstantExpression && !type.equals(ClassHelper.STRING_TYPE)) {
                 valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
             }
-            if (valueExpr instanceof ConstantExpression
-                    && fieldNode.isStatic() && fieldNode.isFinal()
-                    && ClassHelper.isStaticConstantInitializerType(valueExpr.getType())
-                    && valueExpr.getType().equals(fieldNode.getType())) {
-                // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
-                if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
-                    out.print(formatString(valueExpr.getText()));
-                } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
-                    out.print("'"+valueExpr.getText()+"'");
-                } else {
-                    ClassNode constantType = valueExpr.getType();
-                    out.print('(');
-                    printType(out, type);
-                    out.print(") ");
-                    out.print(valueExpr.getText());
-                    if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(constantType))) out.print('L');
+            ClassNode valueType;
+            if (field.isStatic()
+                    && valueExpr instanceof ConstantExpression
+                    && (valueType = valueExpr.getType()).equals(type)
+                    && ClassHelper.isStaticConstantInitializerType(valueType)) {
+                if (ClassHelper.isNumberType(valueType)) {
+                    out.print("(" + type.toString(false) + ") ");
                 }
+                printValue(out, valueExpr, false);
             } else if (ClassHelper.isPrimitiveType(type)) {
-                String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
-                out.print("new " + ClassHelper.getWrapper(type) + "((" + type + ")" + val + ")");
+                String value = type.equals(ClassHelper.boolean_TYPE) ? "false" : "(" + type.toString(false) + ")0";
+                out.print("new " + ClassHelper.getWrapper(type) + "(" + value + ")");
             } else {
                 out.print("null");
             }
         }
-        out.println(";");
-    }
-
-    private static String formatChar(String ch) {
-        return "'" + escapeSpecialChars("" + ch.charAt(0)) + "'";
-    }
-
-    private static String formatString(String s) {
-        return "\"" + escapeSpecialChars(s) + "\"";
+        out.println(';');
     }
 
     private static ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
@@ -515,11 +486,11 @@ public class JavaStubGenerator {
             return null;
 
         BlockStatement block = (BlockStatement) code;
-        List stats = block.getStatements();
+        List<Statement> stats = block.getStatements();
         if (stats == null || stats.isEmpty())
             return null;
 
-        Statement stat = (Statement) stats.get(0);
+        Statement stat = stats.get(0);
         if (!(stat instanceof ExpressionStatement))
             return null;
 
@@ -760,49 +731,44 @@ public class JavaStubGenerator {
             if (!className.endsWith(".class")) {
                 out.print(".class");
             }
-        } else {
-            if (re instanceof ConstantExpression) {
-                ConstantExpression ce = (ConstantExpression) re;
-                Object value = ce.getValue();
-                if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
-                    out.print(formatString((String)value));
-                } else if (ClassHelper.char_TYPE.equals(ce.getType()) || ClassHelper.Character_TYPE.equals(ce.getType())) {
-                    out.print(formatChar(value.toString()));
-                } else if (ClassHelper.long_TYPE.equals(ce.getType())) {
-                    out.print("" + value + "L");
-                } else if (ClassHelper.float_TYPE.equals(ce.getType())) {
-                    out.print("" + value + "f");
-                } else if (ClassHelper.double_TYPE.equals(ce.getType())) {
-                    out.print("" + value + "d");
-                } else {
-                    out.print(re.getText());
-                }
+        } else if (re instanceof ConstantExpression) {
+            ConstantExpression ce = (ConstantExpression) re;
+            Object value = ce.getValue();
+            if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
+                out.print("\"" + escapeSpecialChars((String) value) + "\"");
+            } else if (ClassHelper.char_TYPE.equals(ce.getType())
+                    || ClassHelper.Character_TYPE.equals(ce.getType())) {
+                out.print("'" + escapeSpecialChars("" + value.toString().charAt(0)) + "'");
+            } else if (ClassHelper.long_TYPE.equals(ce.getType())) {
+                out.print("" + value + "L");
+            } else if (ClassHelper.float_TYPE.equals(ce.getType())) {
+                out.print("" + value + "f");
+            } else if (ClassHelper.double_TYPE.equals(ce.getType())) {
+                out.print("" + value + "d");
             } else {
                 out.print(re.getText());
             }
+        } else {
+            out.print(re.getText());
         }
     }
 
-    private void printReturn(PrintWriter out, ClassNode retType) {
-        String retName = retType.getName();
-        if (!retName.equals("void")) {
+    private void printReturn(final PrintWriter out, final ClassNode retType) {
+        if (!retType.equals(ClassHelper.VOID_TYPE)) {
             out.print("return ");
-
             printDefaultValue(out, retType);
-
             out.print(";");
         }
     }
 
-    private void printDefaultValue(PrintWriter out, ClassNode type) {
-        if (type.redirect() != ClassHelper.OBJECT_TYPE && type.redirect() != ClassHelper.boolean_TYPE) {
+    private void printDefaultValue(final PrintWriter out, final ClassNode type) {
+        if (!type.equals(ClassHelper.OBJECT_TYPE) && !type.equals(ClassHelper.boolean_TYPE)) {
             out.print("(");
             printType(out, type);
             out.print(")");
         }
-
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type == ClassHelper.boolean_TYPE) {
+            if (type.equals(ClassHelper.boolean_TYPE)) {
                 out.print("false");
             } else {
                 out.print("0");
@@ -825,22 +791,22 @@ public class JavaStubGenerator {
 
     private void printTypeName(PrintWriter out, ClassNode type) {
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type == ClassHelper.boolean_TYPE) {
+            if (type.equals(ClassHelper.boolean_TYPE)) {
                 out.print("boolean");
-            } else if (type == ClassHelper.char_TYPE) {
-                out.print("char");
-            } else if (type == ClassHelper.int_TYPE) {
-                out.print("int");
-            } else if (type == ClassHelper.short_TYPE) {
-                out.print("short");
-            } else if (type == ClassHelper.long_TYPE) {
-                out.print("long");
-            } else if (type == ClassHelper.float_TYPE) {
-                out.print("float");
-            } else if (type == ClassHelper.double_TYPE) {
-                out.print("double");
-            } else if (type == ClassHelper.byte_TYPE) {
+            } else if (type.equals(ClassHelper.byte_TYPE)) {
                 out.print("byte");
+            } else if (type.equals(ClassHelper.char_TYPE)) {
+                out.print("char");
+            } else if (type.equals(ClassHelper.int_TYPE)) {
+                out.print("int");
+            } else if (type.equals(ClassHelper.long_TYPE)) {
+                out.print("long");
+            } else if (type.equals(ClassHelper.short_TYPE)) {
+                out.print("short");
+            } else if (type.equals(ClassHelper.float_TYPE)) {
+                out.print("float");
+            } else if (type.equals(ClassHelper.double_TYPE)) {
+                out.print("double");
             } else {
                 out.print("void");
             }
@@ -855,8 +821,7 @@ public class JavaStubGenerator {
 
     private void printGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
         if (!skipName) printTypeName(out, type);
-        if (!java5) return;
-        if (!ClassHelper.isCachedType(type)) {
+        if (java5 && !ClassHelper.isCachedType(type)) {
             printGenericsBounds(out, type.getGenericsTypes());
         }
     }
@@ -948,7 +913,7 @@ public class JavaStubGenerator {
             val = ((Expression) memberValue).getText();
         } else if (memberValue instanceof VariableExpression) {
             val = ((Expression) memberValue).getText();
-            //check for an alias
+            // check for an alias
             ImportNode alias = currentModule.getStaticImports().get(val);
             if (alias != null)
                 val = alias.getClassName() + "." + alias.getFieldName();
@@ -1027,7 +992,6 @@ public class JavaStubGenerator {
 
     private static String escapeSpecialChars(String value) {
         return InvokerHelper.escapeBackslashes(value).replace("\"", "\\\"");
-
     }
 
     private static boolean isInterfaceOrTrait(ClassNode cn) {

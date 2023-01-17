@@ -79,7 +79,7 @@ class Groovy5260Bug extends GroovyTestCase implements Opcodes {
         def constant = new ConstantExpression(false, true)
         constant.type = ClassHelper.boolean_TYPE
         // boolean type is not optimized yet
-        checkConstant(constant, /new java.lang.Boolean\(\(boolean\)false\)/)
+        checkConstant(constant, /new java.lang.Boolean\(false\)/)
     }
 
     void testStringConstant() {
