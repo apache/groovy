@@ -71,9 +71,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,6 +82,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
+import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -98,9 +99,9 @@ public class JavaStubGenerator {
     private final String encoding;
     private final boolean requireSuperResolved;
     private final File outputPath;
-    private final ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
-    private final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
-    private final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final List<ConstructorNode> constructors = new ArrayList<>();
+    private final Map<String, MethodNode> propertyMethods = new LinkedHashMap<>();
+
     private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
@@ -278,13 +279,7 @@ public class JavaStubGenerator {
                 }
 
                 private MethodNode doAddMethod(MethodNode method) {
-                    String sig = method.getTypeDescriptor();
-
-                    if (propertyMethodsWithSigs.containsKey(sig)) return method;
-
-                    propertyMethods.add(method);
-                    propertyMethodsWithSigs.put(sig, method);
-
+                    propertyMethods.putIfAbsent(method.getTypeDescriptor(), method);
                     return method;
                 }
 
@@ -360,25 +355,23 @@ public class JavaStubGenerator {
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
                 // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
-                propertyMethods.clear();
-                propertyMethodsWithSigs.clear();
                 constructors.clear();
+                propertyMethods.clear();
                 printClassContents(out, inner.next());
             }
 
             out.println("}");
         } finally {
-            propertyMethods.clear();
-            propertyMethodsWithSigs.clear();
-            constructors.clear();
             currentModule = null;
+            constructors.clear();
+            propertyMethods.clear();
         }
     }
 
     private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
         if (!isEnum) printConstructors(out, classNode);
 
-        List<MethodNode> methods = new ArrayList<>(propertyMethods);
+        List<MethodNode> methods = new ArrayList<>(propertyMethods.values());
         methods.addAll(classNode.getMethods());
         for (MethodNode method : methods) {
             if (isEnum && method.isSynthetic()) {
@@ -404,7 +397,7 @@ public class JavaStubGenerator {
                 MethodNode traitMethod = correctToGenericsSpec(generics, traitOrigMethod);
                 MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
                 if (existingMethod != null) continue;
-                for (MethodNode propertyMethod : propertyMethods) {
+                for (MethodNode propertyMethod : propertyMethods.values()) {
                     if (propertyMethod.getName().equals(traitMethod.getName())) {
                         boolean sameParams = sameParameterTypes(propertyMethod, traitMethod);
                         if (sameParams) {
@@ -443,94 +436,99 @@ public class JavaStubGenerator {
         return org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual(firstParams, secondParams);
     }
 
-    private void printConstructors(PrintWriter out, ClassNode classNode) {
-        @SuppressWarnings("unchecked")
-        List<ConstructorNode> constrs = (List<ConstructorNode>) constructors.clone();
-        if (constrs != null) {
-            constrs.addAll(classNode.getDeclaredConstructors());
-            for (ConstructorNode constr : constrs) {
-                printConstructor(out, classNode, constr);
-            }
+    private void printConstructors(final PrintWriter out, final ClassNode classNode) {
+        List<ConstructorNode> constructors = new ArrayList<>(this.constructors);
+        constructors.addAll(classNode.getDeclaredConstructors());
+        for (ConstructorNode constructor : constructors) {
+            printConstructor(out, classNode, constructor);
         }
     }
 
-    private void printFields(PrintWriter out, ClassNode classNode) {
-        boolean isInterface = isInterfaceOrTrait(classNode);
+    private void printFields(final PrintWriter out, final ClassNode classNode) {
         List<FieldNode> fields = classNode.getFields();
-        if (fields == null) return;
-        final int fieldCnt = fields.size();
-        List<FieldNode> enumFields = new ArrayList<FieldNode>(fieldCnt);
-        List<FieldNode> normalFields = new ArrayList<FieldNode>(fieldCnt);
-        for (FieldNode field : fields) {
-            boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
-            if (field.isEnum()) {
-                enumFields.add(field);
-            } else if (!isSynthetic) {
-                normalFields.add(field);
+        if (!fields.isEmpty()) {
+            List<FieldNode> enumFields = new LinkedList<>();
+            List<FieldNode> normalFields = new LinkedList<>();
+            for (FieldNode field : fields) {
+                if (field.isEnum()) {
+                    enumFields.add(field);
+                } else if (!field.isPrivate() && (field.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0) {
+                    normalFields.add(field);
+                }
             }
-        }
-        printEnumFields(out, enumFields);
-        for (FieldNode normalField : normalFields) {
-            printField(out, normalField, isInterface);
+            boolean interfaceOrTrait = isInterfaceOrTrait(classNode);
+
+            printEnumFields(out, enumFields);
+            for (FieldNode normalField : normalFields) {
+                printField(out, normalField, interfaceOrTrait);
+            }
         }
     }
 
-    private static void printEnumFields(PrintWriter out, List<FieldNode> fields) {
+    private static void printEnumFields(final PrintWriter out, final List<FieldNode> fields) {
         if (!fields.isEmpty()) {
-            boolean first = true;
+            int i = 0;
             for (FieldNode field : fields) {
-                if (!first) {
+                if (i++ != 0) {
                     out.print(", ");
-                } else {
-                    first = false;
                 }
                 out.print(field.getName());
             }
         }
-        out.println(";");
+        out.println(';');
     }
 
-    private void printField(PrintWriter out, FieldNode fieldNode, boolean isInterface) {
-        if (fieldNode.isPrivate()) return;
-
-        printAnnotations(out, fieldNode);
-        if (!isInterface) {
-            printModifiers(out, fieldNode.getModifiers());
+    private void printField(final PrintWriter out, final FieldNode field, final boolean fromFaceOrTrait) {
+        printAnnotations(out, field);
+        if (!fromFaceOrTrait) {
+            printModifiers(out, field.getModifiers());
         }
-
-        ClassNode type = fieldNode.getType();
+        ClassNode type = field.getType();
         printType(out, type);
-
         out.print(' ');
-        out.print(fieldNode.getName());
-        if (isInterface || fieldNode.isFinal()) {
-            out.print(" = ");
-            if (fieldNode.isStatic()) {
-                Expression value = fieldNode.getInitialValueExpression();
-                value = ExpressionUtils.transformInlineConstants(value, type);
+        out.print(field.getName());
+
+        if (fromFaceOrTrait || field.isFinal()) {
+            if (field.isStatic() && field.hasInitialExpression()) {
+                Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
                 if (value instanceof ConstantExpression) {
-                    value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    if (isPrimitiveType(type)) { // do not pass string of length 1 for String field:
+                        value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    }
                     if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
                                 || (isLongCategory(type) && value.getType().equals(int_TYPE))
                                 || (isFloatingCategory(type) && BigDecimal_TYPE.equals(value.getType())))
                             && (type.equals(boolean_TYPE) || isStaticConstantInitializerType(type))) {
+                        out.print(" = ");
                         printValue(out, (ConstantExpression) value);
                         out.println(';');
                         return;
                     }
                 }
+
+                // GROOVY-10902: output a static initializer to prevent inlining
+                out.println(';');
+                out.print("static { " + field.getName() + " = ");
+                if (isPrimitiveType(type)) {
+                    printValue(out, (ConstantExpression) getDefaultValueForPrimitive(type));
+                } else {
+                    out.print("null");
+                }
+                out.println("; }");
+                return;
             }
+
             if (isPrimitiveType(type)) {
                 if (type.equals(boolean_TYPE)) {
-                    out.print("false");
+                    out.print(" = false");
                 } else {
-                    out.print('(');
+                    out.print(" = (");
                     printTypeName(out, type);
                     out.print(')');
                     out.print('0');
                 }
             } else {
-                out.print("null");
+                out.print(" = null");
             }
         }
         out.println(';');
@@ -1069,7 +1067,7 @@ public class JavaStubGenerator {
         return InvokerHelper.escapeBackslashes(value).replace("\"", "\\\"");
     }
 
-    private static boolean isInterfaceOrTrait(ClassNode cn) {
+    private static boolean isInterfaceOrTrait(final ClassNode cn) {
         return cn.isInterface() || Traits.isTrait(cn);
     }
 
