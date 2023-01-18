@@ -622,14 +622,16 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testLazyAnnotation() {
-        String script = '''class Event {
+        String script = '''
+            class Event {
                 @Lazy ArrayList speakers
-            }'''
+            }
+        '''
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result =~ /Lazy\s*private java\.util\.ArrayList .*speakers /
         assert result.contains('public java.util.ArrayList getSpeakers() {')
-        assert result.contains('if ($speakers != null) {')
+        assert result.contains('if ($speakers != null') || result.contains('if (null != $speakers')
         assert result.contains('$speakers = new java.util.ArrayList()')
     }
 

@@ -65,14 +65,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classList2args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.findArg;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.safeExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -124,7 +124,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         if (xform instanceof MapConstructorASTTransformation) {
             VariableExpression namedArgs = varX("args");
-            body.addStatement(ifS(equalsNullX(namedArgs), assignS(namedArgs, new MapExpression())));
+            body.addStatement(ifS(isNullX(namedArgs), assignS(namedArgs, new MapExpression())));
             boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
             body.addStatement(checkPropNamesS(namedArgs, pojo, props));
         }
@@ -209,7 +209,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, castX(fType, param));
         if (shouldNullCheck) {
-            assignStmt = ifElseS(equalsNullX(param), NullCheckASTTransformation.makeThrowStmt(fNode.getName()), assignStmt);
+            assignStmt = ifElseS(isNullX(param), NullCheckASTTransformation.makeThrowStmt(fNode.getName()), assignStmt);
         }
         Expression initExpr = fNode.getInitialValueExpression();
         Statement assignInit;
@@ -243,7 +243,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, createCheckImmutable(fNode, param, knownImmutables, knownImmutableClasses));
         assignStmt = ifElseS(
-                equalsNullX(param),
+                isNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
                 assignStmt);
         Expression initExpr = fNode.getInitialValueExpression();
@@ -271,7 +271,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
                 assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(param, fieldType), fieldType)),
                 assignS(fieldExpr, cloneCollectionExpr(param, fieldType)));
         assignStmt = ifElseS(
-                equalsNullX(param),
+                isNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
                 assignStmt);
         Expression initExpr = fNode.getInitialValueExpression();
@@ -290,7 +290,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, cloneArrayOrCloneableExpr(param, fieldType));
         assignStmt = ifElseS(
-                equalsNullX(param),
+                isNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
                 assignStmt);
         final Statement assignInit;
@@ -312,7 +312,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, cloneDateExpr(param));
         assignStmt = ifElseS(
-                equalsNullX(param),
+                isNullX(param),
                 shouldNullCheck ? NullCheckASTTransformation.makeThrowStmt(fNode.getName()) : assignNullS(fieldExpr),
                 assignStmt);
         final Statement assignInit;
@@ -333,7 +333,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         String name = fNode.getName();
         Expression value = findArg(name);
         return ifS(
-                notX(equalsNullX(value)),
+                notNullX(value),
                 throwS(
                         ctorX(READONLYEXCEPTION_TYPE, args(constX(name), constX(cNode.getName())))
                 )

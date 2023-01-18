@@ -32,18 +32,23 @@ final class DirectMethodCallWithVargsTest {
     void testDirectMethodCallWithVargs() {
         assertScript shell, '''
             def foo(String... args) {
-                (args as List).join(',')
+                args.join(',')
             }
 
             assert foo() == ''
             assert foo('1') == '1'
             assert foo('1','2','3') == '1,2,3'
             assert foo('1','2','3','4') == '1,2,3,4'
+            assert foo(new String[]{'1','2','3','4'}) == '1,2,3,4'
 
             def a = '1'
             def b = '2'
             def c = '3'
             assert foo(a,b,c) == '1,2,3'
+
+            shouldFail(NullPointerException) {
+                foo(null)
+            }
         '''
     }
 
@@ -51,13 +56,19 @@ final class DirectMethodCallWithVargsTest {
     void testDirectMethodCallWithPrimitiveVargs() {
         assertScript shell, '''
             def foo(int... args) {
-                (args as List).join(',')
+                args.join(',')
             }
 
             assert foo() == ''
+            assert foo(0) == '0'
             assert foo(1) == '1'
             assert foo(1,2,3) == '1,2,3'
             assert foo(1,2,3,4) == '1,2,3,4'
+            assert foo(new int[]{1,2,3,4}) == '1,2,3,4'
+
+            shouldFail(NullPointerException) {
+                foo(null)
+            }
         '''
     }
 
@@ -65,18 +76,25 @@ final class DirectMethodCallWithVargsTest {
     void testDirectMethodCallWithArgumentAndVargs() {
         assertScript shell, '''
             def foo(String prefix, String... args) {
-                prefix+(args as List).join(',')
+                '' + prefix + args.join(',')
             }
 
             assert foo('A') == 'A'
+            assert foo(null) == 'null'
             assert foo('A','1') == 'A1'
             assert foo('A','1','2','3') == 'A1,2,3'
             assert foo('A','1','2','3','4') == 'A1,2,3,4'
+            assert foo('A','1','2','3','4') == 'A1,2,3,4'
+            assert foo('A',new String[]{'1','2','3','4'}) == 'A1,2,3,4'
 
             def a = '1'
             def b = '2'
             def c = '3'
             assert foo('A',a,b,c) == 'A1,2,3'
+
+            shouldFail(NullPointerException) {
+                foo('A', null)
+            }
         '''
     }
 
@@ -84,19 +102,26 @@ final class DirectMethodCallWithVargsTest {
     void testDirectMethodCallWithArgumentAndPrimitiveVargs() {
         assertScript shell, '''
             def foo(int prefix, int... args) {
-                "$prefix"+(args as List).join(',')
+                '' + prefix + args.join(',')
             }
 
             assert foo(1) == '1'
+            assert foo(1,0) == '10'
             assert foo(1,1) == '11'
             assert foo(1,1,2,3) == '11,2,3'
             assert foo(1,1,2,3,4) == '11,2,3,4'
+            assert foo(0,new int[]{1,2,3,4}) == '01,2,3,4'
+
+            shouldFail(NullPointerException) {
+                foo(1, null)
+            }
         '''
     }
 
     //--------------------------------------------------------------------------
 
     private final GroovyShell shell = GroovyShell.withConfig {
+        imports{ staticMember 'groovy.test.GroovyAssert','shouldFail' }
         inline(phase: 'CANONICALIZATION') { sourceUnit, x, classNode ->
             def visitor = new MethodCallVisitor(sourceUnit)
             classNode.methods.each(visitor.&acceptMethod)
