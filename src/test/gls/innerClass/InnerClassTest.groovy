@@ -45,7 +45,20 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-7370
+    @Test // GROOVY-10840
+    void testArrayAIC() {
+        assertScript '''
+            class BAIS extends ByteArrayInputStream {
+                BAIS(String input) {
+                    super(input.bytes)
+                }
+            }
+
+            assert new BAIS('input').available() >= 5
+        '''
+    }
+
+    @Test // GROOVY-7370, GROOVY-10722
     void testVargsAIC() {
         String pogo = '''
             class C {
@@ -69,6 +82,17 @@ final class InnerClassTest {
         assertScript pogo + '''
             def c = new C('x','y') { }
             assert c.strings.length == 2
+        '''
+
+        assertScript pogo + '''
+            def c = new C(null) { }
+            assert c.strings == null
+        '''
+
+        assertScript pogo + '''
+            def a = new String[0]
+            def c = new C( a ) { }
+            assert c.strings.length == 0
         '''
     }
 

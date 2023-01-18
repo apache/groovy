@@ -60,7 +60,11 @@ import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullOrInstanceOfX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -247,17 +251,16 @@ public class InvocationWriter {
         int nthParameter = parameters.length - 1;
         ClassNode lastType = parameters[nthParameter].getOriginType();
 
-        AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        int stackLen = operandStack.getStackLength() + arguments.size();
+        int expected = operandStack.getStackLength() + arguments.size();
         boolean varg = lastType.isArray() && (
                 arguments.size() > parameters.length
                 || arguments.size() == parameters.length - 1
-                || !isArray(arguments.get(arguments.size() - 1)));
+                || !arguments.isEmpty() && !isArray(last(arguments)));
 
         for (int i = 0, n = varg ? nthParameter : arguments.size(); i < n; i += 1) {
             Expression argument = arguments.get(i);
-            argument.visit(acg);
+            argument.visit(controller.getAcg());
             if (!isNullConstant(argument)) {
                 operandStack.doGroovyCast(parameters[i].getType());
             }
@@ -265,14 +268,16 @@ public class InvocationWriter {
 
         if (varg) {
             // last arguments wrapped in an array
-            List<Expression> lastArgs = new ArrayList<>();
-            for (int i = nthParameter, n = arguments.size(); i < n; i += 1) {
-                lastArgs.add(arguments.get(i));
+            List<Expression> lastArgs = arguments.subList(nthParameter, arguments.size());
+            Expression array = new ArrayExpression(lastType.getComponentType(), lastArgs);
+            if (lastArgs.size() == 1) { // GROOVY-10722: disambiguate array and null cases
+                Expression lastExpr = lastArgs.get(0); // TODO: cache non-trivial expression value
+                array = ternaryX(isNullOrInstanceOfX(lastExpr, lastType), castX(lastType, lastExpr), array);
             }
-            new ArrayExpression(lastType.getComponentType(), lastArgs).visit(acg);
+            array.visit(controller.getAcg());
 
             // adjust stack length
-            while (operandStack.getStackLength() < stackLen) {
+            while (operandStack.getStackLength() < expected) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
             if (arguments.size() == nthParameter) {
