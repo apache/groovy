@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.NotExpression;
@@ -67,11 +68,22 @@ class BooleanExpressionTransformer {
 
         if (!(expr instanceof BinaryExpression)) {
             expr = transformer.transform(expr);
+
             ClassNode type = transformer.getTypeChooser().resolveType(expr, transformer.getClassNode());
             Expression opt = new OptimizingBooleanExpression(expr, type);
             if (reverse) opt = new NotExpression(opt);
             opt.setSourcePosition(boolX);
+            opt.copyNodeMetaData(boolX);
             return opt;
+
+        } else if (!(expr instanceof DeclarationExpression)) {
+            // TODO: apply reverse to operation
+            expr = transformer.transform(expr);
+
+            expr = reverse ? new NotExpression(expr) : new BooleanExpression(expr);
+            expr.setSourcePosition(boolX);
+            expr.copyNodeMetaData(boolX);
+            return expr;
         }
 
         return transformer.superTransform(boolX);

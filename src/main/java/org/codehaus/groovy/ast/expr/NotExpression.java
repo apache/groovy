@@ -22,24 +22,30 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 public class NotExpression extends BooleanExpression {
 
-    public NotExpression(Expression expression) {
+    public NotExpression(final Expression expression) {
         super(expression);
     }
 
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitNotExpression(this);
-    }
-
+    @Deprecated
     public boolean isDynamic() {
         return false;
     }
 
     @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
+    public String getText() {
+        return "!(" + super.getText() + ")";
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
         Expression ret = new NotExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitNotExpression(this);
     }
 }
