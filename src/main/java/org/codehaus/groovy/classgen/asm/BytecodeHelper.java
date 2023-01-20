@@ -29,6 +29,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 import java.lang.reflect.Modifier;
 
@@ -75,6 +76,7 @@ import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.ISTORE;
+import static org.objectweb.asm.Opcodes.IXOR;
 import static org.objectweb.asm.Opcodes.LCMP;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.LLOAD;
@@ -106,7 +108,7 @@ public class BytecodeHelper {
      * @return the ASM internal name of the type
      */
     public static String getClassInternalName(Class t) {
-        return org.objectweb.asm.Type.getInternalName(t);
+        return Type.getInternalName(t);
     }
 
     /**
@@ -188,7 +190,7 @@ public class BytecodeHelper {
     }
 
     public static String getTypeDescription(Class c) {
-        return org.objectweb.asm.Type.getDescriptor(c);
+        return Type.getDescriptor(c);
     }
 
     /**
@@ -235,48 +237,41 @@ public class BytecodeHelper {
 
     public static void pushConstant(MethodVisitor mv, int value) {
         switch (value) {
-            case 0:
-                mv.visitInsn(ICONST_0);
-                break;
-            case 1:
-                mv.visitInsn(ICONST_1);
-                break;
-            case 2:
-                mv.visitInsn(ICONST_2);
-                break;
-            case 3:
-                mv.visitInsn(ICONST_3);
-                break;
-            case 4:
-                mv.visitInsn(ICONST_4);
-                break;
-            case 5:
-                mv.visitInsn(ICONST_5);
-                break;
-            default:
-                if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-                    mv.visitIntInsn(BIPUSH, value);
-                } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-                    mv.visitIntInsn(SIPUSH, value);
-                } else {
-                    mv.visitLdcInsn(value);
-                }
+          case 0:
+            mv.visitInsn(ICONST_0);
+            break;
+          case 1:
+            mv.visitInsn(ICONST_1);
+            break;
+          case 2:
+            mv.visitInsn(ICONST_2);
+            break;
+          case 3:
+            mv.visitInsn(ICONST_3);
+            break;
+          case 4:
+            mv.visitInsn(ICONST_4);
+            break;
+          case 5:
+            mv.visitInsn(ICONST_5);
+            break;
+          default:
+            if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+                mv.visitIntInsn(BIPUSH, value);
+            } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+                mv.visitIntInsn(SIPUSH, value);
+            } else {
+                mv.visitLdcInsn(value);
+            }
         }
     }
 
     /**
-     * Negate a boolean on stack.
+     * Negates a boolean on stack.
      */
-    public static void negateBoolean(MethodVisitor mv) {
-        // code to negate the primitive boolean
-        Label endLabel = new Label();
-        Label falseLabel = new Label();
-        mv.visitJumpInsn(IFNE, falseLabel);
+    public static void negateBoolean(final MethodVisitor mv) {
         mv.visitInsn(ICONST_1);
-        mv.visitJumpInsn(GOTO, endLabel);
-        mv.visitLabel(falseLabel);
-        mv.visitInsn(ICONST_0);
-        mv.visitLabel(endLabel);
+        mv.visitInsn(IXOR);
     }
 
     /**
@@ -596,7 +591,7 @@ public class BytecodeHelper {
                     "TYPE",
                     "Ljava/lang/Class;");
         } else {
-            mv.visitLdcInsn(org.objectweb.asm.Type.getType(getTypeDescription(classNode)));
+            mv.visitLdcInsn(Type.getType(getTypeDescription(classNode)));
         }
     }
 
@@ -733,7 +728,7 @@ public class BytecodeHelper {
     private static class ReturnVarHandler extends PrimitiveTypeHandler {
         private MethodVisitor mv;
 
-        public ReturnVarHandler(MethodVisitor mv, ClassNode type) {
+        ReturnVarHandler(MethodVisitor mv, ClassNode type) {
             super(type);
             this.mv = mv;
         }
@@ -773,7 +768,7 @@ public class BytecodeHelper {
         private MethodVisitor mv;
         private int idx;
 
-        public LoadVarHandler(MethodVisitor mv, ClassNode type, int idx) {
+        LoadVarHandler(MethodVisitor mv, ClassNode type, int idx) {
             super(type);
             this.mv = mv;
             this.idx = idx;
@@ -814,7 +809,7 @@ public class BytecodeHelper {
         private MethodVisitor mv;
         private int idx;
 
-        public StoreVarHandler(MethodVisitor mv, ClassNode type, int idx) {
+        StoreVarHandler(MethodVisitor mv, ClassNode type, int idx) {
             super(type);
             this.mv = mv;
             this.idx = idx;
@@ -854,7 +849,7 @@ public class BytecodeHelper {
     private static abstract class PrimitiveTypeHandler {
         private ClassNode type;
 
-        public PrimitiveTypeHandler(ClassNode type) {
+        PrimitiveTypeHandler(ClassNode type) {
             this.type = type;
         }
 
