@@ -162,25 +162,25 @@ assert (x.'this$0').is(y)
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 
 // tag::type_depends_on_quoting_AND_whether_we_actually_interpolate[]
-assert 'c'.getClass()==String
-assert "c".getClass()==String
-assert "c${1}".getClass() in GString
+assert 'c'.class == String
+assert "c".class == String
+assert "c${1}".class in GString
 // end::type_depends_on_quoting_AND_whether_we_actually_interpolate[]
 // tag::single_char_strings_are_autocasted[]
-char a='a'
-assert Character.digit(a, 16)==10 : 'But Groovy does boxing'
-assert Character.digit((char) 'a', 16)==10
+char a = 'a'
+assert Character.digit(a, 16) == 10: 'But Groovy does boxing'
+assert Character.digit((char) 'a', 16) == 10
 
 try {
-  assert Character.digit('a', 16)==10
+  assert Character.digit('a', 16) == 10
   assert false: 'Need explicit cast'
 } catch(MissingMethodException e) {
 }
 // end::single_char_strings_are_autocasted[]
 // tag::chars_c_vs_groovy_cast[]
 // for single char strings, both are the same
-assert ((char) "c").class==Character
-assert ("c" as char).class==Character
+assert ((char) "c").class == Character
+assert ("c" as char).class == Character
 
 // for multi char strings they are not
 try {
