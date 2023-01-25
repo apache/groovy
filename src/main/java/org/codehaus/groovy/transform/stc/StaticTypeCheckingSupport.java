@@ -953,9 +953,15 @@ public abstract class StaticTypeCheckingSupport {
             if (receiver.implementsInterface(compare)) {
                 return dist + getMaximumInterfaceDistance(receiver, compare);
             } else if (receiver.equals(CLOSURE_TYPE) && (sam = findSAM(compare)) != null) {
-                // GROOVY-9881: in case of multiple overloads, give preference to equal parameter count
+                // In the case of multiple overloads, give preference to equal parameter count
+                // with fuzzy matching of length for implicit arg Closures
                 Integer closureParamCount = receiver.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                if (closureParamCount != null && closureParamCount == sam.getParameters().length) dist -= 1;
+                if (closureParamCount != null) {
+                    int samParamCount = sam.getParameters().length;
+                    if ((closureParamCount == samParamCount) ||                                  // GROOVY-9881
+                        (closureParamCount == -1 && (samParamCount == 0 || samParamCount == 1))) // GROOVY-10905
+                        dist -= 1;
+                }
 
                 return dist + 13; // GROOVY-9852: @FunctionalInterface vs Object
             }
@@ -1204,7 +1210,8 @@ public abstract class StaticTypeCheckingSupport {
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
-                            if (twoDC.isInterface() ? oneDC.implementsInterface(twoDC) : oneDC.isDerivedFrom(twoDC)) {
+                            if (!twoDC.isInterface() ? oneDC.isDerivedFrom(twoDC) : oneDC.implementsInterface(twoDC) || // GROOVY-10897: concrete vs. abstract
+                                                                                    (!disjoint && !one.isAbstract() && !(two instanceof ExtensionMethodNode))) {
                                 toBeRemoved.add(two);
                             } else if (oneDC.isInterface() ? (disjoint ? twoDC.implementsInterface(oneDC) : twoDC.isInterface()) : twoDC.isDerivedFrom(oneDC)) {
                                 toBeRemoved.add(one);

@@ -39,4 +39,17 @@ class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implemen
         String out = astTrees.values()[0][1]
         assert out.contains('INVOKESTATIC java/lang/Boolean.compare')
     }
+
+    // GROOVY-10909
+    void testMultipleNotExpressionOptimization() {
+        assertScript '''
+            def item = "", list = []
+            def x = !!(item in list)
+            return 0
+        '''
+        String out = astTrees.values()[0][1]
+        out = out.substring(out.indexOf('run()Ljava/lang/Object;'))
+        assert !out.contains('IXOR')
+        assert !out.contains('INVOKESTATIC java/lang/Boolean.valueOf')
+    }
 }

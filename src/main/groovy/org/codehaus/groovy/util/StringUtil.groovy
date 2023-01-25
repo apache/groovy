@@ -25,6 +25,7 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class StringUtil {
+
     /**
      * Provides Groovy with functionality similar to the unix tr command
      * which translates a string replacing characters from a source set
@@ -33,25 +34,30 @@ class StringUtil {
      * @since 1.7.3
      */
     static String tr(String text, String source, String replacement) {
-        if (!text || !source) { return text }
+        if (text == null   || source == null   || replacement == null  ) return text
+        if (text.isEmpty() || source.isEmpty() || replacement.isEmpty()) return text
+
         source = expandHyphen(source)
         replacement = expandHyphen(replacement)
 
         // padding replacement with a last character, if necessary
         replacement = replacement.padRight(source.size(), replacement[-1])
 
-        text.collect { String original ->
-            if (source.contains(original)) {
-                replacement[source.lastIndexOf(original)]
+        text.collect { String character ->
+            if (source.contains(character)) {
+                replacement[source.lastIndexOf(character)]
             } else {
-                original
+                character
             }
         }.join('')
     }
 
     // no expansion for hyphen at start or end of Strings
     private static String expandHyphen(String text) {
-        if (!text.contains('-')) { return text }
-        text.replaceAll(/(.)-(.)/, { all, begin, end -> (begin..end).join('') })
+        if (text.contains('-')) {
+            text.replaceAll(/(.)-(.)/) { _, start, until -> (start..until).join('') }
+        } else {
+            text
+        }
     }
 }

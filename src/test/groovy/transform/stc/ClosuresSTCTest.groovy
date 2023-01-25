@@ -1047,4 +1047,26 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Class<java.lang.Integer> to variable of type int',
         "named param 'bar' has type 'java.lang.Class<java.lang.Number>' but expected 'java.lang.Number'"
     }
+
+    // GROOVY-10905
+    void testImplicitArgClosureMatchesSamMethodWithOneArg() {
+        assertScript '''
+        def method1(java.util.function.IntUnaryOperator unary) { '1a' }
+        def method1(java.util.function.IntBinaryOperator binary) { '1b' }
+        assert method1{ x -> } == '1a'
+        assert method1{ x, y -> } == '1b'
+        assert method1{ } == '1a'
+        '''
+    }
+
+    // GROOVY-10905
+    void testImplicitArgClosureMatchesSamMethodWithZeroArgs() {
+        assertScript '''
+        def method2(java.util.function.IntSupplier supplier) { '2a' }
+        def method2(java.util.function.IntBinaryOperator binary) { '2b' }
+        assert method2{ -> } == '2a'
+        assert method2{ x, y -> } == '2b'
+        assert method2{ } == '2a'
+        '''
+    }
 }

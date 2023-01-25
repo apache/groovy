@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -230,21 +231,19 @@ public class StatementWriter {
     }
 
     private void visitConditionOfLoopingStatement(final BooleanExpression expression, final Label breakLabel, final MethodVisitor mv) {
-        boolean boolHandled = false;
-        if (expression.getExpression() instanceof ConstantExpression) {
+        if (expression.getExpression() instanceof ConstantExpression && !(expression instanceof NotExpression)) {
             ConstantExpression constant = (ConstantExpression) expression.getExpression();
-            if (constant.getValue() == Boolean.TRUE) {
-                boolHandled = true;
-                // do nothing
-            } else if (constant.getValue() == Boolean.FALSE) {
-                boolHandled = true;
+            if (constant.isFalseExpression()) {
                 mv.visitJumpInsn(GOTO, breakLabel);
+                return;
+            } else if (constant.isTrueExpression()) {
+                // do nothing
+                return;
             }
         }
-        if (!boolHandled) {
-            expression.visit(controller.getAcg());
-            controller.getOperandStack().jump(IFEQ, breakLabel);
-        }
+
+        expression.visit(controller.getAcg());
+        controller.getOperandStack().jump(IFEQ, breakLabel);
     }
 
     public void writeWhileLoop(final WhileStatement statement) {
@@ -292,19 +291,17 @@ public class StatementWriter {
         writeStatementLabel(statement);
 
         statement.getBooleanExpression().visit(controller.getAcg());
-        Label l0 = controller.getOperandStack().jump(IFEQ);
+        Label elsePath = controller.getOperandStack().jump(IFEQ);
         statement.getIfBlock().visit(controller.getAcg());
-
         MethodVisitor mv = controller.getMethodVisitor();
         if (statement.getElseBlock().isEmpty()) {
-            mv.visitLabel(l0);
+            mv.visitLabel(elsePath);
         } else {
-            Label l1 = new Label();
-            mv.visitJumpInsn(GOTO, l1);
-            mv.visitLabel(l0);
-
+            Label exitPath = new Label();
+            mv.visitJumpInsn(GOTO, exitPath);
+            mv.visitLabel(elsePath);
             statement.getElseBlock().visit(controller.getAcg());
-            mv.visitLabel(l1);
+            mv.visitLabel(exitPath);
         }
     }
 

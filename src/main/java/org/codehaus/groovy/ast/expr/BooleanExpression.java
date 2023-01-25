@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class BooleanExpression extends Expression {
     private final Expression expression;
 
-    public BooleanExpression(Expression expression) {
+    public BooleanExpression(final Expression expression) {
         this.expression = expression;
         setType(ClassHelper.boolean_TYPE); // for consistency with AsmClassGenerator. see AsmClassGenerator.visitBooleanExpression.
     }
@@ -37,21 +37,20 @@ public class BooleanExpression extends Expression {
     }
 
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitBooleanExpression(this);
+    public String getText() {
+        return getExpression().getText();
     }
 
     @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new BooleanExpression(transformer.transform(expression));
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new BooleanExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
 
     @Override
-    public String getText() {
-        return expression.getText();
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitBooleanExpression(this);
     }
-
 }

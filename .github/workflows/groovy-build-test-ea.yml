@@ -28,7 +28,7 @@ jobs:
         os: [ubuntu-22.04]
         java: [17]
         # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
-        jdk: ["https://download.java.net/java/early_access/jdk20/27/GPL/openjdk-20-ea+27_linux-x64_bin.tar.gz"]
+        jdk: ["https://download.java.net/java/early_access/jdk20/32/GPL/openjdk-20-ea+32_linux-x64_bin.tar.gz"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download JDK ${{ matrix.jdk }}

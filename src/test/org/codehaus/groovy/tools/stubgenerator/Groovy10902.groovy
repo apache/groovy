@@ -16,36 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.expr;
+package org.codehaus.groovy.tools.stubgenerator
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
+final class Groovy10902 extends StringSourcesStubTestCase {
 
-public class NotExpression extends BooleanExpression {
-
-    public NotExpression(final Expression expression) {
-        super(expression);
-    }
-
-    @Deprecated
-    public boolean isDynamic() {
-        return false;
+    @Override
+    Map<String, String> provideSources() {
+        [
+            'G.groovy': '''
+                class G {
+                    public static final int DYNAMIC_CONSTANT = (9.9).intValue()
+                }
+            ''',
+            'J.java': '''
+                public class J {
+                    int m() {
+                        return G.DYNAMIC_CONSTANT;
+                    }
+                }
+            ''',
+        ]
     }
 
     @Override
-    public String getText() {
-        return "!(" + super.getText() + ")";
-    }
+    void verifyStubs() {
+        String stub = stubJavaSourceFor('G')
+        assert stub.contains("public static final int DYNAMIC_CONSTANT;${System.lineSeparator()}static { DYNAMIC_CONSTANT = 0; }")
 
-    @Override
-    public Expression transformExpression(final ExpressionTransformer transformer) {
-        Expression ret = new NotExpression(transformer.transform(getExpression()));
-        ret.setSourcePosition(this);
-        ret.copyNodeMetaData(this);
-        return ret;
-    }
-
-    @Override
-    public void visit(final GroovyCodeVisitor visitor) {
-        visitor.visitNotExpression(this);
+        Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
+        assert pojo.m() == 9
     }
 }

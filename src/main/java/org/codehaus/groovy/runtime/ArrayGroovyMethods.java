@@ -25,6 +25,7 @@ import groovy.lang.Range;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -3685,6 +3686,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
+    @Incubating
     public static int min(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         return DefaultGroovyMethods.min(new IntArrayIterable(self), closure);
     }
@@ -3738,6 +3740,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
+    @Incubating
     public static long min(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         return DefaultGroovyMethods.min(new LongArrayIterator(self), closure);
     }
@@ -3791,6 +3794,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
+    @Incubating
     public static double min(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         return DefaultGroovyMethods.min(new DoubleArrayIterator(self), closure);
     }

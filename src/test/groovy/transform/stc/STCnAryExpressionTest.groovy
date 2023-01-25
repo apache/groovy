@@ -150,6 +150,26 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6137, GROOVY-7473, GROOVY-10909
+    void testInOperatorImplicitNullSafetyChecks() {
+        assertScript '''
+            class C {
+                int i = 0
+                int getA() { i++ }
+                boolean isCase(val) { true }
+                boolean isNotCase(val) { false }
+
+                void test() {
+                    assert !(a !in this)
+                    assert i == 1
+                    assert a in this
+                    assert i == 2
+                }
+            }
+            new C().test()
+        '''
+    }
+
     // GROOVY-7473
     void testInOperatorShouldEvaluateOperandsOnce() {
         assertScript '''
