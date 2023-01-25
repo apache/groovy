@@ -36,8 +36,8 @@ tasks.named('jarjar') { JarJarTask it ->
         version = groovyBundleVersion
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-        def folder = new File( "${projectDir}/subprojects/${symbolicName}/src/main/resources/META-INF/services" )
-        if( folder.exists() ) {
+        def folder = file("${projectDir}/src/main/resources/META-INF/services")
+        if (folder.exists()) {
             if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
                 instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
                 instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
