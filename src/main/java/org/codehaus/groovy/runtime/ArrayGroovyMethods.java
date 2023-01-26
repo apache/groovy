@@ -49,6 +49,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +104,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert !array2.any()
      * </pre>
      *
-     * @param self      the boolean array over which we iterate
+     * @param self the boolean array over which we iterate
      * @return true if any iteration for the booleans matches the closure predicate
      * @since 5.0.0
      */
@@ -859,6 +861,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(boolean[] self, Object value) {
@@ -877,6 +880,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(byte[] self, Object value) {
@@ -895,6 +899,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(char[] self, Object value) {
@@ -913,6 +918,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(short[] self, Object value) {
@@ -931,10 +937,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(int[] self, Object value) {
-        return DefaultGroovyMethods.count(new IntArrayIterable(self), value);
+        return DefaultGroovyMethods.count(new IntArrayIterator(self), value);
     }
 
     /**
@@ -949,6 +956,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(long[] self, Object value) {
@@ -967,6 +975,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(float[] self, Object value) {
@@ -985,10 +994,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(double[] self, Object value) {
-        return DefaultGroovyMethods.count(new DoubleArrayIterable(self), value);
+        return DefaultGroovyMethods.count(new DoubleArrayIterator(self), value);
     }
 
     //-------------------------------------------------------------------------
@@ -2609,7 +2619,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[0, 0..1, [1, [-1]]] == [false, false, false, false, false]
      * </pre>
      *
-     * @param array a boolean array
+     * @param array   a boolean array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the booleans at the given indices
      * @since 1.0
@@ -2628,7 +2638,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array a byte array
+     * @param array   a byte array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the bytes at the given indices
      * @since 1.0
@@ -2647,7 +2657,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == ['b', 'a', 'b', 'a', 'e']
      * </pre>
      *
-     * @param array a char array
+     * @param array   a char array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the chars at the given indices
      * @since 1.0
@@ -2666,7 +2676,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array a short array
+     * @param array   a short array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the shorts at the given indices
      * @since 1.0
@@ -2685,7 +2695,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array an int array
+     * @param array   an int array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the ints at the given indices
      * @since 1.0
@@ -2704,7 +2714,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2L, 0L, 2L, 0L, 8L]
      * </pre>
      *
-     * @param array a long array
+     * @param array   a long array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the longs at the given indices
      * @since 1.0
@@ -2723,7 +2733,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2.0f, 0.0f, 2.0f, 0.0f, 8.0f]
      * </pre>
      *
-     * @param array a float array
+     * @param array   a float array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the floats at the given indices
      * @since 1.0
@@ -2742,7 +2752,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2.0d, 0.0d, 2.0d, 0.0d, 8.0d]
      * </pre>
      *
-     * @param array a double array
+     * @param array   a double array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the doubles at the given indices
      * @since 1.0
@@ -3657,6 +3667,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the int array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [30, 45, 60, 90]
+     * assert 90 == nums.maxBy{ Math.sin(Math.toRadians(it)) }
+     * assert 30 == nums.maxBy{ Math.cos(Math.toRadians(it)) } // cos(90) == 0
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    an int array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int maxBy(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new IntArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the int array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, 30]
+     * assert 30 == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10 == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       an int array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int maxComparing(int[] self, Comparator<Integer> comparator) {
+        return DefaultGroovyMethods.max(new IntArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds max() method to long arrays.
      * <p/>
      * Example usage:
@@ -3746,6 +3807,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the long array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [-30L, 10L, 20L]
+     * assert 20L == nums.maxBy{ a, b {@code ->} a {@code <=>} b }
+     * assert -30L == nums.maxBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    a long array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long maxBy(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new LongArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the long array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert 30L == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10L == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a long array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long maxComparing(long[] self, Comparator<Long> comparator) {
+        return DefaultGroovyMethods.max(new LongArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds max() method to double arrays.
      * <p/>
      * Example usage:
@@ -3832,6 +3944,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [-30.0d, 10.0d, 20.0d]
+     * assert 20.0d == nums.maxBy{ a, b {@code ->} a {@code <=>} b }
+     * assert -30.0d == nums.maxBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    a double array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double maxBy(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new DoubleArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert 30d == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10d == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double maxComparing(double[] self, Comparator<Double> comparator) {
+        return DefaultGroovyMethods.max(new DoubleArrayIterator(self), comparator);
     }
 
     //-------------------------------------------------------------------------
@@ -3927,6 +4090,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the minimum value found from the int array
+     * using the closure to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [-20, 10, 30]
+     * assert -20 == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10 == nums.minBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    an int array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int minBy(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.min(new IntArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the int array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [1, 2, 3]
+     * assert 1 == nums.minComparing(Comparator.naturalOrder())
+     * assert 3 == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       an int array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int minComparing(int[] self, Comparator<Integer> comparator) {
+        return DefaultGroovyMethods.min(new IntArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds min() method to long arrays.
      * <p/>
      * Example usage:
@@ -4016,6 +4230,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the minimum value found from the long array
+     * using the closure to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [-20L, 10L, 30L]
+     * assert -20L == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10L == nums.minBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an int or long) which is then used for
+     * further comparison.
+     *
+     * @param self    a long array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long minBy(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.min(new LongArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the long array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert 10L == nums.minComparing(Comparator.naturalOrder())
+     * assert 30L == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a long array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long minComparing(long[] self, Comparator<Long> comparator) {
+        return DefaultGroovyMethods.min(new LongArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds min() method to double arrays.
      * <p/>
      * Example usage:
@@ -4102,6 +4367,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the double array
+     * using the closure to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [-20.0d, 10.0d, 30.0d]
+     * assert -20.0d == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10.0d == nums.minBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an int or double) which is then used for
+     * further comparison.
+     *
+     * @param self    a double array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double minBy(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.min(new DoubleArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the double array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert 10d == nums.minComparing(Comparator.naturalOrder())
+     * assert 30d == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double minComparing(double[] self, Comparator<Double> comparator) {
+        return DefaultGroovyMethods.min(new DoubleArrayIterator(self), comparator);
     }
 
     //-------------------------------------------------------------------------
@@ -4723,6 +5039,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // split
     //-------------------------------------------------------------------------
     // sum
+
     /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
@@ -4946,8 +5263,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4968,8 +5285,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4990,8 +5307,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -5012,8 +5329,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -5034,8 +5351,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -5056,8 +5373,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -5078,8 +5395,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -5100,8 +5417,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
