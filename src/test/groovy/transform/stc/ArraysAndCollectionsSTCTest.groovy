@@ -778,4 +778,25 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign value of type java.util.List', ' to variable of type java.util.Queue <String>'
     }
+
+    // GROOVY-7128
+    void testCollectionTypesInitializedByListLiteral4() {
+        assertScript '''
+            Collection<Number> collection = [1,2,3]
+            assert collection.size() == 3
+            assert collection.last() == 3
+        '''
+
+        assertScript '''
+            List<Number> list = [1,2,3]
+            assert list.size() == 3
+            assert list.last() == 3
+        '''
+
+        assertScript '''
+            Set<Number> set = [1,2,3,3]
+            assert set.size() == 3
+            assert set.last() == 3
+        '''
+    }
 }

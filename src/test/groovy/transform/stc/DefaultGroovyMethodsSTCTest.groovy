@@ -108,7 +108,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            List<Number> numbers = [(Number)1, 2, 3]
+            List<Number> numbers = [1, 2, 3]
             numbers.getSequence()
             numbers.getString()
             numbers.sequence
