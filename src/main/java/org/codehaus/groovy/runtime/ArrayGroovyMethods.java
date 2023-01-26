@@ -3662,36 +3662,6 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the int array
-     * using the closure to determine the correct ordering.
-     * <p>
-     * <pre class="groovyTestCase">
-     * int[] nums = [30, 45, 60, 90]
-     * assert 30 == nums.min{ Math.sin(Math.toRadians(it)) }
-     * assert 90 == nums.min{ Math.cos(Math.toRadians(it)) } // cos(90) == 0
-     * </pre>
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    an int array
-     * @param closure a Closure used to determine the correct ordering
-     * @return the minimum value
-     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
-     * @since 5.0.0
-     */
-    @Incubating
-    public static int min(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
-        return DefaultGroovyMethods.min(new IntArrayIterable(self), closure);
-    }
-
-    /**
      * Adds min() method to long arrays.
      * <p/>
      * Example usage:
@@ -3716,36 +3686,6 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the long array
-     * using the closure to determine the correct ordering.
-     * <p>
-     * <pre class="groovyTestCase">
-     * long[] nums = [-20L, 10L, 30L]
-     * assert -20L == nums.min{ a, b {@code ->} a {@code <=>} b }
-     * assert 10L == nums.min{ it.abs() }
-     * </pre>
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    a long array
-     * @param closure a Closure used to determine the correct ordering
-     * @return the minimum value
-     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
-     * @since 5.0.0
-     */
-    @Incubating
-    public static long min(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
-        return DefaultGroovyMethods.min(new LongArrayIterator(self), closure);
-    }
-
-    /**
      * Adds min() method to double arrays.
      * <p/>
      * Example usage:
@@ -3767,36 +3707,6 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             if (value < answer) answer = value;
         }
         return answer;
-    }
-
-    /**
-     * Selects the minimum value found from the double array
-     * using the closure to determine the correct ordering.
-     * <p>
-     * <pre class="groovyTestCase">
-     * double[] nums = [-20.0d, 10.0d, 30.0d]
-     * assert -20.0d == nums.min{ a, b {@code ->} a {@code <=>} b }
-     * assert 10.0d == nums.min{ it.abs() }
-     * </pre>
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    a double array
-     * @param closure a Closure used to determine the correct ordering
-     * @return the minimum value
-     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
-     * @since 5.0.0
-     */
-    @Incubating
-    public static double min(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
-        return DefaultGroovyMethods.min(new DoubleArrayIterator(self), closure);
     }
 
     //-------------------------------------------------------------------------
