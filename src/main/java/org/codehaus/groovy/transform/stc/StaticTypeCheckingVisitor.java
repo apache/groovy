@@ -1262,38 +1262,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addListAssignmentConstructorErrors(final ClassNode leftRedirect, final ClassNode leftExpressionType, final ClassNode inferredRightExpressionType, final Expression rightExpression, final Expression assignmentExpression) {
+        if (isWildcardLeftHandSide(leftRedirect) && !leftRedirect.equals(CLASS_Type)) return; // GROOVY-6802, GROOVY-6803
         // if left type is not a list but right type is a list, then we're in the case of a groovy
         // constructor type : Dimension d = [100,200]
         // In that case, more checks can be performed
         if (!implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)
                 && (!leftRedirect.isAbstract() || leftRedirect.isArray())
                 && !ArrayList_TYPE.isDerivedFrom(leftRedirect) && !LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) {
-            ClassNode[] args = getArgumentTypes(args(((ListExpression) rightExpression).getExpressions()));
-            MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, args, assignmentExpression);
+            ClassNode[] types = getArgumentTypes(args(((ListExpression)rightExpression).getExpressions()));
+            MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, types, assignmentExpression);
             if (methodNode != null) {
                 rightExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, methodNode);
             }
-        } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
-                && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
-                && !isWildcardLeftHandSide(leftExpressionType)) {
+        } else if (implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
+                && !implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)) {
             if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
                 addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
             }
         }
     }
 
-    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        if ((leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
-                || leftRedirect.equals(OBJECT_TYPE) || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
+    private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
+        if (!isConstructorAbbreviation(leftRedirect, rightExpression)
+                // GROOVY-6802, GROOVY-6803: Object, String or [Bb]oolean target
+                || (isWildcardLeftHandSide(leftRedirect) && !leftRedirect.equals(CLASS_Type))) {
             return;
         }
 
         // groovy constructor shorthand: A a = [x:2, y:3]
-        ClassNode[] argTypes = getArgumentTypes(args(rightExpression));
+        ClassNode[] argTypes = {getType(rightExpression)};
         checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
         // perform additional type checking on arguments
-        MapExpression mapExpression = (MapExpression) rightExpression;
-        checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
+        checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {
@@ -1316,7 +1316,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static boolean isConstructorAbbreviation(final ClassNode leftType, final Expression rightExpression) {
         if (rightExpression instanceof ListExpression) {
             return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
-                    || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
+                || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
+        }
+        if (rightExpression instanceof MapExpression) {
+            return !(LinkedHashMap_TYPE.isDerivedFrom(leftType) || LinkedHashMap_TYPE.implementsInterface(leftType));
         }
         return false;
     }
@@ -1345,7 +1348,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (rightExpression instanceof ListExpression) {
                 addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
-                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression)rightExpression);
             }
             if (!hasGStringStringError(leftExpressionType, rTypeAdjusted, rightExpression)
                     && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
@@ -1419,29 +1422,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param arguments the constructor arguments
      */
     protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode source) {
-        if (node.equals(ClassHelper.OBJECT_TYPE) || node.equals(ClassHelper.DYNAMIC_TYPE)) {
-            // in that case, we are facing a list constructor assigned to a def or object
-            return null;
+        if (node.equals(DYNAMIC_TYPE) || node.equals(OBJECT_TYPE)) {
+            return null; // list or map assigned to def or Object
         }
-        List<ConstructorNode> constructors = node.getDeclaredConstructors();
+        List<? extends MethodNode> constructors = node.getDeclaredConstructors();
         if (constructors.isEmpty() && arguments.length == 0) {
             return null;
         }
-        List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
-        if (constructorList.isEmpty()) {
-            if (isBeingCompiled(node) && arguments.length == 1 && LinkedHashMap_TYPE.equals(arguments[0])) {
+        constructors = findMethod(node, "<init>", arguments);
+        if (constructors.isEmpty()) {
+            if (isBeingCompiled(node) && !node.isInterface() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
                 // there will be a default map constructor added later
                 Parameter[] params = {new Parameter(LinkedHashMap_TYPE, "args")};
                 return new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
             } else {
-                addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), source);
+                addStaticTypeError("No matching constructor found: " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
                 return null;
             }
-        } else if (constructorList.size() > 1) {
-            addStaticTypeError("Ambiguous constructor call " + node + toMethodParametersString("<init>", arguments), source);
+        } else if (constructors.size() > 1) {
+            addStaticTypeError("Ambiguous constructor call " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
             return null;
         }
-        return constructorList.get(0);
+        return constructors.get(0);
     }
 
     /**
@@ -1992,13 +1994,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
-            if (Character_TYPE.equals(ClassHelper.getWrapper(forLoopVariableType)) && STRING_TYPE.equals(collectionType)) {
+            if (Character_TYPE.equals(getWrapper(forLoopVariableType)) && STRING_TYPE.equals(collectionType)) {
                 // we allow auto-coercion here
                 componentType = forLoopVariableType;
             } else {
                 componentType = inferLoopElementType(collectionType);
             }
-            if (ClassHelper.getUnwrapper(componentType) == forLoopVariableType) {
+            if (getUnwrapper(componentType) == forLoopVariableType) {
                 // prefer primitive type over boxed type
                 componentType = forLoopVariableType;
             }
@@ -2214,7 +2216,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode type = getType(expression);
         ClassNode typeRe = type.redirect();
         ClassNode resultType;
-        if (isDoubleCategory(ClassHelper.getUnwrapper(typeRe))) {
+        if (isDoubleCategory(getUnwrapper(typeRe))) {
             resultType = type;
         } else if (typeRe == ArrayList_TYPE) {
             resultType = ArrayList_TYPE;
@@ -2446,7 +2448,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
             if (tempTypes != null && !tempTypes.isEmpty()) {
                 List<ClassNode> types = new ArrayList<>(tempTypes.size() + 1);
-                if (expressionType != null && !expressionType.equals(ClassHelper.OBJECT_TYPE) // GROOVY-7333
+                if (expressionType != null && !expressionType.equals(OBJECT_TYPE) // GROOVY-7333
                         && noneMatch(tempTypes, expressionType)) { // GROOVY-9769
                     types.add(expressionType);
                 }
@@ -2506,7 +2508,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         super.visitClosureExpression(expression);
         typeCheckingContext.delegationMetadata = typeCheckingContext.delegationMetadata.getParent();
-        returnAdder.visitMethod(new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode()));
+        returnAdder.visitMethod(new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode()));
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (!enclosingClosure.getReturnTypes().isEmpty()) {
@@ -2933,7 +2935,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkNamedParamsAnnotation(Parameter param, MapExpression args) {
-        if (!param.getType().isDerivedFrom(ClassHelper.MAP_TYPE)) return;
+        if (!param.getType().isDerivedFrom(MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
         Map<Object, Expression> entries = new LinkedHashMap<Object, Expression>();
         for (MapEntryExpression entry : entryExpressions) {
@@ -3339,7 +3341,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression type = annotation.getMember("type");
                 Integer stInt = Closure.OWNER_FIRST;
                 if (strategy != null) {
-                    stInt = (Integer) evaluateExpression(castX(ClassHelper.Integer_TYPE, strategy), typeCheckingContext.source.getConfiguration());
+                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), typeCheckingContext.source.getConfiguration());
                 }
                 if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                     if (genericTypeIndex != null) {
@@ -4696,7 +4698,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected boolean areCategoryMethodCalls(final List<MethodNode> foundMethods, final String name, final ClassNode[] args) {
         boolean category = false;
-        if ("use".equals(name) && args != null && args.length == 2 && args[1].equals(ClassHelper.CLOSURE_TYPE)) {
+        if ("use".equals(name) && args != null && args.length == 2 && args[1].equals(CLOSURE_TYPE)) {
             category = true;
             for (MethodNode method : foundMethods) {
                 if (!(method instanceof ExtensionMethodNode) || !((ExtensionMethodNode) method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE)) {
@@ -5087,7 +5089,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return ((Variable) exp).getOriginType();
         }
         if (exp instanceof RangeExpression) {
-            ClassNode plain = ClassHelper.RANGE_TYPE.getPlainNodeReference();
+            ClassNode plain = RANGE_TYPE.getPlainNodeReference();
             RangeExpression re = (RangeExpression) exp;
             ClassNode fromType = getType(re.getFrom());
             ClassNode toType = getType(re.getTo());

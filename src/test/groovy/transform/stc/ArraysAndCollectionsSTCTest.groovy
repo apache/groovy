@@ -799,4 +799,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert set.last() == 3
         '''
     }
+
+    // GROOVY-8136
+    void testInterfaceThatExtendsMapInitializedByMapLiteral() {
+        shouldFailWithMessages '''
+            interface MVM<K, V> extends Map<K, List<V>> { }
+            MVM map = [:] // no STC error; fails at runtime
+        ''',
+        'No matching constructor found'
+    }
 }
