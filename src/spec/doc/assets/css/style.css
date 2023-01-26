@@ -420,6 +420,8 @@ code {
     color: #db4800;
 }
 
+code.rotate { width: 20px; height: 100px; white-space: nowrap; transform: rotate(-90deg); background: transparent; border: 0px; display: inline-block; position:relative; left: 40px; bottom: -50px; }
+
 ul, ol, dl {
     font-size: 1em;
     line-height: 1.6;
