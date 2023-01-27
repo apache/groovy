@@ -45,7 +45,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -3714,6 +3713,327 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // plus
     //-------------------------------------------------------------------------
     // reverse
+
+    /**
+     * Creates a new boolean array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a boolean array
+     * @return an array containing the reversed items
+     * @see #reverse(boolean[], boolean)
+     * @since 5.0.0
+     */
+    public static boolean[] reverse(boolean[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, true]
+     * def yarra = array.reverse(true)
+     * assert array == [true, true, false]
+     * assert yarra == [true, true, false]
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == [true, true, false]
+     * assert yarra == [false, true, true]
+     * </pre>
+     *
+     * @param self   a boolean array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static boolean[] reverse(boolean[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new byte array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a byte array
+     * @return an array containing the reversed items
+     * @see #reverse(byte[], boolean)
+     * @since 5.0.0
+     */
+    public static byte[] reverse(byte[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * byte[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   a byte array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static byte[] reverse(byte[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new char array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a char array
+     * @return an array containing the reversed items
+     * @see #reverse(char[], boolean)
+     * @since 5.0.0
+     */
+    public static char[] reverse(char[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a', 'b', 'c']
+     * def yarra = array.reverse(true)
+     * assert array == ['c', 'b', 'a']
+     * assert yarra == ['c', 'b', 'a']
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == ['c', 'b', 'a']
+     * assert yarra == ['a', 'b', 'c']
+     * </pre>
+     *
+     * @param self   a char array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static char[] reverse(char[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new short array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a short array
+     * @return an array containing the reversed items
+     * @see #reverse(short[], boolean)
+     * @since 5.0.0
+     */
+    public static short[] reverse(short[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * short[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   a short array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static short[] reverse(short[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new int array containing items which are the same as this array but in reverse order.
+     *
+     * @param self an int array
+     * @return an array containing the reversed items
+     * @see #reverse(int[], boolean)
+     * @since 5.0.0
+     */
+    public static int[] reverse(int[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * int[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   a int array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static int[] reverse(int[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new long array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a long array
+     * @return an array containing the reversed items
+     * @see #reverse(long[], boolean)
+     * @since 5.0.0
+     */
+    public static long[] reverse(long[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * long[] array = 1L..3L
+     * def yarra = array.reverse(true)
+     * assert array == 3L..1L
+     * assert yarra == 3L..1L
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3L..1L
+     * assert yarra == 1L..3L
+     * </pre>
+     *
+     * @param self   a long array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static long[] reverse(long[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new float array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a float array
+     * @return an array containing the reversed items
+     * @see #reverse(float[], boolean)
+     * @since 5.0.0
+     */
+    public static float[] reverse(float[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * float[] array = 1f..3f
+     * def yarra = array.reverse(true)
+     * assert array == 3f..1f
+     * assert yarra == 3f..1f
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3f..1f
+     * assert yarra == 1f..3f
+     * </pre>
+     *
+     * @param self   a float array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static float[] reverse(float[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new double array containing items which are the same as this array but in reverse order.
+     *
+     * @param self a double array
+     * @return an array containing the reversed items
+     * @see #reverse(double[], boolean)
+     * @since 5.0.0
+     */
+    public static double[] reverse(double[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * double[] array = 1d..3d
+     * def yarra = array.reverse(true)
+     * assert array == 3d..1d
+     * assert yarra == 3d..1d
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3d..1d
+     * assert yarra == 1d..3d
+     * </pre>
+     *
+     * @param self   a double array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static double[] reverse(double[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
     //-------------------------------------------------------------------------
     // reverseEach
 
