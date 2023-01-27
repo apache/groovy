@@ -2562,7 +2562,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        each(new ReverseListIterator<>(Arrays.asList(self)), closure);
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
         return self;
     }
 

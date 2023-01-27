@@ -3716,6 +3716,183 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // reverse
     //-------------------------------------------------------------------------
     // reverseEach
+
+    /**
+     * Iterates through a boolean[] in reverse order passing each boolean to the given closure.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, true]
+     * String result = ''
+     * array.reverseEach{ result += it.booleanValue() }
+     * assert result == 'truetruefalse'
+     * </pre>
+     *
+     * @param self    the boolean array over which we iterate
+     * @param closure the closure applied on each boolean
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static boolean[] reverseEach(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a byte[] in reverse order passing each byte to the given closure.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.intValue() }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the byte array over which we iterate
+     * @param closure the closure applied on each byte
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static byte[] reverseEach(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a char[] in reverse order passing each char to the given closure.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a' as char, 'b' as char, 'c' as char]
+     * String result = ''
+     * array.reverseEach{ result += it.charValue() }
+     * assert result == 'cba'
+     * </pre>
+     *
+     * @param self    the char array over which we iterate
+     * @param closure the closure applied on each char
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static char[] reverseEach(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a short[] in reverse order passing each short to the given closure.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.shortValue() }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the short array over which we iterate
+     * @param closure the closure applied on each short
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static short[] reverseEach(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through an int[] in reverse order passing each int to the given closure.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.intValue() }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the int array over which we iterate
+     * @param closure the closure applied on each int
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static int[] reverseEach(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a long[] in reverse order passing each long to the given closure.
+     * <pre class="groovyTestCase">
+     * long[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.longValue() }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the long array over which we iterate
+     * @param closure the closure applied on each long
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static long[] reverseEach(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a float[] in reverse order passing each float to the given closure.
+     * <pre class="groovyTestCase">
+     * float[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.floatValue() }
+     * assert result == '2.01.00.0'
+     * </pre>
+     *
+     * @param self    the float array over which we iterate
+     * @param closure the closure applied on each float
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static float[] reverseEach(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a double[] in reverse order passing each double to the given closure.
+     * <pre class="groovyTestCase">
+     * double[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it.doubleValue() }
+     * assert result == '2.01.00.0'
+     * </pre>
+     *
+     * @param self    the double array over which we iterate
+     * @param closure the closure applied on each double
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static double[] reverseEach(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
     //-------------------------------------------------------------------------
     // shuffle
     //-------------------------------------------------------------------------
