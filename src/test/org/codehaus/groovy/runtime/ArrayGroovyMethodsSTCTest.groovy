@@ -80,74 +80,74 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testEachForBooleanArray() {
+    void testEachByForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
         String result = ''
-        array.each{ result += it.booleanValue() }
+        array.eachBy{ result += it.booleanValue() }
         assert result == 'falsetruefalse'
         '''
     }
 
-    void testEachForByteArray() {
+    void testEachByForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
         String result = ''
-        array.each{ result += it.intValue() }
+        array.eachBy{ result += it.intValue() }
         assert result == '012'
         '''
     }
 
-    void testEachForCharArray() {
+    void testEachByForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
         String result = ''
-        array.each{ result += it.charValue() }
+        array.eachBy{ result += it.charValue() }
         assert result == 'abc'
         '''
     }
 
-    void testEachForShortArray() {
+    void testEachByForShortArray() {
         assertScript '''
         short[] array = [0, 1, 2]
         String result = ''
-        array.each{ result += it.shortValue() }
+        array.eachBy{ result += it.shortValue() }
         assert result == '012'
         '''
     }
 
-    void testEachForIntArray() {
+    void testEachByForIntArray() {
         assertScript '''
         int[] array = [0, 1, 2]
         String result = ''
-        array.each{ result += it.intValue() }
+        array.eachBy{ result += it.intValue() }
         assert result == '012'
         '''
     }
 
-    void testEachForLongArray() {
+    void testEachByForLongArray() {
         assertScript '''
         long[] array = [0L, 1L, 2L]
         String result = ''
-        array.each{ result += it.longValue() }
+        array.eachBy{ result += it.longValue() }
         assert result == '012'
         '''
     }
 
-    void testEachForFloatArray() {
+    void testEachByForFloatArray() {
         assertScript '''
         float[] array = [0f, 1f, 2f]
         String result = ''
-        array.each{ result += it.floatValue() }
+        array.eachBy{ result += it.floatValue() }
         assert result == '0.01.02.0'
         '''
     }
 
-    void testEachForDoubleArray() {
+    void testEachByForDoubleArray() {
         assertScript '''
         double[] array = [0d, 1d, 2d]
         String result = ''
-        array.each{ result += it.doubleValue() }
+        array.eachBy{ result += it.doubleValue() }
         assert result == '0.01.02.0'
         '''
     }
