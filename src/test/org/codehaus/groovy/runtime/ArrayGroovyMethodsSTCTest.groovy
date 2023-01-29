@@ -163,10 +163,10 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     void testEachWithIndexForByteArray() {
         assertScript '''
-        byte[] array = [0, 1, 2]
+        byte[] array = [7, 8, 9]
         String result = ''
         array.eachWithIndex{ item, index -> result += "$index:${item.byteValue()}" }
-        assert result == '0:11:22:3'
+        assert result == '0:71:82:9'
         '''
     }
 
@@ -181,28 +181,28 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     void testEachWithIndexForShortArray() {
         assertScript '''
-        short[] array = [0, 1, 2]
+        short[] array = [7, 8, 9]
         String result = ''
         array.eachWithIndex{ item, index -> result += "$index:${item.shortValue()}" }
-        assert result == '0:11:22:3'
+        assert result == '0:71:82:9'
         '''
     }
 
     void testEachWithIndexForIntArray() {
         assertScript '''
-        int[] array = [0, 1, 2]
+        int[] array = [7, 8, 9]
         String result = ''
         array.eachWithIndex{ item, index -> result += "$index:${item.intValue()}" }
-        assert result == '0:11:22:3'
+        assert result == '0:71:82:9'
         '''
     }
 
     void testEachWithIndexForLongArray() {
         assertScript '''
-        long[] array = [0L, 1L, 2L]
+        long[] array = [7L, 8L, 9L]
         String result = ''
         array.eachWithIndex{ item, index -> result += "$index:${item.longValue()}" }
-        assert result == '0:11:22:3'
+        assert result == '0:71:82:9'
         '''
     }
 
