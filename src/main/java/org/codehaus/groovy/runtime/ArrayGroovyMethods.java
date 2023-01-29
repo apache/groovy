@@ -4333,6 +4333,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new boolean array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true]
+     * assert array.reverse() == [true, false]
+     * </pre>
      *
      * @param self a boolean array
      * @return an array containing the reversed items
@@ -4373,6 +4377,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new byte array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * byte[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
      *
      * @param self a byte array
      * @return an array containing the reversed items
@@ -4413,6 +4421,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new char array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a', 'b']
+     * assert array.reverse() == ['b', 'a'] as char[]
+     * </pre>
      *
      * @param self a char array
      * @return an array containing the reversed items
@@ -4453,6 +4465,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new short array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * short[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
      *
      * @param self a short array
      * @return an array containing the reversed items
@@ -4493,6 +4509,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new int array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * int[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
      *
      * @param self an int array
      * @return an array containing the reversed items
@@ -4533,6 +4553,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new long array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * long[] array = 1L..2L
+     * assert array.reverse() == 2L..1L
+     * </pre>
      *
      * @param self a long array
      * @return an array containing the reversed items
@@ -4573,6 +4597,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new float array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * float[] array = [1f, 2f]
+     * assert array.reverse() == [2f, 1f]
+     * </pre>
      *
      * @param self a float array
      * @return an array containing the reversed items
@@ -4613,6 +4641,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new double array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * double[] array = [1d, 2d]
+     * assert array.reverse() == [2d, 1d]
+     * </pre>
      *
      * @param self a double array
      * @return an array containing the reversed items
