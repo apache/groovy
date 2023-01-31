@@ -208,14 +208,12 @@ class GroovyLibraryExtension {
                     'Implementation-Version': groovyBundleVersion,
                     'Implementation-Vendor': 'The Apache Software Foundation',
                     'Bundle-ManifestVersion': '2',
-                    'Bundle-Name': 'Groovy Runtime',
                     'Bundle-Description': 'Groovy Runtime',
                     'Bundle-Version': groovyBundleVersion,
                     'Bundle-Vendor': 'The Apache Software Foundation',
                     'Bundle-ClassPath': '.',
                     'Eclipse-BuddyPolicy': 'dependent',
-                    'DynamicImport-Package': '*',
-                    'Main-Class': 'groovy.ui.GroovyMain')
+                    'DynamicImport-Package': '*')
         }
 
     }
