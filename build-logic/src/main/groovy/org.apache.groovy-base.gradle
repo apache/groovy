@@ -202,8 +202,9 @@ tasks.register("jarjar", JarJarTask) {
     outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${it.archiveClassifier.get() ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
     withManifest {
+        def extras = project.name == 'groovy' ? ['Main-Class': 'groovy.ui.GroovyMain'] : [:]
         def moduleName = "org.apache.${project.name.replace('-', '.')}"
-        attributes('Automatic-Module-Name': moduleName)
+        attributes('Automatic-Module-Name': moduleName, 'Bundle-Name': 'Groovy module: ' + project.name, *:extras)
         groovyLibrary.configureManifest(it, excludedFromManifest)
         classpath = configurations.runtimeClasspath
     }
