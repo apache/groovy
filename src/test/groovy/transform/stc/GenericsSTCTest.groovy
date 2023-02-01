@@ -1908,6 +1908,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10911
+    void testMethodCallShouldWorkForProperUpperBound() {
+        assertScript '''
+            abstract class A {
+                String name
+            }
+            class B extends A {
+                int count
+            }
+            class C extends A {
+                double avg
+            }
+            void proc(List<? extends Object> list) {
+            }
+            void test(A a) {
+                def list
+                if (a instanceof B) {
+                    list = [a.name, a.count, ""]
+                } else {
+                    def c = a as C
+                    list = [c.name, "  ", c.avg]
+                }
+                proc(list) // STC OOB exception!
+            }
+            test(new B())
+            test(new C())
+        '''
+    }
+
     void testGroovy5154() {
         assertScript '''
             class Foo {
