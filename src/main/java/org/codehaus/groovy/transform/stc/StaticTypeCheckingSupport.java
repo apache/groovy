@@ -1783,17 +1783,20 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType ui = usage[i], di = declaration[i];
             if (di.isPlaceholder()) {     // di like "T"
                 storeGenericsConnection(connections, di.getName(), ui);
-            } else if (di.isWildcard()) { // di like "?", "? super T", "? extends T", ...
-                ClassNode lowerBound = di.getLowerBound(), upperBounds[] = di.getUpperBounds();
-                if (ui.isWildcard()) {    // ui like "?", "? super Type" or "? extends Type"
-                    extractGenericsConnections(connections, ui.getLowerBound(), lowerBound);
-                    extractGenericsConnections(connections, ui.getUpperBounds(), upperBounds);
-                } else if (!isUnboundedWildcard(di)) {
-                    ClassNode boundType = lowerBound != null ? lowerBound : upperBounds[0];
+            } else if (di.isWildcard()) { // di like "?", "? super T", "? extends T"
+                if (isUnboundedWildcard(di)) continue;
+                boolean lowerBound = (di.getLowerBound() != null);
+                ClassNode boundType = lowerBound ? di.getLowerBound() : di.getUpperBounds()[0];
+                if (ui.isWildcard()) {    // ui like "?", "? super Type", "? extends One & Two"
+                    if (lowerBound)
+                        extractGenericsConnections(connections, ui.getLowerBound(), boundType);
+                    else if (ui.getUpperBounds()!=null) for (ClassNode ub: ui.getUpperBounds())
+                        extractGenericsConnections(connections, ub, boundType); // GROOVY-10911
+                } else {
                     if (boundType.isGenericsPlaceHolder()) { // di like "? extends/super T"
                         // 6731,7992,8983,9998,10047,10499,10749,10765,...
                         ui = new GenericsType(ui.getType()); // erase type
-                        if (lowerBound != null) ui.setWildcard(true); // weak
+                        if (lowerBound) ui.setWildcard(true); // binds weak
                         String placeholderName = boundType.getUnresolvedName();
                         storeGenericsConnection(connections, placeholderName, ui);
                     } else { // di like "? extends Iterable<T>" and ui like "List<Type>"
@@ -1802,20 +1805,6 @@ public abstract class StaticTypeCheckingSupport {
                 }
             } else { // di like "List<T>", "List<Type>", "List<? extends T>", ...
                 extractGenericsConnections(connections, ui.getType(), di.getType());
-            }
-        }
-    }
-
-    private static void extractGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final ClassNode[] usage, final ClassNode[] declaration) {
-        if (usage == null || declaration == null || declaration.length == 0) return;
-        // both have generics
-        for (int i = 0, n = usage.length; i < n; i += 1) {
-            ClassNode ui = usage[i];
-            ClassNode di = declaration[i];
-            if (di.isGenericsPlaceHolder()) {
-                storeGenericsConnection(connections, di.getUnresolvedName(), new GenericsType(ui));
-            } else if (di.isUsingGenerics()) {
-                extractGenericsConnections(connections, ui.getGenericsTypes(), di.getGenericsTypes());
             }
         }
     }
