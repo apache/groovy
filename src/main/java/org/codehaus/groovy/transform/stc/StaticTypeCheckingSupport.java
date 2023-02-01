@@ -1826,21 +1826,19 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0; i < n; i += 1) {
             GenericsType ui = usage[i];
             GenericsType di = declaration[i];
-            if (di.isPlaceholder()) {
+            if (di.isPlaceholder()) {     // di like "T"
                 connections.put(new GenericsTypeName(di.getName()), ui);
-            } else if (di.isWildcard()) {
-                ClassNode lowerBound = di.getLowerBound(), upperBounds[] = di.getUpperBounds();
-                if (ui.isWildcard()) {
-                    extractGenericsConnections(connections, ui.getLowerBound(), lowerBound);
-                    extractGenericsConnections(connections, ui.getUpperBounds(), upperBounds);
+            } else if (di.isWildcard()) { // di like "?", "? super T", "? extends T"
+                if (isUnboundedWildcard(di)) continue;
+                boolean lowerBound = (di.getLowerBound() != null);
+                ClassNode boundType = lowerBound ? di.getLowerBound() : di.getUpperBounds()[0];
+                if (ui.isWildcard()) {    // ui like "?", "? super Type", "? extends One & Two"
+                    if (lowerBound)
+                        extractGenericsConnections(connections, ui.getLowerBound(), boundType);
+                    else if (ui.getUpperBounds()!=null) for (ClassNode ub: ui.getUpperBounds())
+                        extractGenericsConnections(connections, ub, boundType); // GROOVY-10911
                 } else {
-                    ClassNode ui_type = ui.getType();
-                    extractGenericsConnections(connections, ui_type, lowerBound);
-                    if (upperBounds != null) {
-                        for (ClassNode ub : upperBounds) {
-                            extractGenericsConnections(connections, ui_type, ub);
-                        }
-                    }
+                    extractGenericsConnections(connections, ui.getType(), boundType);
                 }
             } else {
                 extractGenericsConnections(connections, ui.getType(), di.getType());
@@ -1848,21 +1846,7 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, ClassNode[] usage, ClassNode[] declaration) {
-        if (usage == null || declaration == null || declaration.length == 0) return;
-        // both have generics
-        for (int i = 0; i < usage.length; i++) {
-            ClassNode ui = usage[i];
-            ClassNode di = declaration[i];
-            if (di.isGenericsPlaceHolder()) {
-                connections.put(new GenericsTypeName(di.getUnresolvedName()), new GenericsType(ui));
-            } else if (di.isUsingGenerics()) {
-                extractGenericsConnections(connections, ui.getGenericsTypes(), di.getGenericsTypes());
-            }
-        }
-    }
-
-    static GenericsType[] getGenericsWithoutArray(ClassNode type) {
+    static GenericsType[] getGenericsWithoutArray(final ClassNode type) {
         if (type.isArray()) return getGenericsWithoutArray(type.getComponentType());
         return type.getGenericsTypes();
     }
