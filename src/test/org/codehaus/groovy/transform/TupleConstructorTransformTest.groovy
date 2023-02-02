@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -494,6 +495,42 @@ final class TupleConstructorTransformTest {
             assert new Foo('x','y').toString() == 'Foo(x, y)'
             assert new Foo('x').toString() == 'Foo(x, z)'
             assert new Foo().toString() == 'Foo(null, z)'
+        '''
+    }
+
+    // GROOVY-10919
+    @NotYetImplemented @Test
+    void testWithMapConstructor2() {
+        assertScript shell, '''
+            @MapConstructor(includeFields=true)
+            @TupleConstructor(includeFields=true)
+            @ToString(includeFields=true, includeNames=true)
+            class Foo {
+                private final int x
+                private       int y = 1
+                private final int z
+            }
+
+            String string = new Foo(x:2, z:3)
+            assert string == 'Foo(x:2, y:1, z:3)'
+        '''
+    }
+
+    // GROOVY-10925
+    @Test
+    void testWithMapConstructor3() {
+        assertScript shell, '''
+            @MapConstructor(includeFields=true)
+            @TupleConstructor(includeFields=true)
+            @ToString(includeFields=true, includeNames=true)
+            class Foo {
+                private final int x = 1
+                private       int y = 2
+                private final int z
+            }
+
+            String string = new Foo(x:3, y:3, z:3)
+            assert string == 'Foo(x:3, y:3, z:3)'
         '''
     }
 }

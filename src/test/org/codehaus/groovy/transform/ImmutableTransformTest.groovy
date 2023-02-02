@@ -339,6 +339,7 @@ final class ImmutableTransformTest {
         '''
     }
 
+    // GROOVY-4363
     @Test
     void testPrivateFieldAssignedViaConstructor() {
         assertScript shell, '''
@@ -362,6 +363,7 @@ final class ImmutableTransformTest {
         '''
     }
 
+    // GROOVY-4363
     @Test
     void testPrivateFinalFieldAssignedViaConstructorShouldCauseError() {
         shouldFail shell, ReadOnlyPropertyException, '''

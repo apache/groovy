@@ -146,14 +146,15 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
         cNode.getDeclaredConstructors().removeIf(next -> next.getFirstStatement() == null);
 
+        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = false; // GROOVY-4363
         Set<String> names = new HashSet<>();
         List<PropertyNode> properties;
         if (includeSuperProperties || includeSuperFields) {
-            properties = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, false, false, allNames, includeStatic);
+            properties = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, includePseudoGetters, includePseudoSetters, /*super*/true, skipReadOnly, /*reverse*/false, allNames, includeStatic);
         } else {
             properties = new ArrayList<>();
         }
-        properties.addAll(getAllProperties(names, cNode, cNode, includeProperties, includeFields, false, allProperties, false, false, false, allNames, includeStatic));
+        properties.addAll(getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, /*super*/false, skipReadOnly, /*reverse*/false, allNames, includeStatic));
 
         BlockStatement body = new BlockStatement();
         ClassCodeExpressionTransformer transformer = makeMapTypedArgsTransformer();
