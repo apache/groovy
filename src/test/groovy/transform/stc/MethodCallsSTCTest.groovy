@@ -193,6 +193,32 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2 <Integer>#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
     }
 
+    // GROOVY-10922
+    void testCallToSuperGenerated() {
+        assertScript '''
+            interface Foo {
+                String getString()
+                void setString(String s)
+            }
+            class Bar implements Foo {
+                String string
+            }
+            class Baz extends Bar {
+                String object
+                @Override
+                void setString(String string) {
+                    super.setString(string)
+                    object = string
+                }
+            }
+;
+            def obj = new Baz()
+            obj.setString('xx')
+            assert obj.object == 'xx'
+            assert obj.string == 'xx'
+        '''
+    }
+
     void testMethodCallFromSuperOwner() {
         assertScript '''
             class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {

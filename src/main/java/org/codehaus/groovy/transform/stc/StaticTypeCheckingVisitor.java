@@ -4866,7 +4866,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return methods;
     }
 
-    private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<MethodNode> methods) {
+    private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<? extends MethodNode> methods) {
         // using a comparator of parameters
         List<MethodNode> result = new LinkedList<>();
         for (MethodNode method : methods) {
@@ -4927,7 +4927,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         List<MethodNode> methods;
         if ("<init>".equals(name) && !receiver.isInterface()) {
-            methods = addGeneratedMethods(receiver, new ArrayList<>(receiver.getDeclaredConstructors()));
+            methods = addGeneratedMethods(receiver, receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);
@@ -4960,33 +4960,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (methods.isEmpty()) {
                 addArrayMethods(methods, receiver, name, args);
             }
-            if (methods.isEmpty() && (args == null || args.length == 0)) {
-                // check if it's a property
+            if (args == null || args.length == 0) {
+                // check for property accessor
                 String pname = extractPropertyNameFromMethodName("get", name);
                 if (pname == null) {
                     pname = extractPropertyNameFromMethodName("is", name);
                 }
                 if (pname != null) {
                     PropertyNode property = findProperty(receiver, pname);
-                    if (property != null) {
-                        int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
-                        MethodNode node = new MethodNode(name, mods, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                    if (property != null && property.getDeclaringClass().getGetterMethod(name) == null) {
+                        MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
+                                property.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                         node.setDeclaringClass(property.getDeclaringClass());
-                        return Collections.singletonList(node);
+                        node.setSynthetic(true);
+                        methods.add(node);
                     }
                 }
-            } else if (methods.isEmpty() && args != null && args.length == 1) {
-                // maybe we are looking for a setter ?
+            } else if (args.length == 1 && (methods.isEmpty()
+                    || methods.stream().allMatch(MethodNode::isAbstract))) { // GROOVY-10922
+                // check for property mutator
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
                     PropertyNode property = findProperty(receiver, pname);
                     if (property != null && !Modifier.isFinal(property.getModifiers())) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
-                            int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
-                            MethodNode node = new MethodNode(name, mods, VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
+                                    VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                             node.setDeclaringClass(property.getDeclaringClass());
-                            return Collections.singletonList(node);
+                            node.setSynthetic(true);
+                            methods.add(node);
                         }
                     }
                 }
