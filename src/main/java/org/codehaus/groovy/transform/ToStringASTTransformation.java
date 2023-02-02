@@ -225,14 +225,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         body.addStatement(appendS(result, constX(className + delims[0])));
 
         Set<String> names = new HashSet<>();
-        List<PropertyNode> list = getAllProperties(names, cNode, cNode, true, includeFields, allProperties, false, false, true, false, allNames, false);
-        List<PropertyNode> superList;
+        boolean includeProperties = true, includePseudoGetters = allProperties, includePseudoSetters = false, skipReadOnly = false, includeStatic = false;
+        List<PropertyNode> list = getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, /*super*/false, skipReadOnly, /*reverse*/false, allNames, includeStatic);
         if (includeSuperProperties || includeSuperFields) {
-            superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, false, true, true, true, allNames, false);
-        } else {
-            superList = new ArrayList<>();
+            list.addAll(getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, includePseudoGetters, includePseudoSetters, /*super*/true, skipReadOnly, /*reverse*/true, allNames, includeStatic));
         }
-        list.addAll(superList);
 
         for (PropertyNode pNode : list) {
             String name = pNode.getName();
