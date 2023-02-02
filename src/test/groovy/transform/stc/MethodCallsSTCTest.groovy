@@ -330,6 +330,32 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Default method m(T) requires qualified super'
     }
 
+    // GROOVY-10922
+    void testCallToSuperGenerated() {
+        assertScript '''
+            interface Foo {
+                String getString()
+                void setString(String s)
+            }
+            class Bar implements Foo {
+                String string
+            }
+            class Baz extends Bar {
+                String object
+                @Override
+                void setString(String string) {
+                    super.setString(string)
+                    object = string
+                }
+            }
+;
+            def obj = new Baz()
+            obj.setString('xx')
+            assert obj.object == 'xx'
+            assert obj.string == 'xx'
+        '''
+    }
+
     void testMethodCallFromSuperOwner() {
         assertScript '''
             class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {
