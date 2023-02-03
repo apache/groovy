@@ -336,7 +336,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
           case AUTO:
               if (init != null) {
                   param.setInitialExpression(init);
-                  fNode.setInitialValueExpression(null); // GROOVY-10238
               }
             break;
           default:

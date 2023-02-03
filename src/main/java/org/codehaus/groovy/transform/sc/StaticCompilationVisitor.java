@@ -63,11 +63,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
@@ -139,13 +138,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             node.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
         }
 
-        node.getInnerClasses().forEachRemaining(innerClassNode -> {
-            boolean innerClassSkip = !(skip || isSkippedInnerClass(innerClassNode));
-            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(innerClassSkip));
-            innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
-            if (innerClassSkip && !anyMethodSkip(innerClassNode)) {
-                innerClassNode.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
+        node.getInnerClasses().forEachRemaining(innerClass -> {
+            boolean isSC = !isSkipMode(innerClass) && (isStaticallyCompiled(node) || hasAnnotation(innerClass, COMPILESTATIC_CLASSNODE));
+            // GROOVY-10238: @CompileDynamic outer class, @CompileStatic inner class ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            innerClass.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(isSC));
+            if (isSC && !anyMethodSkip(innerClass)) {
+                innerClass.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
             }
+            innerClass.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
         });
 
         super.visitClass(node);
@@ -265,7 +265,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             ClassNode forLoopVariableType = statement.getVariableType();
             ClassNode collectionType = getType(collectionExpression);
             ClassNode componentType;
-            if (isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
+            if (ClassHelper.isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && ClassHelper.isStringType(collectionType)) {
                 // we allow auto-coercion here
                 componentType = forLoopVariableType;
             } else {
