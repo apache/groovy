@@ -82,6 +82,6 @@ public class FieldExpression extends Expression {
 
     @Override
     public String toString() {
-        return "field(" + getType() + " " + getFieldName() + ")";
+        return "field(" + getType().toString(false) + " " + getFieldName() + ")";
     }
 }

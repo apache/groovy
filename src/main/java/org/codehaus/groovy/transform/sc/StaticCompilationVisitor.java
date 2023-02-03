@@ -43,7 +43,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -68,7 +67,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
@@ -111,18 +112,13 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * visitor.
  */
 public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
+
     private static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     private static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
-    private static final ClassNode[] TYPECHECKED_ANNOTATIONS = {TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
 
-    public static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
-    public static final MethodNode ARRAYLIST_CONSTRUCTOR;
-    public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
-
-    static {
-        ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-        ARRAYLIST_CONSTRUCTOR.setDeclaringClass(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
-    }
+    public static final ClassNode  ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
+    public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(OBJECT_TYPE, "o")});
+    public static final MethodNode ARRAYLIST_CONSTRUCTOR = ARRAYLIST_CLASSNODE.getDeclaredConstructor(Parameter.EMPTY_ARRAY); // no-arg variation
 
     private final TypeChooser typeChooser = new StaticTypesTypeChooser();
 
@@ -134,7 +130,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     @Override
     protected ClassNode[] getTypeCheckingAnnotations() {
-        return TYPECHECKED_ANNOTATIONS;
+        return new ClassNode[]{TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
     }
 
     public static boolean isStaticallyCompiled(final AnnotatedNode node) {
@@ -152,11 +148,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return false;
     }
 
-    private void addPrivateFieldAndMethodAccessors(ClassNode node) {
+    private void addPrivateFieldAndMethodAccessors(final ClassNode node) {
         addPrivateBridgeMethods(node);
         addPrivateFieldsAccessors(node);
-        Iterator<InnerClassNode> it = node.getInnerClasses();
-        while (it.hasNext()) {
+        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
             addPrivateFieldAndMethodAccessors(it.next());
         }
     }
@@ -185,22 +180,26 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (!skip && !anyMethodSkip(node)) {
             node.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
         }
-        ClassNode oldCN = classNode;
-        classNode = node;
-        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
-        while (innerClasses.hasNext()) {
-            InnerClassNode innerClassNode = innerClasses.next();
-            boolean innerStaticCompile = !(skip || isSkippedInnerClass(innerClassNode));
-            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, innerStaticCompile);
-            innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
-            if (innerStaticCompile && !anyMethodSkip(innerClassNode)) {
-                innerClassNode.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
+
+        ClassNode previousClassNode = classNode; classNode = node;
+
+        for (Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses(); innerClasses.hasNext(); ) { ClassNode innerClass = innerClasses.next();
+            boolean isSC = !isSkipMode(innerClass) && (isStaticallyCompiled(node) || hasAnnotation(innerClass, COMPILESTATIC_CLASSNODE));
+            // GROOVY-10238: @CompileDynamic outer class, @CompileStatic inner class ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            innerClass.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(isSC));
+            if (isSC && !anyMethodSkip(innerClass)) {
+                innerClass.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
             }
+            innerClass.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
         }
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
-        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getOuterClass());
-        classNode = oldCN;
+        if (isStaticallyCompiled(node)) {
+            ClassNode outerClass = node.getOuterClass();
+            addDynamicOuterClassAccessorsCallback(outerClass);
+        }
+
+        classNode = previousClassNode;
     }
 
     private boolean anyMethodSkip(final ClassNode node) {
@@ -251,9 +250,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     /**
-     * Adds special accessors and mutators for private fields so that inner classes can get/set them
+     * Adds special accessors and mutators for private fields so that inner classes can get/set them.
      */
-    private static void addPrivateFieldsAccessors(ClassNode node) {
+    private static void addPrivateFieldsAccessors(final ClassNode node) {
         Map<String, MethodNode> privateFieldAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
         Map<String, MethodNode> privateFieldMutators = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
         if (privateFieldAccessors != null || privateFieldMutators != null) {
@@ -305,9 +304,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     /**
-     * This method is used to add "bridge" methods for private methods of an inner/outer
-     * class, so that the outer class is capable of calling them. It does basically
-     * the same job as access$000 like methods in Java.
+     * Adds "bridge" methods for private methods of an inner/outer class so that
+     * the outer class is capable of calling them.  It does basically the same
+     * job as access$000 like methods in Java.
      *
      * @param node an inner/outer class node for which to generate bridge methods
      */
