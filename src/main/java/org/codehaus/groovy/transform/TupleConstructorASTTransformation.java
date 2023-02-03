@@ -59,6 +59,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -293,16 +294,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     private static Expression providedOrDefaultInitialValue(FieldNode fNode) {
-        Expression initialExp = fNode.getInitialExpression() != null ? fNode.getInitialExpression() : nullX();
-        final ClassNode paramType = fNode.getType();
-        if (ClassHelper.isPrimitiveType(paramType) && isNull(initialExp)) {
-            initialExp = primitivesInitialValues.get(paramType.getTypeClass());
+        Expression initialValue = fNode.hasInitialExpression() ? fNode.getInitialExpression() : nullX();
+        final ClassNode fieldType = fNode.getType();
+        if (ClassHelper.isPrimitiveType(fieldType) && isNullConstant(initialValue)) {
+            initialValue = primitivesInitialValues.get(fieldType.getTypeClass());
         }
-        return initialExp;
-    }
-
-    private static boolean isNull(Expression exp) {
-        return exp instanceof ConstantExpression && ((ConstantExpression) exp).isNullExpression();
+        return initialValue;
     }
 
     public static void addSpecialMapConstructors(int modifiers, ClassNode cNode, String message, boolean addNoArg) {
