@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -185,13 +186,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
         ClassNode previousClassNode = classNode; classNode = node;
 
-        classNode.getInnerClasses().forEachRemaining(innerClassNode -> {
-            boolean innerStaticCompile = !(skip || isSkippedInnerClass(innerClassNode));
-            innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(innerStaticCompile));
-            innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
-            if (innerStaticCompile && !anyMethodSkip(innerClassNode)) {
-                innerClassNode.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
+        node.getInnerClasses().forEachRemaining(innerClass -> {
+            boolean isSC = !isSkipMode(innerClass) && (isStaticallyCompiled(node) || hasAnnotation(innerClass, COMPILESTATIC_CLASSNODE));
+            // GROOVY-10238: @CompileDynamic outer class, @CompileStatic inner class ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            innerClass.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(isSC));
+            if (isSC && !anyMethodSkip(innerClass)) {
+                innerClass.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
             }
+            innerClass.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
         });
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
