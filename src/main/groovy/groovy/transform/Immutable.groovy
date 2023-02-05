@@ -195,7 +195,7 @@ import java.lang.annotation.Target
 @ImmutableOptions
 @PropertyOptions(propertyHandler = ImmutablePropertyHandler)
 @TupleConstructor(defaults = false)
-@MapConstructor(noArg = true, includeSuperProperties = true, includeFields = true)
+@MapConstructor(noArg = true, includeSuperProperties = true)
 @KnownImmutable
 @AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @Retention(RetentionPolicy.RUNTIME)

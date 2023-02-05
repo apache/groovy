@@ -135,9 +135,6 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         FieldNode fNode = pNode.getField();
         if (fNode.isFinal() && fNode.isStatic()) return null;
-        if (fNode.isFinal() && fNode.getInitialExpression() != null) {
-            return checkFinalArgNotOverridden(cNode, fNode);
-        }
         return createConstructorStatement(xform, cNode, pNode, namedArgsMap);
     }
 

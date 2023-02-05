@@ -141,7 +141,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
             if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
             if (unsupportedTupleAttribute(tupleCons, "includes")) return;
-            if (unsupportedTupleAttribute(tupleCons, "includeFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
