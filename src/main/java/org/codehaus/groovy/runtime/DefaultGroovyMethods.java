@@ -4734,7 +4734,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an Object with an iterator returning its values
      * @return the first non-null result of the closure
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static Object findResult(Object self) {
         return findResult(self, Closure.IDENTITY);
@@ -4778,7 +4778,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an Object with an iterator returning its values
      * @param defaultResult an Object that should be returned if all elements are null
      * @return the first non-null element, otherwise the default value
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static Object findResult(Object self, Object defaultResult) {
         Object result = findResult(self, Closure.IDENTITY);
@@ -4822,7 +4822,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an Iterator
      * @param defaultResult an Object that should be returned if all elements are null
      * @return the first non-null result from the iterator, or the defaultValue
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T, U extends T, V extends T> T findResult(Iterator<U> self, V defaultResult) {
         T result = (T) findResult(self, Closure.IDENTITY);
@@ -4855,7 +4855,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an Iterator
      * @return the first non-null result from the iterator, or null
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> T findResult(Iterator<T> self) {
         return (T) findResult(self, Closure.IDENTITY);
@@ -4897,7 +4897,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an Iterable
      * @param defaultResult an Object that should be returned if all elements in the iterable are null
      * @return the first non-null element from the iterable, or the defaultValue
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T, U extends T, V extends T> T findResult(Iterable<U> self, V defaultResult) {
         T result = (T) findResult(self, Closure.IDENTITY);
@@ -4924,7 +4924,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an Iterable
      * @return the first non-null element from the iterable, or null
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> T findResult(Iterable<T> self) {
         return (T) findResult(self.iterator(), Closure.IDENTITY);
@@ -4951,7 +4951,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an Array
      * @param defaultResult an Object that should be returned if all elements are null
      * @return the first non-null result from calling the closure, or the defaultValue
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T, U extends T, V extends T> T findResult(U[] self, V defaultResult) {
         return (T) findResult(new ArrayIterator<>(self), defaultResult, Closure.IDENTITY);
@@ -4976,7 +4976,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an Array
      * @return the first non-null result from calling the closure, or null
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> T findResult(T[] self) {
         return (T) findResult(new ArrayIterator<>(self), Closure.IDENTITY);
@@ -5059,7 +5059,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return the list of non-null values
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> Collection<T> findResults(Iterable<T> self) {
         return findResults(self.iterator(), Closure.IDENTITY);
@@ -5091,7 +5091,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterator
      * @return the list of non-null values
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> Collection<T> findResults(Iterator<T> self) {
         return findResults(self, Closure.IDENTITY);
@@ -5115,7 +5115,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self               an Array
      * @return the list of non-null values
-     * @since 4.0.8
+     * @since 4.0.9
      */
     public static <T> Collection<T> findResults(T[] self) {
         return findResults(self, Closure.IDENTITY);
