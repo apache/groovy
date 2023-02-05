@@ -1055,12 +1055,19 @@ Printer
         '''
     }
 
-    // GROOVY-10109
+    // GROOVY-8339, GROOVY-10109, GROOVY-10594
     void testInvokePublicMethodFromInaccessibleBase() {
+        assertScript '''
+            new StringBuilder().setLength(0)
+        '''
         assertScript '''
             new StringBuilder().with {
                 assert length() == 0 // access error
             }
+        '''
+        assertScript '''
+            String sub = new StringBuilder("Hello World").substring(0,5)
+            assert sub == 'Hello'
         '''
     }
 
