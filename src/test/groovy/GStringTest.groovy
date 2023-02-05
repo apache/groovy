@@ -696,7 +696,7 @@ class GStringTest extends GroovyTestCase {
         '''
     }
 
-    @groovy.transform.Immutable
+    @groovy.transform.Immutable(includeFields=true)
     static class GroovyImmutableValue {
         private final String v = '123'
         String toString() { v }

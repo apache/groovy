@@ -490,7 +490,7 @@ final class TupleConstructorTransformTest {
     // GROOVY-10925
     @Test
     void testNamedVariant2() {
-        def err = shouldFail shell, '''
+        assertScript shell, '''
             @TupleConstructor(includeFields=true, namedVariant=true)
             @ToString(includeNames=true, includeFields=true)
             class Foo {
@@ -502,7 +502,6 @@ final class TupleConstructorTransformTest {
             String string = new Foo(x:3, y:3, z:3)
             assert string == 'Foo(x:3, y:3, z:3)'
         '''
-        assert err =~ /Unrecognized namedArgKey: x/
     }
 
     // GROOVY-10790

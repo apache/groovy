@@ -363,14 +363,15 @@ final class ImmutableTransformTest {
         '''
     }
 
-    // GROOVY-4363
     @Test
-    void testPrivateFinalFieldAssignedViaConstructorShouldCauseError() {
-        shouldFail shell, ReadOnlyPropertyException, '''
-            @Immutable class Numbers {
+    void testPrivateFinalFieldCanBeAssignedViaConstructor() {
+        assertScript shell, '''
+            @Immutable(includeFields = true, includeNames = true)
+            class Numbers2 {
                 private final int b2 = -2
             }
-            def n1 = new Numbers(b2:2)
+            def n2 = new Numbers2(b2:2)
+            assert n2.toString() == 'Numbers2(b2:2)'
         '''
     }
 

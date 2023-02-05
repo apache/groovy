@@ -191,7 +191,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // no processing if explicit constructor(s) found, unless forced or ImmutableBase is in play
         if (!force && !makeImmutable && hasExplicitConstructor(null, cNode)) return;
 
-        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = true;
+        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = false;
         Set<String> names = new HashSet<>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
