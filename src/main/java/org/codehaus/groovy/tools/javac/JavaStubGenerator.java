@@ -83,6 +83,7 @@ import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isCachedType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
@@ -517,6 +518,7 @@ public class JavaStubGenerator {
         out.print(field.getName());
 
         if (fromFaceOrTrait || field.isFinal()) {
+            out.print(" = ");
             if (field.isStatic() && field.hasInitialExpression()) {
                 Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
                 if (value instanceof ConstantExpression) {
@@ -527,36 +529,31 @@ public class JavaStubGenerator {
                                 || (isLongCategory(type) && isPrimitiveInt(value.getType()))
                                 || (isFloatingCategory(type) && isBigDecimalType(value.getType())))
                             && (isPrimitiveBoolean(type) || isStaticConstantInitializerType(type))) {
-                        out.print(" = ");
                         printValue(out, (ConstantExpression) value);
                         out.println(';');
                         return;
                     }
                 }
 
-                // GROOVY-10902: output a static initializer to prevent inlining
-                out.println(';');
-                out.print("static { " + field.getName() + " = ");
-                if (isPrimitiveType(type)) {
+                // GROOVY-5150, GROOVY-10902, GROOVY-10928: output dummy value
+                if (isPrimitiveType(type) || isStringType(type)) {
+                    out.print("new " + getWrapper(type) + "(");
                     printValue(out, defaultValueX(type));
+                    out.print(')');
                 } else {
                     out.print("null");
                 }
-                out.println("; }");
-                return;
-            }
-
-            if (isPrimitiveType(type)) {
+            } else if (isPrimitiveType(type)) {
                 if (isPrimitiveBoolean(type)) {
-                    out.print(" = false");
+                    out.print("false");
                 } else {
-                    out.print(" = (");
+                    out.print('(');
                     printTypeName(out, type);
                     out.print(')');
                     out.print('0');
                 }
             } else {
-                out.print(" = null");
+                out.print("null");
             }
         }
         out.println(';');
