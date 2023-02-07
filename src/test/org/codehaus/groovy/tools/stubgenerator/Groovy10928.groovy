@@ -18,20 +18,29 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy10902 extends StringSourcesStubTestCase {
+final class Groovy10928 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
+            'TypeReference.java': '''// see com.fasterxml.jackson.core.type.TypeReference
+                abstract class TypeReference<T> implements Comparable<TypeReference<T>> {
+                    @Override
+                    public int compareTo(TypeReference<T> that) {
+                        return 0;
+                    }
+                }
+            ''',
             'G.groovy': '''
-                class G {
-                    public static final int DYNAMIC_CONSTANT = (9.9).intValue()
+                interface G {
+                    TypeReference<Map<String,Object>> TYPE_REF =
+                        new TypeReference<Map<String,Object>>() {}
                 }
             ''',
             'J.java': '''
                 public class J {
-                    int m() {
-                        return G.DYNAMIC_CONSTANT;
+                    Object m() {
+                        return G.TYPE_REF;
                     }
                 }
             ''',
@@ -41,9 +50,6 @@ final class Groovy10902 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('G')
-        assert stub.contains("public static final int DYNAMIC_CONSTANT = new java.lang.Integer((int)0);")
-
-        Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
-        assert pojo.m() == 9
+        assert stub.contains("TypeReference<java.util.Map<java.lang.String, java.lang.Object>> TYPE_REF = null;")
     }
 }
