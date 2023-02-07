@@ -917,4 +917,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'No matching constructor found'
     }
+
+    // GROOVY-8136
+    void testAbstractClassThatImplementsMapInitializedByMapLiteral() {
+        shouldFailWithMessages '''
+            abstract class MVM<K, V> implements Map<K, List<V>> { }
+            MVM map = [:] // no STC error; fails at runtime
+        ''',
+        'No matching constructor found'
+    }
 }
