@@ -1087,4 +1087,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign java.util.LinkedHashMap<java.lang.Integer, java.lang.Integer> to: java.util.Map<java.lang.String, java.lang.Integer>'
     }
+
+    // GROOVY-8136
+    void testInterfaceThatExtendsMapInitializedByMapLiteral() {
+        shouldFailWithMessages '''
+            interface MVM<K, V> extends Map<K, List<V>> { }
+            MVM map = [:] // no STC error; fails at runtime
+        ''',
+        'Cannot find matching constructor MVM(java.util.LinkedHashMap)'
+    }
+
+    // GROOVY-8136
+    void testAbstractClassThatImplementsMapInitializedByMapLiteral() {
+        shouldFailWithMessages '''
+            abstract class MVM<K, V> implements Map<K, List<V>> { }
+            MVM map = [:] // no STC error; fails at runtime
+        ''',
+        'Cannot find matching constructor MVM(java.util.LinkedHashMap)'
+    }
 }
