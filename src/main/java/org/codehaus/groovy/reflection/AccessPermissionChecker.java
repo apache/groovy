@@ -34,22 +34,17 @@ final class AccessPermissionChecker {
     private AccessPermissionChecker() {
     }
 
-    private static void checkAccessPermission(Class<?> declaringClass, final int modifiers, boolean isAccessible) {
-        final SecurityManager securityManager = System.getSecurityManager();
-        if (securityManager != null && isAccessible) {
+    private static void checkAccessPermission(final Class<?> declaringClass, final int modifiers, final boolean accessible) {
+        SecurityManager securityManager;
+        if (accessible && (securityManager = System.getSecurityManager()) != null) {
             if (((modifiers & Modifier.PRIVATE) != 0
-                    || ((modifiers & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0
-                    && packageCanNotBeAddedAnotherClass(declaringClass)))
+                        || ((modifiers & (Modifier.PUBLIC | Modifier.PROTECTED)) == 0 && declaringClass.getName().startsWith("java.")))
                     && !GroovyObject.class.isAssignableFrom(declaringClass)) {
                 securityManager.checkPermission(REFLECT_PERMISSION);
             } else if ((modifiers & (Modifier.PROTECTED)) != 0 && declaringClass.equals(ClassLoader.class)) {
                 securityManager.checkCreateClassLoader();
             }
         }
-    }
-
-    private static boolean packageCanNotBeAddedAnotherClass(Class<?> declaringClass) {
-        return declaringClass.getName().startsWith("java.");
     }
 
     static void checkAccessPermission(Method method) {

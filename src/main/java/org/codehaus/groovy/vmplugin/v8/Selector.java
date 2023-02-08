@@ -639,7 +639,7 @@ public abstract class Selector {
             if (metaMethod instanceof CachedMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
-                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm);
+                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm, LOOKUP.lookupClass());
                 isVargs = cm.isVargsMethod();
                 try {
                     Method m = cm.getCachedMethod();
@@ -684,7 +684,7 @@ public abstract class Selector {
                 return ObjectUtil.getCloneObjectMethodHandle();
             }
 
-            return LOOKUP.unreflect(m);
+            return LOOKUP.unreflect(m); // throws IllegalAccessException if IndyInterface cannot invoke method
         }
 
         /**
