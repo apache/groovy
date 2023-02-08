@@ -18,38 +18,28 @@
  */
 package groovy.swing.beans
 
-import groovy.swing.GroovySwingTestCase
+import org.junit.Test
 
-class BindableSwingTest extends GroovySwingTestCase {
+import static groovy.swing.GroovySwingTestCase.testInEDT
+
+final class BindableSwingTest {
+
+    // GROOVY-8339, GROOVY-10070
+    @Test
     void testExtendsComponent() {
         testInEDT {
-            GroovyShell shell = new GroovyShell()
-            shell.evaluate("""
-                import groovy.beans.Bindable
-                import javax.swing.JPanel
-
-                class BindableTestBean6 extends JPanel {
-                    @Bindable String testField
-
-                    /*
-                    // if the following stub added, the illegal access warnings can be fixed
-                    // java.awt.Component.firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object)
-                    // should we add this kind of stubs automatically?
-                    void firePropertyChange(String propertyName,
-                                      Object oldValue, Object newValue) {
-
-                        super.firePropertyChange(propertyName, oldValue, newValue)                  
-                    }
-                    */
+            new GroovyShell().evaluate '''
+                class BindableTestBean extends javax.swing.JPanel {
+                    @groovy.beans.Bindable String testValue
                 }
 
-                sb = new BindableTestBean6()
-                sb.testField = "bar"
                 changed = false
-                sb.propertyChange = {changed = true}
-                sb.testField = "foo"
+
+                def bean = new BindableTestBean(testValue: 'foo')
+                bean.propertyChange = {changed = true}
+                bean.testValue = 'bar'
                 assert changed
-            """)
+            '''
         }
     }
 }
