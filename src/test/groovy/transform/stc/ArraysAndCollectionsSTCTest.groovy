@@ -620,6 +620,9 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10319
     void testArrayClone() {
         assertScript '''
+            assert (new int[9]).clone().length == 9
+        '''
+        assertScript '''
             package p // must be in package for protected method check
 
             @groovy.transform.ToString(includeFields=true)

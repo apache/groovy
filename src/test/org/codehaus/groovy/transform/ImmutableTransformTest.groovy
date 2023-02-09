@@ -112,13 +112,15 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     @Test
     void testCloneableField() {
         def (originalDolly, lab) = evaluate("""
-            import groovy.transform.Immutable
+            import groovy.transform.*
 
+            @AutoClone
             class Dolly implements Cloneable {
                 String name
             }
 
-            @Immutable class Lab {
+            @Immutable
+            class Lab {
                 String name
                 Cloneable clone
             }
@@ -139,8 +141,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     @Test
     void testCloneableFieldNotCloneableObject() {
-        def cls = shouldFail(CloneNotSupportedException) {
-            def objects = evaluate("""
+        shouldFail(CloneNotSupportedException) {
+            evaluate("""
                 import groovy.transform.Immutable
 
                 class Dolly {
@@ -156,8 +158,6 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 [dolly, new Lab(name: "Area 51", clone: dolly)]
             """)
         }
-
-        assert cls == 'Dolly'
     }
 
     @Test
@@ -165,19 +165,18 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         def objects = evaluate("""
             import groovy.transform.Immutable
             @Immutable class HasList {
-                String[] letters
-                List nums
+                char[] letters
+                List   numbers
             }
-            def letters = 'A,B,C'.split(',')
-            def nums = [1, 2]
-            [new HasList(letters:letters, nums:nums),
-             new HasList(letters, nums)]
+            def letters = 'ABC'.toCharArray()
+            def numbers = [1, 2]
+            [new HasList(letters:letters, numbers:numbers), new HasList(letters, numbers)]
         """)
 
         assertEquals objects[0].hashCode(), objects[1].hashCode()
         assertEquals objects[0], objects[1]
         assert objects[0].letters.size() == 3
-        assert objects[0].nums.size() == 2
+        assert objects[0].numbers.size() == 2
     }
 
     @Test

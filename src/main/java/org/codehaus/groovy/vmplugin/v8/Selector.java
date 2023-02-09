@@ -639,19 +639,23 @@ public abstract class Selector {
                 cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 isVargs = cm.isVargsMethod();
                 Method m = cm.getCachedMethod();
-                if (m.getParameterCount() == 1 && m.getName().equals("forName") && m.getDeclaringClass() == Class.class) {
-                    handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
-                } else {
-                    try {
+                try {
+                    String  methodName = m.getName();
+                    int parameterCount = m.getParameterCount();
+                    if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class && args[0].getClass().isArray()) {
+                        handle = MethodHandles.publicLookup().findVirtual(args[0].getClass(), "clone", MethodType.methodType(Object.class));
+                    } else if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
+                        handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                    } else {
                         MethodHandles.Lookup lookup = LOOKUP;
                         if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
                             Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
                             lookup = (MethodHandles.Lookup) newLookup.invoke(null, sender);
                         }
                         handle = lookup.unreflect(m);
-                    } catch (ReflectiveOperationException e) {
-                        throw new GroovyBugError(e);
                     }
+                } catch (ReflectiveOperationException e) {
+                    throw new GroovyBugError(e);
                 }
                 if (LOG_ENABLED) LOG.info("successfully unreflected cached method");
                 if (isStaticCategoryTypeMethod) {
