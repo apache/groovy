@@ -36,10 +36,12 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
@@ -56,6 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.lang.invoke.MethodType.methodType;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
@@ -167,9 +171,18 @@ public class Java9 extends Java8 {
     //--------------------------------------------------------------------------
 
     @Override
-    public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        final Class<?> receiverType = receiver.getClass();
+    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
+            final Class<?> receiverType = receiver.getClass();
+            // GROOVY-10145, GROOVY-10391: default interface method proxy
+            if (method.isDefault() && Proxy.isProxyClass(receiverType)) {
+                try {
+                    MethodHandle handle = MethodHandles.lookup().findStatic(InvocationHandler.class, "invokeDefault", methodType(Object.class, Object.class, Method.class, Object[].class));
+                    handle = MethodHandles.insertArguments(handle, 0, receiver, method);
+                    return handle.asVarargsCollector(Object[].class);
+                } catch (NoSuchMethodException ignore) {
+                }
+            }
             return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return super.getInvokeSpecialHandle(method, receiver);
