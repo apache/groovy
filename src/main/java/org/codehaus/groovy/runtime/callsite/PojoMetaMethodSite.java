@@ -26,10 +26,6 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.vmplugin.VMPlugin;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
-
-import java.lang.reflect.Method;
 
 /**
  * POJO call site
@@ -37,7 +33,6 @@ import java.lang.reflect.Method;
  *   method - cached
 */
 public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
-    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     protected final int version;
 
@@ -178,17 +173,17 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
     }
 
     public static class PojoCachedMethodSite extends PojoMetaMethodSite {
-        final Method reflect;
+        final java.lang.reflect.Method method;
 
         public PojoCachedMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod), params);
-            reflect = ((CachedMethod) super.metaMethod).setAccessible();
+            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod/*, metaClass.getTheClass()*/), params);
+            this.method = ((CachedMethod) this.metaMethod).setAccessible();
         }
 
         public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -200,7 +195,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -211,7 +206,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
         }
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -226,7 +221,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
-                return metaMethod.doMethodInvoke(receiver,  args);
+                return metaMethod.doMethodInvoke(receiver, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
@@ -244,7 +239,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
-                return metaMethod.invoke(receiver,  args);
+                return metaMethod.invoke(receiver, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }

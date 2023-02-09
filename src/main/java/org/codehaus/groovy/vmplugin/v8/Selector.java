@@ -50,6 +50,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 
@@ -202,7 +203,7 @@ public abstract class Selector {
 
             if (staticTargetType.isPrimitive()) {
                 handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
-                // need to call here here because we used the static target type
+                // need to call here because we used the static target type
                 // it won't be done otherwise because handle.type() == callSite.type()
                 castAndSetGuards();
             } else {
@@ -350,8 +351,8 @@ public abstract class Selector {
 
         /**
          * Additionally to the normal {@link MethodSelector#setHandleForMetaMethod()}
-         * task we have to also take care of generic getter methods, that depend
-         * one the name.
+         * task we have to also take care of generic getter methods, that depends
+         * on the name.
          */
         @Override
         public void setHandleForMetaMethod() {
@@ -497,7 +498,7 @@ public abstract class Selector {
 
     /**
      * Method invocation based {@link Selector}.
-     * This Selector is called for method invocations and is base for cosntructor
+     * This Selector is called for method invocations and is base for constructor
      * calls as well as getProperty calls.
      */
     private static class MethodSelector extends Selector {
@@ -590,12 +591,12 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
                 if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
             } else {
-                String changedName = name;
-                if (receiver instanceof GeneratedClosure && changedName.equals("call")) {
-                    changedName = "doCall";
+                String name = this.name;
+                if (name.equals("call") && receiver instanceof GeneratedClosure) {
+                    name = "doCall";
                 }
                 if (!mci.hasCustomInvokeMethod())
-                    method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
+                    method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
@@ -633,25 +634,34 @@ public abstract class Selector {
             }
 
             if (metaMethod instanceof CachedMethod) {
-                if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
-                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm);
+                VMPlugin vmplugin = VMPluginFactory.getPlugin();
+                cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 isVargs = cm.isVargsMethod();
-                try {
-                    Method m = cm.getCachedMethod();
-                    handle = correctClassForNameAndUnReflectOtherwise(m);
-                    if (LOG_ENABLED) LOG.info("successfully unreflected method");
-                    if (isStaticCategoryTypeMethod) {
-                        handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
-                        handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
-                    } else if (!isCategoryTypeMethod && isStatic(m)) {
-                        // we drop the receiver, which might be a Class (invocation on Class)
-                        // or it might be an object (static method invocation on instance)
-                        // Object.class handles both cases at once
-                        handle = MethodHandles.dropArguments(handle, 0, Object.class);
+                Method m = cm.getCachedMethod();
+                if (m.getParameterCount() == 1 && m.getName().equals("forName") && m.getDeclaringClass() == Class.class) {
+                    handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                } else {
+                    try {
+                        MethodHandles.Lookup lookup = LOOKUP;
+                        if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
+                            Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
+                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, sender);
+                        }
+                        handle = lookup.unreflect(m);
+                    } catch (ReflectiveOperationException e) {
+                        throw new GroovyBugError(e);
                     }
-                } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
+                }
+                if (LOG_ENABLED) LOG.info("successfully unreflected cached method");
+                if (isStaticCategoryTypeMethod) {
+                    handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
+                    handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
+                } else if (!isCategoryTypeMethod && Modifier.isStatic(m.getModifiers())) {
+                    // we drop the receiver, which might be a Class (invocation on Class)
+                    // or it might be an object (static method invocation on instance)
+                    // Object.class handles both cases at once
+                    handle = MethodHandles.dropArguments(handle, 0, Object.class);
                 }
             } else if (method != null) {
                 if (LOG_ENABLED) LOG.info("meta method is dgm helper");
@@ -667,14 +677,6 @@ public abstract class Selector {
                 }
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
-            }
-        }
-
-        private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
-            if (m.getDeclaringClass() == Class.class && m.getName().equals("forName") && m.getParameterTypes().length == 1) {
-                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else {
-                return LOOKUP.unreflect(m);
             }
         }
 
@@ -989,7 +991,7 @@ public abstract class Selector {
          * # get the meta class
          * # select a method/constructor/property from it, if it is a MetaClassImpl
          * # make a handle out of the selection
-         * # if nothing could be selected select a path through the given MetaClass or the GroovyObject
+         * # if nothing could be selected, select a path through the given MetaClass or the GroovyObject
          * # apply transformations for vargs, implicit null argument, coercion, wrapping, null receiver and spreading
          */
         @Override
@@ -1028,7 +1030,7 @@ public abstract class Selector {
 
     /**
      * Returns {@link NullObject#getNullObject()} if the receiver
-     * (args[0]) is null. If it is not null, the recevier itself
+     * (args[0]) is null. If it is not null, the receiver itself
      * is returned.
      */
     public Object getCorrectedReceiver() {
@@ -1038,14 +1040,6 @@ public abstract class Selector {
             receiver = NullObject.getNullObject();
         }
         return receiver;
-    }
-
-    /**
-     * Returns if a method is static
-     */
-    private static boolean isStatic(Method m) {
-        int mods = m.getModifiers();
-        return (mods & Modifier.STATIC) != 0;
     }
 
     /**

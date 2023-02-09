@@ -43,6 +43,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.reflect.Modifier.isProtected;
+
 public class CachedClass {
 
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
@@ -68,7 +70,7 @@ public class CachedClass {
         public CachedConstructor[] initValue() {
             PrivilegedAction<CachedConstructor[]> action = () -> Arrays.stream(getTheClass().getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
-                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class))
+                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class) || isProtected(c.getModifiers()))
                 .map(c -> new CachedConstructor(CachedClass.this, c))
                 .toArray(CachedConstructor[]::new);
             return AccessController.doPrivileged(action);
@@ -84,7 +86,7 @@ public class CachedClass {
                 try {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
                         .filter(m -> m.getName().indexOf('+') < 0) // no synthetic JDK 5+ methods
-                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class))
+                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class) || isProtected(m.getModifiers()))
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);
                 } catch (LinkageError e) {

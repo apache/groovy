@@ -124,6 +124,22 @@ public class Java9 extends Java8 {
         return result;
     }
 
+    //--------------------------------------------------------------------------
+
+    public static MethodHandles.Lookup of(final Class<?> targetClass) {
+        try {
+            Method privateLookup = LookupHolder.PRIVATE_LOOKUP;
+            if (privateLookup != null) {
+                return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, MethodHandles.lookup());
+            }
+            return LookupHolder.LOOKUP_Constructor.newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
+        } catch (final IllegalAccessException | InstantiationException e) {
+            throw new IllegalArgumentException(e);
+        } catch (final InvocationTargetException e) {
+            throw new GroovyRuntimeException(e);
+        }
+    }
+
     private static class LookupHolder {
         private static final Method PRIVATE_LOOKUP;
         private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
@@ -148,27 +164,7 @@ public class Java9 extends Java8 {
         }
     }
 
-    private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
-        return LookupHolder.LOOKUP_Constructor;
-    }
-
-    private static Method getPrivateLookup() {
-        return LookupHolder.PRIVATE_LOOKUP;
-    }
-
-    public static MethodHandles.Lookup of(final Class<?> declaringClass) {
-        try {
-            final Method privateLookup = getPrivateLookup();
-            if (privateLookup != null) {
-                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, MethodHandles.lookup());
-            }
-            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
-        } catch (final IllegalAccessException | InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        } catch (final InvocationTargetException e) {
-            throw new GroovyRuntimeException(e);
-        }
-    }
+    //--------------------------------------------------------------------------
 
     @Override
     public Object getInvokeSpecialHandle(Method method, Object receiver) {

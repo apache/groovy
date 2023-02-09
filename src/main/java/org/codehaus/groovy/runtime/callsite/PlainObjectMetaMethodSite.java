@@ -16,14 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -31,23 +34,29 @@ import java.lang.reflect.Method;
  * Plain ordinary object call site
  *   meta class - cached
  *   method - cached
- *
  */
 public abstract class PlainObjectMetaMethodSite extends MetaMethodSite {
-    public PlainObjectMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
-        super(site, metaClass, metaMethod, params);
-    }
 
-    protected static Object doInvoke(Object receiver, Object[] args, Method reflect) throws Throwable {
+    protected static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
+
+    protected static Object doInvoke(Object receiver, Object[] args, Method method) throws Throwable {
         try {
-            return reflect.invoke(receiver, args);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
+            /*if (!VM_PLUGIN.checkAccessible(PlainObjectMetaMethodSite.class, method.getDeclaringClass(), method.getModifiers(), false)) {
+                MethodHandle handle = MethodHandles.privateLookupIn(receiver.getClass(), MethodHandles.lookup()).unreflect(method);
+                return handle.bindTo(receiver).invokeWithArguments(args);
+            }*/
+            return method.invoke(receiver, args);
+        } catch (InvocationTargetException ite) {
+            final Throwable cause = ite.getCause();
             if (cause instanceof GroovyRuntimeException) {
-                throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                throw ScriptBytecodeAdapter.unwrap((GroovyRuntimeException) cause);
             } else {
                 throw cause;
             }
         }
+    }
+
+    public PlainObjectMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
+        super(site, metaClass, metaMethod, params);
     }
 }

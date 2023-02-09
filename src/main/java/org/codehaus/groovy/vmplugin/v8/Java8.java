@@ -688,9 +688,9 @@ public class Java8 implements VMPlugin {
         return ((MethodHandle) handle).invokeWithArguments(args);
     }
 
-    public static MethodHandles.Lookup of(final Class<?> declaringClass) {
+    public static MethodHandles.Lookup of(final Class<?> targetClass) {
         try {
-            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
+            return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {

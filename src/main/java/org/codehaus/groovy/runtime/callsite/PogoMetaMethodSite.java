@@ -26,10 +26,6 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.vmplugin.VMPlugin;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
-
-import java.lang.reflect.Method;
 
 /**
  * POGO call site
@@ -37,7 +33,7 @@ import java.lang.reflect.Method;
  *   method - cached
 */
 public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
-    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
+
     private final int version;
     private final boolean skipVersionCheck;
     public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
@@ -157,17 +153,17 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
     }
 
     public static class PogoCachedMethodSite extends PogoMetaMethodSite {
-        final Method reflect;
+        final java.lang.reflect.Method method;
 
         public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
-            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod), params);
-            reflect = ((CachedMethod) super.metaMethod).setAccessible();
+            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod/*, metaClass.getTheClass()*/), params);
+            this.method = ((CachedMethod) this.metaMethod).setAccessible();
         }
 
         public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -179,7 +175,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -190,7 +186,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
         }
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
-            return doInvoke(receiver, args, reflect);
+            return doInvoke(receiver, args, method);
         }
     }
 
@@ -205,7 +201,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
-                return metaMethod.doMethodInvoke(receiver,  args);
+                return metaMethod.doMethodInvoke(receiver, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
@@ -223,7 +219,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
 
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
-                return metaMethod.invoke(receiver,  args);
+                return metaMethod.invoke(receiver, args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
