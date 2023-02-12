@@ -647,10 +647,17 @@ public abstract class Selector {
                     } else if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
                         handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
                     } else {
-                        MethodHandles.Lookup lookup = LOOKUP;
-                        if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
+                        MethodHandles.Lookup lookup = LOOKUP; Class<?> redirect;
+                        if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class) {
+                            redirect = args[0].getClass();
+                        } else if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
+                            redirect = sender;
+                        } else {
+                            redirect = null;
+                        }
+                        if (redirect != null) {
                             Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
-                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, sender);
+                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, redirect);
                         }
                         handle = lookup.unreflect(m);
                     }

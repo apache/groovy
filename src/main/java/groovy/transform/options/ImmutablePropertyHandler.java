@@ -201,7 +201,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     protected Statement createConstructorStatement(AbstractASTTransformation xform, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
         final List<String> knownImmutableClasses = ImmutablePropertyUtils.getKnownImmutableClasses(xform, cNode);
         final List<String> knownImmutables = ImmutablePropertyUtils.getKnownImmutables(xform, cNode);
-        FieldNode fNode = pNode.getField();
+        final FieldNode fNode = pNode.getField();
         final ClassNode fType = fNode.getType();
         Statement statement;
         boolean shouldNullCheck = NullCheckASTTransformation.hasIncludeGenerated(cNode);
@@ -327,7 +327,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     // only used by deprecated method
     private Statement createConstructorStatementCollection(FieldNode fNode, boolean namedArgs) {
         final Expression fieldExpr = propX(varX("this"), fNode.getName());
-        ClassNode fieldType = fieldExpr.getType();
+        ClassNode fieldType = fNode.getType();
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
@@ -345,7 +345,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
 
     private Statement createConstructorStatementCollection(FieldNode fNode, Parameter namedArgsMap, boolean shouldNullCheck) {
         final Expression fieldExpr = propX(varX("this"), fNode.getName());
-        ClassNode fieldType = fieldExpr.getType();
+        ClassNode fieldType = fNode.getType();
         Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = ifElseS(
                 isInstanceOfX(param, CLONEABLE_TYPE),

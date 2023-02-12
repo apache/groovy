@@ -23,18 +23,28 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.runtime.ReflectionMethodInvoker;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.BytecodeExpression;
+import org.codehaus.groovy.classgen.asm.CompileStack;
+import org.codehaus.groovy.classgen.asm.OperandStack;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -50,14 +60,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 
 public class ImmutablePropertyUtils {
-    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
     private static final ClassNode DATE_TYPE = make(Date.class);
-    private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
-    private static final Class<? extends Annotation> IMMUTABLE_OPTIONS_CLASS = ImmutableOptions.class;
-    public static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(IMMUTABLE_OPTIONS_CLASS, false);
+    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
+    public  static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(ImmutableOptions.class, false);
+
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
-    /*
+    /**
               Currently leaving BigInteger and BigDecimal in list but see:
               http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
 
@@ -66,7 +75,7 @@ public class ImmutablePropertyUtils {
 
               This list can by extended by providing "known immutable" classes
               via Immutable.knownImmutableClasses
-             */
+     */
     private static final Set<String> BUILTIN_IMMUTABLES = new HashSet<String>(Arrays.asList(
             "boolean",
             "byte",
@@ -134,17 +143,46 @@ public class ImmutablePropertyUtils {
 
     private ImmutablePropertyUtils() { }
 
-    public static Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
-        Expression smce = callX(
-                REFLECTION_INVOKER_TYPE,
-                "invoke",
-                args(
-                        fieldExpr,
-                        constX("clone"),
-                        new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), Collections.emptyList())
-                )
-        );
-        return castX(type, smce);
+    //--------------------------------------------------------------------------
+
+    public static Expression cloneArrayOrCloneableExpr(final Expression expr, final ClassNode type) {
+        Expression clone;
+        if (!CompilerConfiguration.DEFAULT.isIndyEnabled()) {
+            clone = callX(new ClassNode(InvokerHelper.class), "invokeMethod", args(expr, constX("clone"), ConstantExpression.NULL));
+        } else { // GROOVY-10319, GROOVY-10733
+            clone = new BytecodeExpression() {
+                @Override
+                public void visit(final GroovyCodeVisitor visitor) {
+                    if (!(visitor instanceof AsmClassGenerator)) {
+                        expr.visit(visitor);
+                        super.visit(visitor);
+                    } else {
+                        CompileStack compileStack = ((AsmClassGenerator)visitor).getController().getCompileStack();
+                        OperandStack operandStack = ((AsmClassGenerator)visitor).getController().getOperandStack();
+                        compileStack.pushLHS(false);
+
+                        compileStack.pushImplicitThis(false);
+                        expr.visit(visitor);
+                        compileStack.popImplicitThis();
+                        operandStack.remove(1);
+                        super.visit(visitor);
+
+                        compileStack.popLHS();
+                    }
+                }
+                @Override
+                public void visit(final MethodVisitor mv) {
+                    Handle bootstrap = new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            "org/codehaus/groovy/vmplugin/v8/IndyInterface",
+                            "bootstrap",
+                            MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class).toMethodDescriptorString(),
+                            false);
+                    mv.visitInvokeDynamicInsn("invoke", "(Ljava/lang/Object;)Ljava/lang/Object;", bootstrap, new Object[]{"clone", Integer.valueOf(0)});
+                }
+            };
+        }
+        return castX(type, clone);
     }
 
     public static boolean implementsCloneable(ClassNode fieldType) {

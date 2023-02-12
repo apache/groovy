@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX
@@ -581,7 +582,11 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
 
         // assert clones
-        assert result.contains("((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][])) as java.util.Date)")
+        if (CompilerConfiguration.DEFAULT.isIndyEnabled()) {
+            assert result =~ /(?s)\(\( when...BytecodeExpression...\s*\) as java.util.Date\)/
+        } else {
+        	assert result.contains("((org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(when, 'clone', null)) as java.util.Date)")
+        }
     }
 
     void testAnonymousInnerClass() {
