@@ -1431,10 +1431,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 swing.lookAndFeel(lookAndFeel: 'metal', boldFonts: true) { laf ->
                     assert laf instanceof MetalLookAndFeel
                 }
-                shouldFail {
-                    swing.lookAndFeel() {laf ->
-                        "do" + "Nothing"
-                    }
+                swing.lookAndFeel() { laf ->
+                    assert laf != null
                 }
             } finally {
                 UIManager.setLookAndFeel(oldLAF)

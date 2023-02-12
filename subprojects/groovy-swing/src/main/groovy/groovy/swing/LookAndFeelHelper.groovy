@@ -36,7 +36,7 @@ class LookAndFeelHelper {
         return instance ?: (instance = new LookAndFeelHelper())
     }
 
-    private final Map lafCodeNames = [
+    private final Map<String, String> lafCodeNames = [
         // stuff built into various JDKs
         metal   : 'javax.swing.plaf.metal.MetalLookAndFeel',
         nimbus  : getNimbusLAFName(),
@@ -101,53 +101,55 @@ class LookAndFeelHelper {
         attrs[attr] = handler
     }
 
-
     boolean isLeaf() {
         return true
     }
 
     LookAndFeel lookAndFeel(Object value, Map attributes, Closure initClosure) {
-        LookAndFeel lafInstance
-        String lafClassName
-
-        if ((value instanceof Closure) && (initClosure == null)) {
+        if (value instanceof Closure && initClosure == null) {
             initClosure = value
             value = null
         }
         if (value == null) {
             value = attributes.remove('lookAndFeel')
         }
-        if (value instanceof GString) value = value as String
-        if (FactoryBuilderSupport.checkValueIsTypeNotString(value, 'lookAndFeel', LookAndFeel)) {
-            lafInstance = value
-            lafClassName = lafInstance.class.name
-        } else if (value != null) {
-            lafClassName = lafCodeNames[value] ?: value
-            lafInstance = Class.forName(lafClassName, true, getClass().classLoader).newInstance()
-        }
+        if (value instanceof GString) value = value.toString()
 
-        // assume all configuration must be done prior to LAF being installed
-        Map possibleAttributes = extendedAttributes[lafClassName] ?: [:]
+        LookAndFeel laf = UIManager.getLookAndFeel()
+        try {
+            if (FactoryBuilderSupport.checkValueIsTypeNotString(value, 'lookAndFeel', LookAndFeel)) {
+                UIManager.setLookAndFeel(value)
+            } else if (value != null) {
+                UIManager.setLookAndFeel(lafCodeNames[value] ?: value)
+            }
 
-        attributes.each {k, v ->
-            if (possibleAttributes[k]) {
-                possibleAttributes[k](lafInstance, v)
-            } else {
-                try {
-                    lafInstance."$k" = v
-                } catch (MissingPropertyException mpe) {
-                    throw new RuntimeException("SwingBuilder initialization for the Look and Feel Class $lafClassName does accept the attribute $k")
+            LookAndFeel lafInstance = UIManager.getLookAndFeel()
+            String lafClassName = lafInstance.class.name
+
+            // assume all configuration must be done prior to LAF being installed
+            Map possibleAttributes = extendedAttributes[lafClassName] ?: [:]
+
+            attributes.each {k, v ->
+                if (possibleAttributes[k]) {
+                    possibleAttributes[k](lafInstance, v)
+                } else {
+                    try {
+                        lafInstance."$k" = v
+                    } catch (MissingPropertyException mpe) {
+                        throw new RuntimeException("SwingBuilder initialization for the Look and Feel Class $lafClassName does accept the attribute $k")
+                    }
                 }
             }
+
+            if (initClosure) {
+                initClosure.call(lafInstance)
+            }
+
+            return lafInstance
+        } catch (RuntimeException e) {
+            UIManager.setLookAndFeel(laf)
+            throw e
         }
-
-        if (initClosure) {
-            initClosure.call(lafInstance)
-        }
-
-        UIManager.setLookAndFeel(lafInstance)
-
-        return lafInstance
     }
 
     static String getNimbusLAFName() {

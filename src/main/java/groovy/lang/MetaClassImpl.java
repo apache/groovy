@@ -1125,14 +1125,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
-//        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-//
-//        unwrap(arguments);
-
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
-        final boolean isClosure = object instanceof Closure;
-        if (isClosure) {
+        if (object instanceof Closure) {
             final Closure closure = (Closure) object;
             final Object owner = closure.getOwner();
 

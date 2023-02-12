@@ -21,10 +21,11 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.GroovyObjectSupport;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -76,12 +77,29 @@ public class SecurityTest extends GroovyTestCase {
             return methodCalled;
         }
     }
+
     SecurityManager restrictiveSecurityManager;
     CachedMethod cachedMethodUnderTest;
     CachedField cachedFieldUnderTest;
     Permissions forbidden;
 
     public void setUp() {
+        // Forbidding suppressAccessChecks in the test will make the internal implementation of some JDK fail,
+        // so load vm plugin before security manager is installed:
+        /*
+         *     Caused by: java.security.AccessControlException: suppressAccessChecks
+         *         at org.codehaus.groovy.reflection.SecurityTest$1.checkPermission(SecurityTest.java:92)
+         *         at java.base/java.lang.reflect.AccessibleObject.checkPermission(AccessibleObject.java:83)
+         *         at java.base/java.lang.reflect.Constructor.setAccessible(Constructor.java:180)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory$1.run(InnerClassLambdaMetafactory.java:207)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory$1.run(InnerClassLambdaMetafactory.java:200)
+         *         at java.base/java.security.AccessController.doPrivileged(Native Method)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory.buildCallSite(InnerClassLambdaMetafactory.java:199)
+         *         at java.base/java.lang.invoke.LambdaMetafactory.metafactory(LambdaMetafactory.java:329)
+         *         at java.base/java.lang.invoke.BootstrapMethodInvoker.invoke(BootstrapMethodInvoker.java:127)
+         */
+        VMPluginFactory.getPlugin();
+
         forbidden = new Permissions();
         forbidden.add(new ReflectPermission("suppressAccessChecks"));
         restrictiveSecurityManager = new SecurityManager() {
@@ -94,7 +112,7 @@ public class SecurityTest extends GroovyTestCase {
         };
     }
 
-    public void tearDown(){
+    public void tearDown() {
         System.setSecurityManager(null);
     }
 
@@ -217,10 +235,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForInvokeOnPackagePrivateMethodsInRestrictedJavaPackages() throws Exception {
-        // FIX_JDK9 remove this exemption for JDK9
-        if (isAtLeastJdk("9.0")) {
-            return;
-        }
+        if (isAtLeastJdk("9.0")) return;
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "getBootstrapClassPath", new Class[0]);
         System.setSecurityManager(restrictiveSecurityManager);
 
@@ -239,8 +254,10 @@ public class SecurityTest extends GroovyTestCase {
         assertTrue(invokesCachedMethod());
     }
 
-
     public void testChecksCreateClassLoaderPermissionForClassLoaderProtectedMethodAccess() throws Exception {
+        // Illegal access to java.lang.ClassLoader.defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)
+        if (isAtLeastJdk("16.0")) return;
+
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "defineClass", new Class[]{String.class, ByteBuffer.class, ProtectionDomain.class});
         forbidden = new Permissions();
         forbidden.add(new RuntimePermission("createClassLoader"));
@@ -274,5 +291,4 @@ public class SecurityTest extends GroovyTestCase {
         cachedFieldUnderTest.setProperty(object, "value");
         assertEquals("value", cachedFieldUnderTest.getProperty(object));
     }
-
 }

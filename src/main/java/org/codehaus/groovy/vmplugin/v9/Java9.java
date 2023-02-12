@@ -173,7 +173,7 @@ public class Java9 extends Java8 {
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
-            final Class<?> receiverType = receiver.getClass();
+            Class<?> receiverType = receiver.getClass();
             // GROOVY-10145, GROOVY-10391: default interface method proxy
             if (method.isDefault() && Proxy.isProxyClass(receiverType)) {
                 try {
@@ -183,7 +183,11 @@ public class Java9 extends Java8 {
                 } catch (NoSuchMethodException ignore) {
                 }
             }
-            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+            MethodHandles.Lookup lookup = of(receiverType);
+            /*if (!lookup.hasPrivateAccess()) {
+                return lookup.unreflect(method).bindTo(receiver);
+            }*/
+            return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return super.getInvokeSpecialHandle(method, receiver);
         }

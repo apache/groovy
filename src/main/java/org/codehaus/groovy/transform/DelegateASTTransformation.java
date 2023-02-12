@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.lang.Delegate;
 import groovy.lang.Lazy;
 import groovy.lang.Reference;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -67,6 +68,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
+import static org.codehaus.groovy.reflection.ReflectionUtils.isSealed;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
@@ -189,6 +191,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (!addedInterfaces.isEmpty()) {
                 Set<ClassNode> ownerInterfaces = getInterfacesAndSuperInterfaces(delegate.owner);
                 for (ClassNode i : addedInterfaces) {
+                    try {
+                        if (isSealed(i.getTypeClass())) continue;
+                    } catch (GroovyBugError ignore) { }
                     if (!ownerInterfaces.contains(i)) {
                         ClassNode[] faces = delegate.owner.getInterfaces();
                         faces = copyOf(faces, faces.length + 1);
