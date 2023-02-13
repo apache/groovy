@@ -580,7 +580,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Adds a ClassNode directly to the unit (i.e. without source).
      * WARNING: the source is needed for error reporting, using
      * this method without setting a SourceUnit will cause
-     * NullPinterExceptions
+     * NullPointerExceptions
      */
     public void addClassNode(final ClassNode node) {
         ModuleNode module = new ModuleNode(getAST());
@@ -809,9 +809,10 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Recurse for inner classes
             //
-            LinkedList<ClassNode> innerClasses = ((AsmClassGenerator) visitor).getInnerClasses();
+            Deque<ClassNode> innerClasses = ((AsmClassGenerator) visitor).getInnerClasses();
             while (!innerClasses.isEmpty()) {
-                classgen.call(source, context, innerClasses.removeFirst());
+                ClassNode innerClass = innerClasses.removeFirst();
+                classgen.call(source, context, innerClass);
             }
         }
 

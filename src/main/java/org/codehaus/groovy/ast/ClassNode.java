@@ -164,7 +164,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
-    private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
+    private List<ClassNode> permittedSubclasses = new ArrayList<>();
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
     private List<RecordComponentNode> recordComponents = Collections.emptyList();
 

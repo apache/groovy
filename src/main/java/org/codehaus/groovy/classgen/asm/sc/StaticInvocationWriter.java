@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -475,7 +476,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 } else {
                     controller.getSourceUnit().addFatalError("Binding failed" +
                             " for arguments [" + argumentList.stream().map(arg -> typeChooser.resolveType(arg, classNode).toString(false)).collect(Collectors.joining(", ")) + "]" +
-                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", currentCall);
+                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", getCurrentCall());
                 }
             }
             for (int i = 0; i < nArgs; i += 1) {
@@ -729,9 +730,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                         type = ClassHelper.getWrapper(type);
                     }
                     ClassNode declaringClass = target.getDeclaringClass();
-                    if (type.getClass() != ClassNode.class
-                            && type.getClass() != InnerClassNode.class
-                            && type.getClass() != DecompiledClassNode.class) {
+                    Class<?> typeClass = type.getClass();
+                    if (typeClass != ClassNode.class
+                            && typeClass != InnerClassNode.class
+                            && typeClass != DecompiledClassNode.class
+                            && typeClass != EnumConstantClassNode.class) {
                         type = declaringClass; // ex: LUB type
                     }
                     if (isObjectType(declaringClass)) {

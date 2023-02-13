@@ -68,7 +68,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -682,7 +681,7 @@ public class Java8 implements VMPlugin {
 
     private Object getInvokeSpecialHandleFallback(final Method method, final Object receiver) {
         if (!method.isAccessible()) {
-            doPrivilegedInternal((PrivilegedAction<Object>) () -> {
+            doPrivilegedInternal(() -> {
                 ReflectionUtils.trySetAccessible(method);
                 return null;
             });
@@ -695,10 +694,9 @@ public class Java8 implements VMPlugin {
         }
     }
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivilegedInternal(PrivilegedAction<T> action) {
+    private static <T> T doPrivilegedInternal(java.security.PrivilegedAction<T> action) {
         return java.security.AccessController.doPrivileged(action);
     }
-
 
     @Override
     public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {
@@ -732,7 +730,7 @@ public class Java8 implements VMPlugin {
             try {
                 if (!lookup.isAccessible()) {
                     final Constructor<MethodHandles.Lookup> finalReference = lookup;
-                    doPrivilegedInternal((java.security.PrivilegedAction<Object>) () -> {
+                    doPrivilegedInternal(() -> {
                         ReflectionUtils.trySetAccessible(finalReference);
                         return null;
                     });

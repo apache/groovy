@@ -395,8 +395,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         GenericsType typeParameter = genericParameterNames.get(new GenericsTypeName(typeName));
         if (typeParameter != null) {
-            type.setRedirect(typeParameter.getType());
+            type.setDeclaringClass(typeParameter.getType().getDeclaringClass());
             type.setGenericsTypes(new GenericsType[]{typeParameter});
+            type.setRedirect(typeParameter.getType());
             type.setGenericsPlaceHolder(true);
             return true;
         }
@@ -423,8 +424,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected boolean resolveNestedClass(final ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
 
-        ClassNode cn = currentClass;
-        Set<ClassNode> cycleCheck = new HashSet<>();
+        ClassNode cn = currentClass; Set<ClassNode> cycleCheck = new HashSet<>();
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
         for (; cn != null && cycleCheck.add(cn) && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;

@@ -305,7 +305,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
 
         MethodCallExpression result = new MethodCallExpression(object, method, args);
-        result.setGenericsTypes(mce.getGenericsTypes());
+        result.setGenericsTypes(mce.getGenericsTypes()); // GROOVY-6757
         result.setMethodTarget(mce.getMethodTarget());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());

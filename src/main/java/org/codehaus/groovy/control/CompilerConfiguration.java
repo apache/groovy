@@ -98,7 +98,6 @@ public class CompilerConfiguration {
     public static final String JDK18 = "18";
     /** This (<code>"19"</code>) is the value for targetBytecode to compile for a JDK 19. */
     public static final String JDK19 = "19";
-
     /** This (<code>"20"</code>) is the value for targetBytecode to compile for a JDK 20. */
     public static final String JDK20 = "20";
 

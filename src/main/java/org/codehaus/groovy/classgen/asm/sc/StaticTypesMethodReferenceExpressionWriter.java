@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
@@ -388,6 +389,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private void addFatalError(final String msg, final ASTNode node) {
         controller.getSourceUnit().addFatalError(msg, node);
+        // GRECLIPSE: addFatalError won't throw for quick parse
+        throw new MultipleCompilationErrorsException(controller.getSourceUnit().getErrorCollector());
     }
 
     //--------------------------------------------------------------------------

@@ -267,6 +267,9 @@ public class MethodNode extends AnnotatedNode {
         return "<clinit>".equals(name);
     }
 
+    /**
+     * @since 4.0.0
+     */
     public boolean isConstructor() {
         return "<init>".equals(name);
     }
