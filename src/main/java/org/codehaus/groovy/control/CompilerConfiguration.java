@@ -1273,23 +1273,20 @@ public class CompilerConfiguration {
      * Checks if invoke dynamic is enabled.
      */
     public boolean isIndyEnabled() {
-        Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.TRUE);
+        return !Boolean.FALSE.equals(getOptimizationOptions().get(INVOKEDYNAMIC));
     }
 
     /**
      * Checks if groovydoc is enabled.
      */
     public boolean isGroovydocEnabled() {
-        Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(GROOVYDOC));
     }
 
     /**
      * Checks if runtime groovydoc is enabled.
      */
     public boolean isRuntimeGroovydocEnabled() {
-        Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(RUNTIME_GROOVYDOC));
     }
 }

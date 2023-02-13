@@ -728,7 +728,7 @@ public class Java8 implements VMPlugin {
             try {
                 if (!lookup.isAccessible()) {
                     final Constructor<MethodHandles.Lookup> finalReference = lookup;
-                    doPrivilegedInternal((java.security.PrivilegedAction<Object>) () -> {
+                    doPrivilegedInternal(() -> {
                         ReflectionUtils.trySetAccessible(finalReference);
                         return null;
                     });

@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
 /**
  * Handles generation of code for the @Sealed annotation.
@@ -69,12 +70,12 @@ public class SealedASTTransformation extends AbstractASTTransformation {
                 return;
             }
             cNode.putNodeMetaData(SEALED_CLASS, Boolean.TRUE);
-            boolean isPostJDK17 = false;
+            boolean isAtLeastJDK17 = false;
             String message = "Expecting JDK17+ but unable to determine target bytecode";
             if (sourceUnit != null) {
                 CompilerConfiguration config = sourceUnit.getConfiguration();
                 String targetBytecode = config.getTargetBytecode();
-                isPostJDK17 = CompilerConfiguration.isPostJDK17(targetBytecode);
+                isAtLeastJDK17 = isAtLeast(targetBytecode, CompilerConfiguration.JDK17);
                 message = "Expecting JDK17+ but found " + targetBytecode;
             }
             List<AnnotationNode> annotations = cNode.getAnnotations(SEALED_OPTIONS_TYPE);
@@ -82,7 +83,7 @@ public class SealedASTTransformation extends AbstractASTTransformation {
             SealedMode mode = getMode(options, "mode");
             boolean doNotAnnotate = options != null && memberHasValue(options, "alwaysAnnotate", Boolean.FALSE);
 
-            boolean isNative = isPostJDK17 && mode != SealedMode.EMULATE;
+            boolean isNative = isAtLeastJDK17 && mode != SealedMode.EMULATE;
             if (doNotAnnotate) {
                 cNode.putNodeMetaData(SEALED_ALWAYS_ANNOTATE_KEY, Boolean.FALSE);
             }

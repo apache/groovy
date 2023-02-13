@@ -20,8 +20,6 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 
-import java.security.PrivilegedAction;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -104,7 +102,7 @@ public abstract class ProcessingUnit {
 
     @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private GroovyClassLoader createClassLoader() {
-        return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> {
+        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<GroovyClassLoader>) () -> {
             ClassLoader parent = Thread.currentThread().getContextClassLoader();
             if (parent == null) parent = ProcessingUnit.class.getClassLoader();
             return new GroovyClassLoader(parent, getConfiguration());

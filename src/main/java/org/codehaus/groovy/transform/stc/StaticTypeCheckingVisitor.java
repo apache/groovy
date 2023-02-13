@@ -2364,6 +2364,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
                     node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(receiver);
+                    node.setSynthetic(true);
                 }
             }
         }
