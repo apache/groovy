@@ -100,7 +100,6 @@ final class MethodReferenceTest {
     @Test // class::instanceMethod -- GROOVY-9814
     void testFunctionCI5() {
         assertScript imports + '''
-            @CompileStatic
             class One { String id }
 
             @CompileStatic
@@ -272,6 +271,21 @@ final class MethodReferenceTest {
             void test() {
                 def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::add)
                 assert result == 6.0G
+            }
+
+            test()
+        '''
+    }
+
+    @Test // instance::instanceMethod -- GROOVY-10933
+    void testConsumerII() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                List<String> strings = []
+                Optional.of('string')
+                    .ifPresent(strings::add)
+                assert strings.contains('string')
             }
 
             test()

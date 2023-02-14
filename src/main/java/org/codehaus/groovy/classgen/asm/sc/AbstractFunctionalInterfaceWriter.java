@@ -88,6 +88,7 @@ public interface AbstractFunctionalInterfaceWriter {
     }
 
     default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final Parameter[] parameters, final boolean serializable) {
+        ClassNode returnType = !abstractMethodDesc.endsWith(")V") ? methodNode.getReturnType() : ClassHelper.VOID_TYPE; // GROOVY-10933
         Object[] arguments = !serializable ? new Object[3] : new Object[]{null, null, null, 5, 0};
 
         arguments[0] = Type.getType(abstractMethodDesc);
@@ -99,8 +100,7 @@ public interface AbstractFunctionalInterfaceWriter {
                 BytecodeHelper.getMethodDescriptor(methodNode),
                 methodOwner.isInterface());
 
-        arguments[2] = Type.getType(
-                BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters));
+        arguments[2] = Type.getType(BytecodeHelper.getMethodDescriptor(returnType, parameters));
 
         return arguments;
     }
