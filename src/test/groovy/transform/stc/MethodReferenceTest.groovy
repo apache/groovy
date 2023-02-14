@@ -271,6 +271,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10933
+    void testConsumerII() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                List<String> strings = []
+                Optional.of('string')
+                    .ifPresent(strings::add)
+                assert strings.contains('string')
+            }
+
+            test()
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
