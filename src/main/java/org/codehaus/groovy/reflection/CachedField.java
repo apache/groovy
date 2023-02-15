@@ -44,6 +44,9 @@ public class CachedField extends MetaProperty {
         return field.getDeclaringClass();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getModifiers() {
         return field.getModifiers();
@@ -58,25 +61,20 @@ public class CachedField extends MetaProperty {
     }
 
     /**
-     * @return the property of the given object
-     * @throws RuntimeException if the property could not be evaluated
+     * {@inheritDoc}
      */
     @Override
     public Object getProperty(final Object object) {
         makeAccessibleIfNecessary();
         try {
             return field.get(object);
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new GroovyRuntimeException("Cannot get the property '" + name + "'.", e);
         }
     }
 
     /**
-     * Sets the property on the given object to the new value
-     *
-     * @param object on which to set the property
-     * @param newValue the new value of the property
-     * @throws RuntimeException if the property could not be set
+     * {@inheritDoc}
      */
     @Override
     public void setProperty(final Object object, final Object newValue) {
@@ -87,7 +85,7 @@ public class CachedField extends MetaProperty {
         Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
         try {
             field.set(object, goalValue);
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", e);
         }
     }
