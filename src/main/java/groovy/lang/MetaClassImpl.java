@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.reflection.CacheAccessControlException;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.reflection.CachedField;
@@ -245,7 +244,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Returns the registry for this metaclass
      *
-     * @return The resgistry
+     * @return The registry
      */
     public MetaClassRegistry getRegistry() {
         return registry;
@@ -334,6 +333,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return The class contained by this metaclass
      */
+    @Override
     public Class getTheClass() {
         return this.theClass;
     }
@@ -1035,70 +1035,65 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
     }
 
-    private Object invokeMethodClosure(Object object, Object[] arguments) {
-        final MethodClosure mc = (MethodClosure) object;
-        final Object owner = mc.getOwner();
-
-        String methodName = mc.getMethod();
-        final Class ownerClass = owner instanceof Class ? (Class) owner : owner.getClass();
+    private Object invokeMethodClosure(final MethodClosure object, final Object[] arguments) {
+        Object owner = object.getOwner();
+        String method = object.getMethod();
+        boolean ownerIsClass = (owner instanceof Class);
+        Class ownerClass = ownerIsClass ? (Class) owner : owner.getClass();
         final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
 
-        // To conform to "Least Surprise" principle, try to invoke method with original arguments first, which can match most of use cases
+        // To conform to "Least Surprise" principle, try to invoke method with original arguments first, which can match most use cases
         try {
-            return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
-        } catch (MissingMethodExceptionNoStack | InvokerInvocationException e) {
-            // CONSTRUCTOR REFERENCE
-            if (owner instanceof Class && MethodClosure.NEW.equals(methodName)) {
-                if (ownerClass.isArray()) {
-                    if (0 == arguments.length) {
-                        throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
-                    }
-
-                    int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
-
-                    if (arguments.length > arrayDimension) {
-                        throw new GroovyRuntimeException("The length[" + arguments.length + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
-                    }
-
-                    int[] sizeArray = new int[arguments.length];
-
-                    for (int i = 0, n = sizeArray.length; i < n; i++) {
-                        Object argument = arguments[i];
-
-                        if (argument instanceof Integer) {
-                            sizeArray[i] = (Integer) argument;
-                        } else {
-                            sizeArray[i] = Integer.parseInt(String.valueOf(argument));
-                        }
-                    }
-
-                    Class arrayType =
-                            arguments.length == arrayDimension
-                                    ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
-                                    : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - arguments.length));
-                    return Array.newInstance(arrayType, sizeArray);
-                }
-
-                return ownerMetaClass.invokeConstructor(arguments);
-            }
-
-            // METHOD REFERENCE
-            // if and only if the owner is a class and the method closure can be related to some instance methods,
-            // try to invoke method with adjusted arguments(first argument is the actual owner) again.
-            // otherwise throw the MissingMethodExceptionNoStack.
-            if (!(owner instanceof Class
-                    && (Boolean) mc.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS))) {
-
+            return ownerMetaClass.invokeMethod(ownerClass, owner, method, arguments, false, false);
+        } catch (GroovyRuntimeException e) { // GROOVY-10929: GroovyRuntimeException(cause:IllegalArgumentException) thrown for final fields
+            if (!(ownerIsClass && (e instanceof MissingMethodExceptionNoStack || e instanceof InvokerInvocationException || e.getCause() instanceof IllegalArgumentException))) {
                 throw e;
             }
+            if (MethodClosure.NEW.equals(method)) {
+              // CONSTRUCTOR REFERENCE
 
-            if (arguments.length < 1 || !ownerClass.isAssignableFrom(arguments[0].getClass())) {
-                return invokeMissingMethod(object, methodName, arguments);
+                if (!ownerClass.isArray())
+                    return ownerMetaClass.invokeConstructor(arguments);
+
+                int nArguments = arguments.length;
+                if (nArguments == 0) {
+                    throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
+                }
+
+                int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
+                if (nArguments > arrayDimension) {
+                    throw new GroovyRuntimeException("The length[" + nArguments + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
+                }
+                int[] sizeArray = new int[nArguments];
+                for (int i = 0; i < nArguments; i += 1) {
+                    Object argument = arguments[i];
+                    if (argument instanceof Integer) {
+                        sizeArray[i] = (Integer) argument;
+                    } else {
+                        sizeArray[i] = Integer.parseInt(String.valueOf(argument));
+                    }
+                }
+                Class elementType =
+                        nArguments == arrayDimension
+                            ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
+                            : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - nArguments));
+                return Array.newInstance(elementType, sizeArray);
+            } else {
+              // METHOD REFERENCE
+
+                // if the owner is a class and the method closure can be related to some instance method(s)
+                // try to invoke method with adjusted arguments -- first argument is instance of owner type
+                if (arguments.length > 0 && ownerClass.isAssignableFrom(arguments[0].getClass())
+                        && (Boolean) object.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS)) {
+                    try {
+                        Object newReceiver = arguments[0];
+                        Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+                        return ownerMetaClass.invokeMethod(ownerClass, newReceiver, method, newArguments, false, false);
+                    } catch (MissingMethodException ignore) {}
+                }
+
+                return invokeMissingMethod(object, method, arguments);
             }
-
-            Object newReceiver = arguments[0];
-            Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
-            return ownerMetaClass.invokeMethod(ownerClass, newReceiver, methodName, newArguments, false, false);
         }
     }
 
@@ -1134,7 +1129,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
-                    return this.invokeMethodClosure(object, arguments);
+                    return this.invokeMethodClosure((MethodClosure) object, arguments);
                 } else if (objectClass == CurriedClosure.class) {
                     final CurriedClosure cc = (CurriedClosure) object;
                     // change the arguments for an uncurried call
@@ -1893,7 +1888,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method == null && mp != null) {
             try {
                 return mp.getProperty(object);
-            } catch (IllegalArgumentException | CacheAccessControlException e) {
+            } catch (GroovyRuntimeException e) {
                 // can't access the field directly but there may be a getter
                 mp = null;
             }
@@ -2015,12 +2010,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (mp != null) {
             return mp;
-//            try {
-//                return mp.getProperty(object);
-//            } catch (IllegalArgumentException e) {
-//                // can't access the field directly but there may be a getter
-//                mp = null;
-//            }
         }
 
         //----------------------------------------------------------------------
