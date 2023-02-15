@@ -217,6 +217,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
@@ -2425,6 +2427,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isClassClassNodeWrappingConcreteType(type)){
                     type = type.getGenericsTypes()[0].getType();
                     storeType(expression,wrapClosureType(type));
+                    // GROOVY-10930: check constructor reference
+                    ClassNode[] signature = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+                    if (signature != null) { Expression[] mocks = Arrays.stream(signature)
+                            .map(t->castX(t,defaultValueX(t))).toArray(Expression[]::new);
+                        Expression dummy = ctorX(type, args(mocks));
+                        dummy.setSourcePosition(expression);
+                        dummy.visit(this);
+                    }
                 }
                 return;
             }

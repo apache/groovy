@@ -669,6 +669,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new -- GROOVY-10930
+    void testFunctionCN5() {
+        def err = shouldFail shell, '''
+            def <X> void m(Function<String,X> fn) { }
+            class Bar { }
+            @CompileStatic
+            void test() {
+                m(Bar::new) // ctor does not accept String
+            }
+
+            test()
+        '''
+        assert err =~ /Cannot find matching constructor Bar\(java.lang.String\)/
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
