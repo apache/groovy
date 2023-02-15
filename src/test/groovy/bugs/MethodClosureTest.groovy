@@ -18,47 +18,54 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.MethodClosure
+import org.junit.Test
 
-class MethodClosureTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class MethodClosureTest {
 
     def aa(x) {
         x
     }
 
-    static bb(it) { it}
+    static bb(x) {
+        x
+    }
 
+    @Test
     void testMethodClosure() {
-        def cl2 = String.&toUpperCase // Class.instanceMethod
-        assert cl2 instanceof Closure
-        assert cl2 instanceof MethodClosure
+        def closure = this.&aa // instance.instanceMethod
+        assert closure instanceof Closure
+        assert closure instanceof MethodClosure
 
-        assert ["xx", "yy"].collect(cl2) == ["XX","YY"]
-
-        Class[] c1 = [ Exception.class, Throwable.class ]
-        Class[] c2 = [ IllegalStateException.class ]
-
-        def cl = this.&aa // instance.instanceMethod
-
-        assert cl instanceof Closure
-        assert cl instanceof MethodClosure
-
-        assert [c1, c2].collect(cl) == [c1,c2]
-
+        Class[] c1 = [ Exception, Throwable ]
+        Class[] c2 = [ IllegalStateException ]
+        assert [c1, c2].collect(closure) == [c1,c2]
     }
 
-    void testStaticMethodAccess() {
-       def list = [1].collect (this.&bb)
+    @Test
+    void testMethodClosure2() {
+        def closure = String.&toUpperCase // Class.instanceMethod
+        assert closure instanceof Closure
+        assert closure instanceof MethodClosure
+
+        assert ["xx", "yy"].collect(closure) == ["XX","YY"]
+    }
+
+    @Test
+    void testStaticMethodClosure() {
+       def list = [1].collect(this.&bb)
        assert list == [1]
-       list = [1].collect (MethodClosureTest.&bb) // Class.staticMethod
+       list = [1].collect(MethodClosureTest.&bb) // Class.staticMethod
        assert list == [1]
-       def mct = new MethodClosureTest()
-       list = [1].collect (mct.&bb) // instance.staticMethod
+       list = [1].collect(new MethodClosureTest().&bb) // instance.staticMethod
        assert list == [1]
     }
 
-    void testShellVariable() {
+    @Test
+    void testShellVariableAccess() {
         def shell = new GroovyShell()
         assert shell.evaluate("x = String.&toUpperCase; x('abc')") == "ABC"
         assert shell.evaluate("x = 'abc'.&toUpperCase; x()") == "ABC"
@@ -66,6 +73,7 @@ class MethodClosureTest extends GroovyTestCase {
         assert shell.evaluate("x = 3.&parseInt; x('123')") == 123
     }
 
+    @Test
     void testMethodClosureWithCategory() {
         assertScript '''
             class Bar {
@@ -101,6 +109,18 @@ class MethodClosureTest extends GroovyTestCase {
                 assert bar.methodClosure() == 'result'
                 assert foo.methodClosure() == 'result'
             }
+        '''
+    }
+
+    // GROOVY-10929
+    @Test
+    void testMethodClosureIllegalArgumentException() {
+        shouldFail IllegalArgumentException, '''
+            static create(Class type) {
+                throw new IllegalArgumentException("Class ${type.name} does not ...")
+            }
+            def closure = this.class.&create
+            closure(Object)
         '''
     }
 }

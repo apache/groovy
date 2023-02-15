@@ -42,12 +42,12 @@ public abstract class MetaProperty {
 
     /**
      * @return the property of the given object
-     * @throws Exception if the property could not be evaluated
+     * @throws RuntimeException if the property could not be evaluated
      */
     public abstract Object getProperty(Object object);
 
     /**
-     * Sets the property on the given object to the new value
+     * Sets the property on the given object to the new value.
      *
      * @param object on which to set the property
      * @param newValue the new value of the property
