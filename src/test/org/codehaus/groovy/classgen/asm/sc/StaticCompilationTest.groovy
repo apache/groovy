@@ -277,27 +277,26 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
             }
             m 'Cedric'
         ''').hasStrictSequence([
-                "ICONST",
-                "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
-                "ASTORE",
-                "L1",
-                "ALOAD 2",
-                "POP",
-                "L2",
-                "LINENUMBER",
-                "ALOAD 1",
-                "ASTORE 3",
-                "ALOAD 3",
-                "ASTORE 2",
-                "ALOAD 3",
-                "POP",
-                "L3",
-                "LINENUMBER",
-                "ALOAD 2",
-                "CHECKCAST java/lang/String",
-                "INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;",
-                "ARETURN",
-                "L4"
+                'LINENUMBER 4',
+                'ICONST_1',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'ASTORE 2',
+                'L1',
+                'ALOAD 2',
+                'POP',
+                'L2',
+                'LINENUMBER 5',
+                'ALOAD 1',
+                'DUP',
+                'ASTORE 2',
+                'POP',
+                'L3',
+                'LINENUMBER 6',
+                'ALOAD 2',
+                'CHECKCAST java/lang/String',
+                'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;',
+                'ARETURN',
+                'L4'
         ])
     }
 
