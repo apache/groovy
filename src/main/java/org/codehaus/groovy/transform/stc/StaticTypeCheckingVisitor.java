@@ -3605,8 +3605,8 @@ out:                if (mn.size() != 1) {
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
                         }
-                        if (!targetMethod.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
-                                && chosenReceiver.getData() == null && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
+                        if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
+                                && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
                         } else if (targetMethod.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
                             String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
