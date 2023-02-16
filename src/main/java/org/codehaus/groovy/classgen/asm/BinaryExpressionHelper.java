@@ -387,23 +387,35 @@ public class BinaryExpressionHelper {
         boolean singleAssignment = !(leftExpression instanceof TupleExpression);
         boolean directAssignment = defineVariable && singleAssignment; //def x=y
 
-        if (directAssignment && rightExpression instanceof EmptyExpression) {
-            VariableExpression ve = (VariableExpression) leftExpression;
-            BytecodeVariable var = compileStack.defineVariable(ve, controller.getTypeChooser().resolveType(ve, controller.getClassNode()), false);
-            operandStack.loadOrStoreVariable(var, false);
-            return;
-        }
-        // evaluate the RHS and store the result
         // TODO: LHS has not been visited, it could be a variable in a closure and type chooser is not aware.
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
+
+        if (directAssignment && rightExpression instanceof EmptyExpression) {
+            BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
+            operandStack.loadOrStoreVariable(v, false);
+            return;
+        }
+
+        // evaluate RHS and store the value
+
         if (rightExpression instanceof ListExpression && lhsType.isArray()) {
             Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
             array.setSourcePosition(rightExpression);
             array.visit(acg);
         } else if (rightExpression instanceof EmptyExpression) {
-            loadInitValue(leftExpression.getType()); // TODO: lhsType?
+            loadInitValue(lhsType); // null or zero (or false)
         } else {
             rightExpression.visit(acg);
+        }
+
+        // GROOVY-10918: direct store to local variable or parameter (no temp)
+        if (!defineVariable && leftExpression instanceof VariableExpression) {
+            BytecodeVariable v = compileStack.getVariable(leftExpression.getText(), false);
+            if (v != null) {
+                operandStack.dup(); // return value of the assignment expression
+                operandStack.storeVar(v);
+                return;
+            }
         }
 
         ClassNode rhsType = operandStack.getTopOperand();
