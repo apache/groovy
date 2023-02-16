@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.reflection.CacheAccessControlException;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.reflection.CachedField;
@@ -1953,7 +1952,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp != null && Modifier.isPublic(mp.getModifiers())) {
                 try {
                     return mp.getProperty(object);
-                } catch (IllegalArgumentException | CacheAccessControlException e) {
+                } catch (GroovyRuntimeException e) {
                     // can't access the field directly but there may be a getter
                     mp = null;
                 }
@@ -1972,7 +1971,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp != null) {
                 try {
                     return mp.getProperty(object);
-                } catch (IllegalArgumentException | CacheAccessControlException e) {
+                } catch (GroovyRuntimeException e) {
                 }
             }
         }
