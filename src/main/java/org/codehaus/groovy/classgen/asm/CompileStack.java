@@ -260,7 +260,7 @@ public class CompileStack implements Opcodes {
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(final Variable var, final boolean store) {
-        return defineTemporaryVariable(var.getName(), var.getType(),store);
+        return defineTemporaryVariable(var.getName(), var.getType(), store);
     }
 
     public BytecodeVariable getVariable(final String variableName ) {
