@@ -3500,8 +3500,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
                         }
-                        if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
-                                && chosenReceiver.getData() == null && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
+                        if (!targetMethodCandidate.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
+                                && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
                         } else if (targetMethodCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
                             String target = toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters()));

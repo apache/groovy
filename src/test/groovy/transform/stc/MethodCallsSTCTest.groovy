@@ -1572,6 +1572,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10939
+    void testClassHashCodeVsObjectHashCode() {
+        assertScript '''
+            int h = this.getClass().hashCode()
+        '''
+    }
+
     // GROOVY-10341
     void testCallAbstractSuperMethod() {
         shouldFailWithMessages '''
