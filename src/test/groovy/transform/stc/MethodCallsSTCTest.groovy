@@ -18,8 +18,9 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+
+import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 /**
  * Unit tests for static type checking : method calls.
@@ -38,11 +39,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     @Override
     protected void configure() {
-        def ic = new ImportCustomizer()
-        ic.addImport('A','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass')
-        ic.addImport('B','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass2')
-        ic.addImport('C','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass3')
-        config.addCompilationCustomizers(ic)
+        withConfig(config) {
+            imports {
+                alias 'A', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass'
+                alias 'B', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass2'
+                alias 'C', 'groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass3'
+            }
+        }
     }
 
     void testMethodCallOnInstance() {
@@ -63,7 +66,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             A a = new A()
             assert a.foo(1,1)==2
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallOnInstanceWithVarArgs() {
@@ -91,7 +95,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testMissingStaticMethod() {
         shouldFailWithMessages '''
             A.missing 'echo'
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testStaticMethodWithVarArgs() {
@@ -116,11 +121,10 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testStaticMethodCallThroughInstance() {
-        // this is bad style, but supported by java
         assertScript '''
             A a = new A()
             String echo = a.echo 'echo'
-            assert  echo == 'echo'
+            assert echo == 'echo'
         '''
     }
 
@@ -198,7 +202,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             B c = new B<Integer>()
             String[] args = ['a','b','c']
             assert c.identity(args) == args
-        ''', 'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2 <Integer>#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
+        ''',
+        'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2 <Integer>#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
     }
 
     // GROOVY-10922
@@ -219,7 +224,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     object = string
                 }
             }
-;
+
             def obj = new Baz()
             obj.setString('xx')
             assert obj.object == 'xx'
@@ -243,12 +248,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5175
     void testCallMethodAcceptingArrayWithNull() {
         assertClass '''
-            class Foo {
-                def say() {
-                    methodWithArrayParam(null) // STC Error
+            class Main {
+                def bar(String[] s) {
                 }
-                def methodWithArrayParam(String[] s) {
-
+                def foo() {
+                    bar(null)
                 }
             }
         '''
@@ -257,12 +261,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5175
     void testCallMethodWithNull() {
         assertClass '''
-            class Foo {
-                def say() {
-                    methodWithArrayParam(null)
+            class Main {
+                def bar(Date date) {
                 }
-                def methodWithArrayParam(Date date) {
-
+                def foo() {
+                    bar(null)
                 }
             }
         '''
@@ -271,12 +274,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5175
     void testCallMethodWithNullAndAnotherParameter() {
         assertClass '''
-            class Foo {
-                def say() {
-                    methodWithArrayParam(null, new Date())
+            class Main {
+                def bar(Date date1, Date date2) {
                 }
-                def methodWithArrayParam(Date date1, Date date2) {
-
+                def foo() {
+                    bar(null, new Date())
                 }
             }
         '''
@@ -285,32 +287,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5175
     void testAmbiguousCallMethodWithNullAndAnotherParameter() {
         shouldFailWithMessages '''
-            class Foo {
-                def say() {
-                    methodWithArrayParam(null, new Date())
+            class Main {
+                def bar(Date date1, Date date2) {
                 }
-                def methodWithArrayParam(Date date1, Date date2) {
-
+                def bar(String str, Date date) {
                 }
-                def methodWithArrayParam(String o, Date date2) {
-
+                def foo() {
+                    bar(null, new Date())
                 }
             }
-        ''', 'Reference to method is ambiguous'
+        ''',
+        'Reference to method is ambiguous'
     }
 
     // GROOVY-5175
     void testDisambiguateCallMethodWithNullAndAnotherParameter() {
         assertClass '''
-            class Foo {
-                def say() {
-                    methodWithArrayParam((Date)null, new Date())
+            class Main {
+                def bar(Date date1, Date date2) {
                 }
-                def methodWithArrayParam(Date date1, Date date2) {
-
+                def bar(String str, Date date) {
                 }
-                def methodWithArrayParam(String o, Date date2) {
-
+                def foo() {
+                    bar((Date)null, new Date())
                 }
             }
         '''
@@ -328,146 +327,149 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldFindStaticMethod() {
         assertScript '''
-                static String foo(String s) {
-                    'String'
-                }
-                foo('String')
-            '''
+            static String foo(String s) {
+                'String'
+            }
+            foo('String')
+        '''
     }
 
     void testShouldFailWithNoMatchingMethod() {
         shouldFailWithMessages '''
-                static String foo(String s) {
-                    'String'
-                }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each { foo(it) }
-            ''', 'Cannot find matching method'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each { foo(it) }
+        ''',
+        'Cannot find matching method'
     }
 
     void testShouldNotFailThanksToInstanceOfChecks() {
         assertScript '''
-                static String foo(String s) {
-                    'String'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each {
+                if (it instanceof String) {
+                    foo((String)it)
+                } else if (it instanceof Boolean) {
+                    foo((Boolean)it)
+                } else if (it instanceof Integer) {
+                    foo((Integer)it)
                 }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each {
-                    if (it instanceof String) {
-                        foo((String)it)
-                    } else if (it instanceof Boolean) {
-                        foo((Boolean)it)
-                    } else if (it instanceof Integer) {
-                        foo((Integer)it)
-                    }
-                }
-            '''
+            }
+        '''
     }
 
     void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts() {
         assertScript '''
-                static String foo(String s) {
-                    'String'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each {
+                if (it instanceof String) {
+                    foo(it)
+                } else if (it instanceof Boolean) {
+                    foo(it)
+                } else if (it instanceof Integer) {
+                    foo(it)
                 }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each {
-                    if (it instanceof String) {
-                        foo(it)
-                    } else if (it instanceof Boolean) {
-                        foo(it)
-                    } else if (it instanceof Integer) {
-                        foo(it)
-                    }
-                }
-            '''
+            }
+        '''
     }
 
     void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts2() {
         assertScript '''
-                static String foo(String s) {
-                    'String'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each { argument ->
+                if (argument instanceof String) {
+                    foo(argument)
+                } else if (argument instanceof Boolean) {
+                    foo(argument)
+                } else if (argument instanceof Integer) {
+                    foo(argument)
                 }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each { argument ->
-                    if (argument instanceof String) {
-                        foo(argument)
-                    } else if (argument instanceof Boolean) {
-                        foo(argument)
-                    } else if (argument instanceof Integer) {
-                        foo(argument)
-                    }
-                }
-            '''
+            }
+        '''
     }
 
     void testShouldFailWithMultiplePossibleMethods() {
         shouldFailWithMessages '''
-                static String foo(String s) {
-                    'String'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each {
+                if (it instanceof String || it instanceof Boolean || it instanceof Integer) {
+                    foo(it)
                 }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each {
-                    if (it instanceof String || it instanceof Boolean || it instanceof Integer) {
-                        foo(it)
-                    }
-                }
-            ''', 'Reference to method is ambiguous'
+            }
+        ''',
+        'Reference to method is ambiguous'
     }
 
     void testShouldFailWithMultiplePossibleMethods2() {
         shouldFailWithMessages '''
-                static String foo(String s) {
-                    'String'
+            static String foo(String s) {
+                'String'
+            }
+            static String foo(Integer s) {
+                'Integer'
+            }
+            static String foo(Boolean s) {
+                'Boolean'
+            }
+            ['foo',123,true].each { argument ->
+                if (argument instanceof String || argument instanceof Boolean || argument instanceof Integer) {
+                    foo(argument)
                 }
-                static String foo(Integer s) {
-                    'Integer'
-                }
-                static String foo(Boolean s) {
-                    'Boolean'
-                }
-                ['foo',123,true].each { argument ->
-                    if (argument instanceof String || argument instanceof Boolean || argument instanceof Integer) {
-                        foo(argument)
-                    }
-                }
-            ''', 'Reference to method is ambiguous'
+            }
+        ''',
+        'Reference to method is ambiguous'
     }
 
     void testInstanceOfOnExplicitParameter() {
         assertScript '''
-                1.with { obj ->
-                    if (obj instanceof String) {
-                        obj.toUpperCase()
-                    }
+            1.with { obj ->
+                if (obj instanceof String) {
+                    obj.toUpperCase()
                 }
-            '''
+            }
+        '''
     }
 
-    void testSAMWithExplicitParameter() {
+    void testSAMWithExplicitParameter1() {
         assertScript '''
             public interface SAM {
                 boolean run(String var1, Thread th);
@@ -482,97 +484,84 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     str.toUpperCase().equals(th.getName())
                 }
             }
-            '''
+        '''
     }
 
-    void testGroovy8241() {
+    // GROOVY-8241
+    void testSAMWithExplicitParameter2() {
         if (IS_PRE_8) return
-
         assertScript '''
-            import java.util.function.Predicate
-
-            static boolean foo(Predicate<? super String> p) {
-                p.test("foo")
+            static boolean foo(java.util.function.Predicate<? super String> p) {
+                p.test('bar')
             }
-
-            static def testPredicate() {
-                foo { it ->
-                    it.toUpperCase()
-                    true
-                }
-            }
-            '''
+            foo { it -> it.toUpperCase(); return true }
+        '''
     }
 
-    void testGroovy7061() {
+    // GROOVY-7061
+    void testSAMWithExplicitParameter3() {
         assertScript '''
-            void doIt() {
-                List<Integer> nums = [1, 2, 3, -2, -5, 6]
-                Collections.sort(nums, { a, b -> a.abs() <=> b.abs() })
-            }
-            '''
+            List<Integer> nums = [1, 2, 3, -2, -5, 6]
+            Collections.sort(nums, { a, b -> a.abs() <=> b.abs() })
+        '''
     }
 
-    void testGroovy7061ex2() {
+    // GROOVY-7061
+    void testSAMWithExplicitParameter4() {
         if (IS_PRE_8) return
-
         assertScript '''
-            def doIt(List<String> strings) {
-                return strings.
-                    stream().
-                    filter { s -> s.length() < 10 }.
-                    toArray()
+            def foo(List<String> strings) {
+                strings.stream().filter { s -> s.length() < 10 }.toArray()
             }
-
-            final words = ["orange", "sit", "test", "flabbergasted", "honorific"]
-
-            println doIt(words)
-            '''
+            def words = ["orange", "sit", "test", "flabbergasted", "honorific"]
+            foo(words)
+        '''
     }
 
     void testShouldFailBecauseVariableIsReassigned() {
         shouldFailWithMessages '''
-                static String foo(String s) {
-                    'String'
-                }
-                def it
-                if (it instanceof String) {
-                    it = new Date()
-                    foo(it)
-                }
-            ''', 'foo(java.util.Date)'
+            static String foo(String s) {
+                'String'
+            }
+            def it
+            if (it instanceof String) {
+                it = new Date()
+                foo(it)
+            }
+        ''',
+        'foo(java.util.Date)'
     }
 
     void testShouldNotFailEvenIfVariableIsReassigned() {
         assertScript '''
-                static String foo(int val) {
-                    'int'
-                }
-                def it
-                if (it instanceof String) {
-                    it = 123
-                    foo(it)
-                }
-            '''
+            static String foo(int val) {
+                'int'
+            }
+            def it
+            if (it instanceof String) {
+                it = 123
+                foo(it)
+            }
+        '''
     }
 
     void testShouldNotFailEvenIfVariableIsReassignedAndInstanceOfIsEmbed() {
         assertScript '''
-                static String foo(int val) {
-                    'int'
-                }
-                static String foo(Date val) {
-                    'Date'
-                }
-                def it
-                if (it instanceof String) {
-                    it = 123
+            static String foo(int val) {
+                'int'
+            }
+            static String foo(Date val) {
+                'Date'
+            }
+            def it
+            if (it instanceof String) {
+                it = 123
+                foo(it)
+                if (it instanceof Date) {
                     foo(it)
-                    if (it instanceof Date) {
-                        foo(it)
-                    }
                 }
-            '''
+            }
+        '''
     }
 
     void testOneDefaultParam() {
@@ -591,7 +580,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return val.toUpperCase()
             }
             assert m(123) == 'HELLO'
-        ''', '#m(int)'
+        ''',
+        '#m(int)'
     }
 
     void testOneDefaultParamAndOneWithout() {
@@ -610,7 +600,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return val.toUpperCase() + append
             }
             m('test', new Object())
-        ''', 'm(java.lang.String, java.lang.Object)'
+        ''',
+        'm(java.lang.String, java.lang.Object)'
     }
 
     void testMultipleDefaultArgs() {
@@ -639,7 +630,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
             }
             m('f',123,'s', 'too many args')
-        ''', '#m(java.lang.String, int, java.lang.String, java.lang.String)'
+        ''',
+        '#m(java.lang.String, int, java.lang.String, java.lang.String)'
     }
 
     void testMultipleDefaultArgsWithMixedTypesAndWrongType() {
@@ -648,7 +640,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 return first.toUpperCase() + ' ' + second + ' ' + third.toUpperCase()
             }
             m('hello') // no value set for "second"
-        ''', '#m(java.lang.String)'
+        ''',
+        '#m(java.lang.String)'
     }
 
     void testShouldNotFailWithAmbiguousMethodSelection() {
@@ -674,7 +667,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             float square(float x) { x*x }
             assert square(2.0d) == 4.0d
-        ''', '#square(double)'
+        ''',
+        '#square(double)'
     }
 
     void testShouldNotBeAbleToCallMethodUsingLongWithFloatOrDouble() {
@@ -682,44 +676,45 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             float square(long x) { x*x }
             assert square(2.0d) == 4.0d
             assert square(2.0f) == 4.0d
-        ''', '#square(double)', '#square(float)'
+        ''',
+        '#square(double)', '#square(float)'
     }
 
-    void testShouldNotAllowMethodCallFromStaticContext() {
+    void testShouldNotAllowMethodCallFromStaticInitializer() {
         shouldFailWithMessages '''
             class A {
                 void instanceMethod() {}
-
-                static void staticMethod() {
-                    instanceMethod() // calling instance method from static context
-                }
-            }
-            A.staticMethod()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
-    }
-
-    void testShouldNotAllowMethodCallFromStaticConstructor() {
-        shouldFailWithMessages '''
-            class A {
-                void instanceMethod() {}
-
                 static {
-                    instanceMethod() // calling instance method from static context
+                    instanceMethod()
                 }
             }
             new A()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
+    }
+
+    void testShouldNotAllowMethodCallFromStaticMethod() {
+        shouldFailWithMessages '''
+            class A {
+                void instanceMethod() {}
+                static void staticMethod() {
+                    instanceMethod()
+                }
+            }
+            A.staticMethod()
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticField() {
         shouldFailWithMessages '''
             class A {
-                boolean instanceMethod() { true }
-
+                boolean instanceMethod() {}
                 static FOO = instanceMethod()
             }
             new A()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
+        ''',
+        'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     // GROOVY-5495
@@ -741,7 +736,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             new ClassUnderTest()
-            '''
+        '''
     }
 
     void testShouldNotBeAmbiguousCall() {
@@ -767,21 +762,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 try {
                     ser.wait()
                 } catch (e) {}
-
             }
-
         '''
     }
 
     // GROOVY-5534
     void testSafeDereference() {
         assertScript '''
-        def foo() {
-           File bar
-           bar?.name
-        }
-
-        assert foo() == null
+            def foo() {
+               File bar
+               bar?.name
+            }
+            assert foo() == null
         '''
     }
 
@@ -804,148 +796,159 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5580
     void testGetNameAsPropertyFromSuperInterface() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        String foo(Lower impl) {
-            impl.name // getName() called with the property notation
-        }
-        assert foo({ 'bar' } as Lower) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            String foo(Lower impl) {
+                impl.name // getName() called with the property notation
+            }
+            assert foo({ 'bar' } as Lower) == 'bar'
         '''
     }
 
     void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImpl() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { String getName() { 'bar' } }
-        String foo(Foo impl) {
-            impl.name // getName() called with the property notation
-        }
-        assert foo(new Foo()) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { String getName() { 'bar' } }
+            String foo(Foo impl) {
+                impl.name // getName() called with the property notation
+            }
+            assert foo(new Foo()) == 'bar'
         '''
     }
 
     void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { String getName() { 'bar' } }
-        class Bar extends Foo {}
-        String foo(Bar impl) {
-            impl.name // getName() called with the property notation
-        }
-        assert foo(new Bar()) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { String getName() { 'bar' } }
+            class Bar extends Foo {}
+            String foo(Bar impl) {
+                impl.name // getName() called with the property notation
+            }
+            assert foo(new Bar()) == 'bar'
         '''
     }
 
     void testIsGetterAsPropertyFromSuperInterface() {
-        assertScript '''interface Upper { boolean isBar() }
-        interface Lower extends Upper {}
-        boolean foo(Lower impl) {
-            impl.bar // isBar() called with the property notation
-        }
-        assert foo({ true } as Lower)
+        assertScript '''
+            interface Upper { boolean isBar() }
+            interface Lower extends Upper {}
+            boolean foo(Lower impl) {
+                impl.bar // isBar() called with the property notation
+            }
+            assert foo({ true } as Lower)
         '''
     }
 
     void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImpl() {
-        assertScript '''interface Upper { boolean isBar() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { boolean isBar() { true } }
-        boolean foo(Foo impl) {
-            impl.bar // isBar() called with the property notation
-        }
-        assert foo(new Foo())
+        assertScript '''
+            interface Upper { boolean isBar() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { boolean isBar() { true } }
+            boolean foo(Foo impl) {
+                impl.bar // isBar() called with the property notation
+            }
+            assert foo(new Foo())
         '''
     }
 
     void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
-        assertScript '''interface Upper { boolean isBar() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { boolean isBar() { true } }
-        class Bar extends Foo {}
-        boolean foo(Bar impl) {
-            impl.bar // isBar() called with the property notation
-        }
-        assert foo(new Bar())
+        assertScript '''
+            interface Upper { boolean isBar() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { boolean isBar() { true } }
+            class Bar extends Foo {}
+            boolean foo(Bar impl) {
+                impl.bar // isBar() called with the property notation
+            }
+            assert foo(new Bar())
         '''
     }
 
     // GROOVY-5580: getName variant
     void testGetNameFromSuperInterface() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        String foo(Lower impl) {
-            impl.getName()
-        }
-        assert foo({ 'bar' } as Lower) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            String foo(Lower impl) {
+                impl.getName()
+            }
+            assert foo({ 'bar' } as Lower) == 'bar'
         '''
     }
 
     void testGetNameFromSuperInterfaceUsingConcreteImpl() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { String getName() { 'bar' } }
-        String foo(Foo impl) {
-             impl.getName()
-        }
-        assert foo(new Foo()) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { String getName() { 'bar' } }
+            String foo(Foo impl) {
+                impl.getName()
+            }
+            assert foo(new Foo()) == 'bar'
         '''
     }
 
     void testGetNameFromSuperInterfaceUsingConcreteImplSubclass() {
-        assertScript '''interface Upper { String getName() }
-        interface Lower extends Upper {}
-        class Foo implements Lower { String getName() { 'bar' } }
-        class Bar extends Foo {}
-        String foo(Bar impl) {
-             impl.getName()
-        }
-        assert foo(new Bar()) == 'bar'
+        assertScript '''
+            interface Upper { String getName() }
+            interface Lower extends Upper {}
+            class Foo implements Lower { String getName() { 'bar' } }
+            class Bar extends Foo {}
+            String foo(Bar impl) {
+                impl.getName()
+            }
+            assert foo(new Bar()) == 'bar'
         '''
     }
 
-    void testSpreadArgsForbiddenInMethodCall() {
+    void testSpreadArgsForbiddenInNonStaticMethodCall() {
         shouldFailWithMessages '''
-            void foo(String a, String b, int c, double d1, double d2) {}
-            void bar(String[] args, int c, double[] nums) {
-                foo(*args, c, *nums)
+            def foo(String a, String b, int c, double d, double e) {
+            }
+            def bar(String[] strings, int i, double[] numbers) {
+                foo(*strings, i, *numbers)
             }
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'Cannot find matching method'
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInStaticMethodCall() {
         shouldFailWithMessages '''
-            static void foo(String a, String b, int c, double d1, double d2) {}
-            static void bar(String[] args, int c, double[] nums) {
-                foo(*args, c, *nums)
+            static foo(String a, String b, int c, double d, double e) {
+            }
+            static bar(String[] strings, int i, double[] numbers) {
+                foo(*strings, i, *numbers)
             }
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'Cannot find matching method'
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInConstructorCall() {
         shouldFailWithMessages '''
-            class SpreadInCtor {
-                SpreadInCtor(String a, String b) { }
+            class C {
+                C(String a, String b) {
+                }
             }
-
-            new SpreadInCtor(*['A', 'B'])
+            new C(*['A','B'])
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                'Cannot find matching method SpreadInCtor#<init>(java.util.List <E extends java.lang.Object>)'
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'Cannot find matching method C#<init>(java.util.List <E extends java.lang.Object>)'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
         shouldFailWithMessages '''
             def closure = { String a, String b, String c -> println "$a $b $c" }
-            def strings = ['A', 'B', 'C']
+            def strings = ['A','B','C']
             closure(*strings)
         ''',
-                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
     void testBoxingShouldCostMore() {
@@ -954,7 +957,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }
 
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 lookup('mce').each {
                     def call = it.expression
                     def target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
@@ -1111,7 +1114,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5702
     void testShouldFindInterfaceMethod() {
         assertScript '''
-
             interface OtherCloseable {
                 void close()
             }
@@ -1246,22 +1248,22 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5743
     void testClosureAsParameter() {
         assertScript '''
-        Integer a( String s, Closure<Integer> b ) {
-          b( s )
-        }
+            Integer a( String s, Closure<Integer> b ) {
+                b( s )
+            }
 
-        assert a( 'tim' ) { 0 } == 0
+            assert a( 'tim' ) { 0 } == 0
         '''
     }
 
     // GROOVY-5743
     void testClosureAsParameterWithDefaultValue() {
         assertScript '''
-        Integer a( String s, Closure<Integer> b = {String it -> it.length()}) {
-          b( s )
-        }
+            Integer a( String s, Closure<Integer> b = {String it -> it.length()}) {
+                b( s )
+            }
 
-        assert a( 'tim' ) == 3
+            assert a( 'tim' ) == 3
         '''
     }
 
@@ -1273,24 +1275,30 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10939
+    void testClassHashCodeVsObjectHashCode() {
+        assertScript '''
+            int h = this.getClass().hashCode()
+        '''
+    }
+
     // GROOVY-5810
     void testCallStaticSuperMethod() {
         assertScript '''
-        class Top {
-            static boolean called = false
-            public static foo() {
-                called = true
-            }
-        }
-
-        class Bottom extends Top {
-            public static foo() {
-                super.foo() // compiles and creates StackOverFlow
+            class Top {
+                static boolean called = false
+                public static foo() {
+                    called = true
+                }
             }
 
-        }
-        Bottom.foo()
-        assert Top.called
+            class Bottom extends Top {
+                public static foo() {
+                    super.foo()
+                }
+            }
+            Bottom.foo()
+            assert Top.called
         '''
     }
 
@@ -1312,7 +1320,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testStaticContextScoping() {
         assertScript '''
             class A {
-                static List foo = 'a,b,c'.split(/,/).toList()*.trim()
+                static List foo = 'a,b,c'.split(/,/)*.trim()
             }
             assert A.foo == ['a','b','c']
         '''
@@ -1369,10 +1377,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testMoreExplicitErrorMessageOnStaticMethodNotFound() {
         shouldFailWithMessages '''
             Double.isFiniteMissing(2.0d)
-        ''', 'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
+        ''',
+        'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
+
         shouldFailWithMessages '''
             String.doSomething()
-        ''', 'Cannot find matching method java.lang.String#doSomething()'
+        ''',
+        'Cannot find matching method java.lang.String#doSomething()'
     }
 
     // GROOVY-6776
@@ -1403,70 +1414,71 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             try { new Tester()}
             catch(groovy.lang.MissingPropertyException expected) {}
-            '''
+        '''
+    }
+
+    // GROOVY-7987
+    void testNonStaticMethodViaStaticReceiver() {
+        shouldFailWithMessages '''
+            class Foo {
+                def m() {}
+            }
+            Foo.m()
+        ''',
+        'Non-static method Foo#m cannot be called from static context'
     }
 
     // GROOVY-7813
     void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
         shouldFailWithMessages '''
             class Foo {
-                def bar() { 2 }
-
-                static class Baz {
-                    def doBar() { bar() }
+                def m() {}
+                static class Bar {
+                    void test() { m() }
                 }
             }
-            null
-        ''', 'Non static method Foo#bar cannot be called from static context'
+        ''',
+        'Non-static method Foo#m cannot be called from static context'
     }
 
     void testStaticOuterMethodCanBeCalledFromStaticClass() {
         assertScript '''
             class Foo {
-                static def bar() { 2 }
-
-                static class Baz {
-                    def doBar() {
-                        bar()
+                static def sm() { 2 }
+                static class Bar {
+                    void test() {
+                        assert sm() == 2
                     }
                 }
             }
-            assert new Foo.Baz().doBar() == 2
+            new Foo.Bar().test()
         '''
     }
 
     void testInheritedMethodCanBeCalledFromStaticClass() {
         assertScript '''
-            class Bar {
-                def bar() { 1 }
+            class Foo {
+                def m() { 1 }
             }
 
-            class Foo {
-                static class Baz extends Bar {
-                    def doBar() {
-                        bar()
+            class Bar {
+                static class Baz extends Foo {
+                    void test() {
+                        assert m() == 1
                     }
                 }
             }
-            assert new Foo.Baz().doBar() == 1
+            new Bar.Baz().test()
         '''
     }
 
     // GROOVY-8445
     void testCoerceClosureToFunctionalInterface1() {
         if (IS_PRE_8) return
-
         assertScript '''
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
+            class Main {
+                static main(args) {
+                    assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e})
                 }
             }
         '''
@@ -1475,12 +1487,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8138
     void testCoerceClosureToFunctionalInterface2() {
         if (IS_PRE_8) return
-
-        assertScript '''
-            import static java.util.stream.Collectors.toList
-
-            class Test {
-                static void main(String[] args) {
+        assertScript '''import static java.util.stream.Collectors.toList
+            class Main {
+                static main(args) {
                     List<String> tables = ['a', 'b']
                     assert ['a'] == tables.stream().filter { tableName -> tableName.contains('a') }.collect(toList())
                 }
@@ -1502,16 +1511,16 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     //--------------------------------------------------------------------------
 
     static class MyMethodCallTestClass {
-
-        static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
         static String echo(String msg) {
             msg
         }
+        static int mul(int... ints) {
+            ints.toList().inject(1) { x,y -> x*y }
+        }
 
         int add(int x, int y) { x+y }
-        int add(double x, double y) { 2*x+y } // stupid but useful for tests :)
+        int add(double x, double y) { 2*x+y }
         int sum(int... args) { args.toList().sum() }
-
     }
 
     static class MyMethodCallTestClass2<T> extends MyMethodCallTestClass {
@@ -1522,18 +1531,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     static class GroovyPage {
-        public final void printHtmlPart(final int partNumber) {}
-        public final void createTagBody(int bodyClosureIndex, Closure<?> bodyClosure) {}
+        final void printHtmlPart(int partNumber) {}
+        final void createTagBody(int bodyClosureIndex, Closure<?> bodyClosure) {}
     }
 
-    public static class BaseWithProtected {
+    static class BaseWithProtected {
         protected int m() { 1 }
     }
 
-    public static class ChildWithPublic extends BaseWithProtected {
-        public int m() { 2 }
+    static class ChildWithPublic extends BaseWithProtected {
+        int m() { 2 }
     }
 
-    public static class Child2 extends ChildWithPublic {
+    static class Child2 extends ChildWithPublic {
     }
 }
