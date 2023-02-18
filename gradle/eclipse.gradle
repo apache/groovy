@@ -90,12 +90,12 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
 
         // tasks for cleaning the .settings files created above
 
-        task cleanEclipseGdt(type: Delete) {
+        tasks.register('cleanEclipseGdt', Delete) {
             delete "${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs"
         }
         cleanEclipse.dependsOn(cleanEclipseGdt)
 
-        task cleanEclipseJdtUI(type: Delete) {
+        tasks.register('cleanEclipseJdtUI', Delete) {
             delete "${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs"
         }
         cleanEclipse.dependsOn(cleanEclipseJdtUI)

@@ -28,7 +28,8 @@ tasks.withType(Wrapper).configureEach {
     gradleVersion = props.gradle_version
 }
 
-task bootstrap(dependsOn: 'wrapper') {
+tasks.register('bootstrap') {
+    dependsOn 'wrapper'
     doLast {
         ant.move file: "${projectDir}/gradlew", todir: "${projectDir}/../"
         ant.move file: "${projectDir}/gradlew.bat", todir: "${projectDir}/../"

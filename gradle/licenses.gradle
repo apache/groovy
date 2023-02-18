@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-task updateLicenses {
+tasks.register('updateLicenses') {
     description = 'Updates the various LICENSE files'
     ext.licensesDir = "${projectDir}/licenses"
     ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
@@ -32,7 +32,7 @@ task updateLicenses {
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
     outputs.files(licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
-            licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
+        licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -47,13 +47,13 @@ task updateLicenses {
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
-                (licenseBinZipFile): binzipFiles,
-                (licenseDocFile): docFiles,
-                (licenseJarJarFile): jarjarFiles,
-                (licenseSrcFile): srcFiles,
-                (licenseDocGeneratorFile): docgeneratorFiles,
-                (licenseGroovyDocFile): groovydocFiles,
-                (licenseJsr223File): jsr223Files,
+            (licenseBinZipFile)      : binzipFiles,
+            (licenseDocFile)         : docFiles,
+            (licenseJarJarFile)      : jarjarFiles,
+            (licenseSrcFile)         : srcFiles,
+            (licenseDocGeneratorFile): docgeneratorFiles,
+            (licenseGroovyDocFile)   : groovydocFiles,
+            (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(licenseBaseFile)] + inFiles).collect {
@@ -63,15 +63,15 @@ task updateLicenses {
         }
         file(licenseSdkFile).withWriter { writer ->
             writer << [
-                    file(licenseBinZipFile).text,
-                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/LICENSE " +
-                            "and doc/LICENSE files for additional license information."
+                file(licenseBinZipFile).text,
+                "This convenience zip embeds Groovy's src and doc zips.\nSee also src/LICENSE " +
+                    "and doc/LICENSE files for additional license information."
             ].join(licenseHdr) + '\n'
         }
     }
 }
 
-task updateNotices {
+tasks.register('updateNotices') {
     description = 'Updates the various NOTICE files'
     ext.noticesDir = "${projectDir}/notices"
     ext.noticeBaseFile = "${noticesDir}/NOTICE-BASE"
@@ -85,7 +85,7 @@ task updateNotices {
     ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
     outputs.files(noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
-            noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
+        noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
 
     doLast {
         def srcFiles = fileTree(noticesDir).include('*-SRC*.txt').sort { it.name }
@@ -102,12 +102,12 @@ task updateNotices {
         }.sort { it.name }
         def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-BINZIP-SRC.txt')
         [
-                (noticeBinZipFile): binzipFiles,
-                (noticeGrooidFile): grooidFiles,
-                (noticeGrooidJarJarFile): grooidJarjarFiles,
-                (noticeJarJarFile): jarjarFiles,
-                (noticeSrcFile): srcFiles,
-                (noticeGroovyConsoleFile): groovyconsoleFiles,
+            (noticeBinZipFile)       : binzipFiles,
+            (noticeGrooidFile)       : grooidFiles,
+            (noticeGrooidJarJarFile) : grooidJarjarFiles,
+            (noticeJarJarFile)       : jarjarFiles,
+            (noticeSrcFile)          : srcFiles,
+            (noticeGroovyConsoleFile): groovyconsoleFiles,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(noticeBaseFile)] + inFiles).collect {
@@ -117,9 +117,9 @@ task updateNotices {
         }
         file(noticeSdkFile).withWriter { writer ->
             writer << [
-                    file(noticeBinZipFile).text,
-                    "This convenience zip embeds Groovy's src and doc zips.\nSee also src/NOTICE " +
-                            "and doc/NOTICE files for additional notice information."
+                file(noticeBinZipFile).text,
+                "This convenience zip embeds Groovy's src and doc zips.\nSee also src/NOTICE " +
+                    "and doc/NOTICE files for additional notice information."
             ].join('\n\n')
         }
     }
