@@ -102,6 +102,36 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provide the extension of this path.
+     *
+     * @param self a path object
+     * @return the extension of this path (not including the dot), or an empty string if it doesn't have one.
+     * @since 5.0.0
+     */
+    public static String getExtension(Path self) {
+        final Path fileName = self.getFileName();
+        final String name = fileName == null ? "" : fileName.toString();
+        final int index = name.lastIndexOf('.');
+        if (index == -1) return "";
+        return name.substring(index + 1);
+    }
+
+    /**
+     * Provide the path's name without an extension.
+     *
+     * @param self a file object
+     * @return the name of this file or directory without an extension, or an empty string if this path has zero path elements.
+     * @since 5.0.0
+     */
+    public static String getBaseName(Path self) {
+        final Path fileName = self.getFileName();
+        final String name = fileName == null ? "" : fileName.toString();
+        final int index = name.lastIndexOf('.');
+        if (index == -1) return name;
+        return name.substring(0, index);
+    }
+
+    /**
      * Create an object output stream for this path.
      *
      * @param self a {@code Path} object
