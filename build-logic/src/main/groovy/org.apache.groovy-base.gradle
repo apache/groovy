@@ -144,7 +144,7 @@ tasks.named('jar') {
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
 }
 
-tasks.withType(AbstractArchiveTask) {
+tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
@@ -261,7 +261,7 @@ tasks.withType(Checkstyle).configureEach {
     def chk = it
     finalizedBy {
         // we use a closure here as a workaround, to preserve task configuration laziness
-        tasks.create("${name}Report", CheckstyleHtmlReport) {
+        tasks.register("${name}Report", CheckstyleHtmlReport) {
             dependsOn chk
             source.from(chk.source)
             configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")

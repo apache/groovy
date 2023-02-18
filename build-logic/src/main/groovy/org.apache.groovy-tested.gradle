@@ -96,7 +96,7 @@ tasks.withType(Test).configureEach {
 
 tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
     if (taskName.startsWith('testSingle')) {
-        tasks.create(taskName).dependsOn(test)
+        tasks.register(taskName) { dependsOn(test) }
         test.includes = ['**/' + taskName.substring(10) + '.class']
         test.outputs.upToDateWhen { false }
     }
