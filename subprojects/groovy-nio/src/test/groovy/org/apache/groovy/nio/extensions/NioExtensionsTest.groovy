@@ -180,6 +180,26 @@ class NioExtensionsTest extends Specification {
         path.size() == str.size()
     }
 
+    def testPathExtension() {
+        when:
+        def filePath = new File(tempFile, 'gradle.properties').toPath()
+        def dirPath = new File(tempFile, 'properties').toPath()
+
+        then:
+        filePath.getExtension() == 'properties'
+        dirPath.getExtension() == ""
+    }
+
+    def testPathBaseName() {
+        when:
+        def filePath = new File(tempFile, 'gradle.properties').toPath()
+        def dirPath = new File(tempFile, 'properties').toPath()
+
+        then:
+        filePath.getBaseName() == 'gradle'
+        dirPath.getBaseName() == 'properties'
+    }
+
     def testNewObjectOutputStream() {
         setup:
         def str = 'Hello world!'
