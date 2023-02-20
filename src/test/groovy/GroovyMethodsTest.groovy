@@ -384,13 +384,13 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testFileExtension() {
-        assert new File('gradle.properties').getExtension() == 'properties'
-        assert new File('properties').getExtension() == ""
+        assert new File('gradle.properties').extension == 'properties'
+        assert new File('properties').extension == ""
     }
 
     void testFileBaseName() {
-        assert new File('gradle.properties').getBaseName() == 'gradle'
-        assert new File('properties').getBaseName() == 'properties'
+        assert new File('gradle.properties').baseName == 'gradle'
+        assert new File('properties').baseName == 'properties'
     }
 
     void testMatcherSize() {
