@@ -25,6 +25,8 @@ docAggregation {
     excludeFromJavadoc '**/*.html',
             '**/*.groovy',
             '*.g4',
-            '**/GroovyRecognizer.java' // generated file
+            '**/GroovyRecognizer.java', // generated file
+            '**/*.tokens', // Antlr generated file
+            '**/*.interp' // Antlr generated file
 }
 
