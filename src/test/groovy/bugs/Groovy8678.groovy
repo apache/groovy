@@ -81,16 +81,16 @@ final class Groovy8678 {
         def x = new WithMethods()
         def throwable = shouldFail () -> x.'42'
         assert throwable.class == MissingPropertyException.class
-        assert throwable.message == 'No such property: 42 for class: groovy.bugs.Groovy8678'
+        assert throwable.message.startsWith('No such property: 42 for class: groovy.bugs.Groovy8678$WithMethods')
         throwable = shouldFail () -> x.'42d'
         assert throwable.class == MissingPropertyException.class
-        assert throwable.message == 'No such property: 42d for class: groovy.bugs.Groovy8678'
+        assert throwable.message.startsWith('No such property: 42d for class: groovy.bugs.Groovy8678$WithMethods')
         throwable = shouldFail () -> x.'84'()
         assert throwable.class == MissingMethodException.class
-        assert throwable.message.startsWith('No signature of method: groovy.bugs.Groovy8678.84() is applicable for argument types: () values: []')
+        assert throwable.message.startsWith('No signature of method: groovy.bugs.Groovy8678$WithMethods.84() is applicable for argument types: () values: []')
         throwable = shouldFail () -> x.'84f'()
         assert throwable.class == MissingMethodException.class
-        assert throwable.message.startsWith('No signature of method: groovy.bugs.Groovy8678.84f() is applicable for argument types: () values: []')
+        assert throwable.message.startsWith('No signature of method: groovy.bugs.Groovy8678$WithMethods.84f() is applicable for argument types: () values: []')
     }
 
     @Test
