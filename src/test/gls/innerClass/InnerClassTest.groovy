@@ -1937,8 +1937,8 @@ final class InnerClassTest {
     @Test // GROOVY-8274
     void testMissingMethodHandling() {
         assertScript '''
-            class A {
-                class B {
+            class Outer {
+                class Inner {
                     def methodMissing(String name, args) {
                         return name
                     }
@@ -1946,12 +1946,12 @@ final class InnerClassTest {
 
                 def test(Closure c) {
                     c.resolveStrategy = Closure.DELEGATE_ONLY
-                    c.delegate = new B()
+                    c.delegate = new Inner()
                     c.call()
                 }
             }
 
-            def x = new A().test { ->
+            def x = new Outer().test { ->
                 hello() // missing
             }
             assert x == 'hello'
@@ -1964,21 +1964,32 @@ final class InnerClassTest {
             class Outer {
                 private static List items = []
                 void add() { items.add('Outer') }
-                static class Nested {
-                    void add() { items.add('Nested') }
-                    static class NestedNested {
-                        void add() { items.add('NestedNested') }
-                        void set() { items = ['Overridden'] }
+                static class Inner {
+                    void add() { items.add('Inner') }
+                    static class InnerInner {
+                        void add() { items.add('InnerInner') }
+                        void set() { items = ['Overwritten'] }
                     }
                 }
             }
             new Outer().add()
-            new Outer.Nested().add()
-            new Outer.Nested.NestedNested().add()
-            assert Outer.items == ["Outer", "Nested", "NestedNested"]
-            new Outer.Nested.NestedNested().set()
-            assert Outer.items == ["Overridden"]
+            new Outer.Inner().add()
+            new Outer.Inner.InnerInner().add()
+            assert Outer.items == ['Outer', 'Inner', 'InnerInner']
+            new Outer.Inner.InnerInner().set()
+            assert Outer.items == ['Overwritten']
         '''
+    }
+
+    @Test // GROOVY-10935
+    void testNestedPropertyHandling2() {
+        def err = shouldFail '''
+            class Outer {
+                static class Inner {}
+            }
+            new Outer.Inner().missing
+        '''
+        assert err =~ /No such property: missing for class: Outer.Inner/
     }
 
     @Test // GROOVY-7312

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
 import groovy.transform.CompileStatic;
 import groovy.transform.stc.POJO;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -32,6 +34,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -48,15 +51,22 @@ import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -212,7 +222,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         final String outerClassInternalName = getInternalName(outerClass, isStatic);
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "methodMissing",
                 ACC_PUBLIC,
                 OBJECT_TYPE,
@@ -237,7 +247,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "$static_methodMissing",
                 ACC_PUBLIC | ACC_STATIC,
                 OBJECT_TYPE,
@@ -247,7 +257,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "propertyMissing",
                 ACC_PUBLIC,
                 VOID_TYPE,
@@ -272,7 +282,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "$static_propertyMissing",
                 ACC_PUBLIC | ACC_STATIC,
                 VOID_TYPE,
@@ -282,7 +292,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "propertyMissing",
                 ACC_PUBLIC,
                 OBJECT_TYPE,
@@ -306,7 +316,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addSyntheticMethod(node,
+        addMissingHandler(node,
                 "$static_propertyMissing",
                 ACC_PUBLIC | ACC_STATIC,
                 OBJECT_TYPE,
@@ -317,12 +327,29 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         );
     }
 
-    private void addSyntheticMethod(final InnerClassNode innerClass, final String methodName, final int modifiers,
+    private void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
         MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
         if (method == null) {
-            BlockStatement methodBody = block();
-            consumer.accept(methodBody, parameters);
+            Parameter catchParam = param(OBJECT_TYPE, "notFound"); // dummy type
+            ClassNode exceptionT;
+            Expression newException;
+            Expression selfType = varX("this");
+            if ((modifiers & ACC_STATIC) == 0) selfType = callX(selfType, "getClass");
+            if (methodName.endsWith("methodMissing")) {
+                exceptionT = ClassHelper.make(MissingMethodException.class);
+                newException = ctorX(exceptionT, args(propX(varX(catchParam),"method"), selfType, propX(varX(catchParam),"arguments")));
+            } else {
+                exceptionT = ClassHelper.make(MissingPropertyException.class);
+                newException = ctorX(exceptionT, args(propX(varX(catchParam), "property"), selfType, propX(varX(catchParam), "cause")));
+            }
+
+            catchParam.setType(exceptionT);
+            catchParam.setOriginType(exceptionT);
+            BlockStatement handleMissing = block();
+            consumer.accept(handleMissing, parameters);
+            TryCatchStatement methodBody = tryCatchS(handleMissing);
+            methodBody.addCatch(catchS(catchParam, throwS(newException)));
             innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
 
             // if there is a user-defined method, add compiler error and continue
