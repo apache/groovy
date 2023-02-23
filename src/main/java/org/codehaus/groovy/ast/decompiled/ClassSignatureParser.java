@@ -27,7 +27,6 @@ import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class ClassSignatureParser {
 
@@ -60,7 +59,9 @@ class ClassSignatureParser {
         }
 
         if (!stub.recordComponents.isEmpty()) {
-            classNode.setRecordComponents(stub.recordComponents.stream().map(rc -> {
+            List<RecordComponentNode> recordComponents =
+                    new ArrayList<>(stub.recordComponents.size());
+            for (RecordComponentStub rc : stub.recordComponents) {
                 ClassNode[] type = {resolver.resolveType(Type.getType(rc.descriptor))};
                 if (rc.signature != null) {
                     new SignatureReader(rc.signature).accept(new TypeSignatureParser(resolver) {
@@ -69,14 +70,16 @@ class ClassSignatureParser {
                             type[0] = applyErasure(result, type[0]);
                         }
                     });
+                } else {
+                    type[0] = type[0].getPlainNodeReference();
                 }
-                ClassNode rcType = type[0];
-                Annotations.addTypeAnnotations(rc, rcType, resolver);
 
-                RecordComponentNode recordComponent = new RecordComponentNode(classNode, rc.name, rcType);
+                RecordComponentNode recordComponent = new RecordComponentNode(classNode, rc.name, type[0]);
                 Annotations.addAnnotations(rc, recordComponent, resolver);
-                return recordComponent;
-            }).collect(Collectors.toList()));
+                Annotations.addTypeAnnotations(rc, type[0], resolver);
+                recordComponents.add(recordComponent);
+            }
+            classNode.setRecordComponents(recordComponents);
         }
     }
 
