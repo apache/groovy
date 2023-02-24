@@ -26,8 +26,7 @@ import org.junit.Test
  *
  * @see groovy.contracts.Ensures
  */
-
-class OldVariablePostconditionTests extends BaseTestClass {
+final class OldVariablePostconditionTests extends BaseTestClass {
 
     def templateSourceCode = '''
     package tests
@@ -112,58 +111,50 @@ class OldVariablePostconditionTests extends BaseTestClass {
 
     @Test
     void generate_old_variables_for_super_class() {
+        add_class_to_classpath '''
+            package tests
 
-        def baseClassSource = '''
-        package tests
+            import groovy.contracts.*
 
-        import groovy.contracts.*
+            class Account {
+                private BigDecimal balance
 
-        class Account {
-            protected BigDecimal balance
+                Account(BigDecimal balance = 0.0) {
+                    this.balance = balance
+                }
 
-            def Account( BigDecimal amount = 0.0 ) {
-                balance = amount
+                BigDecimal getBalance() {
+                    return balance
+                }
+
+                @Requires({ amount > 0.0 })
+                void deposit(BigDecimal amount) {
+                    balance += amount
+                }
+
+                @Requires({ amount > 0.0 })
+                void withdraw(BigDecimal amount) {
+                    if (balance >= amount) {
+                        balance -= amount
+                    }
+                }
             }
-
-            void deposit( BigDecimal amount ) {
-                balance += amount
-            }
-
-            @Requires({ amount >= 0.0 })
-            BigDecimal withdraw( BigDecimal amount ) {
-                if (balance < amount) return 0.0
-
-                balance -= amount
-                return amount
-            }
-
-            BigDecimal getBalance() {
-                return balance
-            }
-        }
         '''
 
-        def descendantClassSource = '''
-        package tests
+        def betterAccount = create_instance_of '''
+            package tests
 
-        import groovy.contracts.*
+            import groovy.contracts.*
 
-        class BetterAccount extends Account {
-            @Ensures({ balance == old.balance - (amount * 0.5) })
-            BigDecimal withdraw( BigDecimal amount ) {
-                if (balance < amount) return 0.0
-
-                balance -= amount * 0.5
-                return amount
+            class BetterAccount extends Account {
+                @Ensures({ balance == old.balance - (amount * 0.5) })
+                void withdraw(BigDecimal amount) {
+                    super.withdraw(amount * 0.5)
+                }
             }
-        }
         '''
-
-        add_class_to_classpath baseClassSource
-
-        def betterAccount = create_instance_of(descendantClassSource)
         betterAccount.deposit(30.0)
         betterAccount.withdraw(10.0)
-
+        assert betterAccount.balance == 25.0
     }
 }

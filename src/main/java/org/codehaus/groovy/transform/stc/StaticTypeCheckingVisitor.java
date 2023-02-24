@@ -217,6 +217,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
@@ -1439,7 +1441,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         constructors = findMethod(node, "<init>", arguments);
         if (constructors.isEmpty()) {
-            if (isBeingCompiled(node) && !node.isInterface() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
+            if (isBeingCompiled(node) && !node.isAbstract() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
                 // there will be a default hash map constructor added later
                 return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
             } else {
@@ -2425,6 +2427,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isClassClassNodeWrappingConcreteType(type)){
                     type = type.getGenericsTypes()[0].getType();
                     storeType(expression,wrapClosureType(type));
+                    // GROOVY-10930: check constructor reference
+                    ClassNode[] signature = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+                    if (signature != null) { Expression[] mocks = Arrays.stream(signature)
+                            .map(t->castX(t,defaultValueX(t))).toArray(Expression[]::new);
+                        Expression dummy = ctorX(type, args(mocks));
+                        dummy.setSourcePosition(expression);
+                        dummy.visit(this);
+                    }
                 }
                 return;
             }
@@ -2506,10 +2516,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (name.equals(pn.getGetterNameOrDefault())) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), pn.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
                     return node;
                 } else if (name.equals(pn.getSetterNameOrDefault()) && !Modifier.isFinal(pn.getModifiers())) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
                     return node;
                 }
             }
@@ -3593,8 +3605,8 @@ out:                if (mn.size() != 1) {
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
                         }
-                        if (!targetMethod.isStatic() && !isClassType(declaringClass) && isClassType(receiver)
-                                && chosenReceiver.getData() == null && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
+                        if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
+                                && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
                         } else if (targetMethod.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
                             String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
@@ -4740,7 +4752,7 @@ out:                if (mn.size() != 1) {
         return methods;
     }
 
-    private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<MethodNode> methods) {
+    private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<? extends MethodNode> methods) {
         // using a comparator of parameters
         List<MethodNode> result = new LinkedList<>();
         for (MethodNode method : methods) {
@@ -4800,7 +4812,7 @@ out:                if (mn.size() != 1) {
 
         List<MethodNode> methods;
         if ("<init>".equals(name) && !receiver.isInterface()) {
-            methods = addGeneratedMethods(receiver, new ArrayList<>(receiver.getDeclaredConstructors()));
+            methods = addGeneratedMethods(receiver, receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);
@@ -4833,8 +4845,8 @@ out:                if (mn.size() != 1) {
             if (methods.isEmpty()) {
                 addArrayMethods(methods, receiver, name, args);
             }
-            if (methods.isEmpty() && (args == null || args.length == 0)) {
-                // check if it's a property
+            if (args == null || args.length == 0) {
+                // check for property accessor
                 String pname = extractPropertyNameFromMethodName("get", name);
                 if (pname == null) {
                     pname = extractPropertyNameFromMethodName("is", name);
@@ -4853,24 +4865,27 @@ out:                if (mn.size() != 1) {
                         }
                     }
                 }
-                if (property != null) {
-                    int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
-                    MethodNode node = new MethodNode(name, mods, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                if (property != null && property.getDeclaringClass().getGetterMethod(name) == null) {
+                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
+                            property.getOriginType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(property.getDeclaringClass());
-                    return Collections.singletonList(node);
+                    node.setSynthetic(true);
+                    methods.add(node);
                 }
-            } else if (methods.isEmpty() && args.length == 1) {
-                // maybe we are looking for a setter ?
+            } else if (args.length == 1 && (methods.isEmpty()
+                    || methods.stream().allMatch(MethodNode::isAbstract))) { // GROOVY-10922
+                // check for property mutator
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
                     PropertyNode property = findProperty(receiver, pname);
-                    if (property != null && !Modifier.isFinal(property.getModifiers())) {
+                    if (property != null && !property.isFinal()) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
-                            int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
-                            MethodNode node = new MethodNode(name, mods, VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
+                                    VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                             node.setDeclaringClass(property.getDeclaringClass());
-                            return Collections.singletonList(node);
+                            node.setSynthetic(true);
+                            methods.add(node);
                         }
                     }
                 }

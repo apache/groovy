@@ -50,10 +50,13 @@ tasks.withType(Test).configureEach {
         systemProperties 'java.awt.headless': 'true'
     }
     systemProperties 'apple.awt.UIElement': 'true',
-            'javadocAssertion.src.dir': './src/main',
-            'grape.root': grapeDirectory.absolutePath,
-            'gradle.home': gradle.gradleHomeDir, // this is needed by the security.policy
-            'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
+            'javadocAssertion.src.dir': './src/main'
+
+    jvmArgumentProviders.add(new TestCommandLineArgumentProvider(
+            grapeRoot: grapeDirectory,
+            gradleHome: gradle.gradleHomeDir, // this is needed by the security.policy
+            userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
+    ))
 
     if (rootProject.hasProperty('target.java.home')) {
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
@@ -94,9 +97,28 @@ tasks.withType(Test).configureEach {
     }
 }
 
+class TestCommandLineArgumentProvider implements CommandLineArgumentProvider {
+
+    @Internal
+    File grapeRoot
+
+    @Internal
+    File gradleHome
+
+    @Internal
+    File userHome
+
+    @Override
+    Iterable<String> asArguments() {
+        ["-Dgrape.root=${grapeRoot.absolutePath}".toString(),
+         "-Dgradle.home=${gradleHome.absolutePath}".toString(),
+         "-Duser.home=${userHome.absolutePath}".toString()]
+    }
+}
+
 tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
     if (taskName.startsWith('testSingle')) {
-        tasks.create(taskName).dependsOn(test)
+        tasks.register(taskName) { dependsOn(test) }
         test.includes = ['**/' + taskName.substring(10) + '.class']
         test.outputs.upToDateWhen { false }
     }

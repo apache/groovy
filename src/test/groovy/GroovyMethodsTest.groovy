@@ -383,6 +383,16 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert new File('gradle.properties').size()
     }
 
+    void testFileExtension() {
+        assert new File('gradle.properties').extension == 'properties'
+        assert new File('properties').extension == ""
+    }
+
+    void testFileBaseName() {
+        assert new File('gradle.properties').baseName == 'gradle'
+        assert new File('properties').baseName == 'properties'
+    }
+
     void testMatcherSize() {
         assertEquals 3, ('aaa' =~ /./).count
         assertEquals 3, ('aaa' =~ /./).size()

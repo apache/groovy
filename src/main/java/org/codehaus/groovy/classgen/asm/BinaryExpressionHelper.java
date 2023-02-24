@@ -387,23 +387,35 @@ public class BinaryExpressionHelper {
         boolean singleAssignment = !(leftExpression instanceof TupleExpression);
         boolean directAssignment = defineVariable && singleAssignment; //def x=y
 
-        if (directAssignment && rightExpression instanceof EmptyExpression) {
-            VariableExpression ve = (VariableExpression) leftExpression;
-            BytecodeVariable var = compileStack.defineVariable(ve, controller.getTypeChooser().resolveType(ve, controller.getClassNode()), false);
-            operandStack.loadOrStoreVariable(var, false);
-            return;
-        }
-        // evaluate the RHS and store the result
         // TODO: LHS has not been visited, it could be a variable in a closure and type chooser is not aware.
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
+
+        if (directAssignment && rightExpression instanceof EmptyExpression) {
+            BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
+            operandStack.loadOrStoreVariable(v, false);
+            return;
+        }
+
+        // evaluate RHS and store the value
+
         if (rightExpression instanceof ListExpression && lhsType.isArray()) {
             Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
             array.setSourcePosition(rightExpression);
             array.visit(acg);
         } else if (rightExpression instanceof EmptyExpression) {
-            loadInitValue(leftExpression.getType()); // TODO: lhsType?
+            loadInitValue(lhsType); // null or zero (or false)
         } else {
             rightExpression.visit(acg);
+        }
+
+        // GROOVY-10918: direct store to local variable or parameter (no temp)
+        if (!defineVariable && leftExpression instanceof VariableExpression) {
+            BytecodeVariable v = compileStack.getVariable(leftExpression.getText(), false);
+            if (v != null) {
+                operandStack.dup(); // return value of the assignment expression
+                operandStack.storeVar(v);
+                return;
+            }
         }
 
         ClassNode rhsType = operandStack.getTopOperand();
@@ -896,98 +908,72 @@ public class BinaryExpressionHelper {
     }
 
     private void evaluateElvisExpression(final TernaryExpression expression) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        CompileStack compileStack = controller.getCompileStack();
-        OperandStack operandStack = controller.getOperandStack();
-        TypeChooser typeChooser = controller.getTypeChooser();
-
-        Expression boolPart = expression.getBooleanExpression().getExpression();
+        Expression truePart = expression.getTrueExpression();
         Expression falsePart = expression.getFalseExpression();
 
-        ClassNode truePartType = typeChooser.resolveType(boolPart, controller.getClassNode());
+        TypeChooser typeChooser = controller.getTypeChooser();
+        ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
+        ClassNode commonType = WideningCategories.lowestUpperBound(truePartType, falsePartType);
 
-        // x?:y is equal to x?x:y, which evals to
-        //      var t=x; boolean(t)?t:y
-        // first we load x, dup it, convert the dupped to boolean, then
-        // jump depending on the value. For true we are done, for false we
-        // have to load y, thus we first remove x and then load y.
-        // But since x and y may have different stack lengths, this cannot work
-        // Thus we have to do the following:
-        // Be X the type of x, Y the type of y and S the common supertype of
-        // X and Y, then we have to see x?:y as
-        //      var t=x;boolean(t)?S(t):S(y)
-        // so we load x, dup it, store the value in a local variable (t), then
-        // do boolean conversion. In the true part load t and cast it to S,
-        // in the false part load y and cast y to S
+        // write "x?:y" as "boolean(x)?T(x):T(y)" where T is common type of x and y
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
 
-        // load x, dup it, store one in $t and cast the remaining one to boolean
-        int mark = operandStack.getStackLength();
-        boolPart.visit(controller.getAcg());
+        // load x, dup it and cast to boolean
+        truePart.visit(controller.getAcg());
+        int top = operandStack.getStackLength();
         operandStack.dup();
-        if (ClassHelper.isPrimitiveType(truePartType) && !ClassHelper.isPrimitiveType(operandStack.getTopOperand())) {
-            truePartType = ClassHelper.getWrapper(truePartType);
-        }
-        int retValueId = compileStack.defineTemporaryVariable("$t", truePartType, true);
-        operandStack.castToBool(mark, true);
-
+        operandStack.castToBool(top, true);
         Label l0 = operandStack.jump(IFEQ);
-        // true part: load $t and cast to S
-        operandStack.load(truePartType, retValueId);
-        operandStack.doGroovyCast(common);
+
+        // true path: cast to T
+        operandStack.doGroovyCast(commonType);
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
 
-        // false part: load false expression and cast to S
+        // false path: drop x, load y and cast to T
         mv.visitLabel(l0);
+        operandStack.pop();
         falsePart.visit(controller.getAcg());
-        operandStack.doGroovyCast(common);
+        operandStack.doGroovyCast(commonType);
 
-        // finish and cleanup
+        // finish up
         mv.visitLabel(l1);
-        compileStack.removeVar(retValueId);
-        operandStack.replace(common, 2);
+        operandStack.replace(commonType);
     }
 
     private void evaluateTernaryExpression(final TernaryExpression expression) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        TypeChooser typeChooser = controller.getTypeChooser();
-        OperandStack operandStack = controller.getOperandStack();
-
         Expression boolPart = expression.getBooleanExpression();
         Expression truePart = expression.getTrueExpression();
         Expression falsePart = expression.getFalseExpression();
 
+        TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode truePartType = typeChooser.resolveType(truePart, controller.getClassNode());
         ClassNode falsePartType = typeChooser.resolveType(falsePart, controller.getClassNode());
-        ClassNode common = WideningCategories.lowestUpperBound(truePartType, falsePartType);
+        ClassNode commonType = WideningCategories.lowestUpperBound(truePartType, falsePartType);
 
-        // we compile b?x:y as
-        //      boolean(b)?S(x):S(y), S = common super type of x,y
-        // so we load b, do boolean conversion.
-        // In the true part load x and cast it to S,
-        // in the false part load y and cast y to S
+        // write "x?y:z" as "x?T(y):T(z)" where T is common type of y and z
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
 
-        // load b and convert to boolean
-        int mark = operandStack.getStackLength();
+        // load x
         boolPart.visit(controller.getAcg());
-        operandStack.castToBool(mark, true);
-
         Label l0 = operandStack.jump(IFEQ);
-        // true part: load x and cast to S
+
+        // true path: load y and cast to T
         truePart.visit(controller.getAcg());
-        operandStack.doGroovyCast(common);
+        operandStack.doGroovyCast(commonType);
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
 
-        // false part: load y and cast to S
+        // false path: load z and cast to T
         mv.visitLabel(l0);
         falsePart.visit(controller.getAcg());
-        operandStack.doGroovyCast(common);
+        operandStack.doGroovyCast(commonType);
 
-        // finish and cleanup
+        // finish up
         mv.visitLabel(l1);
-        operandStack.replace(common, 2);
+        operandStack.replace(commonType, 2);
     }
 }

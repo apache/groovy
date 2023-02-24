@@ -594,12 +594,12 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
                 if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
             } else {
-                String changedName = name;
-                if (receiver instanceof GeneratedClosure && changedName.equals("call")) {
-                    changedName = "doCall";
+                String name = this.name;
+                if (name.equals("call") && receiver instanceof GeneratedClosure) {
+                    name = "doCall";
                 }
                 if (!mci.hasCustomInvokeMethod())
-                    method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
+                    method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
@@ -639,23 +639,19 @@ public abstract class Selector {
             if (metaMethod instanceof CachedMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
-                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm);
+                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm, sender);
                 isVargs = cm.isVargsMethod();
-                try {
-                    Method m = cm.getCachedMethod();
-                    handle = correctClassForNameAndUnReflectOtherwise(m);
-                    if (LOG_ENABLED) LOG.info("successfully unreflected method");
-                    if (isStaticCategoryTypeMethod) {
-                        handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
-                        handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
-                    } else if (!isCategoryTypeMethod && isStatic(m)) {
-                        // we drop the receiver, which might be a Class (invocation on Class)
-                        // or it might be an object (static method invocation on instance)
-                        // Object.class handles both cases at once
-                        handle = MethodHandles.dropArguments(handle, 0, Object.class);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new GroovyBugError(e);
+                Method m = cm.getCachedMethod();
+                handle = dealWithClassForNameOrObjectCloneOtherwiseUnreflect(m);
+                if (LOG_ENABLED) LOG.info("successfully unreflected method");
+                if (isStaticCategoryTypeMethod) {
+                    handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
+                    handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
+                } else if (!isCategoryTypeMethod && Modifier.isStatic(m.getModifiers())) {
+                    // we drop the receiver, which might be a Class (invocation on Class)
+                    // or it might be an object (static method invocation on instance)
+                    // Object.class handles both cases at once
+                    handle = MethodHandles.dropArguments(handle, 0, Object.class);
                 }
             } else if (method != null) {
                 if (LOG_ENABLED) LOG.info("meta method is dgm helper");
@@ -674,17 +670,23 @@ public abstract class Selector {
             }
         }
 
-        private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
-            final String methodName = m.getName();
-            final int parameterCount = m.getParameterTypes().length;
-            final Class<?> declaringClass = m.getDeclaringClass();
-            if (declaringClass == Class.class && parameterCount == 1 && methodName.equals("forName")) {
-                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
-            } else if (declaringClass == Object.class && parameterCount == 0 && methodName.equals("clone") && null != args && 1 == args.length) {
+        private MethodHandle dealWithClassForNameOrObjectCloneOtherwiseUnreflect(final Method m) {
+            int parameterCount = m.getParameterCount();
+            if (parameterCount == 1 && m.getName().equals("forName") && m.getDeclaringClass() == Class.class) {
+                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+            } else if (parameterCount == 0 && m.getName().equals("clone") && args != null && args.length == 1 && m.getDeclaringClass() == Object.class) {
                 return ObjectUtil.getCloneObjectMethodHandle();
             }
 
-            return LOOKUP.unreflect(m);
+            try {
+                MethodHandles.Lookup lookup = LOOKUP;
+                if (!Modifier.isPublic(m.getModifiers())) { // GROOVY-10070, et al.
+                    lookup = ((Java8)VMPluginFactory.getPlugin()).newLookup(sender);
+                }
+                return lookup.unreflect(m); // throws if sender cannot invoke method
+            } catch (IllegalAccessException e) {
+                throw new GroovyBugError(e);
+            }
         }
 
         /**
@@ -1061,14 +1063,6 @@ public abstract class Selector {
             receiver = NullObject.getNullObject();
         }
         return receiver;
-    }
-
-    /**
-     * Returns if a method is static
-     */
-    private static boolean isStatic(Method m) {
-        int mods = m.getModifiers();
-        return (mods & Modifier.STATIC) != 0;
     }
 
     /**

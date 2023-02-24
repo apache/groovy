@@ -16,14 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.util.function;
 
-import groovy.test.GroovyTestCase
-
-// TODO add JVM option `--illegal-access=deny` when all warnings fixed
-class Groovy8339Bug extends GroovyTestCase {
-    void testCase2() {
-        StringBuilder sb = new StringBuilder()
-        sb.setLength(0)
-    }
+/**
+ * A comparator of two double values.
+ */
+@FunctionalInterface
+public interface DoubleComparator {
+    /**
+     * Compares its two arguments for order.
+     *
+     * @param v1 The double value to compare.
+     * @param v2 The double value to compare.
+     * @return If v1 is less than v2, returns negative. If v1 equals to v2, returns zero. If v1 is greater than v2, returns positive.
+     */
+    int compare(double v1, double v2);
 }

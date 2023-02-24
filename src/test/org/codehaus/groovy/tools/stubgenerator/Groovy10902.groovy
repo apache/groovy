@@ -16,30 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.swing.beans
+package org.codehaus.groovy.tools.stubgenerator
 
-import org.junit.Test
+final class Groovy10902 extends StringSourcesStubTestCase {
 
-import static groovy.swing.GroovySwingTestCase.testInEDT
-
-final class BindableSwingTest {
-
-    // GROOVY-8339, GROOVY-10070
-    @Test
-    void testExtendsComponent() {
-        testInEDT {
-            new GroovyShell().evaluate '''
-                class BindableTestBean extends javax.swing.JPanel {
-                    @groovy.beans.Bindable String testValue
+    @Override
+    Map<String, String> provideSources() {
+        [
+            'G.groovy': '''
+                class G {
+                    public static final int DYNAMIC_CONSTANT = (9.9).intValue()
                 }
+            ''',
+            'J.java': '''
+                public class J {
+                    int m() {
+                        return G.DYNAMIC_CONSTANT;
+                    }
+                }
+            ''',
+        ]
+    }
 
-                changed = false
+    @Override
+    void verifyStubs() {
+        String stub = stubJavaSourceFor('G')
+        assert stub.contains("public static final int DYNAMIC_CONSTANT = new java.lang.Integer(0);")
 
-                def bean = new BindableTestBean(testValue: 'foo')
-                bean.propertyChange = {changed = true}
-                bean.testValue = 'bar'
-                assert changed
-            '''
-        }
+        Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
+        assert pojo.m() == 9
     }
 }

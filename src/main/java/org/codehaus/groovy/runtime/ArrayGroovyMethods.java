@@ -25,6 +25,10 @@ import groovy.lang.Range;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
+import groovy.util.function.DoubleComparator;
+import groovy.util.function.IntComparator;
+import groovy.util.function.LongComparator;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -45,12 +49,16 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntUnaryOperator;
+import java.util.function.LongUnaryOperator;
 
 /**
  * This class defines new groovy methods which appear on primitive arrays inside the Groovy environment.
@@ -96,7 +104,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert !array2.any()
      * </pre>
      *
-     * @param self      the boolean array over which we iterate
+     * @param self the boolean array over which we iterate
      * @return true if any iteration for the booleans matches the closure predicate
      * @since 5.0.0
      */
@@ -520,12 +528,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      boolean[] array = [false, true, false]
-     *      assert array.chop(1, 2) == [[false], [true, false]]
-     * }
-     * test()
+     * boolean[] array = [false, true, false]
+     * assert array.chop(1, 2) == [[false], [true, false]]
      * </pre>
      *
      * @param self      a boolean Array to be chopped
@@ -543,12 +547,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      byte[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * byte[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a byte Array to be chopped
@@ -566,12 +566,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      char[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * char[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a char Array to be chopped
@@ -589,12 +585,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      short[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * short[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a short Array to be chopped
@@ -612,12 +604,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      int[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * int[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      an int Array to be chopped
@@ -635,12 +623,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      long[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * long[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a long Array to be chopped
@@ -658,12 +642,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      float[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * float[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a float Array to be chopped
@@ -681,12 +661,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      double[] array = [0, 1, 2]
-     *      assert array.chop(1, 2) == [[0], [1, 2]]
-     * }
-     * test()
+     * double[] array = [0, 1, 2]
+     * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
      *
      * @param self      a double Array to be chopped
@@ -853,6 +829,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(boolean[] self, Object value) {
@@ -871,6 +848,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(byte[] self, Object value) {
@@ -889,6 +867,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(char[] self, Object value) {
@@ -907,6 +886,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(short[] self, Object value) {
@@ -925,10 +905,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(int[] self, Object value) {
-        return DefaultGroovyMethods.count(new IntArrayIterable(self), value);
+        return DefaultGroovyMethods.count(new IntArrayIterator(self), value);
     }
 
     /**
@@ -943,6 +924,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(long[] self, Object value) {
@@ -961,6 +943,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(float[] self, Object value) {
@@ -979,10 +962,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  the array within which we count the number of occurrences
      * @param value the value being searched for
      * @return the number of occurrences
+     * @see DefaultGroovyMethods#count(Iterator, Object)
      * @since 1.6.4
      */
     public static Number count(double[] self, Object value) {
-        return DefaultGroovyMethods.count(new DoubleArrayIterable(self), value);
+        return DefaultGroovyMethods.count(new DoubleArrayIterator(self), value);
     }
 
     //-------------------------------------------------------------------------
@@ -999,14 +983,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a boolean[] passing each boolean to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      boolean[] array = [false, true, false]
-     *      String result = ''
-     *      array.each{ result += it.booleanValue() }
-     *      assert result == 'falsetruefalse'
-     * }
-     * test()
+     * boolean[] array = [false, true, false]
+     * String result = ''
+     * array.each{ result += it.toString()[0] }
+     * assert result == 'ftf'
      * </pre>
      *
      * @param self    the boolean array over which we iterate
@@ -1025,14 +1005,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a byte[] passing each byte to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      byte[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.intValue() }
-     *      assert result == '012'
-     * }
-     * test()
+     * byte[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
      * </pre>
      *
      * @param self    the byte array over which we iterate
@@ -1051,14 +1027,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a char[] passing each char to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      char[] array = ['a' as char, 'b' as char, 'c' as char]
-     *      String result = ''
-     *      array.each{ result += it.charValue() }
-     *      assert result == 'abc'
-     * }
-     * test()
+     * char[] array = ['a' as char, 'b' as char, 'c' as char]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == 'abc'
      * </pre>
      *
      * @param self    the char array over which we iterate
@@ -1077,14 +1049,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a short[] passing each short to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      short[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.shortValue() }
-     *      assert result == '012'
-     * }
-     * test()
+     * short[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
      * </pre>
      *
      * @param self    the short array over which we iterate
@@ -1103,14 +1071,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through an int[] passing each int to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      int[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.intValue() }
-     *      assert result == '012'
-     * }
-     * test()
+     * int[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
      * </pre>
      *
      * @param self    the int array over which we iterate
@@ -1129,14 +1093,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a long[] passing each long to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      long[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.longValue() }
-     *      assert result == '012'
-     * }
-     * test()
+     * long[] array = [0L, 1L, 2L]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
      * </pre>
      *
      * @param self    the long array over which we iterate
@@ -1155,14 +1115,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a float[] passing each float to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      float[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.floatValue() }
-     *      assert result == '0.01.02.0'
-     * }
-     * test()
+     * float[] array = [0f, 1f, 2f]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '0.01.02.0'
      * </pre>
      *
      * @param self    the float array over which we iterate
@@ -1181,14 +1137,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through a double[] passing each double to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      double[] array = [0, 1, 2]
-     *      String result = ''
-     *      array.each{ result += it.doubleValue() }
-     *      assert result == '0.01.02.0'
-     * }
-     * test()
+     * double[] array = [0d, 1d, 2d]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '0.01.02.0'
      * </pre>
      *
      * @param self    the double array over which we iterate
@@ -1223,21 +1175,17 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // eachWithIndex
 
     /**
-     * Iterates through an boolean[],
+     * Iterates through a boolean[],
      * passing each boolean and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      boolean[] array = [false, true, false]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.booleanValue()}" }
-     *      assert result == '0:false1:true2:false'
-     * }
-     * test()
+     * boolean[] array = [false, true, false]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(false)1(true)2(false)'
      * </pre>
      *
-     * @param self    an boolean array
+     * @param self    a boolean array
      * @param closure a Closure to operate on each boolean
      * @return the self array
      * @since 5.0.0
@@ -1258,14 +1206,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each byte and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      byte[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.byteValue()}" }
-     *      assert result == '0:11:22:3'
-     * }
-     * test()
+     * byte[] array = [10, 20, 30]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10)1(20)2(30)'
      * </pre>
      *
      * @param self    a byte array
@@ -1289,14 +1233,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each char and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      char[] array = ['a' as char, 'b' as char, 'c' as char]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.charValue()}" }
-     *      assert result == '0:a1:b2:c'
-     * }
-     * test()
+     * char[] array = ['a' as char, 'b' as char, 'c' as char]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(a)1(b)2(c)'
      * </pre>
      *
      * @param self    a char array
@@ -1320,14 +1260,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each short and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      short[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.shortValue()}" }
-     *      assert result == '0:11:22:3'
-     * }
-     * test()
+     * short[] array = [10, 20, 30]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10)1(20)2(30)'
      * </pre>
      *
      * @param self    a short array
@@ -1351,14 +1287,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each int and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      int[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.intValue()}" }
-     *      assert result == '0:11:22:3'
-     * }
-     * test()
+     * int[] array = [10, 20, 30]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10)1(20)2(30)'
      * </pre>
      *
      * @param self    an int array
@@ -1382,14 +1314,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each long and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      long[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.longValue()}" }
-     *      assert result == '0:11:22:3'
-     * }
-     * test()
+     * long[] array = [10L, 20L, 30L]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10)1(20)2(30)'
      * </pre>
      *
      * @param self    a long array
@@ -1413,17 +1341,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each float and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      float[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.floatValue()}" }
-     *      assert result == '0:1.01:2.02:3.0'
-     * }
-     * test()
+     * float[] array = [10f, 20f, 30f]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10.0)1(20.0)2(30.0)'
      * </pre>
      *
-     * @param self    an float array
+     * @param self    a float array
      * @param closure a Closure to operate on each float
      * @return the self array
      * @since 5.0.0
@@ -1444,14 +1368,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each double and the element's index (a counter starting at
      * zero) to the given closure.
      * <pre class="groovyTestCase">
-     * {@code @groovy.transform.TypeChecked}
-     * void test(){
-     *      double[] array = [1, 2, 3]
-     *      String result = ''
-     *      array.eachWithIndex{ item, index {@code ->} result += "$index:${item.doubleValue()}" }
-     *      assert result == '0:1.01:2.02:3.0'
-     * }
-     * test()
+     * double[] array = [10d, 20d, 30d]
+     * String result = ''
+     * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
+     * assert result == '0(10.0)1(20.0)2(30.0)'
      * </pre>
      *
      * @param self    a double array
@@ -1655,8 +1575,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] array = [true, false]
-     *     assert array.first() == true
+     * boolean[] array = [true, false]
+     * assert array.first() == true
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1674,8 +1594,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the byte array.
      * <pre class="groovyTestCase">
-     *     byte[] bytes = [1, 2, 3]
-     *     assert bytes.first() == 1
+     * byte[] bytes = [1, 2, 3]
+     * assert bytes.first() == 1
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1693,8 +1613,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the char array.
      * <pre class="groovyTestCase">
-     *     char[] chars = ['a', 'b', 'c']
-     *     assert chars.first() == 'a'
+     * char[] chars = ['a', 'b', 'c']
+     * assert chars.first() == 'a'
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1712,8 +1632,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the short array.
      * <pre class="groovyTestCase">
-     *     short[] shorts = [10, 20, 30]
-     *     assert shorts.first() == 10
+     * short[] shorts = [10, 20, 30]
+     * assert shorts.first() == 10
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1731,8 +1651,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the int array.
      * <pre class="groovyTestCase">
-     *     int[] ints = [1, 3, 5]
-     *     assert ints.first() == 1
+     * int[] ints = [1, 3, 5]
+     * assert ints.first() == 1
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1750,8 +1670,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the long array.
      * <pre class="groovyTestCase">
-     *     long[] longs = [2L, 4L, 6L]
-     *     assert longs.first() == 2L
+     * long[] longs = [2L, 4L, 6L]
+     * assert longs.first() == 2L
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1769,8 +1689,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the float array.
      * <pre class="groovyTestCase">
-     *     float[] floats = [2.0f, 4.0f, 6.0f]
-     *     assert floats.first() == 2.0f
+     * float[] floats = [2.0f, 4.0f, 6.0f]
+     * assert floats.first() == 2.0f
      * </pre>
      * An alias for {@code head()}.
      *
@@ -1788,8 +1708,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the double array.
      * <pre class="groovyTestCase">
-     *     double[] doubles = [10.0d, 20.0d, 30.0d]
-     *     assert doubles.first() == 10.0d
+     * double[] doubles = [10.0d, 20.0d, 30.0d]
+     * assert doubles.first() == 10.0d
      * </pre>
      * An alias for {@code head()}.
      *
@@ -2603,7 +2523,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[0, 0..1, [1, [-1]]] == [false, false, false, false, false]
      * </pre>
      *
-     * @param array a boolean array
+     * @param array   a boolean array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the booleans at the given indices
      * @since 1.0
@@ -2622,7 +2542,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array a byte array
+     * @param array   a byte array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the bytes at the given indices
      * @since 1.0
@@ -2641,7 +2561,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == ['b', 'a', 'b', 'a', 'e']
      * </pre>
      *
-     * @param array a char array
+     * @param array   a char array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the chars at the given indices
      * @since 1.0
@@ -2660,7 +2580,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array a short array
+     * @param array   a short array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the shorts at the given indices
      * @since 1.0
@@ -2679,7 +2599,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
      * </pre>
      *
-     * @param array an int array
+     * @param array   an int array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the ints at the given indices
      * @since 1.0
@@ -2698,7 +2618,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2L, 0L, 2L, 0L, 8L]
      * </pre>
      *
-     * @param array a long array
+     * @param array   a long array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the longs at the given indices
      * @since 1.0
@@ -2717,7 +2637,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2.0f, 0.0f, 2.0f, 0.0f, 8.0f]
      * </pre>
      *
-     * @param array a float array
+     * @param array   a float array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the floats at the given indices
      * @since 1.0
@@ -2736,7 +2656,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array[1, 0..1, [0, [-1]]] == [2.0d, 0.0d, 2.0d, 0.0d, 8.0d]
      * </pre>
      *
-     * @param array a double array
+     * @param array   a double array
      * @param indices a collection of indices for the items to retrieve
      * @return list of the doubles at the given indices
      * @since 1.0
@@ -2879,8 +2799,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] array = [true, false]
-     *     assert array.head() == true
+     * boolean[] array = [true, false]
+     * assert array.head() == true
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2898,8 +2818,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the byte array.
      * <pre class="groovyTestCase">
-     *     byte[] bytes = [1, 2, 3]
-     *     assert bytes.head() == 1
+     * byte[] bytes = [1, 2, 3]
+     * assert bytes.head() == 1
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2917,8 +2837,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the char array.
      * <pre class="groovyTestCase">
-     *     char[] chars = ['a', 'b', 'c']
-     *     assert chars.head() == 'a'
+     * char[] chars = ['a', 'b', 'c']
+     * assert chars.head() == 'a'
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2936,8 +2856,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the short array.
      * <pre class="groovyTestCase">
-     *     short[] shorts = [10, 20, 30]
-     *     assert shorts.head() == 10
+     * short[] shorts = [10, 20, 30]
+     * assert shorts.head() == 10
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2955,8 +2875,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the int array.
      * <pre class="groovyTestCase">
-     *     int[] ints = [1, 3, 5]
-     *     assert ints.head() == 1
+     * int[] ints = [1, 3, 5]
+     * assert ints.head() == 1
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2974,8 +2894,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the long array.
      * <pre class="groovyTestCase">
-     *     long[] longs = [2L, 4L, 6L]
-     *     assert longs.head() == 2L
+     * long[] longs = [2L, 4L, 6L]
+     * assert longs.head() == 2L
      * </pre>
      * An alias for {@code first()}.
      *
@@ -2993,8 +2913,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the float array.
      * <pre class="groovyTestCase">
-     *     float[] floats = [2.0f, 4.0f, 6.0f]
-     *     assert floats.head() == 2.0f
+     * float[] floats = [2.0f, 4.0f, 6.0f]
+     * assert floats.head() == 2.0f
      * </pre>
      * An alias for {@code first()}.
      *
@@ -3012,8 +2932,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the first item from the double array.
      * <pre class="groovyTestCase">
-     *     double[] doubles = [10.0d, 20.0d, 30.0d]
-     *     assert doubles.head() == 10.0d
+     * double[] doubles = [10.0d, 20.0d, 30.0d]
+     * assert doubles.head() == 10.0d
      * </pre>
      * An alias for {@code first()}.
      *
@@ -3143,10 +3063,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the boolean array excluding the last item.
      * <pre class="groovyTestCase">
-     *     boolean[] array = [true, false, true]
-     *     def result = array.init()
-     *     assert result == [true, false]
-     *     assert array.class.componentType == result.class.componentType
+     * boolean[] array = [true, false, true]
+     * def result = array.init()
+     * assert result == [true, false]
+     * assert array.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3163,10 +3083,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the byte array excluding the last item.
      * <pre class="groovyTestCase">
-     *     byte[] bytes = [1, 2, 3]
-     *     def result = bytes.init()
-     *     assert result == [1, 2]
-     *     assert bytes.class.componentType == result.class.componentType
+     * byte[] bytes = [1, 2, 3]
+     * def result = bytes.init()
+     * assert result == [1, 2]
+     * assert bytes.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3183,10 +3103,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the char array excluding the last item.
      * <pre class="groovyTestCase">
-     *     char[] chars = ['a', 'b', 'c']
-     *     def result = chars.init()
-     *     assert result == ['a', 'b']
-     *     assert chars.class.componentType == result.class.componentType
+     * char[] chars = ['a', 'b', 'c']
+     * def result = chars.init()
+     * assert result == ['a', 'b']
+     * assert chars.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3203,10 +3123,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the short array excluding the last item.
      * <pre class="groovyTestCase">
-     *     short[] shorts = [10, 20, 30]
-     *     def result = shorts.init()
-     *     assert result == [10, 20]
-     *     assert shorts.class.componentType == result.class.componentType
+     * short[] shorts = [10, 20, 30]
+     * def result = shorts.init()
+     * assert result == [10, 20]
+     * assert shorts.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3223,10 +3143,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the int array excluding the last item.
      * <pre class="groovyTestCase">
-     *     int[] ints = [1, 3, 5]
-     *     def result = ints.init()
-     *     assert result == [1, 3]
-     *     assert ints.class.componentType == result.class.componentType
+     * int[] ints = [1, 3, 5]
+     * def result = ints.init()
+     * assert result == [1, 3]
+     * assert ints.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3243,10 +3163,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the long array excluding the last item.
      * <pre class="groovyTestCase">
-     *     long[] longs = [2L, 4L, 6L]
-     *     def result = longs.init()
-     *     assert result == [2L, 4L]
-     *     assert longs.class.componentType == result.class.componentType
+     * long[] longs = [2L, 4L, 6L]
+     * def result = longs.init()
+     * assert result == [2L, 4L]
+     * assert longs.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3263,10 +3183,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the float array excluding the last item.
      * <pre class="groovyTestCase">
-     *     float[] floats = [2.0f, 4.0f, 6.0f]
-     *     def result = floats.init()
-     *     assert result == [2.0f, 4.0f]
-     *     assert floats.class.componentType == result.class.componentType
+     * float[] floats = [2.0f, 4.0f, 6.0f]
+     * def result = floats.init()
+     * assert result == [2.0f, 4.0f]
+     * assert floats.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3283,10 +3203,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the double array excluding the last item.
      * <pre class="groovyTestCase">
-     *     double[] doubles = [10.0d, 20.0d, 30.0d]
-     *     def result = doubles.init()
-     *     assert result == [10.0d, 20.0d]
-     *     assert doubles.class.componentType == result.class.componentType
+     * double[] doubles = [10.0d, 20.0d, 30.0d]
+     * def result = doubles.init()
+     * assert result == [10.0d, 20.0d]
+     * assert doubles.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -3417,8 +3337,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the boolean array.
      * <pre class="groovyTestCase">
-     *     boolean[] array = [true, false, true]
-     *     assert array.last() == true
+     * boolean[] array = [true, false, true]
+     * assert array.last() == true
      * </pre>
      *
      * @param self an array
@@ -3435,8 +3355,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the byte array.
      * <pre class="groovyTestCase">
-     *     byte[] bytes = [1, 2, 3]
-     *     assert bytes.last() == 3
+     * byte[] bytes = [1, 2, 3]
+     * assert bytes.last() == 3
      * </pre>
      *
      * @param self an array
@@ -3453,8 +3373,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the char array.
      * <pre class="groovyTestCase">
-     *     char[] chars = ['a', 'b', 'c']
-     *     assert chars.last() == 'c'
+     * char[] chars = ['a', 'b', 'c']
+     * assert chars.last() == 'c'
      * </pre>
      *
      * @param self an array
@@ -3471,8 +3391,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the short array.
      * <pre class="groovyTestCase">
-     *     short[] shorts = [10, 20, 30]
-     *     assert shorts.last() == 30
+     * short[] shorts = [10, 20, 30]
+     * assert shorts.last() == 30
      * </pre>
      *
      * @param self an array
@@ -3489,8 +3409,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the int array.
      * <pre class="groovyTestCase">
-     *     int[] ints = [1, 3, 5]
-     *     assert ints.last() == 5
+     * int[] ints = [1, 3, 5]
+     * assert ints.last() == 5
      * </pre>
      *
      * @param self an array
@@ -3507,8 +3427,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the long array.
      * <pre class="groovyTestCase">
-     *     long[] longs = [2L, 4L, 6L]
-     *     assert longs.last() == 6L
+     * long[] longs = [2L, 4L, 6L]
+     * assert longs.last() == 6L
      * </pre>
      *
      * @param self an array
@@ -3525,8 +3445,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the float array.
      * <pre class="groovyTestCase">
-     *     float[] floats = [2.0f, 4.0f, 6.0f]
-     *     assert floats.last() == 6.0f
+     * float[] floats = [2.0f, 4.0f, 6.0f]
+     * assert floats.last() == 6.0f
      * </pre>
      *
      * @param self an array
@@ -3543,8 +3463,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the last item from the double array.
      * <pre class="groovyTestCase">
-     *     double[] doubles = [10.0d, 20.0d, 30.0d]
-     *     assert doubles.last() == 30.0d
+     * double[] doubles = [10.0d, 20.0d, 30.0d]
+     * assert doubles.last() == 30.0d
      * </pre>
      *
      * @param self an array
@@ -3586,6 +3506,122 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the int array
+     * using the supplier IntBinaryOperator as a comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, -30]
+     * assert 20 == nums.max{ n, m {@code ->} n {@code <=>} m }
+     * assert -30 == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     an int array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int max(int[] self, IntComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        int maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int v = self[i];
+            if (comparator.compare(v, maxV) > 0) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the int array
+     * using the supplier IntUnaryOperator to determine the maximum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, -30]
+     * assert 20 == nums.max{ it }
+     * assert -30 == nums.max{ it.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     an int array
+     * @param operator an operator that returns an int used for comparing values
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int max(int[] self, IntUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        int maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int v = self[i];
+            if (operator.applyAsInt(v) > operator.applyAsInt(maxV)) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the int array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [30, 45, 60, 90]
+     * assert 90 == nums.maxBy{ Math.sin(Math.toRadians(it)) }
+     * assert 30 == nums.maxBy{ Math.cos(Math.toRadians(it)) } // cos(90) == 0
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    an int array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int maxBy(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new IntArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the int array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, 20, 30]
+     * assert 30 == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10 == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       an int array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int maxComparing(int[] self, Comparator<Integer> comparator) {
+        return DefaultGroovyMethods.max(new IntArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds max() method to long arrays.
      * <p/>
      * Example usage:
@@ -3610,6 +3646,122 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the long array
+     * using the supplier LongBinaryOperator as a comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, -30L]
+     * assert 20L == nums.max{ n, m {@code ->} n {@code <=>} m }
+     * assert -30L == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a long array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long max(long[] self, LongComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        long maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long v = self[i];
+            if (comparator.compare(v, maxV) > 0) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the long array
+     * using the supplier LongUnaryOperator to determine the maximum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, -30L]
+     * assert 20L == nums.max{ it }
+     * assert -30L == nums.max{ it.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a long array
+     * @param operator an operator that returns a long used for comparing values
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long max(long[] self, LongUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        long maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long v = self[i];
+            if (operator.applyAsLong(v) > operator.applyAsLong(maxV)) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the long array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [-30L, 10L, 20L]
+     * assert 20L == nums.maxBy{ a, b {@code ->} a {@code <=>} b }
+     * assert -30L == nums.maxBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    a long array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long maxBy(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new LongArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the long array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert 30L == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10L == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a long array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long maxComparing(long[] self, Comparator<Long> comparator) {
+        return DefaultGroovyMethods.max(new LongArrayIterator(self), comparator);
+    }
+
+    /**
      * Adds max() method to double arrays.
      * <p/>
      * Example usage:
@@ -3631,6 +3783,122 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             if (value > answer) answer = value;
         }
         return answer;
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the supplier DoubleComparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10d, 20d, -30d]
+     * assert 20d == nums.max{ n, m {@code ->} n {@code <=>} m }
+     * assert -30d == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double max(double[] self, DoubleComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        double maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double v = self[i];
+            if (comparator.compare(v, maxV) > 0) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the supplier DoubleUnaryOperator to determine the maximum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10d, 20d, -30d]
+     * assert -30d == nums.max{ it.abs() }
+     * assert 20d == nums.max{ it }
+     * </pre>
+     * <p>
+     *
+     * @param self     a double array
+     * @param operator an operator that returns a double used for comparing values
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double max(double[] self, DoubleUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        double maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double v = self[i];
+            if (operator.applyAsDouble(v) > operator.applyAsDouble(maxV)) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the closure to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [-30.0d, 10.0d, 20.0d]
+     * assert 20.0d == nums.maxBy{ a, b {@code ->} a {@code <=>} b }
+     * assert -30.0d == nums.maxBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    a double array
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, groovy.lang.Closure)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double maxBy(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.max(new DoubleArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the double array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert 30d == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10d == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double maxComparing(double[] self, Comparator<Double> comparator) {
+        return DefaultGroovyMethods.max(new DoubleArrayIterator(self), comparator);
     }
 
     //-------------------------------------------------------------------------
@@ -3662,17 +3930,81 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the int array
-     * using the closure to determine the correct ordering.
+     * using the supplier IntComparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
-     * int[] nums = [30, 45, 60, 90]
-     * assert 30 == nums.min{ Math.sin(Math.toRadians(it)) }
-     * assert 90 == nums.min{ Math.cos(Math.toRadians(it)) } // cos(90) == 0
+     * int[] nums = [10, -20, 30]
+     * assert -20 == nums.min{ n, m {@code ->} n {@code <=>} m }
+     * assert 10 == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
      * </pre>
      * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
+     *
+     * @param self       an int array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int min(int[] self, IntComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        int minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int v = self[i];
+            if (comparator.compare(v, minV) < 0) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the int array
+     * using the supplier IntUnaryOperator to determine the minimum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, -20, 30]
+     * assert -20L == nums.min{ n {@code ->} n }
+     * assert 10L == nums.min{ n {@code ->} n.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     an int array
+     * @param operator an operator that returns an int used for comparing values
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int min(int[] self, IntUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        int minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            int v = self[i];
+            if (operator.applyAsInt(v) < operator.applyAsInt(minV)) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the int array
+     * using the closure to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [-20, 10, 30]
+     * assert -20 == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10 == nums.minBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
      * zero, or a positive integer when the first parameter is less than,
      * equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a
@@ -3685,8 +4017,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
-    public static int min(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
-        return DefaultGroovyMethods.min(new IntArrayIterable(self), closure);
+    @Incubating
+    public static int minBy(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        return DefaultGroovyMethods.min(new IntArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the int array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [1, 2, 3]
+     * assert 1 == nums.minComparing(Comparator.naturalOrder())
+     * assert 3 == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       an int array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int minComparing(int[] self, Comparator<Integer> comparator) {
+        return DefaultGroovyMethods.min(new IntArrayIterator(self), comparator);
     }
 
     /**
@@ -3715,21 +4070,85 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the long array
-     * using the closure to determine the correct ordering.
+     * using the supplier LongBinaryOperator as a comparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
-     * long[] nums = [-20L, 10L, 30L]
-     * assert -20L == nums.min{ a, b {@code ->} a {@code <=>} b }
+     * long[] nums = [10L, -20L, 30L]
+     * assert -20L == nums.min{ n, m {@code ->} n {@code <=>} m }
+     * assert 10L == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self       a long array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long min(long[] self, LongComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        long minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long v = self[i];
+            if (comparator.compare(v, minV) < 0) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the long array
+     * using the supplier LongUnaryOperator to determine the minimum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, -20L, 30L]
+     * assert -20L == nums.min{ it }
      * assert 10L == nums.min{ it.abs() }
      * </pre>
      * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
+     *
+     * @param self     a long array
+     * @param operator an operator that returns a long used for comparing values
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long min(long[] self, LongUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        long minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            long v = self[i];
+            if (operator.applyAsLong(v) < operator.applyAsLong(minV)) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the long array
+     * using the closure to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [-20L, 10L, 30L]
+     * assert -20L == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10L == nums.minBy{ it.abs() }
+     * </pre>
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
      * zero, or a positive integer when the first parameter is less than,
      * equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
+     * Comparable (typically an int or long) which is then used for
      * further comparison.
      *
      * @param self    a long array
@@ -3738,8 +4157,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
-    public static long min(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+    @Incubating
+    public static long minBy(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         return DefaultGroovyMethods.min(new LongArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the long array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * long[] nums = [10L, 20L, 30L]
+     * assert 10L == nums.minComparing(Comparator.naturalOrder())
+     * assert 30L == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a long array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long minComparing(long[] self, Comparator<Long> comparator) {
+        return DefaultGroovyMethods.min(new LongArrayIterator(self), comparator);
     }
 
     /**
@@ -3768,21 +4210,85 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the double array
-     * using the closure to determine the correct ordering.
+     * using the supplier DoubleBinaryOperator as a comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10d, -20d, 30d]
+     * assert -20d == nums.min{ n, m {@code ->} n {@code <=>} m }
+     * assert 10d == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double min(double[] self, DoubleComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        double minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double v = self[i];
+            if (comparator.compare(v, minV) < 0) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the double array
+     * using the supplier DoubleUnaryOperator to determine the minimum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10d, -20d, 30d]
+     * assert -20d == nums.min{ it }
+     * assert 10d == nums.min{ it.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a double array
+     * @param operator an operator that returns a double used for comparing values
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double min(double[] self, DoubleUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        double minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            double v = self[i];
+            if (operator.applyAsDouble(v) < operator.applyAsDouble(minV)) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the double array
+     * using the closure to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * double[] nums = [-20.0d, 10.0d, 30.0d]
-     * assert -20.0d == nums.min{ a, b {@code ->} a {@code <=>} b }
-     * assert 10.0d == nums.min{ it.abs() }
+     * assert -20.0d == nums.minBy{ a, b {@code ->} a {@code <=>} b }
+     * assert 10.0d == nums.minBy{ it.abs() }
      * </pre>
      * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e., it should compare
-     * its two parameters for order, returning a negative integer,
+     * If the closure has two parameters it is used like a traditional Comparator,
+     * i.e., it should compare its two parameters for order, returning a negative integer,
      * zero, or a positive integer when the first parameter is less than,
      * equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
+     * Comparable (typically an int or double) which is then used for
      * further comparison.
      *
      * @param self    a double array
@@ -3791,8 +4297,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 5.0.0
      */
-    public static double min(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+    @Incubating
+    public static double minBy(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         return DefaultGroovyMethods.min(new DoubleArrayIterator(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the double array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0d, 20.0d, 30.0d]
+     * assert 10d == nums.minComparing(Comparator.naturalOrder())
+     * assert 30d == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a double array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double minComparing(double[] self, Comparator<Double> comparator) {
+        return DefaultGroovyMethods.min(new DoubleArrayIterator(self), comparator);
     }
 
     //-------------------------------------------------------------------------
@@ -3801,8 +4330,538 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // plus
     //-------------------------------------------------------------------------
     // reverse
+
+    /**
+     * Creates a new boolean array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true]
+     * assert array.reverse() == [true, false]
+     * </pre>
+     *
+     * @param self a boolean array
+     * @return an array containing the reversed items
+     * @see #reverse(boolean[], boolean)
+     * @since 5.0.0
+     */
+    public static boolean[] reverse(boolean[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, true]
+     * def yarra = array.reverse(true)
+     * assert array == [true, true, false]
+     * assert yarra == [true, true, false]
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == [true, true, false]
+     * assert yarra == [false, true, true]
+     * </pre>
+     *
+     * @param self   a boolean array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static boolean[] reverse(boolean[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new byte array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * byte[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
+     *
+     * @param self a byte array
+     * @return an array containing the reversed items
+     * @see #reverse(byte[], boolean)
+     * @since 5.0.0
+     */
+    public static byte[] reverse(byte[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * byte[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   a byte array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static byte[] reverse(byte[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new char array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a', 'b']
+     * assert array.reverse() == ['b', 'a'] as char[]
+     * </pre>
+     *
+     * @param self a char array
+     * @return an array containing the reversed items
+     * @see #reverse(char[], boolean)
+     * @since 5.0.0
+     */
+    public static char[] reverse(char[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a', 'b', 'c']
+     * def yarra = array.reverse(true)
+     * assert array == ['c', 'b', 'a']
+     * assert yarra == ['c', 'b', 'a']
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == ['c', 'b', 'a']
+     * assert yarra == ['a', 'b', 'c']
+     * </pre>
+     *
+     * @param self   a char array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static char[] reverse(char[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new short array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * short[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
+     *
+     * @param self a short array
+     * @return an array containing the reversed items
+     * @see #reverse(short[], boolean)
+     * @since 5.0.0
+     */
+    public static short[] reverse(short[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * short[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   a short array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static short[] reverse(short[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new int array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * int[] array = 1..2
+     * assert array.reverse() == 2..1
+     * </pre>
+     *
+     * @param self an int array
+     * @return an array containing the reversed items
+     * @see #reverse(int[], boolean)
+     * @since 5.0.0
+     */
+    public static int[] reverse(int[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * int[] array = 1..3
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   an int array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static int[] reverse(int[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new long array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * long[] array = 1L..2L
+     * assert array.reverse() == 2L..1L
+     * </pre>
+     *
+     * @param self a long array
+     * @return an array containing the reversed items
+     * @see #reverse(long[], boolean)
+     * @since 5.0.0
+     */
+    public static long[] reverse(long[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * long[] array = 1L..3L
+     * def yarra = array.reverse(true)
+     * assert array == 3L..1L
+     * assert yarra == 3L..1L
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3L..1L
+     * assert yarra == 1L..3L
+     * </pre>
+     *
+     * @param self   a long array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static long[] reverse(long[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new float array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * float[] array = [1f, 2f]
+     * assert array.reverse() == [2f, 1f]
+     * </pre>
+     *
+     * @param self a float array
+     * @return an array containing the reversed items
+     * @see #reverse(float[], boolean)
+     * @since 5.0.0
+     */
+    public static float[] reverse(float[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * float[] array = 1f..3f
+     * def yarra = array.reverse(true)
+     * assert array == 3f..1f
+     * assert yarra == 3f..1f
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3f..1f
+     * assert yarra == 1f..3f
+     * </pre>
+     *
+     * @param self   a float array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static float[] reverse(float[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new double array containing items which are the same as this array but in reverse order.
+     * <pre class="groovyTestCase">
+     * double[] array = [1d, 2d]
+     * assert array.reverse() == [2d, 1d]
+     * </pre>
+     *
+     * @param self a double array
+     * @return an array containing the reversed items
+     * @see #reverse(double[], boolean)
+     * @since 5.0.0
+     */
+    public static double[] reverse(double[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     * <pre class="groovyTestCase">
+     * double[] array = 1d..3d
+     * def yarra = array.reverse(true)
+     * assert array == 3d..1d
+     * assert yarra == 3d..1d
+     * assert array === yarra
+     * yarra = array.reverse(false)
+     * assert array !== yarra
+     * assert array == 3d..1d
+     * assert yarra == 1d..3d
+     * </pre>
+     *
+     * @param self   a double array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return an array containing the reversed items
+     * @since 5.0.0
+     */
+    public static double[] reverse(double[] self, boolean mutate) {
+        int len = self.length;
+        if (!mutate) self = self.clone();
+        for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
+            swap(self, i, j);
+        return self;
+    }
+
     //-------------------------------------------------------------------------
     // reverseEach
+
+    /**
+     * Iterates through a boolean[] in reverse order passing each boolean to the given closure.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [false, true, true]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == 'truetruefalse'
+     * </pre>
+     *
+     * @param self    the boolean array over which we iterate
+     * @param closure the closure applied on each boolean
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static boolean[] reverseEach(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a byte[] in reverse order passing each byte to the given closure.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the byte array over which we iterate
+     * @param closure the closure applied on each byte
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static byte[] reverseEach(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a char[] in reverse order passing each char to the given closure.
+     * <pre class="groovyTestCase">
+     * char[] array = 'abc'.chars
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == 'cba'
+     * </pre>
+     *
+     * @param self    the char array over which we iterate
+     * @param closure the closure applied on each char
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static char[] reverseEach(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a short[] in reverse order passing each short to the given closure.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the short array over which we iterate
+     * @param closure the closure applied on each short
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static short[] reverseEach(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through an int[] in reverse order passing each int to the given closure.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the int array over which we iterate
+     * @param closure the closure applied on each int
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static int[] reverseEach(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a long[] in reverse order passing each long to the given closure.
+     * <pre class="groovyTestCase">
+     * long[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '210'
+     * </pre>
+     *
+     * @param self    the long array over which we iterate
+     * @param closure the closure applied on each long
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static long[] reverseEach(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a float[] in reverse order passing each float to the given closure.
+     * <pre class="groovyTestCase">
+     * float[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '2.01.00.0'
+     * </pre>
+     *
+     * @param self    the float array over which we iterate
+     * @param closure the closure applied on each float
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static float[] reverseEach(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a double[] in reverse order passing each double to the given closure.
+     * <pre class="groovyTestCase">
+     * double[] array = [0, 1, 2]
+     * String result = ''
+     * array.reverseEach{ result += it }
+     * assert result == '2.01.00.0'
+     * </pre>
+     *
+     * @param self    the double array over which we iterate
+     * @param closure the closure applied on each double
+     * @return the self array
+     * @since 5.0.0
+     */
+    public static double[] reverseEach(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int i = self.length - 1; i >= 0; i--) {
+            closure.call(self[i]);
+        }
+        return self;
+    }
+
     //-------------------------------------------------------------------------
     // shuffle
     //-------------------------------------------------------------------------
@@ -3916,6 +4975,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // split
     //-------------------------------------------------------------------------
     // sum
+
     /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
@@ -4139,8 +5199,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4161,8 +5221,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4183,8 +5243,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4205,8 +5265,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4227,8 +5287,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4249,8 +5309,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4271,8 +5331,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4293,8 +5353,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a boolean array
-     * @param i a position
-     * @param j a position
+     * @param i    a position
+     * @param j    a position
      * @return self
      * @since 2.4.0
      */
@@ -4312,10 +5372,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the boolean array excluding the first item.
      * <pre class="groovyTestCase">
-     *     boolean[] array = [true, false, true]
-     *     def result = array.tail()
-     *     assert result == [false, true]
-     *     assert array.class.componentType == result.class.componentType
+     * boolean[] array = [true, false, true]
+     * def result = array.tail()
+     * assert result == [false, true]
+     * assert array.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4332,10 +5392,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the byte array excluding the first item.
      * <pre class="groovyTestCase">
-     *     byte[] bytes = [1, 2, 3]
-     *     def result = bytes.tail()
-     *     assert result == [2, 3]
-     *     assert bytes.class.componentType == result.class.componentType
+     * byte[] bytes = [1, 2, 3]
+     * def result = bytes.tail()
+     * assert result == [2, 3]
+     * assert bytes.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4352,10 +5412,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the char array excluding the first item.
      * <pre class="groovyTestCase">
-     *     char[] chars = ['a', 'b', 'c']
-     *     def result = chars.tail()
-     *     assert result == ['b', 'c']
-     *     assert chars.class.componentType == result.class.componentType
+     * char[] chars = ['a', 'b', 'c']
+     * def result = chars.tail()
+     * assert result == ['b', 'c']
+     * assert chars.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4372,10 +5432,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the short array excluding the first item.
      * <pre class="groovyTestCase">
-     *     short[] shorts = [10, 20, 30]
-     *     def result = shorts.tail()
-     *     assert result == [20, 30]
-     *     assert shorts.class.componentType == result.class.componentType
+     * short[] shorts = [10, 20, 30]
+     * def result = shorts.tail()
+     * assert result == [20, 30]
+     * assert shorts.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4392,10 +5452,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the int array excluding the first item.
      * <pre class="groovyTestCase">
-     *     int[] ints = [1, 3, 5]
-     *     def result = ints.tail()
-     *     assert result == [3, 5]
-     *     assert ints.class.componentType == result.class.componentType
+     * int[] ints = [1, 3, 5]
+     * def result = ints.tail()
+     * assert result == [3, 5]
+     * assert ints.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4412,10 +5472,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the long array excluding the first item.
      * <pre class="groovyTestCase">
-     *     long[] longs = [2L, 4L, 6L]
-     *     def result = longs.tail()
-     *     assert result == [4L, 6L]
-     *     assert longs.class.componentType == result.class.componentType
+     * long[] longs = [2L, 4L, 6L]
+     * def result = longs.tail()
+     * assert result == [4L, 6L]
+     * assert longs.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4432,10 +5492,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the float array excluding the first item.
      * <pre class="groovyTestCase">
-     *     float[] floats = [2.0f, 4.0f, 6.0f]
-     *     def result = floats.tail()
-     *     assert result == [4.0f, 6.0f]
-     *     assert floats.class.componentType == result.class.componentType
+     * float[] floats = [2.0f, 4.0f, 6.0f]
+     * def result = floats.tail()
+     * assert result == [4.0f, 6.0f]
+     * assert floats.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array
@@ -4452,10 +5512,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the items from the double array excluding the first item.
      * <pre class="groovyTestCase">
-     *     double[] doubles = [10.0d, 20.0d, 30.0d]
-     *     def result = doubles.tail()
-     *     assert result == [20.0d, 30.0d]
-     *     assert doubles.class.componentType == result.class.componentType
+     * double[] doubles = [10.0d, 20.0d, 30.0d]
+     * def result = doubles.tail()
+     * assert result == [20.0d, 30.0d]
+     * assert doubles.class.componentType == result.class.componentType
      * </pre>
      *
      * @param self an array

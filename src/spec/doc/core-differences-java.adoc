@@ -126,7 +126,7 @@ include::../test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent
 
 == ARM blocks
 
-Java 7 introduced ARM (Automatic Resource Management) blocks like this:
+Java 7 introduced ARM (Automatic Resource Management) blocks (also know as try-with-resources) blocks like this:
 
 [source,java]
 ----
@@ -296,20 +296,22 @@ are used very frequently and worthy of special treatment.
 Primitives can be efficiently stored and manipulated but can't be used in all contexts where an object could be used.
 Luckily, Java auto boxes and unboxes primitives when they are passed as parameters or used as return types:
 
-// a few shell blocks use "ruby" code style as it is more forgiving than Java or Groovy
-// it's not straight code after all, but might as well be a little pretty
-[source,ruby]
+[source,java]
 ----
-jshell> class Main {
-   ...>   float f1 = 1.0f;
-   ...>   Float f2 = 2.0f;
-   ...>   float add(Float a1, float a2) { return a1 + a2; }
-   ...>   Float calc() { return add(f1, f2); } // <1>
-   ...> }
-|  created class Main
+public class Main {           // Java
 
-jshell> new Main().calc()
-$2 ==> 3.0
+   float f1 = 1.0f;
+   Float f2 = 2.0f;
+
+   float add(Float a1, float a2) { return a1 + a2; }
+
+   Float calc() { return add(f1, f2); } // <1>
+
+    public static void main(String[] args) {
+       Float calcResult = new Main().calc();
+       System.out.println(calcResult); // => 3.0
+    }
+}
 ----
 <1> The `add` method expects wrapper then primitive type arguments,
 but we are supplying parameters with a primitive then wrapper type.
@@ -317,53 +319,51 @@ Similarly, the return type from `add` is primitive, but we need the wrapper type
 
 Groovy does the same:
 
-[source,ruby]
+[source,groovy]
 ----
-groovy:000> class Main {
-groovy:001>   float f1 = 1.0f
-groovy:002>   Float f2 = 2.0f
-groovy:003>   float add(Float a1, float a2) { a1 + a2 }
-groovy:004>   Float calc() { add(f1, f2) }
-groovy:005> }
-===> true
-groovy:000> new Main().calc()
-===> 3.0
+class Main {
+
+    float f1 = 1.0f
+    Float f2 = 2.0f
+
+    float add(Float a1, float a2) { a1 + a2 }
+
+    Float calc() { add(f1, f2) }
+}
+
+assert new Main().calc() == 3.0
 ----
 
 Groovy, also supports primitives and object types, however, it goes a little further
 in pushing OO purity; it tries hard to treat _everything_ as an object.
-Any primitive typed variable or field can be treated like an object and it
-will be link:core-object-orientation.html#_primitive_types[autowrapped] as needed.
+Any primitive typed variable or field can be treated like an object, and it
+will be link:core-object-orientation.html#_primitive_types[auto-wrapped] as needed.
 While primitive types might be used under the covers,
-their use should be indistinguishable from normal object use whenever possible
+their use should be indistinguishable from normal object use whenever possible,
 and they will be boxed/unboxed as needed.
 
 Here is a little example using Java trying to (incorrectly for Java) dereference a primitive `float`:
 
-[source,ruby]
+[source,java]
 ----
-jshell> class Main {
-   ...>     public float z1 = 0.0f;
-   ...> }
-|  created class Main
+public class Main {           // Java
 
-jshell> new Main().z1.equals(1.0f)
-|  Error:
-|  float cannot be dereferenced
-|  new Main().z1.equals(1.0f)
-|  ^------------------^
+    public float z1 = 0.0f;
+
+    public static void main(String[] args){
+      new Main().z1.equals(1.0f); // DOESN'T COMPILE, error: float cannot be dereferenced
+    }
+}
 ----
 
 The same example using Groovy compiles and runs successfully:
 
-[source,ruby]
+[source,groovy]
 ----
-groovy:000> class Main {
-groovy:001>     float z1 = 0.0f
-groovy:002> }
-===> true
-groovy:000> new Main().z1.equals(1.0f)
-===> false
+class Main {
+    float z1 = 0.0f
+}
+assert !(new Main().z1.equals(1.0f))
 ----
 
 Because of Groovy's additional use of un/boxing, it does not follow
@@ -463,38 +463,43 @@ https://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html[conversions].
 | float         | N         | C      | C       | C      | C     | C      | -       | Y
 | double        | N         | C      | C       | C      | C     | C      | C       | -
 |============================================================================================
-^*^ 'Y' indicates a conversion Java can make, 'C' indicates a conversion Java can make when there is an explicit cast,
-'T` indicates a conversion Java can make but data is truncated, 'N' indicates a conversion Java can't make.
+* 'Y' indicates a conversion Java can make +
+* 'C' indicates a conversion Java can make when there is an explicit cast +
+* 'T` indicates a conversion Java can make but data is truncated +
+* 'N' indicates a conversion Java can't make
 
 Groovy expands greatly on this.
 
+[%autowidth]
 [cols=">2s,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a,^1a"]
 .Groovy Conversions
 |=================================================================================================================================================================================================================
 |            18+|*Converts to*
-| Converts from | *boolean* | *Boolean* | *byte* | *Byte* | *short* | *Short* | *char* | *Character* | *int* | *Integer* | *long* | *Long* | *BigInteger* | *float* | *Float* | *double* | *Double* | *BigDecimal*
-| boolean       | -         | B         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
-| Boolean       | B         | -         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
-| byte          | T         | T         | -      | B      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| Byte          | T         | T         | B      | -      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| short         | T         | T         | D      | D      | -       | B       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| Short         | T         | T         | D      | T      | B       | -       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| char          | T         | T         | Y      | D      | Y       | D       | -      | D           | Y     | D         | Y      | D      | D            | Y       | D       | Y        | D        | D
-| Character     | T         | T         | D      | D      | D       | D       | D      | -           | D     | D         | D      | D      | D            | D       | D       | D        | D        | D
-| int           | T         | T         | D      | D      | D       | D       | Y      | D           | -     | B         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| Integer       | T         | T         | D      | D      | D       | D       | Y      | D           | B     | -         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
-| long          | T         | T         | D      | D      | D       | D       | Y      | D           | D     | D         | -      | B      | Y            | T       | T       | T        | T        | Y
-| Long          | T         | T         | D      | D      | D       | T       | Y      | D           | D     | T         | B      | -      | Y            | T       | T       | T        | T        | Y
-| BigInteger    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | -            | D       | D       | D        | D        | T
-| float         | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | -       | B       | Y        | Y        | Y
-| Float         | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | B       | -       | Y        | Y        | Y
-| double        | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | D       | D       | -        | B        | Y
-| Double        | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | D       | T       | B        | -        | Y
-| BigDecimal    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | D            | T       | D       | T        | D        | -
+| Converts from |[.rotate]`boolean` |[.rotate]`Boolean` |[.rotate]`byte` |[.rotate]`Byte` |[.rotate]`short` |[.rotate]`Short` |[.rotate]`char` |[.rotate]`Character` |[.rotate]`int` |[.rotate]`Integer` |[.rotate]`long` |[.rotate]`Long` |[.rotate]`BigInteger` |[.rotate]`float` |[.rotate]`Float` |[.rotate]`double` |[.rotate]`Double` |[.rotate]`BigDecimal`
+| `boolean`       | -         | B         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
+| `Boolean`       | B         | -         | N      | N      | N       | N       | N      | N           | N     | N         | N      | N      | N            | N       | N       | N        | N        | N
+| `byte`          | T         | T         | -      | B      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `Byte`          | T         | T         | B      | -      | Y       | Y       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `short`         | T         | T         | D      | D      | -       | B       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `Short`         | T         | T         | D      | T      | B       | -       | Y      | D           | Y     | Y         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `char`          | T         | T         | Y      | D      | Y       | D       | -      | D           | Y     | D         | Y      | D      | D            | Y       | D       | Y        | D        | D
+| `Character`     | T         | T         | D      | D      | D       | D       | D      | -           | D     | D         | D      | D      | D            | D       | D       | D        | D        | D
+| `int`           | T         | T         | D      | D      | D       | D       | Y      | D           | -     | B         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `Integer`       | T         | T         | D      | D      | D       | D       | Y      | D           | B     | -         | Y      | Y      | Y            | Y       | Y       | Y        | Y        | Y
+| `long`          | T         | T         | D      | D      | D       | D       | Y      | D           | D     | D         | -      | B      | Y            | T       | T       | T        | T        | Y
+| `Long`          | T         | T         | D      | D      | D       | T       | Y      | D           | D     | T         | B      | -      | Y            | T       | T       | T        | T        | Y
+| `BigInteger`    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | -            | D       | D       | D        | D        | T
+| `float`         | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | -       | B       | Y        | Y        | Y
+| `Float`         | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | B       | -       | Y        | Y        | Y
+| `double`        | T         | T         | D      | D      | D       | D       | T      | D           | D     | D         | D      | D      | D            | D       | D       | -        | B        | Y
+| `Double`        | T         | T         | D      | T      | D       | T       | T      | D           | D     | T         | D      | T      | D            | D       | T       | B        | -        | Y
+| `BigDecimal`    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | D            | T       | D       | T        | D        | -
 |=================================================================================================================================================================================================================
-^*^ 'Y' indicates a conversion Groovy can make, 'D' indicates a conversion Groovy can make when compiled dynamically or
-explicitly cast, 'T' indicates a conversion Groovy can make but data is truncated, 'B' indicates a boxing/unboxing
-operation, 'N' indicates a conversion Groovy can't make.
+* 'Y' indicates a conversion Groovy can make +
+* 'D' indicates a conversion Groovy can make when compiled dynamically or explicitly cast +
+* 'T' indicates a conversion Groovy can make but data is truncated +
+* 'B' indicates a boxing/unboxing operation +
+* 'N' indicates a conversion Groovy can't make.
 
 The truncation uses <<{core-semantics}#the-groovy-truth,Groovy Truth>> when converting to `boolean`/`Boolean`. Converting
 from a number to a character casts the `Number.intvalue()` to `char`. Groovy constructs `BigInteger` and `BigDecimal`

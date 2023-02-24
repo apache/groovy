@@ -100,6 +100,34 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provide the extension of this file.
+     *
+     * @param self a file object
+     * @return the extension of this file (not including the dot), or an empty string if it doesn't have one.
+     * @since 5.0.0
+     */
+    public static String getExtension(File self) {
+        final String name = self.getName();
+        final int index = name.lastIndexOf('.');
+        if (index == -1) return "";
+        return name.substring(index + 1);
+    }
+
+    /**
+     * Provide the file's name without an extension.
+     *
+     * @param self a file object
+     * @return file's name without an extension.
+     * @since 5.0.0
+     */
+    public static String getBaseName(File self) {
+        final String name = self.getName();
+        final int index = name.lastIndexOf('.');
+        if (index == -1) return name;
+        return name.substring(0, index);
+    }
+
+    /**
      * Calculates directory size as total size of all its files, recursively.
      *
      * @param self a file object

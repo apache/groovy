@@ -186,6 +186,82 @@ public class Java9 extends Java8 {
         }
     }
 
+    //--------------------------------------------------------------------------
+
+    @Override
+    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, Class<?> caller) {
+        CachedClass declaringClass = metaMethod.getDeclaringClass();
+        if (declaringClass != null && metaMethod instanceof CachedMethod) {
+            if (caller == null) caller = ReflectionUtils.class;
+            CachedMethod cachedMethod = (CachedMethod) metaMethod;
+            Optional<CachedMethod> transformedMethod = Optional.ofNullable(cachedMethod.getTransformedMethod());
+            if (!transformedMethod.isPresent()
+                    // if caller can access the method legally, there is no need to transform the cached method
+                    && !checkAccessible(caller, declaringClass.getTheClass(), metaMethod.getModifiers(), false)) {
+                Class<?> theClass = metaClass.getTheClass();
+                if (declaringClass.getTheClass() == theClass) {
+                    transformedMethod = transformDirectAccess(theClass, cachedMethod, caller);
+
+                } else if (declaringClass.isAssignableFrom(theClass)) {
+                    // try to find the corresponding method in its derived class
+                    transformedMethod = findAccessibleMetaMethod(cachedMethod, cachedMethod.getPT(), caller, theClass, false);
+                }
+
+                transformedMethod.ifPresent(cachedMethod::setTransformedMethod);
+            }
+
+            return transformedMethod.orElse(cachedMethod);
+        }
+
+        return metaMethod;
+    }
+
+    private Optional<CachedMethod> transformDirectAccess(final Class<?> metaClass, final CachedMethod metaMethod, final Class<?> caller) {
+        Class<?>[] paramTypes = metaMethod.getPT();
+        if (metaClass == BigInteger.class && paramTypes.length == 1 && metaMethod.getName().equals("multiply")) {
+            Class<?> type = paramTypes[0];
+            if (type == Long.class || type == long.class
+                    || type == Integer.class || type == int.class
+                    || type == Short.class || type == short.class) {
+                return Optional.of(BigIntegerMultiplyMethodHolder.MULTIPLY_METHOD);
+            }
+        }
+
+        // GROOVY-9081: try to find the visible method from its supers
+        for (Class<?> c = metaClass; c != null; c = c.getSuperclass()) {
+            Optional<CachedMethod> cachedMethod = findAccessibleMetaMethod(metaMethod, paramTypes, caller, c, true);
+            if (cachedMethod.isPresent()) {
+                return cachedMethod;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<CachedMethod> findAccessibleMetaMethod(final CachedMethod metaMethod, final Class<?>[] params, final Class<?> caller, final Class<?> sc, final boolean declared) {
+        List<Method> methods = declared ? ReflectionUtils.getDeclaredMethods(sc, metaMethod.getName(), params)
+                                        : ReflectionUtils.getMethods        (sc, metaMethod.getName(), params);
+        return methods.stream().filter(m -> checkAccessible(caller, m.getDeclaringClass(), m.getModifiers(), false)).map(CachedMethod::new).findFirst();
+    }
+
+    private static class BigIntegerMultiplyMethodHolder {
+        private static final CachedMethod MULTIPLY_METHOD;
+        static {
+            try {
+                MULTIPLY_METHOD = new CachedMethod(BigInteger.class.getDeclaredMethod("multiply", BigInteger.class));
+            } catch (NoSuchMethodException | SecurityException e) {
+                throw new GroovyBugError("Failed to find multiply method of BigInteger", e);
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Override
+    public boolean trySetAccessible(final AccessibleObject ao) {
+        return ao.trySetAccessible();
+    }
+
     /**
      * This method may be used by a caller in class C to check whether to enable access to a member of declaring class D successfully
      * if {@link Java8#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
@@ -223,124 +299,6 @@ public class Java9 extends Java8 {
         if (callerModule == Object.class.getModule()) return true;
 
         return checkAccessible(callerClass, declaringClass, member.getModifiers(), true);
-    }
-
-    @Override
-    public boolean trySetAccessible(final AccessibleObject ao) {
-        return ao.trySetAccessible();
-    }
-
-    @Override
-    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, Class<?> caller) {
-        if (!(metaMethod instanceof CachedMethod)) {
-            return metaMethod;
-        }
-
-        CachedMethod cachedMethod = (CachedMethod) metaMethod;
-        CachedClass methodDeclaringClass = cachedMethod.getDeclaringClass();
-
-        if (null == methodDeclaringClass) {
-            return metaMethod;
-        }
-
-        if (null == caller) {
-            caller = ReflectionUtils.class; // "set accessible" are done via `org.codehaus.groovy.reflection.ReflectionUtils` as shown in warnings
-        }
-
-        return getOrTransformMetaMethod(metaClass, caller, cachedMethod);
-    }
-
-    private CachedMethod getOrTransformMetaMethod(final MetaClass metaClass, final Class<?> caller, final CachedMethod cachedMethod) {
-        CachedMethod transformedMethod = cachedMethod.getTransformedMethod();
-        if (null != transformedMethod) {
-            return transformedMethod;
-        }
-
-        transformedMethod = doTransformMetaMethod(metaClass, cachedMethod, caller);
-        cachedMethod.setTransformedMethod(transformedMethod);
-
-        return transformedMethod;
-    }
-
-    private CachedMethod doTransformMetaMethod(final MetaClass metaClass, final CachedMethod metaMethod, final Class<?> caller) {
-        Class<?> declaringClass = metaMethod.getDeclaringClass().getTheClass();
-        int methodModifiers = metaMethod.getModifiers();
-
-        // if caller can access the method, no need to transform the meta method
-        if (!checkAccessible(caller, declaringClass, methodModifiers, false)) {
-            Class<?>[] paramTypes = metaMethod.getPT();
-            Class<?> theClass = metaClass.getTheClass();
-            if (declaringClass == theClass) {
-                if (BigInteger.class == theClass) {
-                    CachedMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, paramTypes);
-                    if (bigIntegerMetaMethod != metaMethod) {
-                        return bigIntegerMetaMethod;
-                    }
-                }
-                // GROOVY-9081: Access public members of private class, e.g. Collections.unmodifiableMap([:]).toString()
-                // try to find the visible method from its superclasses
-                for (Class<?> c = theClass; c != null; c = c.getSuperclass()) {
-                    Optional<CachedMethod> cachedMethod = getAccessibleMetaMethod(metaMethod, paramTypes, caller, c, true);
-                    if (cachedMethod.isPresent()) {
-                        return cachedMethod.get();
-                    }
-                }
-            } else if (declaringClass.isAssignableFrom(theClass)) {
-                // if caller can not access the method,
-                // try to find the corresponding method in its derived class
-                // GROOVY-9081: Sub-class derives the protected members from public class, "Invoke the members on the subclass instances"
-                // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
-                // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
-                Optional<CachedMethod> cachedMethod = getAccessibleMetaMethod(metaMethod, paramTypes, caller, theClass, false);
-                if (cachedMethod.isPresent()) {
-                    return cachedMethod.get();
-                }
-            }
-        }
-
-        return metaMethod;
-    }
-
-    private static CachedMethod transformBigIntegerMetaMethod(final CachedMethod metaMethod, final Class<?>[] paramTypes) {
-        if (paramTypes.length == 1 && metaMethod.getName().equals("multiply")) {
-            Class<?> type = paramTypes[0];
-            if (type == Long.class || type == long.class
-                    || type == Integer.class || type == int.class
-                    || type == Short.class || type == short.class) {
-                return BigIntegerMultiplyMethodHolder.MULTIPLY_METHOD;
-            }
-        }
-
-        return metaMethod;
-    }
-
-    private static class BigIntegerMultiplyMethodHolder {
-        private static final CachedMethod MULTIPLY_METHOD;
-        static {
-            try {
-                MULTIPLY_METHOD = new CachedMethod(BigInteger.class.getDeclaredMethod("multiply", BigInteger.class));
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new GroovyBugError("Failed to find multiply method of BigInteger", e);
-            }
-        }
-    }
-
-    private Optional<CachedMethod> getAccessibleMetaMethod(final CachedMethod metaMethod, final Class<?>[] params, final Class<?> caller, final Class<?> sc, final boolean declared) {
-        List<CachedMethod> metaMethodList = getMetaMethods(metaMethod, params, sc, declared);
-        for (CachedMethod mm : metaMethodList) {
-            if (checkAccessible(caller, mm.getDeclaringClass().getTheClass(), mm.getModifiers(), false)) {
-                return Optional.of(mm);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static List<CachedMethod> getMetaMethods(final CachedMethod metaMethod, final Class<?>[] params, final Class<?> sc, final boolean declared) {
-        String metaMethodName = metaMethod.getName();
-        List<Method> optionalMethodList = declared
-                ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
-                : ReflectionUtils.getMethods(sc, metaMethodName, params);
-        return optionalMethodList.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
     @Override

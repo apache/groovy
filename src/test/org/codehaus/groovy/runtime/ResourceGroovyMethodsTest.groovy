@@ -47,7 +47,7 @@ class ResourceGroovyMethodsTest {
 	void test_Should_write_String_to_File_using_default_encoding() {
 		File file = temporaryFolder.newFile()
 		String text = 'Hello World'
-		
+
 		ResourceGroovyMethods.write(file, text)
 
 		assert file.text == text
@@ -58,9 +58,9 @@ class ResourceGroovyMethodsTest {
 		File file = temporaryFolder.newFile()
 		String text = "؁"
 		String encoding = 'UTF-8'
-		
+
 		ResourceGroovyMethods.write(file, text, encoding)
-		
+
 		assert file.getText(encoding) == text
 	}
 
@@ -80,9 +80,9 @@ class ResourceGroovyMethodsTest {
 		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		byte[] bytes = ' World'.bytes
-		
+
 		ResourceGroovyMethods.append(file, bytes)
-		
+
 		assert file.text == 'Hello World'
 	}
 
@@ -90,9 +90,9 @@ class ResourceGroovyMethodsTest {
 	void test_Should_append_String_to_File_using_default_encoding() {
 		File file = temporaryFolder.newFile()
 		file.write('Hello')
-		
+
 		ResourceGroovyMethods.append(file, ' World')
-		
+
 		assert file.text == 'Hello World'
 	}
 
@@ -101,9 +101,9 @@ class ResourceGroovyMethodsTest {
 		File file = temporaryFolder.newFile()
 		file.write('Hello')
 		Reader reader = new StringReader(' World')
-		
+
 		ResourceGroovyMethods.append(file, reader)
-		
+
 		assert file.text == 'Hello World'
 	}
 
@@ -111,12 +111,12 @@ class ResourceGroovyMethodsTest {
 	void test_Should_append_text_supplied_by_Writer_to_File_using_default_encoding() {
 		File file = temporaryFolder.newFile()
 		file.write('Hello')
-		
+
 		Writer writer = new StringWriter()
 		writer.append(' World')
-		
+
 		ResourceGroovyMethods.append(file, writer)
-		
+
 		assert file.text == 'Hello World'
 	}
 
@@ -125,9 +125,9 @@ class ResourceGroovyMethodsTest {
 		File file = temporaryFolder.newFile()
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
-		
+
 		ResourceGroovyMethods.append(file, ' ؁', encoding)
-		
+
 		assert file.getText(encoding) == '؁ ؁'
 	}
 
@@ -137,9 +137,9 @@ class ResourceGroovyMethodsTest {
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 		Reader reader = new CharArrayReader([' ','؁'] as char[])
-		
+
 		ResourceGroovyMethods.append(file, reader, encoding)
-		
+
 		assert file.getText(encoding) == '؁ ؁'
 	}
 
@@ -148,13 +148,13 @@ class ResourceGroovyMethodsTest {
 		File file = temporaryFolder.newFile()
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
-		
+
 		Writer writer = new CharArrayWriter()
 		writer.append(' ')
 		writer.append('؁')
-		
+
 		ResourceGroovyMethods.append(file, writer, encoding)
-		
+
 		assert file.getText(encoding) == '؁ ؁'
 	}
 

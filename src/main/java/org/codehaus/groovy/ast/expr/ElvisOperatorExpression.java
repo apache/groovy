@@ -21,43 +21,37 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a short ternary expression x ?: y, which is equal 
- * to 
+ * Represents a short ternary expression x ?: y, which is equal to
  * <pre>
  * def truePart = x
  * def booleanPart = truePart as boolean
  * booleanPart? truePart : y
  * </pre>
- * Even if x is no atomic expression, x will be evaluated only 
- * once. Example:
+ * Even if x is no atomic expression, x will be evaluated only once. Example:
  * <pre class="groovyTestCase">
- * class Foo { 
- *   def index=0 
+ * class Foo {
+ *   def index=0
  *   def getX(){ index++; return index }
  * }
  * def foo = new Foo()
- * def result = foo.x ?: "false case" 
+ * def result = foo.x ?: "false case"
  * assert foo.index == 1
- * assert result == 1 
+ * assert result == 1
  * </pre>
- * 
+ *
  * @since 1.5
  */
 public class ElvisOperatorExpression extends TernaryExpression {
 
-    public ElvisOperatorExpression(Expression base, Expression falseExpression) {
-        super(getBool(base), base, falseExpression);
+    public ElvisOperatorExpression(final Expression base, final Expression falseValue) {
+        super(asBooleanExpression(base), base, falseValue);
     }
 
-    private static BooleanExpression getBool(Expression base) {
-       BooleanExpression be = new BooleanExpression(base);
-       be.setSourcePosition(base);
-       return be;
-    }
-
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitShortTernaryExpression(this);
+    private static BooleanExpression asBooleanExpression(final Expression base) {
+        if (base instanceof BooleanExpression) return (BooleanExpression) base;
+        BooleanExpression be = new BooleanExpression(base);
+        be.setSourcePosition(base);
+        return be;
     }
 
     @Override
@@ -67,6 +61,11 @@ public class ElvisOperatorExpression extends TernaryExpression {
                 transformer.transform(getFalseExpression()));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
-        return ret; 
+        return ret;
+    }
+
+    @Override
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitShortTernaryExpression(this);
     }
 }

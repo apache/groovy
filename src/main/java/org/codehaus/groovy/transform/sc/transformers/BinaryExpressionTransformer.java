@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -242,8 +243,10 @@ public class BinaryExpressionTransformer {
                 || rightExpression instanceof MapExpression
                 || rightExpression instanceof RangeExpression
                 || rightExpression instanceof ClassExpression
-                || rightExpression instanceof ConstantExpression
+                ||(rightExpression instanceof ConstantExpression
                             && !isNullConstant(rightExpression))
+                // rightExpression instanceof VariableExpression
+                || isThisOrSuper(rightExpression))//GROOVY-10909
             return staticCompilationTransformer.transform(call);
 
         // GROOVY-6137, GROOVY-7473: null safety and one-time evaluation

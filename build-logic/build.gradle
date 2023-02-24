@@ -29,7 +29,7 @@ repositories {
 dependencies {
     implementation 'org.asciidoctor:asciidoctor-gradle-jvm:3.3.2'
     implementation 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:3.3.2'
-    implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:4.31.0'
+    implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:4.31.4'
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.0'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.13'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.6.8'

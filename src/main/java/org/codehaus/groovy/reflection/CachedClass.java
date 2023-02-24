@@ -31,7 +31,6 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,6 +40,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static java.lang.reflect.Modifier.isProtected;
+import static java.lang.reflect.Modifier.isPublic;
 
 public class CachedClass {
 
@@ -53,10 +55,9 @@ public class CachedClass {
 
         @Override
         public CachedField[] initValue() {
-            PrivilegedAction<CachedField[]> action = () -> Arrays.stream(getTheClass().getDeclaredFields())
+            return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredFields())
                 .filter(f -> ReflectionUtils.checkCanSetAccessible(f, CachedClass.class))
-                .map(CachedField::new).toArray(CachedField[]::new);
-            return doPrivileged(action);
+                .map(CachedField::new).toArray(CachedField[]::new));
         }
     };
 
@@ -65,12 +66,11 @@ public class CachedClass {
 
         @Override
         public CachedConstructor[] initValue() {
-            PrivilegedAction<CachedConstructor[]> action = () -> Arrays.stream(getTheClass().getDeclaredConstructors())
+            return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
-                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class))
+                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class) || (isProtected(c.getModifiers()) && isPublic(c.getDeclaringClass().getModifiers())))
                 .map(c -> new CachedConstructor(CachedClass.this, c))
-                .toArray(CachedConstructor[]::new);
-            return doPrivileged(action);
+                .toArray(CachedConstructor[]::new));
         }
     };
 
@@ -79,18 +79,17 @@ public class CachedClass {
 
         @Override
         public CachedMethod[] initValue() {
-            PrivilegedAction<CachedMethod[]> action = () -> {
+            CachedMethod[] declaredMethods = doPrivileged(() -> {
                 try {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
                         .filter(m -> m.getName().indexOf('+') < 0) // no synthetic JDK 5+ methods
-                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class))
+                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class) || (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())))
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);
                 } catch (LinkageError e) {
                     return CachedMethod.EMPTY_ARRAY;
                 }
-            };
-            CachedMethod[] declaredMethods = doPrivileged(action);
+            });
 
             List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
@@ -133,8 +132,8 @@ public class CachedClass {
         }
     };
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the action not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
+    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the action not as a privileged action
+    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
         return java.security.AccessController.doPrivileged(action);
     }
 
@@ -143,7 +142,7 @@ public class CachedClass {
 
         @Override
         public CallSiteClassLoader initValue() {
-            return doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
+            return doPrivileged(() -> new CallSiteClassLoader(CachedClass.this.cachedClass));
         }
     };
 

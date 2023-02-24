@@ -124,7 +124,7 @@ public class IndyInterface {
         LOG = Logger.getLogger(IndyInterface.class.getName());
 
         try {
-            if (System.getProperty("groovy.indy.logging") != null) {
+            if (Boolean.getBoolean("groovy.indy.logging")) {
                 LOG.setLevel(Level.ALL);
                 enableLogger = true;
             }

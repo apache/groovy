@@ -18,27 +18,28 @@
  */
 package groovy.swing.beans
 
-import groovy.swing.GroovySwingTestCase
+import org.junit.Test
 
-class VetoableSwingTest extends GroovySwingTestCase {
+import static groovy.swing.GroovySwingTestCase.testInEDT
+
+final class VetoableSwingTest {
+
+    // GROOVY-8339, GROOVY-10070
+    @Test
     void testExtendsComponent() {
         testInEDT {
-            GroovyShell shell = new GroovyShell()
-            shell.evaluate("""
-                import groovy.beans.Vetoable
-                import javax.swing.JPanel
-
-                class VetoableTestBean7 extends JPanel {
-                    @Vetoable String testField
+            new GroovyShell().evaluate '''
+                class VetoableTestBean extends javax.swing.JPanel {
+                    @groovy.beans.Vetoable String testValue
                 }
 
-                sb = new VetoableTestBean7()
-                sb.testField = "bar"
                 changed = false
-                sb.vetoableChange = {changed = true}
-                sb.testField = "foo"
+
+                def bean = new VetoableTestBean(testValue: 'foo')
+                bean.vetoableChange = {changed = true}
+                bean.testValue = 'bar'
                 assert changed
-            """)
+            '''
         }
     }
 }

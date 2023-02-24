@@ -275,6 +275,30 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10897
+    void testCallToSuper2() {
+        assertScript '''
+            interface A10897 {
+                def m()
+            }
+            interface B10897 extends A10897 {
+                @Override def m()
+            }
+            class C10897 implements A10897 {
+                @Override def m() { "C" }
+            }
+            class D10897 extends C10897 implements B10897 {
+            }
+            class E10897 extends D10897 {
+                @Override
+                def m() {
+                    "E then " + super.m()
+                }
+            }
+            assert new E10897().m() == 'E then C'
+        '''
+    }
+
     // GROOVY-10494
     void testCallToSuperDefault() {
         assertScript '''
@@ -304,6 +328,32 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Default method m(T) requires qualified super'
+    }
+
+    // GROOVY-10922
+    void testCallToSuperGenerated() {
+        assertScript '''
+            interface Foo {
+                String getString()
+                void setString(String s)
+            }
+            class Bar implements Foo {
+                String string
+            }
+            class Baz extends Bar {
+                String object
+                @Override
+                void setString(String string) {
+                    super.setString(string)
+                    object = string
+                }
+            }
+;
+            def obj = new Baz()
+            obj.setString('xx')
+            assert obj.object == 'xx'
+            assert obj.string == 'xx'
+        '''
     }
 
     void testMethodCallFromSuperOwner() {
@@ -1591,6 +1641,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             import java.nio.charset.Charset
             Charset charset = Charset.forName('UTF-8')
             assert charset instanceof Charset
+        '''
+    }
+
+    // GROOVY-10939
+    void testClassHashCodeVsObjectHashCode() {
+        assertScript '''
+            int h = this.getClass().hashCode()
         '''
     }
 

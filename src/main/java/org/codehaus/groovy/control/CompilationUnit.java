@@ -302,6 +302,8 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.INSTRUCTION_SELECTION);
 
+        addPhaseOperation(verification, Phases.CLASS_GENERATION);
+
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
 
         addPhaseOperation(groovyClass -> {
@@ -580,7 +582,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Adds a ClassNode directly to the unit (i.e. without source).
      * WARNING: the source is needed for error reporting, using
      * this method without setting a SourceUnit will cause
-     * NullPinterExceptions
+     * NullPointerExceptions
      */
     public void addClassNode(final ClassNode node) {
         ModuleNode module = new ModuleNode(getAST());
@@ -739,17 +741,11 @@ public class CompilationUnit extends ProcessingUnit {
         return false;
     }
 
-    /**
-     * Runs the class generation phase on a single {@code ClassNode}.
-     */
-    private final IPrimaryClassNodeOperation classgen = new IPrimaryClassNodeOperation() {
+    private final IPrimaryClassNodeOperation verification = new IPrimaryClassNodeOperation() {
         @Override
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
             new OptimizerVisitor(CompilationUnit.this).visitClass(classNode, source); // GROOVY-4272: repositioned from static import visitor
 
-            //
-            // Run the Verifier on the outer class
-            //
             GroovyClassVisitor visitor = new Verifier();
             try {
                 visitor.visitClass(classNode);
@@ -777,7 +773,20 @@ public class CompilationUnit extends ProcessingUnit {
             // because the class may be generated even if an error was found
             // and that class may have an invalid format we fail here if needed
             getErrorCollector().failIfErrors();
+        }
 
+        @Override
+        public boolean needSortedInput() {
+            return true;
+        }
+    };
+
+    /**
+     * Generates bytecode for a single {@code ClassNode}.
+     */
+    private final IPrimaryClassNodeOperation classgen = new IPrimaryClassNodeOperation() {
+        @Override
+        public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
             //
             // Prep the generator machinery
             //
@@ -793,7 +802,7 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Run the generation and create the class (if required)
             //
-            visitor = new AsmClassGenerator(source, context, classVisitor, sourceName);
+            AsmClassGenerator visitor = new AsmClassGenerator(source, context, classVisitor, sourceName);
             visitor.visitClass(classNode);
 
             byte[] bytes = ((ClassWriter) classVisitor).toByteArray();
@@ -807,11 +816,13 @@ public class CompilationUnit extends ProcessingUnit {
             }
 
             //
-            // Recurse for inner classes
+            // Recurse for generated classes
             //
-            LinkedList<ClassNode> innerClasses = ((AsmClassGenerator) visitor).getInnerClasses();
+            Deque<ClassNode> innerClasses = visitor.getInnerClasses();
             while (!innerClasses.isEmpty()) {
-                classgen.call(source, context, innerClasses.removeFirst());
+                ClassNode innerClass = innerClasses.removeFirst();
+                verification.call(source, context, innerClass);
+                classgen.call(source, context, innerClass);
             }
         }
 

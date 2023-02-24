@@ -16,30 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.swing.beans
+package groovy.util.function;
 
-import org.junit.Test
-
-import static groovy.swing.GroovySwingTestCase.testInEDT
-
-final class BindableSwingTest {
-
-    // GROOVY-8339, GROOVY-10070
-    @Test
-    void testExtendsComponent() {
-        testInEDT {
-            new GroovyShell().evaluate '''
-                class BindableTestBean extends javax.swing.JPanel {
-                    @groovy.beans.Bindable String testValue
-                }
-
-                changed = false
-
-                def bean = new BindableTestBean(testValue: 'foo')
-                bean.propertyChange = {changed = true}
-                bean.testValue = 'bar'
-                assert changed
-            '''
-        }
-    }
+/**
+ * A comparator of two long values.
+ */
+@FunctionalInterface
+public interface LongComparator {
+    /**
+     * Compares its two arguments for order.
+     *
+     * @param v1 The long value to compare.
+     * @param v2 The long value to compare.
+     * @return If v1 is less than v2, returns negative. If v1 equals to v2, returns zero. If v1 is greater than v2, returns positive.
+     */
+    int compare(long v1, long v2);
 }

@@ -144,7 +144,7 @@ tasks.named('jar') {
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
 }
 
-tasks.withType(AbstractArchiveTask) {
+tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
 }
@@ -202,8 +202,9 @@ tasks.register("jarjar", JarJarTask) {
     outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${it.archiveClassifier.get() ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
     withManifest {
+        def extras = project.name == 'groovy' ? ['Main-Class': 'groovy.ui.GroovyMain'] : [:]
         def moduleName = "org.apache.${project.name.replace('-', '.')}"
-        attributes('Automatic-Module-Name': moduleName)
+        attributes('Automatic-Module-Name': moduleName, 'Bundle-Name': 'Groovy module: ' + project.name, *:extras)
         groovyLibrary.configureManifest(it, excludedFromManifest)
         classpath = configurations.runtimeClasspath
     }
@@ -260,7 +261,7 @@ tasks.withType(Checkstyle).configureEach {
     def chk = it
     finalizedBy {
         // we use a closure here as a workaround, to preserve task configuration laziness
-        tasks.create("${name}Report", CheckstyleHtmlReport) {
+        tasks.register("${name}Report", CheckstyleHtmlReport) {
             dependsOn chk
             source.from(chk.source)
             configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")

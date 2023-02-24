@@ -146,17 +146,18 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
         cNode.getDeclaredConstructors().removeIf(next -> next.getFirstStatement() == null);
 
+        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = false; // GROOVY-4363
         Set<String> names = new HashSet<>();
         List<PropertyNode> properties;
         if (includeSuperProperties || includeSuperFields) {
-            properties = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, false, false, allNames, includeStatic);
+            properties = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, includePseudoGetters, includePseudoSetters, /*super*/true, skipReadOnly, /*reverse*/false, allNames, includeStatic);
         } else {
             properties = new ArrayList<>();
         }
-        properties.addAll(getAllProperties(names, cNode, cNode, includeProperties, includeFields, false, allProperties, false, false, false, allNames, includeStatic));
+        properties.addAll(getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, /*super*/false, skipReadOnly, /*reverse*/false, allNames, includeStatic));
 
         BlockStatement body = new BlockStatement();
-        ClassCodeExpressionTransformer transformer = makeMapTypedArgsTransformer();
+        ClassCodeExpressionTransformer transformer = makeMapTypedArgsTransformer(source);
         if (pre != null) {
             ClosureExpression transformed = (ClosureExpression) transformer.transform(pre);
             copyStatementsWithSuperAdjustment(transformed, body);
@@ -169,7 +170,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         Parameter map = new Parameter(MAP_TYPE, "args");
         boolean specialNamedArgsCase = specialNamedArgHandling
                 && ImmutableASTTransformation.isSpecialNamedArgCase(properties, true);
-        processProps(xform, anno, cNode, handler, allNames, excludes, includes, properties, map, inner);
+        createInitializers(xform, anno, cNode, handler, allNames, excludes, includes, properties, map, inner);
         if (specialNamedArgsCase) map = new Parameter(LHMAP_TYPE, "args");
         body.addStatement(inner);
         if (post != null) {
@@ -188,16 +189,16 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             // GROOVY-5814: fix compatibility with @CompileStatic
             ClassCodeVisitorSupport variableExpressionFix = new ClassCodeVisitorSupport() {
                 @Override
-                protected SourceUnit getSourceUnit() {
-                    return cNode.getModule().getContext();
-                }
-
-                @Override
                 public void visitVariableExpression(final VariableExpression expression) {
                     super.visitVariableExpression(expression);
                     if ("args".equals(expression.getName())) {
                         expression.setAccessedVariable(args);
                     }
+                }
+
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return cNode.getModule().getContext();
                 }
             };
             variableExpressionFix.visitConstructor(ctor);
@@ -207,18 +208,18 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         }
     }
 
-    private static void processProps(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyHandler handler, boolean allNames, List<String> excludes, List<String> includes, List<PropertyNode> superList, Parameter map, BlockStatement inner) {
-        for (PropertyNode pNode : superList) {
+    private static void createInitializers(final AbstractASTTransformation xform, final AnnotationNode aNode, final ClassNode cNode, final PropertyHandler handler, final boolean allNames, final List<String> excludes, final List<String> includes, final List<PropertyNode> list, final Parameter map, final BlockStatement block) {
+        for (PropertyNode pNode : list) {
             String name = pNode.getName();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
-            Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, map);
+            Statement propInit = handler.createPropInit(xform, aNode, cNode, pNode, map);
             if (propInit != null) {
-                inner.addStatement(propInit);
+                block.addStatement(propInit);
             }
         }
     }
 
-    private static ClassCodeExpressionTransformer makeMapTypedArgsTransformer() {
+    private static ClassCodeExpressionTransformer makeMapTypedArgsTransformer(final SourceUnit unit) {
         return new ClassCodeExpressionTransformer() {
             @Override
             public Expression transform(final Expression exp) {
@@ -238,7 +239,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
             @Override
             protected SourceUnit getSourceUnit() {
-                return null;
+                return unit;
             }
         };
     }

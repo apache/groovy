@@ -271,6 +271,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10933
+    void testConsumerII() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                List<String> strings = []
+                Optional.of('string')
+                    .ifPresent(strings::add)
+                assert strings.contains('string')
+            }
+
+            test()
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
@@ -654,6 +669,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new -- GROOVY-10930
+    void testFunctionCN5() {
+        def err = shouldFail shell, '''
+            def <X> void m(Function<String,X> fn) { }
+            class Bar { }
+            @CompileStatic
+            void test() {
+                m(Bar::new) // ctor does not accept String
+            }
+
+            test()
+        '''
+        assert err =~ /Cannot find matching constructor Bar\(java.lang.String\)/
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
@@ -962,6 +992,27 @@ final class MethodReferenceTest {
                 }
 
                 test()
+            """
+        }
+    }
+
+    @Test // GROOVY-10904
+    void testPropertyMethodLocation() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript shell, """
+                $tag
+                class Test {
+                    static class Profile {
+                        String foo, bar
+                    }
+
+                    Map<String, Profile> profiles = [new Profile()].stream()
+                        .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
+
+                    static main(args) {
+                        assert this.newInstance().getProfiles().size() == 1
+                    }
+                }
             """
         }
     }
