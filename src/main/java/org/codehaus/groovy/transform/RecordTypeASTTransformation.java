@@ -402,11 +402,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
     private Object[] createBootstrapMethodArguments(ClassNode cNode) {
         String internalName = cNode.getName().replace('.', '/');
-        String names = cNode.getRecordComponents().stream().map(RecordComponentNode::getName).collect(Collectors.joining(";"));
+        String names = cNode.getRecordComponents().stream()
+                                                    .map(RecordComponentNode::getName)
+                                                    .collect(Collectors.joining(";"));
         List<Object> args = new LinkedList<>();
         args.add(Type.getType(BytecodeHelper.getTypeDescription(cNode)));
         args.add(names);
-        cNode.getRecordComponents().stream().forEach(rcn -> args.add(createFieldHandle(rcn, internalName)));
+        cNode.getRecordComponents().forEach(rcn -> args.add(createFieldHandle(rcn, internalName)));
         return args.toArray();
     }
 
