@@ -32,7 +32,7 @@ dependencies {
     implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:4.31.4'
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.0'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.13'
-    implementation 'me.champeau.jmh:jmh-gradle-plugin:0.6.8'
+    implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.0'
 }
 
 tasks.withType(Jar).configureEach {
