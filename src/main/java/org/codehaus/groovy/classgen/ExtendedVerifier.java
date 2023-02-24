@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
@@ -160,6 +159,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructor(ConstructorNode node) {
         visitConstructorOrMethod(node, CONSTRUCTOR_TARGET);
+        if (!node.getReturnType().isRedirectNode() && node.getAnnotations().stream().anyMatch(anno -> anno.isTargetAllowed(TYPE_USE_TARGET))) {
+            node.setReturnType(node.getReturnType().getPlainNodeReference(false)); // GROOVY-10937
+        }
         extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), CONSTRUCTOR_TARGET);
     }
 
@@ -207,7 +209,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void extractTypeUseAnnotations(List<AnnotationNode> mixed, ClassNode targetType, Integer keepTarget) {
+    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, final ClassNode targetType, final int keepTarget) {
         List<AnnotationNode> typeUseAnnos = new ArrayList<>();
         for (AnnotationNode anno : mixed) {
             if (anno.isTargetAllowed(TYPE_USE_TARGET)) {
@@ -216,9 +218,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
         if (!typeUseAnnos.isEmpty()) {
             targetType.addTypeAnnotations(typeUseAnnos);
-            targetType.setAnnotated(true);
             for (AnnotationNode anno : typeUseAnnos) {
-                if (keepTarget != null && !anno.isTargetAllowed(keepTarget)) {
+                if (!anno.isTargetAllowed(keepTarget)) {
                     mixed.remove(anno);
                 }
             }

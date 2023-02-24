@@ -18,7 +18,29 @@
  */
 package org.codehaus.groovy.classgen.asm
 
-class TypeAnnotationsTest extends AbstractBytecodeTestCase {
+final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
+
+    void testTypeAnnotationsForConstructor() {
+        assert compile(method: '<init>', classNamePattern: 'HasConstructor', '''
+            import java.lang.annotation.*
+            import static java.lang.annotation.RetentionPolicy.RUNTIME
+            import static java.lang.annotation.ElementType.*
+
+            @Retention(RUNTIME) @Target(CONSTRUCTOR) @interface CtorAnno  { }
+            @Retention(RUNTIME) @Target(TYPE_USE)    @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE)    @interface TypeAnno1 { }
+
+            class HasConstructor {
+                @CtorAnno @TypeAnno0 @TypeAnno1 HasConstructor() { }
+            }
+        ''').hasSequence([
+                'public <init>()V',
+                '@LCtorAnno;()',
+                '@LTypeAnno0;() : METHOD_RETURN',
+                '@LTypeAnno1;() : METHOD_RETURN'
+        ])
+    }
+
     void testTypeAnnotationsForMethod1() {
         assert compile(method: 'foo','''
         import java.lang.annotation.*
@@ -139,27 +161,6 @@ class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 '@LTypeAnno9;() : METHOD_FORMAL_PARAMETER 1, 1;*',
                 '@LTypeAnno0;() : THROWS 0, null',
                 '@LTypeAnno1;() : THROWS 1, null'
-        ])
-    }
-
-    void testTypeAnnotationsForConstructor() {
-        assert compile(method: '<init>', classNamePattern: 'HasCons', '''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
-
-        @Retention(RUNTIME) @Target([CONSTRUCTOR]) @interface ConstructorAnno { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno1 { }
-
-        class HasCons {
-            @ConstructorAnno @TypeAnno0 @TypeAnno1 HasCons() { }
-        }
-        ''').hasSequence([
-                'public <init>()V',
-                '@LConstructorAnno;()',
-                '@LTypeAnno0;() : METHOD_RETURN',
-                '@LTypeAnno1;() : METHOD_RETURN'
         ])
     }
 

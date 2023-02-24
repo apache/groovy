@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
@@ -1606,29 +1607,31 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public List<AnnotationNode> getTypeAnnotations() {
-        return typeAnnotations;
+        return new ArrayList<>(typeAnnotations);
     }
 
-    public List<AnnotationNode> getTypeAnnotations(ClassNode type) {
-        List<AnnotationNode> ret = new ArrayList<>(typeAnnotations.size());
+    public List<AnnotationNode> getTypeAnnotations(final ClassNode type) {
+        List<AnnotationNode> annotations = new ArrayList<>();
         for (AnnotationNode node : typeAnnotations) {
             if (type.equals(node.getClassNode())) {
-                ret.add(node);
+                annotations.add(node);
             }
         }
-        return ret;
+        return annotations;
     }
 
-    public void addTypeAnnotation(AnnotationNode annotation) {
-        if (annotation != null) {
-            if (typeAnnotations == Collections.EMPTY_LIST) {
-                typeAnnotations = new ArrayList<>(3);
-            }
-            typeAnnotations.add(annotation);
+    public void addTypeAnnotation(final AnnotationNode annotation) {
+        if (!isPrimaryClassNode() && !isRedirectNode() && isResolved()) {
+            throw new GroovyBugError("Adding type annotation @" + annotation.getClassNode().getNameWithoutPackage() + " to non-primary, non-redirect node: " + getName());
         }
+        if (typeAnnotations == Collections.EMPTY_LIST) {
+            typeAnnotations = new ArrayList<>(3);
+        }
+        typeAnnotations.add(requireNonNull(annotation));
+        setAnnotated(true);
     }
 
-    public void addTypeAnnotations(List<AnnotationNode> annotations) {
+    public void addTypeAnnotations(final List<AnnotationNode> annotations) {
         for (AnnotationNode annotation : annotations) {
             addTypeAnnotation(annotation);
         }

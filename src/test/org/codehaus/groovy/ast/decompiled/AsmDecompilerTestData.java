@@ -77,17 +77,14 @@ public class AsmDecompilerTestData<T extends List<? super T>, V> extends SuperCl
     static class Inner$WithDollar {}
 
     static <T extends List<? super T>> AsmDecompilerTestData<T, Integer>.Inner<String> returnInner() { return null; }
-
 }
 
-@SuppressWarnings("unused")
+class SuperClass { }
+
 interface Intf<S> { }
 
 enum SomeEnum { FOO, BAR }
 
-class SuperClass { }
-
-@SuppressWarnings("unused")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @interface Anno {
@@ -100,7 +97,11 @@ class SuperClass { }
     InnerAnno[] annoArrayAttr() default {};
 }
 
-@SuppressWarnings("unused")
+@Target(ElementType.TYPE_USE)
+@Retention(RetentionPolicy.RUNTIME)
+@interface TypeAnno {
+}
+
 @Retention(RetentionPolicy.RUNTIME)
 @interface InnerAnno {
     boolean booleanAttr() default true;
@@ -110,4 +111,17 @@ class SuperClass { }
 abstract class NonTrivialErasure<V extends RuntimeException> {
     abstract V method(V param) throws V;
     V field;
+}
+
+@SuppressWarnings("unused")
+abstract class WithTypeAnnotations extends @TypeAnno Object implements @TypeAnno Cloneable, @TypeAnno List<@TypeAnno Object> {
+    @TypeAnno Object method(@TypeAnno Object param) throws @TypeAnno Exception {
+        return null;
+    }
+    <T extends @TypeAnno Object> @TypeAnno T parameterizedMethod() {
+        return null;
+    }
+    @TypeAnno WithTypeAnnotations() {
+    }
+    @TypeAnno Object field;
 }

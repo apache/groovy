@@ -506,8 +506,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         visitAnnotations(node, mv);
         visitTypeParameters(node, mv);
-        // ideally following statement would be in visitMethod but mv not visible there
-        if (!(node instanceof ConstructorNode)) {
+        if (!node.isConstructor() || node.getReturnType().isAnnotated()) {
             visitType(node.getReturnType(), mv, newTypeReference(METHOD_RETURN), "", true);
         }
 

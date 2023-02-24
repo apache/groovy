@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.decompiled
 
-import junit.framework.TestCase
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -26,14 +25,17 @@ import org.codehaus.groovy.ast.decompiled.support.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
-import org.objectweb.asm.Opcodes
+import org.junit.Test
 
-final class AsmDecompilerTest extends TestCase {
+import static java.lang.reflect.Modifier.*
 
-    void "test decompile class"() {
+final class AsmDecompilerTest {
+
+    @Test
+    void "basic class"() {
         ClassNode node = decompile()
         assert AsmDecompilerTestData.name == node.name
-        assert (node.modifiers & Opcodes.ACC_PUBLIC) != 0
+        assert isPublic(node.modifiers)
 
         assert !node.genericsPlaceHolder
         assert node.usingGenerics
@@ -67,20 +69,23 @@ final class AsmDecompilerTest extends TestCase {
         assert v.upperBounds[0].toString() == Object.name
     }
 
-    void "test method object return type"() {
-        def method = decompile().getDeclaredMethod("objectMethod")
+    @Test
+    void "method object return type"() {
+        def method = decompile().getDeclaredMethod('objectMethod')
         assert method.returnType.name == ClassNode.name
     }
 
-    void "test method primitive array return type"() {
-        def method = decompile().getDeclaredMethod("primitiveArrayMethod")
+    @Test
+    void "method primitive array return type"() {
+        def method = decompile().getDeclaredMethod('primitiveArrayMethod')
         assert method.returnType.array
         assert method.returnType.componentType.array
         assert method.returnType.componentType.componentType == ClassHelper.int_TYPE
     }
 
-    void "test method parameters and exceptions"() {
-        def method = decompile().getDeclaredMethods("withParametersThrowing")[0]
+    @Test
+    void "method parameters and exceptions"() {
+        def method = decompile().getDeclaredMethods('withParametersThrowing')[0]
 
         assert method.parameters.length == 2
         assert method.parameters[0].type == ClassHelper.int_TYPE
@@ -90,17 +95,20 @@ final class AsmDecompilerTest extends TestCase {
         assert method.exceptions[0].name == IOException.name
     }
 
-    void "test field"() {
-        def field = decompile().getDeclaredField("aField")
+    @Test
+    void "basic field"() {
+        def field = decompile().getDeclaredField('aField')
         assert field.type.name == Object.name
     }
 
-    void "test constructor"() {
+    @Test
+    void "constructor"() {
         def constructor = decompile().getDeclaredConstructors()[0]
         assert constructor.parameters[0].type == ClassHelper.boolean_TYPE
     }
 
-    void "test supers"() {
+    @Test
+    void "supers"() {
         def node = decompile()
         assert node.superClass.name == SuperClass.name
         assert !node.superClass.usingGenerics
@@ -126,12 +134,13 @@ final class AsmDecompilerTest extends TestCase {
         assert !string.type.usingGenerics
     }
 
-    void "test simple class annotations"() {
+    @Test
+    void "simple class annotations"() {
         def node = decompile().annotations[0]
 
         assert node.classNode.name == Anno.name
 
-        assert ((ConstantExpression) node.members.stringAttr).value == "s"
+        assert ((ConstantExpression) node.members.stringAttr).value == 's'
         assert !node.members.booleanAttr
         assert ((ClassExpression) node.members.clsAttr).type.name == String.name
 
@@ -139,35 +148,40 @@ final class AsmDecompilerTest extends TestCase {
         assert ((PropertyExpression) node.members.enumAttr).objectExpression.type.name == SomeEnum.name
     }
 
-    void "test member annotations"() {
+    @Test
+    void "member annotations"() {
         def node = decompile()
-        assert node.getDeclaredField("aField").annotations[0].classNode.name == Anno.name
-        assert node.getDeclaredMethod("objectMethod").annotations[0].classNode.name == Anno.name
-        assert !node.getDeclaredMethods("withParametersThrowing")[0].annotations
+        assert node.getDeclaredField('aField').annotations[0].classNode.name == Anno.name
+        assert node.getDeclaredMethod('objectMethod').annotations[0].classNode.name == Anno.name
+        assert !node.getDeclaredMethods('withParametersThrowing')[0].annotations
     }
 
-    void "test parameter annotations"() {
+    @Test
+    void "parameter annotations"() {
         def node = decompile()
-        def params = node.getDeclaredMethods("withParametersThrowing")[0].parameters
+        def params = node.getDeclaredMethods('withParametersThrowing')[0].parameters
         assert params[0].annotations.collect { it.classNode.name } == [Anno.name]
         assert !params[1].annotations
     }
 
-    void "test primitive array attribute"() {
+    @Test
+    void "primitive array attribute"() {
         def node = decompile().annotations[0]
 
         def list = ((ListExpression) node.members.intArrayAttr).expressions
         assert list.collect { ((ConstantExpression) it).value } == [4, 2]
     }
 
-    void "test class array attribute"() {
+    @Test
+    void "class array attribute"() {
         def node = decompile().annotations[0]
 
         def list = ((ListExpression) node.members.classArrayAttr).expressions
         assert list.collect { ((ClassExpression) it).type.name } == [AsmDecompilerTestData.name]
     }
 
-    void "test annotation array attribute"() {
+    @Test
+    void "annotation array attribute"() {
         def node = decompile().annotations[0]
 
         def list = ((ListExpression) node.members.annoArrayAttr).expressions
@@ -181,14 +195,16 @@ final class AsmDecompilerTest extends TestCase {
         assert ((ConstantExpression) annotationNode.members.booleanAttr).value == false
     }
 
-    void "test annotation default method"() {
-        def method = decompile(Anno.name).getDeclaredMethod('booleanAttr')
+    @Test
+    void "annotation default method"() {
+        def method = decompile(Anno).getDeclaredMethod('booleanAttr')
         assert method.hasAnnotationDefault()
         assert method.code
     }
 
-    void "test annotation retention and targets"() {
-        def anno = decompile().getAnnotations(decompile(Anno.name))[0]
+    @Test
+    void "annotation retention and targets"() {
+        def anno = decompile().getAnnotations(decompile(Anno))[0]
         assert anno.hasRuntimeRetention()
         assert !anno.hasClassRetention()
         assert !anno.hasSourceRetention()
@@ -198,8 +214,9 @@ final class AsmDecompilerTest extends TestCase {
         assert !anno.isTargetAllowed(AnnotationNode.LOCAL_VARIABLE_TARGET)
     }
 
-    void "test enum field"() {
-        def node = decompile(SomeEnum.name).plainNodeReference
+    @Test
+    void "enum field"() {
+        def node = decompile(SomeEnum).plainNodeReference
         for (s in ['FOO', 'BAR']) {
             def field = node.getDeclaredField(s)
             assert field
@@ -207,8 +224,9 @@ final class AsmDecompilerTest extends TestCase {
         }
     }
 
-    void "test generic method"() {
-        def method = decompile().getDeclaredMethods("genericMethod")[0]
+    @Test
+    void "generic method"() {
+        def method = decompile().getDeclaredMethods('genericMethod')[0]
 
         assert method.genericsTypes.size() == 2
         assert method.genericsTypes[0].name == 'A'
@@ -240,18 +258,21 @@ final class AsmDecompilerTest extends TestCase {
         assert wildcard.upperBounds == null
     }
 
-    void "test non-generic exceptions"() {
-        def method = decompile().getDeclaredMethods("nonGenericExceptions")[0]
+    @Test
+    void "non-generic exceptions"() {
+        def method = decompile().getDeclaredMethods('nonGenericExceptions')[0]
         assert method.exceptions[0].name == IOException.name
     }
 
-    void "test non-generic parameters"() {
-        def method = decompile().getDeclaredMethods("nonGenericParameters")[0]
+    @Test
+    void "non-generic parameters"() {
+        def method = decompile().getDeclaredMethods('nonGenericParameters')[0]
         assert method.parameters[0].type == ClassHelper.boolean_TYPE
     }
 
-    void "test generic field"() {
-        def type = decompile().getDeclaredField("genericField").type
+    @Test
+    void "generic field"() {
+        def type = decompile().getDeclaredField('genericField').type
         assert type.name == List.name
         assert type.usingGenerics
 
@@ -262,83 +283,101 @@ final class AsmDecompilerTest extends TestCase {
         assert tRef.genericsTypes[0].name == 'T'
     }
 
-    void "test non-trivial erasure"() {
-        def cls = decompile(NonTrivialErasure.name)
+    @Test
+    void "non-trivial erasure"() {
+        def cls = decompile(NonTrivialErasure)
 
-        def method = cls.getDeclaredMethods("method")[0]
+        def method = cls.getDeclaredMethods('method')[0]
         assert method.returnType.toString() == 'V -> java.lang.RuntimeException'
         assert method.parameters[0].type.toString() == 'V -> java.lang.RuntimeException'
         assert method.exceptions[0].toString() == 'V -> java.lang.RuntimeException'
 
-        def field = cls.getDeclaredField("field")
+        def field = cls.getDeclaredField('field')
         assert field.type.toString() == 'V -> java.lang.RuntimeException'
     }
 
-    void "test static inner class"() {
-        ClassNode cn = decompile(AsmDecompilerTestData.InnerStatic.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
+    @Test
+    void "static inner class"() {
+        ClassNode cn = decompile(AsmDecompilerTestData.InnerStatic)
+        assert isStatic(cn.modifiers)
     }
 
-    void "test static inner with dollar"() {
-        ClassNode cn = decompile(AsmDecompilerTestData.Inner$WithDollar.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
+    @Test
+    void "static inner with dollar"() {
+        ClassNode cn = decompile(AsmDecompilerTestData.Inner$WithDollar)
+        assert isStatic(cn.modifiers)
     }
 
-    void "test static inner classes with same name"() {
-        ClassNode cn = decompile(Groovy8632Abstract.Builder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) != 0
+    @Test
+    void "static inner classes with same name"() {
+        ClassNode cn = decompile(Groovy8632Abstract.Builder)
+        assert isStatic(cn.modifiers)
+        assert isAbstract(cn.modifiers)
 
-        cn = decompile(Groovy8632.Builder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
+        cn = decompile(Groovy8632.Builder)
+        assert isStatic(cn.modifiers)
+        assert !isAbstract(cn.modifiers)
 
-        cn = decompile(Groovy8632Groovy.Builder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
+        cn = decompile(Groovy8632Groovy.Builder)
+        assert isStatic(cn.modifiers)
+        assert !isAbstract(cn.modifiers)
     }
 
-    void "test inner classes with same name"() {
-        ClassNode cn = decompile(Groovy8632Abstract.InnerBuilder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) == 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) != 0
+    @Test
+    void "inner classes with same name"() {
+        ClassNode cn = decompile(Groovy8632Abstract.InnerBuilder)
+        assert !isStatic(cn.modifiers)
+        assert isAbstract(cn.modifiers)
 
-        cn = decompile(Groovy8632.InnerBuilder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) == 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
+        cn = decompile(Groovy8632.InnerBuilder)
+        assert !isStatic(cn.modifiers)
+        assert !isAbstract(cn.modifiers)
 
-        cn = decompile(Groovy8632Groovy.InnerBuilder.name)
-        assert (cn.modifiers & Opcodes.ACC_STATIC) == 0
-        assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
+        cn = decompile(Groovy8632Groovy.InnerBuilder)
+        assert !isStatic(cn.modifiers)
+        assert !isAbstract(cn.modifiers)
     }
 
-    void "test private inner class"() {
-        ClassNode cn = decompile(Groovy8632.InnerPrivate.name)
-        assert (cn.modifiers & Opcodes.ACC_PRIVATE) != 0
-        assert (cn.modifiers & Opcodes.ACC_PUBLIC) == 0
+    @Test
+    void "private inner class"() {
+        ClassNode cn = decompile(Groovy8632.InnerPrivate)
+        assert isPrivate(cn.modifiers)
+        assert !isPublic(cn.modifiers)
     }
 
-    void "test protected inner class"() {
-        ClassNode cn = decompile(Groovy8632.InnerProtected.name)
-        assert (cn.modifiers & Opcodes.ACC_PROTECTED) != 0
-        assert (cn.modifiers & Opcodes.ACC_PUBLIC) == 0
+    @Test
+    void "protected inner class"() {
+        ClassNode cn = decompile(Groovy8632.InnerProtected)
+        assert isProtected(cn.modifiers)
+        assert !isPublic(cn.modifiers)
     }
 
-    void "test non-parameterized generics"() {
-        assert decompile().getDeclaredMethod("nonParameterizedGenerics").genericsTypes == null
+    @Test
+    void "non-parameterized generics"() {
+        assert decompile().getDeclaredMethod('nonParameterizedGenerics').genericsTypes == null
     }
 
-    void "test non-static parameterized inner"() {
-        def asmType = decompile().getDeclaredMethod("returnInner").returnType
-        def jvmType = new ClassNode(AsmDecompilerTestData).getDeclaredMethod("returnInner").returnType
+    @Test
+    void "non-static parameterized inner"() {
+        def asmType = decompile().getDeclaredMethod('returnInner').returnType
+        def jvmType = new ClassNode(AsmDecompilerTestData).getDeclaredMethod('returnInner').returnType
         assert asmType == jvmType
-        assert asmType.genericsTypes.collect { it.name } == jvmType.genericsTypes.collect { it.name }
+        assert asmType.genericsTypes*.name == jvmType.genericsTypes*.name
+    }
+
+    // GROOVY-10937
+    @Test
+    void "type annotations everywhere"() {
+        def asmType = decompile(WithTypeAnnotations)
+        def methods = asmType.declaredConstructors
+        assert !ClassHelper.OBJECT_TYPE.annotated
+        assert !ClassHelper.VOID_TYPE.annotated
     }
 
     //--------------------------------------------------------------------------
 
-    private static ClassNode decompile(String className = AsmDecompilerTestData.name) {
-        def classFileName = className.replace('.', '/') + '.class'
+    private static ClassNode decompile(Class clazz = AsmDecompilerTestData) {
+        def classFileName = clazz.name.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
         def stub = AsmDecompiler.parseClass(resource)
 
