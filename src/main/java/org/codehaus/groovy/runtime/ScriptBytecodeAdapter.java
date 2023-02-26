@@ -52,10 +52,11 @@ import java.util.regex.Pattern;
  * A static helper class to interface bytecode and runtime
  */
 public class ScriptBytecodeAdapter {
+
     public static final Object[] EMPTY_ARGS = {};
-    private static final Integer ZERO = 0;
-    private static final Integer MINUS_ONE = -1;
-    private static final Integer ONE = 1;
+    private static final Integer ONE = Integer.valueOf(1);
+    private static final Integer ZERO = Integer.valueOf(0);
+    private static final Integer MINUS_ONE = Integer.valueOf(-1);
 
     //  --------------------------------------------------------
     //                   exception handling
@@ -703,200 +704,209 @@ public class ScriptBytecodeAdapter {
         return (T) n;
     }
 
+    public static MetaClass initMetaClass(final Object object) {
+        return InvokerHelper.getMetaClass(object.getClass());
+    }
+
+    //--------------------------------------------------------------------------
+
     //assert
-    public static void assertFailed(Object expression, Object message) {
+    public static void assertFailed(final Object expression, final Object message) {
         InvokerHelper.assertFailed(expression, message);
     }
 
     //isCase
-    //TODO: set sender class
-    public static boolean isCase(Object switchValue, Object caseExpression) throws Throwable {
+    public static boolean isCase(final Object switchValue, final Object caseExpression) throws Throwable {
         if (caseExpression == null) {
             return switchValue == null;
         }
         return DefaultTypeTransformation.castToBoolean(invokeMethodN(caseExpression.getClass(), caseExpression, "isCase", new Object[]{switchValue}));
     }
 
-    public static boolean isNotCase(Object switchValue, Object caseExpression) throws Throwable {
+    public static boolean isNotCase(final Object switchValue, final Object caseExpression) throws Throwable {
         return !isCase(switchValue, caseExpression);
     }
 
     //compare
-    public static boolean compareIdentical(Object left, Object right) {
+    public static boolean compareIdentical(final Object left, final Object right) {
         return left == right;
     }
 
-    public static boolean compareNotIdentical(Object left, Object right) {
+    public static boolean compareNotIdentical(final Object left, final Object right) {
         return left != right;
     }
 
-    public static boolean compareEqual(Object left, Object right) {
+    public static boolean compareEqual(final Object left, final Object right) {
         if (left == right) return true;
-
-        Class<?> leftClass = left == null ? null : left.getClass();
-        Class<?> rightClass = right == null ? null : right.getClass();
-
-        if (leftClass == Integer.class && rightClass == Integer.class) {
-            return left.equals(right);
+        if (left != null && right != null) {
+            Class leftClass = left.getClass();
+            if (leftClass == right.getClass()) {
+                if (leftClass == Integer.class) {
+                    return left.equals(right);
+                }
+                if (leftClass == BigDecimal.class) {
+                    return ((BigDecimal) left).compareTo((BigDecimal) right) == 0;
+                }
+                if (leftClass == BigInteger.class) {
+                    return ((BigInteger) left).compareTo((BigInteger) right) == 0;
+                }
+                if (leftClass == Long.class) {
+                    return left.equals(right);
+                }
+                if (leftClass == Double.class) {
+                    return left.equals(right);
+                }
+                if (leftClass == Float.class) {
+                    return left.equals(right);
+                }
+                if (leftClass == String.class) {
+                    return left.equals(right);
+                }
+                if (leftClass == GStringImpl.class) {
+                    return left.equals(right);
+                }
+            }
         }
-        if (leftClass == BigDecimal.class && rightClass == BigDecimal.class) {
-            return ((BigDecimal) left).compareTo((BigDecimal) right) == 0;
-        }
-        if (leftClass == BigInteger.class && rightClass == BigInteger.class) {
-            return ((BigInteger) left).compareTo((BigInteger) right) == 0;
-        }
-        if (leftClass == Long.class && rightClass == Long.class) {
-            return left.equals(right);
-        }
-        if (leftClass == Double.class && rightClass == Double.class) {
-            return left.equals(right);
-        }
-        if (leftClass == Float.class && rightClass == Float.class) {
-            return left.equals(right);
-        }
-
-        if (leftClass == String.class && rightClass == String.class) {
-            return left.equals(right);
-        }
-        if (leftClass == GStringImpl.class && rightClass == GStringImpl.class) {
-            return left.equals(right);
-        }
-
         return DefaultTypeTransformation.compareEqual(left, right);
     }
 
-    public static boolean compareNotEqual(Object left, Object right) {
+    public static boolean compareNotEqual(final Object left, final Object right) {
         return !compareEqual(left, right);
     }
 
-    public static Integer compareTo(Object left, Object right) {
+    public static Integer compareTo(final Object left, final Object right) {
         int answer = DefaultTypeTransformation.compareTo(left, right);
         if (answer == 0) {
             return ZERO;
-        } else {
-            return answer > 0 ? ONE : MINUS_ONE;
         }
+        return answer > 0 ? ONE : MINUS_ONE;
     }
 
-    public static boolean compareLessThan(Object left, Object right) {
-        Class<?> leftClass = left == null ? null : left.getClass();
-        Class<?> rightClass = right == null ? null : right.getClass();
-
-        if (leftClass == Integer.class && rightClass == Integer.class) {
-            return (Integer) left < (Integer) right;
+    public static boolean compareLessThan(final Object left, final Object right) {
+        if (left != null && right != null) {
+            Class leftClass = left.getClass();
+            if (leftClass == right.getClass()) {
+                if (leftClass == Integer.class) {
+                    return (Integer) left < (Integer) right;
+                }
+                if (leftClass == BigDecimal.class) {
+                    return ((BigDecimal) left).compareTo((BigDecimal) right) < 0;
+                }
+                if (leftClass == BigInteger.class) {
+                    return ((BigInteger) left).compareTo((BigInteger) right) < 0;
+                }
+                if (leftClass == Long.class) {
+                    return (Long) left < (Long) right;
+                }
+                if (leftClass == Double.class) {
+                    return (Double) left < (Double) right;
+                }
+                if (leftClass == Float.class) {
+                    return (Float) left < (Float) right;
+                }
+            }
         }
-        if (leftClass == BigDecimal.class && rightClass == BigDecimal.class) {
-            return ((BigDecimal) left).compareTo((BigDecimal) right) < 0;
-        }
-        if (leftClass == BigInteger.class && rightClass == BigInteger.class) {
-            return ((BigInteger) left).compareTo((BigInteger) right) < 0;
-        }
-        if (leftClass == Long.class && rightClass == Long.class) {
-            return (Long) left < (Long) right;
-        }
-        if (leftClass == Double.class && rightClass == Double.class) {
-            return (Double) left < (Double) right;
-        }
-        if (leftClass == Float.class && rightClass == Float.class) {
-            return (Float) left < (Float) right;
-        }
-
-        return compareTo(left, right) < 0;
+        return compareTo(left, right) == MINUS_ONE;
     }
 
-    public static boolean compareLessThanEqual(Object left, Object right) {
-        Class<?> leftClass = left == null ? null : left.getClass();
-        Class<?> rightClass = right == null ? null : right.getClass();
-
-        if (leftClass == Integer.class && rightClass == Integer.class) {
-            return (Integer) left <= (Integer) right;
+    public static boolean compareLessThanEqual(final Object left, final Object right) {
+        if (left != null && right != null) {
+            Class leftClass = left.getClass();
+            if (leftClass == right.getClass()) {
+                if (leftClass == Integer.class) {
+                    return (Integer) left <= (Integer) right;
+                }
+                if (leftClass == BigDecimal.class) {
+                    return ((BigDecimal) left).compareTo((BigDecimal) right) <= 0;
+                }
+                if (leftClass == BigInteger.class) {
+                    return ((BigInteger) left).compareTo((BigInteger) right) <= 0;
+                }
+                if (leftClass == Long.class) {
+                    return (Long) left <= (Long) right;
+                }
+                if (leftClass == Double.class) {
+                    return (Double) left <= (Double) right;
+                }
+                if (leftClass == Float.class) {
+                    return (Float) left <= (Float) right;
+                }
+            }
         }
-        if (leftClass == BigDecimal.class && rightClass == BigDecimal.class) {
-            return ((BigDecimal) left).compareTo((BigDecimal) right) <= 0;
-        }
-        if (leftClass == BigInteger.class && rightClass == BigInteger.class) {
-            return ((BigInteger) left).compareTo((BigInteger) right) <= 0;
-        }
-        if (leftClass == Long.class && rightClass == Long.class) {
-            return (Long) left <= (Long) right;
-        }
-        if (leftClass == Double.class && rightClass == Double.class) {
-            return (Double) left <= (Double) right;
-        }
-        if (leftClass == Float.class && rightClass == Float.class) {
-            return (Float) left <= (Float) right;
-        }
-
-        return compareTo(left, right) <= 0;
+        Integer result = compareTo(left, right);
+        return  result == MINUS_ONE || result == ZERO;
     }
 
-    public static boolean compareGreaterThan(Object left, Object right) {
-        Class<?> leftClass = left == null ? null : left.getClass();
-        Class<?> rightClass = right == null ? null : right.getClass();
-
-        if (leftClass == Integer.class && rightClass == Integer.class) {
-            return (Integer) left > (Integer) right;
+    public static boolean compareGreaterThan(final Object left, final Object right) {
+        if (left != null && right != null) {
+            Class leftClass = left.getClass();
+            if (leftClass == right.getClass()) {
+                if (leftClass == Integer.class) {
+                    return (Integer) left > (Integer) right;
+                }
+                if (leftClass == BigDecimal.class) {
+                    return ((BigDecimal) left).compareTo((BigDecimal) right) > 0;
+                }
+                if (leftClass == BigInteger.class) {
+                    return ((BigInteger) left).compareTo((BigInteger) right) > 0;
+                }
+                if (leftClass == Long.class) {
+                    return (Long) left > (Long) right;
+                }
+                if (leftClass == Double.class) {
+                    return (Double) left > (Double) right;
+                }
+                if (leftClass == Float.class) {
+                    return (Float) left > (Float) right;
+                }
+            }
         }
-        if (leftClass == BigDecimal.class && rightClass == BigDecimal.class) {
-            return ((BigDecimal) left).compareTo((BigDecimal) right) > 0;
-        }
-        if (leftClass == BigInteger.class && rightClass == BigInteger.class) {
-            return ((BigInteger) left).compareTo((BigInteger) right) > 0;
-        }
-        if (leftClass == Long.class && rightClass == Long.class) {
-            return (Long) left > (Long) right;
-        }
-        if (leftClass == Double.class && rightClass == Double.class) {
-            return (Double) left > (Double) right;
-        }
-        if (leftClass == Float.class && rightClass == Float.class) {
-            return (Float) left > (Float) right;
-        }
-
-        return compareTo(left, right) > 0;
+        return compareTo(left, right) == ONE;
     }
 
-    public static boolean compareGreaterThanEqual(Object left, Object right) {
-        Class<?> leftClass = left == null ? null : left.getClass();
-        Class<?> rightClass = right == null ? null : right.getClass();
-
-        if (leftClass == Integer.class && rightClass == Integer.class) {
-            return (Integer) left >= (Integer) right;
+    public static boolean compareGreaterThanEqual(final Object left, final Object right) {
+        if (left != null && right != null) {
+            Class leftClass = left.getClass();
+            if (leftClass == right.getClass()) {
+                if (leftClass == Integer.class) {
+                    return (Integer) left >= (Integer) right;
+                }
+                if (leftClass == BigDecimal.class) {
+                    return ((BigDecimal) left).compareTo((BigDecimal) right) >= 0;
+                }
+                if (leftClass == BigInteger.class) {
+                    return ((BigInteger) left).compareTo((BigInteger) right) >= 0;
+                }
+                if (leftClass == Long.class) {
+                    return (Long) left >= (Long) right;
+                }
+                if (leftClass == Double.class) {
+                    return (Double) left >= (Double) right;
+                }
+                if (leftClass == Float.class) {
+                    return (Float) left >= (Float) right;
+                }
+            }
         }
-        if (leftClass == BigDecimal.class && rightClass == BigDecimal.class) {
-            return ((BigDecimal) left).compareTo((BigDecimal) right) >= 0;
-        }
-        if (leftClass == BigInteger.class && rightClass == BigInteger.class) {
-            return ((BigInteger) left).compareTo((BigInteger) right) >= 0;
-        }
-        if (leftClass == Long.class && rightClass == Long.class) {
-            return (Long) left >= (Long) right;
-        }
-        if (leftClass == Double.class && rightClass == Double.class) {
-            return (Double) left >= (Double) right;
-        }
-        if (leftClass == Float.class && rightClass == Float.class) {
-            return (Float) left >= (Float) right;
-        }
-
-        return compareTo(left, right) >= 0;
+        Integer result = compareTo(left, right);
+        return  result == ONE || result == ZERO;
     }
 
     //regexpr
-    public static Pattern regexPattern(Object regex) {
-        return StringGroovyMethods.bitwiseNegate((CharSequence)regex.toString());
-    }
-
-    public static Matcher findRegex(Object left, Object right) throws Throwable {
+    public static Matcher findRegex(final Object left, final Object right) throws Throwable {
             return InvokerHelper.findRegex(left, right);
     }
 
-    public static boolean matchRegex(Object left, Object right) {
+    public static boolean matchRegex(final Object left, final Object right) {
         return InvokerHelper.matchRegex(left, right);
     }
 
-    //spread expressions
-    public static Object[] despreadList(Object[] args, Object[] spreads, int[] positions) {
+    public static Pattern regexPattern(final Object regex) {
+        return StringGroovyMethods.bitwiseNegate((CharSequence)regex.toString());
+    }
+
+    //spread
+    public static Object[] despreadList(final Object[] args, final Object[] spreads, final int[] positions) {
         List ret = new ArrayList();
         int argsPos = 0;
         int spreadPos = 0;
@@ -926,15 +936,16 @@ public class ScriptBytecodeAdapter {
         return ret.toArray();
     }
 
-    public static Object spreadMap(Object value) {
+    public static Object spreadMap(final Object value) {
         return InvokerHelper.spreadMap(value);
     }
 
-    public static Object unaryMinus(Object value) throws Throwable {
+    //unary
+    public static Object unaryMinus(final Object value) throws Throwable {
             return InvokerHelper.unaryMinus(value);
     }
 
-    public static Object unaryPlus(Object value) throws Throwable {
+    public static Object unaryPlus(final Object value) throws Throwable {
         try {
             return InvokerHelper.unaryPlus(value);
         } catch (GroovyRuntimeException gre) {
@@ -942,15 +953,11 @@ public class ScriptBytecodeAdapter {
         }
     }
 
-    public static Object bitwiseNegate(Object value) throws Throwable {
+    public static Object bitwiseNegate(final Object value) throws Throwable {
         try {
             return InvokerHelper.bitwiseNegate(value);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
-    }
-
-    public static MetaClass initMetaClass(Object object) {
-        return InvokerHelper.getMetaClass(object.getClass());
     }
 }
