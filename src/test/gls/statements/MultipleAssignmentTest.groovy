@@ -105,4 +105,15 @@ final class MultipleAssignmentTest {
             assert [c, d] == [3, 4]
         '''
     }
+
+    @Test
+    void testMultiAssignmentUnderscorePlaceholder() {
+        assertScript '''
+            def m() {
+                def (x, _, y, _, z) = 1..5
+                assert "$x $y $z" == '1 3 5'
+            }
+            m()
+        '''
+    }
 }

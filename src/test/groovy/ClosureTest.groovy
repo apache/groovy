@@ -552,6 +552,19 @@ final class ClosureTest {
         assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
 
+    // GROOVY-10943
+    @Test
+    void testClosureUnderscorePlaceholder() {
+        assertScript '''
+            def e = { a, b, _, _ -> a + b }
+            def f = { a, _, b, _ -> a + b }
+            def g = { _, a, _, b -> a + b }
+            assert e(1000, 100, 10, 1) == 1100
+            assert f(1000, 100, 10, 1) == 1010
+            assert g(1000, 100, 10, 1) == 101
+        '''
+    }
+
     // GROOVY-2433, GROOVY-3073, GROOVY-9987, GROOVY-11128
     @Test
     void testClosureAccessToEnclosingClassPrivateMethod() {

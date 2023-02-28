@@ -1285,6 +1285,54 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10943
+    void testMultiAssignUnderscorePlaceholder1() {
+        assertScript '''
+            def m() {
+                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
+                assert "$x $y $z" == '1 3 5'
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-10943
+    void testMultiAssignUnderscorePlaceholder2() {
+        shouldFailWithMessages '''
+            def m() {
+                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
+                assert _
+            }
+
+            m()
+        ''',
+            'The variable [_] is undeclared'
+    }
+
+    // GROOVY-10943
+    void testClosureUnderscorePlaceholder() {
+        shouldFailWithMessages '''
+            def m() {
+                def g = { String a, _, _ -> a + _ }
+            }
+
+            m()
+        ''',
+            'The variable [_] is undeclared'
+    }
+
+    // GROOVY-10943
+    void testLambdaUnderscorePlaceholder() {
+        shouldFailWithMessages '''
+            def m() {
+                def h = (String a, _, _) -> a + _
+            }
+
+            m()
+        ''',
+            'The variable [_] is undeclared'
+    }
+
     // GROOVY-8237
     void testFlowTypingParameterTempTypeAssignmentTracking2() {
         assertScript '''

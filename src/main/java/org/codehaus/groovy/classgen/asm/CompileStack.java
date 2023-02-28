@@ -375,7 +375,8 @@ public class CompileStack {
             }
             for (BytecodeVariable v : usedVariables) {
                 String type = BytecodeHelper.getTypeDescription(v.isHolder() ? ClassHelper.REFERENCE_TYPE : v.getType());
-                mv.visitLocalVariable(v.getName(), type, null, v.getStartLabel(), v.getEndLabel(), v.getIndex());
+                Label endLabel = v.getEndLabel() == null ? v.getStartLabel() : v.getEndLabel(); // only occurs for '_' placeholder
+                mv.visitLocalVariable(v.getName(), type, null, v.getStartLabel(), endLabel, v.getIndex());
             }
         }
 

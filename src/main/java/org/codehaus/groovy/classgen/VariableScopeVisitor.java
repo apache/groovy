@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
@@ -139,12 +140,20 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         } else if (context.getClass() == PropertyNode.class) {
             scopeType = "class";
             variableType = "property";
+        } else if (context.getClass() == ClosureExpression.class) {
+            scopeType = "parameter list";
+            variableType = "parameter";
         }
 
         StringBuilder msg = new StringBuilder();
         msg.append("The current ").append(scopeType);
         msg.append(" already contains a ").append(variableType);
         msg.append(" of the name ").append(variable.getName());
+
+        if (PlaceholderVisitor.isPlaceholder(context) ||
+            (variable instanceof Parameter && PlaceholderVisitor.isPlaceholder((Parameter) variable))) {
+            return;
+        }
 
         if (currentScope.getDeclaredVariable(variable.getName()) != null) {
             addError(msg.toString(), context);
