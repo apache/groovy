@@ -1252,6 +1252,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10953
+    void testMultiAssign2() {
+        assertScript '''
+            def m() {
+                def (x, y, z) = 1..4
+                assert "$x $y $z" == '1 2 3'
+                (x, y, z) = -5..-6
+                assert "$x ${y.intValue()} $z" == '-5 -6 null'
+                def (a, _, c) = 'a'..'c'
+                assert "${a.toUpperCase()} ${c.endsWith('c')}" == 'A true'
+            }
+            m()
+        '''
+    }
+
     // GROOVY-8220
     void testFlowTypingParameterTempTypeAssignmentTracking1() {
         assertScript '''

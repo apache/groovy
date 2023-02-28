@@ -222,6 +222,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -1206,6 +1207,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (int n = TUPLE_TYPES.indexOf(inferredType), i = 0; i < n; i += 1) {
                 ClassNode type = (genericsTypes != null ? genericsTypes[i].getType() : OBJECT_TYPE);
                 listExpression.addExpression(varX("v" + (i + 1), type));
+            }
+            if (!listExpression.getExpressions().isEmpty()) {
+                rightExpression = listExpression;
+            }
+        } else if (rightExpression instanceof RangeExpression) {
+            ListExpression listExpression = new ListExpression();
+            listExpression.setSourcePosition(rightExpression);
+            ClassNode type = getType(((RangeExpression) rightExpression).getFrom());
+            TupleExpression tuple = (TupleExpression) leftExpression;
+            for (int i = 0; i < tuple.getExpressions().size(); i++) {
+                Expression expression = indexX(rightExpression, constX(i, true));
+                expression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type);
+                listExpression.addExpression(expression);
             }
             if (!listExpression.getExpressions().isEmpty()) {
                 rightExpression = listExpression;
