@@ -789,6 +789,19 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-10943
+    @Test
+    void testLambdaUnderscorePlaceholder() {
+        assertScript '''
+            def e = (a, b, _, _) -> a + b
+            def f = (a, _, b, _) -> a + b
+            def g = (_, a, _, b) -> a + b
+            assert e(1000, 100, 10, 1) == 1100
+            assert f(1000, 100, 10, 1) == 1010
+            assert g(1000, 100, 10, 1) == 101
+        '''
+    }
+
     @Test // GROOVY-11072
     void testFunctionalInterface7() {
         assertScript shell, '''

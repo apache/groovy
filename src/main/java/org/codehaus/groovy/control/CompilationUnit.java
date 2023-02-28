@@ -198,6 +198,10 @@ public class CompilationUnit extends ProcessingUnit {
             GroovyClassVisitor visitor = new EnumVisitor(this, source);
             visitor.visitClass(classNode);
         }, Phases.CONVERSION);
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new PlaceholderVisitor(this, source);
+            visitor.visitClass(classNode);
+        }, Phases.CONVERSION);
 
         addPhaseOperation(source -> {
             try {

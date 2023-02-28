@@ -3906,13 +3906,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         for (int n = parameterList.size(), i = n - 1; i >= 0; i -= 1) {
             Parameter parameter = parameterList.get(i);
 
+            String name = parameter.getName();
+            if (name.equals("_")) {
+                continue; // check this later
+            }
             for (Parameter otherParameter : parameterList) {
                 if (otherParameter == parameter) {
                     continue;
                 }
 
-                if (otherParameter.getName().equals(parameter.getName())) {
-                    throw createParsingFailedException("Duplicated parameter '" + parameter.getName() + "' found.", parameter);
+                if (otherParameter.getName().equals(name)) {
+                    throw createParsingFailedException("Duplicated parameter '" + name + "' found.", parameter);
                 }
             }
         }
