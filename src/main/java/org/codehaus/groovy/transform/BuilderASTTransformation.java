@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
+import groovy.transform.RecordBase;
 import groovy.transform.builder.Builder;
 import groovy.transform.builder.DefaultStrategy;
 import org.codehaus.groovy.ast.ASTNode;
@@ -32,6 +33,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
@@ -45,18 +47,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static groovy.transform.Undefined.isUndefined;
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 
 /**
  * Handles generation of code for the {@link Builder} annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
+public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware, TransformWithPriority {
 
     private static final Class MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode RECORD_TYPE = makeWithoutCaching(RecordBase.class, false);
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
@@ -70,13 +75,37 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
         if (parent instanceof ClassNode || parent instanceof MethodNode) {
-            if (parent instanceof ClassNode && !checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) return;
+            if (parent instanceof ClassNode) {
+                if (!checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) {
+                    return;
+                }
+                ClassNode cn = (ClassNode) parent;
+                if (!cn.getAnnotations(RECORD_TYPE).isEmpty()) {
+                    // we'll later create a tuple constructor and move the builder annotation
+                    // to it but let's create a mock constructor node for now
+                    int size = cn.getProperties().size();
+                    Parameter[] params = new Parameter[size];
+                    List<PropertyNode> properties = cn.getProperties();
+                    for (int i = 0; i < size; i++) {
+                        PropertyNode pn = properties.get(i);
+                        params[i] = param(pn.getType(), pn.getName());
+                    }
+                    parent = new ConstructorNode(0, params, null, null);
+                    parent.setNodeMetaData("PSEUDO_CONSTRUCTOR", Boolean.TRUE);
+                    parent.setDeclaringClass(cn);
+                }
+            }
             if (parent instanceof MethodNode && !checkStatic((MethodNode) parent, MY_TYPE_NAME)) return;
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             final BuilderStrategy strategy = createBuilderStrategy(anno, classLoader);
             if (strategy == null) return;
             strategy.build(this, parent, anno);
         }
+    }
+
+    @Override
+    public int priority() {
+        return -5;
     }
 
     public interface BuilderStrategy {
@@ -89,7 +118,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-            List<PropertyInfo> props = new ArrayList<PropertyInfo>();
+            List<PropertyInfo> props = new ArrayList<>();
             for (FieldNode fNode : getInstancePropertyFields(cNode)) {
                 if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
@@ -98,7 +127,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected static List<PropertyInfo> getPropertyInfoFromBeanInfo(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-            final List<PropertyInfo> result = new ArrayList<PropertyInfo>();
+            final List<PropertyInfo> result = new ArrayList<>();
             try {
                 BeanInfo beanInfo = Introspector.getBeanInfo(cNode.getTypeClass());
                 for (PropertyDescriptor descriptor : beanInfo.getPropertyDescriptors()) {
@@ -189,8 +218,8 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected List<PropertyInfo> getPropertyInfoFromClassNode(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames, boolean allProperties) {
-            List<PropertyInfo> props = new ArrayList<PropertyInfo>();
-            List<String> seen = new ArrayList<String>();
+            List<PropertyInfo> props = new ArrayList<>();
+            List<String> seen = new ArrayList<>();
             for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, allProperties)) {
                 if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(pNode.getName(), pNode.getType()));
