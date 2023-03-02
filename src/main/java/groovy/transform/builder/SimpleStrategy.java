@@ -49,7 +49,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
 /**
  * This strategy is used with the {@link Builder} AST transform to modify your Groovy objects so that the
  * setter methods for properties return the original object, thus allowing chained usage of the setters.
- *
+ * <p>
  * You use it as follows:
  * <pre class="groovyTestCase">
  * import groovy.transform.builder.*
@@ -75,7 +75,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * </pre>
  * When using the default prefix of "set", Groovy's normal setters will be replaced by the chained versions. When using
  * a custom prefix, Groovy's unchained setters will still be available for use in the normal unchained fashion.
- *
+ * <p>
  * The 'useSetters' annotation attribute can be used for writable properties as per the {@code Builder} transform documentation.
  * The other annotation attributes for the {@code @Builder} transform for configuring the building process aren't applicable for this strategy.
  */
@@ -83,8 +83,9 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (!(annotatedNode instanceof ClassNode)) {
+            String target = annotatedNode.getDeclaringClass().isRecord() ? "records" : annotatedNode.getClass().getSimpleName();
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
-                    annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
+                    target + " not supported by " + getClass().getSimpleName(), annotatedNode);
             return;
         }
         ClassNode buildee = (ClassNode) annotatedNode;
@@ -98,8 +99,8 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
 
-        List<String> excludes = new ArrayList<String>();
-        List<String> includes = new ArrayList<String>();
+        List<String> excludes = new ArrayList<>();
+        List<String> includes = new ArrayList<>();
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;

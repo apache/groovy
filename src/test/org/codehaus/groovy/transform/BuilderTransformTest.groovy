@@ -816,4 +816,28 @@ final class BuilderTransformTest {
             config.targetDirectory.deleteDir()
         }
     }
+
+    @Test // GROOVY-10955
+    void testBuilderWithRecord() {
+        assertScript shell, '''
+        @Builder
+        record Captain(String first, String middle, String last) {
+            @Builder(builderClassName="CaptainBuilderFull", builderMethodName="fullBuilder")
+            Captain(String full) {
+                this(full.split(' ')[0], '', full.split(' ')[1])
+            }
+            @Builder(builderStrategy=InitializerStrategy)
+            Captain(String first, String last) {
+                this(first, '', last)
+            }
+            String toString() {
+                "$first ${middle? middle + ' ' : ''}$last"
+            }
+        }
+        assert new Captain('James', 'Tiberius', 'Kirk').toString() == 'James Tiberius Kirk'
+        assert Captain.fullBuilder().full('Jean-Luc Picard').build().toString() == 'Jean-Luc Picard'
+        assert Captain.builder().first('Christopher').last('Pike').build().toString() == 'Christopher Pike'
+        assert new Captain(Captain.createInitializer().first('Kathryn').last('Janeway')).toString() == 'Kathryn Janeway'
+        '''
+    }
 }
