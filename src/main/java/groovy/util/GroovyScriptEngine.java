@@ -84,7 +84,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final ResourceConnector rc;
     private final ClassLoader parentLoader;
     private GroovyClassLoader groovyLoader;
-    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
+    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<>();
     private CompilerConfiguration config;
 
     {
@@ -244,7 +244,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             Set<String> origDep = null;
             if (origEntry != null) origDep = origEntry.dependencies;
             if (origDep != null) {
-                Set<String> newDep = new HashSet<String>(origDep.size());
+                Set<String> newDep = new HashSet<>(origDep.size());
                 for (String depName : origDep) {
                     ScriptCacheEntry dep = scriptCache.get(depName);
                     if (origEntry == dep || GroovyScriptEngine.this.isSourceNewer(dep)) {
@@ -376,14 +376,14 @@ public class GroovyScriptEngine implements ResourceConnector {
 
                 break; // Now this is a bit unusual
             } catch (MalformedURLException e) {
-                String message = "Malformed URL: " + root + ", " + resourceName;
+                String message = "Malformed URL: with context=" + root + " and spec=" + resourceName + " because " + e.getMessage();
                 if (se == null) {
                     se = new ResourceException(message);
                 } else {
                     se = new ResourceException(message, se);
                 }
             } catch (IOException e1) {
-                String message = "Cannot open URL: " + root + ", " + resourceName;
+                String message = "Cannot open URL: " + scriptURL;
                 groovyScriptConn = null;
                 if (se == null) {
                     se = new ResourceException(message);
