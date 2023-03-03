@@ -30,7 +30,7 @@ pluginManagement {
 
 // check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
 plugins {
-    id "com.gradle.enterprise" version "3.12.3"
+    id "com.gradle.enterprise" version "3.12.4"
 }
 
 gradleEnterprise {
