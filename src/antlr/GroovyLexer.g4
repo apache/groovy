@@ -38,24 +38,12 @@ options {
 }
 
 @header {
-    import java.util.Deque;
-    import java.util.ArrayDeque;
-    import java.util.Map;
-    import java.util.HashMap;
-    import java.util.Set;
-    import java.util.HashSet;
-    import java.util.Collections;
-    import java.util.Arrays;
-    import java.util.logging.Logger;
-    import java.util.logging.Level;
-    import java.util.EmptyStackException;
+    import java.util.*;
     import org.apache.groovy.util.Maps;
     import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
 }
 
 @members {
-    private static final Logger LOGGER = Logger.getLogger(GroovyLexer.class.getName());
-
     private boolean errorIgnored;
     private long tokenIndex;
     private int  lastTokenType;
@@ -129,10 +117,12 @@ options {
             return this.lastTokenType;
         }
 
+        @SuppressWarnings("unused")
         public int getLine() {
             return line;
         }
 
+        @SuppressWarnings("unused")
         public int getColumn() {
             return column;
         }
@@ -223,13 +213,14 @@ options {
     public int popMode() {
         try {
             return super.popMode();
-        } catch (EmptyStackException ignored) { // raised when parens are unmatched: too many ), ], or }
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest(org.codehaus.groovy.runtime.DefaultGroovyMethods.asString(ignored));
-            }
+        } catch (EmptyStackException ignore) { // raised when parens are unmatched: too many ), ], or }
         }
 
         return Integer.MIN_VALUE;
+    }
+
+    private void addComment(int type) {
+        String text = _input.getText(Interval.of(_tokenStartCharIndex, getCharIndex() - 1));
     }
 
     private static boolean isJavaIdentifierStartAndNotIdentifierIgnorable(int codePoint) {
@@ -983,17 +974,17 @@ WS  : ([ \t]+ | LineEscape+) -> skip
     ;
 
 // Inside (...) and [...] but not {...}, ignore newlines.
-NL  : LineTerminator   { this.ignoreTokenInsideParens(); }
+NL  : LineTerminator   { ignoreTokenInsideParens(); }
     ;
 
 // Multiple-line comments (including groovydoc comments)
 ML_COMMENT
-    :   '/*' .*? '*/'       { this.ignoreMultiLineCommentConditionally(); } -> type(NL)
+    :   '/*' .*? '*/'       { addComment(0); ignoreMultiLineCommentConditionally(); } -> type(NL)
     ;
 
 // Single-line comments
 SL_COMMENT
-    :   '//' ~[\r\n\uFFFF]* { this.ignoreTokenInsideParens(); }             -> type(NL)
+    :   '//' ~[\r\n\uFFFF]* { addComment(1); ignoreTokenInsideParens(); }             -> type(NL)
     ;
 
 // Script-header comments.

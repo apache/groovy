@@ -18,19 +18,17 @@
  */
 package org.codehaus.groovy.ast.stmt
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+import org.codehaus.groovy.ast.ClassHelper
+import org.junit.Test
 
-class ExpressionStatementTest extends GroovyTestCase {
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
 
+final class ExpressionStatementTest {
+
+    @Test
     void testGetText() {
-        assert new ExpressionStatement(
-            new ConstructorCallExpression(
-                new ClassNode(Object),
-                new ArgumentListExpression())).
-            text == 'new java.lang.Object()'
-    }
+        def stmt = new ExpressionStatement(ctorX(ClassHelper.OBJECT_TYPE))
 
+        assert stmt.text == 'new java.lang.Object()'
+    }
 }

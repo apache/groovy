@@ -18,18 +18,30 @@
  */
 package org.codehaus.groovy.ast.stmt
 
-import org.codehaus.groovy.ast.ClassHelper
 import org.junit.Test
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.*
 
-final class ThrowStatementTest {
+final class IfStatementTest {
 
     @Test
     void testGetText() {
-        def stmt = new ThrowStatement(ctorX(ClassHelper.THROWABLE_TYPE, constX('oops')))
+        def stmt = new IfStatement(boolX(constX(true)), block(returnS(nullX())), null)
 
-        assert stmt.text == 'throw new java.lang.Throwable(oops)' // TODO: quoted string
+        assert stmt.text == 'if (true) { return null }'
+    }
+
+    @Test
+    void testGetText2() {
+        def stmt = new IfStatement(boolX(constX(true)), block(), block(returnS(nullX())))
+
+        assert stmt.text == 'if (true) {  } else { return null }'
+    }
+
+    @Test
+    void testGetText3() {
+        def stmt = new IfStatement(boolX(varX('list')), returnS(varX('list')), block(returnS(nullX())))
+
+        assert stmt.text == 'if (list) return list; else { return null }'
     }
 }
