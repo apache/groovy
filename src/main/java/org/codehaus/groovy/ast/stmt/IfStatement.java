@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
- * Represents an if (condition) { ... } else { ... } statement in Groovy
+ * Represents an if (condition) { ... } else { ... } statement in Groovy.
  */
 public class IfStatement extends Statement {
 
@@ -30,15 +30,28 @@ public class IfStatement extends Statement {
     private Statement ifBlock;
     private Statement elseBlock;
 
-
-    public IfStatement(BooleanExpression booleanExpression, Statement ifBlock, Statement elseBlock) {
-        this.booleanExpression = booleanExpression;
-        this.ifBlock = ifBlock;
-        this.elseBlock = elseBlock;
+    public IfStatement(final BooleanExpression booleanExpression, final Statement ifBlock, final Statement elseBlock) {
+        setBooleanExpression(booleanExpression);
+        setIfBlock(ifBlock);
+        setElseBlock(elseBlock);
     }
 
+    public void setBooleanExpression(final BooleanExpression booleanExpression) {
+        this.booleanExpression = booleanExpression;
+    }
+
+    public void setIfBlock(final Statement statement) {
+        ifBlock = statement;
+    }
+
+    public void setElseBlock(final Statement statement) {
+        elseBlock = statement;
+    }
+
+    //--------------------------------------------------------------------------
+
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitIfElse(this);
     }
 
@@ -54,15 +67,22 @@ public class IfStatement extends Statement {
         return elseBlock;
     }
 
-    public void setBooleanExpression(BooleanExpression booleanExpression) {
-        this.booleanExpression = booleanExpression;
-    }
+    @Override
+    public String getText() {
+        Statement thenStmt = getIfBlock(), elseStmt = getElseBlock();
 
-    public void setIfBlock(Statement statement) {
-        ifBlock = statement;
-    }
-
-    public void setElseBlock(Statement statement) {
-        elseBlock = statement;
+        StringBuilder text = new StringBuilder(64);
+        text.append("if (");
+        text.append(getBooleanExpression().getText());
+        text.append(") ");
+        text.append(thenStmt.getText());
+        if (elseStmt != null && !elseStmt.isEmpty()) {
+            if (!(thenStmt instanceof BlockStatement)) {
+                text.append(';');
+            }
+            text.append(" else ");
+            text.append(elseStmt.getText());
+        }
+        return text.toString();
     }
 }

@@ -1385,26 +1385,28 @@ public abstract class StaticTypeCheckingSupport {
         if (UNKNOWN_PARAMETER_TYPE == argumentType) { // argument is null
             return !isPrimitiveType(parameterType);
         }
+        boolean isArrayParameter = parameterType.isArray();
         if (!isAssignableTo(argumentType, parameterType)) {
-            if (!lastArg || !parameterType.isArray()
+            if (!lastArg || !isArrayParameter
                     || !isAssignableTo(argumentType, parameterType.getComponentType())) {
                 return false; // incompatible assignment
             }
         }
-        if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
-            GenericsType gt = GenericsUtils.buildWildcardType(parameterType);
-            if (!gt.isCompatibleWith(argumentType)) {
-                boolean samCoercion = isSAMType(parameterType) && argumentType.equals(CLOSURE_TYPE);
-                if (!samCoercion) return false; // else assume parameters and return checked earlier
-            }
-        } else if (parameterType.isArray() && argumentType.isArray()) {
+        if (isArrayParameter && argumentType.isArray()) {
             // verify component type
             return typeCheckMethodArgumentWithGenerics(parameterType.getComponentType(), argumentType.getComponentType(), lastArg);
-        } else if (lastArg && parameterType.isArray()) {
+
+        } else if (isArrayParameter && lastArg) {
             // verify component type, but if we reach that point, the only possibility is that the argument is
             // the last one of the call, so we're in the cast of a vargs call
             // (otherwise, we face a type checker bug)
             return typeCheckMethodArgumentWithGenerics(parameterType.getComponentType(), argumentType, lastArg);
+
+        } else if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
+            if (!GenericsUtils.buildWildcardType(parameterType).isCompatibleWith(argumentType)) {
+                boolean samCoercion = argumentType.equals(CLOSURE_TYPE) && isSAMType(parameterType);
+                if (!samCoercion) return false; // else assume parameters and return checked earlier
+            }
         }
         return true;
     }

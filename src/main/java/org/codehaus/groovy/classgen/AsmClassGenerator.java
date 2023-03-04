@@ -2374,14 +2374,14 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().remove(1);
     }
 
-    public void onLineNumber(final ASTNode statement, final String message) {
-        if (statement == null || statement instanceof BlockStatement) return;
-
-        currentASTNode = statement;
-        int line = statement.getLineNumber();
-        if (!ASM_DEBUG && line == controller.getLineNumber()) return;
-
-        controller.visitLineNumber(line);
+    public void onLineNumber(final ASTNode node, final String message) {
+        if (node != null && !(node instanceof BlockStatement)) {
+            currentASTNode = node;
+            int line = node.getLineNumber();
+            if (line != controller.getLineNumber() || ASM_DEBUG) {
+                controller.visitLineNumber(line);
+            }
+        }
     }
 
     public void throwException(final String message) {
