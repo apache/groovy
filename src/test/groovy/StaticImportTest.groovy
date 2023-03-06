@@ -318,6 +318,27 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         }
     }
 
+    // GROOVY-8389, GROOVY-10329
+    void testStaticImportPropertyWithClosure() {
+        for (imports in ['import static Foo.bar; import static Foo.baz', 'import static Foo.*']) {
+            assertScript """$imports
+                class Foo {
+                    static Closure<String> bar = { -> 'property' }
+                    static Closure<String> baz = { -> 'property' }
+                }
+                String bar() {
+                    'method'
+                }
+                @groovy.transform.CompileStatic
+                def test() {
+                    bar() + ':' + baz()
+                }
+                String result = test()
+                assert result == 'method:property'
+            """
+        }
+    }
+
     // GROOVY-8389
     void testStaticImportMethodVsLocalMethod() {
         assertScript '''
@@ -419,6 +440,29 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
             assertScript """$imports
                 String result = cl()
                 assert result == 'StaticImportTarget#static closure called'
+            """
+        }
+    }
+
+    // GROOVY-7490, GROOVY-10329
+    void testStaticImportOfCallableProperty() {
+        for (imports in ['import static Pogo.callable_property', 'import static Pogo.*']) {
+            assertScript """$imports
+                class WithCall {
+                    String call(String input) {
+                        return input
+                    }
+                }
+                class Pogo {
+                    static final WithCall callable_property = new WithCall()
+                }
+
+                @groovy.transform.CompileStatic
+                def usage() {
+                    callable_property('works')
+                }
+                String result = usage()
+                assert result == 'works'
             """
         }
     }

@@ -103,7 +103,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -354,7 +353,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, ClassHelper.make(ClassInfo.class, false), null);
         staticMetaClassField.setSynthetic(true);
-
+        ClassNode classNode = this.classNode;
         node.addSyntheticMethod(
                 "$getStaticMetaClass",
                 ACC_PROTECTED,
@@ -661,7 +660,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         FieldNode field = node.getField();
 
         String getterName = "get" + capitalize(name);
-        String setterName = getSetterName(name);
+        String setterName = "set" + capitalize(name);
 
         int accessorModifiers = adjustPropertyModifiersForMethod(node);
 
@@ -1189,14 +1188,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
+        String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
             @Override
             public void visit(final MethodVisitor mv) {
                 if (field.isStatic()) {
-                    mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(GETSTATIC, owner, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 } else {
                     mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(GETFIELD, owner, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 BytecodeHelper.doReturn(mv, field.getType());
             }
@@ -1204,16 +1204,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected Statement createSetterBlock(final PropertyNode propertyNode, final FieldNode field) {
+        String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
             @Override
             public void visit(final MethodVisitor mv) {
                 if (field.isStatic()) {
                     BytecodeHelper.load(mv, field.getType(), 0);
-                    mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(PUTSTATIC, owner, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 } else {
                     mv.visitVarInsn(ALOAD, 0);
                     BytecodeHelper.load(mv, field.getType(), 1);
-                    mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(PUTFIELD, owner, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 mv.visitInsn(RETURN);
             }
@@ -1399,6 +1400,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // if we reach this point there is least one parameter or return type
         // that is different in its specified form, so create a bridge method
+        String owner = BytecodeHelper.getClassInternalName(classNode);
         return new MethodNode(
                 oldMethod.getName(),
                 overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
@@ -1423,7 +1425,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 BytecodeHelper.doCast(mv, goal[i].getType());
                             }
                         }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(classNode), overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(nmr, overridingMethod.getParameters()), false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, owner, overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(nmr, overridingMethod.getParameters()), false);
 
                         BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
                     }
