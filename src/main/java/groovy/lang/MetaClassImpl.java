@@ -667,10 +667,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Gets all instance methods available on this class for the given name
+     * Gets all the normal object methods of this class for the given name.
      *
-     * @return all the normal instance methods available on this class for the
-     * given name
+     * @return object methods available from this class for given name
      */
     private Object getMethods(final Class<?> sender, final String name, final boolean isCallToSuper) {
         Object answer;
@@ -708,10 +707,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Returns all the normal static methods on this class for the given name
+     * Gets all the normal static methods of this class for the given name.
      *
-     * @return all the normal static methods available on this class for the
-     * given name
+     * @return static methods available from this class for given name
      */
     private Object getStaticMethods(final Class<?> sender, final String name) {
         final MetaMethodIndex.Entry entry = metaMethodIndex.getMethods(sender, name);
@@ -1642,7 +1640,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingMethodException(methodName, sender, arguments, true);
     }
 
-    private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
+    private MetaMethod pickStaticMethod(String methodName, Class[] arguments) throws MethodSelectionException {
         MetaMethod method = null;
         MethodSelectionException mse = null;
         Object methods = getStaticMethods(theClass, methodName);
@@ -1659,7 +1657,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = cmc.pickMethod(methodName, arguments);
         }
         if (method == null) {
-            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments));
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments);
         }
 
         if (method == null && mse != null) {
@@ -2507,27 +2505,48 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static MetaProperty establishStaticMetaProperty(final MetaProperty mp) {
+    private MetaMethod findStaticAccessMethod(final MetaBeanProperty mbp) {
+        MetaMethod getterMethod = mbp.getGetter();
+        // GROOVY-10962: non-static isser shadows static getter
+        if (getterMethod != null && !getterMethod.isStatic()) {
+            String name = getterMethod.getName();
+            if (name.startsWith("is")) {
+                name = "get" + name.substring(2);
+                Object getter = filterPropertyMethod(getStaticMethods(theClass, name), true, false);
+                if (getter != null) { // keep original if no static getter
+                    getterMethod = (MetaMethod) getter;
+                }
+            }
+        }
+        return getterMethod;
+    }
+
+    private MetaProperty establishStaticMetaProperty(final MetaProperty mp) {
         MetaBeanProperty mbp = (MetaBeanProperty) mp;
-        final MetaMethod getterMethod = mbp.getGetter();
         final MetaMethod setterMethod = mbp.getSetter();
+        final MetaMethod getterMethod = findStaticAccessMethod(mbp);
         final CachedField staticField = Optional.ofNullable(mbp.getField()).filter(f -> f.isStatic()).orElse(null);
 
         boolean getter = getterMethod == null || getterMethod.isStatic();
         boolean setter = setterMethod == null || setterMethod.isStatic();
-        boolean field = staticField != null;
+        boolean field  = staticField  != null;
 
         MetaProperty staticProperty = staticField;
         if (getter || setter || field) {
             if (getter && setter) {
-                if (field) {
+                boolean shadow = (getterMethod != mbp.getGetter());
+                if (field && !shadow) {
                     staticProperty = mbp; // mbp has static field, null or static getter and null or static setter
-                } else {
-                    staticProperty = new MetaBeanProperty(mbp.getName(), mbp.getType(), getterMethod, setterMethod);
+                } else if (getterMethod != null || setterMethod != null) {
+                    Class<?> type = mbp.getType();
+                    if (type == Boolean.TYPE && shadow)
+                        type = getterMethod.getReturnType();
+                    staticProperty = new MetaBeanProperty(mbp.getName(), type, getterMethod, setterMethod);
                 }
             } else if (getter) {
                 if (getterMethod != null) {
-                    MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(), mbp.getType(), getterMethod, null);
+                    Class<?> type = getterMethod.getReturnType();
+                    MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(), type, getterMethod, null);
                     newmp.setField(staticField);
                     staticProperty = newmp;
                 }
@@ -3307,14 +3326,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param methodOrList the possible methods to choose from
      * @param arguments    the arguments
      */
-    protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
+    protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) throws MethodSelectionException {
         Object method = chooseMethodInternal(methodName, methodOrList, arguments);
         if (method instanceof GeneratedMetaMethod.Proxy)
             return ((GeneratedMetaMethod.Proxy) method).proxy();
         return method;
     }
 
-    private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments) {
+    private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments) throws MethodSelectionException {
         if (methodOrList instanceof MetaMethod) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
@@ -3344,8 +3363,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Object[] data = methods.getArray();
             for (int i = 0; i != len; ++i) {
                 Object method = data[i];
-
-                // making this false helps find matches
                 if (((ParameterTypes) method).isValidMethod(arguments)) {
                     if (matchingMethods == null) {
                         matchingMethods = method;
