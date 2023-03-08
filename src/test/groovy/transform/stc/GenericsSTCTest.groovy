@@ -2553,6 +2553,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testShouldUseMethodGenericType18() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            List<String> names = Arrays.stream(this.class.fields)
+                .parallel() // declared in BaseStream
+                .map { f ->
+                    f.getName()
+                }
+                .collect(java.util.stream.Collectors.toList())
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
@@ -3616,7 +3629,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10322
-    @NotYetImplemented
     void testShouldFindMethodEvenWithRepeatNames4() {
         assertScript '''
             class C<T> {
@@ -4090,20 +4102,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5839
     void testMethodShadowGenerics() {
-        shouldFailWithMessages '''
-            public class GoodCodeRed<T> {
-                Collection<GoodCodeRed<T>> attached = []
-                public <T> void attach(GoodCodeRed<T> toAttach) {
+        assertScript '''
+            class C<T> {
+                Collection<C<T>> attached = []
+                def <T> void attach(C<T> toAttach) {
                     attached.add(toAttach)
                 }
-                static void foo() {
-                    def g1 = new GoodCodeRed<Long>()
-                    def g2 = new GoodCodeRed<Integer>()
-                    g1.attach(g2);
-                }
             }
-            GoodCodeRed.foo()
-        ''', 'Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]'
+            def c1 = new C<Short>()
+            def c2 = new C<Long>()
+            c1.attach(c2)
+        '''
     }
 
     void testHiddenGenerics() {

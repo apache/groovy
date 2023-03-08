@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1105,14 +1106,28 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
             */
 
-            ClassNode declaringClassForDistance = candidate.getDeclaringClass();
-            ClassNode actualReceiverForDistance = receiver != null ? receiver : declaringClassForDistance;
-            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClassForDistance, actualReceiverForDistance);
+            ClassNode declaringClass = candidate.getDeclaringClass();
+            ClassNode actualReceiver = receiver != null ? receiver : declaringClass;
 
-            Parameter[] params = makeRawTypes(safeNode.getParameters(), declaringAndActualGenericsTypeMap);
+            Map<GenericsType, GenericsType> spec;
+            if (candidate.isStatic()) {
+                spec = Collections.emptyMap(); // none visible
+            } else {
+                spec = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClass, actualReceiver);
+                GenericsType[] methodGenerics = candidate.getGenericsTypes();
+                if (methodGenerics != null) { // GROOVY-10322: remove hidden type parameters
+                    for (int i = 0, n = methodGenerics.length; i < n && !spec.isEmpty(); i += 1) {
+                        for (Iterator<GenericsType> it = spec.keySet().iterator(); it.hasNext(); ) {
+                            if (it.next().getName().equals(methodGenerics[i].getName())) it.remove();
+                        }
+                    }
+                }
+            }
+
+            Parameter[] params = makeRawTypes(safeNode.getParameters(), spec);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
-                dist += getClassDistance(declaringClassForDistance, actualReceiverForDistance);
+                dist += getClassDistance(declaringClass, actualReceiver);
                 dist += getExtensionDistance(isExtensionMethod);
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -1447,15 +1462,6 @@ public abstract class StaticTypeCheckingSupport {
         return true;
     }
 
-    static void addMethodLevelDeclaredGenerics(MethodNode method, Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
-        GenericsType[] generics = method.getGenericsTypes();
-        if (!method.isStatic() && !resolvedPlaceholders.isEmpty()) {
-            // GROOVY-8034: non-static method may use class generics
-            generics = applyGenericsContext(resolvedPlaceholders, generics);
-        }
-        GenericsUtils.extractPlaceholders(GenericsUtils.makeClassSafe0(OBJECT_TYPE, generics), resolvedPlaceholders);
-    }
-
     protected static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod) {
         if (candidateMethod instanceof ExtensionMethodNode) {
             ClassNode[] realTypes = new ClassNode[arguments.length + 1];
@@ -1474,62 +1480,52 @@ public abstract class StaticTypeCheckingSupport {
         return typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod, false);
     }
 
-    private static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final boolean isExtensionMethod) {
-        Parameter[] parameters = candidateMethod.getParameters();
-        if (parameters.length == 0 || parameters.length > arguments.length) {
-            // this is a limitation that must be removed in a future version
-            // we cannot check generic type arguments if there are default parameters!
+    private static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod, final boolean isExtensionMethod) {
+        final Parameter[] parameters = candidateMethod.getParameters();
+        if (parameters.length == 0 || parameters.length > argumentTypes.length){
+            // this is a limitation that must be removed in a future version; we
+            // cannot check generic type arguments if there is default argument!
             return true;
         }
 
-        // correct receiver for inner class
-        // we assume the receiver is an instance of the declaring class of the
-        // candidate method, but findMethod returns also outer class methods
-        // for that receiver. For now we skip receiver based checks in that case
-        // TODO: correct generics for when receiver is to be skipped
-        boolean skipBecauseOfInnerClassNotReceiver = !implementsInterfaceOrIsSubclassOf(receiver, candidateMethod.getDeclaringClass());
-
-        // we have here different generics contexts we have to deal with.
-        // There is firstly the context given through the class, and the method.
-        // The method context may hide generics given through the class, but use
-        // the non-hidden ones.
-        Map<GenericsTypeName, GenericsType> classGTs;
-        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<>();
-        if (skipBecauseOfInnerClassNotReceiver) {
-            classGTs = Collections.emptyMap();
-        } else {
-            classGTs = GenericsUtils.extractPlaceholders(receiver);
-            addMethodLevelDeclaredGenerics(candidateMethod, resolvedMethodGenerics);
-            // remove hidden generics
-            for (GenericsTypeName key : resolvedMethodGenerics.keySet()) {
-                classGTs.remove(key);
-            }
-            // use the remaining information to refine given generics
-            applyGenericsConnections(classGTs, resolvedMethodGenerics);
-        }
-
         boolean failure = false;
-        // start checks with the receiver
-        if (!skipBecauseOfInnerClassNotReceiver) {
-            failure = inferenceCheck(Collections.EMPTY_SET, resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
-        }
-        // the outside context parts till now define placeholder we are not allowed to
-        // generalize, thus we save that for later use...
-        // extension methods are special, since they set the receiver as
-        // first parameter. While we normally allow generalization for the first
-        // parameter, in case of an extension method we must not.
-        Set<GenericsTypeName> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
-        if ("<init>".equals(candidateMethod.getName())) {
-            fixedGenericsPlaceHolders.addAll(resolvedMethodGenerics.keySet());
-        }
-        for (int i = 0, n = arguments.length, nthParameter = parameters.length - 1; i < n; i += 1) {
-            ClassNode argumentType = arguments[i];
-            ClassNode parameterType = parameters[Math.min(i, nthParameter)].getOriginType();
-            failure |= inferenceCheck(fixedGenericsPlaceHolders, resolvedMethodGenerics, parameterType, argumentType, i >= nthParameter);
+        Set<GenericsTypeName> fixedPlaceHolders = Collections.emptySet();
+        Map<GenericsTypeName, GenericsType> candidateGenerics = new HashMap<>();
+        // we assume the receiver is an instance of the declaring class of the
+        // candidate method, but findMethod() also returns outer class methods
+        // for the receiver; for now we skip receiver-based checks in that case
+        if (implementsInterfaceOrIsSubclassOf(receiver, candidateMethod.getDeclaringClass())) {
+            if ("<init>".equals(candidateMethod.getName())) {
+                candidateGenerics = GenericsUtils.extractPlaceholders(receiver);
+                fixedPlaceHolders = new HashSet<>( candidateGenerics.keySet() );
+            } else {
+                failure = inferenceCheck(fixedPlaceHolders, candidateGenerics, candidateMethod.getDeclaringClass(), receiver, false);
 
-            if (i == 0 && isExtensionMethod) // set real fixed generics for extension methods
-                fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+                GenericsType[] gts = candidateMethod.getGenericsTypes();
+                if (candidateMethod.isStatic()) {
+                    candidateGenerics.clear(); // not in scope
+                } else if (gts != null) {
+                    // first remove hidden params
+                    for (GenericsType gt : gts) {
+                        candidateGenerics.remove(new GenericsTypeName(gt.getName()));
+                    }
+                    // GROOVY-8034: non-static method may use class generics
+                    gts = applyGenericsContext(candidateGenerics, gts);
+                }
+                GenericsUtils.extractPlaceholders(GenericsUtils.makeClassSafe0(OBJECT_TYPE, gts), candidateGenerics);
+
+                fixedPlaceHolders = extractResolvedPlaceHolders(candidateGenerics);
+            }
         }
+
+        for (int i = 0, n = argumentTypes.length, nthParameter = parameters.length - 1; i < n; i += 1) {
+            ClassNode argumentType = argumentTypes[i], parameterType = parameters[Math.min(i,nthParameter)].getOriginType();
+            failure |= inferenceCheck(fixedPlaceHolders, candidateGenerics, parameterType, argumentType, i >= nthParameter);
+
+            if (i == 0 && isExtensionMethod) // re-load fixed names for extension
+                fixedPlaceHolders = extractResolvedPlaceHolders(candidateGenerics);
+        }
+
         return !failure;
     }
 
