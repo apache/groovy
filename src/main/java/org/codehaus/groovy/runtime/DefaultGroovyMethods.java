@@ -147,6 +147,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
@@ -2540,6 +2541,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
         each(new ReverseListIterator<>(Arrays.asList(self)), closure);
+        return self;
+    }
+
+    /**
+     * Iterate over each element of the set in reverse order.
+     * <pre class="groovyTestCase">
+     * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
+     * List result = []
+     * navSet.reverseEach { result &lt;&lt; it }
+     * assert result == [4, 3, 2, 1]
+     * </pre>
+     *
+     * @param self    a NavigableSet
+     * @param closure a closure to which each item is passed.
+     * @return the original NavigableSet
+     * @since 4.0.11
+     */
+    public static <T> NavigableSet<T> reverseEach(NavigableSet<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        each(self.descendingIterator(), closure);
         return self;
     }
 
@@ -12391,6 +12411,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> asReversed(List<T> self) {
         return new ReversedList<>(self);
+    }
+
+    /**
+     * Creates a reverse order view of the set. The order of original list will not change.
+     * <pre class="groovyTestCase">
+     * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
+     * assert navSet.asReversed() == [4, 3, 2, 1] as Set
+     * </pre>
+     *
+     * @param self a NavigableSet
+     * @param <T> the type of element
+     * @return the reversed view NavigableSet
+     * @since 4.0.11
+     */
+    public static <T> NavigableSet<T> asReversed(NavigableSet<T> self) {
+        return self.descendingSet();
     }
 
     /**
