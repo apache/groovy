@@ -165,10 +165,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testReturnTypeInference2() {
         assertScript '''
-        Object m() {
-          def s = '1234'
-          println 'Hello'
-        }
+            Object m() {
+              def s = '1234'
+              println 'Hello'
+            }
         '''
     }
 
@@ -308,11 +308,58 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 Collections.singleton(x.newInstance(42))
             }
             def <T extends Number> List<T> g(Class<T> t) {
-                f(t).stream().filter{n -> n.intValue() > 0}.toList()
+                f(t).stream().filter{it.intValue() > 0}.toList()
             }
 
             def result = g(Integer)
             assert result == [ 42 ]
+        '''
+    }
+
+    // GROOVY-10053
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenericsA() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        for (cast in ['t.&cast', '{ n -> t.cast(n) }', '{ n -> (N) n }']) {
+            assertScript """
+                Set<Number> f() {
+                    Collections.<Number>singleton(42)
+                }
+                def <N extends Number> Set<N> g(Class<N> t) {
+                    Set<N> result = new HashSet<>()
+                    f().stream().filter(t.&isInstance)
+                        .map($cast).forEach{result.add(it)}
+                    return result
+                }
+
+                def result = g(Integer)
+                assert result == [42] as Set
+            """
+        }
+    }
+
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenericsB() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            def <T> String test(Iterable<T> iterable) {
+                Iterator<T> it = iterable.iterator()
+                if (it.hasNext()) {
+                    List<String[]> table = []
+                    it.forEachRemaining { r ->
+                        if (r instanceof List) {
+                            String[] cells = ((List) r).stream().map{it?.toString()}
+                            table.add(cells)
+                        }
+                    }
+                    return table
+                }
+            }
+
+            String result = test([ ['x'], ['y'], [null] ])
+            assert result == '[[x], [y], [null]]'
         '''
     }
 
@@ -423,10 +470,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9064
-    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics13() {
         assertScript '''
-            List getSomeRows() { [new String[]{'x'}] }
+            List getSomeRows() { [['x'] as String[]] }
             List<String[]> rows = getSomeRows()
             rows.each { row ->
                 def col = row[0].toUpperCase()
@@ -495,7 +541,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               T p
               T m() {
                 Closure<T> x = { -> p }
-                x() // Cannot return value of type Object for method returning type T
+                x() // Cannot return value of type Object for method returning T
               }
             }
             assert new C<>(42).m() == 42
@@ -1250,7 +1296,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
                 T2 t
                 B(T2 t) {
-                    this.t  = t
+                    this.t = t
                 }
             }
             class C {
@@ -2190,93 +2236,65 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5415
     void testShouldUseMethodGenericType1() {
         assertScript '''import groovy.transform.stc.GenericsSTCTest.ClassA
-        class ClassB {
-            void bar() {
-                def ClassA<Long> a = new ClassA<Long>();
-                a.foo(this.getClass());
+            class ClassB {
+                void test() {
+                    def ClassA<Long> a = new ClassA<Long>()
+                    a.foo(this.getClass())
+                }
             }
-        }
-        new ClassB()
+            new ClassB().test()
         '''
     }
 
     // GROOVY-5415
     void testShouldUseMethodGenericType2() {
         shouldFailWithMessages '''import groovy.transform.stc.GenericsSTCTest.ClassA
-        class ClassB {
-            void bar() {
-                def ClassA<Long> a = new ClassA<Long>();
-                a.bar(this.getClass());
+            class ClassB {
+                void test() {
+                    def ClassA<Long> a = new ClassA<Long>()
+                    a.bar(this.getClass())
+                }
             }
-        }
-        new ClassB()
         ''',
         'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-8961
     void testShouldUseMethodGenericType3() {
-        assertScript '''
-            void setM(List<String> strings) {
+        for (mode in ['', 'static']) {
+            for (type in ['List', 'Collection', 'Iterable']) {
+                assertScript """
+                    $mode void setX(${type}<String> strings) { }
+                    x = Collections.emptyList()
+                """
             }
-            void test() {
-              m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
-            }
-            test()
-        '''
-        assertScript '''
-            void setM(Collection<String> strings) {
-            }
-            void test() {
-              m = Collections.emptyList()
-            }
-            test()
-        '''
-        assertScript '''
-            void setM(Iterable<String> strings) {
-            }
-            void test() {
-              m = Collections.emptyList()
-            }
-            test()
-        '''
-
-        shouldFailWithMessages '''
-            void setM(List<String> strings) {
-            }
-            void test() {
-              m = Collections.<Integer>emptyList()
-            }
-        ''',
-        'Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+            shouldFailWithMessages """
+                $mode void setX(List<String> strings) { }
+                x = Collections.<Integer>emptyList()
+            """,
+            'Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+        }
     }
 
     // GROOVY-9734
     void testShouldUseMethodGenericType4() {
-        assertScript '''
-            void m(List<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
-            }
-            test()
-        '''
-        assertScript '''
-            void m(Collection<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList())
-            }
-            test()
-        '''
-        assertScript '''
-            void m(Iterable<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList())
-            }
-            test()
-        '''
+        for (type in ['List', 'Collection', 'Iterable']) {
+            assertScript """
+                def m(${type}<String> strings) { }
+                m(Collections.emptyList())
+            """
+        }
+    }
+
+    // GROOVY-9734
+    @NotYetImplemented
+    void testShouldUseMethodGenericType4a() {
+        for (type in ['List', 'Collection', 'Iterable']) {
+            assertScript """
+                static m(${type}<String> strings) { }
+                m(Collections.emptyList())
+            """
+        }
     }
 
     // GROOVY-9751
@@ -2529,7 +2547,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10648
-    @NotYetImplemented
     void testShouldUseMethodGenericType16() {
         assertScript '''
             def <T extends Number> Set<T> test(Iterable<T> iterable) {
@@ -2570,22 +2587,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             List<String> list = ['a','b','c']
-            Collection<String> e = list.findAll { it }
+            Collection<String> strings = list.findAll { it }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def dmt = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert dmt.declaringClass.implementsInterface(LIST_TYPE)
                 assert !(dmt instanceof ExtensionMethodNode)
                 assert dmt.name == 'addAll'
             })
-            boolean r = list.addAll(e)
+            boolean r = list.addAll(strings)
         '''
     }
 
     void testAddAllWithCollectionShouldNotBeAllowed() {
         shouldFailWithMessages '''
             List<String> list = ['a','b','c']
-            Collection<Integer> e = (Collection<Integer>) [1,2,3]
-            boolean r = list.addAll(e)
+            Collection<Integer> numbers = (Collection<Integer>) [1,2,3]
+            boolean r = list.addAll(numbers)
         ''',
         'Cannot call java.util.ArrayList <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
@@ -2794,7 +2811,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             r.bindings2['a'] = 'A'
             r.bindings2.put('b', 'B')
-
         '''
     }
     void testInferDiamondForAssignment() {

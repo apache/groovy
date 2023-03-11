@@ -883,6 +883,8 @@ public class GenericsUtils {
 
     /**
      * Checks if the type has any placeholder (aka unresolved) generics.
+     * <p>
+     * Backported from 3.0.0
      *
      * @since 2.5.10
      */

@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform.stc;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
+import groovy.lang.Tuple2;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import groovy.transform.TypeChecked;
@@ -238,6 +239,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extrac
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolve;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedBoundType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getGenericsWithoutArray;
@@ -1033,15 +1035,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (rhsExpression instanceof ClosureExpression) {
             MethodNode abstractMethod = findSAM(lhsType);
             ClosureExpression closure = (ClosureExpression) rhsExpression;
-            Map<GenericsType, GenericsType> mappings = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), lhsType);
+            Tuple2<ClassNode[], ClassNode> signature = parameterizeSAM(abstractMethod, lhsType);
 
-            ClassNode[] samParameterTypes = extractTypesFromParameters(abstractMethod.getParameters());
-            for (int i = 0; i < samParameterTypes.length; i += 1) {
-                if (samParameterTypes[i].isGenericsPlaceHolder()) {
-                    samParameterTypes[i] = GenericsUtils.findActualTypeByGenericsPlaceholderName(samParameterTypes[i].getUnresolvedName(), mappings);
-                }
-            }
-
+            ClassNode[] samParameterTypes = signature.getFirst();
             Parameter[] closureParameters = getParametersSafe(closure);
             if (samParameterTypes.length == 1 && hasImplicitParameter(closure)) {
                 Variable it = closure.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
@@ -1057,15 +1053,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             } else {
-                String descriptor = toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes);
+                String descriptor = toMethodParametersString(abstractMethod.getName(), samParameterTypes);
                 addStaticTypeError("Wrong number of parameters for method target " + descriptor, rhsExpression);
             }
 
-            ClassNode returnType = abstractMethod.getReturnType();
-            if (returnType.isGenericsPlaceHolder()) {
-                returnType = GenericsUtils.findActualTypeByGenericsPlaceholderName(returnType.getUnresolvedName(), mappings);
-            }
-            storeInferredReturnType(rhsExpression, returnType);
+            storeInferredReturnType(rhsExpression, signature.getSecond());
 
         } else if (rhsExpression instanceof MapExpression) { // GROOVY-7141
             List<MapEntryExpression> spec = ((MapExpression) rhsExpression).getMapEntryExpressions();
@@ -1074,6 +1066,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 processFunctionalInterfaceAssignment(lhsType, spec.get(0).getValueExpression());
             }
         }
+    }
+
+    // Backported from 3.0.0
+    private static Tuple2<ClassNode[], ClassNode> parameterizeSAM(final MethodNode abstractMethod, final ClassNode targetType) {
+        Map<GenericsType, GenericsType> mappings = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), targetType);
+
+        ClassNode[] paramTypes = extractTypesFromParameters(abstractMethod.getParameters());
+        for (int i = 0, n = paramTypes.length; i < n; i += 1) {
+            if (paramTypes[i].isGenericsPlaceHolder())
+                paramTypes[i] = GenericsUtils.findActualTypeByGenericsPlaceholderName(paramTypes[i].getUnresolvedName(), mappings);
+        }
+
+        ClassNode returnType = abstractMethod.getReturnType();
+        if (returnType.isGenericsPlaceHolder())
+            returnType = GenericsUtils.findActualTypeByGenericsPlaceholderName(returnType.getUnresolvedName(), mappings);
+
+        return new Tuple2<ClassNode[], ClassNode>(paramTypes, returnType);
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
@@ -2990,7 +2999,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (typeX != null) {
             expectedType = typeX.getType();
         }
-        if (!entries.keySet().contains(name)) {
+        if (!entries.containsKey(name)) {
             if (required) {
                 addStaticTypeError("required named param '" + name + "' not found.", expression);
             }
@@ -3015,118 +3024,108 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * This method is responsible for performing type inference on closure argument types whenever code like this is
-     * found: <code>foo.collect { it.toUpperCase() }</code>.
-     * In this case, the type checker tries to find if the <code>collect</code> method has its {@link Closure} argument
-     * annotated with {@link groovy.transform.stc.ClosureParams}. If yes, then additional type inference can be performed
-     * and the type of <code>it</code> may be inferred.
+     * Performs type inference on closure argument types whenever code like this
+     * is found: <code>foo.collect { it.toUpperCase() }</code>.
+     * <p>
+     * In this case the type checker tries to find if the {@code collect} method
+     * has its {@link Closure} argument annotated with {@link ClosureParams}. If
+     * so, then additional type inference can be performed and the type of
+     * {@code it} may be inferred.
      *
      * @param receiver
      * @param arguments
-     * @param expression     a closure expression for which the argument types should be inferred
-     * @param param          the parameter where to look for a {@link groovy.transform.stc.ClosureParams} annotation.
-     * @param selectedMethod the method accepting a closure
+     * @param expression closure or lambda expression for which the argument types should be inferred
+     * @param target     parameter which may provide {@link ClosureParams} annotation or SAM type
+     * @param method     method that declares {@code target}
      */
-    protected void inferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final Parameter param, final MethodNode selectedMethod) {
-        List<AnnotationNode> annotations = param.getAnnotations(CLOSUREPARAMS_CLASSNODE);
+    protected void inferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final Parameter target, final MethodNode method) {
+        MethodNode abstractMethod;
+        List<AnnotationNode> annotations = target.getAnnotations(CLOSUREPARAMS_CLASSNODE);
         if (annotations != null && !annotations.isEmpty()) {
             for (AnnotationNode annotation : annotations) {
                 Expression hintClass = annotation.getMember("value");
                 if (hintClass instanceof ClassExpression) {
                     Expression options = annotation.getMember("options");
                     Expression resolverClass = annotation.getMember("conflictResolutionStrategy");
-                    doInferClosureParameterTypes(receiver, arguments, expression, selectedMethod, hintClass, resolverClass, options);
+                    doInferClosureParameterTypes(receiver, arguments, expression, method, hintClass, resolverClass, options);
                 }
             }
-        } else if (isSAMType(param.getOriginType())) {
-            // SAM coercion
-            inferSAMType(param, receiver, selectedMethod, InvocationWriter.makeArgumentList(arguments), expression);
-        }
-    }
-
-    private void inferSAMType(Parameter param, ClassNode receiver, MethodNode methodWithSAMParameter, ArgumentListExpression originalMethodCallArguments, ClosureExpression openBlock) {
-        // In a method call with SAM coercion the inference is to be
-        // understood as a two phase process. We have the normal method call
-        // to the target method with the closure argument and we have the
-        // SAM method that will be called inside the normal target method.
-        // To infer correctly we have to "simulate" this process. We know the
-        // call to the closure will be done through the SAM type, so the SAM
-        // type generics deliver information about the Closure. At the same
-        // time the SAM class is used in the target method parameter,
-        // providing a connection from the SAM type and the target method
-        // declaration class.
-
-        // First we try to get as much information about the declaration
-        // class through the receiver
-        Map<GenericsTypeName, GenericsType> targetMethodDeclarationClassConnections;
-        if (methodWithSAMParameter.isStatic()) {
-            targetMethodDeclarationClassConnections = new HashMap<GenericsTypeName, GenericsType>();
-        } else {
-            targetMethodDeclarationClassConnections = extractPlaceHolders(receiver, getDeclaringClass(methodWithSAMParameter, originalMethodCallArguments));
-        }
-        // then we use the method with the SAM parameter to get more information about the declaration
-        Parameter[] parametersOfMethodContainingSAM = methodWithSAMParameter.getParameters();
-        for (int i = 0, n = parametersOfMethodContainingSAM.length; i < n; i += 1) {
-            // potentially skip empty varargs
-            if (i == n - 1
-                    && i == originalMethodCallArguments.getExpressions().size()
-                    && parametersOfMethodContainingSAM[i].getType().isArray())
-                continue;
-            Expression callArg = originalMethodCallArguments.getExpression(i);
-            // we look at the closure later in detail, so skip it here
-            if (callArg == openBlock) continue;
-            ClassNode parameterType = parametersOfMethodContainingSAM[i].getType();
-            extractGenericsConnections(targetMethodDeclarationClassConnections, getType(callArg), parameterType);
-        }
-
-        // To make a connection to the SAM class we use that new information
-        // to replace the generics in the SAM type parameter of the target
-        // method and than that to make the connections to the SAM type generics
-        ClassNode paramTypeWithReceiverInformation = applyGenericsContext(targetMethodDeclarationClassConnections, param.getOriginType());
-        Map<GenericsTypeName, GenericsType> SAMTypeConnections = new HashMap<GenericsTypeName, GenericsType>();
-        ClassNode classForSAM = paramTypeWithReceiverInformation.redirect();
-        extractGenericsConnections(SAMTypeConnections, paramTypeWithReceiverInformation, classForSAM);
-
-        // should the open block provide final information we apply that
-        // to the corresponding parameters of the SAM type method
-        MethodNode methodForSAM = findSAM(classForSAM);
-        ClassNode[] parameterTypesForSAM = extractTypesFromParameters(methodForSAM.getParameters());
-        ClassNode[] blockParameterTypes = (ClassNode[]) openBlock.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-        if (blockParameterTypes == null) {
-            Parameter[] p = openBlock.getParameters();
-            if (p == null) {
-                // zero parameter closure e.g. { -> println 'no args' }
-                blockParameterTypes = ClassNode.EMPTY_ARRAY;
-            } else if (p.length == 0 && parameterTypesForSAM.length != 0) {
-                // implicit it
-                blockParameterTypes = parameterTypesForSAM;
+        } else if ((abstractMethod = findSAM(target.getOriginType())) != null) {
+            Map<GenericsTypeName, GenericsType> context;
+            if (method.isStatic()) {
+                context = new HashMap<GenericsTypeName, GenericsType>();
             } else {
-                blockParameterTypes = new ClassNode[p.length];
-                for (int i = 0; i < p.length; i++) {
-                    if (p[i] != null && !p[i].isDynamicTyped()) {
-                        blockParameterTypes[i] = p[i].getType();
-                    } else {
-                        blockParameterTypes[i] = typeOrNull(parameterTypesForSAM, i);
+                context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
+            }
+            GenericsType[] typeParameters = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
+
+            if (typeParameters != null) {
+                boolean typeParametersResolved = false;
+                // first check for explicit type arguments
+                Expression emc = typeCheckingContext.getEnclosingMethodCall();
+                if (emc instanceof MethodCallExpression) {
+                    MethodCallExpression mce = (MethodCallExpression) emc;
+                    if (mce.getArguments() == arguments) {
+                        GenericsType[] typeArguments = mce.getGenericsTypes();
+                        if (typeArguments != null) {
+                            int n = typeParameters.length;
+                            if (n == typeArguments.length) {
+                                typeParametersResolved = true;
+                                for (int i = 0; i < n; i += 1) {
+                                    context.put(new GenericsTypeName(typeParameters[i].getName()), typeArguments[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!typeParametersResolved) {
+                    // check for implicit type arguments
+                    int i = -1; Parameter[] p = method.getParameters();
+                    for (Expression argument : (TupleExpression) arguments) { i += 1;
+                        if (argument instanceof ClosureExpression || isNullConstant(argument)) continue;
+
+                        ClassNode pType = p[Math.min(i, p.length - 1)].getType();
+                        Map<GenericsTypeName, GenericsType> gc = new HashMap<>();
+                        extractGenericsConnections(gc, wrapTypeIfNecessary(getType(argument)), pType);
+
+                        for (Map.Entry<GenericsTypeName, GenericsType> entry : gc.entrySet()) {
+                            for (GenericsType tp : typeParameters) {
+                                GenericsTypeName name = entry.getKey();
+                                if (tp.getName().equals(name.getName()) && !context.containsKey(name)) {
+                                    context.put(name, entry.getValue());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    for (GenericsType tp : typeParameters) {
+                        GenericsTypeName name = new GenericsTypeName(tp.getName());
+                        if (!context.containsKey(name)) context.put(name, fullyResolve(tp, context));
                     }
                 }
             }
-        }
-        for (int i = 0; i < blockParameterTypes.length; i++) {
-            extractGenericsConnections(SAMTypeConnections, blockParameterTypes[i], typeOrNull(parameterTypesForSAM, i));
-        }
 
-        // and finally we apply the generics information to the parameters and
-        // store the type of parameter and block type as meta information
-        for (int i = 0; i < blockParameterTypes.length; i++) {
-            ClassNode resolvedParameter =
-                    applyGenericsContext(SAMTypeConnections, typeOrNull(parameterTypesForSAM, i));
-            blockParameterTypes[i] = resolvedParameter;
-        }
-        openBlock.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, blockParameterTypes);
-    }
+            ClassNode[] samParamTypes = parameterizeSAM(abstractMethod, applyGenericsContext(context, target.getType())).getFirst();
 
-    private ClassNode typeOrNull(ClassNode[] parameterTypesForSAM, int i) {
-        return i < parameterTypesForSAM.length ? parameterTypesForSAM[i] : null;
+            ClassNode[] paramTypes = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+            if (paramTypes == null) {
+                int n; Parameter[] p = expression.getParameters();
+                if (p == null) {
+                    // zero parameters
+                    paramTypes = ClassNode.EMPTY_ARRAY;
+                } else if ((n = p.length) == 0) {
+                    // implicit parameter(s)
+                    paramTypes = samParamTypes;
+                } else {
+                    paramTypes = new ClassNode[n];
+                    for (int i = 0; i < n; i += 1) {
+                        paramTypes[i] = !p[i].isDynamicTyped() ? p[i].getOriginType() : (i < samParamTypes.length ? samParamTypes[i] : null);
+                    }
+                }
+                expression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, paramTypes);
+            }
+        }
     }
 
     private List<ClassNode[]> getSignaturesFromHint(final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression options) {
@@ -3244,12 +3243,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
                         }
                     }
-                    boolean lastArg = i == (n - 1);
-
-                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
-                        addError("Expected parameter of type " + inferredType.toString(false) + " but got " + originType.toString(false), closureParam.getType());
+                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, i == n-1)) {
+                        addError("Expected parameter of type " + prettyPrintType(inferredType) + " but got " + prettyPrintType(originType), closureParam.getType());
                     }
-
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
                 }
             }

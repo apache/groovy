@@ -1874,7 +1874,7 @@ public abstract class StaticTypeCheckingSupport {
         return newGTs;
     }
 
-    private static GenericsType applyGenericsContext(Map<GenericsTypeName, GenericsType> spec, GenericsType gt) {
+    private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
         if (gt.isPlaceholder()) {
             GenericsTypeName name = new GenericsTypeName(gt.getName());
             GenericsType specType = spec.get(name);
@@ -1895,7 +1895,9 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             newType = applyGenericsContext(spec, type.getComponentType()).makeArray();
         } else {
-            if (type.getGenericsTypes()==null) return gt;
+            if (type.getGenericsTypes() == null) {
+                return gt;
+            }
             newType = type.getPlainNodeReference();
             newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
             newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
@@ -1903,13 +1905,18 @@ public abstract class StaticTypeCheckingSupport {
         return new GenericsType(newType);
     }
 
-    private static boolean hasNonTrivialBounds(GenericsType gt) {
+    private static boolean hasNonTrivialBounds(final GenericsType gt) {
+        if (gt.isWildcard()) {
+            return true;
+        }
+        if (gt.getLowerBound() != null) {
+            return true;
+        }
         ClassNode[] upperBounds = gt.getUpperBounds();
-        return gt.getLowerBound() != null || gt.isWildcard() ||
-                (upperBounds != null && (
-                        upperBounds.length != 1
-                                || upperBounds[0].isGenericsPlaceHolder()
-                                || !OBJECT_TYPE.equals(upperBounds[0])));
+        if (upperBounds != null) {
+            return (upperBounds.length != 1 || upperBounds[0].isGenericsPlaceHolder() || !OBJECT_TYPE.equals(upperBounds[0]));
+        }
+        return false;
     }
 
     static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
@@ -1929,27 +1936,30 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return applyGenericsContext(spec, type.getComponentType()).makeArray();
         }
-        ClassNode newType = type.getPlainNodeReference();
-        GenericsType[] gt = type.getGenericsTypes();
-        if (spec != null) {
-            gt = applyGenericsContext(spec, gt);
-        }
-        newType.setGenericsTypes(gt);
-        if (type.isGenericsPlaceHolder()) {
-            boolean nonTrivial = hasNonTrivialBounds(gt[0]);
-            if (nonTrivial || !gt[0].isPlaceholder()) {
+
+        GenericsType[] gt = applyGenericsContext(spec, type.getGenericsTypes());
+
+        boolean typeVariable = type.isGenericsPlaceHolder();
+        if (typeVariable) {
+            if (!gt[0].isPlaceholder() || hasNonTrivialBounds(gt[0])) {
                 return getCombinedBoundType(gt[0]);
             }
-            String placeholderName = gt[0].getName();
-            if (!placeholderName.equals(newType.getUnresolvedName())) {
-                ClassNode clean = make(placeholderName);
-                clean.setGenericsTypes(gt);
-                clean.setRedirect(newType);
-                newType = clean;
+            String gt_name = gt[0].getName();
+            ClassNode gt_type = gt[0].getType();
+            if (!type.getUnresolvedName().equals(gt_name) || !type.equals(gt_type)) {
+                ClassNode cn = !gt_name.equals(gt_type.getName()) ? gt_type : type;
+                ClassNode tp = make(gt_name);
+                tp.setRedirect(cn);
+                tp.setGenericsTypes(gt);
+                tp.setGenericsPlaceHolder(true);
+                return tp;
             }
-            newType.setGenericsPlaceHolder(true);
         }
-        return newType;
+
+        ClassNode cn = type.getPlainNodeReference();
+        cn.setGenericsPlaceHolder(typeVariable);
+        cn.setGenericsTypes(gt);
+        return cn;
     }
 
     static ClassNode getCombinedBoundType(GenericsType genericsType) {

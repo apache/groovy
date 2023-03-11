@@ -1318,11 +1318,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9077
     void testInferredTypeForPropertyThatResolvesToMethod() {
         assertScript '''
-            import groovy.transform.*
-            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET
-
-            @CompileStatic
-            void meth() {
+            void test() {
                 def items = [1, 2] as LinkedList
 
                 @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -1344,7 +1340,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 def alsoOne = items.peek()
             }
 
-            meth()
+            test()
         '''
     }
 
