@@ -179,7 +179,6 @@ public class BinaryExpressionTransformer {
                     }
                 }
             }
-            boolean isAssignment = StaticTypeCheckingSupport.isAssignment(operationType);
             MethodCallExpression call;
             MethodNode node = (MethodNode) list[0];
             String name = (String) list[1];
@@ -209,7 +208,7 @@ public class BinaryExpressionTransformer {
                 call.setImplicitThis(false);
             }
             call.setSourcePosition(bin);
-            if (!isAssignment) return call;
+            if (!StaticTypeCheckingSupport.isAssignment(operationType)) return call;
             // case of +=, -=, /=, ...
             // the method represents the operation type only, and we must add an assignment
             return new BinaryExpression(left, Token.newSymbol("=", operation.getStartLine(), operation.getStartColumn()), call);

@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -739,9 +740,9 @@ public class StaticInvocationWriter extends InvocationWriter {
                     controller.getOperandStack().doGroovyCast(type);
                 }
                 if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(topOperand, type)) return;
-                controller.getMethodVisitor().visitTypeInsn(CHECKCAST, type.isArray() ?
-                        BytecodeHelper.getTypeDescription(type) :
-                        BytecodeHelper.getClassInternalName(type.getName()));
+                controller.getMethodVisitor().visitTypeInsn(CHECKCAST, type.isArray()
+                        ? BytecodeHelper.getTypeDescription(type)
+                        : BytecodeHelper.getClassInternalName(type.getName()));
                 controller.getOperandStack().replace(type);
             }
         }
@@ -758,9 +759,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                         type = ClassHelper.getWrapper(type);
                     }
                     ClassNode declaringClass = target.getDeclaringClass();
-                    if (type.getClass() != ClassNode.class
-                            && type.getClass() != InnerClassNode.class
-                            && type.getClass() != DecompiledClassNode.class) {
+                    Class<?>  typeClass = type.getClass();
+                    if (typeClass != ClassNode.class
+                            && typeClass != InnerClassNode.class
+                            && typeClass != DecompiledClassNode.class
+                            && typeClass != EnumConstantClassNode.class) {
                         type = declaringClass; // ex: LUB type
                     }
                     if (ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
@@ -780,7 +783,7 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     @Override
-    protected boolean makeCachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
+    protected boolean makeCachedCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean containsSpreadExpression) {
         return false;
     }
 }

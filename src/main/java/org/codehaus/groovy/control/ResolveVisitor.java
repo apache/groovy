@@ -1572,7 +1572,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             GenericsTypeName gtn = new GenericsTypeName(name);
             ClassNode[] bounds = type.getUpperBounds();
             boolean isWild = QUESTION_MARK.equals(name);
-            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(gtn));
+            boolean toDealWithGenerics = 0 == level || (level > 0 && genericParameterNames.containsKey(gtn));
 
             if (bounds != null) {
                 boolean nameAdded = false;

@@ -459,7 +459,7 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public SourceUnit addSource(SourceUnit source) {
         String name = source.getName();
-        source.setClassLoader(this.classLoader);
+        source.setClassLoader(getClassLoader());
         for (SourceUnit su : queuedSources) {
             if (name.equals(su.getName())) return su;
         }
@@ -681,7 +681,6 @@ public class CompilationUnit extends ProcessingUnit {
                 resolveVisitor.setClassNodeResolver(classNodeResolver);
                 resolveVisitor.startResolving(node, source);
             }
-
         }
     };
 
@@ -697,11 +696,11 @@ public class CompilationUnit extends ProcessingUnit {
     private final SourceUnitOperation convert = new SourceUnitOperation() {
         public void call(SourceUnit source) throws CompilationFailedException {
             source.convert();
-            CompilationUnit.this.ast.addModule(source.getAST());
+            // add module node to compile unit
+            getAST().addModule(source.getAST());
 
-
-            if (CompilationUnit.this.progressCallback != null) {
-                CompilationUnit.this.progressCallback.call(source, CompilationUnit.this.phase);
+            if (progressCallback != null) {
+                progressCallback.call(source, getPhase());
             }
         }
     };
@@ -789,8 +788,8 @@ public class CompilationUnit extends ProcessingUnit {
             GroovyClassVisitor visitor = verifier;
             try {
                 visitor.visitClass(classNode);
-            } catch (GroovyRuntimeException rpe) {
-                getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);
+            } catch (GroovyRuntimeException gre) {
+                getErrorCollector().addError(new SyntaxException(gre.getMessage(), gre.getNode()), source);
             }
 
             visitor = new LabelVerifier(source);
@@ -973,13 +972,13 @@ public class CompilationUnit extends ProcessingUnit {
     private static int getSuperClassCount(ClassNode element) {
         int count = 0;
         while (element != null) {
-            count++;
+            count += 1;
             element = element.getSuperClass();
         }
         return count;
     }
 
-    private int getSuperInterfaceCount(ClassNode element) {
+    private static int getSuperInterfaceCount(ClassNode element) {
         int count = 1;
         ClassNode[] interfaces = element.getInterfaces();
         for (ClassNode anInterface : interfaces) {

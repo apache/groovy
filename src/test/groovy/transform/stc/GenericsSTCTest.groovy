@@ -428,6 +428,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented
+    void testReturnTypeInferenceWithMethodGenerics1y() {
+        assertScript '''
+            interface Type { }
+            class Pogo implements Type { String name }
+            class CacheManager {
+                def <T extends Type> T fromCache(String key) {
+                    new Pogo()
+                }
+            }
+
+            def cacheManager = new CacheManager( )
+            Pogo pogo = cacheManager.fromCache('')
+            pogo.name
+        '''
+    }
+
     // GROOVY-10067
     @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics11() {
@@ -1461,7 +1478,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10343
-    @NotYetImplemented
     void testDiamondInferenceFromConstructor27() {
         assertScript '''
             class C<T1, T2 extends T1> {

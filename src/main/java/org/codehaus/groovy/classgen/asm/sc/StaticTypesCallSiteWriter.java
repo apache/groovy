@@ -146,9 +146,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(int_TYPE);
             return;
-        } else if (
-                (receiverType.implementsInterface(COLLECTION_TYPE)
-                        || COLLECTION_TYPE.equals(receiverType)) && ("size".equals(propertyName) || "length".equals(propertyName))) {
+        } else if (("size".equals(propertyName) || "length".equals(propertyName)) && isOrImplements(receiverType, COLLECTION_TYPE)) {
             MethodCallExpression expr = new MethodCallExpression(
                     receiver,
                     "size",
@@ -164,7 +162,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         boolean isStaticProperty = receiver instanceof ClassExpression
                 && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
 
-        if (!isStaticProperty && (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType))) {
+        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)) {
             // for maps, replace map.foo with map.get('foo')
             writeMapDotProperty(receiver, propertyName, safe);
             return;
