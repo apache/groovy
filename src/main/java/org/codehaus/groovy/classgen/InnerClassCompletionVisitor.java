@@ -79,8 +79,9 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
     public void visitClass(final ClassNode node) {
         classNode = node;
         thisField = null;
+        if (node.isEnum() || node.isInterface()) return;
         InnerClassNode innerClass = null;
-        if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
+        if (node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
             thisField = innerClass.getField("this$0");
             if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
@@ -88,7 +89,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
         }
-        if (node.isEnum() || node.isInterface()) return;
         // use Iterator.hasNext() to check for available inner classes
         if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
         if (innerClass == null) return;
@@ -335,7 +335,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
         BlockStatement block = getCodeAsBlock(node);
         BlockStatement newCode = block();
-        addFieldInit(thisPara, thisField, newCode);
+        if (thisField != null) addFieldInit(thisPara, thisField, newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
             cce = ctorSuperX(new TupleExpression());
