@@ -80,6 +80,8 @@ import java.util.Set;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -451,24 +453,33 @@ public class JavaStubGenerator {
         out.print(field.getName());
 
         if (interfaceOrTrait || field.isFinal()) {
-            // GROOVY-5150: initialize field with a value so Java compiles correctly
             out.print(" = ");
-            Expression valueExpr = field.getInitialValueExpression();
-            if (valueExpr instanceof ConstantExpression && !type.equals(ClassHelper.STRING_TYPE)) {
-                valueExpr = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) valueExpr);
-            }
-            ClassNode valueType;
-            if (field.isStatic()
-                    && valueExpr instanceof ConstantExpression
-                    && (valueType = valueExpr.getType()).equals(type)
-                    && ClassHelper.isStaticConstantInitializerType(valueType)) {
-                if (ClassHelper.isNumberType(valueType)) {
-                    out.print("(" + type.toString(false) + ") ");
+            if (field.isStatic() && field.hasInitialExpression()) {
+                Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
+                if (value instanceof ConstantExpression) {
+                    if (ClassHelper.isPrimitiveType(type)) { // do not pass string of length 1 for String field:
+                        value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    }
+                    if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
+                                || (isLongCategory(type) && value.getType().equals(ClassHelper.int_TYPE))
+                                || (isFloatingCategory(type) && ClassHelper.BigDecimal_TYPE.equals(value.getType())))
+                            && (type.equals(ClassHelper.boolean_TYPE) || ClassHelper.isStaticConstantInitializerType(type))) {
+                        printValue(out, (ConstantExpression) value);
+                        out.println(';');
+                        return;
+                    }
                 }
-                printValue(out, valueExpr, false);
+
+                // GROOVY-5150, GROOVY-10902, GROOVY-10928: output dummy value
+                if (ClassHelper.isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
+                    out.print("new " + ClassHelper.getWrapper(type) + "(");
+                    printDefaultValue(out, type);
+                    out.print(')');
+                } else {
+                    out.print("null");
+                }
             } else if (ClassHelper.isPrimitiveType(type)) {
-                String value = type.equals(ClassHelper.boolean_TYPE) ? "false" : "(" + type.toString(false) + ")0";
-                out.print("new " + ClassHelper.getWrapper(type) + "(" + value + ")");
+                printDefaultValue(out, type);
             } else {
                 out.print("null");
             }
@@ -685,7 +696,8 @@ public class JavaStubGenerator {
                     Expression re = es.getExpression();
                     out.print(" default ");
                     ClassNode rt = methodNode.getReturnType();
-                    boolean classReturn = ClassHelper.CLASS_Type.equals(rt) || (rt.isArray() && ClassHelper.CLASS_Type.equals(rt.getComponentType()));
+                    boolean classReturn = rt.equals(ClassHelper.CLASS_Type)
+                            || (rt.isArray() && rt.getComponentType().equals(ClassHelper.CLASS_Type));
                     if (re instanceof ListExpression) {
                         out.print("{ ");
                         ListExpression le = (ListExpression) re;
@@ -733,36 +745,50 @@ public class JavaStubGenerator {
         return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
     }
 
-    private static void printValue(PrintWriter out, Expression re, boolean assumeClass) {
+    private void printValue(final PrintWriter out, final Expression exp, final boolean assumeClass) {
         if (assumeClass) {
-            if (re.getType().getName().equals("groovy.lang.Closure")) {
+            if (exp.getType().getName().equals("groovy.lang.Closure")) {
                 out.print("groovy.lang.Closure.class");
                 return;
             }
-            String className = re.getText();
+            String className = exp.getText();
             out.print(className);
             if (!className.endsWith(".class")) {
                 out.print(".class");
             }
-        } else if (re instanceof ConstantExpression) {
-            ConstantExpression ce = (ConstantExpression) re;
-            Object value = ce.getValue();
-            if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
-                out.print("\"" + escapeSpecialChars((String) value) + "\"");
-            } else if (ClassHelper.char_TYPE.equals(ce.getType())
-                    || ClassHelper.Character_TYPE.equals(ce.getType())) {
-                out.print("'" + escapeSpecialChars("" + value.toString().charAt(0)) + "'");
-            } else if (ClassHelper.long_TYPE.equals(ce.getType())) {
-                out.print("" + value + "L");
-            } else if (ClassHelper.float_TYPE.equals(ce.getType())) {
-                out.print("" + value + "f");
-            } else if (ClassHelper.double_TYPE.equals(ce.getType())) {
-                out.print("" + value + "d");
-            } else {
-                out.print(re.getText());
-            }
+        } else if (exp instanceof ConstantExpression) {
+            printValue(out, (ConstantExpression) exp);
         } else {
-            out.print(re.getText());
+            out.print(exp.getText());
+        }
+    }
+
+    private void printValue(final PrintWriter out, final ConstantExpression ce) {
+        ClassNode type = ClassHelper.getUnwrapper(ce.getType());
+        if (type == ClassHelper.char_TYPE) {
+            out.print("'");
+            out.print(escapeSpecialChars(ce.getText().substring(0, 1)));
+            out.print("'");
+        } else if (type.equals(ClassHelper.STRING_TYPE)) {
+            out.print('"');
+            out.print(escapeSpecialChars(ce.getText()));
+            out.print('"');
+        } else if (type == ClassHelper.double_TYPE) {
+            out.print(ce.getText());
+            out.print('d');
+        } else if (type == ClassHelper.float_TYPE) {
+            out.print(ce.getText());
+            out.print('f');
+        } else if (type == ClassHelper.long_TYPE) {
+            out.print(ce.getText());
+            out.print('L');
+        } else {
+            if (type != ClassHelper.int_TYPE && type != ClassHelper.boolean_TYPE && !type.equals(ClassHelper.BigDecimal_TYPE)) {
+                out.print('(');
+                printType(out, type);
+                out.print(')');
+            }
+            out.print(ce.getText());
         }
     }
 
@@ -776,9 +802,9 @@ public class JavaStubGenerator {
 
     private void printDefaultValue(final PrintWriter out, final ClassNode type) {
         if (type != null && !type.equals(ClassHelper.boolean_TYPE)) {
-            out.print("(");
+            out.print('(');
             printType(out, type);
-            out.print(")");
+            out.print(')');
         }
         if (type != null && ClassHelper.isPrimitiveType(type)) {
             if (type.equals(ClassHelper.boolean_TYPE)) {
