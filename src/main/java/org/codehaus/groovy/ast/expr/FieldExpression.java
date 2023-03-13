@@ -22,6 +22,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Represents a field access such as the expression "this.foo".
  */
@@ -30,17 +32,17 @@ public class FieldExpression extends Expression {
     private final FieldNode field;
     private boolean useRef;
 
-    public FieldExpression(FieldNode field) {
-        this.field = field;
+    public FieldExpression(final FieldNode field) {
+        this.field = requireNonNull(field);
     }
 
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitFieldExpression(this);
     }
 
     @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
+    public Expression transformExpression(final ExpressionTransformer transformer) {
         return this;
     }
 
@@ -63,7 +65,7 @@ public class FieldExpression extends Expression {
     }
 
     @Override
-    public void setType(ClassNode type) {
+    public void setType(final ClassNode type) {
         super.setType(type);
         field.setType(type);
     }
@@ -76,7 +78,7 @@ public class FieldExpression extends Expression {
         return useRef;
     }
 
-    public void setUseReferenceDirectly(boolean useRef) {
+    public void setUseReferenceDirectly(final boolean useRef) {
         this.useRef = useRef;
     }
 

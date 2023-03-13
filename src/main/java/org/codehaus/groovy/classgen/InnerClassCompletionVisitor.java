@@ -52,7 +52,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    private FieldNode thisField = null;
+    private FieldNode thisField;
 
     private static final String
             CLOSURE_INTERNAL_NAME = BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE),
@@ -71,8 +71,9 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
     public void visitClass(ClassNode node) {
         classNode = node;
         thisField = null;
+        if (node.isEnum() || node.isInterface()) return;
         InnerClassNode innerClass = null;
-        if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
+        if (node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
             thisField = innerClass.getField("this$0");
             if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
@@ -80,7 +81,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
                 addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
         }
-        if (node.isEnum() || node.isInterface()) return;
         // use Iterator.hasNext() to check for available inner classes
         if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
         if (innerClass == null) return;
@@ -419,7 +419,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             block = (BlockStatement) code;
         }
         BlockStatement newCode = new BlockStatement();
-        addFieldInit(thisPara, thisField, newCode);
+        if (thisField != null) addFieldInit(thisPara, thisField, newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
             cce = new ConstructorCallExpression(ClassNode.SUPER, new TupleExpression());
