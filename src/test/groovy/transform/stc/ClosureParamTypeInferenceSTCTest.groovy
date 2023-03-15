@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 /**
  * Unit tests for static type checking : closure parameter type inference.
  */
@@ -1319,6 +1321,30 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert foo() == ['FEE', 'FO']
+        '''
+    }
+
+    void testGroovy9347() {
+        assertScript '''
+            class C {
+                static int acc = 1
+                static {
+                    [1, 2, 3].each{e -> acc += e}
+                }
+            }
+            assert C.acc == 7
+        '''
+
+        if (!isAtLeastJdk('1.8')) return
+
+        assertScript '''
+            class C {
+                static int acc = 1
+                static {
+                    [1, 2, 3].forEach{e -> acc += e}
+                }
+            }
+            assert C.acc == 7
         '''
     }
 
