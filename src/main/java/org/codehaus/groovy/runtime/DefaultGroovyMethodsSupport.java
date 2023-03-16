@@ -417,6 +417,33 @@ public class DefaultGroovyMethodsSupport {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
+    protected static boolean sameType(Iterable[] iters) {
+        Object first;
+        Class baseClass = null;
+
+        for (Iterable iter : iters) {
+            for (Object o : iter) {
+                if (baseClass == null) {
+                    first = o;
+                    if (first instanceof Number) {
+                        baseClass = Number.class;
+                    } else if (first == null) {
+                        baseClass = NullObject.class;
+                    } else {
+                        baseClass = first.getClass();
+                    }
+                } else {
+                    if (!baseClass.isInstance(o)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     protected static void writeUTF16BomIfRequired(final Writer writer, final String charset) throws IOException {
         writeUTF16BomIfRequired(writer, Charset.forName(charset));
     }
