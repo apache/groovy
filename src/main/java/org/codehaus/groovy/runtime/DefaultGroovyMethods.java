@@ -11558,55 +11558,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<? super T> comparator) {
-        Collection<T> self1 = asCollection(self);
-        Collection<?> removeMe1 = asCollection(removeMe);
-        Collection<T> ansCollection = createSimilarCollection(self1);
-        if (self1.isEmpty())
+        Collection<T> ansCollection = createSimilarCollection(self);
+        if (!self.iterator().hasNext())
             return ansCollection;
-        T head = self1.iterator().next();
-
-        boolean nlgnSort = sameType(new Collection[]{self1, removeMe1});
+        T head = self.iterator().next();
 
         // We can't use the same tactic as for intersection
         // since AbstractCollection only does a remove on the first
         // element it encounters.
+        boolean nlgnSort = sameType(new Iterable[]{self, removeMe});
 
         if (nlgnSort && (head instanceof Comparable)) {
             //n*LOG(n) version
-            Set<T> answer;
-            if (head instanceof Number) {
-                answer = new TreeSet<>(comparator);
-                answer.addAll(self1);
-                for (T t : self1) {
-                    if (t instanceof Number) {
-                        for (Object t2 : removeMe1) {
-                            if (t2 instanceof Number) {
-                                if (comparator.compare(t, (T) t2) == 0)
-                                    answer.remove(t);
-                            }
-                        }
-                    } else {
-                        if (removeMe1.contains(t))
-                            answer.remove(t);
-                    }
-                }
-            } else {
-                answer = new TreeSet<>(comparator);
-                answer.addAll(self1);
-                answer.removeAll(removeMe1);
+            Set<T> removeMe2 = new TreeSet<>(comparator);
+            for(Object o: removeMe) {
+                removeMe2.add((T) o);
             }
-
-            for (T o : self1) {
-                if (answer.contains(o))
+            for (T o : self) {
+                if (!removeMe2.contains(o))
                     ansCollection.add(o);
             }
         } else {
             //n*n version
-            List<T> tmpAnswer = new LinkedList<>(self1);
-            for (Iterator<T> iter = tmpAnswer.iterator(); iter.hasNext();) {
+            Collection<T> tmpAnswer = asCollection(self);
+            for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
                 T element = iter.next();
                 boolean elementRemoved = false;
-                for (Iterator<?> iterator = removeMe1.iterator(); iterator.hasNext() && !elementRemoved;) {
+                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
                     Object elt = iterator.next();
                     if (DefaultTypeTransformation.compareEqual(element, elt)) {
                         iter.remove();
