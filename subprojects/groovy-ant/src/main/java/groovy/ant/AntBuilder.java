@@ -57,13 +57,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Allows <a href="http://ant.apache.org/manual/coretasklist.html">Ant tasks</a> to
- * be used with a Groovy builder-style markup. Requires that {{ant.jar}} is on your classpath which will
+ * Allows <a href="https://ant.apache.org/manual/tasklist.html">Ant tasks</a> to
+ * be used with a Groovy builder-style markup. Requires that <code>ant.jar</code> is on your classpath which will
  * happen automatically if you are using the Groovy distribution but will be up
  * to you to organize if you are embedding Groovy. If you wish to use the
- * <a href="http://ant.apache.org/manual/install#optionalTasks">optional tasks</a>
+ * <a href="https://ant.apache.org/manual/install.html#optionalTasks">optional tasks</a>
  * you will need to add one or more additional jars from the ant distribution to
- * your classpath - see the <a href="http://ant.apache.org/manual/install.html#librarydependencies">library
+ * your classpath - see the <a href="https://ant.apache.org/manual/install.html#librarydependencies">library
  * dependencies</a> for more details.
  */
 public class AntBuilder extends BuilderSupport {
