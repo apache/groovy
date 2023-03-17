@@ -291,7 +291,7 @@ public class WideningCategories {
     }
 
     private static ClassNode upperBound(final GenericsType gt) {
-        if (gt.isWildcard()) {
+        if (gt.isPlaceholder() || gt.isWildcard()) {
             ClassNode[] ub = gt.getUpperBounds();
             if (ub != null) return ub[0];
         }
