@@ -400,6 +400,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10978
     void testReturnTypeInferenceWithMethodGenerics1x() {
         assertScript '''
             interface Handle {
@@ -426,6 +427,62 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def c = new HandleContainer(handle: h)
             test({k->c} as Input, {k->c} as State)
         '''
+
+        File parentDir = createTempDir()
+        config.with {
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
+        }
+        try {
+            def a = new File(parentDir, 'Handle.java')
+            a.write '''
+                interface Handle {
+                    int getCount();
+                }
+            '''
+            def b = new File(parentDir, 'HandleContainer.java')
+            b.write '''
+                class HandleContainer<H extends Handle> {
+                    H handle;
+                }
+            '''
+            def c = new File(parentDir, 'Input.java')
+            c.write '''
+                interface Input {
+                    HandleContainer<? extends Handle> getResult(Object key);
+                }
+            '''
+            def d = new File(parentDir, 'State.java')
+            d.write '''
+                interface State {
+                    <X extends Handle> HandleContainer<X> getResult(Object key);
+                }
+            '''
+            def e = new File(parentDir, 'Tester.groovy')
+            e.write '''
+                void test(Input input, State state) {
+                    def container = state.getResult('k') ?: input.getResult('k')
+                    Handle handle = container.handle
+                    Integer count = handle.count
+                    assert count == 1
+                }
+
+                Handle h = {->1}
+                def c = new HandleContainer(handle: h)
+                test({k->c} as Input, {k->c} as State)
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c, d, e)
+            cu.compile()
+
+            loader.loadClass('Tester').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     @NotYetImplemented
