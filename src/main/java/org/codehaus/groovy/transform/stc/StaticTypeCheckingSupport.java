@@ -89,6 +89,7 @@ import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
@@ -1559,22 +1560,30 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
         if (resolved.isPlaceholder()
-                && resolved.getUpperBounds() != null
-                && resolved.getUpperBounds().length == 1
+                &&  resolved.getUpperBounds() != null
+                &&  resolved.getUpperBounds().length == 1
                 && !resolved.getUpperBounds()[0].isGenericsPlaceHolder()
-                && resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) {
+                &&  resolved.getUpperBounds()[0].getName().equals(OBJECT)) {
             return true;
         }
         ClassNode compareNode;
         if (hasNonTrivialBounds(resolved)) {
             compareNode = getCombinedBoundType(resolved);
-            compareNode = compareNode.redirect().getPlainNodeReference();
+            compareNode = compareNode.getPlainNodeReference();
         } else if (!resolved.isPlaceholder()) {
             compareNode = resolved.getType().getPlainNodeReference();
         } else {
             return true;
         }
-        GenericsType gt = connection.isWildcard() ? connection : buildWildcardType(connection);
+
+        GenericsType gt;
+        if (connection.isWildcard()) {
+            gt = connection;
+        } else if (!connection.isPlaceholder() && connection.getType().equals(CLOSURE_TYPE) && isSAMType(compareNode)) {
+            return true; // GROOVY-10270: SAM-type (placeholder) accepts closure
+        } else {
+            gt = buildWildcardType(connection);
+        }
         return gt.isCompatibleWith(compareNode);
     }
 
