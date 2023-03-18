@@ -3358,6 +3358,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10270
+    void testCompatibleArgumentsForPlaceholders12() {
+        assertScript '''import java.util.function.*
+            void a(Function<Number,Byte> fn) { }
+            class B {
+                B(Function<Number,Byte> fn) { }
+            }
+            class C<T> {
+                C(T t) { }
+            }
+
+            a({ Number x -> x.byteValue() })
+            new B({ Number x -> x.byteValue() })
+            new C<Function<Number,Byte>>({ Number x -> x.byteValue() } as Function<Number,Byte>)
+            new C<Function<Number,Byte>>({ Number x -> x.byteValue() }                         )
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }
