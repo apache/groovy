@@ -3263,6 +3263,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10270
+    void testCompatibleArgumentsForPlaceholders12() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
+        assertScript '''import java.util.function.*
+            void a(Function<Number,Byte> fn) { }
+            class B {
+                B(Function<Number,Byte> fn) { }
+            }
+            class C<T> {
+                C(T t) { }
+            }
+
+            a({ Number x -> x.byteValue() })
+            new B({ Number x -> x.byteValue() })
+            new C<Function<Number,Byte>>({ Number x -> x.byteValue() } as Function<Number,Byte>)
+            new C<Function<Number,Byte>>({ Number x -> x.byteValue() }                         )
+        '''
+    }
+
     // GROOVY-9902: incomplete generics should not stop type checking
     void testIncompatibleArgumentsForPlaceholders3() {
         shouldFailWithMessages '''
