@@ -2054,17 +2054,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitPostfixExpression(final PostfixExpression expression) {
         Expression operand = expression.getExpression();
         int operator = expression.getOperation().getType();
-        visitPrefixOrPostifExpression(expression, operand, operator);
+        visitPrefixOrPostixExpression(expression, operand, operator);
     }
 
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
         Expression operand = expression.getExpression();
         int operator = expression.getOperation().getType();
-        visitPrefixOrPostifExpression(expression, operand, operator);
+        visitPrefixOrPostixExpression(expression, operand, operator);
     }
 
-    private void visitPrefixOrPostifExpression(final Expression origin, final Expression operand, final int operator) {
+    private void visitPrefixOrPostixExpression(final Expression origin, final Expression operand, final int operator) {
         Optional<Token> token = TokenUtil.asAssignment(operator);
         // push "operand += 1" or "operand -= 1" onto stack for LHS checks
         token.ifPresent(value -> typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, value, constX(1))));
