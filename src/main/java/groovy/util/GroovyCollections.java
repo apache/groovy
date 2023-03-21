@@ -50,7 +50,7 @@ public class GroovyCollections {
     }
 
     /**
-     * Finds all non-null subsequences of a list.
+     * Finds all non-empty subsequences of a list.
      * E.g. <code>subsequences([1, 2, 3])</code> would be:
      * [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]]
      *
