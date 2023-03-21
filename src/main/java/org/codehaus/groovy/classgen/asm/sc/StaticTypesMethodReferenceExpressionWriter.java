@@ -100,8 +100,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             methodRefName = controller.getContext().getNextConstructorReferenceSyntheticMethodName(controller.getMethodNode());
             methodRefMethod = addSyntheticMethodForConstructorReference(methodRefName, typeOrTargetRefType, parametersWithExactType);
         } else {
-            // TODO: move the findMethodRefMethod and checking to StaticTypeCheckingVisitor
-            methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, typeOrTargetRefType);
+            List<MethodNode> methods = methodReferenceExpression.getNodeMetaData(MethodNode.class);
+            if (methods != null && methods.size() == 1) {
+                methodRefMethod = methods.get(0);
+            } else {
+                methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, typeOrTargetRefType);
+            }
         }
 
         validate(methodReferenceExpression, typeOrTargetRefType, methodRefName, methodRefMethod, parametersWithExactType,
@@ -109,17 +113,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (isExtensionMethod(methodRefMethod)) {
             ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
-            methodRefMethod  = extensionMethodNode.getExtensionMethodNode();
-            boolean isStatic = extensionMethodNode.isStaticExtension();
-            if (isStatic) { // create adapter method to pass extra argument
+            methodRefMethod = extensionMethodNode.getExtensionMethodNode();
+            if (extensionMethodNode.isStaticExtension()) {
+                // create adapter method to pass extra argument
                 methodRefMethod = addSyntheticMethodForDGSM(methodRefMethod);
-            }
-            if (isStatic || isClassExpression) {
-                // replace expression with declaring type
+                // replace expression with owner class expression
                 typeOrTargetRefType = methodRefMethod.getDeclaringClass();
                 typeOrTargetRef = makeClassTarget(typeOrTargetRefType, typeOrTargetRef);
             } else { // GROOVY-10653
-                targetIsArgument = true; // ex: "string"::size
+                targetIsArgument = true; // ex: "string"::size or Type::toString
             }
         } else if (isVargs(methodRefMethod.getParameters())) {
             int mParameters = abstractMethod.getParameters().length;

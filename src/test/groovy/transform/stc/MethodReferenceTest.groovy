@@ -381,6 +381,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10972
+    void testFunctionII4() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+              LinkedList<String> list = new LinkedList<>()
+              list.add('works')
+              Function<Integer,String> func = list::remove
+              assert func.apply(0) == 'works'
+            }
+
+            test()
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-10057
     void testPredicateII() {
         assertScript shell, '''
@@ -972,13 +987,15 @@ final class MethodReferenceTest {
 
             test()
         '''
-        def err = shouldFail shell, '''
+        shouldFail shell, '''
             @CompileStatic
             void test() {
-                Supplier<String> s = Object::toString // all options require an object
+                Supplier<String> s = Object::toString
+                assert s.get() === 'java.lang.Object'
             }
+
+            test()
         '''
-        assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
     }
 
     @Test // GROOVY-10859
