@@ -142,7 +142,7 @@ import java.util.Map;
  *                 MINUS,
  *                 MULTIPLY,
  *                 DIVIDE,
- *                 MOD,
+ *                 REMAINDER,
  *                 POWER,
  *                 PLUS_PLUS,
  *                 MINUS_MINUS,

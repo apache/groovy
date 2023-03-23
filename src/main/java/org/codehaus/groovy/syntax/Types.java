@@ -147,6 +147,8 @@ public class Types {
     public static final int BITWISE_AND_EQUAL = 351;   // &=
     public static final int BITWISE_XOR_EQUAL = 352;   // ^=
     public static final int BITWISE_NEGATION = REGEX_PATTERN;    // ~
+    public static final int REMAINDER = 353;   // %
+    public static final int REMAINDER_EQUAL = 354;   // %
 
 
     //
@@ -945,6 +947,7 @@ public class Types {
             case BITWISE_OR_EQUAL:
             case BITWISE_AND_EQUAL:
             case BITWISE_XOR_EQUAL:
+            case REMAINDER_EQUAL:
                 return 5;
 
             case QUESTION:
@@ -995,6 +998,7 @@ public class Types {
             case DIVIDE:
             case INTDIV:
             case MOD:
+            case REMAINDER:
                 return 45;
 
             case NOT:
@@ -1171,7 +1175,7 @@ public class Types {
         addTranslation("*", MULTIPLY);
         addTranslation("/", DIVIDE);
         addTranslation("\\", INTDIV);
-        addTranslation("%", MOD);
+        addTranslation("%", REMAINDER);
 
         addTranslation("**", POWER);
         addTranslation("+=", PLUS_EQUAL);
@@ -1179,7 +1183,7 @@ public class Types {
         addTranslation("*=", MULTIPLY_EQUAL);
         addTranslation("/=", DIVIDE_EQUAL);
         addTranslation("\\=", INTDIV_EQUAL);
-        addTranslation("%=", MOD_EQUAL);
+        addTranslation("%=", REMAINDER_EQUAL);
         addTranslation("**=", POWER_EQUAL);
         addTranslation("?=", ELVIS_EQUAL);
 

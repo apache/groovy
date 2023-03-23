@@ -15516,7 +15516,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Performs a division modulus operation.  Called by the '%' operator.
+     * Performs a division modulus operation.
      *
      * @param left  a Number
      * @param right another Number to mod
@@ -15525,6 +15525,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number mod(Number left, Number right) {
         return NumberMath.mod(left, right);
+    }
+
+    /**
+     * Performs a division modulus operation.  Called by the '%' operator.
+     *
+     * @param left  a Number
+     * @param right another Number to find the remainder
+     * @return the remainder result
+     * @since 5.0.0
+     */
+    public static Number remainder(Number left, Number right) {
+        return NumberMath.remainder(left, right);
     }
 
     /**

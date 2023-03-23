@@ -67,6 +67,7 @@ public class TokenUtil {
             case Types.BITWISE_OR_EQUAL: return Types.BITWISE_OR;
             case Types.BITWISE_AND_EQUAL: return Types.BITWISE_AND;
             case Types.BITWISE_XOR_EQUAL: return Types.BITWISE_XOR;
+            case Types.REMAINDER_EQUAL: return Types.REMAINDER;
             default: return op;
         }
     }

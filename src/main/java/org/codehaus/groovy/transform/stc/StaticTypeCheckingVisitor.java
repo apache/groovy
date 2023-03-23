@@ -260,6 +260,8 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
+import static org.codehaus.groovy.syntax.Types.REMAINDER;
+import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
@@ -4578,7 +4580,8 @@ out:                if (mn.size() != 1) {
                 return getGroupOperationResultType(leftRedirect, rightRedirect);
             }
         }
-        if (isNumberCategory(getWrapper(rightRedirect)) && isNumberCategory(getWrapper(leftRedirect)) && (MOD == op || MOD_EQUAL == op)) {
+        if (isNumberCategory(getWrapper(rightRedirect)) && isNumberCategory(getWrapper(leftRedirect)) &&
+            (REMAINDER == op || REMAINDER_EQUAL == op || MOD == op || MOD_EQUAL == op)) {
             return leftRedirect;
         }
         return null;

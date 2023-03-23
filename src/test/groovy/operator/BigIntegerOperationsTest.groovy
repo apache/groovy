@@ -74,12 +74,27 @@ class BigIntegerOperationsTest extends GroovyTestCase {
     }
 
     void testMod() {
+        x = 100G.mod(3)
+        assert x == 1G
+
+        y = 11G
+        y = y.mod(3)
+        assert y == 2G
+        y = -11G
+        y = y.mod(3)
+        assert y == 1G
+    }
+
+    void testRemainder() {
         x = 100G % 3
         assert x == 1G
 
         y = 11G
         y %= 3
         assert y == 2G
+        y = -11G
+        y %= 3
+        assert y == -2G
     }
 
     void testAsOperatorPrecisionLoss() {

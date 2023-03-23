@@ -28,7 +28,7 @@ public final class LongMath extends NumberMath {
     private LongMath() {}
 
     @Override
-    protected Number absImpl(Number number) {
+    public Number absImpl(Number number) {
         return Math.abs(number.longValue());
     }
 
@@ -60,61 +60,66 @@ public final class LongMath extends NumberMath {
     }
 
     @Override
-    protected Number intdivImpl(Number left, Number right) {
+    public Number intdivImpl(Number left, Number right) {
         return left.longValue() / right.longValue();
     }
 
     @Override
-    protected Number modImpl(Number left, Number right) {
+    public Number remainderImpl(Number left, Number right) {
         return left.longValue() % right.longValue();
     }
 
     @Override
-    protected Number unaryMinusImpl(Number left) {
+    public Number modImpl(Number left, Number right) {
+        return toBigInteger(left).mod(toBigInteger(right)).longValue();
+    }
+
+    @Override
+    public Number unaryMinusImpl(Number left) {
         return -left.longValue();
     }
 
     @Override
-    protected Number unaryPlusImpl(Number left) {
+    public Number unaryPlusImpl(Number left) {
         return left.longValue();
     }
 
     @Override
-    protected Number bitwiseNegateImpl(Number left) {
+    public Number bitwiseNegateImpl(Number left) {
         return ~left.longValue();
     }
 
     @Override
-    protected Number orImpl(Number left, Number right) {
+    public Number orImpl(Number left, Number right) {
         return left.longValue() | right.longValue();
     }
 
     @Override
-    protected Number andImpl(Number left, Number right) {
+    public Number andImpl(Number left, Number right) {
         return left.longValue() & right.longValue();
     }
 
     @Override
-    protected Number xorImpl(Number left, Number right) {
+    public Number xorImpl(Number left, Number right) {
         return left.longValue() ^ right.longValue();
     }
 
     @Override
-    protected Number leftShiftImpl(Number left, Number right) {
+    public Number leftShiftImpl(Number left, Number right) {
         return left.longValue() << right.longValue();
     }
 
     @Override
-    protected Number rightShiftImpl(Number left, Number right) {
+    public Number rightShiftImpl(Number left, Number right) {
         return left.longValue() >> right.longValue();
     }
 
     @Override
-    protected Number rightShiftUnsignedImpl(Number left, Number right) {
+    public Number rightShiftUnsignedImpl(Number left, Number right) {
         return left.longValue() >>> right.longValue();
     }
 
-    protected Number bitAndImpl(Number left, Number right) {
+    public Number bitAndImpl(Number left, Number right) {
         return left.longValue() & right.longValue();
     }
 }

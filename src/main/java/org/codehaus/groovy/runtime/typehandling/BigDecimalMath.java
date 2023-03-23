@@ -42,7 +42,7 @@ public final class BigDecimalMath extends NumberMath {
     private BigDecimalMath() {}
 
     @Override
-    protected Number absImpl(Number number) {
+    public Number absImpl(Number number) {
         return toBigDecimal(number).abs();
     }
 
@@ -83,17 +83,25 @@ public final class BigDecimalMath extends NumberMath {
     }
 
     @Override
-    protected Number unaryMinusImpl(Number left) {
+    public Number unaryMinusImpl(Number left) {
         return toBigDecimal(left).negate();
     }
 
     @Override
-    protected Number unaryPlusImpl(Number left) {
+    public Number unaryPlusImpl(Number left) {
         return toBigDecimal(left);
     }
 
     @Override
-    protected Number modImpl(Number left, Number right) {
+    public Number remainderImpl(Number left, Number right) {
         return toBigDecimal(left).remainder(toBigDecimal(right));
+    }
+
+    @Override
+    public Number modImpl(Number self, Number divisor) {
+        BigDecimal selfDecimal = toBigDecimal(self);
+        BigDecimal divDecimal = toBigDecimal(divisor);
+        BigDecimal remainder = selfDecimal.remainder(divDecimal);
+        return remainder.signum() < 0 ? remainder.add(divDecimal) : remainder;
     }
 }

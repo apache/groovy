@@ -99,6 +99,19 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     }
 
     void testMod() {
+        x = 100.0.mod(3)
+
+        assert x == 1
+
+        y = 5.5
+        y = y.mod(2.0)
+        assert y == 1.5
+        y = -5.5
+        y = y.mod(2.0)
+        assert y == 0.5
+    }
+
+    void testRemainder() {
         x = 100.0 % 3
 
         assert x == 1
@@ -106,6 +119,9 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         y = 5.5
         y %= 2.0
         assert y == 1.5
+        y = -5.5
+        y %= 2.0
+        assert y == -1.5
     }
 
     BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}

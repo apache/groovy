@@ -118,7 +118,7 @@ class CustomizersTest extends GroovyTestCase {
                     MINUS,
                     MULTIPLY,
                     DIVIDE,
-                    MOD,
+                    REMAINDER,
                     POWER,
                     PLUS_PLUS,
                     MINUS_MINUS,

@@ -32,7 +32,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it / 2 } }
         ''', 'Cannot find matching method java.lang.Object#div(int)'
     }
-    void testShouldNotAllowDivBynUntypedVariable() {
+    void testShouldNotAllowDivByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 / it } }
@@ -41,14 +41,26 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testShouldNotAllowModOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
-            def bar() { foo { it % 2 } }
+            def bar() { foo { it.mod(2) } }
         ''', 'Cannot find matching method java.lang.Object#mod(int)'
     }
-    void testShouldNotAllowModBynUntypedVariable() {
+    void testShouldNotAllowModByUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { 2.mod(it) } }
+        ''', 'Cannot find matching method int#mod(java.lang.Object)'
+    }
+    void testShouldNotAllowRemainderOnUntypedVariable() {
+        shouldFailWithMessages '''
+            def foo(Closure cls) {}
+            def bar() { foo { it % 2 } }
+        ''', 'Cannot find matching method java.lang.Object#remainder(int)'
+    }
+    void testShouldNotAllowRemainderByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 % it } }
-        ''', 'Cannot find matching method int#mod(java.lang.Object)'
+        ''', 'Cannot find matching method int#remainder(java.lang.Object)'
     }
     void testShouldNotAllowMulOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -56,7 +68,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it * 2 } }
         ''', 'Cannot find matching method java.lang.Object#multiply(int)'
     }
-    void testShouldNotAllowMulBynUntypedVariable() {
+    void testShouldNotAllowMulByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 * it } }

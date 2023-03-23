@@ -33,7 +33,7 @@ public class NumberMathModificationInfo {
     private static final HashSet<String> NAMES = new HashSet<String>();
 
     static {
-        Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+        Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "remainder", "leftShift", "rightShift", "rightShiftUnsigned");
     }
 
     private NumberMathModificationInfo() { }
@@ -72,6 +72,8 @@ public class NumberMathModificationInfo {
             doCheckNumberOps(klazz, e -> byte_xor = true, e -> short_xor = true, e -> int_xor = true, e -> long_xor = true, e -> float_xor = true, e -> double_xor = true);
         } else if ("intdiv".equals(name)) {
             doCheckNumberOps(klazz, e -> byte_intdiv = true, e -> short_intdiv = true, e -> int_intdiv = true, e -> long_intdiv = true, e -> float_intdiv = true, e -> double_intdiv = true);
+        } else if ("remainder".equals(name)) {
+            doCheckNumberOps(klazz, e -> byte_remainder = true, e -> short_remainder = true, e -> int_remainder = true, e -> long_remainder = true, e -> float_remainder = true, e -> double_remainder = true);
         } else if ("mod".equals(name)) {
             doCheckNumberOps(klazz, e -> byte_mod = true, e -> short_mod = true, e -> int_mod = true, e -> long_mod = true, e -> float_mod = true, e -> double_mod = true);
         } else if ("leftShift".equals(name)) {
@@ -160,6 +162,12 @@ public class NumberMathModificationInfo {
     public boolean long_mod;
     public boolean float_mod;
     public boolean double_mod;
+    public boolean byte_remainder;
+    public boolean short_remainder;
+    public boolean int_remainder;
+    public boolean long_remainder;
+    public boolean float_remainder;
+    public boolean double_remainder;
     public boolean byte_leftShift;
     public boolean short_leftShift;
     public boolean int_leftShift;
@@ -183,7 +191,7 @@ public class NumberMathModificationInfo {
         if (instance.byte_plus) {
             return plusSlow(op1, op2);
         } else {
-            return ((int) op1) + ((int) op2);
+            return op1 + op2;
         }
     }
 
@@ -195,7 +203,7 @@ public class NumberMathModificationInfo {
         if (instance.byte_plus) {
             return plusSlow(op1, op2);
         } else {
-            return ((int) op1) + ((int) op2);
+            return op1 + op2;
         }
     }
 
@@ -207,7 +215,7 @@ public class NumberMathModificationInfo {
         if (instance.byte_plus) {
             return plusSlow(op1, op2);
         } else {
-            return ((int) op1) + op2;
+            return op1 + op2;
         }
     }
 
@@ -219,7 +227,7 @@ public class NumberMathModificationInfo {
         if (instance.byte_plus) {
             return plusSlow(op1, op2);
         } else {
-            return ((long) op1) + op2;
+            return op1 + op2;
         }
     }
 
@@ -2865,6 +2873,198 @@ public class NumberMathModificationInfo {
 
     private static long modSlow(long op1, long op2) {
         return ((Number) InvokerHelper.invokeMethod(op1, "mod", op2)).longValue();
+    }
+
+    public static int remainder(byte op1, byte op2) {
+        if (instance.byte_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(byte op1, byte op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(byte op1, short op2) {
+        if (instance.byte_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(byte op1, short op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(byte op1, int op2) {
+        if (instance.byte_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % op2;
+        }
+    }
+
+    private static int remainderSlow(byte op1, int op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static long remainder(byte op1, long op2) {
+        if (instance.byte_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((long) op1) % op2;
+        }
+    }
+
+    private static long remainderSlow(byte op1, long op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static int remainder(short op1, byte op2) {
+        if (instance.short_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(short op1, byte op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(short op1, short op2) {
+        if (instance.short_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(short op1, short op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(short op1, int op2) {
+        if (instance.short_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((int) op1) % op2;
+        }
+    }
+
+    private static int remainderSlow(short op1, int op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static long remainder(short op1, long op2) {
+        if (instance.short_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((long) op1) % op2;
+        }
+    }
+
+    private static long remainderSlow(short op1, long op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static int remainder(int op1, byte op2) {
+        if (instance.int_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(int op1, byte op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(int op1, short op2) {
+        if (instance.int_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % ((int) op2);
+        }
+    }
+
+    private static int remainderSlow(int op1, short op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static int remainder(int op1, int op2) {
+        if (instance.int_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % op2;
+        }
+    }
+
+    private static int remainderSlow(int op1, int op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).intValue();
+    }
+
+    public static long remainder(int op1, long op2) {
+        if (instance.int_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return ((long) op1) % op2;
+        }
+    }
+
+    private static long remainderSlow(int op1, long op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static long remainder(long op1, byte op2) {
+        if (instance.long_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % ((long) op2);
+        }
+    }
+
+    private static long remainderSlow(long op1, byte op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static long remainder(long op1, short op2) {
+        if (instance.long_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % ((long) op2);
+        }
+    }
+
+    private static long remainderSlow(long op1, short op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static long remainder(long op1, int op2) {
+        if (instance.long_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % ((long) op2);
+        }
+    }
+
+    private static long remainderSlow(long op1, int op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
+    }
+
+    public static long remainder(long op1, long op2) {
+        if (instance.long_remainder) {
+            return remainderSlow(op1, op2);
+        } else {
+            return op1 % op2;
+        }
+    }
+
+    private static long remainderSlow(long op1, long op2) {
+        return ((Number) InvokerHelper.invokeMethod(op1, "remainder", op2)).longValue();
     }
 
     public static int leftShift(byte op1, byte op2) {
