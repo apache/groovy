@@ -78,12 +78,27 @@ class DoubleOperationsTest extends GroovyTestCase {
     }
 
     void testMod() {
+        x = 100d.mod(3)
+        assert x == 1d
+
+        y = 11d
+        y = y.mod(3d)
+        assert y == 2d
+        y = -11d
+        y = y.mod(3d)
+        assert y == 1d
+    }
+
+    void testRemainder() {
         x = 100d % 3
         assert x == 1d
 
         y = 11d
         y %= 3d
         assert y == 2d
+        y = -11d
+        y %= 3d
+        assert y == -2d
     }
 
     void testMethodNotFound() {

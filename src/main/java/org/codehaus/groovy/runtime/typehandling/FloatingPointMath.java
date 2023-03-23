@@ -28,7 +28,7 @@ public final class FloatingPointMath extends NumberMath {
     private FloatingPointMath() {}
 
     @Override
-    protected Number absImpl(Number number) {
+    public Number absImpl(Number number) {
         return Math.abs(number.doubleValue());
     }
 
@@ -58,17 +58,22 @@ public final class FloatingPointMath extends NumberMath {
     }
 
     @Override
-    protected Number modImpl(Number left, Number right) {
+    public Number remainderImpl(Number left, Number right) {
         return left.doubleValue() % right.doubleValue();
     }
 
     @Override
-    protected Number unaryMinusImpl(Number left) {
+    public Number modImpl(Number left, Number right) {
+        return toBigInteger(left).mod(toBigInteger(right)).doubleValue();
+    }
+
+    @Override
+    public Number unaryMinusImpl(Number left) {
         return -left.doubleValue();
     }
 
     @Override
-    protected Number unaryPlusImpl(Number left) {
+    public Number unaryPlusImpl(Number left) {
         return left.doubleValue();
     }
 }

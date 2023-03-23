@@ -28,7 +28,7 @@ public final class BigIntegerMath extends NumberMath {
     private BigIntegerMath() {}
 
     @Override
-    protected Number absImpl(Number number) {
+    public Number absImpl(Number number) {
         return toBigInteger(number).abs();
     }
 
@@ -57,52 +57,57 @@ public final class BigIntegerMath extends NumberMath {
     }
 
     @Override
-    protected Number intdivImpl(Number left, Number right) {
+    public Number intdivImpl(Number left, Number right) {
         return toBigInteger(left).divide(toBigInteger(right));
     }
 
     @Override
-    protected Number modImpl(Number left, Number right) {
+    public Number modImpl(Number left, Number right) {
         return toBigInteger(left).mod(toBigInteger(right));
     }
 
     @Override
-    protected Number unaryMinusImpl(Number left) {
+    public Number remainderImpl(Number left, Number right) {
+        return toBigInteger(left).remainder(toBigInteger(right));
+    }
+
+    @Override
+    public Number unaryMinusImpl(Number left) {
         return toBigInteger(left).negate();
     }
 
     @Override
-    protected Number unaryPlusImpl(Number left) {
+    public Number unaryPlusImpl(Number left) {
         return toBigInteger(left);
     }
 
     @Override
-    protected Number bitwiseNegateImpl(Number left) {
+    public Number bitwiseNegateImpl(Number left) {
         return toBigInteger(left).not();
     }
 
     @Override
-    protected Number orImpl(Number left, Number right) {
+    public Number orImpl(Number left, Number right) {
         return toBigInteger(left).or(toBigInteger(right));
     }
 
     @Override
-    protected Number andImpl(Number left, Number right) {
+    public Number andImpl(Number left, Number right) {
         return toBigInteger(left).and(toBigInteger(right));
     }
 
     @Override
-    protected Number xorImpl(Number left, Number right) {
+    public Number xorImpl(Number left, Number right) {
         return toBigInteger(left).xor(toBigInteger(right));
     }
 
     @Override
-    protected Number leftShiftImpl(Number left, Number right) {
+    public Number leftShiftImpl(Number left, Number right) {
         return toBigInteger(left).shiftLeft(right.intValue());
     }
 
     @Override
-    protected Number rightShiftImpl(Number left, Number right) {
+    public Number rightShiftImpl(Number left, Number right) {
         return toBigInteger(left).shiftRight(right.intValue());
     }
 }

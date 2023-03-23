@@ -166,6 +166,8 @@ import static org.codehaus.groovy.syntax.Types.PLUS;
 import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.POWER;
 import static org.codehaus.groovy.syntax.Types.POWER_EQUAL;
+import static org.codehaus.groovy.syntax.Types.REMAINDER;
+import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
@@ -208,6 +210,7 @@ public abstract class StaticTypeCheckingSupport {
             "and",        BITWISE_AND,
             "xor",        BITWISE_XOR,
             "mod",        MOD,
+            "remainder",  REMAINDER,
             "intdiv",     INTDIV,
             "leftShift",  LEFT_SHIFT,
             "rightShift", RIGHT_SHIFT,
@@ -576,6 +579,10 @@ public abstract class StaticTypeCheckingSupport {
             case MOD:
             case MOD_EQUAL:
                 return "mod";
+
+            case REMAINDER:
+            case REMAINDER_EQUAL:
+                return "remainder";
 
             case POWER:
             case POWER_EQUAL:

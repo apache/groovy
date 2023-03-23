@@ -145,6 +145,19 @@ class IntegerOperatorsTest extends GroovyTestCase {
     }
 
     void testMod() {
+        x = 100.mod(3)
+
+        assert x == 1
+
+        y = 11
+        y = y.mod(3)
+        assert y == 2
+        y = -11
+        y = y.mod(3)
+        assert y == 1
+    }
+
+    void testRemainder() {
         x = 100 % 3
 
         assert x == 1
@@ -152,6 +165,9 @@ class IntegerOperatorsTest extends GroovyTestCase {
         y = 11
         y %= 3
         assert y == 2
+        y = -11
+        y %= 3
+        assert y == -2
     }
 
     void testAnd() {

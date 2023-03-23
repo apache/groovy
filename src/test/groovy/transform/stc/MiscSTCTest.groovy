@@ -493,6 +493,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
                 assert new Long(7L.leftShift(3)) == 56
                 assert new Long(7L.rightShift(1)) == 3
                 assert new Long(7L.mod(3)) == 1
+                assert new Long(7L.remainder(3)) == 1
                 assert new Long(7L.intdiv(3)) == 2
                 assert new Integer((-8).intdiv(-4)) == 2
                 Integer x = 9

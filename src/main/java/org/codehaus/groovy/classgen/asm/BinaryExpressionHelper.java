@@ -104,6 +104,8 @@ import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.syntax.Types.POWER;
 import static org.codehaus.groovy.syntax.Types.POWER_EQUAL;
+import static org.codehaus.groovy.syntax.Types.REMAINDER;
+import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
@@ -266,6 +268,14 @@ public class BinaryExpressionHelper {
 
         case MOD_EQUAL:
             evaluateBinaryExpressionWithAssignment("mod", expression);
+            break;
+
+        case REMAINDER:
+            evaluateBinaryExpression("remainder", expression);
+            break;
+
+        case REMAINDER_EQUAL:
+            evaluateBinaryExpressionWithAssignment("remainder", expression);
             break;
 
         case POWER:

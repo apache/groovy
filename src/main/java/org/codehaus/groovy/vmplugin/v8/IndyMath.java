@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.toBigInteger;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
 import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isBigDecCategory;
 import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isDoubleCategory;
@@ -39,7 +40,7 @@ import static org.codehaus.groovy.vmplugin.v8.TypeHelper.replaceWithMoreSpecific
  * meta method and call site caching system. The goal is to avoid boxing, thus
  * use primitive types for parameters and return types where possible.
  * WARNING: This class is for internal use only. Do not use it outside the
- * org.codehaus.groovy.vmplugin.v7 package of groovy-core.
+ * org.codehaus.groovy.vmplugin.v8 package of groovy-core.
  */
 public class IndyMath {
 
@@ -90,6 +91,7 @@ public class IndyMath {
 
             keys = new MethodType[]{IIV, LLV};
             values = new MethodType[]{III, LLL};
+            makeMapEntry("remainder", keys, values);
             makeMapEntry("mod", keys, values);
             makeMapEntry("or", keys, values);
             makeMapEntry("xor", keys, values);
@@ -165,8 +167,12 @@ public class IndyMath {
         return a * b;
     }
 
-    public static int mod(int a, int b) {
+    public static int remainder(int a, int b) {
         return a % b;
+    }
+
+    public static int mod(int a, int b) {
+        return toBigInteger(a).mod(toBigInteger(b)).intValue();
     }
 
     public static int or(int a, int b) {
@@ -202,8 +208,12 @@ public class IndyMath {
         return a * b;
     }
 
-    public static long mod(long a, long b) {
+    public static long remainder(long a, long b) {
         return a % b;
+    }
+
+    public static long mod(long a, long b) {
+        return toBigInteger(a).mod(toBigInteger(b)).longValue();
     }
 
     public static long or(long a, long b) {

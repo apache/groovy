@@ -27,7 +27,7 @@ def ops = [
         'and',
         'xor',
         'intdiv',
-        'mod',
+        'remainder',
         'leftShift',
         'rightShift',
         'rightShiftUnsigned'
@@ -108,7 +108,7 @@ def getMath (left, right) {
                 and : '&',
                 xor : '^',
                 intdiv : '/',
-                mod : '%',
+                remainder : '%',
                 leftShift : '<<',
                 rightShift : '>>',
                 rightShiftUnsigned : '>>>'
@@ -125,7 +125,7 @@ def getMath (left, right) {
             and : '&',
             xor : '^',
             intdiv : '/',
-            mod : '%',
+            remainder : '%',
             leftShift : '<<',
             rightShift : '>>',
             rightShiftUnsigned : '>>>'

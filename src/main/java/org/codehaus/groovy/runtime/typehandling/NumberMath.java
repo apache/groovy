@@ -84,8 +84,13 @@ public abstract class NumberMath {
         return getMath(left, right).intdivImpl(left, right);
     }
 
+    // retain for backwards compatibility
     public static Number mod(Number left, Number right) {
         return getMath(left, right).modImpl(left, right);
+    }
+
+    public static Number remainder(Number left, Number right) {
+        return getMath(left, right).remainderImpl(left, right);
     }
 
     /**
@@ -290,6 +295,10 @@ public abstract class NumberMath {
 
     protected Number xorImpl(Number left, Number right) {
         throw createUnsupportedException("xor()", left);
+    }
+
+    protected Number remainderImpl(Number left, Number right) {
+        throw createUnsupportedException("remainder()", left);
     }
 
     protected Number modImpl(Number left, Number right) {
