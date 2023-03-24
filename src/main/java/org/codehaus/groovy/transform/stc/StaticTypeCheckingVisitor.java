@@ -675,18 +675,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
         } else if (accessedVariable instanceof FieldNode) {
+            ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
             if (enclosingClosure != null) {
                 tryVariableExpressionAsProperty(vexp, name);
-            } else {
+            } else if (((FieldNode) accessedVariable).getDeclaringClass() == typeCheckingContext.getEnclosingClassNode() || !tryVariableExpressionAsProperty(vexp, name)) {
                 checkOrMarkPrivateAccess(vexp, (FieldNode) accessedVariable, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
-
-                // GROOVY-9454
-                ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
-                if (inferredType != null && !isObjectType(inferredType)) {
-                    vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
-                } else {
-                    storeType(vexp, getType(vexp));
-                }
+                if (temporaryType == null) storeType(vexp, getType(vexp));
+            }
+            if (temporaryType != null && !isObjectType(temporaryType)) {
+                vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
             }
         } else if (accessedVariable instanceof PropertyNode) {
             // we must be careful, because the property node may be of a wrong type:
@@ -744,9 +741,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (val != null) vexp.putNodeMetaData(key, val);
             }
             vexp.removeNodeMetaData(INFERRED_TYPE);
-            ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
-            storeType(vexp, Optional.ofNullable(type).orElseGet(pexp::getType));
-
+            if (!asBoolean(getTemporaryTypesForExpression(vexp))) {
+                ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
+                storeType(vexp, Optional.ofNullable(type).orElseGet(pexp::getType));
+            }
             String receiver = vexp.getNodeMetaData(IMPLICIT_RECEIVER);
             Boolean dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
             // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor
@@ -5913,10 +5911,12 @@ out:                if (mn.size() != 1) {
         int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
         while (types == null && depth > 0) {
             Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            Object key = expression instanceof ParameterVariableExpression
-                    ? ((ParameterVariableExpression) expression).parameter
-                    : extractTemporaryTypeInfoKey(expression);
-            types = tempo.get(key);
+            if (!tempo.isEmpty()) {
+                Object key = expression instanceof ParameterVariableExpression
+                        ? ((ParameterVariableExpression) expression).parameter
+                        : extractTemporaryTypeInfoKey(expression);
+                types = tempo.get(key);
+            }
         }
         return types;
     }

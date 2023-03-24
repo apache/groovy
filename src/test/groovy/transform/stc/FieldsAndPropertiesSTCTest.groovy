@@ -368,13 +368,38 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 String p
             }
+
             def x = new C().getP()
             x = x?.toUpperCase()
         '''
     }
 
-    // GROOVY-9973
+    // GROOVY-10981
     void testGetterForProperty2() {
+        for (mode in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
+            assertScript """
+                abstract class A {
+                    $mode Object p = 'field'
+                    CharSequence getP() { 'property' }
+                }
+                class C extends A {
+                    def m() {
+                        final int len = p.length()
+                        if (p instanceof String) {
+                            p.toLowerCase()
+                            p.toUpperCase()
+                        }
+                    }
+                }
+
+                String which = new C().m()
+                assert which == 'PROPERTY'
+            """
+        }
+    }
+
+    // GROOVY-9973
+    void testGetterForProperty3() {
         assertScript '''
             class C {
                 private int f
