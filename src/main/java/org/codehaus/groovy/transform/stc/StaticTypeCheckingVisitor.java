@@ -596,17 +596,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
                     Expression rightExpression = enclosingBinaryExpression.getRightExpression();
                     SetterInfo setterInfo = removeSetterInfo(leftExpression);
-                    if (setterInfo != null) {
-                        if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
-                            return;
-                        }
-
+                    if (setterInfo != null && !ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
+                        return;
                     }
                 }
             }
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) accessedVariable;
-
+            ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
             if (enclosingClosure != null) {
                 // GROOVY-8562
                 // when vexp has the same name as a property of the owner,
@@ -617,9 +614,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                         ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
-                            FieldNode veFieldNode = owner.getField(name);
-                            if (veFieldNode != null) {
-                                fieldNode = veFieldNode;
+                            fieldNode = owner.getField(name);
+                            if (fieldNode != null) {
                                 boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
                                 vexp.setAccessedVariable(fieldNode);
                                 checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
@@ -627,15 +623,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-            } else {
+            } else if (((FieldNode) accessedVariable).getDeclaringClass() == typeCheckingContext.getEnclosingClassNode() || !tryVariableExpressionAsProperty(vexp, name)) {
                 checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
-
-                ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
-                if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
-                    vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
-                } else {
-                    storeType(vexp, getType(vexp));
-                }
+                if (inferredType == null) storeType(vexp, getType(vexp));
+            }
+            if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT)) {
+                vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
             }
         }
 
@@ -703,9 +696,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (val != null) vexp.putNodeMetaData(key, val);
             }
             vexp.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            ClassNode type = pexp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            storeType(vexp, type != null ? type: pexp.getType());
-
+            if (!asBoolean(getTemporaryTypesForExpression(vexp))) {
+                ClassNode type = pexp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                storeType(vexp, type != null ? type : pexp.getType());
+            }
             String receiver = vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
             Boolean dynamic = pexp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
             // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor

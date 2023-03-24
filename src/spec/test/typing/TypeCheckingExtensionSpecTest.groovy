@@ -600,7 +600,7 @@ new DelegateTest().delegate()
                     @Delegate
                     private Map<String, Object> delegate = [:]
                     void m(int c) {
-                        if (c > MAX_LINES) {
+                        if (c > A.MAX_LINES) {
                             return
                         }
                     }
