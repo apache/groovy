@@ -602,8 +602,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } else if (accessedVariable instanceof FieldNode) {
-            FieldNode fieldNode = (FieldNode) accessedVariable;
-            ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
+            FieldNode accessedField = (FieldNode) accessedVariable;
+            ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null);
             if (enclosingClosure != null) {
                 // GROOVY-8562
                 // when vexp has the same name as a property of the owner,
@@ -614,21 +614,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                         ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
-                            fieldNode = owner.getField(name);
-                            if (fieldNode != null) {
+                            accessedField = owner.getField(name);
+                            if (accessedField != null) {
                                 boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
-                                vexp.setAccessedVariable(fieldNode);
-                                checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
+                                vexp.setAccessedVariable(accessedField);
+                                checkOrMarkPrivateAccess(vexp, accessedField, lhsOfEnclosingAssignment);
                             }
                         }
                     }
                 }
-            } else if (((FieldNode) accessedVariable).getDeclaringClass() == typeCheckingContext.getEnclosingClassNode() || !tryVariableExpressionAsProperty(vexp, name)) {
-                checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
-                if (inferredType == null) storeType(vexp, getType(vexp));
+            } else if (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
+                    || !tryVariableExpressionAsProperty(vexp, name)) { // GROOVY-10981: check for property before super class field
+                checkOrMarkPrivateAccess(vexp, accessedField, isLHSOfEnclosingAssignment(vexp));
+                if (temporaryType == null) storeType(vexp, getType(vexp));
             }
-            if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT)) {
-                vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
+            if (temporaryType != null && !temporaryType.getName().equals(ClassHelper.OBJECT)) {
+                vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, temporaryType);
             }
         }
 
