@@ -171,8 +171,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * predicate is valid for at least one element.
      * <pre class="groovyTestCase">
      * char[] array = ['a', 'b', 'c']
-     * assert array.any{ it <= 'a' }
-     * assert !array.any{ it < 'a' }
+     * assert array.any{ it &lt;= 'a' }
+     * assert !array.any{ it &lt; 'a' }
      * </pre>
      *
      * @param self      the char array over which we iterate
@@ -2250,7 +2250,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a boolean array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, true, false, true, false, true]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [false, false, false] // NumberRange
      * assert array[(1..5.5).step(2)] == [true, true, true]    // NumberRange
      * </pre>
@@ -2269,7 +2269,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a byte array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * byte[] array = [1, 3, 5, 7, 9, 11]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
      * </pre>
@@ -2288,7 +2288,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a char array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * char[] array = 'abcdef'.chars
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == ['a', 'c', 'e']  // NumberRange
      * assert array[(1..5.5).step(2)] == ['b', 'd', 'f']  // NumberRange
      * </pre>
@@ -2307,7 +2307,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a short array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * short[] array = [1, 3, 5, 7, 9, 11]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
      * </pre>
@@ -2326,7 +2326,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for an int array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * int[] array = [1, 3, 5, 7, 9, 11]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3, 7, 11]  // NumberRange
      * </pre>
@@ -2345,7 +2345,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a long array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * long[] array = [1L, 3L, 5L, 7L, 9L, 11L]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1L, 5L, 9L]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3L, 7L, 11L]  // NumberRange
      * </pre>
@@ -2364,7 +2364,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a float array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * float[] array = [1.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1.0f, 5.0f, 9.0f]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3.0f, 7.0f, 11.0f]  // NumberRange
      * </pre>
@@ -2383,7 +2383,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support the subscript operator for a double array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * double[] array = [1.0d, 3.0d, 5.0d, 7.0d, 9.0d, 11.0d]
-     * assert array[2..<2] == [] // EmptyRange
+     * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1.0d, 5.0d, 9.0d]   // NumberRange
      * assert array[(1..5.5).step(2)] == [3.0d, 7.0d, 11.0d]  // NumberRange
      * </pre>
