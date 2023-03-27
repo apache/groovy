@@ -625,11 +625,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
         } else if (accessedVariable instanceof FieldNode) {
+            FieldNode accessedField = (FieldNode) accessedVariable;
             ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
             if (enclosingClosure != null) {
                 tryVariableExpressionAsProperty(vexp, name);
-            } else if (((FieldNode) accessedVariable).getDeclaringClass() == typeCheckingContext.getEnclosingClassNode() || !tryVariableExpressionAsProperty(vexp, name)) {
-                checkOrMarkPrivateAccess(vexp, (FieldNode) accessedVariable, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
+            } else if (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
+                    || !tryVariableExpressionAsProperty(vexp, name)) { // GROOVY-10981: check for property before super class field
+                checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
                 if (temporaryType == null) storeType(vexp, getType(vexp));
             }
             if (temporaryType != null && !isObjectType(temporaryType)) {

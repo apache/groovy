@@ -813,6 +813,31 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10981, GROOVY-10985
+    void testOuterPropertyAccess9() {
+        for (propertySource in [
+                'def get(String name){if(name=="VALUE")return 2}',
+                'def getProperty(String name){if(name=="VALUE")return 2}',
+                '@Delegate private Map<String,Object> map = [VALUE:2]']) {
+            assertScript """
+                class Outer {
+                    static private int VALUE = 1
+                    static class Inner {
+                        $propertySource
+                        int test(int i) {
+                            if (i > VALUE) {
+                                // ...
+                            }
+                            return VALUE
+                        }
+                    }
+                }
+                Number value = new Outer.Inner().test(0)
+                assert value == 1 // this is legacy result
+            """
+        }
+    }
+
     void testPrivateFieldAccessInAIC() {
         assertScript '''
             class C {
