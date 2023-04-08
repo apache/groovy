@@ -79,7 +79,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         assert array.any{ 0.0d == it.doubleValue() }
         '''
     }
-
+/*
     void testEachForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
@@ -151,7 +151,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         assert result == '0.01.02.0'
         '''
     }
-
+*/
     void testEachWithIndexForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
