@@ -680,11 +680,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Object val = pexp.getNodeMetaData(key);
                 if (val != null) vexp.putNodeMetaData(key, val);
             }
-            vexp.removeNodeMetaData(INFERRED_TYPE);
-            if (!asBoolean(getTemporaryTypesForExpression(vexp))) {
-                ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
-                storeType(vexp, Optional.ofNullable(type).orElseGet(pexp::getType));
+            ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
+            if (vexp.isClosureSharedVariable()) {
+                type = wrapTypeIfNecessary(type);
             }
+            if (type == null) type = OBJECT_TYPE;
+            vexp.putNodeMetaData(INFERRED_TYPE, type); // GROOVY-11007
             String receiver = vexp.getNodeMetaData(IMPLICIT_RECEIVER);
             Boolean dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
             // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor
