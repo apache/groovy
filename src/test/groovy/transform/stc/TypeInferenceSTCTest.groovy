@@ -260,6 +260,28 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type Foo for method returning Bar'
     }
 
+    // GROOVY-11007
+    void testInstanceOf11() {
+        assertScript '''
+            interface I {
+                CharSequence getCharSequence()
+            }
+
+            void accept(CharSequence cs) {   }
+
+            void test(I i) {
+                i.with {
+                    if (charSequence instanceof String) {
+                        charSequence.toUpperCase()
+                        accept(charSequence)
+                    }
+                }
+            }
+
+            test({ -> 'works' } as I)
+        '''
+    }
+
     void testNestedInstanceOf1() {
         assertScript '''
             Object o
