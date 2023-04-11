@@ -419,6 +419,18 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10994
+    void testPredicateII2() {
+        assertScript imports + '''
+            @CompileStatic
+            def <T> void test(List<T> list) {
+                Predicate<? super T> p = list::add
+            }
+
+            test([])
+        '''
+    }
+
     @Test // instance::instanceMethod
     void testBinaryOperatorII() {
         assertScript imports + '''
