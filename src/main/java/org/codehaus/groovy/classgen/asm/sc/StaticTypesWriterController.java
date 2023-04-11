@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -39,10 +37,10 @@ import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
+
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
 
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
@@ -87,24 +85,13 @@ public class StaticTypesWriterController extends DelegatingController {
 
     @Override
     public void setMethodNode(final MethodNode mn) {
-        updateStaticCompileFlag(mn);
+        isInStaticallyCheckedMethod = isStaticallyCompiled(mn);
         super.setMethodNode(mn);
-    }
-
-    private void updateStaticCompileFlag(final MethodNode mn) {
-        AnnotatedNode outer = mn;
-        ClassNode classNode = getClassNode();
-        boolean inClosureOrLambda = ClassHelper.isGeneratedFunction(classNode);
-        if (inClosureOrLambda) {
-            outer = classNode.getOuterClass();
-        }
-        boolean isStaticCompileNode = Boolean.TRUE.equals(classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE));
-        isInStaticallyCheckedMethod = mn != null && (StaticCompilationVisitor.isStaticallyCompiled(outer) || inClosureOrLambda && isStaticCompileNode);
     }
 
     @Override
     public void setConstructorNode(final ConstructorNode cn) {
-        updateStaticCompileFlag(cn);
+        isInStaticallyCheckedMethod = isStaticallyCompiled(cn);
         super.setConstructorNode(cn);
     }
 
