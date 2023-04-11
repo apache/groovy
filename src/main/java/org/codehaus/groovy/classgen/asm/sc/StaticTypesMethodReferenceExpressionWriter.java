@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -42,6 +43,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
@@ -328,6 +330,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 System.arraycopy(parameters, 0, plusOne, 1, n);
 
                 parameters = plusOne;
+            }
+
+            if (parameters.length > 0 && !method.isStatic() && !isExtensionMethod(method)
+                    && typeOrTargetRefType.redirect().getGenericsTypes() != null) { // GROOVY-10994
+                Map<GenericsType.GenericsTypeName, GenericsType> spec = extractPlaceholders(typeOrTargetRefType);
+                parameters = Arrays.stream(parameters).map(p -> new Parameter(resolveClassNodeGenerics(spec, null, p.getType()), p.getName())).toArray(Parameter[]::new);
             }
 
             // check direct match
