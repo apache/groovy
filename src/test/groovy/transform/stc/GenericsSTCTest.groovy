@@ -3430,6 +3430,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11003
+    void testCompatibleArgumentsForPlaceholders13() {
+        assertScript '''
+            def <T> void m(Integer x, java.util.List<T>... lists) {
+            }
+            void test(java.util.List<Integer> p) {
+                m(1, p)
+                m(2)
+            }
+
+            test([1,2,3])
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }

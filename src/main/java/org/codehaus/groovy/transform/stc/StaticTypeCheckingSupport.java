@@ -1488,11 +1488,9 @@ public abstract class StaticTypeCheckingSupport {
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
         if (isPrimitiveType(wrappedArgument)) wrappedArgument = getWrapper(wrappedArgument);
 
-        if (lastArg &&
-                type.isArray() && type.getComponentType().isGenericsPlaceHolder() &&
-                !wrappedArgument.isArray() && wrappedArgument.isGenericsPlaceHolder()) {
-            // GROOVY-8090: handle generics varargs, e.g. "U x = ...; Arrays.asList(x)"
-            // we should connect the type of vararg(e.g. T is the type of T...) to the argument type
+        // GROOVY-8090, GROOVY-11003: handle vararg generics like "T x = ...; Arrays.asList(x)"
+        if (lastArg && type.isArray() && dimensions(type) != dimensions(wrappedArgument)
+                && isUsingGenericsOrIsArrayUsingGenerics(type.getComponentType())) {
             type = type.getComponentType();
         }
         // the context we compare with in the end is the one of the callsite
@@ -1556,6 +1554,15 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return true;
+    }
+
+    private static int dimensions(ClassNode cn) {
+        int dims = 0;
+        while (cn.isArray()) {
+            cn = cn.getComponentType();
+            dims += 1;
+        }
+        return dims;
     }
 
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
