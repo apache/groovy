@@ -273,14 +273,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
-        Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
+        Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
         genericParameterNames = node.isStatic() && !Traits.isTrait(node.getDeclaringClass())
                 ? new HashMap<>() : new HashMap<>(genericParameterNames);
 
         resolveGenericsHeader(node.getGenericsTypes());
 
-        Parameter[] paras = node.getParameters();
-        for (Parameter p : paras) {
+        for (Parameter p : node.getParameters()) {
             p.setInitialExpression(transform(p.getInitialExpression()));
             resolveOrFail(p.getType(), p.getType());
             visitAnnotations(p);
@@ -297,7 +296,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitConstructorOrMethod(node, isConstructor);
 
         currentMethod = oldCurrentMethod;
-        genericParameterNames = oldPNames;
+        genericParameterNames = oldNames;
         currentScope = oldScope;
     }
 
@@ -379,7 +378,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         resolveGenericsTypes(genericsTypes);
 
         if (type.isPrimaryClassNode()) return true;
-        if (type.isResolved()) return true;
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element, testModuleImports, testDefaultImports, testStaticInnerClasses);
@@ -389,6 +387,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             return resolved;
         }
+        if (type.isResolved()) return true;
 
         String typeName = type.getName();
 
