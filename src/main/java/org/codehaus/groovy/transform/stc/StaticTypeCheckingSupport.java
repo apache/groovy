@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -1574,14 +1575,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static int dimensions(ClassNode cn) {
-        int dims = 0;
-        while (cn.isArray()) {
-            cn = cn.getComponentType();
-            dims += 1;
+        if (!cn.isArray()) {
+            return 0;
         }
-        return dims;
+        return ArrayTypeUtils.dimension(cn);
     }
-
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
         if (resolved.isPlaceholder()
                 &&  resolved.getUpperBounds() != null
