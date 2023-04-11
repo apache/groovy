@@ -675,6 +675,28 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new -- GROOVY-11001
+    void testFunctionCN6() {
+        assertScript shell, '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            class StringInputStream {
+                StringInputStream(String s) {
+                }
+            }
+
+            @CompileStatic
+            void test() {
+                Try.success('string').flatMap { // <U> Try<U> flatMap(Function<? super T,? extends Try<? extends U>> mapper)
+                    Try.success(it).map(StringInputStream::new)
+                }
+            }
+
+            test()
+        '''
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
