@@ -1509,7 +1509,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static boolean inferenceCheck(final Set<GenericsTypeName> fixedPlaceHolders, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, final ClassNode wrappedArgument, final boolean lastArg) {
         // GROOVY-8090, GROOVY-11003: handle vararg generics like "T x = ...; Arrays.asList(x)"
-        if (lastArg && type.isArray() && ArrayTypeUtils.dimension(type) != ArrayTypeUtils.dimension(wrappedArgument)
+        if (lastArg && type.isArray() && wrappedArgument.isArray() && ArrayTypeUtils.dimension(type) != ArrayTypeUtils.dimension(wrappedArgument)
                 && isUsingGenericsOrIsArrayUsingGenerics(type.getComponentType())) {
             type = type.getComponentType();
         }
