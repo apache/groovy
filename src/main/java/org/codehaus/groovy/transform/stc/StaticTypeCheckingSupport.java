@@ -1523,9 +1523,9 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static boolean inferenceCheck(final Set<GenericsTypeName> fixedPlaceHolders, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, final ClassNode wrappedArgument, final boolean lastArg) {
-        // GROOVY-8090: handle generics varargs like "T x = ...; Arrays.asList(x)"
-        if (lastArg && type.isArray() && type.getComponentType().isGenericsPlaceHolder()
-                && !wrappedArgument.isArray() && wrappedArgument.isGenericsPlaceHolder()) {
+        // GROOVY-8090, GROOVY-11003: handle vararg generics like "T x = ...; Arrays.asList(x)"
+        if (lastArg && type.isArray() && dimensions(type) != dimensions(wrappedArgument)
+                && isUsingGenericsOrIsArrayUsingGenerics(type.getComponentType())) {
             type = type.getComponentType();
         }
         // the context we compare with in the end is the one of the callsite
@@ -1571,6 +1571,15 @@ public abstract class StaticTypeCheckingSupport {
         // into something that can exist in the callsite context
         ClassNode resolvedType = applyGenericsContext(resolvedMethodGenerics, type);
         return !typeCheckMethodArgumentWithGenerics(resolvedType, wrappedArgument, lastArg);
+    }
+
+    private static int dimensions(ClassNode cn) {
+        int dims = 0;
+        while (cn.isArray()) {
+            cn = cn.getComponentType();
+            dims += 1;
+        }
+        return dims;
     }
 
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
