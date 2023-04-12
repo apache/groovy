@@ -224,6 +224,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -2447,7 +2448,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // GROOVY-10930: check constructor reference
                     ClassNode[] signature = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
                     if (signature != null) { Expression[] mocks = Arrays.stream(signature)
-                            .map(t->castX(t,defaultValueX(t))).toArray(Expression[]::new);
+                            .map(t -> typedValueExpression(t)).toArray(Expression[]::new);
                         Expression dummy = ctorX(type, args(mocks));
                         dummy.setSourcePosition(expression);
                         dummy.visit(this);
@@ -2521,6 +2522,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
+    }
+
+    private static Expression typedValueExpression(final ClassNode type) {
+        if (isObjectType(type) && !type.isGenericsPlaceHolder()) {
+            return nullX(); // GROOVY-10971: unknown argument type
+        }
+        return castX(type, defaultValueX(type));
     }
 
     private static ClassNode wrapClosureType(final ClassNode returnType) {
@@ -3090,15 +3098,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
 
                     for (GenericsType tp : typeParameters) {
-                        context.computeIfAbsent(new GenericsTypeName(tp.getName()), x -> fullyResolve(tp, context));
+                        GenericsTypeName name = new GenericsTypeName(tp.getName());
+                        context.computeIfAbsent(name, x -> fullyResolve(tp, context));
                     }
                 }
             }
 
-            ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(applyGenericsContext(context, target.getType())).getV1();
-
             ClassNode[] paramTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
             if (paramTypes == null) {
+                ClassNode targetType = applyGenericsContext(context, target.getType());
+                ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
+
                 int n; Parameter[] p = expression.getParameters();
                 if (p == null) {
                     // zero parameters

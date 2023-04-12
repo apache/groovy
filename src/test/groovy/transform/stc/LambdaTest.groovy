@@ -259,18 +259,26 @@ final class LambdaTest {
 
     @Test
     void testCollectors1() {
-        assertScript shell, '''
-            Set<String> set = ['a', 'b', 'c'] as Set
-            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e))
-        '''
+        for (spec in ['', '<String,String,String>']) {
+            assertScript shell, """
+                def set = ['a', 'b', 'c'] as Set<String>
+                def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e))
+
+                assert map == [a: 'a', b: 'b', c: 'c']
+            """
+        }
     }
 
     @Test
     void testCollectors2() {
-        assertScript shell, '''
-            Set<String> set = ['a', 'b', 'c'] as Set
-            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e, (o1, o2) -> o2))
-        '''
+        for (spec in ['', '<String,String,String>']) {
+            assertScript shell, """
+                def set = ['a', 'b', 'c'] as Set<String>
+                def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e, (v1,v2) -> v2))
+
+                assert map == [a: 'a', b: 'b', c: 'c']
+            """
+        }
     }
 
     @Test

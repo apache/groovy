@@ -47,7 +47,6 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -1323,25 +1322,30 @@ public abstract class StaticTypeCheckingSupport {
      * for which placeholders are resolved recursively.
      */
     protected static GenericsType fullyResolve(GenericsType gt, final Map<GenericsTypeName, GenericsType> placeholders) {
-        GenericsType fromMap = placeholders.get(new GenericsTypeName(gt.getName()));
-        if (gt.isPlaceholder() && fromMap != null) {
-            gt = fromMap;
+        if (gt.isPlaceholder()) {
+            gt = placeholders.getOrDefault(new GenericsTypeName(gt.getName()), gt);
+        }
+        if (!gt.isPlaceholder() && !gt.isWildcard()) {
+            return new GenericsType(fullyResolveType(gt.getType(), placeholders), null, null);
         }
 
-        ClassNode type = fullyResolveType(gt.getType(), placeholders);
         ClassNode lowerBound = gt.getLowerBound();
-        if (lowerBound != null) lowerBound = fullyResolveType(lowerBound, placeholders);
         ClassNode[] upperBounds = gt.getUpperBounds();
-        if (upperBounds != null) {
-            ClassNode[] copy = new ClassNode[upperBounds.length];
-            for (int i = 0, upperBoundsLength = upperBounds.length; i < upperBoundsLength; i++) {
-                final ClassNode upperBound = upperBounds[i];
-                copy[i] = fullyResolveType(upperBound, placeholders);
+        if (lowerBound != null) {
+            lowerBound = fullyResolveType(lowerBound, placeholders);
+            upperBounds = null; // should be the case; let's be sure
+        } else if (upperBounds != null) {
+            upperBounds = upperBounds.clone();
+            for (int i = 0, n = upperBounds.length; i < n; i += 1) {
+                upperBounds[i] = fullyResolveType(upperBounds[i], placeholders);
             }
-            upperBounds = copy;
+        } else {
+            upperBounds = new ClassNode[]{fullyResolveType(gt.getType(), placeholders)};
         }
-        GenericsType genericsType = new GenericsType(type, upperBounds, lowerBound);
-        genericsType.setWildcard(gt.isWildcard());
+
+        GenericsType genericsType = new GenericsType(makeWithoutCaching("?"), upperBounds, lowerBound);
+        genericsType.getType().setRedirect(OBJECT_TYPE);
+        genericsType.setWildcard(true);
         return genericsType;
     }
 
@@ -1559,11 +1563,14 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static int dimensions(ClassNode cn) {
-        if (!cn.isArray()) {
-            return 0;
+        int dims = 0;
+        while (cn.isArray()) {
+            cn = cn.getComponentType();
+            dims += 1;
         }
-        return ArrayTypeUtils.dimension(cn);
+        return dims;
     }
+
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
         if (resolved.isPlaceholder()
                 &&  resolved.getUpperBounds() != null
@@ -1831,8 +1838,10 @@ public abstract class StaticTypeCheckingSupport {
             return gt;
         }
 
-        if (gt.isWildcard()) {
-            GenericsType newGT = new GenericsType(type, applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
+        if (gt.isWildcard()) { // TODO: What if a bound itself resolves to a wildcard?
+            ClassNode[] upperBounds = applyGenericsContext(spec, gt.getUpperBounds());
+            ClassNode   lowerBound = applyGenericsContext(spec, gt.getLowerBound());
+            GenericsType newGT = new GenericsType(type, upperBounds, lowerBound);
             newGT.setWildcard(true);
             return newGT;
         }

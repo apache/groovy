@@ -684,20 +684,35 @@ final class MethodReferenceTest {
     @Test // class::new -- GROOVY-10930
     void testFunctionCN5() {
         def err = shouldFail shell, '''
-            def <X> void m(Function<String,X> fn) { }
-            class Bar { }
+            class Foo { Foo() { } }
+            def <T> void m(Function<String,T> fn) { }
+
             @CompileStatic
             void test() {
-                m(Bar::new) // ctor does not accept String
+                m(Foo::new) // ctor does not accept String
             }
 
             test()
         '''
-        assert err =~ /Cannot find matching constructor Bar\(java.lang.String\)/
+        assert err =~ /Cannot find matching constructor Foo\(java.lang.String\)/
+    }
+
+    @Test // class::new -- GROOVY-10971
+    void testFunctionCN6() {
+        assertScript shell, '''
+            class Foo { Foo(String s) { } }
+
+            @CompileStatic
+            void test() {
+                Collectors.groupingBy(Foo::new) // Cannot find matching constructor Foo(Object)
+            }
+
+            test()
+        '''
     }
 
     @Test // class::new -- GROOVY-11001
-    void testFunctionCN6() {
+    void testFunctionCN7() {
         assertScript shell, '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.Try
