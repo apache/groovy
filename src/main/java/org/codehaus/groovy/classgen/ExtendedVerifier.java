@@ -174,11 +174,14 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), METHOD_TARGET);
     }
 
-    private void visitTypeAnnotations(ClassNode node) {
-        if (Boolean.TRUE.equals(node.getNodeMetaData(EXTENDED_VERIFIER_SEEN))) return;
-        node.putNodeMetaData(EXTENDED_VERIFIER_SEEN, Boolean.TRUE);
-        visitAnnotations(node, node.getTypeAnnotations(), TYPE_PARAMETER_TARGET);
-        visitGenericsTypeAnnotations(node);
+    private void visitTypeAnnotations(final ClassNode node) {
+        if ((node.isRedirectNode() || node.isPrimaryClassNode())
+                && !Boolean.TRUE.equals(node.getNodeMetaData(EXTENDED_VERIFIER_SEEN))) {
+            node.putNodeMetaData(EXTENDED_VERIFIER_SEEN, Boolean.TRUE); // one-time look
+
+            visitAnnotations(node, node.getTypeAnnotations(), TYPE_PARAMETER_TARGET);
+            visitGenericsTypeAnnotations(node);
+        }
     }
 
     private void visitGenericsTypeAnnotations(ClassNode node) {
