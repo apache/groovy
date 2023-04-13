@@ -18,50 +18,57 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 
-class FileTreeBuilderTest extends GroovyTestCase {
-    File tmpDir
-    FileTreeBuilder builder
+final class FileTreeBuilderTest {
 
+    private File tmpDir
+    private FileTreeBuilder root
+
+    @Before
     void setUp() {
-        super.setUp()
         tmpDir = File.createTempDir()
-        builder = new FileTreeBuilder(tmpDir)
+        root = new FileTreeBuilder(tmpDir)
     }
 
+    @After
     void tearDown() {
         tmpDir.deleteDir()
-        builder = null
-        tmpDir = null
     }
 
+    @Test
     void testFileWithText() {
-        def file = builder.file('foo.txt','foo')
+        def file = root.file('foo.txt','foo')
         assert file.exists()
         assert file.text == 'foo'
     }
 
+    @Test
     void testFileWithBytes() {
-        def file = builder.file('foo.txt','foo'.getBytes('utf-8'))
+        def file = root.file('foo.txt','foo'.getBytes('utf-8'))
         assert file.exists()
         assert file.getText('utf-8') == 'foo'
     }
 
+    @Test
     void testFileWithFile() {
-        def f1 = builder.file('foo.txt', 'foo')
-        def f2 = builder.file('bar.txt', f1)
+        def f1 = root.file('foo.txt', 'foo')
+        def f2 = root.file('bar.txt', f1)
         assert f2.exists()
         assert f2.text == 'foo'
     }
 
+    @Test
     void testFileWithClosureSpec() {
-        def file = builder.file('foo.txt') { file ->
-            file << 'foo'
+        def file = root.file('foo.txt') { foo_txt ->
+            foo_txt << 'foo'
         }
         assert file.exists()
         assert file.text == 'foo'
-        def file2 = builder.file('foo.txt') {
+
+        def file2 = root.file('foo.txt') {
             withWriter('utf-8') {
                 it.write('foo')
             }
@@ -70,53 +77,59 @@ class FileTreeBuilderTest extends GroovyTestCase {
         assert file2.text == 'foo'
     }
 
+    @Test
     void testDir() {
-        def dir = builder.dir('sub')
-        assert dir.directory
-        assert dir.parentFile == builder.baseDir
+        def dir = root.dir('sub')
+        assert dir.isDirectory()
+        assert dir.name == 'sub'
+        assert dir.parentFile == root.baseDir
     }
 
+    @Test
     void testDirWithClosure() {
         File f = null
-        def dir = builder.dir('sub') {
+        def dir = root.dir('sub') {
             f = file('foo.txt','foo')
         }
-        assert dir.directory
-        assert dir.parentFile == builder.baseDir
+        assert dir.isDirectory()
+        assert dir.parentFile == root.baseDir
         assert f.text == 'foo'
         assert f.parentFile == dir
     }
 
+    @Test
     void testCall() {
-        File s1=null,s2=null,f1=null,f2=null
-        builder {
-            s1=dir('sub1') {
-                f1=file('foo.txt','foo')
+        File s1, s2, f1, f2
+        root {
+            s1 = dir('sub1') {
+                f1 = file('foo.txt','foo')
             }
-            s2=dir('sub2') {
-                f2=file('bar.txt', 'bar')
+            s2 = dir('sub2') {
+                f2 = file('bar.txt', 'bar')
             }
         }
         assert f1.text == 'foo'
         assert f2.text == 'bar'
         assert f1.parentFile == s1
         assert f2.parentFile == s2
-        assert s1.parentFile == builder.baseDir
-        assert s2.parentFile == builder.baseDir
+        assert s1.parentFile == root.baseDir
+        assert s2.parentFile == root.baseDir
     }
 
+    @Test
     void testCreateDirWithMethodMissing() {
-        File dir = builder.dir {}
-        assert dir.directory
+        File dir = root.dir({}) // not dir(String) or dir(String,Closure)
+        assert dir.isDirectory()
         assert dir.name == 'dir'
-        assert dir.parentFile == builder.baseDir
+        assert dir.parentFile == root.baseDir
     }
 
+    @Test
     void testCreateFileWithMethodMissing() {
-        File f1 = builder.'foo.txt'('foo')
-        File f2 = builder.'bar.txt'('foo'.getBytes('utf-8'))
-        File f3 = builder.'baz.txt'(f2)
-        [f1,f2,f3].each {
+        File f1 = root.'foo.txt'('foo')
+        File f2 = root.'bar.txt'('foo'.getBytes('utf-8'))
+        File f3 = root.'baz.txt'(f2)
+        [f1, f2, f3].each {
             assert it.exists()
             assert it.getText('utf-8') == 'foo'
         }

@@ -141,8 +141,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
         if (receiverType.isArray() && "length".equals(propertyName)) {
             receiver.visit(controller.getAcg());
-            ClassNode arrayGetReturnType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
-            controller.getOperandStack().doGroovyCast(arrayGetReturnType);
+            controller.getOperandStack().doGroovyCast(receiverType); // GROOVY-5683, GROOVY-11011
             controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(int_TYPE);
             return;
@@ -695,6 +694,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         int m1 = operandStack.getStackLength();
         // visit receiver
         receiver.visit(controller.getAcg());
+        operandStack.doGroovyCast(rType); // GROOVY-11011
         // visit arguments as array index
         arguments.visit(controller.getAcg());
         operandStack.doGroovyCast(int_TYPE);
