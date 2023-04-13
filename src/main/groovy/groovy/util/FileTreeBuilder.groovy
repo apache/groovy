@@ -18,7 +18,10 @@
  */
 package groovy.util
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.FromString
 
 /**
  * A builder dedicated at generating a file directory structure from a
@@ -70,6 +73,7 @@ import groovy.transform.CompileStatic
  *
  * @since 2.4.2
  */
+@AutoFinal
 @CompileStatic
 class FileTreeBuilder {
 
@@ -117,13 +121,9 @@ class FileTreeBuilder {
      * @param spec closure for generating the file contents
      * @return the created file
      */
-    File file(String name, @DelegatesTo(value = File, strategy = Closure.DELEGATE_FIRST) Closure spec) {
+    File file(String name, @ClosureParams(value = FromString, options = 'File') @DelegatesTo(value = File, strategy = Closure.DELEGATE_FIRST) Closure spec) {
         def file = new File(baseDir, name)
-        def clone = (Closure) spec.clone()
-        clone.delegate = file
-        clone.resolveStrategy = Closure.DELEGATE_FIRST
-        clone(file)
-        file
+        file.tap(spec)
     }
 
     /**
@@ -132,25 +132,26 @@ class FileTreeBuilder {
      * @return the created directory
      */
     File dir(String name) {
-        def f = new File(baseDir, name)
-        f.mkdirs()
-        f
+        def file = new File(baseDir, name)
+        file.mkdirs()
+        file
     }
 
     /**
      * Creates a new directory and allows to specify a subdirectory structure using the closure as a specification
      * @param name name of the directory to be created
-     * @param cl specification of the subdirectory structure
+     * @param spec specification of the subdirectory structure
      * @return the created directory
      */
-    File dir(String name, @DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure cl) {
+    File dir(String name, @DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure spec) {
         def oldBase = baseDir
         def newBase = dir(name)
         try {
             baseDir = newBase
-            cl.delegate = this
-            cl.resolveStrategy = Closure.DELEGATE_FIRST
-            cl()
+            def clone = (Closure) spec.clone()
+            clone.delegate = this
+            clone.resolveStrategy = Closure.DELEGATE_FIRST
+            clone()
         } finally {
             baseDir = oldBase
         }
@@ -165,18 +166,17 @@ class FileTreeBuilder {
         baseDir
     }
 
-    @SuppressWarnings('Instanceof')
-    def methodMissing(String name, args) {
-        if (args instanceof Object[] && ((Object[]) args).length == 1) {
-            def arg = ((Object[]) args)[0]
+    def methodMissing(String name, Object args) {
+        if (args instanceof Object[] && args.length == 1) {
+            def arg = args[0]
             if (arg instanceof Closure) {
-                dir(name, arg)
+                dir(name, (Closure<?>) arg)
             } else if (arg instanceof CharSequence) {
                 file(name, arg.toString())
             } else if (arg instanceof byte[]) {
-                file(name, arg)
+                file(name, (byte[]) arg)
             } else if (arg instanceof File) {
-                file(name, arg)
+                file(name, (File) arg)
             }
         }
     }
