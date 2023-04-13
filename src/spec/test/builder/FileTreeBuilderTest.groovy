@@ -18,15 +18,19 @@
  */
 package builder
 
-import groovy.test.GroovyTestCase
+import org.junit.After
+import org.junit.Test
 
-class FileTreeBuilderTest extends GroovyTestCase {
+final class FileTreeBuilderTest {
+
     File tmpDir
 
+    @After
     void tearDown() {
         tmpDir.deleteDir()
     }
 
+    @Test
     void testFileTreeBuilder() {
         // tag::example[]
         tmpDir = File.createTempDir()
@@ -51,6 +55,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
          // end::example_assert[]
     }
 
+    @Test
     void testFileTreeBuilderShortHandSyntax() {
         // tag::shorthand_syntax[]
         tmpDir = File.createTempDir()
@@ -73,5 +78,5 @@ class FileTreeBuilderTest extends GroovyTestCase {
          assert new File(tmpDir, '/src/main/groovy/Foo.groovy').text == 'println "Hello"'
          assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends groovy.test.GroovyTestCase {}'
          // end::shorthand_syntax_assert[]
-    }    
- }
+    }
+}
