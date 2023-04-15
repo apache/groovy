@@ -18,11 +18,14 @@
  */
 package org.codehaus.groovy.runtime;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class MetaClassHelperTest extends TestCase {
+import static org.junit.Assert.assertNull;
+
+public final class MetaClassHelperTest {
+
+    @Test // GROOVY-1262
     public void testGetClassName() {
-        // GROOVY-1262
-        MetaClassHelper.getClassName(null);
+        assertNull(MetaClassHelper.getClassName(null));
     }
 }

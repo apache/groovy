@@ -124,7 +124,6 @@ import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
 import static org.codehaus.groovy.reflection.ReflectionUtils.parameterTypeMatches;
-import static org.codehaus.groovy.runtime.MetaClassHelper.castArgumentsToClassArray;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -133,7 +132,7 @@ import static org.codehaus.groovy.runtime.MetaClassHelper.castArgumentsToClassAr
  */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
-    public static final Object[] EMPTY_ARGUMENTS = {};
+    public static final Object[] EMPTY_ARGUMENTS = MetaClassHelper.EMPTY_ARRAY;
 
     protected static final String STATIC_METHOD_MISSING = "$static_methodMissing";
     protected static final String STATIC_PROPERTY_MISSING = "$static_propertyMissing";
@@ -265,12 +264,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public List<MetaMethod> respondsTo(final Object obj, final String name, final Object[] argTypes) {
-        Class[] classes = castArgumentsToClassArray(argTypes);
-        MetaMethod m = getMetaMethod(name, classes);
-        if (m != null) {
-            return Collections.singletonList(m);
-        }
-        return Collections.emptyList();
+        MetaMethod m = getMetaMethod(name, MetaClassHelper.castArgumentsToClassArray(argTypes));
+        return (m != null ? Collections.singletonList(m) : Collections.emptyList());
     }
 
     /**
@@ -325,8 +320,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public MetaMethod getStaticMetaMethod(final String name, final Object[] argTypes) {
-        Class[] classes = castArgumentsToClassArray(argTypes);
-        return pickStaticMethod(name, classes);
+        return pickStaticMethod(name, MetaClassHelper.castArgumentsToClassArray(argTypes));
     }
 
     /**
@@ -334,8 +328,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public MetaMethod getMetaMethod(final String name, final Object[] argTypes) {
-        Class[] classes = castArgumentsToClassArray(argTypes);
-        return pickMethod(name, classes);
+        return pickMethod(name, MetaClassHelper.castArgumentsToClassArray(argTypes));
     }
 
     /**
@@ -781,7 +774,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @Override
     public Object invokeMethod(final Object object, final String methodName, final Object arguments) {
         if (arguments == null) {
-            return invokeMethod(object, methodName, MetaClassHelper.EMPTY_ARRAY);
+            return invokeMethod(object, methodName, EMPTY_ARGUMENTS);
         }
         if (arguments instanceof Tuple) {
             return invokeMethod(object, methodName, ((Tuple<?>) arguments).toArray());
@@ -889,7 +882,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
             instanceKlazz = theClass;
 
-        Class<?>[] argClasses = castArgumentsToClassArray(arguments);
+        Class<?>[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
         MetaMethod method = findMixinMethod(methodName, argClasses);
         if (method != null) {
@@ -1096,7 +1089,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (isCallToSuper) {
                 if (lookup == null) throw mme;
                 MethodHandles.Lookup theLookup = lookup;
-                MethodHandle methodHandle = findMethod(sender.getSuperclass(), methodName, castArgumentsToClassArray(arguments), method -> {
+                MethodHandle methodHandle = findMethod(sender.getSuperclass(), methodName, MetaClassHelper.convertToTypeArray(arguments), method -> {
                     try {
                         return theLookup.unreflectSpecial(method, receiverClass);
                     } catch (IllegalAccessException e) {
@@ -1128,7 +1121,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
             MethodHandles.Lookup theLookup = lookup;
-            MethodHandle methodHandle = findMethod(receiverClass, methodName, castArgumentsToClassArray(arguments), method -> {
+            MethodHandle methodHandle = findMethod(receiverClass, methodName, MetaClassHelper.convertToTypeArray(arguments), method -> {
                 try {
                     return spyFound ? theLookup.unreflectSpecial(method, receiverClass) : theLookup.unreflect(method);
                 } catch (IllegalAccessException e) {
@@ -1189,9 +1182,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
-//        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-//
-//        unwrap(arguments);
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
@@ -1575,7 +1565,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
-//        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
         MetaMethod method = retrieveStaticMethod(methodName, arguments);
         // let's try to use the cache to find the method

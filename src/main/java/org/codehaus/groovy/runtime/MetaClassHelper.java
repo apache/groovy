@@ -49,9 +49,10 @@ import static org.codehaus.groovy.reflection.stdclasses.CachedSAMClass.getSAMMet
 public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};
-    public static final Class[] EMPTY_TYPE_ARRAY = {};
-    public static final Object[] ARRAY_WITH_NULL = {null};
-    protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
+    public static final Class [] EMPTY_TYPE_ARRAY = {};
+    public static final Class [] EMPTY_CLASS_ARRAY = EMPTY_TYPE_ARRAY;
+    public static final Object[] ARRAY_WITH_NULL = {null}; // mutable!
+
     private static final int MAX_ARG_LEN = 12;
     private static final int
             OBJECT_SHIFT = 23, INTERFACE_SHIFT = 0,
@@ -62,8 +63,6 @@ public class MetaClassHelper {
     * 23-43: object dist
     * 44-48: vargs penalty
     */
-
-    public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
         boolean accessible = false;
@@ -170,7 +169,6 @@ public class MetaClassHelper {
 
         return ret;
     }
-
 
     /**
      * @param list          the original list
@@ -633,21 +631,19 @@ public class MetaClassHelper {
     }
 
     /**
-     * param instance array to the type array
+     * Converts array of values (incl. {@code null}) to their respective types.
      *
-     * @param args the arguments
+     * @param arguments the arguments
      * @return the types of the arguments
      */
-    public static Class[] convertToTypeArray(Object[] args) {
-        if (args == null)
-            return null;
-        int s = args.length;
-        Class[] ans = new Class[s];
-        for (int i = 0; i < s; i++) {
-            Object o = args[i];
-            ans[i] = getClassWithNullAndWrapper(o);
+    public static Class[] convertToTypeArray(final Object[] arguments) {
+        if (arguments == null) return null;
+        int n = arguments.length;
+        Class[] types = new Class[n];
+        for (int i = 0; i < n; i += 1) {
+            types[i] = getClassWithNullAndWrapper(arguments[i]);
         }
-        return ans;
+        return types;
     }
 
     public static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {
@@ -977,24 +973,25 @@ public class MetaClassHelper {
 
     public static boolean sameClass(Class[] params, Object arg) {
         return params[0] == getClassWithNullAndWrapper(arg);
-
     }
 
-    public static Class[] castArgumentsToClassArray(Object[] argTypes) {
-        if (argTypes == null) return EMPTY_CLASS_ARRAY;
-        Class[] classes = new Class[argTypes.length];
-        for (int i = 0; i < argTypes.length; i++) {
-            Object argType = argTypes[i];
-            if (argType instanceof Class) {
-                classes[i] = (Class) argType;
-            } else if (argType == null) {
-                classes[i] = null;
+    /**
+     * @param arguments an array of classes, values, or nulls
+     */
+    public static Class[] castArgumentsToClassArray(final Object[] arguments) {
+        if (arguments == null || arguments.length == 0) return EMPTY_CLASS_ARRAY;
+        Class[] types = new Class[arguments.length];
+        for (int i = 0; i < arguments.length; ++i) {
+            Object argument = arguments[i];
+            if (argument instanceof Class) {
+                types[i] = (Class<?>) argument;
+            } else if (argument != null) {
+                types[i] = argument.getClass();
             } else {
-//                throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");
-                classes[i] = argType.getClass();
+                types[i] = null;
             }
         }
-        return classes;
+        return types;
     }
 
     public static void unwrap(Object[] arguments) {
