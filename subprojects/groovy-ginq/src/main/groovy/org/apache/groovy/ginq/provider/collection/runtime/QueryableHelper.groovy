@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Internal
 import org.apache.groovy.util.SystemUtil
@@ -32,6 +33,8 @@ import java.util.concurrent.ForkJoinWorkerThread
 import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import java.util.function.Supplier
+import java.util.logging.Level
+import java.util.logging.Logger
 import java.util.stream.Collectors
 
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
@@ -141,6 +144,7 @@ class QueryableHelper {
     private QueryableHelper() {}
 
     private static class ThreadPoolHolder {
+        private static final Logger LOGGER = Logger.getLogger(ThreadPoolHolder.class.getName());
         static int fjSeq
         static int seq
         static final int PARALLELISM = SystemUtil.getIntegerSafe("groovy.ginq.parallelism", Runtime.getRuntime().availableProcessors() + 1);
@@ -149,12 +153,27 @@ class QueryableHelper {
             worker.setName("ginq-fj-thread-${fjSeq++}")
             return worker
         }, null, false)
-        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(PARALLELISM, (Runnable r) -> {
-            Thread t = new Thread(r)
-            t.setName("ginq-thread-${seq++}")
-            t.setDaemon(true)
-            return t
-        })
+        static final ExecutorService THREAD_POOL = createExecutorService()
+
+        @CompileDynamic
+        private static ExecutorService createExecutorService() {
+            var threadPool
+            try {
+                threadPool = Executors.newVirtualThreadPerTaskExecutor()
+            } catch (e) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("Failed to create VirtualThreadPerTaskExecutor.\n${e.asString()}")
+                }
+                threadPool = Executors.newFixedThreadPool(PARALLELISM, (Runnable r) -> {
+                    Thread t = new Thread(r)
+                    t.setName("ginq-thread-${seq++}")
+                    t.setDaemon(true)
+                    return t
+                })
+            }
+            return threadPool
+        }
+
         private ThreadPoolHolder() {}
     }
 }
