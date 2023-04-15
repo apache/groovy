@@ -1136,7 +1136,7 @@ final class LambdaTest {
             test()
         '''
 
-        assert err.message.contains('$Lambda$')
+        assert err.message.contains('$Lambda')
     }
 
     @Test
@@ -1744,7 +1744,7 @@ final class LambdaTest {
         assertScript shell, '''
             static void main(args) {
                 Function<String, String> lower = String::toLowerCase
-                assert lower.toString().contains('$$Lambda$')
+                assert lower.toString().contains('$$Lambda')
             }
         '''
     }

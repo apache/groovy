@@ -19,9 +19,6 @@
 package groovy.execute
 
 import groovy.test.GroovyTestCase
-
-import static groovy.test.GroovyAssert.isAtLeastJdk
-
 /**
  *  Cross platform tests for the DGM#execute() family of methods.
  */
@@ -157,7 +154,9 @@ final class ExecuteTest extends GroovyTestCase {
         def err = new StringBuffer()
         process.waitForProcessOutput(out, err)
 
-        assert out.toString().startsWith('hello')
+        // Run on JDK21ea, we got the following warning:
+        // '[0.054s][warning][cds] Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "groovy.lang.GroovyClassLoader"). To use archived non-system classes, this property must not be set\nhello\n'
+        assert out.toString().contains('hello')
         assert process.exitValue() == 0
     }
 }
