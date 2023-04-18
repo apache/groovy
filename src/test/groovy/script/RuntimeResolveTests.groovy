@@ -82,4 +82,9 @@ final class RuntimeResolveTests {
     void testResolvePackagePeersAndTypeArgument() {
         runScript('/groovy/bugs/groovy7799/Main.groovy')
     }
+
+    @Test
+    void testResolvePackagePeersAndAnnotationValue() {
+        runScript('/groovy/bugs/groovyA196/Main.groovy')
+    }
 }
