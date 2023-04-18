@@ -232,6 +232,25 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-11009
+    void testFunctionCI9() {
+        assertScript shell, '''
+            class C {
+                static <T> T clone(T t) { t }
+                // see also Object#clone()
+            }
+
+            @CompileStatic
+            Double test() {
+                Function<Double,Double> fn = C::clone
+                fn.apply(1.234d)
+            }
+
+            def n = test()
+            assert n == 1.234
+        '''
+    }
+
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript shell, '''

@@ -2567,7 +2567,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 result = new ArrayList<>(result.size());
                 result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.TRUE), signature));
-                if (!staticAndNonStatic.get(Boolean.FALSE).isEmpty()) {
+                if (result.isEmpty() && !staticAndNonStatic.get(Boolean.FALSE).isEmpty()) { // GROOVY-11009
                     if (signature.length > 0) signature= Arrays.copyOfRange(signature, 1, signature.length);
                     result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.FALSE), signature));
                 }
