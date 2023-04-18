@@ -968,86 +968,76 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return tuple(name, Boolean.FALSE);
     }
 
-    // iterate from the inner most to the outer and check for classes
-    // this check will ignore a .class property, for Example Integer.class will be
-    // a PropertyExpression with the ClassExpression of Integer as objectExpression
-    // and class as property
+    /**
+     * Returns "Type" class expression for "Type.class" or "pack.Type.class".
+     */
     private static Expression correctClassClassChain(final PropertyExpression pe) {
-        LinkedList<Expression> stack = new LinkedList<Expression>();
-        ClassExpression found = null;
-        for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
-            if (it instanceof ClassExpression) {
-                found = (ClassExpression) it;
-                break;
-            } else if (!(it.getClass() == PropertyExpression.class)) {
+        ClassExpression ce = null; LinkedList<PropertyExpression> stack = new LinkedList<>();
+        for (Expression e = pe; e != null; e = ((PropertyExpression) e).getObjectExpression()) {
+            if (e.getClass() == PropertyExpression.class) {
+                stack.push((PropertyExpression) e);
+            } else if (e instanceof ClassExpression) {
+                ce = (ClassExpression) e; break;
+            } else {
                 return pe;
             }
-            stack.addFirst(it);
         }
-        if (found == null) return pe;
+        if (ce == null) return pe;
+        PropertyExpression classProperty = stack.pop();
+        String propertyName = classProperty.getPropertyAsString();
 
-        if (stack.isEmpty()) return pe;
-        Object stackElement = stack.removeFirst();
-        if (!(stackElement.getClass() == PropertyExpression.class)) return pe;
-        PropertyExpression classPropertyExpression = (PropertyExpression) stackElement;
-        String propertyNamePart = classPropertyExpression.getPropertyAsString();
-        if (propertyNamePart == null || !propertyNamePart.equals("class")) return pe;
+        // if it's "Type.foo.bar" or something else return PropertyExpression
+        if (propertyName == null || !propertyName.equals("class")) return pe;
+        // if it's "Type.class" or "pack.Type.class" return ClassExpression
+        ce.setSourcePosition(classProperty);
+        if (stack.isEmpty()) return ce;
 
-        found.setSourcePosition(classPropertyExpression);
-        if (stack.isEmpty()) return found;
-        stackElement = stack.removeFirst();
-        if (!(stackElement.getClass() == PropertyExpression.class)) return pe;
-        PropertyExpression classPropertyExpressionContainer = (PropertyExpression) stackElement;
-
-        classPropertyExpressionContainer.setObjectExpression(found);
+        PropertyExpression classPropertyExpressionContainer = stack.pop();
+        classPropertyExpressionContainer.setObjectExpression(ce);
         return pe;
     }
 
-    protected Expression transformPropertyExpression(PropertyExpression pe) {
-        boolean itlp = isTopLevelProperty;
-        boolean ipe = inPropertyExpression;
+    protected Expression transformPropertyExpression(final PropertyExpression pe) {
+        Expression objectExpression = pe.getObjectExpression(), property;
+        boolean ipe = inPropertyExpression, itlp = isTopLevelProperty;
+        try {
+            inPropertyExpression = true;
+            isTopLevelProperty = (objectExpression.getClass() != PropertyExpression.class);
+            objectExpression = transform(objectExpression);
+            // handle the property part as if it were not part of the property
+            inPropertyExpression = false;
+            property = transform(pe.getProperty());
+        } finally {
+            inPropertyExpression = ipe;
+            isTopLevelProperty = itlp;
+        }
+        PropertyExpression xe = new PropertyExpression(objectExpression, property, pe.isSafe());
+        xe.setSpreadSafe(pe.isSpreadSafe());
+        xe.setSourcePosition(pe);
+      //xe.copyNodeMetaData(pe);
 
-        Expression objectExpression = pe.getObjectExpression();
-        inPropertyExpression = true;
-        isTopLevelProperty = (objectExpression.getClass() != PropertyExpression.class);
-        objectExpression = transform(objectExpression);
-        // we handle the property part as if it were not part of the property
-        inPropertyExpression = false;
-        Expression property = transform(pe.getProperty());
-        isTopLevelProperty = itlp;
-        inPropertyExpression = ipe;
-
-        boolean spreadSafe = pe.isSpreadSafe();
-        PropertyExpression old = pe;
-        pe = new PropertyExpression(objectExpression, property, pe.isSafe());
-        pe.setSpreadSafe(spreadSafe);
-        pe.setSourcePosition(old);
-
-        String className = lookupClassName(pe);
+        String className = lookupClassName(xe);
         if (className != null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) {
                 return new ClassExpression(type);
             }
         }
-        if (objectExpression instanceof ClassExpression && pe.getPropertyAsString() != null) {
+
+        if (objectExpression instanceof ClassExpression && property instanceof ConstantExpression) {
             // possibly an inner class (or inherited inner class)
-            ClassExpression ce = (ClassExpression) objectExpression;
-            ClassNode classNode = ce.getType();
-            while (classNode != null) {
-                ClassNode type = new ConstructedNestedClass(classNode, pe.getPropertyAsString());
+            for (ClassNode propertyOwner = objectExpression.getType(); propertyOwner != null; propertyOwner = propertyOwner.getSuperClass()) {
+                ClassNode type = new ConstructedNestedClass(propertyOwner, xe.getPropertyAsString());
                 if (resolve(type, false, false, false)) {
-                    if (classNode == ce.getType() || isVisibleNestedClass(type, ce.getType())) {
+                    if (propertyOwner == objectExpression.getType() || isVisibleNestedClass(type, objectExpression.getType())) {
                         return new ClassExpression(type);
                     }
                 }
-                classNode = classNode.getSuperClass();
             }
         }
-        Expression ret = pe;
-        checkThisAndSuperAsPropertyAccess(pe);
-        if (isTopLevelProperty) ret = correctClassClassChain(pe);
-        return ret;
+
+        checkThisAndSuperAsPropertyAccess(xe);
+        return isTopLevelProperty ? correctClassClassChain(xe) : xe;
     }
 
     private static boolean isVisibleNestedClass(final ClassNode innerType, final ClassNode outerType) {
