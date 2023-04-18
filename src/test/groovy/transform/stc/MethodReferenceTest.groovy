@@ -883,6 +883,25 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::staticMethod -- GROOVY-11009
+    void testFunctionCS9() {
+        assertScript imports + '''
+            class C {
+                static <T> T clone(T t) { t }
+                // see also Object#clone()
+            }
+
+            @CompileStatic
+            Double test() {
+                Function<Double,Double> fn = C::clone
+                fn.apply(1.234d)
+            }
+
+            def n = test()
+            assert n == 1.234
+        '''
+    }
+
     @Test // class::instanceGroovyMethod
     void testFunctionCI_DGM() {
         assertScript imports + '''
