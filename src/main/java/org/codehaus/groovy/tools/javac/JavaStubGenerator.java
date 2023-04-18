@@ -79,6 +79,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
@@ -485,7 +486,7 @@ public class JavaStubGenerator {
 
         if (fromFaceOrTrait || field.isFinal()) {
             out.print(" = ");
-            if (field.isStatic() && field.hasInitialExpression()) {
+            if (field.isStatic()) {
                 Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
                 if (value instanceof ConstantExpression) {
                     if (isPrimitiveType(type)) { // do not pass string of length 1 for String field:
@@ -495,13 +496,13 @@ public class JavaStubGenerator {
                                 || (isLongCategory(type) && value.getType().equals(ClassHelper.int_TYPE))
                                 || (isFloatingCategory(type) && ClassHelper.BigDecimal_TYPE.equals(value.getType())))
                             && (type.equals(ClassHelper.boolean_TYPE) || isStaticConstantInitializerType(type))) {
-                        printValue(out, (ConstantExpression) value);
+                        printValue(out, type, value);
                         out.println(';');
                         return;
                     }
                 }
 
-                // GROOVY-5150, GROOVY-10902, GROOVY-10928: output dummy value
+                // GROOVY-5150, GROOVY-10902, GROOVY-10928, GROOVY-11019: dummy value that prevents inlining
                 if (isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
                     out.print("new " + ClassHelper.getWrapper(type) + "(");
                     printDefaultValue(out, type);
@@ -671,18 +672,18 @@ public class JavaStubGenerator {
         return arg.getType();
     }
 
-    private void printMethod(PrintWriter out, ClassNode clazz, MethodNode methodNode) {
+    private void printMethod(final PrintWriter out, final ClassNode classNode, final MethodNode methodNode) {
         if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
 
         printAnnotations(out, methodNode);
-        if (!isInterfaceOrTrait(clazz)) {
+        if (!isInterfaceOrTrait(classNode)) {
             int modifiers = methodNode.getModifiers();
             if (isDefaultTraitImpl(methodNode)) {
                 modifiers ^= Opcodes.ACC_ABSTRACT;
             }
-            printModifiers(out, modifiers & ~(clazz.isEnum() ? Opcodes.ACC_ABSTRACT : 0));
+            printModifiers(out, modifiers & ~(classNode.isEnum() ? Opcodes.ACC_ABSTRACT : 0));
         }
 
         printGenericsBounds(out, methodNode.getGenericsTypes());
@@ -696,38 +697,56 @@ public class JavaStubGenerator {
         ClassNode[] exceptions = methodNode.getExceptions();
         printExceptions(out, exceptions);
 
-        if (Traits.isTrait(clazz)) {
+        if (Traits.isTrait(classNode)) {
             out.println(";");
-        } else if (isAbstract(methodNode) && !clazz.isEnum()) {
-            if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
+        } else if (isAbstract(methodNode) && !classNode.isEnum()) {
+            if (classNode.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
                 if (fs instanceof ExpressionStatement) {
                     ExpressionStatement es = (ExpressionStatement) fs;
                     Expression re = es.getExpression();
-                    out.print(" default ");
                     ClassNode rt = methodNode.getReturnType();
-                    boolean classReturn = rt.equals(ClassHelper.CLASS_Type)
-                            || (rt.isArray() && rt.getComponentType().equals(ClassHelper.CLASS_Type));
+                    Consumer<Expression> valuePrinter = (value) -> {
+                        if (rt.equals(ClassHelper.CLASS_Type) || (rt.isArray()
+                            && rt.getComponentType().equals(ClassHelper.CLASS_Type))) {
+                            if (value.getType().getName().equals("groovy.lang.Closure")) {
+                                out.print("groovy.lang.Closure.class");
+                                return;
+                            }
+                            String valueText = value.getText();
+                            out.print(valueText);
+                            if (!valueText.endsWith(".class")) {
+                                out.print(".class");
+                            }
+                        } else if (value instanceof ConstantExpression) {
+                            printValue(out, rt, value);
+                        } else {
+                            out.print(value.getText());
+                        }
+                    };
+                    out.print(" default ");
                     if (re instanceof ListExpression) {
                         out.print("{ ");
                         ListExpression le = (ListExpression) re;
                         boolean first = true;
                         for (Expression expression : le.getExpressions()) {
-                            if (first) first = false;
-                            else out.print(", ");
-                            printValue(out, expression, classReturn);
+                            if (first) first = false; else out.print(", ");
+                            valuePrinter.accept(expression);
                         }
                         out.print(" }");
                     } else {
-                        printValue(out, re, classReturn);
+                        valuePrinter.accept(re);
                     }
                 }
             }
             out.println(";");
         } else {
             out.print(" { ");
-            ClassNode retType = methodNode.getReturnType();
-            printReturn(out, retType);
+            if (!methodNode.isVoidMethod()) {
+                out.print("return ");
+                printDefaultValue(out, methodNode.getReturnType());
+                out.print(";");
+            }
             out.println("}");
         }
     }
@@ -755,58 +774,32 @@ public class JavaStubGenerator {
         return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
     }
 
-    private void printValue(final PrintWriter out, final Expression exp, final boolean assumeClass) {
-        if (assumeClass) {
-            if (exp.getType().getName().equals("groovy.lang.Closure")) {
-                out.print("groovy.lang.Closure.class");
-                return;
-            }
-            String className = exp.getText();
-            out.print(className);
-            if (!className.endsWith(".class")) {
-                out.print(".class");
-            }
-        } else if (exp instanceof ConstantExpression) {
-            printValue(out, (ConstantExpression) exp);
-        } else {
-            out.print(exp.getText());
-        }
-    }
-
-    private void printValue(final PrintWriter out, final ConstantExpression ce) {
-        ClassNode type = ClassHelper.getUnwrapper(ce.getType());
-        if (type == ClassHelper.char_TYPE) {
+    private void printValue(final PrintWriter out, final ClassNode type, final Expression value) {
+        ClassNode valueType = ClassHelper.getUnwrapper(value.getType());
+        if (valueType == ClassHelper.char_TYPE) {
             out.print("'");
-            out.print(escapeSpecialChars(ce.getText().substring(0, 1)));
+            out.print(escapeSpecialChars(value.getText().substring(0, 1)));
             out.print("'");
-        } else if (type.equals(ClassHelper.STRING_TYPE)) {
+        } else if (valueType.equals(ClassHelper.STRING_TYPE)) {
             out.print('"');
-            out.print(escapeSpecialChars(ce.getText()));
+            out.print(escapeSpecialChars(value.getText()));
             out.print('"');
-        } else if (type == ClassHelper.double_TYPE) {
-            out.print(ce.getText());
+        } else if (valueType == ClassHelper.double_TYPE) {
+            out.print(value.getText());
             out.print('d');
-        } else if (type == ClassHelper.float_TYPE) {
-            out.print(ce.getText());
+        } else if (valueType == ClassHelper.float_TYPE) {
+            out.print(value.getText());
             out.print('f');
-        } else if (type == ClassHelper.long_TYPE) {
-            out.print(ce.getText());
+        } else if (valueType == ClassHelper.long_TYPE) {
+            out.print(value.getText());
             out.print('L');
         } else {
-            if (type != ClassHelper.int_TYPE && type != ClassHelper.boolean_TYPE && !type.equals(ClassHelper.BigDecimal_TYPE)) {
+            if (valueType != ClassHelper.int_TYPE && valueType != ClassHelper.boolean_TYPE && !valueType.equals(ClassHelper.BigDecimal_TYPE)) {
                 out.print('(');
                 printType(out, type);
                 out.print(')');
             }
-            out.print(ce.getText());
-        }
-    }
-
-    private void printReturn(PrintWriter out, ClassNode retType) {
-        if (!ClassHelper.VOID_TYPE.equals(retType)) {
-            out.print("return ");
-            printDefaultValue(out, retType);
-            out.print(";");
+            out.print(value.getText());
         }
     }
 
