@@ -17,39 +17,30 @@
  *  under the License.
  */
 
-def acceptFile = new File(gradle.gradleUserHomeDir, "gradle-scans-license-agree.txt")
 def env = System.getenv()
 boolean isCI = env.CI || env.TRAVIS || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
-boolean hasAccepted = isCI || env.GRADLE_SCANS_ACCEPT=='yes' || acceptFile.exists() && acceptFile.text.trim() == 'yes'
-boolean hasRefused = env.GRADLE_SCANS_ACCEPT=='no' || acceptFile.exists() && acceptFile.text.trim() == 'no'
 
 gradleEnterprise {
+    server = "https://ge.apache.org"
+    allowUntrustedServer = false
+
     buildScan {
-        if (hasAccepted) {
-            termsOfServiceAgree = 'yes'
-            publishAlways()
-        } else if (!hasRefused) {
-            gradle.buildFinished {
-                println """
-This build uses Gradle Build Scans to gather statistics, share information about
-failures, environmental issues, dependencies resolved during the build and more.
-Build scans will be published after each build, if you accept the terms of
-service, and in particular the privacy policy.
-
-Please read
-
-    https://gradle.com/terms-of-service
-    https://gradle.com/legal/privacy
-
-and then:
-
-  - set the `GRADLE_SCANS_ACCEPT` to `yes`/`no` if you agree with/refuse the TOS
-  - or create the ${acceptFile} file with `yes`/`no` in it if you agree with/refuse
-
-And we'll not bother you again. Note that build scans are only made public if
-you share the URL at the end of the build.
-"""
-            }
+        capture { taskInputFiles = true }
+        uploadInBackground = !isCI
+        publishAlways()
+        publishIfAuthenticated()
+        obfuscation {
+            ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0" } }
         }
+    }
+}
+
+buildCache {
+    local {
+        enabled = !isCI
+    }
+
+    remote(gradleEnterprise.buildCache) {
+        enabled = false
     }
 }
