@@ -474,7 +474,6 @@ final class MethodReferenceTest {
         '''
     }
 
-    @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-10972
     void testFunctionII4() {
         assertScript imports + '''
