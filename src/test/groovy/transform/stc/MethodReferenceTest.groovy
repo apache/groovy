@@ -286,6 +286,23 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11020
+    void testConsumerII2() {
+        assertScript shell, '''
+            def <C extends Consumer<String>> void m(C c) {
+                c.accept('string')
+            }
+
+            @CompileStatic
+            void test(ArrayDeque<String> strings) {
+                m(strings::addFirst) // NPE in STC
+                assert strings.contains('string')
+            }
+
+            test(new ArrayDeque<>())
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
