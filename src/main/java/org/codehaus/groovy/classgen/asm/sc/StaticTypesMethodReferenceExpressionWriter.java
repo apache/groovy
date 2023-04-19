@@ -42,6 +42,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +59,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
@@ -318,7 +320,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private MethodNode findMethodRefMethod(final String methodName, final Parameter[] samParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
         List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType);
 
-        methods.removeIf(method -> {
+        java.util.function.ToIntFunction<Parameter[]> distance = (parameters) -> { // GROOVY-10972: select from closest matches
+            return allParametersAndArgumentsMatch(parameters, Arrays.stream(samParameters).map(Parameter::getType).toArray(ClassNode[]::new));
+        };
+
+        int[] distances = methods.stream().mapToInt(method -> {
             Parameter[] parameters = method.getParameters();
             if (isTypeReferringInstanceMethod(typeOrTargetRef, method)) {
                 // there is an implicit parameter for "String::length"
@@ -339,14 +345,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             }
 
             // check direct match
-            if (parametersCompatible(samParameters, parameters)) return false;
+            if (parametersCompatible(samParameters, parameters)) return distance.applyAsInt(parameters);
 
             // check vararg match
             if (isVargs(parameters)) {
                 int nParameters = parameters.length;
                 if (samParameters.length == nParameters - 1) { // 0 case
                     parameters = Arrays.copyOf(parameters, nParameters - 1);
-                    if (parametersCompatible(samParameters, parameters)) return false;
+                    if (parametersCompatible(samParameters, parameters)) return distance.applyAsInt(parameters);
                 }
                 else if (samParameters.length >= nParameters) { // 1+ case
                     Parameter p = new Parameter(parameters[nParameters - 1].getType().getComponentType(), "");
@@ -354,19 +360,24 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                     for (int i = nParameters - 1; i < parameters.length; i += 1){
                         parameters[i] = p;
                     }
-                    if (parametersCompatible(samParameters, parameters)) return false;
+                    if (parametersCompatible(samParameters, parameters)) return distance.applyAsInt(parameters);
                 }
             }
 
-            return true; // no match; remove method
-        });
+            return -1; // no match
+        }).toArray();
 
+        int i = 0, bestDistance = Arrays.stream(distances).filter(d -> d >= 0).min().orElse(0);
+        for (Iterator<MethodNode> it = methods.iterator(); it.hasNext(); ) {
+            it.next(); if (distances[i++] != bestDistance) it.remove();
+        }
+
+        if (methods.isEmpty()) return null;
+        if (methods.size() == 1) return methods.get(0);
         return chooseMethodRefMethod(methods, typeOrTargetRef, typeOrTargetRefType);
     }
 
     private MethodNode chooseMethodRefMethod(final List<MethodNode> methods, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
-        if (methods.isEmpty()) return null;
-        if (methods.size() == 1) return methods.get(0);
         return methods.stream().max(comparingInt((MethodNode mn) -> {
             int score = 9;
             for (ClassNode cn = typeOrTargetRefType; cn != null && !cn.equals(mn.getDeclaringClass()); cn = cn.getSuperClass()) {

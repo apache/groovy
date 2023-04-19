@@ -232,25 +232,6 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-11009
-    void testFunctionCI9() {
-        assertScript shell, '''
-            class C {
-                static <T> T clone(T t) { t }
-                // see also Object#clone()
-            }
-
-            @CompileStatic
-            Double test() {
-                Function<Double,Double> fn = C::clone
-                fn.apply(1.234d)
-            }
-
-            def n = test()
-            assert n == 1.234
-        '''
-    }
-
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript shell, '''
@@ -397,6 +378,21 @@ final class MethodReferenceTest {
 
             int size = test("foo")
             assert size == 3
+        '''
+    }
+
+    @Test // instance::instanceMethod -- GROOVY-10972
+    void testFunctionII4() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                LinkedList<String> list = new LinkedList<>()
+                list.add('works')
+                Function<Integer,String> func = list::remove
+                assert func.apply(0) == 'works'
+            }
+
+            test()
         '''
     }
 
@@ -917,6 +913,25 @@ final class MethodReferenceTest {
             list.sort(C.c)
 
             assert list == ['bar','baz','foo']
+        '''
+    }
+
+    @Test // class::staticMethod -- GROOVY-11009
+    void testFunctionCS9() {
+        assertScript shell, '''
+            class C {
+                static <T> T clone(T t) { t }
+                // see also Object#clone()
+            }
+
+            @CompileStatic
+            Double test() {
+                Function<Double,Double> fn = C::clone
+                fn.apply(1.234d)
+            }
+
+            def n = test()
+            assert n == 1.234
         '''
     }
 
