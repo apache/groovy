@@ -28,6 +28,8 @@ jobs:
         os: [ubuntu-22.04]
         java: [12, 13, 14, 15, 16]
     runs-on: ${{ matrix.os }}
+    env:
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Free disk space
