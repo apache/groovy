@@ -734,9 +734,19 @@ public class JavaStubGenerator {
         ClassNode[] exceptions = methodNode.getExceptions();
         printExceptions(out, exceptions);
 
-        if (Traits.isTrait(classNode)) {
-            out.println(";");
-        } else if (isAbstract(methodNode) && !classNode.isEnum()) {
+        boolean skipBody = (isAbstract(methodNode) && !classNode.isEnum()) || Traits.isTrait(classNode);
+        if (!skipBody) {
+            ClassNode type = methodNode.getReturnType();
+            if (isPrimitiveBoolean(type)) {
+                out.println(" { return false; }");
+            } else if (!isPrimitiveType(type)) {
+                out.println(" { return null; }");
+            } else if (!isPrimitiveVoid(type)) {
+                out.println(" { return 0; }");
+            } else { // void return type
+                out.println(" { }");
+            }
+        } else {
             if (classNode.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
                 if (fs instanceof ExpressionStatement) {
@@ -760,6 +770,7 @@ public class JavaStubGenerator {
                             out.print(value.getText());
                         }
                     };
+
                     out.print(" default ");
                     if (re instanceof ListExpression) {
                         out.print("{ ");
@@ -776,15 +787,6 @@ public class JavaStubGenerator {
                 }
             }
             out.println(";");
-        } else {
-            out.print(" { ");
-            ClassNode type = methodNode.getReturnType();
-            if (!isPrimitiveVoid(type)) {
-                out.print("return ");
-                printDefaultValue(out, type);
-                out.print(";");
-            }
-            out.println("}");
         }
     }
 
@@ -801,10 +803,7 @@ public class JavaStubGenerator {
     }
 
     private static boolean isAbstract(final MethodNode methodNode) {
-        if (isDefaultTraitImpl(methodNode)) {
-            return false;
-        }
-        return (methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0;
+        return methodNode.isAbstract() && !isDefaultTraitImpl(methodNode);
     }
 
     private static boolean isDefaultTraitImpl(final MethodNode methodNode) {

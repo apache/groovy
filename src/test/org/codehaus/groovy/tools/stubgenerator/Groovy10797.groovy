@@ -50,6 +50,6 @@ final class Groovy10797 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('C')
-        assert stub.contains('public static <T extends A<?>> B<T> test() { return (B<T>)null;}');
+        assert stub.contains('public static <T extends A<?>> B<T> test() { return null; }');
     }
 }

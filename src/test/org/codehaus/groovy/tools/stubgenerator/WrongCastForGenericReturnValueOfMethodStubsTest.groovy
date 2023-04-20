@@ -24,7 +24,7 @@ package org.codehaus.groovy.tools.stubgenerator
  *
  * (also covers GROOVY-5439)
  */
-class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSourcesStubTestCase  {
+final class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSourcesStubTestCase  {
 
     Map<String, String> provideSources() {
         [
@@ -53,10 +53,10 @@ class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSourcesStubT
         def stubSourceForHelper = stubJavaSourceFor('HelperUtil')
         def stubSourceForSchedule = stubJavaSourceFor('Schedule')
 
-        assert stubSourceForHelper.contains("public static <T extends Task> T createTask(java.lang.Class<T> type) { return (T)null;}")
-        assert stubSourceForHelper.contains("public final  java.util.Map<java.lang.String, java.lang.String> getTest() { return (java.util.Map<java.lang.String, java.lang.String>)null;}")
-        assert stubSourceForHelper.contains("public <T extends java.util.List> T foo() { return (T)null;}")
+        assert stubSourceForHelper.contains("public static <T extends Task> T createTask(java.lang.Class<T> type) { return null; }")
+        assert stubSourceForHelper.contains("public final  java.util.Map<java.lang.String, java.lang.String> getTest() { return null; }")
+        assert stubSourceForHelper.contains("public <T extends java.util.List> T foo() { return null; }")
 
-        assert stubSourceForSchedule.contains("public  T getCurrentItem() { return (T)null;}")
+        assert stubSourceForSchedule.contains("public  T getCurrentItem() { return null; }")
     }
 }
