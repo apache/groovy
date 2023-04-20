@@ -32,7 +32,7 @@ final class Groovy10607 extends StringSourcesStubTestCase {
                 package q
                 import p.*
                 class Foo {
-                    def baz(Bar b) {
+                    def m(Bar bar) {
                     }
                 }
             ''',
@@ -49,6 +49,6 @@ final class Groovy10607 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('q.Foo')
-        assert stub.contains('import p.*;')
+        assert stub.contains(' java.lang.Object m(p.Bar bar) { return null; }')
     }
 }

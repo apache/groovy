@@ -44,12 +44,11 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
 
     @Override
     protected void visitClassCodeContainer(final Statement stmt) {
-        // do nothing here, leave it to the normal resolving
+        // do nothing here; leave it to the normal resolving
     }
 
     @Override
     public void addError(final String error, final ASTNode node) {
-        if (error.startsWith("unable to resolve")) // GROOVY-10607
-            getSourceUnit().getAST().putNodeMetaData("require.imports", Boolean.TRUE);
+        // do nothing here; leave it to the normal resolving
     }
 }

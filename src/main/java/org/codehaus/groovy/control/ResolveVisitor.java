@@ -775,7 +775,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     currentClass.getCompileUnit().addClassNodeToCompile(type, lr.getSourceUnit());
                     throw new Interrupt(compilationUnit); // GROOVY-10300, et al.: restart resolve
                 } else {
-                    type.setRedirect(lr.getClassNode());
+                    ClassNode cn = lr.getClassNode();
+                    if (cn != ClassNodeResolver.NO_CLASS) type.setRedirect(cn);
                 }
                 return true;
             }
@@ -997,13 +998,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
 
-        if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
-            /*
-             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to
-             *  resolve its type. Variable type resolve should proceed only if the variable is being declared.
-             */
-            return ve;
-        }
         if (v instanceof DynamicVariable) {
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
@@ -1033,6 +1027,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ce.setSourcePosition(ve);
                 return ce;
             }
+        } else if (!checkingVariableTypeInDeclaration) {
+            // GROOVY-4009: When a normal variable is simply being used, there is no need to try to
+            // resolve its type. Variable type resolve should proceed only if the variable is being declared.
+            return ve;
         }
         resolveOrFail(ve.getType(), ve);
         ClassNode origin = ve.getOriginType();

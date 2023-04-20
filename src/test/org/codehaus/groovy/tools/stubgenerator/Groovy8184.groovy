@@ -18,40 +18,25 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy10571 extends StringSourcesStubTestCase {
+final class Groovy8184 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-            'A.groovy': '''
-                public @interface A {
-                    Class[] value()
+            'C8184.java': '''
+                class C8184 {
                 }
             ''',
-            'B.java': '''
-                public class B {
+            'G.groovy': '''
+                @Category(C8184)
+                class G {
+                    def m() { this }
                 }
             ''',
-            'C.groovy': '''
-                import groovy.transform.*
-                import java.lang.annotation.*
-
-                @stc.POJO
-                @A([ B, Object ])
-                @AnnotationCollector
-                @Target(ElementType.TYPE)
-                @Retention(RetentionPolicy.SOURCE)
-                public @interface C {
-                }
-            ''',
-            'D.groovy': '''
-                @C class D {
-                }
-            ''',
-            'Main.java': '''
-                public class Main {
-                    public static void main(String[] args) {
-                        new D();
+            'J.java': '''
+                public class J {
+                    Object m() throws Exception {
+                        return G.class.getDeclaredMethod("m", C8184.class);
                     }
                 }
             ''',
@@ -60,8 +45,10 @@ final class Groovy10571 extends StringSourcesStubTestCase {
 
     @Override
     void verifyStubs() {
-        String stub = stubJavaSourceFor('C')
-        assert stub.contains('Object.class')
-        assert stub.contains('B.class')//bug
+        String stub = stubJavaSourceFor('G')
+        assert stub.contains("@groovy.lang.Category(value=C8184.class)")
+
+        Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
+        assert pojo.m() != null
     }
 }

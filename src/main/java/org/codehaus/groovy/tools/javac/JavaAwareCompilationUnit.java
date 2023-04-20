@@ -24,10 +24,12 @@ import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
+import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 
@@ -65,7 +67,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     public JavaAwareCompilationUnit(final CompilerConfiguration configuration, final GroovyClassLoader groovyClassLoader, final GroovyClassLoader transformClassLoader) {
-        super(configuration, null, groovyClassLoader, transformClassLoader);
+        super(configuration, /*codeSource*/null, groovyClassLoader, transformClassLoader);
 
         {
             Map<String, Object> options = this.configuration.getJointCompilationOptions();
@@ -79,7 +81,22 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             if (!javaSources.isEmpty()) {
-                new JavaAwareResolveVisitor(this).startResolving(classNode, source);
+                ResolveVisitor resolveVisitor = new JavaAwareResolveVisitor(this);
+                resolveVisitor.setClassNodeResolver(new ClassNodeResolver() {
+                    @Override
+                    public LookupResult resolveName(final String name, final CompilationUnit unit) {
+                        LookupResult result = super.resolveName(name, unit);
+                        if (result == null) { // GROOVY-8184, GROOVY-10571: look for java source
+                            String spec = File.separator + name.replace('.', File.separatorChar) + ".java";
+                            if (javaSources.stream().anyMatch(path -> path.endsWith(spec))) {
+                                result = new LookupResult(null, NO_CLASS); // truthy value
+                            }
+                        }
+                        return result;
+                    }
+                });
+                resolveVisitor.startResolving(classNode, source);
+                // then resolve constants in annotation instances
                 new AnnotationConstantsVisitor().visitClass(classNode, source);
             }
         }, Phases.CONVERSION);
@@ -128,6 +145,14 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
+    private void addJavaOrGroovySource(final File file) {
+        if (file.getName().endsWith(".java")) {
+            addJavaSource(file);
+        } else {
+            addSource(file);
+        }
+    }
+
     private void addJavaSource(final File file) {
         javaSources.add(file.getAbsolutePath());
     }
@@ -143,14 +168,6 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public void addSources(final File[] files) {
         for (File file : files) {
             addJavaOrGroovySource(file);
-        }
-    }
-
-    private void addJavaOrGroovySource(final File file) {
-        if (file.getName().endsWith(".java")) {
-            addJavaSource(file);
-        } else {
-            addSource(file);
         }
     }
 
