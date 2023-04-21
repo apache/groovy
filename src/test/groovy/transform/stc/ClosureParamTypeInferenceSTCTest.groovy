@@ -1442,11 +1442,8 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-            def foo() {
-              assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
-              assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
-            }
-            foo()
+          assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
+          assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
         '''
     }
 
@@ -1455,12 +1452,10 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             List<Object[]> table() {
                 [ ['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[] ]
             }
-            def foo() {
-                List<String> result = []
-                table().each { row -> result << row[0].toString().toUpperCase() }
-                assert result == ['FEE', 'FO']
-            }
-            foo()
+
+            List<String> result = []
+            table().each { row -> result << row[0].toString().toUpperCase() }
+            assert result == ['FEE', 'FO']
         '''
     }
 
@@ -1708,5 +1703,21 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             assert i == 1
         '''
+    }
+
+    void testGroovy10756() {
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            Pogo10756.files.collect { it.name }
+            //                        ^^ File
+        """
+
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            def file = Pogo10756.files[0]
+            file?.name
+        """
+    }
+
+    static class Pogo10756 {
+        static <T extends File> Collection<T> getFiles() { [] }
     }
 }
