@@ -5426,7 +5426,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 GenericsType xxx = new GenericsType(ClassHelper.makeWithoutCaching("#"),
                         applyGenericsContext(resolvedPlaceholders, gt.getUpperBounds()),
                         applyGenericsContext(resolvedPlaceholders, gt.getLowerBound()));
-                xxx.getType().setRedirect(gt.getType().redirect());
+                xxx.getType().setRedirect(getCombinedBoundType(gt));
                 xxx.putNodeMetaData(GenericsType.class, gt);
                 xxx.setName("#" + gt.getName());
                 xxx.setPlaceholder(true);

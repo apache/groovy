@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : loops.
  */
@@ -278,7 +276,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10651
+    // GROOVY-10651
     void testForInLoopOnRawTypeIterable() {
         assertScript '''
             void test(groovy.transform.stc.TreeNode node) {
@@ -289,7 +287,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10651
+    // GROOVY-10651
     void testForInLoopOnUnboundedIterable() {
         assertScript '''
             void test(groovy.transform.stc.TreeNode<?> node) {

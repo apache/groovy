@@ -641,10 +641,28 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testInferenceForDGM_eachMatch() {
+        assertScript '''
+            'foo bar baz'.eachMatch(~/(?m)^(\s*).*\n$/) { all, ws ->
+                all.trim(); ws.length()
+            }
+        '''
+    }
+
     void testInferenceForDGM_eachWithIndexOnMap() {
         assertScript '''
-            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
             [a:'A',bb:'B',ccc:'C'].eachWithIndex { e,i -> assert e.key.toUpperCase() == e.value*(1+i) }
+            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
+        '''
+    }
+    @NotYetImplemented
+    void testInferenceForDGM_eachWithIndexOnObject() {
+        assertScript '''
+            def foo(object) {
+                object.eachWithIndex { Map<String,String> map, i -> map.ccc.toLowerCase() + (1+i) }
+                //                     ^^^^^^^^^^^^^^^^^^ each/eachWithIndex are flexible
+            }
+            foo([ [a:'A',bb:'B',ccc:'C'] ])
         '''
     }
     void testInferenceForDGM_eachWithIndexOnIterable() {
@@ -657,7 +675,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             ['1','2','3'].iterator().eachWithIndex { e,i -> assert e.toUpperCase() == String.valueOf(1+i) }
         '''
     }
-    @NotYetImplemented
     void testInferenceForDGM_eachWithIndexOnRecursiveIterable() { // GROOVY-10651
         ['', '<?>'].each { args ->
             assertScript """
@@ -1245,33 +1262,27 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testInferenceWithSAMTypeCoercion2() {
-        assertScript '''import java.util.concurrent.Callable
+        assertScript '''
             interface Action<T> {
                 void execute(T thing)
             }
 
             class Wrapper<T> {
-
                 private final T thing
-
                 Wrapper(T thing) {
                     this.thing = thing
                 }
-
                 void contravariantTake(Action<? super T> action) {
                     action.execute(thing)
                 }
-
                 void invariantTake(Action<T> action) {
                     action.execute(thing)
                 }
-
             }
 
-            static <T> Wrapper<T> wrap(Callable<T> callable) {
+            static <T> Wrapper<T> wrap(java.util.concurrent.Callable<T> callable) {
                 new Wrapper(callable.call())
             }
-
             static Integer dub(Integer integer) {
                 integer * 2
             }
@@ -1289,6 +1300,8 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    //--------------------------------------------------------------------------
 
     @NotYetImplemented
     void testGroovy6022() {
@@ -1349,27 +1362,20 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-            def method() {
-              assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
-              assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
-            }
-
-            method()
+          assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
+          assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
         '''
     }
 
     void testGroovy9058() {
         assertScript '''
-            List<Object[]> bar() { [['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[]] }
-
-            def foo() {
-                def result = []
-                List<Object[]> bar = bar()
-                bar.each { row -> result << row[0].toString().toUpperCase() }
-                result
+            List<Object[]> table() {
+                [ ['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[] ]
             }
 
-            assert foo() == ['FEE', 'FO']
+            List<String> result = []
+            table().each { row -> result << row[0].toString().toUpperCase() }
+            assert result == ['FEE', 'FO']
         '''
     }
 
@@ -1629,20 +1635,19 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    static class Java10756 {
-        static <T extends File> Collection<T> getFiles() {
-        }
-    }
-
     void testGroovy10756() {
-        assertScript """import ${Java10756.name.replace('$','.')}
-            Java10756.files?.collect { it.name }
-            //                         ^^ File
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            Pogo10756.files.collect { it.name }
+            //                        ^^ File
         """
 
-        assertScript """import ${Java10756.name.replace('$','.')}
-            def file = Java10756.files?[0]
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            def file = Pogo10756.files[0]
             file?.name
         """
+    }
+
+    static class Pogo10756 {
+        static <T extends File> Collection<T> getFiles() { [] }
     }
 }

@@ -58,6 +58,7 @@ import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
 
 /**
  * Utility methods to deal with generic types.
@@ -540,8 +541,24 @@ public class GenericsUtils {
             ClassNode superClass = getSuperClass(type, target);
             if (superClass != null) {
                 if (hasUnresolvedGenerics(superClass)) {
-                    Map<String, ClassNode> genericsSpec = createGenericsSpec(type);
-                    superClass = correctToGenericsSpecRecurse(genericsSpec, superClass);
+                    GenericsType[] tp = type.redirect().getGenericsTypes();
+                    if (tp != null) {
+                        GenericsType[] ta = type.getGenericsTypes();
+                        boolean noTypeArguments = ta == null || ta.length == 0 || !type.isRedirectNode();
+                        Map<String, ClassNode> genericsSpec = new HashMap<>();
+                        for (int i = 0, n = tp.length; i < n; i += 1) {
+                            ClassNode cn;
+                            if (noTypeArguments || isUnboundedWildcard(ta[i])) { // GROOVY-10651
+                                GenericsType gt = tp[i];
+                                cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
+                            } else {
+                                GenericsType gt = ta[i];
+                                cn = gt.isWildcard() && gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType();
+                            }
+                            genericsSpec.put(tp[i].getName(), cn);
+                        }
+                        superClass = correctToGenericsSpecRecurse(genericsSpec, superClass);
+                    }
                 }
                 extractSuperClassGenerics(superClass, target, spec);
             } else {
@@ -622,15 +639,16 @@ public class GenericsUtils {
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
             ClassNode dummyNode = dummyDeclaration.getLeftExpression().getType();
             GenericsType[] dummyNodeGenericsTypes = dummyNode.getGenericsTypes();
-            if (dummyNodeGenericsTypes == null) {
-                return null;
+            if (dummyNodeGenericsTypes != null) {
+                int n = dummyNodeGenericsTypes.length;
+                ClassNode[] signature = new ClassNode[n];
+                for (int i = 0; i < n; i += 1) {
+                    GenericsType genericsType = dummyNodeGenericsTypes[i];
+                    signature[i] = genericsType.isWildcard() ? ClassHelper.dynamicType()
+                                    : resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
+                }
+                return signature;
             }
-            ClassNode[] signature = new ClassNode[dummyNodeGenericsTypes.length];
-            for (int i = 0, n = dummyNodeGenericsTypes.length; i < n; i += 1) {
-                final GenericsType genericsType = dummyNodeGenericsTypes[i];
-                signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
-            }
-            return signature;
         } catch (Exception | LinkageError e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }

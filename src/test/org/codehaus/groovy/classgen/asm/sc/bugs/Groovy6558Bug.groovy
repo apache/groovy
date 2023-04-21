@@ -25,7 +25,7 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
 
     void testPostfixPlusOnMap() {
         assertScript '''
-            Map<String,Integer> frequencies = [a:0]
+            Map<String, Integer> frequencies = [a:0]
             frequencies['a']++
 
             assert frequencies.a == 1
@@ -34,8 +34,8 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
 
     void testPostfixPlusOnMapWithDefault() {
         assertScript '''
-            Map<String,Integer> frequencies = [:].withDefault { 0 }
-            frequencies['a']++
+            Map<String, Integer> frequencies = [:]
+            (frequencies.withDefault { 0 }['a'])++
 
             assert frequencies.a == 1
         '''
@@ -43,7 +43,7 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
 
     void testPrefixPlusOnMap() {
         assertScript '''
-            Map<String,Integer> frequencies = [a:0]
+            Map<String, Integer> frequencies = [a:0]
             ++frequencies['a']
 
             assert frequencies.a == 1
@@ -52,8 +52,8 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
 
     void testPrefixPlusOnMapWithDefault() {
         assertScript '''
-            Map<String,Integer> frequencies = [:].withDefault { 0 }
-            ++frequencies['a']
+            Map<String, Integer> frequencies = [:]
+            ++(frequencies.withDefault { 0 }['a'])
 
             assert frequencies.a == 1
         '''
