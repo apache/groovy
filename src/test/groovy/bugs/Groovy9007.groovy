@@ -65,17 +65,16 @@ final class Groovy9007 {
 
             @CompileStatic
             class LazyMap implements Map<String,Object> {
-                @Delegate protected Map<String,Object> target
-                LazyMap() {
-                    target = new HashMap<>()
-                }
+                @Delegate protected  Map<String,Object> target = new HashMap<>()
             }
 
             @CompileStatic
             class TaskConfig extends LazyMap implements Cloneable {
-                TaskConfig() {  }
+                TaskConfig() {
+                }
+                @Override
                 TaskConfig clone() {
-                    def copy = (TaskConfig)super.clone()
+                    def copy = (TaskConfig) super.clone()
                     copy.target = new HashMap<>(this.target)
                     return copy
                 }

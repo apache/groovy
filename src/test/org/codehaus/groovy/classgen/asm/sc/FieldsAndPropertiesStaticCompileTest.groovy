@@ -18,34 +18,9 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
-
-    void testMapGetAt() {
-        assertScript '''
-            Map map = [a: 1, b:2]
-            String key = 'b'
-            assert map['a'] == 1
-            assert map[key] == 2
-        '''
-    }
-
-    void testStaticMapGetAt() {
-        assertScript '''
-            class Foo {
-                public static Map CLASSES = [key:'value']
-            }
-            String foo = 'key'
-            assert Foo.CLASSES[foo] == 'value'
-        '''
-    }
-
-    @Override @NotYetImplemented
-    void testReadMapProperty() {
-        super.testReadMapProperty() // Access to HM#a is forbidden
-    }
 
     // GROOVY-5561
     void testShouldNotThrowAccessForbidden() {

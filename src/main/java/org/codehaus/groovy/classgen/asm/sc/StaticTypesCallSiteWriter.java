@@ -179,7 +179,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         boolean isStaticProperty = (receiver instanceof ClassExpression
                 && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType())));
 
-        // for maps, replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared (GROOVY-5001)
+        // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
+        // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
         if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)
                 && !java.util.Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isPresent()) {
             writeMapDotProperty(receiver, propertyName, safe);
@@ -428,8 +429,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
+
+        boolean isStaticProperty = (receiver instanceof ClassExpression
+                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType())));
+        // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for maps, replace "map.foo" with "map.get('foo')"
+        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)) {
+            writeMapDotProperty(receiver, propertyName, safe);
+            return;
+        }
 
         boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
         if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence

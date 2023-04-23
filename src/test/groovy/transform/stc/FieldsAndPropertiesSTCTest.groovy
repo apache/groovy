@@ -509,26 +509,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5517
-    void testShouldFindStaticPropertyEvenIfObjectImplementsMap() {
-        assertScript '''
-            @groovy.transform.stc.POJO
-            @groovy.transform.CompileStatic
-            class MyHashMap extends HashMap {
-                public static int version = 666
-            }
-            def map = new MyHashMap()
-            map.foo = 123
-            def value = map.foo
-            assert value == 123
-            map['foo'] = 4.5
-            value = map['foo']
-            assert value == 4.5
-            value = map.version
-            assert value == 666
-        '''
-    }
-
     void testListDotProperty() {
         assertScript '''class Elem { int value }
             List<Elem> list = new LinkedList<Elem>()
@@ -592,7 +572,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5001, GROOVY-5491, GROOVY-6144, GROOVY-8788
-    void testReadMapProperty() {
+    void testMapProperties1() {
         assertScript '''
             class A { }
             class B { }
@@ -614,8 +594,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5517
+    void testMapProperties2() {
+        assertScript '''
+            @groovy.transform.stc.POJO
+            @groovy.transform.CompileStatic
+            class MyHashMap extends HashMap {
+                public static int version = 666
+            }
+            def map = new MyHashMap()
+            map.foo = 123
+            def value = map.foo
+            assert value == 123
+            map['foo'] = 4.5
+            value = map['foo']
+            assert value == 4.5
+            value = map.version
+            assert value == 666
+        '''
+    }
+
     // GROOVY-5797
-    void testReadMapProperty2() {
+    void testMapProperties3() {
         assertScript '''
             def m(Map foo) {
                 def map = [baz: 1]
@@ -625,13 +625,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testWriteMapProperty() {
+    void testMapProperties4() {
         assertScript '''
             def map = [:]
             map['a'] = 1
             map.b = 2
             assert map.get('a') == 1
             assert map.get('b') == 2
+        '''
+    }
+
+    void testMapProperties5() {
+        assertScript '''
+            Map map = [a: 1, b:2]
+            String key = 'b'
+            assert map['a'] == 1
+            assert map[key] == 2
+        '''
+    }
+
+    void testMapProperties6() {
+        assertScript '''
+            class Foo {
+                public static Map CLASSES = [key:'value']
+            }
+            String name = 'key'
+            assert Foo.CLASSES[name] == 'value'
         '''
     }
 
