@@ -324,9 +324,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 if (expression instanceof NamedArgumentListExpression) {
                     NamedArgumentListExpression namedArgs = (NamedArgumentListExpression) expression;
                     List<MapEntryExpression> entryExpressions = namedArgs.getMapEntryExpressions();
-                    for (int i = 0; i < entryExpressions.size(); i++) {
-                        entryExpressions.set(i, (MapEntryExpression) transformMapEntryExpression(entryExpressions.get(i), cce.getType()));
-                    }
+                    entryExpressions.replaceAll(me -> (MapEntryExpression) transformMapEntryExpression(me, cce.getType()));
                 }
             }
         }
