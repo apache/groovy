@@ -43,6 +43,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -136,7 +137,8 @@ public class InvocationWriter {
     }
 
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
-        if (target == null) return false;
+        if (target == null || target instanceof ExtensionMethodNode) return false;
+
         ClassNode declaringClass = target.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode(), receiverType = enclosingClass;
         if (receiver != null) {

@@ -55,7 +55,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10072
+    // GROOVY-10072, GROOVY-11023
     void testClosureWithoutArguments5() {
         assertScript '''
             def c = { p = 'foo' -> return p }
@@ -63,9 +63,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert c() == 'foo'
         '''
         assertScript '''
-            def c = { p, q = 'baz' -> '' + p + q }
+            def c = { p, q = p.toString() -> '' + p + q }
             assert c('foo', 'bar') == 'foobar'
-            assert c('foo') == 'foobaz'
+            assert c('foo') == 'foofoo'
         '''
     }
 
