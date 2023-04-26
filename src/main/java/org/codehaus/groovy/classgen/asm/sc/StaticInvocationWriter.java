@@ -434,7 +434,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         ClassNode classNode = controller.getClassNode();
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode lastArgType = nArgs == 0 ? null : typeChooser.resolveType(argumentList.get(nArgs - 1), classNode);
-        ClassNode lastPrmType = parameters[nPrms - 1].getOriginType();
+        ClassNode lastPrmType = parameters[nPrms - 1].getType();
 
         // target is variadic and args are too many or one short or just enough with array compatibility
         if (lastPrmType.isArray() && (nArgs > nPrms || nArgs == nPrms - 1
