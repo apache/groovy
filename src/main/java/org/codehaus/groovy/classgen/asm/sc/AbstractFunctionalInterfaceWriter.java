@@ -162,11 +162,10 @@ public interface AbstractFunctionalInterfaceWriter {
         }
     }
 
-    default Parameter prependParameter(final List<Parameter> methodParameterList, final String parameterName, final ClassNode parameterType) {
+    default Parameter prependParameter(final List<Parameter> parameterList, final String parameterName, final ClassNode parameterType) {
         Parameter parameter = new Parameter(parameterType, parameterName);
         parameter.setClosureSharedVariable(false);
-        parameter.setOriginType(parameterType);
-        methodParameterList.add(0, parameter);
+        parameterList.add(0, parameter);
         return parameter;
     }
 }
