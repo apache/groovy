@@ -295,7 +295,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             ClassNode inferredType = parameter.getNodeMetaData(INFERRED_TYPE);
             if (inferredType != null) {
                 ClassNode type = convertParameterType(targetParameter.getType(), parameter.getType(), inferredType);
-                parameter.setOriginType(type);
                 parameter.setType(type);
             }
         }
