@@ -1953,8 +1953,10 @@ public abstract class StaticTypeCheckingSupport {
 
     static GenericsType getCombinedGenericsType(final GenericsType gt1, final GenericsType gt2) {
         // GROOVY-7992, GROOVY-10765: "? super T" for gt1 or gt2?
-        if (isUnboundedWildcard(gt1) != isUnboundedWildcard(gt2))
-            return isUnboundedWildcard(gt2) ? gt1 : gt2;
+        if (isUnboundedWildcard(gt1) != isUnboundedWildcard(gt2)) return isUnboundedWildcard(gt2) ? gt1 : gt2;
+        // GROOVY-11028, et al.: empty list / map for gt1 or gt2?
+        if (gt2.isPlaceholder() && gt2.getName().startsWith("#")) return gt1;
+        if (gt1.isPlaceholder() && gt1.getName().startsWith("#")) return gt2;
         // GROOVY-10315, GROOVY-10317, GROOVY-10339, ...
         ClassNode cn1 = GenericsUtils.makeClassSafe0(CLASS_Type, gt1);
         ClassNode cn2 = GenericsUtils.makeClassSafe0(CLASS_Type, gt2);
