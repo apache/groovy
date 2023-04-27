@@ -270,7 +270,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             [] < 1
         ''',
-        'Cannot find matching method java.util.List#compareTo(int)'
+        'Cannot find matching method java.util.ArrayList#compareTo(int)'
     }
 
     void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {

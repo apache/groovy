@@ -5211,12 +5211,12 @@ out:                if (mn.size() != 1) {
                 ClassNode subType = lowestUpperBound(expressionTypes);
                 genericsTypes = new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subType))};
             } else { // GROOVY-11028
-                GenericsType[] typeVars = listType.redirect().getGenericsTypes();
+                GenericsType[] typeVars = ArrayList_TYPE.getGenericsTypes();
                 Map<GenericsTypeName, GenericsType> spec = extractGenericsConnectionsFromArguments(
                     typeVars, Parameter.EMPTY_ARRAY, ArgumentListExpression.EMPTY_ARGUMENTS, null);
                 genericsTypes = applyGenericsContext(spec, typeVars);
             }
-            listType = listType.getPlainNodeReference();
+            listType = ArrayList_TYPE.getPlainNodeReference();
             listType.setGenericsTypes(genericsTypes);
         }
 

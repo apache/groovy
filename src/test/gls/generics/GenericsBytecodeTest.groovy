@@ -223,10 +223,10 @@ class GenericsBytecodeTest extends GenericsTestBase {
             }
         '''
         assert signatures == [
-            'a()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;*>;',
-            'b()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;Ljava/util/List<*>;>;',
-            'doCall()Ljava/util/List;'                  : '()Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;',
-            'doCall(Ljava/lang/Object;)Ljava/util/List;': '(Ljava/lang/Object;)Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;'
+            'a()Ljava/util/Map;'                             : '()Ljava/util/Map<Ljava/lang/String;*>;',
+            'b()Ljava/util/Map;'                             : '()Ljava/util/Map<Ljava/lang/String;Ljava/util/List<*>;>;',
+            'doCall()Ljava/util/ArrayList;'                  : '()Ljava/util/ArrayList<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;',
+            'doCall(Ljava/lang/Object;)Ljava/util/ArrayList;': '(Ljava/lang/Object;)Ljava/util/ArrayList<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;'
         ]
     }
 

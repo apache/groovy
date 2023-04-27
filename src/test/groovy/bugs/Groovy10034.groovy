@@ -29,7 +29,7 @@ final class Groovy10034 extends AbstractBytecodeTestCase {
             }
         '''
         int offset = result.indexOf('ANEWARRAY java/lang/String', result.indexOf('--BEGIN--'))
-        assert result.hasStrictSequence(['ANEWARRAY java/lang/String','INVOKEINTERFACE java/util/List.toArray'], offset)
+        assert result.hasStrictSequence(['ANEWARRAY java/lang/String','INVOKEVIRTUAL java/util/ArrayList.toArray'], offset)
         // there should be no 'INVOKEDYNAMIC cast' instruction here: ^
     }
 }

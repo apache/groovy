@@ -782,7 +782,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6266
     void testMapKeyGenerics() {
         assertScript '''
-            Map<String,List<List>> map = new HashMap<String,List<List>>()
+            Map<String, ? extends List<? extends List>> map = new HashMap<>()
             map.get('key',[['val1'],['val2']])
             assert map.'key'[0] == ['val1']
         '''
@@ -919,7 +919,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             }
             A a = [1]
         ''',
-        'Cannot assign value of type java.util.List<java.lang.Integer> to variable of type A'
+        'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type A'
     }
 
     // GROOVY-6912
@@ -1038,17 +1038,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Deque<String> deque = []
         ''',
-        'Cannot assign value of type java.util.List','to variable of type java.util.Deque<java.lang.String>'
+        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Queue<String> queue = []
         ''',
-        'Cannot assign value of type java.util.List','to variable of type java.util.Queue<java.lang.String>'
+        'Cannot assign value of type java.util.ArrayList','to variable of type java.util.Queue<java.lang.String>'
 
         shouldFailWithMessages '''
             Deque<String> deque = [""]
         ''',
-        'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
+        'Cannot assign value of type java.util.ArrayList<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
     }
 
     // GROOVY-7128

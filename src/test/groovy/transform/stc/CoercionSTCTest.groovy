@@ -161,7 +161,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''import java.util.function.*
             def s = (() -> ['']) as Supplier<Number>
         ''',
-        'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
+        'Cannot return value of type java.util.ArrayList<java.lang.String> for lambda expecting java.lang.Number'
     }
 
     // GROOVY-8045

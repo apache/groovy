@@ -1314,7 +1314,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                     } else if (value instanceof GString) {
                         value = value.toString()
                     }
-                    mvm.computeIfAbsent(name, k -> []).add(value)
+                    mvm.computeIfAbsent(name, k -> [] as List<Object>).add(value)
                 }
             }
             new M().setProperty('foo', 'bar')

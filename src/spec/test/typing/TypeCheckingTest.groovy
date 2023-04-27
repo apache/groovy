@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package typing
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
@@ -445,7 +444,8 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
     void testCollectionLiteralInference() {
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == make(List)
+            def type = node.getNodeMetaData(INFERRED_TYPE)
+            assert type == make(ArrayList)
         })
         // tag::empty_list_literal_inference[]
         def list = []
@@ -454,9 +454,9 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            def inft = node.getNodeMetaData(INFERRED_TYPE)
-            assert inft == make(List)
-            assert inft.genericsTypes[0].type == make(String)
+            def type = node.getNodeMetaData(INFERRED_TYPE)
+            assert type == make(ArrayList)
+            assert type.genericsTypes[0].type == STRING_TYPE
         })
         // tag::list_literal_inference_simple[]
         def list = ['foo','bar']
@@ -467,9 +467,9 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         def foo = 1
         def bar = 2
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            def inft = node.getNodeMetaData(INFERRED_TYPE)
-            assert inft == make(List)
-            assert inft.genericsTypes[0].type == make(GString)
+            def type = node.getNodeMetaData(INFERRED_TYPE)
+            assert type == make(ArrayList)
+            assert type.genericsTypes[0].type == GSTRING_TYPE
         })
         // tag::list_literal_inference_gstring[]
         def list = ["${foo}","${bar}"]
@@ -477,7 +477,8 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == make(LinkedHashMap)
+             def type = node.getNodeMetaData(INFERRED_TYPE)
+             assert type == make(LinkedHashMap)
         })
         // tag::empty_map_literal_inference[]
         def map = [:]
@@ -486,10 +487,10 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-             def inft = node.getNodeMetaData(INFERRED_TYPE)
-             assert inft == make(LinkedHashMap)
-             assert inft.genericsTypes[0].type == make(String)
-             assert inft.genericsTypes[1].type == make(String)
+             def type = node.getNodeMetaData(INFERRED_TYPE)
+             assert type == make(LinkedHashMap)
+             assert type.genericsTypes[0].type == STRING_TYPE
+             assert type.genericsTypes[1].type == STRING_TYPE
         })
         // tag::map_literal_inference_simple[]
         def map1 = [someKey: 'someValue']
@@ -502,8 +503,8 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
              def inft = node.getNodeMetaData(INFERRED_TYPE)
              assert inft == make(LinkedHashMap)
-             assert inft.genericsTypes[0].type == make(GString)
-             assert inft.genericsTypes[1].type == make(String)
+             assert inft.genericsTypes[0].type == GSTRING_TYPE
+             assert inft.genericsTypes[1].type == STRING_TYPE
         })
         // tag::map_literal_inference_gstring[]
         def map = ["${someKey}": 'someValue']
@@ -512,7 +513,8 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == make(IntRange)
+            def type = node.getNodeMetaData(INFERRED_TYPE)
+            assert type == make(IntRange)
         })
         // tag::intRange_literal_inference[]
         def intRange = (0..10)
@@ -521,15 +523,14 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            def inft = node.getNodeMetaData(INFERRED_TYPE)
-            assert inft == make(Range)
-            assert inft.genericsTypes[0].type == make(String)
+            def type = node.getNodeMetaData(INFERRED_TYPE)
+            assert type == RANGE_TYPE
+            assert type.genericsTypes[0].type == STRING_TYPE
         })
         // tag::charRange_literal_inference[]
         def charRange = ('a'..'z')
         // end::charRange_literal_inference[]
         '''
-
     }
 
     void testTypeInferenceFieldVsLocalVariable() {

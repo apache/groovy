@@ -276,13 +276,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               return x // List<E>
             }
         ''',
-        'Incompatible generic argument types.' // Cannot assign java.util.List<java.lang.Object> to: java.util.List<java.lang.String>
+        'Incompatible generic argument types.' // Cannot assign java.util.ArrayList<java.lang.Object> to: java.util.List<java.lang.String>
 
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
                 assert type.genericsTypes[0].toString() == 'java.lang.String'
-                assert type.genericsTypes[1].toString() == 'java.util.List<java.lang.Object>' // not List<E>
+                assert type.genericsTypes[1].toString() == 'java.util.ArrayList<java.lang.Object>' // not <E>
             })
             def map = [ key: [] ]
         '''
@@ -2728,7 +2728,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         assertScript base + '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).implementsInterface(LIST_TYPE)
                 assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
             })
             def list = ["foo", "$bar"]
@@ -2736,7 +2736,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages base + '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).implementsInterface(LIST_TYPE)
                 assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
             })
             List<String> list = ["foo", "$bar"]
@@ -2745,7 +2745,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages base + '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).implementsInterface(LIST_TYPE)
                 assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == GSTRING_TYPE // single element means no LUB
             })
             List<String> list = ["$bar"]

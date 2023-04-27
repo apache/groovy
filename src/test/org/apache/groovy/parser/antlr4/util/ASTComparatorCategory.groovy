@@ -187,7 +187,7 @@ class ASTComparatorCategory {
     ].asUnmodifiable()
 
     public static final Map<Class, List<String>> COLLECTION_PROPERTY_CONFIGURATION = [
-            (ModuleNode): ['classes', 'name']
+            (ModuleNode): ['classes', 'name'] as List<String>
     ].asUnmodifiable()
 
     public static Map<Class, List<String>> configuration = DEFAULT_CONFIGURATION

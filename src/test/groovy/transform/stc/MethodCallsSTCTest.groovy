@@ -226,7 +226,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
             m([1,2,3,3])
         ''',
-        'm(java.util.List<java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
+        'Cannot find matching method','m(java.util.ArrayList<java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
     }
 
     // GROOVY-7106, GROOVY-7274, GROOVY-9844

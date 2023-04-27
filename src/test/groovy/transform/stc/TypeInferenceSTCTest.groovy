@@ -1283,7 +1283,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     lookup('test').each {
                         def call = it.expression
                         def type = call.getNodeMetaData(INFERRED_TYPE)
-                        assert type == LIST_TYPE
+                        assert type.implementsInterface(LIST_TYPE)
                     }
                 })
                 static void run() {

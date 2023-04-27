@@ -37,6 +37,7 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 
 import java.util.stream.Collectors
+
 /**
  * Optimize the execution plan of GINQ through transforming AST.
  * <p>
@@ -315,14 +316,10 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
             return
         }
 
-        final alias = usedAliasSet[0]
-        if (!optimizingAliasList.contains(alias)) {
-            return
-        }
-
-        if (toAdd) {
-            expression.putNodeMetaData(TO_OPTIMIZE, true)
-            conditionsToOptimize.computeIfAbsent(alias, k -> []).add(expression)
+        String alias = usedAliasSet[0]
+        if (toAdd && optimizingAliasList.contains(alias)) {
+            expression.putNodeMetaData(TO_OPTIMIZE, Boolean.TRUE)
+            conditionsToOptimize.computeIfAbsent(alias, k -> new ArrayList<>()).add(expression)
         }
     }
 
