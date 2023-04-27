@@ -100,12 +100,16 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             Class c = 'java.lang.String'
             assert String.class
         '''
+
         shouldFailWithMessages '''
             Class c = []
-        ''', 'Cannot find matching constructor java.lang.Class()'
+        ''',
+        'Cannot find matching constructor java.lang.Class()'
+
         shouldFailWithMessages '''
             Class c = [:]
-        ''', 'Cannot find matching constructor java.lang.Class(java.util.LinkedHashMap)'
+        ''',
+        'Cannot find matching constructor java.lang.Class(', 'Map', ')'
     }
 
     // GROOVY-6803
@@ -126,36 +130,38 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10277
     void testCoerceToFunctionalInterface() {
-        assertScript '''
-            import java.util.function.*
+        assertScript '''import java.util.function.*
             Consumer<Number> c = { n -> }
             Supplier<Number> s = { -> 42 }
             Predicate<Number> p = { n -> 42 }
         '''
-        assertScript '''
-            import java.util.function.*
+
+        assertScript '''import java.util.function.*
             def c = (Consumer<Number>) { n -> }
             def s = (Supplier<Number>) { -> 42 }
             def p = (Predicate<Number>) { n -> 42 }
         '''
-        assertScript '''
-            import java.util.function.*
+
+        assertScript '''import java.util.function.*
             def c = { n -> } as Consumer<Number>
             def s = { -> 42 } as Supplier<Number>
             def p = { n -> 42 } as Predicate<Number>
         '''
-        shouldFailWithMessages '''
-            import java.util.function.*
+
+        shouldFailWithMessages '''import java.util.function.*
             def s = (Supplier<Number>) { -> false }
-        ''', 'Cannot return value of type boolean for closure expecting java.lang.Number'
-        shouldFailWithMessages '''
-            import java.util.function.*
+        ''',
+        'Cannot return value of type boolean for closure expecting java.lang.Number'
+
+        shouldFailWithMessages '''import java.util.function.*
             def s = { -> false } as Supplier<Number>
-        ''', 'Cannot return value of type boolean for closure expecting java.lang.Number'
-        shouldFailWithMessages '''
-            import java.util.function.*
+        ''',
+        'Cannot return value of type boolean for closure expecting java.lang.Number'
+
+        shouldFailWithMessages '''import java.util.function.*
             def s = (() -> ['']) as Supplier<Number>
-        ''', 'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
+        ''',
+        'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
     }
 
     // GROOVY-8045

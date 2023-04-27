@@ -596,20 +596,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testListPlusEquals() {
-        assertScript '''
-            List<String> list = ['a','b']
-            list += ['c']
-            assert list == ['a','b','c']
-        '''
-
-        assertScript '''
-            Collection<String> list = ['a','b']
-            list += 'c'
-            assert list == ['a','b','c']
-        '''
-    }
-
     void testObjectArrayGet() {
         assertScript '''
             Object[] arr = [new Object()]
@@ -698,7 +684,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 String[] arr = ['1','2','3']
                 arr.getAt(1)
             }
-            assert m()=='2'
+            assert m() == '2'
         '''
     }
 
@@ -709,12 +695,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
-            Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it%2 == 0 }
+            Integer i = list.find { int it -> it % 2 == 0 }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
-            Integer i = list.find { int it -> it % 2 == 0 }
+            Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it % 2 == 0 }
         '''
     }
 
@@ -851,6 +837,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             List<String> strings = ['y','z']
             test(['x', *strings])
         '''
+
         assertScript '''
             void test(List<String> list) {
                 assert list == ['x','y','z']
@@ -865,19 +852,50 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6241
     void testAsImmutable() {
         assertScript '''
-            List<Integer> list = [1, 2, 3]
-            List<Integer> immutableList = [1, 2, 3].asImmutable()
-            Map<String, Integer> map = [foo: 123, bar: 456]
-            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
+            List<Integer> list = [1,2,3]
+            List<Integer> immutableList = [1,2,3].asImmutable()
+            assert list !== immutableList && list.equals(immutableList)
+
+            Map<String,Integer> map = [a:1]
+            Map<String,Integer> immutableMap = [a:1].asImmutable()
+            assert map !== immutableMap && map.equals(immutableMap)
+        '''
+    }
+
+    void testAsUnmodifiable() {
+        assertScript '''
+            List<Integer> list = [1,2,3]
+            List<Integer> immutableList = [1,2,3].asUnmodifiable()
+            assert list !== immutableList && list.equals(immutableList)
+
+            Map<String,Integer> map = [a:1]
+            Map<String,Integer> immutableMap = [a:1].asUnmodifiable()
+            assert map !== immutableMap && map.equals(immutableMap)
+        '''
+    }
+
+    void testListPlusEquals() {
+        assertScript '''
+            List<String> list = ['a','b']
+            list += ['c']
+            assert list == ['a','b','c']
+        '''
+
+        assertScript '''
+            Collection<String> list = ['a','b']
+            list += 'c'
+            assert list == ['a','b','c']
         '''
     }
 
     // GROOVY-6350
     void testListPlusList() {
-        assertScript '''
-            def foo = [] + []
-            assert foo==[]
-        '''
+        [['[]','Collections.emptyList()'], ['[]','Collections.emptyList()']].eachCombination { lhs, rhs ->
+            assertScript """
+                def list = $lhs + $rhs
+                assert list.isEmpty()
+            """
+        }
     }
 
     // GROOVY-7122
@@ -885,10 +903,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             int countIt(Iterable<Integer> list) {
                 int count = 0
-                for (Integer obj : list) {count ++}
+                for (Integer obj : list) {
+                    count++
+                }
                 return count
             }
-            countIt([1,2,3])==3
+            countIt([1,2,3]) == 3
         '''
     }
 
@@ -1018,12 +1038,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Deque<String> deque = []
         ''',
-        'Cannot assign value of type java.util.List<E> to variable of type java.util.Deque<java.lang.String>'
+        'Cannot assign value of type java.util.List','to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Queue<String> queue = []
         ''',
-        'Cannot assign value of type java.util.List<E> to variable of type java.util.Queue<java.lang.String>'
+        'Cannot assign value of type java.util.List','to variable of type java.util.Queue<java.lang.String>'
 
         shouldFailWithMessages '''
             Deque<String> deque = [""]
@@ -1052,6 +1072,28 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11028
+    void testCollectionTypesInitializedByListLiteral5() {
+        assertScript '''
+            Collection<Integer> collection = [].withDefault { 1 }
+            assert collection.size() == 0
+            assert collection.get(0) == 1
+            assert collection.size() == 1
+        '''
+
+        assertScript '''
+            List<Integer> list = [].withDefault { 2 }
+            assert list.size() == 0
+            assert list.get(1) == 2
+            assert list.size() == 2
+        '''
+
+        shouldFailWithMessages '''
+            Set<Integer> set = [].withDefault { 3 }
+        ''',
+        'Cannot assign value of type groovy.lang.ListWithDefault<java.lang.Integer> to variable of type java.util.Set<java.lang.Integer>'
+    }
+
     void testMapWithTypeArgumentsInitializedByMapLiteral() {
         ['CharSequence,Integer', 'String,Number', 'CharSequence,Number'].each { spec ->
             assertScript """
@@ -1073,6 +1115,13 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert c.map['key'] == '42'
         '''
 
+        // GROOVY-11028
+        assertScript '''
+            Map<String,Integer> map = [:].withDefault { 0 }
+            assert map.size() == 0
+            assert map.foo == 0
+        '''
+
         shouldFailWithMessages '''
             Map<String,Integer> map = [1:2]
         ''',
@@ -1085,7 +1134,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             interface MVM<K, V> extends Map<K, List<V>> { }
             MVM map = [:] // no STC error; fails at runtime
         ''',
-        'Cannot find matching constructor MVM(java.util.LinkedHashMap)'
+        'Cannot find matching constructor MVM(', 'Map', ')'
     }
 
     // GROOVY-8136
@@ -1094,6 +1143,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             abstract class MVM<K, V> extends Map<K, List<V>> { }
             MVM map = [:] // no STC error; fails at runtime
         ''',
-        'Cannot find matching constructor MVM(java.util.LinkedHashMap)'
+        'Cannot find matching constructor MVM(', 'Map', ')'
     }
 }
