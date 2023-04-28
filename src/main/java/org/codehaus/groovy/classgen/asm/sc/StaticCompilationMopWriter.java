@@ -37,21 +37,16 @@ public class StaticCompilationMopWriter extends MopWriter {
 
     public static final MopWriter.Factory FACTORY = StaticCompilationMopWriter::new;
 
-    private final StaticTypesWriterController controller;
-
     public StaticCompilationMopWriter(final WriterController wc) {
         super(wc);
-        this.controller = (StaticTypesWriterController) wc;
     }
-
 
     @Override
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
         LinkedList<MethodNode> requiredMopMethods = classNode.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
-        if (requiredMopMethods!=null) {
+        if (requiredMopMethods != null) {
             generateMopCalls(requiredMopMethods, false);
         }
     }
-
 }

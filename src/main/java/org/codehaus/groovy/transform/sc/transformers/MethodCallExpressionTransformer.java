@@ -56,7 +56,7 @@ public class MethodCallExpressionTransformer {
             return trn;
         }
         ClassNode superCallReceiver = expr.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
-        if (superCallReceiver!=null) {
+        if (superCallReceiver != null) {
             return transformMethodCallExpression(transformToMopSuperCall(superCallReceiver, expr));
         }
         Expression objectExpression = expr.getObjectExpression();

@@ -1809,8 +1809,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private boolean storeProperty(final PropertyNode property, final PropertyExpression expression, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitProperty(property);
-        ClassNode propertyType = property.getOriginType();
 
+        ClassNode propertyType = property.getOriginType();
         storeWithResolve(propertyType, receiver, property.getDeclaringClass(), property.isStatic(), expression);
 
         if (delegationData != null) {
@@ -1818,19 +1818,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (Modifier.isFinal(property.getModifiers())) {
             expression.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
-            if (!lhsOfAssignment) {
-                MethodNode implicitGetter = new MethodNode(property.getGetterNameOrDefault(), Opcodes.ACC_PUBLIC, propertyType, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
-                implicitGetter.setDeclaringClass(property.getDeclaringClass());
-                extension.onMethodSelection(expression, implicitGetter);
-            }
         } else {
             expression.removeNodeMetaData(READONLY_PROPERTY);
-            if (lhsOfAssignment) {
-                MethodNode implicitSetter = new MethodNode(property.getSetterNameOrDefault(), Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[] {new Parameter(propertyType, "value")}, ClassNode.EMPTY_ARRAY, null);
-                implicitSetter.setDeclaringClass(property.getDeclaringClass());
-                extension.onMethodSelection(expression, implicitSetter);
-            }
         }
+
+        String methodName;
+        ClassNode returnType;
+        Parameter[] parameters;
+        if (!lhsOfAssignment) {
+            methodName = property.getGetterNameOrDefault();
+            returnType = propertyType;
+            parameters = Parameter.EMPTY_ARRAY;
+        } else {
+            methodName = property.getSetterNameOrDefault();
+            returnType = VOID_TYPE;
+            parameters = new Parameter[] {new Parameter(propertyType, "value")};
+        }
+        MethodNode accessMethod = new MethodNode(methodName, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0), returnType, parameters, ClassNode.EMPTY_ARRAY, null);
+        accessMethod.setDeclaringClass(property.getDeclaringClass());
+        accessMethod.setSynthetic(true);
+
+        expression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, accessMethod); // GROOVY-11029
+        extension.onMethodSelection(expression, accessMethod);
         return true;
     }
 
