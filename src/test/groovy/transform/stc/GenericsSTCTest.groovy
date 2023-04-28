@@ -1870,6 +1870,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.CharSequence to variable of type N'
     }
 
+    // GROOVY-10754
+    void testAssignmentShouldWorkForParameterizedType3() {
+        assertScript '''
+            class A<T> { }
+            class B extends A<Number> { }
+            class C<T extends A<Number>, U extends T> {
+                C(T t, U u) { }
+            }
+
+            void test(B x, B y) {
+                C<? extends B, ? extends B> z = new C<>(x, y) // Cannot assign C<A<Number>,B> to C<? extends B, ? extends B>
+            }
+            test(null,null)
+        '''
+    }
+
     // GROOVY-9555
     void testAssignmentShouldWorkForProperUpperBound() {
         assertScript '''
