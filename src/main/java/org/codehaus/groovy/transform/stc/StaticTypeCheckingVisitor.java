@@ -1633,9 +1633,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     visitor.visitField(virtual);
                                 }
                             }
-                            SetterInfo info = new SetterInfo(current, getSetterName(propertyName), setters);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
+                                SetterInfo info = new SetterInfo(current, setterName, setters);
                                 putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
                             }
                             String delegationData = receiver.getData();
@@ -1649,11 +1649,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-                foundGetterOrSetter = (foundGetterOrSetter || !setters.isEmpty() || getter != null);
 
-                if (property != null && storeProperty(property, pexp, receiverType, visitor, receiver.getData())) return true;
+                if (property != null && storeProperty(property, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
 
                 if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
+
+                foundGetterOrSetter = (foundGetterOrSetter || !setters.isEmpty() || getter != null);
             }
 
             // GROOVY-5568: the property may be defined by DGM
@@ -1850,17 +1851,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).isStaticExtension() : method.isStatic();
     }
 
-    private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
-            type = resolveGenericsWithContext(extractPlaceHolders(receiver, declaringClass), type);
-        }
-        if (expressionToStoreOn instanceof PropertyExpression) {
-            storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
-        } else {
-            storeType(expressionToStoreOn, type);
-        }
-    }
-
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
@@ -1886,18 +1876,54 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return true;
     }
 
-    private boolean storeProperty(final PropertyNode property, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData) {
+    private boolean storeProperty(final PropertyNode property, final PropertyExpression expression, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitProperty(property);
-        storeWithResolve(property.getOriginType(), receiver, property.getDeclaringClass(), property.isStatic(), expressionToStoreOn);
+
+        ClassNode propertyType = property.getOriginType();
+        storeWithResolve(propertyType, receiver, property.getDeclaringClass(), property.isStatic(), expression);
+
         if (delegationData != null) {
-            expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+            expression.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
         }
         if (Modifier.isFinal(property.getModifiers())) {
-            expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
+            expression.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
         } else {
-            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY);
+            expression.removeNodeMetaData(READONLY_PROPERTY);
         }
+
+        String methodName;
+        ClassNode returnType;
+        Parameter[] parameters;
+        if (!lhsOfAssignment) {
+            methodName = propertyType.equals(boolean_TYPE) ? "is" + capitalize(property.getName()) : getGetterName(property);
+            returnType = propertyType;
+            parameters = Parameter.EMPTY_ARRAY;
+        } else {
+            methodName = getSetterName(property.getName());
+            returnType = VOID_TYPE;
+            parameters = new Parameter[] {new Parameter(propertyType, "value")};
+        }
+        MethodNode accessMethod = new MethodNode(methodName, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0), returnType, parameters, ClassNode.EMPTY_ARRAY, null);
+        accessMethod.setDeclaringClass(property.getDeclaringClass());
+        accessMethod.setSynthetic(true);
+
+        if (isSuperExpression(expression.getObjectExpression())) {
+            ClassNode superCaller = typeCheckingContext.getEnclosingClassNode();
+            superCaller.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(accessMethod); // GROOVY-11029
+        }
+
         return true;
+    }
+
+    private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
+        if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
+            type = resolveGenericsWithContext(extractPlaceHolders(receiver, declaringClass), type);
+        }
+        if (expressionToStoreOn instanceof PropertyExpression) {
+            storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
+        } else {
+            storeType(expressionToStoreOn, type);
+        }
     }
 
     @Deprecated
@@ -2573,10 +2599,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (name.equals(getterName)) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), pn.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
                     return node;
                 } else if (name.equals(getSetterName(pn.getName())) && !Modifier.isFinal(pn.getModifiers())) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
                     return node;
                 }
             }
