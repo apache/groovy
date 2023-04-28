@@ -81,7 +81,7 @@ public class MopWriter {
 
     //--------------------------------------------------------------------------
 
-    private final WriterController controller;
+    protected final WriterController controller;
 
     public MopWriter(final WriterController controller) {
         this.controller = requireNonNull(controller);

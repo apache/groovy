@@ -889,26 +889,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testPrivateFieldAccessInAIC() {
+    // GROOVY-11029
+    void testSuperPropertyAccess1() {
         assertScript '''
-            class A {
-                private int x
-                void foo() {
-                    def aic = new Runnable() { void run() { x = 666 } }
-                    aic.run()
+            class Foo {
+                Object myThing
+            }
+            class Bar extends Foo {
+                @Override
+                Object getMyThing() {
+                    super.myThing
                 }
-                void ensure() {
-                    assert x == 666
+                @Override
+                void setMyThing(Object object) {
+                    super.myThing = object
                 }
             }
-            def a = new A()
-            a.foo()
-            a.ensure()
+
+            def bar = new Bar()
+            def value = 'thing'
+            bar.myThing = value
+            assert bar.myThing === value
         '''
     }
 
     // GROOVY-9562
-    void testSuperPropertyAccessInAIC() {
+    void testSuperPropertyAccess2() {
         assertScript '''
             abstract class One {
                 int prop = 1
@@ -931,6 +937,24 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert new Foo().bar().baz() == 2
+        '''
+    }
+
+    void testPrivateFieldAccessInAIC() {
+        assertScript '''
+            class A {
+                private int x
+                void foo() {
+                    def aic = new Runnable() { void run() { x = 666 } }
+                    aic.run()
+                }
+                void ensure() {
+                    assert x == 666
+                }
+            }
+            def a = new A()
+            a.foo()
+            a.ensure()
         '''
     }
 
