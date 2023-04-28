@@ -1930,10 +1930,10 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
-            ClassNode cn = make(gt[0].getName());
-            cn.setRedirect(gt[0].getType());
+            ClassNode cn = make(gt[0].getName()) , erasure = getCombinedBoundType(gt[0]);
             cn.setGenericsPlaceHolder(true);
             cn.setGenericsTypes(gt);
+            cn.setRedirect(erasure);
             return cn;
         }
 

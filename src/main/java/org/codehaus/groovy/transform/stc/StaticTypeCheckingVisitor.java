@@ -3001,7 +3001,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (paramTypes == null) {
                 ClassNode targetType = target.getType();
                 if (targetType != null && targetType.isGenericsPlaceHolder())
-                    targetType = getCombinedBoundType(targetType.getGenericsTypes()[0]);
+                    targetType = getCombinedBoundType(targetType.asGenericsType());
                 targetType = applyGenericsContext(context, targetType); // fill place-holders
                 ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
 

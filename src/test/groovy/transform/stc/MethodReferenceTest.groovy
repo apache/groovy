@@ -307,6 +307,25 @@ final class MethodReferenceTest {
 
             test(new ArrayDeque<>())
         '''
+
+        assertScript shell, '''
+            @Grab('org.apache.commons:commons-collections4:4.4')
+            import org.apache.commons.collections4.*
+
+            @CompileStatic
+            def test(Iterable<String> x, ArrayDeque<String> y) {
+                CollectionUtils.forAllButLastDo(x,y::addFirst)
+                IterableUtils.forEachButLast(x,y::addFirst)
+                Iterator<String> z = x.iterator()
+                IteratorUtils.forEachButLast(z,y::addFirst)
+            }
+
+            Iterable  <String> x = ['foo','bar','baz']
+            ArrayDeque<String> y = []
+            def z = test(x,y)
+
+            assert y.join('') == 'barfoo'*3 && z == 'baz'
+        '''
     }
 
     @Test // instance::instanceMethod -- GROOVY-9813

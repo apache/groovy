@@ -1483,6 +1483,9 @@ public class ClassNode extends AnnotatedNode {
     public GenericsType asGenericsType() {
         if (!isGenericsPlaceHolder()) {
             return new GenericsType(this);
+        } else if (genericsTypes != null
+                && genericsTypes[0].getUpperBounds() != null) {
+            return genericsTypes[0];
         } else {
             ClassNode upper = (redirect != null ? redirect : this);
             return new GenericsType(this, new ClassNode[]{upper}, null);
