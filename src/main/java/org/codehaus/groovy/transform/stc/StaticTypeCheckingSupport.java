@@ -720,7 +720,7 @@ public abstract class StaticTypeCheckingSupport {
             }
         } else if (left.isGenericsPlaceHolder()) { // must precede non-final types
             return right.getUnresolvedName().charAt(0) != '#' // RHS not adaptable
-                    ? left.getGenericsTypes()[0].isCompatibleWith(right) // GROOVY-7307, GROOVY-9952, et al.
+                    ? left.asGenericsType().isCompatibleWith(right) // GROOVY-7307, GROOVY-9952, GROOVY-11026
                     : implementsInterfaceOrSubclassOf(leftRedirect, rightRedirect); // GROOVY-10067, GROOVY-10342
 
         } else if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {

@@ -478,6 +478,25 @@ final class MethodReferenceTest {
         '''
     }
 
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-11026
+    void testBiFunctionII() {
+        assertScript shell, '''
+            @CompileDynamic
+            def <In,InOut> InOut m(BiFunction<In,InOut,InOut> beef) {
+                beef.apply(0,'boo')
+            }
+
+            @CompileStatic
+            String test(List<String> x) {
+                m(x::set) // NPE
+            }
+
+            String result = test(['foo','bar'])
+            assert result == 'foo'
+        '''
+    }
+
     @Test // instance::instanceMethod
     void testBinaryOperatorII() {
         assertScript shell, '''
@@ -499,7 +518,7 @@ final class MethodReferenceTest {
     }
 
     @Test // instance::instanceMethod
-    void testBinaryOperatorII_COMPATIBLE() {
+    void testBinaryOperatorII2() {
         assertScript shell, '''
             class Adder {
                 BigDecimal add(Number a, Number b) {
@@ -724,22 +743,55 @@ final class MethodReferenceTest {
             }
             @CompileStatic
             class X extends A {
-              public X() {
-                super(Y::new)
-              }
-              private static class Y extends B {
-                Y(A a) {
-                  super(a)
+                public X() {
+                    super(Y::new)
                 }
-              }
+                private static class Y extends B {
+                    Y(A a) {
+                        super(a)
+                    }
+                }
             }
 
             new X()
         '''
     }
 
-    @Test // class::new -- GROOVY-11001
+    @NotYetImplemented
+    @Test // class::new -- GROOVY-10930
+    void testFunctionCN5() {
+        def err = shouldFail shell, '''
+            class Foo { Foo() { } }
+            def <T> void m(Function<String,T> fn) { }
+
+            @CompileStatic
+            void test() {
+                m(Foo::new) // ctor does not accept String
+            }
+
+            test()
+        '''
+        assert err =~ /Cannot find matching constructor Foo\(java.lang.String\)/
+    }
+
+    @Test // class::new -- GROOVY-10971
     void testFunctionCN6() {
+        assertScript shell, '''
+            class Foo {
+                Foo(String s) { }
+            }
+
+            @CompileStatic
+            void test() {
+                Collectors.groupingBy(Foo::new)
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new -- GROOVY-11001
+    void testFunctionCN7() {
         assertScript shell, '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.Try
@@ -844,7 +896,7 @@ final class MethodReferenceTest {
         assertScript shell, '''
             @CompileStatic
             void test() {
-                def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
+                def f = Math::abs // No explicit type defined, so it is actually a method closure
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
@@ -911,7 +963,7 @@ final class MethodReferenceTest {
     }
 
     @NotYetImplemented
-    @Test // class::staticMethod
+    @Test // class::staticMethod -- GROOVY-10807
     void testFunctionCS8() {
         assertScript shell, '''
             @CompileStatic
@@ -967,7 +1019,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()
@@ -993,10 +1045,10 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
 
                 result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()
@@ -1124,6 +1176,28 @@ final class MethodReferenceTest {
                 }
 
                 test()
+            """
+        }
+    }
+
+    @NotYetImplemented
+    @Test // GROOVY-10904
+    void testPropertyMethodLocation() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript shell, """
+                $tag
+                class Test {
+                    static class Profile {
+                        String foo, bar
+                    }
+
+                    Map<String, Profile> profiles = [new Profile()].stream()
+                        .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
+
+                    static main(args) {
+                        assert this.newInstance().getProfiles().size() == 1
+                    }
+                }
             """
         }
     }
