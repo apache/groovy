@@ -2520,9 +2520,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (arguments != null && arguments.length > 0) {
                     ClassNode[] parameters = collateMethodReferenceParameterTypes(expression, candidates.get(0));
                     for (int i = 0; i < arguments.length; i += 1) {
-                        ClassNode at = arguments[i], pt = parameters[Math.min(i, parameters.length - 1)];
+                        ClassNode at = arguments[i];
+                        ClassNode pt = applyGenericsContext(gts, parameters[Math.min(i, parameters.length - 1)]);
                         if (!pt.equals(at) && (at.isInterface() ? pt.implementsInterface(at) : pt.isDerivedFrom(at)))
-                            arguments[i] = parameters[i]; // GROOVY-10734, GROOVY-10807: method refines expected type
+                            arguments[i] = pt; // GROOVY-10734, GROOVY-10807, GROPOVY-11026: expected type is refined
                     }
                 }
             } else if (!(expression instanceof MethodReferenceExpression)

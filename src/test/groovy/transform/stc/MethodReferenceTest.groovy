@@ -472,6 +472,24 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11026
+    void testBiFunctionII() {
+        assertScript shell, '''
+            @CompileDynamic
+            def <In,InOut> InOut m(BiFunction<In,InOut,InOut> beef) {
+                beef.apply(0,'boo')
+            }
+
+            @CompileStatic
+            String test(List<String> x) {
+                m(x::set) // NPE
+            }
+
+            String result = test(['foo','bar'])
+            assert result == 'foo'
+        '''
+    }
+
     @Test // instance::instanceMethod
     void testBinaryOperatorII() {
         assertScript shell, '''
@@ -493,7 +511,7 @@ final class MethodReferenceTest {
     }
 
     @Test // instance::instanceMethod
-    void testBinaryOperatorII_COMPATIBLE() {
+    void testBinaryOperatorII2() {
         assertScript shell, '''
             class Adder {
                 BigDecimal add(Number a, Number b) {
