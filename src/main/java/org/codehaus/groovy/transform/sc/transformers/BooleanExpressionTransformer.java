@@ -121,7 +121,7 @@ class BooleanExpressionTransformer {
                     return;
                 }
 
-                if (ClassHelper.isPrimitiveType(type)) {
+                if (ClassHelper.isPrimitiveType(type) && !ClassHelper.VOID_TYPE.equals(type)) { // GROOVY-10920
                     getExpression().visit(visitor);
                     if (ClassHelper.boolean_TYPE.equals(type)) {
                         os.doGroovyCast(ClassHelper.boolean_TYPE);
