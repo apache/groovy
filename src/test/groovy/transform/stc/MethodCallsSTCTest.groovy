@@ -963,6 +963,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10362
+    void testShouldNotFailWithAmbiguousMethodSelection2() {
+        assertScript '''
+            interface I1<T, U, V extends T> {
+                U m(U u, V v)
+            }
+            interface I2<W extends Boolean, X> extends I1<W, W, W   > {
+            }
+            interface I3<Y                   > extends I2<Boolean, Y> {
+            }
+            interface I4<Z extends Number    > extends I3<Z         > {
+            }
+            class C10362 implements I4<Integer> {
+                Boolean m(Boolean x, Boolean y) { x == y }
+            }
+            abstract class D10362<T1 extends Integer, T2 extends T1> extends C10362 {
+            }
+
+            C10362 x = new D10362<Integer,Integer>() {}
+            x.m(true, false) // Cannot choose between [Boolean C#m(Boolean,Boolean), U I1#m(U,V)]
+        '''
+    }
+
     void testShouldBeAbleToCallMethodUsingDoubleWithDoubleFloatLongIntShortOrByte() {
         assertScript '''
             double square(double x) { x*x }
