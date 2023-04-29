@@ -231,13 +231,20 @@ public class StatementWriter {
     }
 
     private void visitConditionOfLoopingStatement(final BooleanExpression expression, final Label breakLabel, final MethodVisitor mv) {
-        if (expression.getExpression() instanceof ConstantExpression && !(expression instanceof NotExpression)) {
-            ConstantExpression constant = (ConstantExpression) expression.getExpression();
-            if (constant.isFalseExpression()) {
-                mv.visitJumpInsn(GOTO, breakLabel);
+        Expression expr = expression;
+        boolean reverse = false;
+        do { // undo arbitrary nesting of (Boolean|Not)Expressions
+            if (expr instanceof NotExpression) reverse = !reverse;
+            expr = ((BooleanExpression) expr).getExpression();
+        } while (expr instanceof BooleanExpression);
+
+        // optimize constant boolean condition
+        if (expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue() instanceof Boolean) {
+            if (((ConstantExpression) expr).isFalseExpression() && !reverse) {
+                mv.visitJumpInsn(GOTO, breakLabel); // unconditional exit
                 return;
-            } else if (constant.isTrueExpression()) {
-                // do nothing
+            } else {
+                // unconditional loop
                 return;
             }
         }

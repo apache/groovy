@@ -119,14 +119,9 @@ class BooleanExpressionTransformer {
                 int mark = os.getStackLength();
                 getExpression().visit(visitor);
 
-                if (ClassHelper.isPrimitiveType(type)) {
-                    if (ClassHelper.isPrimitiveBoolean(type)) {
-                        // TODO: maybe: os.castToBool(mark, true);
-                        os.doGroovyCast(ClassHelper.boolean_TYPE);
-                    } else {
-                        BytecodeHelper.convertPrimitiveToBoolean(mv, type);
-                        os.replace(ClassHelper.boolean_TYPE);
-                    }
+                if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveVoid(type)) { // GROOVY-10920
+                    BytecodeHelper.convertPrimitiveToBoolean(mv, type);
+                    os.replace(ClassHelper.boolean_TYPE);
                     return;
                 }
 
