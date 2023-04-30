@@ -321,8 +321,8 @@
             <pgp value="aeb1e1aec035c66fa39589d13efc46ee83c40224"/>
          </artifact>
       </component>
-      <component group="com.puppycrawl.tools" name="checkstyle" version="10.6.0">
-         <artifact name="checkstyle-10.6.0.jar">
+      <component group="com.puppycrawl.tools" name="checkstyle" version="10.10.0">
+         <artifact name="checkstyle-10.10.0.jar">
             <pgp value="06d34ed6ff73de368a772a781063fe98bcecb758"/>
          </artifact>
       </component>
