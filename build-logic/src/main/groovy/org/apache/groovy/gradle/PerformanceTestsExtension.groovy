@@ -102,7 +102,7 @@ class PerformanceTestsExtension {
             it.dependencies.add(dependencies.create('commons-httpclient:commons-httpclient:3.1'))
             it.dependencies.add(dependencies.create('net.sf.jopt-simple:jopt-simple:5.0.4'))
             it.dependencies.add(dependencies.create('com.baulsupp.kolja:jcurses:0.9.5.3'))
-            it.dependencies.add(dependencies.create('org.mnode.mstor:mstor:1.0.2'))
+            it.dependencies.add(dependencies.create('org.mnode.mstor:mstor:1.0.3'))
             it.dependencies.add(dependencies.create('commons-lang:commons-lang:2.6'))
             it.dependencies.add(dependencies.create('dnsjava:dnsjava:3.5.2'))
             it.dependencies.add(dependencies.create('net.sourceforge.expectj:expectj:2.0.7'))
