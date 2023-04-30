@@ -503,177 +503,155 @@ final class TraitASTTransformationTest {
 
     @Test
     void testTraitWithGenerics1() {
-        assertScript '''
-            trait Provider<T> {
-                T get() {
-                    null
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait Provider<T> {
+                    T get() { null }
                 }
-            }
-            class StringProvider implements Provider<String> {}
-            def c = new StringProvider()
-            assert c.get() == null
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait Provider<T> {
-                T get() {
-                    null
+                $mode
+                class StringProvider implements Provider<String> {
                 }
-            }
-            @groovy.transform.CompileStatic
-            class StringProvider implements Provider<String> {}
-            def c = new StringProvider()
-            assert c.get() == null
-        '''
+                $mode
+                void test() {
+                    def c = new StringProvider()
+                    assert c.get() == null
+                }
+                test()
+            """
+        }
     }
 
     @Test
     void testTraitWithGenerics2() {
-        assertScript '''
-            trait Provider<T> {
-                T get(T ref) {
-                    ref
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait Provider<T> {
+                    T get(T t) { t }
                 }
-            }
-            class StringProvider implements Provider<String> {}
-            def c = new StringProvider()
-            assert c.get('foo') == 'foo'
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait Provider<T> {
-                T get(T ref) {
-                    ref
+                $mode
+                class StringProvider implements Provider<String> {
                 }
-            }
-            @groovy.transform.CompileStatic
-            class StringProvider implements Provider<String> {}
-            def c = new StringProvider()
-            assert c.get('foo') == 'foo'
-        '''
+                $mode
+                void test() {
+                    def p = new StringProvider()
+                    assert p.get('foo') == 'foo'
+                }
+                test()
+            """
+        }
     }
 
     @Test // GROOVY-9760
     void testTraitWithGenerics3() {
-        assertScript '''
-            trait Provider<T> {
-                T get(T ref) {
-                    ref
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait Provider<T> {
+                    T get(T t) { t }
                 }
-            }
-            class UnspecifiedProvider implements Provider {
-            }
-            assert new UnspecifiedProvider().get('foo') == 'foo'
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait Provider<T> {
-                T get(T ref) {
-                    ref
+                $mode
+                class UnspecifiedProvider implements Provider {
                 }
-            }
-            @groovy.transform.CompileStatic
-            class UnspecifiedProvider implements Provider {
-            }
-            assert new UnspecifiedProvider().get('foo') == 'foo'
-        '''
+                $mode
+                void test() {
+                    assert new UnspecifiedProvider().get('foo') == 'foo'
+                }
+                test()
+            """
+        }
+    }
+
+    @Test // GROOVY-11012
+    void testTraitWithGenerics4() {
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait Provider<T> {
+                    T get(T t) { t }
+                }
+                $mode
+                class Supplier<U> implements Provider<U> {
+                }
+                $mode
+                void test() {
+                    def s = new Supplier<Number>()
+                    Number n = s.get(42)
+                    assert n == 42
+                }
+                test()
+            """
+        }
     }
 
     @Test
-    void testTraitWithGenericProperty() {
-        assertScript '''
-            trait PropertyProvider<T> {
-                T foo
-            }
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.foo = 'foo'
-            assert c.foo == 'foo'
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait PropertyProvider<T> {
-                T foo
-            }
-            @groovy.transform.CompileStatic
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.foo = 'foo'
-            assert c.foo == 'foo'
-        '''
+    void testTraitWithGenericProperty1() {
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait PropertyProvider<T> {
+                    T foo
+                }
+                $mode
+                class StringProperty implements PropertyProvider<String> {
+                }
+                $mode
+                void test() {
+                    def c = new StringProperty()
+                    c.foo = 'foo'
+                    assert c.foo == 'foo'
+                }
+                test()
+            """
+        }
     }
 
     @Test
-    void testTraitWithComplexGenericProperty() {
-        assertScript '''
-            trait PropertyProvider<T> {
-                List<T> foo
-            }
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.foo = ['foo']
-            assert c.foo == ['foo']
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait PropertyProvider<T> {
-                List<T> foo
-            }
-            @groovy.transform.CompileStatic
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.foo = ['foo']
-            assert c.foo == ['foo']
-        '''
-
-        assertScript '''
-            trait PropertyProvider<T> {
-                List<T> foo
-            }
-            class StringProperty implements PropertyProvider<String> {}
-
-            @groovy.transform.CompileStatic
-            void test() {
-                def c = new StringProperty()
-                c.foo = ['foo']
-                assert c.foo == ['foo']
-            }
-            test()
-        '''
+    void testTraitWithGenericProperty2() {
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait PropertyProvider<T> {
+                    List<T> foo
+                }
+                $mode
+                class StringProperty implements PropertyProvider<String> {
+                }
+                $mode
+                void test() {
+                    def c = new StringProperty()
+                    c.foo = ['foo']
+                    assert c.foo == ['foo']
+                }
+                test()
+            """
+        }
     }
 
     @Test
-    void testTraitWithGenericField() {
-        assertScript '''
-            trait PropertyProvider<T> {
-                private T foo
-                void set(T t) { foo = t}
-                T get() { foo }
-            }
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.set('foo')
-            assert c.get() == 'foo'
-        '''
-
-        assertScript '''
-            @groovy.transform.CompileStatic
-            trait PropertyProvider<T> {
-                private T foo
-                void set(T t) { foo = t}
-                T get() { foo }
-            }
-            @groovy.transform.CompileStatic
-            class StringProperty implements PropertyProvider<String> {}
-            def c = new StringProperty()
-            c.set('foo')
-            assert c.get() == 'foo'
-        '''
+    void testTraitWithGenericProperty3() {
+        for (mode in ['','@groovy.transform.TypeChecked','@groovy.transform.CompileStatic']) {
+            assertScript """
+                $mode
+                trait PropertyProvider<T> {
+                    private T foo
+                    T getFoo() { foo }
+                    void setFoo(T t) { foo = t }
+                }
+                $mode
+                class StringProperty implements PropertyProvider<String> {
+                }
+                $mode
+                void test() {
+                    def c = new StringProperty(foo:'bar')
+                    assert c.getFoo() == 'bar'
+                    c.setFoo('foo')
+                    assert c.getFoo() == 'foo'
+                }
+                test()
+            """
+        }
     }
 
     @Test

@@ -288,7 +288,9 @@ public abstract class Traits {
         if (cNode.isInterface()) interfaces.add(cNode);
         ClassNode[] directInterfaces = cNode.getInterfaces();
         for (int i = directInterfaces.length - 1; i >= 0; i -= 1) {
-            ClassNode iNode = GenericsUtils.parameterizeType(cNode, directInterfaces[i]);
+            ClassNode iNode = directInterfaces[i];
+            if (cNode.isRedirectNode()) // GROOVY-11012
+                iNode = GenericsUtils.parameterizeType(cNode, iNode);
             if (interfaces.add(iNode)) collectAllInterfacesReverseOrder(iNode, interfaces);
         }
         return interfaces;
