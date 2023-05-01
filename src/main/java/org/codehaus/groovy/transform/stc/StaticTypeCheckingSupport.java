@@ -490,7 +490,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         // GROOVY-10067: unresolved argument like "N extends Number" for parameter like "Integer"
         if (type.isGenericsPlaceHolder() && type.getUnresolvedName().charAt(0) == '#') {
-            return type.getGenericsTypes()[0].isCompatibleWith(toBeAssignedTo);
+            return type.asGenericsType().isCompatibleWith(toBeAssignedTo);
         }
         return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }

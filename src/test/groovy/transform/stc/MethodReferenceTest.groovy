@@ -831,16 +831,16 @@ final class MethodReferenceTest {
 
     @Test // class::staticMethod
     void testFunctionCS2() {
-        assertScript shell, '''
-            @CompileStatic
-            void test() {
-                List<String> list = ['x','y','z']
-                def map = list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
-                assert map == [x: ['x'], y: ['y'], z: ['z']]
-            }
+        for (makeList in ['Collections::singletonList','List::of']) {
+            assertScript shell, """
+                @CompileStatic
+                def test(List<String> list) {
+                    list.stream().collect(Collectors.toMap(Function.identity(), $makeList))
+                }
 
-            test()
-        '''
+                assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
+            """
+        }
     }
 
     @Test // class::staticMethod -- GROOVY-9799
