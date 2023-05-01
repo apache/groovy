@@ -30,27 +30,25 @@ final class Groovy3904 {
     }
 
     @Test
-    void testCyclicInheritenceTC1() {
+    void testCyclicInheritence1() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R1A extends G3904R1A {}
         '''
     }
 
     @Test
-    void testCyclicInheritenceTC2() {
+    void testCyclicInheritence2() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R2A extends G3904R2A {
-                public static void main(String []argv) {
-                  print 'hey'
+                static main(args) {
+                    print 'hello'
                 }
             }
         '''
     }
 
-    /* next 2 tests are similar but in reverse order */
-
     @Test
-    void testCyclicInheritenceTC3() {
+    void testCyclicInheritence3() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R3A extends G3904R3B {}
             class G3904R3B extends G3904R3A {}
@@ -58,15 +56,15 @@ final class Groovy3904 {
     }
 
     @Test
-    void testCyclicInheritenceTC4() {
+    void testCyclicInheritence4() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R4B extends G3904R4A {}
             class G3904R4A extends G3904R4B {}
         '''
     }
 
-    @Test // cyclic inheritence is between 2 parent classes
-    void testCyclicInheritenceTC5() {
+    @Test
+    void testCyclicInheritence5() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R5A extends G3904R5B {}
             class G3904R5B extends G3904R5C {}
@@ -74,13 +72,21 @@ final class Groovy3904 {
         '''
     }
 
-    @Test // cyclic inheritence is between 2 parent classes with a normal level in-between
-    void testCyclicInheritenceTC6() {
+    @Test
+    void testCyclicInheritence6() {
         compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R6A extends G3904R6B {}
             class G3904R6B extends G3904R6C {}
             class G3904R6C extends G3904R6D {}
             class G3904R6D extends G3904R6B {}
+        '''
+    }
+
+    @Test // GROOVY-11036
+    void testCyclicInheritence7() {
+        compileAndVerifyCyclicInheritenceCompilationError '''
+            interface I11036 {}
+            interface J11036 extends J11036, I11036 {}
         '''
     }
 }
