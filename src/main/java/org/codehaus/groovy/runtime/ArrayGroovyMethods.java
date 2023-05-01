@@ -109,7 +109,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self the boolean array over which we iterate
-     * @return true if any iteration for the booleans matches the closure predicate
+     * @return true if any boolean is true
      * @since 5.0.0
      */
     public static boolean any(boolean[] self) {
@@ -1569,6 +1569,213 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //-------------------------------------------------------------------------
     // every
+
+    /**
+     * Iterates over the contents of a boolean Array, and checks whether
+     * every element is true.
+     * <pre class="groovyTestCase">
+     * boolean[] array1 = [false, true]
+     * assert !array1.every()
+     * boolean[] array2 = [true, true]
+     * assert array2.every()
+     * </pre>
+     *
+     * @param self the boolean array over which we iterate
+     * @return true if no boolean is false
+     * @since 5.0.0
+     */
+    public static boolean every(boolean[] self) {
+        Objects.requireNonNull(self);
+        for (boolean item : self) {
+            if (!item) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a boolean Array, and checks whether a
+     * predicate is valid for every element.
+     * <pre class="groovyTestCase">
+     * boolean[] array = [true]
+     * assert array.every{ it }
+     * assert !array.every{ !it }
+     * </pre>
+     *
+     * @param self      the boolean array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (boolean item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a byte Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * byte[] array = [0, 1, 2]
+     * assert array.every{ it &lt; 3 }
+     * assert !array.every{ it > 1 }
+     * </pre>
+     *
+     * @param self      the byte array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (byte item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a char Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * char[] array = ['a', 'b', 'c']
+     * assert array.every{ it &lt;= 'd' }
+     * assert !array.every{ it > 'b' }
+     * </pre>
+     *
+     * @param self      the char array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (char item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a short Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * short[] array = [0, 1, 2]
+     * assert array.every{ it &lt; 3 }
+     * assert !array.every{ it > 1 }
+     * </pre>
+     *
+     * @param self      the char array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (short item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of an int Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * int[] array = [0, 1, 2]
+     * assert array.every{ it &lt; 3 }
+     * assert !array.every{ it > 1 }
+     * </pre>
+     *
+     * @param self      the int array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (int item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a long Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * long[] array = [0L, 1L, 2L]
+     * assert array.every{ it &lt; 3L }
+     * assert !array.every{ it > 1L }
+     * </pre>
+     *
+     * @param self      the long array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (long item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a float Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * float[] array = [0.0f, 1.0f, 2.0f]
+     * assert array.every{ it &lt; 2.5f }
+     * assert !array.every{ it > 1.5f }
+     * </pre>
+     *
+     * @param self      the float array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (float item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Iterates over the contents of a double Array, and checks whether a
+     * predicate is valid for all elements.
+     * <pre class="groovyTestCase">
+     * double[] array = [0.0d, 1.0d, 2.0d]
+     * assert array.every{ it &lt; 2.5d }
+     * assert !array.every{ it > 1.5d }
+     * </pre>
+     *
+     * @param self      the double array over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if the closure predicate is true for all elements in the array
+     * @since 5.0.0
+     */
+    public static boolean every(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        Objects.requireNonNull(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (double item : self) {
+            if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
     //-------------------------------------------------------------------------
     // find
     //-------------------------------------------------------------------------
