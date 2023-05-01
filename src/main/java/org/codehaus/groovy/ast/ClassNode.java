@@ -444,17 +444,15 @@ public class ClassNode extends AnnotatedNode {
 
     public Set<ClassNode> getAllInterfaces() {
         Set<ClassNode> result = new LinkedHashSet<>();
+        if (isInterface()) result.add(this);
         getAllInterfaces(result);
         return result;
     }
 
     private void getAllInterfaces(Set<ClassNode> set) {
-        if (isInterface()) {
-            set.add(this);
-        }
         for (ClassNode face : getInterfaces()) {
-            set.add(face);
-            face.getAllInterfaces(set);
+            if (set.add(face)) // GROOVY-11036
+                face.getAllInterfaces(set);
         }
     }
 
