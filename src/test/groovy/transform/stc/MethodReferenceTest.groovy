@@ -24,6 +24,7 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
 
 final class MethodReferenceTest {
 
@@ -720,7 +721,7 @@ final class MethodReferenceTest {
             void test() {
                 IntFunction<Integer[]> f = Integer[]::new;
                 def result = [1, 2, 3].stream().toArray(f)
-                result == new Integer[] {1, 2, 3}
+                assert result == new Integer[] {1, 2, 3}
             }
 
             test()
@@ -733,7 +734,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
-                assert [1, 2, 3] == result
+                assert result == [1, 2, 3]
             }
 
             test()
@@ -744,13 +745,26 @@ final class MethodReferenceTest {
     void testFunctionCS2() {
         assertScript imports + '''
             @CompileStatic
-            void test() {
-                List<String> list = ['x','y','z']
-                def map = list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
-                assert map == [x: ['x'], y: ['y'], z: ['z']]
+            def test(List<String> list) {
+                list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
             }
 
-            test()
+            assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
+        '''
+    }
+
+    @NotYetImplemented
+    @Test // class::staticMethod -- GROOVY-11024
+    void testFunctionCS2x() {
+        assumeTrue(isAtLeastJdk('9.0'))
+
+        assertScript imports + '''
+            @CompileStatic
+            def test(List<String> list) {
+                list.stream().collect(Collectors.toMap(Function.identity(), List::of))
+            }
+
+            assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
         '''
     }
 
