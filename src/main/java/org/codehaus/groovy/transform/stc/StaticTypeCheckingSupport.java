@@ -311,7 +311,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #findDGMMethodsForClassNode(ClassLoader, ClassNode, String)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.2.0")
     protected static Set<MethodNode> findDGMMethodsForClassNode(final ClassNode clazz, final String name) {
         return findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), clazz, name);
     }
@@ -325,7 +325,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #findDGMMethodsForClassNode(ClassLoader, ClassNode, String, TreeSet)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.2.0")
     protected static void findDGMMethodsForClassNode(final ClassNode clazz, final String name, final TreeSet<MethodNode> accumulator) {
         findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), clazz, name, accumulator);
     }
@@ -443,6 +443,7 @@ public abstract class StaticTypeCheckingSupport {
      *
      * @return -1 if no match, 0 if the last argument is exactly the vararg type and 1 if of an assignable type
      */
+    @SuppressWarnings("removal")
     static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
         if (!isVargs(parameters)) return -1;
         int lastParamIndex = parameters.length - 1;
@@ -495,7 +496,7 @@ public abstract class StaticTypeCheckingSupport {
         return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.4")
     static boolean isVargs(final Parameter[] parameters) {
         return ParameterUtils.isVargs(parameters);
     }
@@ -791,7 +792,7 @@ public abstract class StaticTypeCheckingSupport {
         return (node.getCompileUnit() != null);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "3.0.0")
     static boolean checkPossibleLooseOfPrecision(final ClassNode left, final ClassNode right, final Expression rightExpr) {
         return checkPossibleLossOfPrecision(left, right, rightExpr);
     }
@@ -1012,7 +1013,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, ClassNode, String, ClassNode[], List)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.2.0")
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args) {
         return findDGMMethodsByNameAndArguments(MetaClassRegistryImpl.class.getClassLoader(), receiver, name, args);
     }
@@ -1024,7 +1025,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #findDGMMethodsByNameAndArguments(ClassLoader, ClassNode, String, ClassNode[], List)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.2.0")
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
         return findDGMMethodsByNameAndArguments(MetaClassRegistryImpl.class.getClassLoader(), receiver, name, args, methods);
     }
@@ -1129,6 +1130,7 @@ public abstract class StaticTypeCheckingSupport {
         return bestMethods;
     }
 
+    @SuppressWarnings("removal")
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = -1;
         if (parameters.length == argumentTypes.length) {
@@ -2187,7 +2189,7 @@ public abstract class StaticTypeCheckingSupport {
     /**
      * @deprecated Use {@link #evaluateExpression(Expression, CompilerConfiguration, GroovyClassLoader)} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.7")
     public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
         return evaluateExpression(expr, config, null);
     }
@@ -2248,12 +2250,12 @@ public abstract class StaticTypeCheckingSupport {
      * @param node a class for which we want to retrieve all interfaces
      * @return a set of interfaces implemented by this class node
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.0")
     public static Set<ClassNode> collectAllInterfaces(final ClassNode node) {
         return GeneralUtils.getInterfacesAndSuperInterfaces(node);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.0")
     public static ClassNode getCorrectedClassNode(final ClassNode cn, final ClassNode sc, final boolean completed) {
         if (completed && GenericsUtils.hasUnresolvedGenerics(cn)) return sc.getPlainNodeReference();
         return GenericsUtils.correctToGenericsSpecRecurse(GenericsUtils.createGenericsSpec(cn), sc);

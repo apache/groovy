@@ -54,7 +54,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -79,7 +78,7 @@ public class GenericsUtils {
      * @return aligned type arguments
      * @deprecated You shouldn't call this method because it is inherently unreliable
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.3.0")
     public static GenericsType[] alignGenericTypes(final GenericsType[] redirectGenericTypes, final GenericsType[] parameterizedTypes, final GenericsType[] alignmentTarget) {
         if (alignmentTarget == null) return EMPTY_GENERICS_ARRAY;
         if (parameterizedTypes == null || parameterizedTypes.length == 0) return alignmentTarget;
@@ -241,7 +240,7 @@ public class GenericsUtils {
      * @return a parameterized interface class node
      * @deprecated Use #parameterizeType instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "2.5.0")
     public static ClassNode parameterizeInterfaceGenerics(final ClassNode hint, final ClassNode target) {
         return parameterizeType(hint, target);
     }
@@ -494,31 +493,27 @@ public class GenericsUtils {
         return newSpec;
     }
 
-    public static Map<String, ClassNode> addMethodGenerics(MethodNode current, Map<String, ClassNode> oldSpec) {
+    public static Map<String, ClassNode> addMethodGenerics(final MethodNode node, final Map<String, ClassNode> oldSpec) {
         Map<String, ClassNode> newSpec = new HashMap<>(oldSpec);
-        GenericsType[] gts = current.getGenericsTypes();
-        if (gts != null) {
-            for (GenericsType gt : gts) {
-                String name = gt.getName();
-                ClassNode type = gt.getType();
-                if (gt.isPlaceholder()) {
-                    ClassNode redirect;
-                    if (gt.getUpperBounds() != null) {
-                        redirect = gt.getUpperBounds()[0];
-                    } else if (gt.getLowerBound() != null) {
-                        redirect = gt.getLowerBound();
-                    } else {
-                        redirect = ClassHelper.OBJECT_TYPE;
-                    }
-                    if (redirect.isGenericsPlaceHolder()) {
-                        // "T extends U" or "T super U"
-                        type = redirect;
-                    } else {
-                        // "T" or "T extends Thing" or "T super Thing"
-                        type = ClassHelper.makeWithoutCaching(name);
-                        type.setGenericsPlaceHolder(true);
-                        type.setRedirect(redirect);
-                    }
+        GenericsType[] tps = node.getGenericsTypes();
+        if (tps != null) {
+            for (GenericsType tp : tps) {
+                String name = tp.getName();
+                ClassNode type = tp.getType();
+                ClassNode redirect;
+                if (tp.getUpperBounds() != null) {
+                    redirect = tp.getUpperBounds()[0];
+                } else {
+                    redirect = ClassHelper.OBJECT_TYPE;
+                }
+                if (redirect.isGenericsPlaceHolder()) {
+                    // "T extends U (& Face)*"
+                    type = redirect;
+                } else {
+                    // "T" or "T extends Type (& Face)*"
+                    type = ClassHelper.makeWithoutCaching(name);
+                    type.setGenericsPlaceHolder(true);
+                    type.setRedirect(redirect);
                 }
                 newSpec.put(name, type);
             }
@@ -972,16 +967,13 @@ public class GenericsUtils {
         MethodNode abstractMethod = ClassHelper.findSAM(samType);
 
         Map<GenericsType, GenericsType> generics = makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), samType);
-        Function<ClassNode, ClassNode> resolver = t -> {
-            if (t.isGenericsPlaceHolder()) {
-                return findActualTypeByGenericsPlaceholderName(t.getUnresolvedName(), generics);
-            }
-            return t;
+        Function<ClassNode , ClassNode> resolver = t -> {
+            return t.isGenericsPlaceHolder() ? findActualTypeByGenericsPlaceholderName(t.getUnresolvedName(), generics) : t;
         };
 
         ClassNode[] parameterTypes = Arrays.stream(abstractMethod.getParameters()).map(Parameter::getType).map(resolver).toArray(ClassNode[]::new);
         ClassNode returnType = resolver.apply(abstractMethod.getReturnType());
-        return tuple(parameterTypes, returnType);
+        return new Tuple2<>(parameterTypes, returnType);
     }
 
     /**
