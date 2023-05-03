@@ -391,4 +391,11 @@ public @interface ToString {
      * @since 4.0.0
      */
     String fieldSeparator() default ", ";
+
+    /**
+     * Whether to access properties directly by their fields (faster) or via their getters.
+     *
+     * @since 4.0.12
+     */
+    boolean useGetters() default true;
 }

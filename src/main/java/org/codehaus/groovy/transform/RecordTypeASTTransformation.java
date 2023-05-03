@@ -243,7 +243,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 ToStringASTTransformation.createToString(cNode, false, false, null,
                         null, true, false, false, false,
                         false, false, false, false, true,
-                        new String[]{"[", "]", "=", ", "});
+                        new String[]{"[", "]", "=", ", "}, false);
             }
         }
 
@@ -252,8 +252,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 createRecordEquals(cNode);
                 createRecordHashCode(cNode);
             } else {
-                EqualsAndHashCodeASTTransformation.createEquals(cNode, false, false, false, null, null, false, false, true);
-                EqualsAndHashCodeASTTransformation.createHashCode(cNode, false, false, false, null, null, false, false, true);
+                EqualsAndHashCodeASTTransformation.createEquals(cNode, false, false, false, null, null, false, false, true, false);
+                EqualsAndHashCodeASTTransformation.createHashCode(cNode, true, false, false, null, null, false, false, true, false);
             }
         }
 

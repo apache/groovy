@@ -43,6 +43,7 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.util.HashCodeHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -99,6 +100,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     private static final ClassNode HASHUTIL_TYPE = make(HashCodeHelper.class);
     private static final ClassNode POJO_TYPE = make(POJO.class);
     private static final ClassNode OBJECTS_TYPE = make(Objects.class);
+    private static final ClassNode ARRAYS_TYPE = make(Arrays.class);
     private static final ClassNode OBJECT_TYPE = makeClassSafe(Object.class);
     private static final String HASH_CODE = "hashCode";
     private static final String UNDER_HASH_CODE = "_hashCode";
@@ -133,6 +135,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);
+            boolean useGetter = !memberHasValue(anno, "useGetters", false);
             List<String> excludes = getMemberStringList(anno, "excludes");
             List<String> includes = getMemberStringList(anno, "includes");
             final boolean allNames = memberHasValue(anno, "allNames", true);
@@ -140,8 +143,8 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
             if (!checkPropertyList(cNode, includes, "includes", anno, MY_TYPE_NAME, includeFields)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields)) return;
-            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo);
-            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, pojo);
+            createHashCode(cNode, cacheHashCode, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, useGetter);
+            createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, pojo, useGetter);
         }
     }
 
@@ -158,6 +161,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
+        createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, false);
+    }
+
+    public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, HASH_CODE, 0);
         if (hasExistingHashCode) {
@@ -175,11 +182,11 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             final Expression hash = varX(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
-                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo)
+                    calculateHashStatements(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, useGetter)
             ));
             body.addStatement(returnS(hash));
         } else {
-            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo));
+            body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, useGetter));
         }
 
         addGeneratedMethod(cNode,
@@ -191,14 +198,14 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 body);
     }
 
-    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
+    private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         if (pojo) {
-            return calculateHashStatementsPOJO(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties);
+            return calculateHashStatementsPOJO(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties, useGetter);
         }
-        return calculateHashStatementsDefault(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties);
+        return calculateHashStatementsDefault(cNode, hash, includeFields, callSuper, excludes, includes, allNames, allProperties, useGetter);
     }
 
-    private static Statement calculateHashStatementsDefault(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
+    private static Statement calculateHashStatementsDefault(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean useGetter) {
         final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, false, allProperties, false, false, false);
         final List<FieldNode> fList = new ArrayList<>();
@@ -213,10 +220,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         for (PropertyNode pNode : pList) {
             if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
-            Expression getter = getterThisX(cNode, pNode);
-            final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, getter));
+            Expression prop = useGetter ? getterThisX(cNode, pNode) : propX(varX("this"), pNode.getName());
+            final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, prop));
             body.addStatement(ifS(
-                    notIdenticalX(getter, varX("this")),
+                    notIdenticalX(prop, varX("this")),
                     assignS(result, current)));
 
         }
@@ -243,7 +250,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         return body;
     }
 
-    private static Statement calculateHashStatementsPOJO(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
+    private static Statement calculateHashStatementsPOJO(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean useGetter) {
         final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, false, allProperties, false, false, false);
         final List<FieldNode> fList = new ArrayList<>();
@@ -254,7 +261,11 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final ArgumentListExpression args = new ArgumentListExpression();
         for (PropertyNode pNode : pList) {
             if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
-            args.addExpression(getterThisX(cNode, pNode));
+            if (useGetter) {
+                args.addExpression(getterThisX(cNode, pNode));
+            } else {
+                args.addExpression(propX(varX("this"), pNode.getName()));
+            }
         }
         for (FieldNode fNode : fList) {
             if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
@@ -263,7 +274,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (callSuper) {
             args.addExpression(varX("super"));
         }
-        Expression calcHash = callX(OBJECTS_TYPE, "hash", args);
+        Expression calcHash = callX(ARRAYS_TYPE, HASH_CODE, args);
         if (hash != null) {
             body.addStatement(assignS(hash, calcHash));
         } else {
@@ -303,6 +314,9 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
+        createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, pojo, false);
+    }
+    public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, EQUALS, 1);
@@ -348,8 +362,10 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(
                     pNode.getOriginType(), cNode
             );
+            Expression thisX = useGetter ? getterThisX(originType, pNode) : propX(varX("this"), pNode.getName());
+            Expression otherX = useGetter ? getterX(originType, otherTyped, pNode) : propX(otherTyped, pNode.getName());
             Expression propsEqual = pojo
-                    ? callX(OBJECTS_TYPE, EQUALS, args(getterThisX(originType, pNode), getterX(originType, otherTyped, pNode)))
+                    ? callX(OBJECTS_TYPE, EQUALS, args(thisX, otherX))
                     : hasEqualPropertyX(originType, pNode, otherTyped);
             if (!canBeSelf) {
                 body.addStatement(ifS(notX(propsEqual), returnS(constX(Boolean.FALSE, true))));
