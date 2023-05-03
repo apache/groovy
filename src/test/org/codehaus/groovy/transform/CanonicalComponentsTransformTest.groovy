@@ -641,6 +641,50 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testToStringUseGettersAttribute() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @ToString(useGetters=true)
+            record Foo0(String x0, String x1) {
+                String x0() { x0.toUpperCase() }
+            }
+
+            @ToString(useGetters=false)
+            record Foo1(String x0, String x1) {
+                String x1() { x1.toUpperCase() }
+            }
+
+            assert new Foo0('cat', 'dog').toString() == 'Foo0(CAT, dog)'
+            assert new Foo1('cat', 'dog').toString() == 'Foo1(cat, dog)'
+        """
+    }
+
+    void testEqualsAndHashCodeUseGettersAttribute() {
+        new GroovyShell().evaluate """
+            import groovy.transform.*
+
+            @EqualsAndHashCode(useGetters=true)
+            record Foo0(String x0, String x1) {
+                String x0() { x0.toUpperCase() }
+            }
+
+            @EqualsAndHashCode(useGetters=false)
+            record Foo1(String x0, String x1) {
+                String x1() { x1.toUpperCase() }
+            }
+
+            def foo0a = new Foo0('cat', 'dog')
+            def foo0b = new Foo0('CAT', 'dog')
+            def foo1a = new Foo1('cat', 'dog')
+            def foo1b = new Foo1('cat', 'DOG')
+            assert foo0a == foo0b
+            assert foo0a.hashCode() == foo0b.hashCode()
+            assert foo1a != foo1b
+            assert foo1a.hashCode() != foo1b.hashCode()
+        """
+    }
+
     void testincludeSuperFieldsAndroperties_GROOVY8013() {
         new GroovyShell().evaluate """
             import groovy.transform.*
@@ -767,7 +811,7 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         new GroovyShell().evaluate """
             import groovy.transform.*
             @EqualsAndHashCode(includeFields = true)
-            class FieldAndPropertyIncludedInHashCode {            
+            class FieldAndPropertyIncludedInHashCode {
                 private String field
                 String property
             }
@@ -779,7 +823,7 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
         new GroovyShell().evaluate '''
             import groovy.transform.*
             @EqualsAndHashCode(allProperties = true)
-            class FieldAndPropertyIncludedInHashCode {            
+            class FieldAndPropertyIncludedInHashCode {
                 String property
                 String getField() { null }
             }

@@ -606,8 +606,8 @@ public class GeneralUtils {
         return eqX(varX(fNode), propX(other, fNode.getName()));
     }
 
-    public static BinaryExpression hasEqualPropertyX(final ClassNode annotatedNode, final PropertyNode pNode, final VariableExpression other) {
-        return eqX(getterThisX(annotatedNode, pNode), getterX(other.getOriginType(), other, pNode));
+    public static BinaryExpression hasEqualPropertyX(final ClassNode cNode, final PropertyNode pNode, final VariableExpression other) {
+        return eqX(getterThisX(cNode, pNode), getterX(other.getOriginType(), other, pNode));
     }
 
     @Deprecated

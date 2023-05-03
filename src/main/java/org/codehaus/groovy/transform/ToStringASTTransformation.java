@@ -66,6 +66,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -108,6 +109,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             String rightDelim = getMemberStringValue(anno, "rightDelimiter", ")");
             String nameValueSep = getMemberStringValue(anno, "nameValueSeparator", ":");
             String fieldSep = getMemberStringValue(anno, "fieldSeparator", ", ");
+            boolean useGetter = !memberHasValue(anno, "useGetters", false);
             if (includes != null && includes.contains("super")) {
                 includeSuper = true;
             }
@@ -133,7 +135,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (!checkPropertyList(cNode, includes != null ? DefaultGroovyMethods.minus(includes, "super") : null, "includes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties)) return;
             String[] delims = new String[]{leftDelim, rightDelim, nameValueSep, fieldSep};
-            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames, includeSuperFields, pojo, delims);
+            createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cacheToString, includeSuperProperties, allProperties, allNames, includeSuperFields, pojo, delims, useGetter);
         }
     }
 
@@ -166,6 +168,9 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields, boolean pojo, String[] delims) {
+        createToString(cNode, includeSuper, includeFields, excludes, includes, includeNames, ignoreNulls, includePackage, cache, includeSuperProperties, allProperties, allNames, includeSuperFields, pojo, delims, false);
+    }
+    public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields, boolean pojo, String[] delims, boolean useGetter) {
         if (delims == null || delims.length != 4) {
             delims = new String[]{"(", ")", ":", ", "};
         }
@@ -186,11 +191,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             final Expression savedToString = varX(cacheField);
             body.addStatement(ifS(
                     equalsNullX(savedToString),
-                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames, pojo, delims))
+                    assignS(savedToString, calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames, pojo, delims, useGetter))
             ));
             tempToString = savedToString;
         } else {
-            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames, pojo, delims);
+            tempToString = calculateToStringStatements(cNode, includeSuper, includeFields, includeSuperFields, excludes, includes, includeNames, ignoreNulls, includePackage, includeSuperProperties, allProperties, body, allNames, pojo, delims, useGetter);
         }
         body.addStatement(returnS(tempToString));
 
@@ -210,7 +215,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         boolean canBeSelf;
     }
 
-    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, boolean includeSuperFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames, boolean pojo, String[] delims) {
+    private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, boolean includeSuperFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames, boolean pojo, String[] delims, boolean useGetter) {
         // def _result = new StringBuilder()
         final Expression result = localVarX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
@@ -239,7 +244,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
                 // it's really just a field
                 elements.add(new ToStringElement(varX(fNode), name, canBeSelf(cNode, fNode.getType())));
             } else {
-                Expression getter = getterThisX(cNode, pNode);
+                Expression getter = useGetter ? getterThisX(cNode, pNode) : propX(varX("this"), pNode.getName());
                 elements.add(new ToStringElement(getter, name, canBeSelf(cNode, pNode.getType())));
             }
         }
