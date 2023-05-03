@@ -489,8 +489,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
         boolean isGetterDefined = cNode.getDeclaredMethods(pNode.getName()).stream()
                 .anyMatch(MethodNodeUtils::isGetterCandidate);
+        pNode.setGetterName(pNode.getName());
         if (!isGetterDefined) {
-            pNode.setGetterName(pNode.getName());
             Statement getter = handler.createPropGetter(pNode);
             if (getter != null) {
                 pNode.setGetterBlock(getter);
