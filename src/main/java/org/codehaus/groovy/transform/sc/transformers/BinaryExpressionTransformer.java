@@ -110,7 +110,7 @@ public class BinaryExpressionTransformer {
                             pe.getObjectExpression(), // "a"
                             directMCT, // "setX"
                             right, // "val"
-                            false,
+                            pe.isImplicitThis(),
                             pe.isSafe(),
                             pe.getProperty(), // "x"
                             bin // "a.x = val"
