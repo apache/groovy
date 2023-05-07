@@ -24,54 +24,52 @@ package groovy.transform.stc
 class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
 
     void testBinaryStringPlus() {
-        assertScript """
+        assertScript '''
             String str = 'a'
             String str2 = 'b'
             str+str2
-        """
+        '''
     }
 
     void testBinaryStringPlusInt() {
-        assertScript """
+        assertScript '''
             String str = 'a'
-            int str2 = 2
-            str+str2
-        """
+            int num = 2
+            str+num
+        '''
     }
 
     void testBinaryObjectPlusInt() {
-        shouldFailWithMessages """
-            def str = new Object()
-            int str2 = 2
-            str+str2
-        """, "Cannot find matching method java.lang.Object#plus(int)"
+        shouldFailWithMessages '''
+            def obj = new Object()
+            int num = 2
+            obj+num
+        ''',
+        'Cannot find matching method java.lang.Object#plus(int)'
     }
 
     void testBinaryIntPlusObject() {
-        shouldFailWithMessages """
-            def str = new Object()
-            int str2 = 2
-            str2+str
-        """, "Cannot find matching method int#plus(java.lang.Object)"
+        shouldFailWithMessages '''
+            def obj = new Object()
+            int num = 2
+            num+obj
+        ''',
+        'Cannot find matching method int#plus(java.lang.Object)'
     }
 
     void testPrimitiveComparison() {
         assertScript '''
             1<2
         '''
-
         assertScript '''
             1>2
         '''
-
         assertScript '''
             1<=2
         '''
-
         assertScript '''
             1>=2
         '''
-
         assertScript '''
             1==2
         '''
@@ -81,33 +79,36 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         assertScript '''
             1<new Integer(2)
         '''
-
         assertScript '''
             1>new Integer(2)
         '''
-
         assertScript '''
             1<=new Integer(2)
         '''
-
         assertScript '''
             1>=new Integer(2)
         '''
-
         assertScript '''
             1==new Integer(2)
         '''
+    }
+
+    void testOtherTypeComparison() {
+        shouldFailWithMessages '''
+            def that = new Object()
+            def test = (that >= this)
+            test.booleanValue() // no error
+        ''',
+        'Cannot find matching method java.lang.Object#compareTo'
     }
 
     void testShiftOnPrimitives() {
         assertScript '''
             1 << 8
         '''
-
         assertScript '''
             1 >> 8
         '''
-
         assertScript '''
             1 >>> 8
         '''
@@ -119,13 +120,11 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             int y = 8
             x << y
         '''
-
         assertScript '''
             int x = 1
             int y = 8
             x >> y
         '''
-
         assertScript '''
             int x = 1
             int y = 8
@@ -134,7 +133,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5644
-    void testSpaceshipOperatorShouldNotThrowAmbiguousError() {
+    void testSpaceshipOperatorNoAmbiguousError() {
         assertScript '''
             Integer x = 3
             Integer y = 4
@@ -142,22 +141,154 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6137, GROOVY-7473, GROOVY-10909
+    void testInOperatorImplicitNullSafetyChecks() {
+        assertScript '''
+            class C {
+                int i = 0
+                int getA() { i++ }
+                boolean isCase(obj) { true }
+                boolean isNotCase(obj) { false }
+            }
+
+            new C().with { c ->
+                assert !(a !in c)
+                assert i == 1
+                assert a in c
+                assert i == 2
+            }
+        '''
+    }
+
+    // GROOVY-10915
+    void testInNotInAndUnaryNotOperatorConsistent() {
+        assertScript '''
+            class C {
+                boolean isCase(obj) { true }
+            }
+
+            def c = new C()
+            assert 0 in c
+            assert !!(0 in c)
+            assert !(0 !in c)
+            assert  (0 !in c) == false
+        '''
+    }
+
+    // GROOVY-7473
+    void testInOperatorShouldEvaluateOperandsOnce() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            int getA() { i++ }
+            int getB() { j++ }
+
+            assert a in b
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++; null }
+            def getB() { j++ }
+
+            assert !(a in b)
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++ }
+            def getB() { j++; null }
+
+            assert !(a in b)
+            assert i == 1
+            assert j == 1
+        '''
+    }
+
+    // GROOVY-6137, GROOVY-7473, GROOVY-10383
+    void testInOperatorShouldEvaluateOperandsOnce2() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            int getA() { i++ }
+            int getB() { j++ }
+
+            assert !(a !in b)
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++; null }
+            def getB() { j++ }
+
+            assert a !in b
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++ }
+            def getB() { j++; null }
+
+            assert a !in b
+            assert i == 1
+            assert j == 1
+        '''
+    }
+
+    // GROOVY-10394
+    void testUfoOperatorShouldEvaluateOperandsOnce() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 1
+            Integer getA() { i++ }
+            Integer getB() { j++ }
+
+            assert (a <=> b) < 0
+            assert i == 1
+            assert j == 2
+        '''
+    }
+
     void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
         shouldFailWithMessages '''
             [] < 1
-        ''', "Cannot find matching method java.util.List#compareTo(int)"
+        ''',
+        'Cannot find matching method java.util.List#compareTo(int)'
     }
 
     void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc' < 1
-        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+        ''',
+        'Cannot find matching method java.lang.String#compareTo(int)'
     }
 
     void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc'.compareTo(1)
-        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+        ''',
+        'Cannot find matching method java.lang.String#compareTo(int)'
     }
 }
-

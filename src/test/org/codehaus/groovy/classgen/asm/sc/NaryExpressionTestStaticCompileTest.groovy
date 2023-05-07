@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.STCnAryExpressionTest
 
 /**
@@ -25,5 +26,18 @@ import groovy.transform.stc.STCnAryExpressionTest
  */
 class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
 
-}
+    @Override @NotYetImplemented
+    void testInOperatorImplicitNullSafetyChecks() {
+        super.testInOperatorImplicitNullSafetyChecks()
+    }
 
+    @Override @NotYetImplemented
+    void testInOperatorShouldEvaluateOperandsOnce() {
+        super.testInOperatorShouldEvaluateOperandsOnce()
+    }
+
+    @Override @NotYetImplemented
+    void testUfoOperatorShouldEvaluateOperandsOnce() {
+        super.testUfoOperatorShouldEvaluateOperandsOnce()
+    }
+}
