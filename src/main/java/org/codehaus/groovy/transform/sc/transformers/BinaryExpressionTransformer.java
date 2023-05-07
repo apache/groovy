@@ -232,12 +232,17 @@ public class BinaryExpressionTransformer {
     }
 
     private Expression transformInOperation(final BinaryExpression bin, final boolean in) {
+        MethodNode target = bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (target == null) return staticCompilationTransformer.superTransform(bin); // GROOVY-10915
         Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
 
         // transform "left [!]in right" into "right.is[Not]Case(left)"
         MethodCallExpression call = callX(rightExpression, in ? "isCase" : "isNotCase", leftExpression);
-        call.setImplicitThis(false); call.setSourcePosition(bin); call.copyNodeMetaData(bin);
-        call.setMethodTarget(bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+        call.setImplicitThis(false);
+        call.setMethodTarget(target);
+        call.setSourcePosition(bin);
+        call.copyNodeMetaData(bin);
+
         // GROOVY-7473: no null test for simple cases
         if (rightExpression instanceof ListExpression
                 || rightExpression instanceof MapExpression

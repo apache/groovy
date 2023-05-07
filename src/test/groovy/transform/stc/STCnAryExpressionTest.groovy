@@ -156,17 +156,31 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             class C {
                 int i = 0
                 int getA() { i++ }
-                boolean isCase(val) { true }
-                boolean isNotCase(val) { false }
-
-                void test() {
-                    assert !(a !in this)
-                    assert i == 1
-                    assert a in this
-                    assert i == 2
-                }
+                boolean isCase(obj) { true }
+                boolean isNotCase(obj) { false }
             }
-            new C().test()
+
+            new C().with { c ->
+                assert !(a !in c)
+                assert i == 1
+                assert a in c
+                assert i == 2
+            }
+        '''
+    }
+
+    // GROOVY-10915
+    void testInNotInAndUnaryNotOperatorConsistent() {
+        assertScript '''
+            class C {
+                boolean isCase(obj) { true }
+            }
+
+            def c = new C()
+            assert 0 in c
+            assert !!(0 in c)
+            assert !(0 !in c)
+            assert  (0 !in c) == false
         '''
     }
 

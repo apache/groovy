@@ -3769,20 +3769,17 @@ out:                if (mn.size() != 1) {
      * @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
     private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
-        if (directMethodCallCandidate instanceof ExtensionMethodNode) {
-            ExtensionMethodNode emn = (ExtensionMethodNode) directMethodCallCandidate;
-            if ("withTraits".equals(emn.getName()) && "DefaultGroovyMethods".equals(emn.getExtensionMethodNode().getDeclaringClass().getNameWithoutPackage())) {
-                List<ClassNode> nodes = new LinkedList<>();
-                Collections.addAll(nodes, receiver.getInterfaces());
-                for (ClassNode arg : args) {
-                    if (isClassClassNodeWrappingConcreteType(arg)) {
-                        nodes.add(arg.getGenericsTypes()[0].getType());
-                    } else {
-                        nodes.add(arg);
-                    }
+        if ("withTraits".equals(directMethodCallCandidate.getName()) && isDefaultExtension(directMethodCallCandidate)) {
+            List<ClassNode> nodes = new ArrayList<>();
+            Collections.addAll(nodes, receiver.getInterfaces());
+            for (ClassNode arg : args) {
+                if (isClassClassNodeWrappingConcreteType(arg)) {
+                    nodes.add(arg.getGenericsTypes()[0].getType());
+                } else {
+                    nodes.add(arg);
                 }
-                return new WideningCategories.LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
             }
+            return new WideningCategories.LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
         }
         return returnType;
     }
@@ -4518,6 +4515,12 @@ out:                if (mn.size() != 1) {
         }
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
+            if (op == COMPARE_NOT_IN && isDefaultExtension(method)) {
+                // GROOVY-10915: check if left implements its own isCase method
+                MethodNode isCase = findMethodOrFail(expr, left, "isCase", right);
+                if (isCase != null && !isDefaultExtension(isCase)) return null; // require dynamic dispatch
+            }
+
             storeTargetMethod(expr, method);
             typeCheckMethodsWithGenericsOrFail(left, new ClassNode[]{right}, method, expr);
 
@@ -4739,7 +4742,7 @@ out:                if (mn.size() != 1) {
         if ("use".equals(name) && args != null && args.length == 2 && args[1].equals(CLOSURE_TYPE)) {
             category = true;
             for (MethodNode method : foundMethods) {
-                if (!(method instanceof ExtensionMethodNode) || !((ExtensionMethodNode) method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE)) {
+                if (!isDefaultExtension(method)) {
                     category = false;
                     break;
                 }
@@ -5591,6 +5594,10 @@ out:                if (mn.size() != 1) {
             args.addExpression(arguments);
         }
         return args;
+    }
+
+    private static boolean isDefaultExtension(final MethodNode method) {
+        return method instanceof ExtensionMethodNode && ((ExtensionMethodNode) method).getExtensionMethodNode().getDeclaringClass().equals(DGM_CLASSNODE);
     }
 
     private static boolean isGenericsPlaceHolderOrArrayOf(ClassNode cn) {
