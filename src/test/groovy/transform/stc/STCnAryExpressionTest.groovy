@@ -34,25 +34,25 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     void testBinaryStringPlusInt() {
         assertScript '''
             String str = 'a'
-            int str2 = 2
-            str+str2
+            int num = 2
+            str+num
         '''
     }
 
     void testBinaryObjectPlusInt() {
         shouldFailWithMessages '''
-            def str = new Object()
-            int str2 = 2
-            str+str2
+            def obj = new Object()
+            int num = 2
+            obj+num
         ''',
         'Cannot find matching method java.lang.Object#plus(int)'
     }
 
     void testBinaryIntPlusObject() {
         shouldFailWithMessages '''
-            def str = new Object()
-            int str2 = 2
-            str2+str
+            def obj = new Object()
+            int num = 2
+            num+obj
         ''',
         'Cannot find matching method int#plus(java.lang.Object)'
     }
@@ -138,6 +138,40 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             Integer x = 3
             Integer y = 4
             assert (x <=> y) == -1
+        '''
+    }
+
+    // GROOVY-6137, GROOVY-7473, GROOVY-10909
+    void testInOperatorImplicitNullSafetyChecks() {
+        assertScript '''
+            class C {
+                int i = 0
+                int getA() { i++ }
+                boolean isCase(obj) { true }
+                boolean isNotCase(obj) { false }
+            }
+
+            new C().with { c ->
+                assert !(a !in c)
+                assert i == 1
+                assert a in c
+                assert i == 2
+            }
+        '''
+    }
+
+    // GROOVY-10915
+    void testInNotInAndUnaryNotOperatorConsistent() {
+        assertScript '''
+            class C {
+                boolean isCase(obj) { true }
+            }
+
+            def c = new C()
+            assert 0 in c
+            assert !!(0 in c)
+            assert !(0 !in c)
+            assert  (0 !in c) == false
         '''
     }
 
