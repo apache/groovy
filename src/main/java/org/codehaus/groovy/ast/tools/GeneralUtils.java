@@ -172,6 +172,10 @@ public class GeneralUtils {
         return new AttributeExpression(owner, attribute);
     }
 
+    public static Expression attrX(final Expression oe, final String propName) {
+        return new AttributeExpression(oe, constX(propName));
+    }
+
     public static BinaryExpression binX(final Expression left, final Token token, final Expression right) {
         return new BinaryExpression(left, token, right);
     }
