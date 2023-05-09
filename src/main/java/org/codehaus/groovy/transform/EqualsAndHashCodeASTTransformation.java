@@ -54,6 +54,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -363,7 +364,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                     pNode.getOriginType(), cNode
             );
             Expression thisX = useGetter ? getterThisX(originType, pNode) : propX(varX("this"), pNode.getName());
-            Expression otherX = useGetter ? getterX(originType, otherTyped, pNode) : propX(otherTyped, pNode.getName());
+            Expression otherX = useGetter ? getterX(originType, otherTyped, pNode) : attrX(otherTyped, pNode.getName());
             Expression propsEqual = pojo
                     ? callX(OBJECTS_TYPE, EQUALS, args(thisX, otherX))
                     : hasEqualPropertyX(originType, pNode, otherTyped);
