@@ -19,32 +19,41 @@
 package org.apache.groovy.util
 
 import org.junit.Test
-import static org.apache.groovy.util.BeanUtils.decapitalize
-import static org.apache.groovy.util.BeanUtils.capitalize
 
-class BeanUtilsTest {
+final class BeanUtilsTest {
+
     @Test
-    void testJavaBeanDecapitalize() {
-        assert decapitalize('Prop') == 'prop'
-        assert decapitalize('prop') == 'prop'
-        assert decapitalize('SomeProp') == 'someProp'
-        assert decapitalize('X') == 'x'
-        assert decapitalize('DB') == 'DB' // GROOVY-9451
-        assert decapitalize('XML') == 'XML'
-        assert decapitalize('aProp') == 'aProp'
-        assert decapitalize('AProp') == 'AProp'
+    void testCapitalize() {
+        [
+            Prop    : 'Prop',
+            prop    : 'Prop',
+            someProp: 'SomeProp',
+            X       : 'X',
+            DB      : 'DB',
+            XML     : 'XML',
+            aProp   : 'aProp', // GROOVY-3211
+            pNAME   : 'pNAME', // GROOVY-3211
+            AProp   : 'AProp', // GROOVY-3211
+            '_prop' : '_prop'
+        ].each { string, expect ->
+            assert BeanUtils.capitalize(string) == expect
+        }
     }
 
     @Test
-    void testJavaBeanCapitalize() {
-        assert capitalize('Prop') == 'Prop'
-        assert capitalize('prop') == 'Prop'
-        assert capitalize('someProp') == 'SomeProp'
-        assert capitalize('X') == 'X'
-        assert capitalize('DB') == 'DB'
-        assert capitalize('XML') == 'XML'
-        assert capitalize('aProp') == 'aProp' // GROOVY-3211
-        assert capitalize('pNAME') == 'pNAME' // GROOVY-3211
-        assert capitalize('AProp') == 'AProp' // GROOVY-3211
+    void testDecapitalize() {
+        [
+            Prop    : 'prop',
+            prop    : 'prop',
+            SomeProp: 'someProp',
+            X       : 'x',
+            DB      : 'DB', // GROOVY-9451
+            XML     : 'XML',
+            aProp   : 'aProp',
+            AProp   : 'AProp',
+            '_Prop' : '_Prop'
+        ].each { string, expect ->
+            assert BeanUtils.decapitalize(string) == expect
+        }
     }
 }

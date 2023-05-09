@@ -18,47 +18,52 @@
  */
 package org.apache.groovy.util;
 
-import static java.lang.Character.isUpperCase;
-
 public class BeanUtils {
+
     /**
-     * Returns a new String which is the same as the original except the first letter
+     * Returns a string which is the same as the original except the first letter
      * will be lowercase except for some special cases as per JavaBean handling.
      * In particular, if the first two letters are both uppercase, e.g. URL,
      * then no change of case occurs.
-     *
-     * Originally inspired by the method with the same name in java.lang.Introspector.
-     * See also:
-     * https://stackoverflow.com/questions/4052840/most-efficient-way-to-make-the-first-character-of-a-string-lower-case/4052914
+     * <p>
+     * Originally inspired by the method with the same name in {@link java.beans.Introspector}.
      *
      * @param property a string representing the name of a JavaBean-like property
      * @return the decapitalized string
+     *
+     * @since 3.0.0
+     * @see https://stackoverflow.com/questions/4052840/most-efficient-way-to-make-the-first-character-of-a-string-lower-case/4052914
      */
     public static String decapitalize(final String property) {
-        if (property == null || property.isEmpty()) return property;
-        if (property.length() >= 2 && isUpperCase(property.charAt(1)) && isUpperCase(property.charAt(0))) return property;
+        int propertyLength = (property == null ? 0 : property.length());
+        if (propertyLength == 0 || !Character.isUpperCase(property.charAt(0))
+                || (propertyLength > 1 && Character.isUpperCase(property.charAt(1)))) {
+            return property;
+        }
         final char[] c = property.toCharArray();
         c[0] = Character.toLowerCase(c[0]);
         return new String(c);
     }
 
     /**
-     * This is the complement the behavior of the decapitalize(string) method.
+     * This is the complement the behavior of the decapitalize(String) method.
      * We handle names that begin with an initial lowerCase followed by upperCase
      * with special JavaBean behavior (which is to make no change). See GROOVY-3211.
      *
      * @param property the property name to capitalize
      * @return the name capitalized, except when we don't
+     *
+     * @since 3.0.0
      */
     public static String capitalize(final String property) {
-        final String rest = property.substring(1);
-
-        // Funky rule so that names like 'pNAME' will still work.
-        if (Character.isLowerCase(property.charAt(0)) && (rest.length() > 0) && isUpperCase(rest.charAt(0))) {
+        int propertyLength = (property == null ? 0 : property.length());
+        if (propertyLength == 0 || !Character.isLowerCase(property.charAt(0))
+                || (propertyLength > 1 && Character.isUpperCase(property.charAt(1)))) {
             return property;
         }
-
-        return property.substring(0, 1).toUpperCase() + rest;
+        final char[] c = property.toCharArray();
+        c[0] = Character.toUpperCase(c[0]);
+        return new String(c);
     }
 
     private BeanUtils() {

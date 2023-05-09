@@ -502,9 +502,9 @@ public class MetaClassHelper {
     }
 
     /**
-     * @deprecated Use BeanUtils.capitalize instead
+     * @deprecated Use {@link BeanUtils#capitalize} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "3.0.0")
     public static String capitalize(final String property) {
         return BeanUtils.capitalize(property);
     }
