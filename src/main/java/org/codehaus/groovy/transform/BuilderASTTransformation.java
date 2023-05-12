@@ -26,14 +26,12 @@ import groovy.transform.builder.DefaultStrategy;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
@@ -47,7 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static groovy.transform.Undefined.isUndefined;
-import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -59,9 +57,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware, TransformWithPriority {
 
     private static final Class MY_CLASS = Builder.class;
-    private static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
+    private static final ClassNode MY_TYPE = make(MY_CLASS);
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode RECORD_TYPE = makeWithoutCaching(RecordBase.class, false);
+    private static final ClassNode RECORD_TYPE = make(RecordBase.class, false);
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
@@ -80,7 +78,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                     return;
                 }
                 ClassNode cn = (ClassNode) parent;
-                if (!cn.getAnnotations(RECORD_TYPE).isEmpty()) {
+                if (hasAnnotation(cn, RECORD_TYPE)) {
                     // we'll later create a tuple constructor and move the builder annotation
                     // to it but let's create a mock constructor node for now
                     int size = cn.getProperties().size();
@@ -134,7 +132,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                     if (shouldSkipUndefinedAware(descriptor.getName(), excludes, includes, allNames)) continue;
                     // skip hidden and read-only props
                     if (descriptor.isHidden() || descriptor.getWriteMethod() == null) continue;
-                    result.add(new PropertyInfo(descriptor.getName(), ClassHelper.make(descriptor.getPropertyType())));
+                    result.add(new PropertyInfo(descriptor.getName(), make(descriptor.getPropertyType())));
                 }
             } catch (IntrospectionException ignore) {
             }
@@ -276,7 +274,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
     }
 
     private BuilderStrategy createBuilderStrategy(AnnotationNode anno, GroovyClassLoader loader) {
-        ClassNode strategyClass = getMemberClassValue(anno, "builderStrategy", ClassHelper.make(DefaultStrategy.class));
+        ClassNode strategyClass = getMemberClassValue(anno, "builderStrategy", make(DefaultStrategy.class));
 
         if (strategyClass == null) {
             addError("Couldn't determine builderStrategy class", anno);
