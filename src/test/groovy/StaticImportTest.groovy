@@ -37,6 +37,7 @@ import static java.util.jar.Attributes.*
 import static java.util.jar.Attributes.Name as AttrName
 import static groovy.Container5087.*
 import static Foo4964.*
+
 import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
 
 final class StaticImportTest extends groovy.test.GroovyTestCase {
@@ -321,21 +322,23 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     // GROOVY-8389, GROOVY-10329
     void testStaticImportPropertyWithClosure() {
         for (imports in ['import static Foo.bar; import static Foo.baz', 'import static Foo.*']) {
-            assertScript """$imports
-                class Foo {
-                    static Closure<String> bar = { -> 'property' }
-                    static Closure<String> baz = { -> 'property' }
-                }
-                String bar() {
-                    'method'
-                }
-                @groovy.transform.CompileStatic
-                def test() {
-                    bar() + ':' + baz()
-                }
-                String result = test()
-                assert result == 'method:property'
-            """
+            for (tag in ['@groovy.transform.CompileDynamic', '@groovy.transform.CompileStatic']) {
+                assertScript """$imports
+                    class Foo {
+                        static Closure<String> bar = { -> 'property' }
+                        static Closure<String> baz = { -> 'property' }
+                    }
+                    String bar() {
+                        'method'
+                    }
+                    $tag
+                    String test() {
+                        bar() + ':' + baz()
+                    }
+                    String result = test()
+                    assert result == 'method:property'
+                """
+            }
         }
     }
 
@@ -434,36 +437,46 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         } catch (MissingMethodException expected) {}
     }
 
-    // GROOVY-3945, GROOVY-10329
+    // GROOVY-3945, GROOVY-10329, GROOVY-11056
     void testStaticImportOfClosureProperty() {
         for (imports in ['import static groovy.StaticImportTarget.cl', 'import static groovy.StaticImportTarget.*']) {
             assertScript """$imports
                 String result = cl()
                 assert result == 'StaticImportTarget#static closure called'
             """
+            assertScript """$imports
+                def fn = { -> cl() }
+                String result = fn()
+                assert result == 'StaticImportTarget#static closure called'
+            """
         }
+
+        assertScript """import static groovy.StaticImportTarget.cl as fn
+            String result = fn()
+            assert result == 'StaticImportTarget#static closure called'
+        """
     }
 
-    // GROOVY-7490, GROOVY-10329
+    // GROOVY-7490, GROOVY-10329, GROOVY-11056
     void testStaticImportOfCallableProperty() {
         for (imports in ['import static Pogo.callable_property', 'import static Pogo.*']) {
-            assertScript """$imports
-                class WithCall {
-                    String call(String input) {
-                        return input
+            for (use in ['@groovy.transform.CompileStatic caller()', 'def caller()', 'def caller =']) {
+                assertScript """$imports
+                    class WithCall {
+                        String call(String input) {
+                            return input
+                        }
                     }
-                }
-                class Pogo {
-                    static final WithCall callable_property = new WithCall()
-                }
-
-                @groovy.transform.CompileStatic
-                def usage() {
-                    callable_property('works')
-                }
-                String result = usage()
-                assert result == 'works'
-            """
+                    class Pogo {
+                        static final WithCall callable_property = new WithCall()
+                    }
+                    $use {
+                        callable_property('works')
+                    }
+                    String result = caller()
+                    assert result == 'works'
+                """
+            }
         }
     }
 
