@@ -68,16 +68,19 @@ import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
  * Visitor to resolve constants and method calls from static imports.
  */
 public class StaticImportVisitor extends ClassCodeExpressionTransformer {
-    private ClassNode currentClass;
-    private MethodNode currentMethod;
+
     private SourceUnit sourceUnit;
-    private boolean inSpecialConstructorCall;
-    private boolean inClosure;
-    private boolean inPropertyExpression;
-    private Expression foundConstant;
+    private ClassNode  currentClass;
+    private MethodNode currentMethod;
+
     private Expression foundArgs;
+    private Expression foundConstant;
+
+    private boolean inClosure;
     private boolean inAnnotation;
     private boolean inLeftExpression;
+    private boolean inPropertyExpression;
+    private boolean inSpecialConstructorCall;
 
     public void visitClass(final ClassNode classNode, final SourceUnit sourceUnit) {
         this.currentClass = classNode;
@@ -427,10 +430,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (staticImports.containsKey(name)) {
             ImportNode importNode = staticImports.get(name);
             expression = findStaticMethod(importNode.getType(), importNode.getFieldName(), args);
-            if (expression != null) {
-                return expression;
-            }
-            if (!inClosure && !inLeftExpression) {
+            if (expression != null) return expression;
+            if (!inLeftExpression) { // GROOVY-11056, et al.
                 expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
                 if (expression != null) { // assume name refers to a callable static field/property
                     MethodCallExpression call = new MethodCallExpression(expression, "call", args);
@@ -481,7 +482,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             ClassNode importType = importNode.getType();
             expression = findStaticMethod(importType, name, args);
             if (expression != null) return expression;
-            if (!inClosure && !inLeftExpression) { // GROOVY-10329
+            if (!inLeftExpression) { // GROOVY-10329, et al.
                 expression = findStaticPropertyOrField(importType, name);
                 if (expression != null) { // assume name refers to a callable static field/property
                     MethodCallExpression call = new MethodCallExpression(expression, "call", args);
