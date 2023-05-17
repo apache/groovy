@@ -987,6 +987,8 @@ public class JavaStubGenerator {
                 val = writer.toString();
             } else if (constValue instanceof Number || constValue instanceof Boolean) {
                 val = constValue.toString();
+            } else if (constValue instanceof Enum) {
+                val = constValue.getClass().getName() + "." + constValue.toString();
             } else {
                 val = "\"" + escapeSpecialChars(constValue.toString()) + "\"";
                 replaceDollars = false;
