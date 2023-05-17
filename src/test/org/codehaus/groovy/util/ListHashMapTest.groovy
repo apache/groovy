@@ -18,168 +18,191 @@
  */
 package org.codehaus.groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class ListHashMapTest extends GroovyTestCase {
+final class ListHashMapTest {
 
-    private final ListHashMap list = new ListHashMap(2)
+    private final ListHashMap lhm = new ListHashMap(2)
 
-    void testEmptyWhenCreated() {
-        assert list.isEmpty()
-        assert list.@maxListFill == 2
+    @Test
+    void testEmptyAtFirst() {
+        assert lhm.isEmpty()
+        assert lhm.size() == 0
+        assert lhm.@keys.length == 2
     }
 
+    @Test
     void testInsertElement() {
-        list.put("a", "a")
-        assert list.size() == 1
-        assert list.@innerMap == null
+        lhm.put('a', 'a')
+        assert lhm.size() == 1
+        assert lhm.@innerMap == null
     }
 
+    @Test
     void testInsertTwoElements() {
-        list.put("a", "a")
-        list.put("b", "b")
-        assert list.size() == 2
-        assert list.@innerMap == null
+        lhm.put('a', 'a')
+        lhm.put('b', 'b')
+        assert lhm.size() == 2
+        assert lhm.@innerMap == null
     }
 
+    @Test
     void testInsertWithSameKey() {
-        list.put("a", "a")
-        list.put("a", "b")
-        assert list.size() == 1
-        assert list.@innerMap == null
-        assert list.get("a") == "b"
+        assert lhm.put('a', 'a') == null
+        assert lhm.put('a', 'b') == 'a'
+        assert lhm.size() == 1
+        assert lhm.get('a') == 'b'
+        assert lhm.@innerMap == null
     }
 
+    @Test
     void testSwitchToInnerMap() {
-        list.put("a", "a")
-        list.put("b", "b")
-        list.put("c", "c")
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@innerMap.size() == 3
+        assert lhm.put('a', 'a') == null
+        assert lhm.put('b', 'b') == null
+        assert lhm.put('c', 'c') == null
+        assert lhm.size() == 3
+        assert lhm.@innerMap != null
+        assert lhm.@innerMap.size() == 3
     }
 
+    @Test
     void testSwitchToInnerMapThenFallbackToList() {
-        list.put("a", "a")
-        list.put("b", "b")
-        list.put("c", "c")
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@innerMap.size() == 3
-        list.remove("c")
-        assert list.size() == 2
-        assert list.@innerMap == null
-        assert list.keySet() == ['a','b'] as Set
+        testSwitchToInnerMap()
+        assert lhm.remove('c') == 'c'
+        assert lhm.size() == 2
+        assert lhm.@innerMap == null
+        assert lhm.keySet() == ['a','b'] as Set
     }
 
+    @Test
     void testPutNullValue() {
-        list.put("a", null)
-        assert list.size() == 1
-        assert list.a == null
+        lhm.put('a', 'xx')
+        lhm.put('a', null)
+        assert lhm.a == null
+        assert lhm.isEmpty()
     }
 
+    @Test
     void testRemoveNullValue() {
-        list.put("a", null)
-        assert list.size() == 1
-        assert list.a == null
-        list.remove("a")
-        assert list.size() == 0
+        testPutNullValue()
+        assert lhm.remove('a') == null
+        assert lhm.isEmpty()
     }
 
+    @Test
     void testPutAll() {
-        list.putAll([a: '1', b: '2', c: '3'])
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@innerMap.size() == 3
-        assert list.keySet() == ['a','b','c'] as Set
-        assert list.values()  as Set == ['1','2','3'] as Set
+        lhm.putAll(a: '1', b: '2', c: '3')
+        assert lhm.size() == 3
+        assert lhm.@innerMap != null
+        assert lhm.@innerMap.size() == 3
+        assert lhm.keySet() == ['a','b','c'] as Set
+        assert lhm.values()  as Set == ['1','2','3'] as Set
     }
 
+    @Test
     void testPutAllTwice() {
-        list.putAll([a: '1', b: '2', c: '3'])
-        list.putAll([a: '1', b: '2', c: '3'])
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@innerMap.size() == 3
-        assert list.keySet()  == ['a','b','c'] as Set
-        assert list.values() as Set  == ['1','2','3'] as Set
+        testPutAll()
+        testPutAll()
     }
 
+    @Test
     void testRemoveAll() {
-        list.putAll([a: '1', b: '2', c: '3'])
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@innerMap.size() == 3
-        assert list.keySet() == ['a','b','c'] as Set
-        assert list.values() as Set == ['1','2','3'] as Set
-        list.remove('a')
-        list.remove('b')
-        list.remove('c')
-        assert list.isEmpty()
-        assert list.@innerMap == null
+        testPutAll()
+        assert lhm.remove('a') == '1'
+        assert lhm.remove('b') == '2'
+        assert lhm.remove('c') == '3'
+        assert lhm.isEmpty()
+        assert lhm.@innerMap == null
     }
 
+    @Test
     void testRemoveFirstShiftsKeyValuesAndClearsArraySlot() {
-        list.putAll([a: '1', b: '2'])
-        assert list.size() == 2
-        assert list.@innerMap == null
-        list.remove('a')
-        assert list.size() == 1
-        assert list.@listKeys[0] == 'b'
-        assert list.@listValues[0] == '2'
-        assert list.@listKeys[1] == null
-        assert list.@listValues[1] == null
+        lhm.putAll(a: '1', b: '2')
+        assert lhm.size() == 2
+        assert lhm.@innerMap == null
 
-        list.put('c', '3')
-        assert list.size() == 2
-        assert list.@listKeys[0] == 'b'
-        assert list.@listValues[0] == '2'
-        assert list.@listKeys[1] == 'c'
-        assert list.@listValues[1] == '3'
+        lhm.remove('a')
+        assert lhm.size() == 1
+        assert lhm.@keys[0] == 'b'
+        assert lhm.@values[0] == '2'
+        assert lhm.@keys[1] == null
+        assert lhm.@values[1] == null
+
+        lhm.put('c', '3')
+        assert lhm.size() == 2
+        assert lhm.@keys[0] == 'b'
+        assert lhm.@values[0] == '2'
+        assert lhm.@keys[1] == 'c'
+        assert lhm.@values[1] == '3'
     }
 
+    @Test
     void testRemoveLastClearsLastArraySlot() {
-        list.putAll([a: '1', b: '2'])
-        assert list.size() == 2
-        assert list.@innerMap == null
-        list.remove('b')
-        assert list.size() == 1
-        assert list.@listKeys[0] == 'a'
-        assert list.@listValues[0] == '1'
-        assert list.@listKeys[1] == null
-        assert list.@listValues[1] == null
+        lhm.putAll(a: '1', b: '2')
+        assert lhm.size() == 2
+        assert lhm.@innerMap == null
 
-        list.put('c', '3')
-        assert list.size() == 2
-        assert list.@listKeys[0] == 'a'
-        assert list.@listValues[0] == '1'
-        assert list.@listKeys[1] == 'c'
-        assert list.@listValues[1] == '3'
+        lhm.remove('b')
+        assert lhm.size() == 1
+        assert lhm.@keys[0] == 'a'
+        assert lhm.@values[0] == '1'
+        assert lhm.@keys[1] == null
+        assert lhm.@values[1] == null
+
+        lhm.put('c', '3')
+        assert lhm.size() == 2
+        assert lhm.@keys[0] == 'a'
+        assert lhm.@values[0] == '1'
+        assert lhm.@keys[1] == 'c'
+        assert lhm.@values[1] == '3'
     }
 
+    @Test
     void testSwitchToInnerMapClearsArrays() {
-        list.putAll([a: '1', b: '2'])
-        assert list.size() == 2
-        assert list.@innerMap == null
-        assert list.@listKeys[0] == 'a'
-        assert list.@listKeys[1] == 'b'
+        lhm.putAll(a: '1', b: '2')
+        assert lhm.size() == 2
+        assert lhm.@keys[0] == 'a'
+        assert lhm.@keys[1] == 'b'
+        assert lhm.@innerMap == null
 
-        list.put('c', '3')
-        assert list.size() == 3
-        assert list.@innerMap != null
-        assert list.@listKeys[0] == null
-        assert list.@listKeys[1] == null
-        assert list.@listValues[0] == null
-        assert list.@listValues[1] == null
+        lhm.put('c', '3')
+        assert lhm.size() == 3
+        assert lhm.@innerMap != null
+        assert lhm.@keys[0] == null
+        assert lhm.@keys[1] == null
+        assert lhm.@values[0] == null
+        assert lhm.@values[1] == null
     }
 
+    @Test
     void testContainsKey() {
-        list.putAll([a: '1', b: '2'])
-        assert list.containsKey('b')
+        lhm.putAll(a: '1', b: '2')
+        assert lhm.containsKey('b')
+        assert !lhm.containsKey('c')
     }
 
+    @Test
     void testContainsValue() {
-        list.putAll([a: '1', b: '2'])
-        assert list.containsValue('2')
+        lhm.putAll(a: '1', b: '2')
+        assert lhm.containsValue('2')
+        assert !lhm.containsValue('3')
+    }
+
+    @Test(expected = UnsupportedOperationException)
+    void testCannotModifyInnerMapViaKeySet() {
+        testSwitchToInnerMap()
+        lhm.keySet().clear()
+    }
+
+    @Test(expected = UnsupportedOperationException)
+    void testCannotModifyInnerMapViaEntrySet() {
+        testSwitchToInnerMap()
+        lhm.entrySet().clear()
+    }
+
+    @Test(expected = UnsupportedOperationException)
+    void testCannotModifyInnerMapViaValueCol() {
+        testSwitchToInnerMap()
+        lhm.values().clear()
     }
 }
