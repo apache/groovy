@@ -18,39 +18,37 @@
  */
 package org.codehaus.groovy.util;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * This class represents a {@link Map} that is optimized for a small number of
- * entries.  For a number of entries up to {@code listSize} the entries
- * are stored in arrays.  After {@code listSize} entries are exceeded
- * storage switches internally to a {@link Map} and converts back
- * to being array based when its size is less than or equal to {@code listSize}.
- *
+ * Represents a {@link Map} that is optimized for a small number of entries. For
+ * a number of entries up to {@code listSize} the entries are stored in arrays.
+ * After {@code listSize} entries are exceeded storage switches internally to a
+ * {@link Map} and converts back to being array based when its size is less than
+ * or equal to {@code listSize}.
+ * <p>
  * Null keys or values are not supported.
- *
- * This class is not thread safe.
+ * <p>
+ * This class is not thread-safe!
  */
 public class ListHashMap<K,V> implements Map<K,V> {
-    private final Object[] listKeys;
-    private final Object[] listValues;
-    private int size = 0;
+
+    private final K[] keys;
+    private final V[] values;
     private Map<K,V> innerMap;
-    private final int maxListFill;
+    private volatile int size;
 
     public ListHashMap() {
         this(3);
     }
 
-    public ListHashMap(int listSize){
-        this.listKeys = new Object[listSize];
-        this.listValues = new Object[listSize];
-        maxListFill = listSize;
+    @SuppressWarnings("unchecked")
+    public ListHashMap(int listSize) {
+        keys = (K[]) new Object[listSize];
+        values = (V[]) new Object[listSize];
     }
 
     @Override
@@ -61,106 +59,96 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     private void clearArrays() {
-        for (int i=0; i<maxListFill; i++) {
-            listValues[i] = null;
-            listKeys[i] = null;
+        for (int i = 0, n = keys.length; i < n; i += 1) {
+            values[i] = null;
+            keys[i] = null;
         }
     }
 
     @Override
     public boolean containsKey(Object key) {
-        if (size == 0) {
-            return false;
-        }
-        if (innerMap == null) {
-            for (int i=0; i<size; i++) {
-                if (listKeys[i].equals(key)) return true;
+        if (key != null) {
+            if (innerMap != null) {
+                return innerMap.containsKey(key);
             }
-            return false;
-        } else {
-            return innerMap.containsKey(key);
+            for (int i = 0; i < size; i += 1) {
+                if (key.equals(keys[i])) return true;
+            }
         }
+        return false;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        if (size == 0) {
-            return false;
-        }
-        if (innerMap == null) {
-            for (int i=0; i<size; i++) {
-                if (listValues[i].equals(value)) return true;
+        if (value != null) {
+            if (innerMap != null) {
+                return innerMap.containsValue(value);
             }
-            return false;
-        } else {
-            return innerMap.containsValue(value);
+            for (int i = 0; i < size; i += 1) {
+                if (value.equals(values[i])) return true;
+            }
         }
-    }
-
-    private Map<K,V> makeMap() {
-        Map<K,V> m = new HashMap();
-        for (int i=0; i<size; i++) {
-            m.put((K) listKeys[i], (V) listValues[i]);
-        }
-        return m;
+        return false;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Set<java.util.Map.Entry<K, V>> entrySet() {
-        Map m = innerMap!=null?innerMap:makeMap();
-        return m.entrySet();
+    public Set<Entry<K,V>> entrySet() {
+        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).entrySet();
     }
 
     @Override
     public V get(Object key) {
-        if (size == 0)
-            return null;
-        if (innerMap != null)
-            return innerMap.get(key);
-        for (int i = 0; i < size; ++i) {
-            if (key.equals(listKeys[i]))
-                return (V) listValues[i];
+        if (key != null) {
+            if (innerMap != null) {
+                return innerMap.get(key);
+            }
+            for (int i = 0; i < size; i += 1) {
+                if (key.equals(keys[i])) return values[i];
+            }
         }
         return null;
     }
 
     @Override
     public boolean isEmpty() {
-        return size == 0;
+        return (size == 0);
     }
 
     @Override
     public Set<K> keySet() {
-        Map m = innerMap!=null?innerMap:makeMap();
-        return m.keySet();
+        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).keySet();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public V put(K key, V value) {
-        if (innerMap==null) {
-            for (int i=0; i<size; i++) {
-                if (listKeys[i].equals(key)) {
-                    V old = (V) listValues[i];
-                    listValues[i] = value;
+        if (key != null) {
+            if (value == null) {
+                return remove(key);
+            }
+            if (innerMap != null) {
+                V old = innerMap.put(key, value);
+                size = innerMap.size();
+                return old;
+            }
+            for (int i = 0; i < size; i += 1) {
+                if (key.equals(keys[i])) {
+                    V old = values[i];
+                    values[i] = value;
                     return old;
                 }
             }
-            if (size<maxListFill) {
-                listKeys[size] = key;
-                listValues[size] = value;
-                size++;
-                return null;
-            } else {
-                innerMap = makeMap();
-                // Switched over to Map so need to clear array references
+            if (size < keys.length) {
+                values[size] = value;
+                keys[size] = key;
+            } else { // evolve
+                Map<K,V> map = toMap();
+                map.put(key, value);
+                innerMap = map;
                 clearArrays();
             }
+            size += 1;
         }
-        V val = (V) innerMap.put(key, value);
-        size = innerMap.size();
-        return val;
+        return null;
     }
 
     @Override
@@ -172,41 +160,38 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     @Override
     public V remove(Object key) {
-        if (innerMap==null) {
-            for (int i=0; i<size; i++) {
-                if (listKeys[i].equals(key)) {
-                    V old = (V) listValues[i];
-                    size--;
-                    // If last element is not being removed shift the last element into this slot
-                    if (i < size) {
-                        listValues[i] = listValues[size];
-                        listKeys[i] = listKeys[size];
+        if (key != null) {
+            if (innerMap != null) {
+                V value = innerMap.remove(key);
+                if (value != null) {
+                    size = innerMap.size();
+                    if (size <= keys.length) { // devolve
+                        size = 0; Set<Entry<K,V>> entries = innerMap.entrySet(); innerMap = null;
+                        for (Entry<? extends K, ? extends V> entry : entries) {
+                            values[size] = entry.getValue();
+                            keys[size] = entry.getKey();
+                            size += 1;
+                        }
                     }
-                    listValues[size] = null;
-                    listKeys[size] = null;
-                    return old;
+                }
+                return value;
+            }
+            for (int i = 0; i < size; i += 1) {
+                if (key.equals(keys[i])) {
+                    V value = values[i];
+                    size -= 1;
+                    // if last element is not being removed, shift the last element into this slot
+                    if (i < size) {
+                        values[i] = values[size];
+                        keys[i] = keys[size];
+                    }
+                    values[size] = null;
+                    keys[size] = null;
+                    return value;
                 }
             }
-            return null;
-        } else {
-            V old = innerMap.remove(key);
-            size = innerMap.size();
-            if (size<=maxListFill) {
-                mapToList();
-            }
-            return old;
         }
-    }
-
-    private void mapToList() {
-        int i = 0;
-        for (Entry<? extends K,? extends V> entry : innerMap.entrySet()) {
-            listKeys[i] = entry.getKey();
-            listValues[i] = entry.getValue();
-            i++;
-        }
-        size = innerMap.size();
-        innerMap = null;
+        return null;
     }
 
     @Override
@@ -214,17 +199,16 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return size;
     }
 
-    @Override
-    public Collection<V> values() {
-        if (innerMap == null) {
-            List<V> list = new ArrayList<V>(size);
-            for (int i = 0; i < size; i++) {
-                list.add((V) listValues[i]);
-            }
-            return list;
-        } else {
-            return innerMap.values();
+    private Map<K,V> toMap() {
+        Map<K,V> m = new java.util.HashMap<>();
+        for (int i = 0; i < size; i += 1) {
+            m.put(keys[i], values[i]);
         }
+        return m;
     }
 
+    @Override
+    public Collection<V> values() {
+        return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).values();
+    }
 }
