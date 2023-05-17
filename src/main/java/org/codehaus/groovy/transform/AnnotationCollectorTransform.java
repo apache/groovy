@@ -52,6 +52,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.transform.trait.TraitComposer.COMPILESTATIC_CLASSNODE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
@@ -158,7 +160,8 @@ public class AnnotationCollectorTransform {
             if (e instanceof AnnotationConstantExpression) {
                 AnnotationConstantExpression ace = (AnnotationConstantExpression) e;
                 return serialize((AnnotationNode) ace.getValue());
-            } else if (e instanceof ListExpression) {
+            }
+            if (e instanceof ListExpression) {
                 boolean annotationConstant = false;
                 ListExpression le = (ListExpression) e;
                 List<Expression> list = le.getExpressions();
@@ -170,6 +173,12 @@ public class AnnotationCollectorTransform {
                 ClassNode type = ClassHelper.OBJECT_TYPE;
                 if (annotationConstant) type = type.makeArray();
                 return new ArrayExpression(type, newList);
+            }
+            if (e instanceof ConstantExpression) {
+                Object obj = ((ConstantExpression) e).getValue();
+                if (obj instanceof Enum) {
+                    return propX(classX(obj.getClass()), e);
+                }
             }
             return e;
         }
