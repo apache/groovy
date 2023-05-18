@@ -23,17 +23,18 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 import org.junit.Test
 
 final class GenericsUtilsTest {
 
     private static List<ClassNode> compile(String code) {
         def compiler = new org.codehaus.groovy.ast.builder.AstStringCompiler()
-        compiler.compile(code, CompilePhase.SEMANTIC_ANALYSIS, false).tail()
+        compiler.compile(code, CompilePhase.INSTRUCTION_SELECTION, false).tail()
     }
 
-    private static ClassNode findClassNode(String name, List<ClassNode> list) {
-        list.find { it.name == name }
+    private static ClassNode findClassNode(String name, classNodes) {
+        classNodes.find { it.name == name }
     }
 
     //--------------------------------------------------------------------------
@@ -177,7 +178,8 @@ final class GenericsUtilsTest {
         assert result.redirect() === target
     }
 
-    @Test // GROOVY-9945
+    // GROOVY-9945
+    @Test
     void testFindParameterizedType8() {
         def classNodeList = compile '''
             interface I<T> {}
@@ -198,7 +200,7 @@ final class GenericsUtilsTest {
             import java.util.function.*
             interface Derived extends BinaryOperator<Integer> {}
         '''
-        ClassNode target = ClassHelper.makeWithoutCaching(java.util.function.BiFunction.class)
+        ClassNode target = ClassHelper.makeWithoutCaching(java.util.function.BiFunction)
         ClassNode source = findClassNode('Derived', classNodeList)
 
         Map<GenericsType, GenericsType> m = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(target, source)
@@ -249,7 +251,7 @@ final class GenericsUtilsTest {
             import java.util.function.*
             interface T extends Function<String, Integer> {}
         '''
-        ClassNode samType = findClassNode('T', classNodeList).interfaces.find { it.name == 'java.util.function.Function' }
+        ClassNode samType = findClassNode('java.util.function.Function', findClassNode('T', classNodeList).interfaces)
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
@@ -265,7 +267,7 @@ final class GenericsUtilsTest {
             import java.util.function.*
             interface T extends BinaryOperator<Integer> {}
         '''
-        ClassNode samType = findClassNode('T', classNodeList).interfaces.find { it.name == 'java.util.function.BinaryOperator' }
+        ClassNode samType = findClassNode('java.util.function.BinaryOperator', findClassNode('T', classNodeList).interfaces)
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
@@ -276,13 +278,14 @@ final class GenericsUtilsTest {
         assert typeInfo.v2 == ClassHelper.Integer_TYPE
     }
 
-    @Test // GROOVY-10813
+    // GROOVY-10813
+    @Test
     void testParameterizeSAMWithRawType() {
         def classNodeList = compile '''
             interface I extends java.util.function.BinaryOperator {
             }
         '''
-        ClassNode samType = findClassNode('I', classNodeList).interfaces.find { it.name == 'java.util.function.BinaryOperator' }
+        ClassNode samType = findClassNode('java.util.function.BinaryOperator', findClassNode('I', classNodeList).interfaces)
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
@@ -302,7 +305,7 @@ final class GenericsUtilsTest {
             abstract class A implements I {
             }
         '''
-        ClassNode samType = findClassNode('A', classNodeList).interfaces.find { it.name == 'I' }
+        ClassNode samType = findClassNode('I', findClassNode('A', classNodeList).interfaces)
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
@@ -321,7 +324,7 @@ final class GenericsUtilsTest {
             abstract class A implements I {
             }
         '''
-        ClassNode samType = findClassNode('A', classNodeList).interfaces.find { it.name == 'I' }
+        ClassNode samType = findClassNode('I', findClassNode('A', classNodeList).interfaces)
 
         def typeInfo = GenericsUtils.parameterizeSAM(samType)
 
@@ -329,5 +332,54 @@ final class GenericsUtilsTest {
         assert typeInfo.v1[0].toString(false) == 'java.lang.CharSequence'
 
         assert typeInfo.v2.toString(false) == 'java.lang.CharSequence'
+    }
+
+    // GROOVY-10067, GROOVY-11057
+    @Test
+    void testParameterizeType1() {
+        def classNodeList = compile '''
+            @groovy.transform.CompileStatic
+            void test() {
+                def map = [:]
+            }
+        '''
+        // get the intermediate type of the map literal (LinkedHashMap<#K,#V>)
+        def node = classNodeList[0].getDeclaredMethod('test').code.statements[0]
+        def type = new StaticTypeCheckingVisitor(classNodeList[0].module.context,
+                        classNodeList[0]).getType(node.expression.rightExpression)
+
+        ClassNode mapType = GenericsUtils.parameterizeType(type, ClassHelper.MAP_TYPE)
+
+        assert mapType == ClassHelper.MAP_TYPE
+        assert mapType.genericsTypes.length == 2
+        assert mapType.genericsTypes[0].name == '#K'
+        assert mapType.genericsTypes[1].name == '#V'
+        assert mapType.genericsTypes[0].type.unresolvedName == '#K'
+        assert mapType.genericsTypes[1].type.unresolvedName == '#V'
+        assert mapType.genericsTypes[0].type.name == 'java.lang.Object'
+        assert mapType.genericsTypes[1].type.name == 'java.lang.Object'
+    }
+
+    // GROOVY-10067, GROOVY-11057
+    @Test
+    void testParameterizeType2() {
+        def classNodeList = compile '''
+            @groovy.transform.CompileStatic
+            void test() {
+                def list = []
+            }
+        '''
+        // get the intermediate type of the list literal (ArrayList<#E>)
+        def node = classNodeList[0].getDeclaredMethod('test').code.statements[0]
+        def type = new StaticTypeCheckingVisitor(classNodeList[0].module.context,
+                        classNodeList[0]).getType(node.expression.rightExpression)
+
+        ClassNode listType = GenericsUtils.parameterizeType(type, ClassHelper.LIST_TYPE)
+
+        assert listType == ClassHelper.LIST_TYPE
+        assert listType.genericsTypes.length == 1
+        assert listType.genericsTypes[0].name == '#E'
+        assert listType.genericsTypes[0].type.unresolvedName == '#E'
+        assert listType.genericsTypes[0].type.name == 'java.lang.Object'
     }
 }

@@ -443,11 +443,14 @@ public class GenericsUtils {
         return makeClassSafeWithGenerics(type, newgTypes);
     }
 
-    public static ClassNode correctToGenericsSpec(Map<String, ClassNode> genericsSpec, GenericsType type) {
-        ClassNode cn = null; String name = type.getName();
-        if (type.isPlaceholder() && name.charAt(0) != '#') {
-            cn = genericsSpec.get(name);
-        } else if (type.isWildcard()) {
+    public static ClassNode correctToGenericsSpec(final Map<String, ClassNode> genericsSpec, final GenericsType type) {
+        ClassNode cn = null;
+        if (type.isPlaceholder()) {
+            String name = type.getName();
+            if (name.charAt(0) != '#') //
+                cn = genericsSpec.get(name);
+        }
+        else if (type.isWildcard()) {
             if (type.getUpperBounds() != null)
                 cn = type.getUpperBounds()[0]; // GROOVY-9891
         }
@@ -457,7 +460,7 @@ public class GenericsUtils {
         return cn;
     }
 
-    public static ClassNode correctToGenericsSpec(Map<String, ClassNode> genericsSpec, ClassNode type) {
+    public static ClassNode correctToGenericsSpec(final Map<String, ClassNode> genericsSpec, ClassNode type) {
         if (type.isArray()) {
             return correctToGenericsSpec(genericsSpec, type.getComponentType()).makeArray();
         }
@@ -469,8 +472,7 @@ public class GenericsUtils {
                 return correctToGenericsSpec(genericsSpec, type);
             }
         }
-        if (type == null) type = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
-        return type;
+        return type != null ? type : ClassHelper.OBJECT_TYPE.getPlainNodeReference();
     }
 
     public static Map<String, ClassNode> createGenericsSpec(final ClassNode type) {

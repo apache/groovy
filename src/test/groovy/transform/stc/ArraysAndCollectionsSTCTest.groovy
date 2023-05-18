@@ -1103,8 +1103,9 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type groovy.lang.ListWithDefault<java.lang.Integer> to variable of type java.util.Set<java.lang.Integer>'
     }
 
+    // GROOVY-8001, GROOVY-11028
     void testMapWithTypeArgumentsInitializedByMapLiteral() {
-        ['CharSequence,Integer', 'String,Number', 'CharSequence,Number'].each { spec ->
+        for (spec in ['CharSequence,Integer', 'String,Number', 'CharSequence,Number']) {
             assertScript """
                 Map<$spec> map = [a:1,b:2,c:3]
                 assert map.size() == 3
@@ -1113,7 +1114,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             """
         }
 
-        // GROOVY-8001
         assertScript '''
             class C {
                 Map<String,Object> map
@@ -1124,7 +1124,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert c.map['key'] == '42'
         '''
 
-        // GROOVY-11028
         assertScript '''
             Map<String,Integer> map = [:].withDefault { 0 }
             assert map.size() == 0
