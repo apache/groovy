@@ -828,14 +828,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10599
+    // GROOVY-10599, GROOVY-11060
     void testListExpressionWithSpreadExpression() {
         assertScript '''
             void test(List<String> list) {
                 assert list == ['x','y','z']
             }
             List<String> strings = ['y','z']
-            test(['x', *strings])
+            test(['x',*strings])
         '''
 
         assertScript '''
@@ -845,7 +845,23 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             List<String> getStrings() {
                 return ['y','z']
             }
-            test(['x', *strings])
+            test(['x',*strings])
+        '''
+
+        assertScript '''
+            void test(String[] array) {
+                assert array.toString() == '[x, y, z]'
+            }
+            List<String> strings = ['y','z']
+            test(['x',*strings] as String[])
+        '''
+
+        assertScript '''
+            void test(long[] array) {
+                assert array.toString() == '[1, 2, 3]'
+            }
+            List<Number> numbers = [2, 3]
+            test([1L,*numbers] as long[])
         '''
     }
 
@@ -1094,8 +1110,9 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type groovy.lang.ListWithDefault<java.lang.Integer> to variable of type java.util.Set<java.lang.Integer>'
     }
 
+    // GROOVY-8001, GROOVY-11028
     void testMapWithTypeArgumentsInitializedByMapLiteral() {
-        ['CharSequence,Integer', 'String,Number', 'CharSequence,Number'].each { spec ->
+        for (spec in ['CharSequence,Integer', 'String,Number', 'CharSequence,Number']) {
             assertScript """
                 Map<$spec> map = [a:1,b:2,c:3]
                 assert map.size() == 3
@@ -1104,7 +1121,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             """
         }
 
-        // GROOVY-8001
         assertScript '''
             class C {
                 Map<String,Object> map
@@ -1115,7 +1131,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert c.map['key'] == '42'
         '''
 
-        // GROOVY-11028
         assertScript '''
             Map<String,Integer> map = [:].withDefault { 0 }
             assert map.size() == 0
@@ -1140,7 +1155,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8136
     void testAbstractClassThatImplementsMapInitializedByMapLiteral() {
         shouldFailWithMessages '''
-            abstract class MVM<K, V> extends Map<K, List<V>> { }
+            abstract class MVM<K, V> implements Map<K, List<V>> { }
             MVM map = [:] // no STC error; fails at runtime
         ''',
         'Cannot find matching constructor MVM(', 'Map', ')'

@@ -96,6 +96,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
+import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.MopWriter;
@@ -158,6 +159,7 @@ import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
+import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -172,6 +174,7 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ARRAYLENGTH;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.BASTORE;
@@ -187,6 +190,7 @@ import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IASTORE;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -1660,26 +1664,40 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
-
-        int size = 0;
-        int dimensions = 0;
-        OperandStack operandStack = controller.getOperandStack();
-        if (expression.hasInitializer()) {
-            size = expression.getExpressions().size();
-            BytecodeHelper.pushConstant(mv, size);
-        } else {
-            for (Expression element : expression.getSizeExpression()) {
-                if (element == ConstantExpression.EMPTY_EXPRESSION) break;
-                dimensions += 1;
-                // convert to an int
-                element.visit(this);
-                operandStack.doGroovyCast(ClassHelper.int_TYPE);
-            }
-            operandStack.remove(dimensions);
-        }
+        CompileStack  compileStack = controller.getCompileStack();
+        OperandStack  operandStack = controller.getOperandStack();
 
         ClassNode arrayType = expression.getType();
         ClassNode elementType = arrayType.getComponentType();
+
+        int size = 0, dimensions = 0;
+        if (expression.hasInitializer()) {
+            if (containsSpreadExpression(expression)) {
+                despreadList(expression.getExpressions(), false);
+                if (elementType.equals(ClassHelper.OBJECT_TYPE)){
+                    operandStack.push(arrayType);
+                    return;
+                }
+                mv.visitInsn(DUP); // Object[] from despreadList
+                mv.visitInsn(ARRAYLENGTH);
+                mv.visitInsn(DUP); // store value count
+                operandStack.push(ClassHelper.int_TYPE);
+                size = -compileStack.defineTemporaryVariable("value$count", ClassHelper.int_TYPE, true);
+            } else {
+                size = expression.getExpressions().size();
+                BytecodeHelper.pushConstant(mv, size);
+            }
+            // stack: ..., size
+        } else {
+            for (final Expression sizeExpr : expression.getSizeExpression()) {
+                if (sizeExpr == ConstantExpression.EMPTY_EXPRESSION) break;
+                dimensions += 1;
+                sizeExpr.visit(this);
+                operandStack.doGroovyCast(ClassHelper.int_TYPE);
+            }
+            operandStack.remove(dimensions);
+            // stack: ..., size (one per dimension)
+        }
 
         int storeIns = AASTORE;
         if (!elementType.isArray() || expression.hasInitializer()) {
@@ -1718,19 +1736,58 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             mv.visitMultiANewArrayInsn(BytecodeHelper.getTypeDescription(arrayType), dimensions);
         }
+        // stack: ..., array
 
-        for (int i = 0; i < size; i += 1) {
-            mv.visitInsn(DUP);
-            BytecodeHelper.pushConstant(mv, i);
-            Expression elementExpression = expression.getExpression(i);
-            if (elementExpression == null) {
-                ConstantExpression.NULL.visit(this);
-            } else {
-                elementExpression.visit(this);
+        if (size >= 0) {
+            for (int i = 0; i < size; i += 1) {
+                mv.visitInsn(DUP); // array ref
+                BytecodeHelper.pushConstant(mv, i);
+                Optional.ofNullable(expression.getExpression(i))
+                        .orElse(ConstantExpression.NULL)
+                        .visit(this);
                 operandStack.doGroovyCast(elementType);
+                mv.visitInsn(storeIns);
+                operandStack.remove(1);
             }
-            mv.visitInsn(storeIns);
-            operandStack.remove(1);
+        } else {
+            // stack: ..., source, target
+            Label top = new Label();
+            mv.visitLabel(top);
+
+            {
+                final int idx = -size;
+                mv.visitIincInsn(idx, -1);
+
+                mv.visitInsn(DUP2);
+                mv.visitInsn(SWAP);
+                // stack: ..., target, source
+                mv.visitVarInsn(ILOAD, idx);
+                // stack: ..., target, source, index
+                mv.visitInsn(AALOAD);
+                // stack: ..., target, value
+                operandStack.push(ClassHelper.OBJECT_TYPE);
+                operandStack.doGroovyCast(elementType);
+
+                mv.visitVarInsn(ILOAD, idx);
+                // stack: ..., target, value, index
+                operandStack.push(ClassHelper.int_TYPE);
+                operandStack.swap();
+                // stack: ..., target, index, value
+                mv.visitInsn(storeIns);
+                operandStack.remove(2);
+                // stack: ...
+
+                mv.visitVarInsn(ILOAD, idx);
+                mv.visitJumpInsn(IFNE, top);
+
+                compileStack.removeVar(idx);
+            }
+
+            // stack: ..., source, target
+            mv.visitInsn(SWAP);
+            // stack: ..., target, source
+            mv.visitInsn(POP);
+            // stack: ..., target
         }
 
         operandStack.push(arrayType);
@@ -2280,19 +2337,19 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
 
-    public static boolean containsSpreadExpression(final Expression arguments) {
-        List<Expression> args;
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
-            args = tupleExpression.getExpressions();
-        } else if (arguments instanceof ListExpression) {
-            ListExpression le = (ListExpression) arguments;
-            args = le.getExpressions();
+    public static boolean containsSpreadExpression(final Expression expression) {
+        List<Expression> expressions;
+        if (expression instanceof TupleExpression) {
+            expressions = ((TupleExpression) expression).getExpressions();
+        } else if (expression instanceof ListExpression) {
+            expressions = ((ListExpression)  expression).getExpressions();
+        } else if (expression instanceof ArrayExpression) {
+            expressions = ((ArrayExpression) expression).getExpressions();
         } else {
-            return arguments instanceof SpreadExpression;
+            return expression instanceof SpreadExpression;
         }
-        for (Expression arg : args) {
-            if (arg instanceof SpreadExpression) return true;
+        for (Expression expr : expressions) {
+            if (expr instanceof SpreadExpression) return true;
         }
         return false;
     }
