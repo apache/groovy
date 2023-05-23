@@ -98,11 +98,8 @@ import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.ArrayIterator;
-import org.codehaus.groovy.util.DoubleArrayIterable;
-import org.codehaus.groovy.util.IntArrayIterable;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
-import org.codehaus.groovy.util.LongArrayIterable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -175,12 +172,6 @@ import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
-    private static final Integer ONE = 1;
-    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
     public static final Class[] ADDITIONAL_CLASSES = {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
@@ -205,7 +196,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayGetAtMetaMethod.class,
             DoubleArrayPutAtMetaMethod.class,
     };
-    public static final Class[] DGM_LIKE_CLASSES = new Class[]{
+    public static final Class[] DGM_LIKE_CLASSES = {
             ArrayGroovyMethods.class,
             DefaultGroovyMethods.class,
             EncodingGroovyMethods.class,
@@ -225,7 +216,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             XmlExtensions.class,
             */
     };
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
+    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(  Long.MAX_VALUE);
+    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(  Long.MIN_VALUE);
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
 
     /**
@@ -816,7 +811,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Closure self) {
         Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", EMPTY_OBJECT_ARRAY);
+        InvokerHelper.invokeMethod(owner, "println", InvokerHelper.EMPTY_ARGS);
     }
 
     /**
@@ -2134,91 +2129,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
-     * comparator determining which items are unique.
-     * <p>
-     * <pre class="groovyTestCase">
-     * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
-     * String[] lower = ['c', 'a', 't', 's', 'h']
-     * class LowerComparator implements Comparator {
-     *     int compare(let1, let2) { let1.toLowerCase() {@code <=>} let2.toLowerCase() }
-     * }
-     * assert letters.toUnique(new LowerComparator()) == lower
-     * </pre>
-     *
-     * @param self an array
-     * @param comparator a Comparator used to determine unique (equal) items
-     *        If {@code null}, the Comparable natural ordering of the elements will be used.
-     * @return the unique items from the array
-     */
-    public static <T> T[] toUnique(T[] self, Comparator<? super T> comparator) {
-        Collection<T> items = toUnique(new ArrayIterable<>(self), comparator);
-        return items.toArray(createSimilarArray(self, items.size()));
-    }
-
-    /**
-     * Returns a new Array containing the items from the original Array but with duplicates removed using the
-     * natural ordering of the items in the array.
-     * <p>
-     * <pre class="groovyTestCase">
-     * String[] letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
-     * String[] expected = ['c', 'a', 't', 's', 'h']
-     * def result = letters.toUnique()
-     * assert result == expected
-     * assert result.class.componentType == String
-     * </pre>
-     *
-     * @param self an array
-     * @return the unique items from the array
-     */
-    public static <T> T[] toUnique(T[] self) {
-        return toUnique(self, (Comparator<T>) null);
-    }
-
-    /**
-     * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
-     * comparator determining which items are unique.
-     * <p>
-     * <pre class="groovyTestCase">
-     * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
-     * String[] expected = ['c', 'a', 't', 's', 'h']
-     * assert letters.toUnique{ p1, p2 {@code ->} p1.toLowerCase() {@code <=>} p2.toLowerCase() } == expected
-     * assert letters.toUnique{ it.toLowerCase() } == expected
-     * </pre>
-     *
-     * @param self an array
-     * @param condition a Closure used to determine unique items
-     * @return the unique items from the array
-     */
-    public static <T> T[] toUnique(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
-                ? new OrderBy<>(condition, true)
-                : new ClosureComparator<>(condition);
-        return toUnique(self, comparator);
-    }
-
-    /**
-     * Iterates through an array passing each array entry to the given closure.
-     * <pre class="groovyTestCase">
-     * String[] letters = ['a', 'b', 'c']
-     * String result = ''
-     * letters.each{ result += it }
-     * assert result == 'abc'
-     * </pre>
-     *
-     * @param self    the array over which we iterate
-     * @param closure the closure applied on each array entry
-     * @return the self array
-     * @since 2.5.0
-     */
-    public static <T> T[] each(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        for(T item : self){
-            closure.call(item);
-        }
-        return self;
-    }
-
-    /**
      * Iterates through an aggregate type or data structure,
      * passing each item to the given closure.  Custom types may utilize this
      * method by simply providing an "iterator()" method.  The items returned
@@ -2236,33 +2146,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T each(T self, @ClosureParams(value=FromString.class, options="?") Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
-        return self;
-    }
-
-    /**
-     * Iterates through an array,
-     * passing each array element and the element's index (a counter starting at
-     * zero) to the given closure.
-     * <pre class="groovyTestCase">
-     * String[] letters = ['a', 'b', 'c']
-     * String result = ''
-     * letters.eachWithIndex{ letter, index {@code ->} result += "$index:$letter" }
-     * assert result == '0:a1:b2:c'
-     * </pre>
-     *
-     * @param self    an array
-     * @param closure a Closure to operate on each array entry
-     * @return the self array
-     * @since 2.5.0
-     */
-    public static <T> T[] eachWithIndex(T[] self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
-        final Object[] args = new Object[2];
-        int counter = 0;
-        for(T item : self) {
-            args[0] = item;
-            args[1] = counter++;
-            closure.call(args);
-        }
         return self;
     }
 
@@ -2555,22 +2438,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterate over each element of the array in the reverse order.
-     *
-     * @param self    an array
-     * @param closure a closure to which each item is passed
-     * @return the original array
-     * @since 1.5.2
-     */
-    public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        Objects.requireNonNull(self);
-        for (int i = self.length - 1; i >= 0; i--) {
-            closure.call(self[i]);
-        }
-        return self;
-    }
-
-    /**
      * Iterate over each element of the set in reverse order.
      * <pre class="groovyTestCase">
      * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
@@ -2627,19 +2494,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return true;
-    }
-
-    /**
-     * Used to determine if the given predicate closure is valid (i.e. returns
-     * <code>true</code> for all items in this Array).
-     *
-     * @param self      an Array
-     * @param predicate the closure predicate used for matching
-     * @return true if every element of the Array matches the closure predicate
-     * @since 2.5.0
-     */
-    public static <T> boolean every(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
-        return every(new ArrayIterator<>(self), predicate);
     }
 
     /**
@@ -2761,19 +2615,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
         return any(self.iterator(), predicate);
-    }
-
-    /**
-     * Iterates over the contents of an Array, and checks whether a
-     * predicate is valid for at least one element.
-     *
-     * @param self      the array over which we iterate
-     * @param predicate the closure predicate used for matching
-     * @return true if any iteration for the object matches the closure predicate
-     * @since 2.5.0
-     */
-    public static <T> boolean any(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
-        return any(new ArrayIterator<>(self), predicate);
     }
 
     /**
@@ -2935,36 +2776,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the array of items and returns a collection of items that match
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements. This method can be used with different
-     * kinds of filters like regular expressions, classes, ranges etc.
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = ['a', 'b', 'aa', 'bc', 3, 4.5] as Object[]
-     * assert items.grep( ~/a+/ )  == ['a', 'aa']
-     * assert items.grep( ~/../ )  == ['aa', 'bc']
-     * assert items.grep( Number ) == [ 3, 4.5 ]
-     * assert items.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
-     * </pre>
-     *
-     * @param self   an array
-     * @param filter the filter to perform on each element of the array (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @return a collection of objects which match the filter
-     * @since 2.0
-     */
-    public static <T> Collection<T> grep(T[] self, Object filter) {
-        Collection<T> answer = new ArrayList<>();
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
-        for (T element : self) {
-            if (bmi.invoke(filter, element)) {
-                answer.add(element);
-            }
-        }
-        return answer;
-    }
-
-    /**
      * Iterates over the collection of items which this Object represents and returns each item that matches
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
@@ -3037,25 +2848,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Set<T> grep(Set<T> self) {
-        return grep(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates over the array returning each element that matches
-     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
-     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self an array
-     * @return a collection of elements which satisfy Groovy truth
-     * @see Closure#IDENTITY
-     * @since 2.0
-     */
-    public static <T> Collection<T> grep(T[] self) {
         return grep(self, Closure.IDENTITY);
     }
 
@@ -3166,72 +2958,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // for b/c with Java return an int if we can
         if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
-    }
-
-    /**
-     * Counts the number of occurrences of the given value inside this array.
-     * Comparison is done using Groovy's == operator (using
-     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param value the value being searched for
-     * @return the number of occurrences
-     * @since 1.6.4
-     */
-    public static Number count(Object[] self, Object value) {
-        return count(Arrays.asList(self), value);
-    }
-
-    /**
-     * Counts the number of occurrences which satisfy the given closure from inside this array.
-     *
-     * @param self  the array within which we count the number of occurrences
-     * @param closure a closure condition
-     * @return the number of occurrences
-     * @since 1.8.0
-     */
-    public static <T> Number count(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        return count(Arrays.asList(self), closure);
-    }
-
-    @Deprecated
-    public static Number count(int[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(long[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(short[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(char[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(boolean[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(double[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(float[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
-    }
-
-    @Deprecated
-    public static Number count(byte[] self, Object value) {
-        return ArrayGroovyMethods.count(self, value);
     }
 
     /**
@@ -3776,11 +3502,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K, V> List<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(self, new ArrayList<>(), projection);
-    }
-
-    @Deprecated
-    public static <T, K, V> Collection<T> collectMany$$bridge(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
-        return collectMany(self, projection);
     }
 
     /**
@@ -5280,11 +5001,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return findMany(new ArrayList<>(), new ArrayIterator<>(self), condition);
     }
 
-    @Deprecated
-    public static <T> Collection<T> findAll$$bridge(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findAll(self, condition);
-    }
-
     /**
      * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
@@ -5357,11 +5073,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return findAll(self, Closure.IDENTITY);
     }
 
-    @Deprecated
-    public static <T> Collection<T> findAll$$bridge(T[] self) {
-        return findAll(self);
-    }
-
     /**
      * Finds all items matching the closure condition.
      *
@@ -5373,11 +5084,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List findAll(Object self, Closure closure) {
         return findMany(new ArrayList(), InvokerHelper.asIterator(self), closure);
-    }
-
-    @Deprecated
-    public static Collection findAll$$bridge(Object self, Closure closure) {
-        return findAll(self, closure);
     }
 
     /**
@@ -5396,11 +5102,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List findAll(Object self) {
         return findAll(self, Closure.IDENTITY);
-    }
-
-    @Deprecated
-    public static Collection findAll$$bridge(Object self) {
-        return findAll(self);
     }
 
     private static <T, C extends Collection<T>> C findMany(C collector, Iterator<? extends T> iter, Closure<?> closure) {
@@ -5892,22 +5593,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return GroovyCollections.transpose(self);
     }
 
-
-    @Deprecated
-    public static int[][] transpose(int[][] self) {
-        return ArrayGroovyMethods.transpose(self);
-    }
-
-    @Deprecated
-    public static long[][] transpose(long[][] self) {
-        return ArrayGroovyMethods.transpose(self);
-    }
-
-    @Deprecated
-    public static double[][] transpose(double[][] self) {
-        return ArrayGroovyMethods.transpose(self);
-    }
-
     /**
      * Sorts all Iterable members into groups determined by the supplied mapping closure.
      * The closure should return the key that this item should be grouped by. The returned
@@ -6090,26 +5775,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K,E> Map<K, Integer> countBy(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<K> closure) {
         return countBy(self.iterator(), closure);
-    }
-
-    /**
-     * Sorts all array members into groups determined by the supplied mapping
-     * closure and counts the group size.  The closure should return the key that each
-     * item should be grouped by.  The returned Map will have an entry for each
-     * distinct key returned from the closure, with each value being the frequency of
-     * items occurring for that group.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">assert ([1,2,2,2,3] as Object[]).countBy{ it % 2 } == [1:2, 0:3]</pre>
-     *
-     * @param self    an array to group and count
-     * @param closure a closure mapping items to the frequency keys
-     * @return a new Map grouped by keys with frequency counts
-     * @see #countBy(Iterator, Closure)
-     * @since 1.8.0
-     */
-    public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
-        return countBy(new ArrayIterator<>(self), closure);
     }
 
     /**
@@ -6526,47 +6191,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through the given array as with inject(Object[],initialValue,closure), but
-     * using the first element of the array as the initialValue, and then iterating
-     * the remaining elements of the array.
-     *
-     * @param self         an Object[]
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @throws NoSuchElementException if the array is empty.
-     * @see #inject(Object[], Object, Closure)
-     * @since 1.8.7
-     */
-    public static <E,T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
-        return inject( (Object)self, closure ) ;
-    }
-
-    /**
-     * Iterates through the given array, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until all elements of the array
-     * have been used. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Object[]
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.5.0
-     */
-    public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        Object[] params = new Object[2];
-        T value = initialValue;
-        for (Object next : self) {
-            params[0] = value;
-            params[1] = next;
-            value = closure.call(params);
-        }
-        return value;
-    }
-
-    /**
      * Sums the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable.
      * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
@@ -6581,19 +6205,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in an array. This is equivalent to invoking the
-     * "plus" method on all items in the array.
-     *
-     * @param self The array of values to add together
-     * @return The sum of all the items
-     * @see #sum(java.util.Iterator)
-     * @since 1.7.1
-     */
-    public static Object sum(Object[] self) {
-        return sum(new ArrayIterator<>(self), null, true);
-    }
-
-    /**
      * Sums the items from an Iterator. This is equivalent to invoking the
      * "plus" method on all items from the Iterator. The iterator will become
      * exhausted of elements after determining the sum value.
@@ -6604,41 +6215,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object sum(Iterator<Object> self) {
         return sum(self, null, true);
-    }
-
-    @Deprecated
-    public static byte sum(byte[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static short sum(short[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static int sum(int[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static long sum(long[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static char sum(char[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static float sum(float[] self) {
-        return ArrayGroovyMethods.sum(self);
-    }
-
-    @Deprecated
-    public static double sum(double[] self) {
-        return ArrayGroovyMethods.sum(self);
     }
 
     /**
@@ -6658,18 +6234,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in an array, adding the result to some initial value.
-     *
-     * @param self         an array of values to sum
-     * @param initialValue the items in the array will be summed to this initial value
-     * @return The sum of all the items.
-     * @since 1.7.1
-     */
-    public static Object sum(Object[] self, Object initialValue) {
-        return sum(new ArrayIterator<>(self), initialValue, false);
-    }
-
-    /**
      * Sums the items from an Iterator, adding the result to some initial value. This is
      * equivalent to invoking the "plus" method on all items from the Iterator. The iterator
      * will become exhausted of elements after determining the sum value.
@@ -6683,7 +6247,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sum(self, initialValue, false);
     }
 
-    private static Object sum(Iterator<?> self, Object initialValue, boolean first) {
+    static Object sum(Iterator<?> self, Object initialValue, boolean first) {
         Object result = initialValue;
         Object[] param = new Object[1];
         while (self.hasNext()) {
@@ -6700,41 +6264,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    @Deprecated
-    public static byte sum(byte[] self, byte initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static short sum(short[] self, short initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static int sum(int[] self, int initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static long sum(long[] self, long initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static char sum(char[] self, char initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static float sum(float[] self, float initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
-    @Deprecated
-    public static double sum(double[] self, double initialValue) {
-        return ArrayGroovyMethods.sum(self, initialValue);
-    }
-
     /**
      * Sums the result of applying a closure to each item of an Iterable.
      * <code>coll.sum(closure)</code> is equivalent to:
@@ -6749,21 +6278,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Object sum(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return sum(self.iterator(), null, closure, true);
-    }
-
-    /**
-     * Sums the result of applying a closure to each item of an array.
-     * <code>array.sum(closure)</code> is equivalent to:
-     * <code>array.collect(closure).sum()</code>.
-     *
-     * @param self    An array
-     * @param closure a single parameter closure that returns a (typically) numeric value.
-     * @return The sum of the values returned by applying the closure to each
-     *         item of the array.
-     * @since 1.7.1
-     */
-    public static <T> Object sum(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        return sum(new ArrayIterator<>(self), null, closure, true);
     }
 
     /**
@@ -6800,22 +6314,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of applying a closure to each item of an array to some initial value.
-     * <code>array.sum(initVal, closure)</code> is equivalent to:
-     * <code>array.collect(closure).sum(initVal)</code>.
-     *
-     * @param self         an array
-     * @param closure      a single parameter closure that returns a (typically) numeric value.
-     * @param initialValue the closure results will be summed to this initial value
-     * @return The sum of the values returned by applying the closure to each
-     *         item of the array.
-     * @since 1.7.1
-     */
-    public static <T> Object sum(T[] self, Object initialValue, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        return sum(new ArrayIterator<>(self), initialValue, closure, false);
-    }
-
-    /**
      * Sums the result of applying a closure to each item of an Iterator to some initial value.
      * <code>iter.sum(initVal, closure)</code> is equivalent to:
      * <code>iter.collect(closure).sum(initVal)</code>. The iterator will become
@@ -6832,7 +6330,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sum(self, initialValue, closure, false);
     }
 
-    private static Object sum(Iterator<?> self, Object initialValue, Closure closure, boolean first) {
+    static Object sum(Iterator<?> self, Object initialValue, Closure closure, boolean first) {
         Object result = initialValue;
         Object[] closureParam = new Object[1];
         Object[] plusParam = new Object[1];
@@ -6865,26 +6363,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object average(Iterable<?> self) {
         return average(self.iterator());
-    }
-
-    /**
-     * Averages the items in an array. This is equivalent to invoking the
-     * "plus" method on all items in the array and then dividing by the
-     * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">
-     * assert 3 == ([1, 2, 6] as Integer[]).average()
-     * </pre>
-     *
-     * @param self The array of values to average
-     * @return The average of all the items
-     * @see #sum(java.lang.Object[])
-     * @since 3.0.0
-     */
-    public static Object average(Object[] self) {
-        Object result = sum(self);
-        MetaClass metaClass = InvokerHelper.getMetaClass(result);
-        result = metaClass.invokeMethod(result, "div", self.length);
-        return result;
     }
 
     /**
@@ -6937,36 +6415,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    @Deprecated
-    public static BigDecimal average(byte[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
-    @Deprecated
-    public static BigDecimal average(short[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
-    @Deprecated
-    public static BigDecimal average(int[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
-    @Deprecated
-    public static BigDecimal average(long[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
-    @Deprecated
-    public static double average(float[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
-    @Deprecated
-    public static double average(double[] self) {
-        return ArrayGroovyMethods.average(self);
-    }
-
     /**
      * Averages the result of applying a closure to each item of an Iterable.
      * <code>iter.average(closure)</code> is equivalent to:
@@ -6984,27 +6432,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Object average(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return average(self.iterator(), closure);
-    }
-
-    /**
-     * Averages the result of applying a closure to each item of an array.
-     * <code>array.average(closure)</code> is equivalent to:
-     * <code>array.collect(closure).average()</code>.
-     * <pre class="groovyTestCase">
-     * def (nums, strings) = [[1, 3] as Integer[], ['to', 'from'] as String[]]
-     * assert 20 == nums.average { it * 10 }
-     * assert 3 == strings.average { it.size() }
-     * assert 3 == strings.average (String::size)
-     * </pre>
-     *
-     * @param self    An array
-     * @param closure a single parameter closure that returns a (typically) numeric value.
-     * @return The average of the values returned by applying the closure to each
-     *         item of the array.
-     * @since 3.0.0
-     */
-    public static <T> Object average(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        return average(new ArrayIterator<>(self), closure);
     }
 
     /**
@@ -7083,60 +6510,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each
-     * item in this array, with the given String as a separator between each
-     * item.
-     *
-     * @param self      an array of Object
-     * @param separator a String separator
-     * @return the joined String
-     * @since 1.0
-     */
-    public static <T> String join(T[] self, String separator) {
-        return join(new ArrayIterator<>(self), separator);
-    }
-
-    @Deprecated
-    public static String join(boolean[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(byte[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(char[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(double[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(float[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(int[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(long[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    @Deprecated
-    public static String join(short[] self, String separator) {
-        return ArrayGroovyMethods.join(self, separator);
-    }
-
-    /**
      * Adds min() method to Collection objects.
      * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
      *
@@ -7167,33 +6540,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * Adds min() method to Object arrays.
-     *
-     * @param self an array
-     * @return the minimum value
-     * @see #min(Iterator)
-     * @since 1.5.5
-     */
-    public static <T> T min(T[] self) {
-        return min(new ArrayIterator<>(self));
-    }
-
-    @Deprecated
-    public static int min(int[] self) {
-        return ArrayGroovyMethods.max(self);
-    }
-
-    @Deprecated
-    public static long min(long[] self) {
-        return ArrayGroovyMethods.max(self);
-    }
-
-    @Deprecated
-    public static double min(double[] self) {
-        return ArrayGroovyMethods.max(self);
     }
 
     /**
@@ -7232,19 +6578,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * Selects the minimum value found from the Object array using the given comparator.
-     *
-     * @param self       an array
-     * @param comparator a Comparator
-     * @return the minimum value
-     * @see #min(Iterator, java.util.Comparator)
-     * @since 1.5.5
-     */
-    public static <T> T min(T[] self, Comparator<? super T> comparator) {
-        return min(new ArrayIterator<>(self), comparator);
     }
 
     /**
@@ -7404,29 +6737,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the Object array
-     * using the closure to determine the correct ordering.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    an array
-     * @param closure a Closure used to determine the correct ordering
-     * @return the minimum value
-     * @see #min(Iterator, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T min(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return min(new ArrayIterator<>(self), closure);
-    }
-
-    /**
      * Adds max() method to Iterable objects.
      * <pre class="groovyTestCase">
      * assert 5 == [2,3,1,5,4].max()
@@ -7458,33 +6768,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * Adds max() method to Object arrays.
-     *
-     * @param self an array
-     * @return the maximum value
-     * @see #max(Iterator)
-     * @since 1.5.5
-     */
-    public static <T> T max(T[] self) {
-        return max(new ArrayIterator<>(self));
-    }
-
-    @Deprecated
-    public static int max(int[] self) {
-        return ArrayGroovyMethods.max(self);
-    }
-
-    @Deprecated
-    public static long max(long[] self) {
-        return ArrayGroovyMethods.max(self);
-    }
-
-    @Deprecated
-    public static double max(double[] self) {
-        return ArrayGroovyMethods.max(self);
     }
 
     /**
@@ -7561,29 +6844,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found from the Object array
-     * using the closure to determine the correct ordering.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    an array
-     * @param closure a Closure used to determine the correct ordering
-     * @return the maximum value
-     * @see #max(Iterator, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static <T> T max(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return max(new ArrayIterator<>(self), closure);
-    }
-
-    /**
      * Selects the maximum value found in the Iterable using the given comparator.
      * <pre class="groovyTestCase">
      * assert "hello" == ["hello","hi","hey"].max( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )
@@ -7619,19 +6879,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found from the Object array using the given comparator.
-     *
-     * @param self       an array
-     * @param comparator a Comparator
-     * @return the maximum value
-     * @see #max(Iterator, Comparator)
-     * @since 1.5.5
-     */
-    public static <T> T max(T[] self, Comparator<? super T> comparator) {
-        return max(new ArrayIterator<>(self), comparator);
-    }
-
-    /**
      * Returns indices of the collection.
      * <p>
      * Example:
@@ -7645,63 +6892,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static IntRange getIndices(Collection self) {
         return new IntRange(false, 0, self.size());
-    }
-
-    /**
-     * Returns indices of the array.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * String[] letters = ['a', 'b', 'c', 'd']
-     * {@code assert 0..<4 == letters.indices}
-     * </pre>
-     *
-     * @param self an array
-     * @return an index range
-     * @since 2.4.0
-     */
-    public static <T> IntRange getIndices(T[] self) {
-        return new IntRange(false, 0, self.length);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(boolean[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(byte[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(char[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(double[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(float[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(int[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(long[] self) {
-        return ArrayGroovyMethods.getIndices(self);
-    }
-
-    @Deprecated
-    public static IntRange getIndices(short[] self) {
-        return ArrayGroovyMethods.getIndices(self);
     }
 
     /**
@@ -7735,17 +6925,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static int size(Iterable self) {
         return size(self.iterator());
-    }
-
-    /**
-     * Provide the standard Groovy <code>size()</code> method for an array.
-     *
-     * @param self an Array of objects
-     * @return the size (length) of the Array
-     * @since 1.0
-     */
-    public static int size(Object[] self) {
-        return self.length;
     }
 
     /**
@@ -7907,30 +7086,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Select a List of items from an array using a Collection to
-     * identify the indices to be selected.
-     *
-     * @param self    an array
-     * @param indices a Collection of indices
-     * @return a new list of the values at the given indices
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(T[] self, Collection indices) {
-        List<T> answer = new ArrayList<>(indices.size());
-        for (Object value : indices) {
-            if (value instanceof Range) {
-                answer.addAll(getAt(self, (Range) value));
-            } else if (value instanceof Collection) {
-                answer.addAll(getAt(self, (Collection) value));
-            } else {
-                int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.add(getAtImpl(self, idx));
-            }
-        }
-        return answer;
-    }
-
-    /**
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges.
      * <pre class="groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
@@ -8002,72 +7157,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             map.put(key, defaultValue);
         }
         return map.get(key);
-    }
-
-    /**
-     * Support the range subscript operator for an Array
-     *
-     * @param array an Array of Objects
-     * @param range a Range
-     * @return a range of a list from the range's from index up to but not
-     *         including the range's to value
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(T[] array, Range range) {
-        List<T> list = Arrays.asList(array);
-        return getAt(list, range);
-    }
-
-    /**
-     *
-     * @param array an Array of Objects
-     * @param range an IntRange
-     * @return a range of a list from the range's from index up to but not
-     *         including the range's to value
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(T[] array, IntRange range) {
-        List<T> list = Arrays.asList(array);
-        return getAt(list, range);
-    }
-
-    /**
-     *
-     * @param array an Array of Objects
-     * @param range an EmptyRange
-     * @return an empty Range
-     * @since 1.5.0
-     */
-    public static <T> List<T> getAt(T[] array, EmptyRange range) {
-        return new ArrayList<>();
-    }
-
-    /**
-     *
-     * @param array an Array of Objects
-     * @param range an ObjectRange
-     * @return a range of a list from the range's from index up to but not
-     *         including the range's to value
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(T[] array, ObjectRange range) {
-        List<T> list = Arrays.asList(array);
-        return getAt(list, range);
-    }
-
-    private static <T> T getAtImpl(T[] array, int idx) {
-        return array[normaliseIndex(idx, array.length)];
-    }
-
-    /**
-     * Allows conversion of arrays into a mutable List.
-     *
-     * @param array an Array of Objects
-     * @return the array as a List
-     * @since 1.0
-     */
-    public static <T> List<T> toList(T[] array) {
-        return new ArrayList<>(Arrays.asList(array));
     }
 
     /**
@@ -8357,38 +7446,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
         }
-    }
-
-    // todo: remove after putAt(Splice) gets deleted
-    @Deprecated
-    protected static List getSubList(List self, List splice) {
-        int left /* = 0 */;
-        int right = 0;
-        boolean emptyRange = false;
-        if (splice.size() == 2) {
-            left = DefaultTypeTransformation.intUnbox(splice.get(0));
-            right = DefaultTypeTransformation.intUnbox(splice.get(1));
-        } else if (splice instanceof IntRange) {
-            IntRange range = (IntRange) splice;
-            left = range.getFrom();
-            right = range.getTo();
-        } else if (splice instanceof EmptyRange) {
-            RangeInfo info = subListBorders(self.size(), (EmptyRange) splice);
-            left = info.from;
-            emptyRange = true;
-        } else {
-            throw new IllegalArgumentException("You must specify a list of 2 indexes to create a sub-list");
-        }
-        int size = self.size();
-        left = normaliseIndex(left, size);
-        right = normaliseIndex(right, size);
-        List sublist /* = null */;
-        if (!emptyRange) {
-            sublist = self.subList(left, right + 1);
-        } else {
-            sublist = self.subList(left, left);
-        }
-        return sublist;
     }
 
     /**
@@ -8912,11 +7969,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return withLazyDefault(self, init);
     }
 
-    @Deprecated
-    public static <T> List<T> withDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
-        return withDefault(self, init);
-    }
-
     /**
      * Decorates a list allowing it to grow when called with a non-existent index value.
      * When called with such values, the list is grown in size and a default value
@@ -8963,11 +8015,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return ListWithDefault.newInstance(self, true, init);
     }
 
-    @Deprecated
-    public static <T> List<T> withLazyDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
-        return ListWithDefault.newInstance(self, true, init);
-    }
-
     /**
      * Decorates a list allowing it to grow when called with a non-existent index value.
      * When called with such values, the list is grown in size and a default value
@@ -9005,11 +8052,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> ListWithDefault<T> withEagerDefault(List<T> self, @ClosureParams(value=SimpleType.class, options="int") Closure<T> init) {
-        return ListWithDefault.newInstance(self, false, init);
-    }
-
-    @Deprecated
-    public static <T> List<T> withEagerDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
         return ListWithDefault.newInstance(self, false, init);
     }
 
@@ -9092,36 +8134,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result.put(next.getV1(), next.getV2());
         }
         return result;
-    }
-
-    @Deprecated
-    public static Map<Integer, Integer> indexed(int[] self) {
-        return ArrayGroovyMethods.indexed(self);
-    }
-
-    @Deprecated
-    public static Map<Integer, Integer> indexed(int[] self, int offset) {
-        return ArrayGroovyMethods.indexed(self, offset);
-    }
-
-    @Deprecated
-    public static Map<Integer, Long> indexed(long[] self) {
-        return ArrayGroovyMethods.indexed(self);
-    }
-
-    @Deprecated
-    public static Map<Integer, Long> indexed(long[] self, int offset) {
-        return ArrayGroovyMethods.indexed(self, offset);
-    }
-
-    @Deprecated
-    public static Map<Integer, Double> indexed(double[] self) {
-        return ArrayGroovyMethods.indexed(self);
-    }
-
-    @Deprecated
-    public static Map<Integer, Double> indexed(double[] self, int offset) {
-        return ArrayGroovyMethods.indexed(self, offset);
     }
 
     /**
@@ -11711,59 +10723,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Coerce an Object array to a boolean value.
-     * An Object array is false if the array is of length 0.
-     * and to true otherwise
-     *
-     * @param array the array
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Object[] array) {
-        return array != null && array.length > 0;
-    }
-
-    @Deprecated
-    public static boolean asBoolean(byte[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(short[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(int[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(long[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(float[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(double[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(boolean[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    @Deprecated
-    public static boolean asBoolean(char[] array) {
-        return ArrayGroovyMethods.asBoolean(array);
-    }
-
-    /**
      * Coerce a character to a boolean value.
      * A character is coerced to false if it's character value is equal to 0,
      * and to true otherwise.
@@ -11896,32 +10855,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return asType((Object) col, clazz);
-    }
-
-    /**
-     * Converts the given array to either a List, Set, or
-     * SortedSet.  If the given class is something else, the
-     * call is deferred to {@link #asType(Object,Class)}.
-     *
-     * @param ary   an array
-     * @param clazz the desired class
-     * @return the object resulting from this type conversion
-     * @see #asType(java.lang.Object, java.lang.Class)
-     * @since 1.5.1
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Object[] ary, Class<T> clazz) {
-        if (clazz == List.class) {
-            return (T) new ArrayList(Arrays.asList(ary));
-        }
-        if (clazz == Set.class) {
-            return (T) new HashSet(Arrays.asList(ary));
-        }
-        if (clazz == SortedSet.class) {
-            return (T) new TreeSet(Arrays.asList(ary));
-        }
-
-        return asType((Object) ary, clazz);
     }
 
     /**
@@ -13203,11 +12136,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-    @Deprecated
-    public static boolean equals(int[] left, int[] right) {
-        return ArrayGroovyMethods.equals(left, right);
-    }
-
     /**
      * Determines if the contents of this array are equal to the
      * contents of the given list, in the same order. This returns
@@ -13898,47 +12826,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return flatten(toList(self), new ArrayList());
     }
 
-    @Deprecated
-    public static Collection flatten(boolean[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(byte[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(char[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(short[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(int[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-
-    @Deprecated
-    public static Collection flatten(long[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(float[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
-    @Deprecated
-    public static Collection flatten(double[] self) {
-        return flatten(toList(self), new ArrayList());
-    }
-
     @SuppressWarnings("unchecked")
     private static Collection flatten(Iterable elements, Collection addTo) {
         for (Object element : elements) {
@@ -14151,166 +13038,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.rightShiftUnsigned(self, operand);
     }
 
-    @Deprecated
-    public static List<Byte> getAt(byte[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Character> getAt(char[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Short> getAt(short[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Integer> getAt(int[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Long> getAt(long[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Float> getAt(float[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Double> getAt(double[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Boolean> getAt(boolean[] array, Range range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Byte> getAt(byte[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Character> getAt(char[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Short> getAt(short[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Integer> getAt(int[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Long> getAt(long[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Float> getAt(float[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Double> getAt(double[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Boolean> getAt(boolean[] array, IntRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Byte> getAt(byte[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Character> getAt(char[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Short> getAt(short[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Integer> getAt(int[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Long> getAt(long[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Float> getAt(float[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Double> getAt(double[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Boolean> getAt(boolean[] array, ObjectRange range) {
-        return ArrayGroovyMethods.getAt(array, range);
-    }
-
-    @Deprecated
-    public static List<Byte> getAt(byte[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Character> getAt(char[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Short> getAt(short[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Integer> getAt(int[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Long> getAt(long[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Float> getAt(float[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Double> getAt(double[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
-    @Deprecated
-    public static List<Boolean> getAt(boolean[] array, Collection indices) {
-        return ArrayGroovyMethods.getAt(array, indices);
-    }
-
     /**
      * Support the subscript operator for a Bitset
      *
@@ -14381,126 +13108,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void putAt(BitSet self, int index, boolean value) {
         self.set(index, value);
-    }
-
-    @Deprecated
-    public static int size(boolean[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(byte[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(char[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(short[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(int[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(long[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(float[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static int size(double[] array) {
-        return Array.getLength(array);
-    }
-
-    @Deprecated
-    public static List<Byte> toList(byte[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Boolean> toList(boolean[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Character> toList(char[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Short> toList(short[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Integer> toList(int[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Long> toList(long[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Float> toList(float[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static List<Double> toList(double[] array) {
-        return ArrayGroovyMethods.toList(array);
-    }
-
-    @Deprecated
-    public static Set<Boolean> toSet(boolean[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Byte> toSet(byte[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Character> toSet(char[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Short> toSet(short[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Integer> toSet(int[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Long> toSet(long[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Float> toSet(float[] array) {
-        return ArrayGroovyMethods.toSet(array);
-    }
-
-    @Deprecated
-    public static Set<Double> toSet(double[] array) {
-        return ArrayGroovyMethods.toSet(array);
     }
 
     /**
@@ -14575,65 +13182,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Implements the getAt(int) method for primitive type arrays.
-     *
-     * @param self an array object
-     * @param idx  the index of interest
-     * @return the returned value from the array
-     * @since 1.5.0
-     */
-    @Deprecated
-    protected static Object primitiveArrayGet(Object self, int idx) {
-        return Array.get(self, normaliseIndex(idx, Array.getLength(self)));
-    }
-
-    /**
-     * Implements the getAt(Range) method for primitive type arrays.
-     *
-     * @param self  an array object
-     * @param range the range of indices of interest
-     * @return the returned values from the array corresponding to the range
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    protected static List primitiveArrayGet(Object self, Range range) {
-        List answer = new ArrayList();
-        for (Object next : range) {
-            int idx = DefaultTypeTransformation.intUnbox(next);
-            answer.add(primitiveArrayGet(self, idx));
-        }
-        return answer;
-    }
-
-    /**
-     * Implements the getAt(Collection) method for primitive type arrays.  Each
-     * value in the collection argument is assumed to be a valid array index.
-     * The value at each index is then added to a list which is returned.
-     *
-     * @param self    an array object
-     * @param indices the indices of interest
-     * @return the returned values from the array
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    protected static List primitiveArrayGet(Object self, Collection indices) {
-        List answer = new ArrayList();
-        for (Object value : indices) {
-            if (value instanceof Range) {
-                answer.addAll(primitiveArrayGet(self, (Range) value));
-            } else if (value instanceof List) {
-                answer.addAll(primitiveArrayGet(self, (List) value));
-            } else {
-                int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.add(primitiveArrayGet(self, idx));
-            }
-        }
-        return answer;
-    }
-
-    /**
      * Implements the setAt(int idx) method for primitive type arrays.
      *
      * @param self     an object
@@ -14658,46 +13206,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
-    @Deprecated
-    public static boolean contains(boolean[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(byte[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(char[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(short[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(int[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(long[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(float[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
-    @Deprecated
-    public static boolean contains(double[] self, Object value) {
-        return ArrayGroovyMethods.contains(self, value);
-    }
-
     /**
      * Checks whether the array contains the given value.
      *
@@ -14711,46 +13219,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
         return false;
-    }
-
-    @Deprecated
-    public static String toString(boolean[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(byte[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(char[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(short[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(int[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(long[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(float[] self) {
-        return ArrayGroovyMethods.toString(self);
-    }
-
-    @Deprecated
-    public static String toString(double[] self) {
-        return ArrayGroovyMethods.toString(self);
     }
 
     /**
@@ -14888,7 +13356,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number next(Number self) {
-        return NumberNumberPlus.plus(self, ONE);
+        return NumberNumberPlus.plus(self, Integer.valueOf(1));
     }
 
     /**
@@ -14910,7 +13378,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number previous(Number self) {
-        return NumberNumberMinus.minus(self, ONE);
+        return NumberNumberMinus.minus(self, Integer.valueOf(1));
     }
 
     /**
@@ -16579,7 +15047,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.toBigInteger(self);
     }
 
-    //-------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
     // Boolean based methods
 
     /**
@@ -16630,9 +15098,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return left ^ Boolean.TRUE.equals(right);
     }
 
-//    public static Boolean negate(Boolean left) {
-//        return Boolean.valueOf(!left.booleanValue());
-//    }
+    //--------------------------------------------------------------------------
 
     /**
      * Allows a simple syntax for using timers. This timer will execute the
@@ -16653,23 +15119,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         };
         timer.schedule(timerTask, delay);
         return timerTask;
-    }
-
-    /**
-     * Traverse through each byte of this Byte array. Alias for each.
-     *
-     * @param self    a Byte array
-     * @param closure a closure
-     * @see #each(java.lang.Object, groovy.lang.Closure)
-     * @since 1.5.5
-     */
-    public static void eachByte(Byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        each(self, closure);
-    }
-
-    @Deprecated
-    public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
-        ArrayGroovyMethods.eachByte(self, closure);
     }
 
     /**
@@ -16781,34 +15230,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the elements of an Array and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self      an Array
-     * @param condition the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Array, starting from a
-     * specified startIndex, and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self       an Array
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexOf(new ArrayIterator<>(self), startIndex, condition);
-    }
-
-    /**
      * Iterates over the elements of an aggregate of items and returns
      * the index of the last item that matches the condition specified in the closure.
      * Example (aggregate is {@code ChronoUnit} enum values):
@@ -16914,35 +15335,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the elements of an Array and returns
-     * the index of the last item that matches the condition specified in the closure.
-     *
-     * @param self      an Array
-     * @param condition the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findLastIndexOf(new ArrayIterator<>(self), 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Array, starting
-     * from a specified startIndex, and returns the index of the last item that
-     * matches the condition specified in the closure.
-     *
-     * @param self       an Array
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        // TODO could be made more efficient by using a reverse index
-        return findLastIndexOf(new ArrayIterator<>(self), startIndex, condition);
-    }
-
-    /**
      * Iterates over the elements of an aggregate of items and returns
      * the index values of the items that match the condition specified in the closure.
      *
@@ -17037,34 +15429,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<Number> findIndexValues(Iterable<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
         return findIndexValues(self.iterator(), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Array and returns
-     * the index values of the items that match the condition specified in the closure.
-     *
-     * @param self      an Array
-     * @param condition the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexValues(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Array, starting from
-     * a specified startIndex, and returns the index values of the items that match
-     * the condition specified in the closure.
-     *
-     * @param self       an Array
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexValues(new ArrayIterator<>(self), startIndex, condition);
     }
 
     /**
@@ -17454,19 +15818,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Attempts to create an Iterator for the given object by first
      * converting it to a Collection.
      *
-     * @param a an array
-     * @return an Iterator for the given Array.
-     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object[])
-     * @since 1.6.4
-     */
-    public static <T> Iterator<T> iterator(T[] a) {
-        return DefaultTypeTransformation.asCollection(a).iterator();
-    }
-
-    /**
-     * Attempts to create an Iterator for the given object by first
-     * converting it to a Collection.
-     *
      * @param o an object
      * @return an Iterator for the given Object.
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
@@ -17657,67 +16008,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Swaps two elements at the specified positions.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert (["a", "c", "b", "d"] as String[]) == (["a", "b", "c", "d"] as String[]).swap(1, 2)
-     * </pre>
-     *
-     * @param self an array
-     * @param i a position
-     * @param j a position
-     * @return self
-     * @since 2.4.0
-     */
-    public static <T> T[] swap(T[] self, int i, int j) {
-        T tmp = self[i];
-        self[i] = self[j];
-        self[j] = tmp;
-        return self;
-    }
-
-    @Deprecated
-    public static boolean[] swap(boolean[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static byte[] swap(byte[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static char[] swap(char[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static double[] swap(double[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static float[] swap(float[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static int[] swap(int[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static long[] swap(long[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    @Deprecated
-    public static short[] swap(short[] self, int i, int j) {
-        return ArrayGroovyMethods.swap(self, i,  j);
-    }
-
-    /**
      * Modifies this list by removing the element at the specified position
      * in this list. Returns the removed element. Essentially an alias for
      * {@link List#remove(int)} but with no ambiguity for List&lt;Integer&gt;.
@@ -17788,5 +16078,1126 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return sw.toString();
+    }
+
+    //--------------------------------------------------------------------------
+    // attic
+
+    @Deprecated(since = "5.0.0")
+    public static <T> boolean any(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        return ArrayGroovyMethods.any(self, predicate);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(boolean[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(byte[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(char[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(short[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(int[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(long[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(float[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(double[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean asBoolean(Object[] self) {
+        return ArrayGroovyMethods.asBoolean(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T asType(Object[] self, Class<T> type) {
+        return ArrayGroovyMethods.asType(self, type);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static BigDecimal average(byte[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static BigDecimal average(short[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static BigDecimal average(int[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static BigDecimal average(long[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double average(float[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double average(double[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Object average(Object[] self) {
+        return ArrayGroovyMethods.average(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Object average(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return ArrayGroovyMethods.average(self, closure);
+    }
+
+    @Deprecated
+    public static <T, K, V> Collection<T> collectMany$$bridge(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, projection);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(boolean[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(byte[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(char[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(short[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(int[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(long[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(float[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean contains(double[] self, Object value) {
+        return ArrayGroovyMethods.contains(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(boolean[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(byte[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(char[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(short[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(int[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(long[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(float[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(double[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Number count(Object[] self, Object value) {
+        return ArrayGroovyMethods.count(self, value);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Number count(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        return ArrayGroovyMethods.count(self, predicate);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
+        return ArrayGroovyMethods.countBy(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] each(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return ArrayGroovyMethods.each(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static void eachByte(byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        ArrayGroovyMethods.eachByte(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static void eachByte(Byte[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        ArrayGroovyMethods.each(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] eachWithIndex(T[] self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
+        return ArrayGroovyMethods.eachWithIndex(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean equals(int[] left, int[] right) {
+        return ArrayGroovyMethods.equals(left, right);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> boolean every(T[] self, @ClosureParams(FirstParam.Component.class) Closure predicate) {
+        return ArrayGroovyMethods.every(self, predicate);
+    }
+
+    @Deprecated
+    public static Collection findAll$$bridge(Object self) {
+        return findAll(self);
+    }
+
+    @Deprecated
+    public static <T> Collection<T> findAll$$bridge(T[] self) {
+        return findAll(self);
+    }
+
+    @Deprecated
+    public static Collection findAll$$bridge(Object self, Closure closure) {
+        return findAll(self, closure);
+    }
+
+    @Deprecated
+    public static <T> Collection<T> findAll$$bridge(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findAll(self, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<Number> findIndexValues(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexValues(new ArrayIterator<>(self), startIndex, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findIndexOf(new ArrayIterator<>(self), startIndex, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findLastIndexOf(new ArrayIterator<>(self), 0, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        // TODO could be made more efficient by using a reverse index
+        return findLastIndexOf(new ArrayIterator<>(self), startIndex, condition);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(boolean[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(byte[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(char[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(short[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(int[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(long[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(float[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Collection flatten(double[] self) {
+        return ArrayGroovyMethods.flatten(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Boolean> getAt(boolean[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Byte> getAt(byte[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Character> getAt(char[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Short> getAt(short[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Integer> getAt(int[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Long> getAt(long[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Float> getAt(float[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Double> getAt(double[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> getAt(T[] self, Range range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Boolean> getAt(boolean[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Byte> getAt(byte[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Character> getAt(char[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Short> getAt(short[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Integer> getAt(int[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Long> getAt(long[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Float> getAt(float[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Double> getAt(double[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> getAt(T[] self, IntRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Boolean> getAt(boolean[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Byte> getAt(byte[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Character> getAt(char[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Short> getAt(short[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Integer> getAt(int[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Long> getAt(long[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Float> getAt(float[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Double> getAt(double[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> getAt(T[] self, ObjectRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> getAt(T[] self, EmptyRange range) {
+        return ArrayGroovyMethods.getAt(self, range);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Boolean> getAt(boolean[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Byte> getAt(byte[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Character> getAt(char[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Short> getAt(short[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Integer> getAt(int[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Long> getAt(long[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Float> getAt(float[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Double> getAt(double[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> getAt(T[] self, Collection indices) {
+        return ArrayGroovyMethods.getAt(self, indices);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(boolean[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(byte[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(char[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(short[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(int[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(long[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(float[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static IntRange getIndices(double[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> IntRange getIndices(T[] self) {
+        return ArrayGroovyMethods.getIndices(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Collection<T> grep(T[] self) {
+        return ArrayGroovyMethods.grep(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Collection<T> grep(T[] self, Object filter) {
+        return ArrayGroovyMethods.grep(self, filter);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Integer> indexed(int[] self) {
+        return ArrayGroovyMethods.indexed(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Long> indexed(long[] self) {
+        return ArrayGroovyMethods.indexed(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Double> indexed(double[] self) {
+        return ArrayGroovyMethods.indexed(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Integer> indexed(int[] self, int offset) {
+        return ArrayGroovyMethods.indexed(self, offset);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Long> indexed(long[] self, int offset) {
+        return ArrayGroovyMethods.indexed(self, offset);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Map<Integer, Double> indexed(double[] self, int offset) {
+        return ArrayGroovyMethods.indexed(self, offset);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <E,T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+        return ArrayGroovyMethods.inject(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        return ArrayGroovyMethods.inject(self, initialValue, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Iterator<T> iterator(T[] self) {
+        return ArrayGroovyMethods.iterator(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(boolean[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(byte[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(char[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(short[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(int[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(long[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(float[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String join(double[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> String join(T[] self, String separator) {
+        return ArrayGroovyMethods.join(self, separator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int max(int[] self) {
+        return ArrayGroovyMethods.max(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long max(long[] self) {
+        return ArrayGroovyMethods.max(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double max(double[] self) {
+        return ArrayGroovyMethods.max(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T max(T[] self) {
+        return ArrayGroovyMethods.max(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T max(T[] self, Comparator<? super T> comparator) {
+        return ArrayGroovyMethods.max(self, comparator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T max(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return ArrayGroovyMethods.max(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int min(int[] self) {
+        return ArrayGroovyMethods.min(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long min(long[] self) {
+        return ArrayGroovyMethods.min(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double min(double[] self) {
+        return ArrayGroovyMethods.min(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T min(T[] self) {
+        return ArrayGroovyMethods.min(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T min(T[] self, Comparator<? super T> comparator) {
+        return ArrayGroovyMethods.min(self, comparator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T min(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return ArrayGroovyMethods.min(self, closure);
+    }
+
+    /**
+     * Implements the getAt(int) method for primitive type arrays.
+     *
+     * @param self an array object
+     * @param idx  the index of interest
+     * @return the returned value from the array
+     * @since 1.5.0
+     */
+    @Deprecated(since = "5.0.0")
+    protected static Object primitiveArrayGet(Object self, int idx) {
+        return Array.get(self, normaliseIndex(idx, Array.getLength(self)));
+    }
+
+    /**
+     * Implements the getAt(Range) method for primitive type arrays.
+     *
+     * @param self  an array object
+     * @param range the range of indices of interest
+     * @return the returned values from the array corresponding to the range
+     * @since 1.5.0
+     */
+    @Deprecated(since = "5.0.0")
+    protected static List primitiveArrayGet(Object self, Range range) {
+        List answer = new ArrayList();
+        for (Object next : range) {
+            int idx = DefaultTypeTransformation.intUnbox(next);
+            answer.add(primitiveArrayGet(self, idx));
+        }
+        return answer;
+    }
+
+    /**
+     * Implements the getAt(Collection) method for primitive type arrays.  Each
+     * value in the collection argument is assumed to be a valid array index.
+     * The value at each index is then added to a list which is returned.
+     *
+     * @param self    an array object
+     * @param indices the indices of interest
+     * @return the returned values from the array
+     * @since 1.0
+     */
+    @Deprecated(since = "5.0.0")
+    protected static List primitiveArrayGet(Object self, Collection indices) {
+        List answer = new ArrayList();
+        for (Object value : indices) {
+            if (value instanceof Range) {
+                answer.addAll(primitiveArrayGet(self, (Range) value));
+            } else if (value instanceof List) {
+                answer.addAll(primitiveArrayGet(self, (List) value));
+            } else {
+                int idx = DefaultTypeTransformation.intUnbox(value);
+                answer.add(primitiveArrayGet(self, idx));
+            }
+        }
+        return answer;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] reverseEach(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return ArrayGroovyMethods.reverseEach(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(boolean[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(byte[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(char[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(short[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(int[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(long[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(float[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(double[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int size(Object[] self) {
+        return self.length;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static byte sum(byte[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static char sum(char[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static short sum(short[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int sum(int[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long sum(long[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static float sum(float[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double sum(double[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Object sum(Object[] self) {
+        return ArrayGroovyMethods.sum(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static byte sum(byte[] self, byte initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static float sum(float[] self, float initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static short sum(short[] self, short initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int sum(int[] self, int initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long sum(long[] self, long initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static char sum(char[] self, char initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double sum(double[] self, double initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Object sum(Object[] self, Object initialValue) {
+        return ArrayGroovyMethods.sum(self, initialValue);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Object sum(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return ArrayGroovyMethods.sum(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> Object sum(T[] self, Object initialValue, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return ArrayGroovyMethods.sum(self, initialValue, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static boolean[] swap(boolean[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static byte[] swap(byte[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static char[] swap(char[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static short[] swap(short[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int[] swap(int[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long[] swap(long[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static float[] swap(float[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double[] swap(double[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] swap(T[] self, int i, int j) {
+        return ArrayGroovyMethods.swap(self, i,  j);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Boolean> toList(boolean[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Byte> toList(byte[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Character> toList(char[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Short> toList(short[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Integer> toList(int[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Long> toList(long[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Float> toList(float[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static List<Double> toList(double[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> List<T> toList(T[] self) {
+        return ArrayGroovyMethods.toList(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Boolean> toSet(boolean[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Byte> toSet(byte[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Character> toSet(char[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Short> toSet(short[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Integer> toSet(int[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Long> toSet(long[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Float> toSet(float[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static Set<Double> toSet(double[] self) {
+        return ArrayGroovyMethods.toSet(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(boolean[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(byte[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(char[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(short[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(int[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(long[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(float[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static String toString(double[] self) {
+        return ArrayGroovyMethods.toString(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] toUnique(T[] self) {
+        return ArrayGroovyMethods.toUnique(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] toUnique(T[] self, Comparator<? super T> comparator) {
+        return ArrayGroovyMethods.toUnique(self, comparator);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <T> T[] toUnique(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return ArrayGroovyMethods.toUnique(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static int[][] transpose(int[][] self) {
+        return ArrayGroovyMethods.transpose(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static long[][] transpose(long[][] self) {
+        return ArrayGroovyMethods.transpose(self);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static double[][] transpose(double[][] self) {
+        return ArrayGroovyMethods.transpose(self);
+    }
+
+    @Deprecated
+    public static <T> List<T> withDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
+        return withDefault(self, init);
+    }
+
+    @Deprecated
+    public static <T> List<T> withLazyDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
+        return ListWithDefault.newInstance(self, true, init);
+    }
+
+    @Deprecated
+    public static <T> List<T> withEagerDefault$$bridge(List<T> self, @ClosureParams(value=SimpleType.class, options = "int") Closure<T> init) {
+        return ListWithDefault.newInstance(self, false, init);
     }
 }
