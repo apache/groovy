@@ -47,10 +47,11 @@ import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
+import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.dimension;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.elementType;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -88,7 +89,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Return an existing method if one exists or else create a new method and mark it as {@code @Generated}.
+     * Returns an existing method if one exists or else create a new method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
      */
@@ -106,7 +107,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method and mark it as {@code @Generated}.
+     * Adds a method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(MethodNode)
      */
@@ -116,7 +117,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method and mark it as {@code @Generated}.
+     * Adds a method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(MethodNode)
      */
@@ -126,7 +127,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add an inner class that is marked as {@code @Generated}.
+     * Adds an inner class that is marked as {@code @Generated}.
      *
      * @see org.codehaus.groovy.ast.ModuleNode#addClass(ClassNode)
      */
@@ -136,7 +137,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method that is marked as {@code @Generated}.
+     * Adds a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(int, Parameter[], ClassNode[], Statement)
      */
@@ -147,7 +148,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method that is marked as {@code @Generated}.
+     * Adds a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(ConstructorNode)
      */
@@ -157,7 +158,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add methods from the super class.
+     * Adds methods from the super class.
      *
      * @param cNode The ClassNode
      * @return A map of methods
@@ -283,7 +284,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Return true if we have a static accessor
+     * Returns true if we have a static accessor
      */
     public static boolean hasPossibleStaticProperty(final ClassNode cNode, final String methodName) {
         // assume explicit static method call checked first so we can assume a simple check here
@@ -309,7 +310,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detect whether the given accessor name starts with "get", "set" or "is" followed by at least one character.
+     * Detects whether the given accessor name starts with "get", "set" or "is" followed by at least one character.
      *
      * @param accessorName the accessor name of interest, e.g. getAge
      * @return true if a valid prefix is found
@@ -331,7 +332,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detect whether a static property with the given name is within the class
+     * Detects whether a static property with the given name is within the class
      * or a super class.
      *
      * @param cNode the ClassNode of interest
@@ -350,7 +351,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detect whether a given ClassNode is an inner class (non-static).
+     * Detects whether a given ClassNode is an inner class (non-static).
      *
      * @param cNode the ClassNode of interest
      * @return true if the given node is a (non-static) inner class, else false
@@ -360,7 +361,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Check if the source ClassNode is compatible with the target ClassNode
+     * Checks if the source ClassNode is compatible with the target ClassNode
      */
     public static boolean isCompatibleWith(ClassNode source, ClassNode target) {
         if (source.equals(target)) return true;
@@ -385,7 +386,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Determine if an explicit (non-generated) constructor is in the class.
+     * Determines if an explicit (non-generated) constructor is in the class.
      *
      * @param xform if non-null, add an error if an explicit constructor is found
      * @param cNode the type of the containing class
@@ -409,7 +410,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Determine if the given ClassNode values have the same package name.
+     * Determines if the given ClassNode values have the same package name.
      *
      * @param first a ClassNode
      * @param second a ClassNode
@@ -422,6 +423,8 @@ public class ClassNodeUtils {
 
     /**
      * Searches the class for a field that matches specified name.
+     *
+     * @since 3.0.0
      */
     public static FieldNode getField(final ClassNode classNode, final String fieldName) {
         return getField(classNode, fieldName, fieldNode -> true);
@@ -429,8 +432,10 @@ public class ClassNodeUtils {
 
     /**
      * Searches the class for a field that matches specified name and test.
+     *
+     * @since 4.0.0
      */
-    public static FieldNode getField(final ClassNode classNode, final String fieldName, final Predicate<FieldNode> acceptability) {
+    public static FieldNode getField(final ClassNode classNode, final String fieldName, final Predicate<? super FieldNode> acceptability) {
         Queue<ClassNode> todo = new ArrayDeque<>(Collections.singletonList(classNode));
         Set<ClassNode> done = new HashSet<>();
         ClassNode next;
@@ -444,6 +449,37 @@ public class ClassNodeUtils {
                 Collections.addAll(todo, next.getInterfaces());
                 ClassNode superType = next.getSuperClass();
                 if (superType != null) todo.add(superType);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Searches the class for a method that matches specified name and test.
+     *
+     * @since 5.0.0
+     */
+    public static MethodNode getMethod(final ClassNode classNode, final String methodName, final Predicate<? super MethodNode> acceptability) {
+        for (ClassNode next = classNode; next != null; next = next.getSuperClass()) {
+            for (MethodNode methodNode : next.getDeclaredMethods(methodName)) {
+                if (acceptability.test(methodNode)) return methodNode;
+            }
+        }
+
+        if (classNode.isAbstract() && asBoolean(classNode.getInterfaces())) { // GROOVY-11071
+            Queue<ClassNode> todo = new ArrayDeque<>(Arrays.asList(classNode.getInterfaces()));
+            Set<ClassNode> done = new HashSet<>();
+            done.add(classNode);
+            ClassNode next;
+
+            while ((next = todo.poll()) != null) {
+                if (done.add(next)) {
+                    for (MethodNode methodNode : next.getDeclaredMethods(methodName)) {
+                        if (acceptability.test(methodNode)) return methodNode;
+                    }
+                    Collections.addAll(todo, next.getInterfaces());
+                }
             }
         }
 

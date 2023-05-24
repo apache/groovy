@@ -972,6 +972,25 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11071
+    void testIfaceGetAtAndSquareBracketIndexing() {
+        assertScript '''
+            interface MapLike<SELF extends MapLike<SELF,K,V>,K,V> {
+                V getAt(K key)
+            }
+            interface MyMap extends MapLike<MyMap,KeyType,Object> {
+            }
+            class KeyType {
+            }
+
+            try {
+                MyMap myMap = null
+                myMap[new KeyType()].toString()
+            } catch (NullPointerException expected) {
+            }
+        '''
+    }
+
     // GROOVY-10741
     void testMethodPointerPropertyReference() {
         assertScript '''

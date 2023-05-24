@@ -35,10 +35,16 @@ public class ParameterUtils {
         return (parameters[parameters.length - 1].getType().isArray());
     }
 
+    /**
+     * @since 2.5.0
+     */
     public static boolean parametersEqual(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, false);
     }
 
+    /**
+     * @since 3.0.0
+     */
     public static boolean parametersEqualWithWrapperType(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, true);
     }

@@ -1097,7 +1097,7 @@ public class ClassNode extends AnnotatedNode {
         if (compileUnit != null) compileUnit = cu;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.0")
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return ParameterUtils.parametersEqual(a, b);
     }

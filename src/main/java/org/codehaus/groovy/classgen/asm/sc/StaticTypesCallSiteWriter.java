@@ -54,8 +54,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
@@ -74,7 +77,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
@@ -573,8 +575,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     @Override
     public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
-        TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
+        TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);
         ClassNode aType = typeChooser.resolveType(arguments, classNode);
         if (trySubscript(receiver, message, arguments, rType, aType, safe)) {
@@ -607,7 +609,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             } else if ("power".equals(message)) {
                 writePowerCall(receiver, arguments, rType, aType);
                 return true;
-            } else if ("remainder".equals(message) || "leftShift".equals(message) || "rightShift".equals(message) || "rightShiftUnsigned".equals(message)
+            } else if ("remainder".equals(message) || "leftShift".equals(message)
+                    || "rightShift".equals(message) || "rightShiftUnsigned".equals(message)
                     || "and".equals(message) || "or".equals(message) || "xor".equals(message)) {
                 writeOperatorCall(receiver, arguments, message);
                 return true;
@@ -619,28 +622,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE) && !safe) {
                 writeArrayGet(receiver, arguments, rType, aType);
                 return true;
-            } else {
-                // check if a getAt method can be found on the receiver
-                ClassNode current = isClassClassNodeWrappingConcreteType(rType) ? rType.getGenericsTypes()[0].getType() : rType;
-                MethodNode getAtNode = null;
-                while (current != null && !isObjectType(current) && getAtNode == null) {
-                    getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
-                    if (getAtNode == null) {
-                        getAtNode = getCompatibleMethod(current, "getAt", aType);
-                    }
-                    if (getAtNode == null && isPrimitiveType(aType)) {
-                        getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getWrapper(aType), "index")});
-                        if (getAtNode == null) {
-                            getAtNode = getCompatibleMethod(current, "getAt", getWrapper(aType));
-                        }
-                    } else if (getAtNode == null && aType.isDerivedFrom(Number_TYPE)) {
-                        getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getUnwrapper(aType), "index")});
-                        if (getAtNode == null) {
-                            getAtNode = getCompatibleMethod(current, "getAt", getUnwrapper(aType));
-                        }
-                    }
-                    current = current.getSuperClass();
-                }
+            } else { // check the receiver for a getAt method
+                MethodNode getAtNode = findGetAt(rType, aType);
                 if (getAtNode != null) {
                     MethodCallExpression call = callX(receiver, "getAt", arguments);
                     call.setImplicitThis(false);
@@ -650,21 +633,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     call.visit(controller.getAcg());
                     return true;
                 }
-
-                // make sure Map#getAt and List#getAt handled with the bracket syntax are properly compiled
-                ClassNode[] args = {aType};
-                List<MethodNode> nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
-                if (nodes.size() == 1 || (nodes.size() > 1 && (isOrImplements(rType, MAP_TYPE) || isOrImplements(rType, LIST_TYPE)))) {
-                    MethodCallExpression call = callX(receiver, message, arguments);
-                    call.setImplicitThis(false);
-                    call.setMethodTarget(nodes.get(0));
-                    call.setSafe(safe);
-                    call.setSourcePosition(arguments);
-                    call.visit(controller.getAcg());
-                    return true;
-                }
-                if (isOrImplements(rType, MAP_TYPE)) {
-                    // fallback to Map#get
+                if (isOrImplements(rType, MAP_TYPE)) { // fallback to Map#get
                     MethodCallExpression call = callX(receiver, "get", arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(MAP_GET_METHOD);
@@ -678,19 +647,45 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         return false;
     }
 
-    private MethodNode getCompatibleMethod(final ClassNode current, final String getAt, final ClassNode aType) {
-        // TODO this really should find "best" match or find all matches and complain about ambiguity if more than one
-        // TODO handle getAt with more than one parameter
-        // TODO handle default getAt methods on Java 8 interfaces
-        for (MethodNode methodNode : current.getDeclaredMethods("getAt")) {
-            if (methodNode.getParameters().length == 1) {
-                ClassNode paramType = methodNode.getParameters()[0].getType();
-                if (aType.isDerivedFrom(paramType) || aType.declaresInterface(paramType)) {
-                    return methodNode;
-                }
+    private MethodNode findGetAt(final ClassNode rType, final ClassNode aType) {
+        // TODO: find "best" match or find all matches and deal with ambiguity
+        // TODO: handle getAt with more than one parameter
+
+        ClassNode classNode = rType;
+        Predicate<MethodNode> compatible = methodNode -> (methodNode.getParameters().length == 1);
+        if (isClassClassNodeWrappingConcreteType(rType)) { // GROOVY-9415
+            classNode = rType.getGenericsTypes()[0].getType();
+            compatible = compatible.and(MethodNode::isStatic);
+        }
+
+        MethodNode getAt = findGetAt(classNode, compatible, aType, true);
+        if (getAt == null) getAt = findGetAt(classNode, compatible, aType, false);
+        if (getAt == null) { // make sure Map#getAt and List#getAt handled with the bracket syntax are properly compiled
+            List<MethodNode> nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, "getAt", new ClassNode[]{aType});
+            if (nodes.size() == 1 || (nodes.size() > 1 && (isOrImplements(rType, MAP_TYPE) || isOrImplements(rType, LIST_TYPE)))) {
+                getAt = nodes.get(0);
             }
         }
-        return null;
+        return getAt;
+    }
+
+    private MethodNode findGetAt(final ClassNode rType, final Predicate<MethodNode> mTest, final ClassNode aType, final boolean exact) {
+        BiPredicate<MethodNode, ClassNode> pType = (methodNode, argumentType) -> {
+            ClassNode parameterType = methodNode.getParameters()[0].getType();
+            if (exact) {
+                return argumentType.equals(parameterType);
+            } else {
+                return parameterType.isInterface() ? argumentType.implementsInterface(parameterType) : argumentType.isDerivedFrom(parameterType);
+            }
+        };
+
+        MethodNode getAt = getMethod(rType, "getAt", mTest.and(mNode -> pType.test(mNode, aType)));
+        if (getAt == null && isPrimitiveType(aType)) {
+            getAt = getMethod(rType, "getAt", mTest.and(mNode -> pType.test(mNode, getWrapper(aType))));
+        } else if (getAt == null && aType.isDerivedFrom(Number_TYPE)) {
+            getAt = getMethod(rType, "getAt", mTest.and(mNode -> pType.test(mNode, getUnwrapper(aType))));
+        }
+        return getAt;
     }
 
     private void writeArrayGet(final Expression receiver, final Expression arguments, final ClassNode rType, final ClassNode aType) {
