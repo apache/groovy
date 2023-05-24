@@ -20,10 +20,12 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.EmptyRange;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.ObjectRange;
 import groovy.lang.Range;
+import groovy.lang.SpreadMap;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
@@ -56,19 +58,23 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongConsumer;
@@ -784,17 +790,286 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes);
     }
 
+    /**
+     * Chops the array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * If the array isn't large enough, truncated (possibly empty) pieces are returned.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
+     *
+     * @param self      an Array to be chopped
+     * @param chopSizes the sizes for the returned pieces
+     * @return a list of lists chopping the original array elements into pieces determined by chopSizes
+     * @see #collate(Object[], int) to chop a list into pieces of a fixed size
+     * @since 2.5.2
+     */
+    public static <T> List<List<T>> chop(T[] self, int... chopSizes) {
+        return DefaultGroovyMethods.chop(Arrays.asList(self), chopSizes);
+    }
+
     //--------------------------------------------------------------------------
     // collate
+
+    /**
+     * Collates an array.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the array values collated into sub-lists
+     * @see #collate(Iterable, int)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size) {
+        return collate(self, size, true);
+    }
+
+    /**
+     * Collates an array into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the array elements collated into sub-lists
+     * @see #collate(Iterable, int, int)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, int step) {
+        return collate(self, size, step, true);
+    }
+
+    /**
+     * Collates this array into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the array elements collated into sub-lists
+     * @see #collate(Iterable, int, boolean)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
+        return collate(self, size, size, keepRemainder);
+    }
+
+    /**
+     * Collates this array into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the array elements collated into sub-lists
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
+        final List<List<T>> answer;
+        if (size <= 0) {
+            answer = new ArrayList<>(1);
+            answer.add(Arrays.asList(self));
+        } else {
+            if (step == 0) throw new IllegalArgumentException("step cannot be zero");
+            final int selfSize = self.length;
+            answer = new ArrayList<>(step < 0 ? 1 : (selfSize / step + 1));
+            for (int pos = 0; pos < selfSize && pos > -1; pos += step) {
+                if (!keepRemainder && pos > selfSize - size) {
+                    break;
+                }
+                List<T> element = new ArrayList<>(size);
+                for (int offs = pos; offs < pos + size && offs < selfSize; offs++) {
+                    element.add(self[offs]);
+                }
+                answer.add(element);
+            }
+        }
+        return answer;
+    }
 
     //--------------------------------------------------------------------------
     // collect
 
+    /**
+     * Iterates through this Array transforming each item into a new value using the
+     * <code>transform</code> closure, returning a list of transformed values.
+     *
+     * @param self      an array
+     * @param transform the closure used to transform each item of the Array
+     * @return A list of the transformed values.
+     * @since 2.5.0
+     */
+    public static <E, T> List<T> collect(E[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
+        return DefaultGroovyMethods.collect(new ArrayIterator<>(self), transform);
+    }
+
+    /**
+     * Iterates through this Array transforming each item into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">
+     * Integer[] nums = [1,2,3]
+     * List<Integer> answer = []
+     * nums.collect(answer) { it * 2 }
+     * assert [2,4,6] == answer
+     * </pre>
+     *
+     * @param self      an array
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item
+     * @return The collector with all transformed values added to it.
+     * @since 2.5.0
+     */
+    public static <E, T, C extends Collection<T>> C collect(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
+        return DefaultGroovyMethods.collect(new ArrayIterator<>(self), collector, transform);
+    }
+
     //--------------------------------------------------------------------------
     // collectEntries
 
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      an array
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Closure)
+     * @since 1.8.5
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self) {
+        return collectEntries(self, Closure.IDENTITY);
+    }
+
+    /**
+     * A variant of collectEntries using the identity closure as the transform.
+     *
+     * @param self      an array
+     * @param collector the Map into which the transformed entries are put
+     * @return the collector with all transformed values added to it
+     * @see #collectEntries(Object[], Map, Closure)
+     * @since 1.8.5
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector) {
+        return collectEntries(self, collector, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through this array transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * def nums = [0, 1, 2] as Integer[]
+     * // collect letters with index using list style
+     * assert nums.collectEntries { index {@code ->} [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * // collect letters with index using map style
+     * assert nums.collectEntries { index {@code ->} [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     *
+     * @param self      a Collection
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return a Map of the transformed entries
+     * @see #collectEntries(Iterator, Map, Closure)
+     * @since 1.7.9
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(self), new LinkedHashMap<>(), transform);
+    }
+
+    /**
+     * Iterates through this array transforming each item using the <code>transform</code> closure
+     * and returning a map of the resulting transformed entries.
+     * <pre class="groovyTestCase">
+     * def letters = "abc"
+     * def nums = [0, 1, 2] as Integer[]
+     * // collect letters with index
+     * assert nums.collectEntries( [:] ) { index {@code ->} [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert nums.collectEntries( [4:'d'] ) { index {@code ->}
+     *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
+     * </pre>
+     * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
+     * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
+     * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
+     * If your collector Map doesn't support null keys or values, you might get a runtime error, e.g. NullPointerException or IllegalArgumentException.
+     *
+     * @param self      an array
+     * @param collector the Map into which the transformed entries are put
+     * @param transform the closure used for transforming, which has an item from self as the parameter and
+     *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
+     * @return the collector with all transformed values added to it
+     * @see #collect(Map, Collection, Closure)
+     * @since 1.7.9
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(self), collector, transform);
+    }
+
+    /**
+     * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
+     * <pre class="groovyTestCase">
+     * String[] languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * def firstLetter = s {@code ->} s[0]
+     * assert languages.collectEntries(firstLetter, String::size) == [G:6, J:4, K:6, S:5]
+     * </pre>
+     *
+     * @param self           an array
+     * @param keyTransform   a function for transforming array elements into keys
+     * @param valueTransform a function for transforming array elements into values
+     * @return a Map of the transformed entries
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(self), new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
+     * The supplied collector map is used as the destination for transformed entries.
+     *
+     * @param self           an array
+     * @param collector      the Map into which the transformed entries are put
+     * @param keyTransform   a function for transforming array elements into keys
+     * @param valueTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @since 5.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(self), collector, keyTransform, valueTransform);
+    }
+
     //--------------------------------------------------------------------------
     // collectMany
+
+    /**
+     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <pre class="groovyTestCase">
+     * def nums = [1, 2, 3, 4, 5, 6] as Object[]
+     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self       an array
+     * @param projection a projecting Closure returning a collection of items
+     * @return A list created from the projected collections concatenated (flattened) together.
+     * @since 1.8.1
+     */
+    public static <T, E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
+    }
+
+    /**
+     * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
+     * <pre class="groovyTestCase">
+     * def nums = [1, 2, 3, 4, 5, 6] as Object[]
+     * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self       an array
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting Closure returning a collection of items
+     * @return The collector with the projected collections concatenated (flattened) to it.
+     * @since 1.8.1
+     */
+    public static <T, E, C extends Collection<T>> C collectMany(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
+        return DefaultGroovyMethods.collectMany(new ArrayIterable<>(self), collector, projection);
+    }
 
     //--------------------------------------------------------------------------
     // contains
@@ -922,6 +1197,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean contains(double[] self, Object value) {
         Objects.requireNonNull(self);
         for (double next : self) {
+            if (DefaultTypeTransformation.compareEqual(value, next)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether the array contains the given value.
+     *
+     * @param self  the array we are searching
+     * @param value the value being searched for
+     * @return true if the array contains the value
+     * @since 1.8.6
+     */
+    public static boolean contains(Object[] self, Object value) {
+        Objects.requireNonNull(self);
+        for (Object next : self) {
             if (DefaultTypeTransformation.compareEqual(value, next)) return true;
         }
         return false;
@@ -1127,18 +1418,114 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see DefaultGroovyMethods#countBy(Iterator, Closure)
      * @since 1.8.0
      */
-    public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
+    public static <K, E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
         return DefaultGroovyMethods.countBy(new ArrayIterator<>(self), closure);
     }
 
     //-------------------------------------------------------------------------
     // drop
 
+    /**
+     * Drops the given number of elements from the head of this array
+     * if they are available.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as String[]
+     * assert strings.drop( 2 ) == [ 'c' ] as String[]
+     * assert strings.drop( 5 ) == [] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to drop from this array
+     * @return An array consisting of all elements of this array except the
+     *         first <code>num</code> ones, or else the empty array, if this
+     *         array has less than <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> T[] drop(T[] self, int num) {
+        if (self.length <= num) {
+            return createSimilarArray(self, 0);
+        }
+        if (num <= 0) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, self.length - num);
+        System.arraycopy(self, num, ret, 0, self.length - num);
+        return ret;
+    }
+
     //--------------------------------------------------------------------------
     // dropRight
 
+    /**
+     * Drops the given number of elements from the tail of this array
+     * if they are available.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ] as String[]
+     * assert strings.dropRight( 2 ) == [ 'a' ] as String[]
+     * assert strings.dropRight( 5 ) == [] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to drop from this array
+     * @return An array consisting of all elements of this array except the
+     *         last <code>num</code> ones, or else the empty array, if this
+     *         array has less than <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> T[] dropRight(T[] self, int num) {
+        if (self.length <= num) {
+            return createSimilarArray(self, 0);
+        }
+        if (num <= 0) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, self.length - num);
+        System.arraycopy(self, 0, ret, 0, self.length - num);
+        return ret;
+    }
+
     //--------------------------------------------------------------------------
     // dropWhile
+
+    /**
+     * Create a suffix of the given array by dropping as many elements as possible from the
+     * front of the original array such that calling the given closure condition evaluates to
+     * true when passed each of the dropped elements.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ] as Integer[]
+     * assert nums.dropWhile{ it {@code <=} 3 } == [ ] as Integer[]
+     * assert nums.dropWhile{ it {@code <} 3 } == [ 3, 2 ] as Integer[]
+     * assert nums.dropWhile{ it != 2 } == [ 2 ] as Integer[]
+     * assert nums.dropWhile{ it == 0 } == [ 1, 3, 2 ] as Integer[]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the closure that must evaluate to true to
+     *                  continue dropping elements
+     * @return The shortest suffix of the given array such that the given closure condition
+     *         evaluates to true for each element dropped from the front of the array.
+     * @since 1.8.7
+     */
+    public static <T> T[] dropWhile(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (num < self.length) {
+            if (bcw.call(self[num])) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
+    }
 
     //--------------------------------------------------------------------------
     // each
@@ -1625,7 +2012,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // equals
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1645,7 +2032,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1665,7 +2052,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1685,7 +2072,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1705,7 +2092,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1725,7 +2112,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1745,7 +2132,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1765,7 +2152,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare the contents of this array to the contents of the given array.
+     * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -1782,6 +2169,20 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean equals(double[] self, double[] right) {
         return Arrays.equals(self, right);
+    }
+
+    /**
+     * Determines if the contents of this array are equal to the
+     * contents of the given list, in the same order. This returns
+     * <code>false</code> if either collection is <code>null</code>.
+     *
+     * @param left  an array
+     * @param right the List being compared
+     * @return {@code true} if the contents of both collections are equal.
+     * @since 1.5.0
+     */
+    public static boolean equals(Object[] left, List<?> right) {
+        return DefaultGroovyMethods.equals(right, left);
     }
 
     //--------------------------------------------------------------------------
@@ -2014,8 +2415,64 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // find
 
+    /**
+     * Finds the first element in the array that matches the given closure condition.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1,2,3] as Integer[]
+     * assert 2 == list.find { it {@code >} 1 }
+     * assert null == list.find { it {@code >} 5 }
+     * </pre>
+     *
+     * @param self      an array
+     * @param condition a closure condition
+     * @return The first element from the array that matches the condition or null if no element matches.
+     * @since 2.0
+     */
+    public static <T> T find(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        for (T element : self) {
+            if (bcw.call(element)) {
+                return element;
+            }
+        }
+        return null;
+    }
+
     //--------------------------------------------------------------------------
     // findAll
+
+    /**
+     * Finds the elements of the array matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self an array
+     * @return A list of the truthy values.
+     * @see Closure#IDENTITY
+     * @since 2.0
+     */
+    public static <T> List<T> findAll(T[] self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds all elements of the array matching the given Closure condition.
+     * <pre class="groovyTestCase">
+     * def items = [1,2,3,4] as Integer[]
+     * assert [2,4] == items.findAll { it % 2 == 0 }
+     * </pre>
+     *
+     * @param self      an array
+     * @param condition a closure condition
+     * @return A list of the matching values.
+     * @since 2.0
+     */
+    public static <T> List<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        return DefaultGroovyMethods.findMany(new ArrayList<>(), new ArrayIterator<>(self), condition);
+    }
 
     //--------------------------------------------------------------------------
     // findIndexOf
@@ -2114,8 +2571,84 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // findResult
 
+    /**
+     * Iterates through the Array stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self an array
+     * @return The first non-null result from calling the closure, or null.
+     * @since 4.0.9
+     */
+    public static <T> T findResult(T[] self) {
+        return DefaultGroovyMethods.findResult(new ArrayIterator<>(self));
+    }
+
+    /**
+     * Iterates through the Array stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     *
+     * @param self          an Array
+     * @param defaultResult an Object that should be returned if all elements are null
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 4.0.9
+     */
+    public static <T, U extends T, V extends T> T findResult(U[] self, V defaultResult) {
+        return DefaultGroovyMethods.findResult(new ArrayIterator<>(self), defaultResult);
+    }
+
+    /**
+     * Iterates through the Array calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an array
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return The first non-null result from calling the closure, or null.
+     * @since 2.5.0
+     */
+    public static <S, T> T findResult(S[] self, @ClosureParams(FirstParam.Component.class) Closure<T> condition) {
+        return DefaultGroovyMethods.findResult(new ArrayIterator<>(self), condition);
+    }
+
+    /**
+     * Iterates through the Array calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     *
+     * @param self          an array
+     * @param defaultResult a value that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return The first non-null result from calling the closure, or the defaultValue.
+     * @since 2.5.0
+     */
+    public static <S, T, U extends T, V extends T> T findResult(S[] self, U defaultResult, @ClosureParams(FirstParam.Component.class) Closure<V> condition) {
+        return DefaultGroovyMethods.findResult(new ArrayIterator<>(self), defaultResult, condition);
+    }
+
     //--------------------------------------------------------------------------
     // findResults
+
+    /**
+     * Iterates through the Array collecting any non-null results.
+     *
+     * @param self an array
+     * @return The list of non-null values.
+     * @since 4.0.9
+     */
+    public static <T> Collection<T> findResults(T[] self) {
+        return DefaultGroovyMethods.findResults(new ArrayIterator<>(self));
+    }
+
+    /**
+     * Iterates through the Array transforming items using the supplied closure
+     * and collecting any non-null results.
+     *
+     * @param self               an array
+     * @param filteringTransform a closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return The list of non-null transformed values.
+     * @since 2.5.0
+     */
+    public static <T, U> Collection<T> findResults(U[] self, @ClosureParams(FirstParam.Component.class) Closure<T> filteringTransform) {
+        return DefaultGroovyMethods.findResults(new ArrayIterator<>(self), filteringTransform);
+    }
 
     //--------------------------------------------------------------------------
     // first
@@ -2272,6 +2805,24 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return self[0];
     }
 
+    /**
+     * Returns the first item from the array.
+     * <pre class="groovyTestCase">
+     * def array = [3, 4, 2].toArray()
+     * assert array.first() == 3
+     * </pre>
+     *
+     * @param self an array
+     * @return the first item from the array
+     * @throws NoSuchElementException if the array is empty
+     * @since 1.7.3
+     */
+    public static <T> T first(T[] self) {
+        Objects.requireNonNull(self);
+        throwNoSuchElementIfEmpty(self.length, "first");
+        return self[0];
+    }
+
     //--------------------------------------------------------------------------
     // flatten
 
@@ -2409,6 +2960,19 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<Double> flatten(double[] self) {
         return toList(self);
+    }
+
+    /**
+     * Flattens an array. This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self an Array to flatten
+     * @return S flattened Collection
+     * @since 1.6.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Object> flatten(Object[] self) {
+        return (List<Object>) DefaultGroovyMethods.flatten(Arrays.asList(self));
     }
 
     //
@@ -2601,7 +3165,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // getAt
 
     /**
-     * Support the subscript operator for a boolean array with a range giving the desired indices.
+     * Supports the subscript operator for a boolean array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, true, false, true, false, true]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2620,7 +3184,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a byte array with a range giving the desired indices.
+     * Supports the subscript operator for a byte array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * byte[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2639,7 +3203,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a char array with a range giving the desired indices.
+     * Supports the subscript operator for a char array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * char[] array = 'abcdef'.chars
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2658,7 +3222,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a short array with a range giving the desired indices.
+     * Supports the subscript operator for a short array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * short[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2677,7 +3241,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for an int array with a range giving the desired indices.
+     * Supports the subscript operator for an int array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * int[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2696,7 +3260,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a long array with a range giving the desired indices.
+     * Supports the subscript operator for a long array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * long[] array = [1L, 3L, 5L, 7L, 9L, 11L]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2715,7 +3279,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a float array with a range giving the desired indices.
+     * Supports the subscript operator for a float array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * float[] array = [1.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2734,7 +3298,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a double array with a range giving the desired indices.
+     * Supports the subscript operator for a double array with a range giving the desired indices.
      * <pre class="groovyTestCase">
      * double[] array = [1.0d, 3.0d, 5.0d, 7.0d, 9.0d, 11.0d]
      * assert array[2..&lt;2] == [] // EmptyRange
@@ -2753,7 +3317,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for an object array with a range giving the desired indices.
+     * Supports the subscript operator for an object array with a range giving the desired indices.
      *
      * @param array an Array of Objects
      * @param range a Range
@@ -2768,7 +3332,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //
 
     /**
-     * Support the subscript operator for a boolean array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a boolean array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
      * assert array[2..3] == [true, true]
@@ -2789,7 +3353,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a byte array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a byte array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * byte[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
@@ -2810,7 +3374,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a char array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a char array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * char[] array = 'abcdef'.chars
      * assert array[2..3] == ['c', 'd']
@@ -2831,7 +3395,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a short array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a short array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * short[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
@@ -2852,7 +3416,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for an int array with an IntRange giving the desired indices.
+     * Supports the subscript operator for an int array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * int[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
@@ -2873,7 +3437,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a long array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a long array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * long[] array = [0L, 10L, 20L, 30L, 40L]
      * assert array[2..3] == [20L, 30L]
@@ -2894,7 +3458,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a float array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a float array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
      * assert array[2..3] == [20.0f, 30.0f]
@@ -2915,7 +3479,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a double array with an IntRange giving the desired indices.
+     * Supports the subscript operator for a double array with an IntRange giving the desired indices.
      * <pre class="groovyTestCase">
      * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
      * assert array[2..3] == [20.0d, 30.0d]
@@ -2936,6 +3500,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Supports the subscript operator for an object array with an IntRange giving the desired indices.
      *
      * @param array an object array
      * @param range an IntRange
@@ -2950,7 +3515,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //
 
     /**
-     * Support the subscript operator for a boolean array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a boolean array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
      * def range = new ObjectRange(2, 3)
@@ -2968,7 +3533,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a byte array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a byte array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * byte[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
@@ -2986,7 +3551,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a boolean array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a boolean array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * char[] array = 'abcdef'.chars
      * def range = new ObjectRange(2, 3)
@@ -3004,7 +3569,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a short array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a short array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * short[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
@@ -3022,7 +3587,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for an int array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for an int array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * int[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
@@ -3040,7 +3605,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a long array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a long array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * long[] array = [0L, 10L, 20L, 30L, 40L]
      * def range = new ObjectRange(2, 3)
@@ -3058,7 +3623,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a float array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a float array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
      * def range = new ObjectRange(2, 3)
@@ -3076,7 +3641,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a double array with an ObjectRange giving the desired indices.
+     * Supports the subscript operator for a double array with an ObjectRange giving the desired indices.
      * <pre class="groovyTestCase">
      * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
      * def range = new ObjectRange(2, 3)
@@ -3094,6 +3659,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Supports the subscript operator for an object array with an ObjectRange giving the desired indices.
+     *
      * @param array an Array of Objects
      * @param range an ObjectRange
      * @return a range of a list from the range's from index up to but not
@@ -3107,6 +3674,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //
 
     /**
+     * Supports the subscript operator for an object array with an EmptyRange.
      *
      * @param array an Array of Objects
      * @param range an EmptyRange
@@ -3120,7 +3688,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //
 
     /**
-     * Support the subscript operator for a boolean array
+     * Supports the subscript operator for a boolean array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
@@ -3139,7 +3707,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a byte array
+     * Supports the subscript operator for a byte array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * byte[] array = [0, 2, 4, 6, 8]
@@ -3158,7 +3726,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a char array
+     * Supports the subscript operator for a char array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * char[] array = 'abcde'.chars
@@ -3177,7 +3745,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a short array
+     * Supports the subscript operator for a short array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * short[] array = [0, 2, 4, 6, 8]
@@ -3196,7 +3764,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for an int array
+     * Supports the subscript operator for an int array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * int[] array = [0, 2, 4, 6, 8]
@@ -3215,7 +3783,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a long array
+     * Supports the subscript operator for a long array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * long[] array = [0L, 2L, 4L, 6L, 8L]
@@ -3234,7 +3802,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a float array
+     * Supports the subscript operator for a float array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * float[] array = [0.0f, 2.0f, 4.0f, 6.0f, 8.0f]
@@ -3253,7 +3821,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a double array
+     * Supports the subscript operator for a double array
      * with a (potentially nested) collection giving the desired indices.
      * <pre class="groovyTestCase">
      * double[] array = [0.0d, 2.0d, 4.0d, 6.0d, 8.0d]
@@ -3272,7 +3840,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Select a List of items from an array using a Collection to
+     * Selects a List of items from an array using a Collection to
      * identify the indices to be selected.
      *
      * @param array   an object array
@@ -3490,6 +4058,53 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // groupBy
 
+    /**
+     * Sorts all array members into groups determined by the supplied mapping closure.
+     * The closure should return the key that this item should be grouped by. The returned
+     * LinkedHashMap will have an entry for each distinct key returned from the closure,
+     * with each value being a list of items for that group.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * Integer[] items = [1,2,3,4,5,6]
+     * assert [0:[2,4,6], 1:[1,3,5]] == items.groupBy { it % 2 }
+     * </pre>
+     *
+     * @param self    an array to group
+     * @param closure a closure mapping entries on keys
+     * @return A map grouped by keys.
+     * @since 2.2.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(T[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
+        return DefaultGroovyMethods.groupBy(Arrays.asList(self), closure);
+    }
+
+    /**
+     * Sorts all array members into (sub)groups determined by the supplied
+     * mapping closures as per the Iterable variant of this method.
+     *
+     * @param self     an array to group
+     * @param closures an array of closures, each mapping entries on keys
+     * @return A map grouped by keys on each criterion.
+     * @since 2.2.0
+     */
+    public static Map groupBy(Object[] self, Object... closures) {
+        return DefaultGroovyMethods.groupBy(new ArrayIterable<>(self), closures);
+    }
+
+    /**
+     * Sorts all array members into (sub)groups determined by the supplied
+     * mapping closures as per the list variant of this method.
+     *
+     * @param self     an array to group
+     * @param closures a list of closures, each mapping entries on keys
+     * @return A map grouped by keys on each criterion.
+     * @since 2.2.0
+     */
+    public static Map groupBy(Object[] self, List<Closure<?>> closures) {
+        return DefaultGroovyMethods.groupBy(new ArrayIterable<>(self), closures);
+    }
+
     //--------------------------------------------------------------------------
     // head
 
@@ -3640,6 +4255,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static double head(double[] self) {
+        Objects.requireNonNull(self);
+        throwNoSuchElementIfEmpty(self.length, "head");
+        return self[0];
+    }
+
+    /**
+     * Returns the first item from the Object array.
+     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
+     * assert array.head() == 3</pre>
+     *
+     * @param self an array
+     * @return the first item from the Object array
+     * @throws NoSuchElementException if the array is empty
+     * @since 1.7.3
+     */
+    public static <T> T head(T[] self) {
         Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "head");
         return self[0];
@@ -3919,6 +4550,26 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
+    /**
+     * Returns the items from the Object array excluding the last item.
+     * <pre class="groovyTestCase">
+     *     String[] strings = ["a", "b", "c"]
+     *     def result = strings.init()
+     *     assert result.length == 2
+     *     assert strings.class.componentType == String
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its last element
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 2.4.0
+     */
+    public static <T> T[] init(T[] self) {
+        Objects.requireNonNull(self);
+        throwNoSuchElementIfEmpty(self.length, "init");
+        return Arrays.copyOfRange(self, 0, self.length - 1);
+    }
+
     //--------------------------------------------------------------------------
     // inject
 
@@ -3934,7 +4585,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Object[], Object, Closure)
      * @since 1.8.7
      */
-    public static <E,T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+    public static <E, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
         return DefaultGroovyMethods.inject((Object) self, closure);
     }
 
@@ -3968,16 +4619,14 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // iterator
 
     /**
-     * Attempts to create an Iterator for the given object by first
-     * converting it to a Collection.
+     * Returns an Iterator for the given array.
      *
      * @param self an array
      * @return an Iterator for the given Array.
-     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object[])
      * @since 1.6.4
      */
     public static <T> Iterator<T> iterator(final T[] self) {
-        return DefaultTypeTransformation.asCollection(self).iterator();
+        return Arrays.asList(self).iterator();
     }
 
     //--------------------------------------------------------------------------
@@ -4245,6 +4894,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     public static double last(double[] self) {
         Objects.requireNonNull(self);
         throwNoSuchElementIfEmpty(self.length, "last");
+        return self[self.length - 1];
+    }
+
+    /**
+     * Returns the last item from the array.
+     * <pre class="groovyTestCase">
+     * def array = [3, 4, 2].toArray()
+     * assert array.last() == 2
+     * </pre>
+     *
+     * @param self an array
+     * @return the last item from the array
+     * @throws NoSuchElementException if you try to access last() for an empty array
+     * @since 1.7.3
+     */
+    public static <T> T last(T[] self) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot access last() element from an empty Array");
+        }
         return self[self.length - 1];
     }
 
@@ -5204,8 +5872,232 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // minus
 
+    /**
+     * Creates a new array composed of the elements of the first array minus the
+     * elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * List&lt;Integer> nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
+     *
+     * @param self     an array
+     * @param removeMe an Iterable of elements to remove
+     * @return An array with the supplied elements removed.
+     * @since 1.5.5
+     */
+    public static <T> T[] minus(T[] self, Iterable<?> removeMe) {
+        Collection<T> temp = DefaultGroovyMethods.minus((Iterable<T>) toList(self), removeMe);
+        return temp.toArray(createSimilarArray(self, temp.size()));
+    }
+
+    /**
+     * Creates a new array composed of the elements of the first array minus the
+     * elements of the given array.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * Integer[] nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
+     *
+     * @param self     an array
+     * @param removeMe an array of elements to remove
+     * @return An array with the supplied elements removed.
+     * @since 1.5.5
+     */
+    public static <T> T[] minus(T[] self, Object[] removeMe) {
+        switch (removeMe.length) {
+          case 0:
+            return self.clone();
+          case 1:
+            return DefaultGroovyMethods.minus(self, removeMe[0]);
+          default:
+            Collection<T> temp = DefaultGroovyMethods.minus((Collection<T>) toList(self), Arrays.asList(removeMe));
+            return temp.toArray(createSimilarArray(self, temp.size()));
+        }
+    }
+
+    /**
+     * Creates a new array composed of the elements of the given array minus every occurrence the given object.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * def result = ints - 1
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2, 3}
+     *
+     * Integer[] none = []
+     * result = none - '1'
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
+     *
+     * @param self     an array
+     * @param removeMe an element to remove from the array
+     * @return a new array with the operand removed
+     * @since 1.5.5
+     */
+    public static <T> T[] minus(T[] self, Object removeMe) {
+        int i = 0, n = self.length;
+        T[] result = createSimilarArray(self, n);
+        for (T t : self) {
+            if (!DefaultGroovyMethods.coercedEquals(t, removeMe)) {
+                result[i] = t;
+                i += 1;
+            }
+        }
+        if (i != n) {
+            result = Arrays.copyOfRange(result, 0, i);
+        }
+        return result;
+    }
+
     //--------------------------------------------------------------------------
     // plus
+
+    /**
+     * Creates an array containing elements from an original array plus those from a Collection.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a + [4, 5, 6]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + [1, 2, 3]
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + [-1, 0.9, null]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + [new Date()] }
+     * </pre>
+     *
+     * @param left  the array
+     * @param right a Collection to be appended
+     * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus(T[] left, Collection<?> right) {
+        T[] result = Arrays.copyOf(left, left.length + right.size());
+        int i = left.length;
+        Class<?> leftType = left.getClass().getComponentType();
+        for (Object t : right) {
+            result[i] = (T) DefaultTypeTransformation.castToType(t, leftType);
+            i += 1;
+        }
+        return result;
+    }
+
+    /**
+     * Creates an array containing elements from an original array plus those from an Iterable.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * String[] array = ['x', 'y', 'z']
+     * def result = array + new AbcIterable()
+     * assert result.class == String[]
+     * assert result == new String[]{'x', 'y', 'z', 'a', 'b', 'c'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right an Iterable to be appended
+     * @return A new array containing elements from left with those from right appended.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @see #union(Object[], Iterable)
+     * @since 1.8.7
+     */
+    public static <T> T[] plus(T[] left, Iterable<?> right) {
+        return plus(left, DefaultGroovyMethods.toList(right));
+    }
+
+    /**
+     * Creates an array as a union of two arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * Integer[] b = [4, 5, 6]
+     * def result = a + b
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + a
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + c
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * Date[] d = [new Date()]
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + d }
+     * </pre>
+     *
+     * @param left  the left Array
+     * @param right the right Array
+     * @return A new array containing right appended to left.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus(T[] left, Object[] right) {
+        T[] result = Arrays.copyOf(left, left.length + right.length);
+        T[] temp = (T[]) DefaultTypeTransformation.castToType(right, left.getClass());
+        System.arraycopy(temp, 0, result, left.length, temp.length);
+        return result;
+    }
+
+    /**
+     * Creates an array containing elements from an original array plus an additional appended element.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a + 4
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4}
+     *
+     * result = a + 5.5d
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 5}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + new Date() }
+     * </pre>
+     *
+     * @param left  the array
+     * @param right the value to append
+     * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] plus(T[] left, Object right) {
+        T[] result = Arrays.copyOf(left, left.length + 1);
+        result[left.length] = (T) DefaultTypeTransformation.castToType(right, left.getClass().getComponentType());
+        return result;
+    }
 
     //--------------------------------------------------------------------------
     // reverse
@@ -5227,7 +6119,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * boolean[] array = [false, true, true]
@@ -5271,7 +6163,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * byte[] array = 1..3
@@ -5315,7 +6207,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * char[] array = ['a', 'b', 'c']
@@ -5359,7 +6251,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * short[] array = 1..3
@@ -5403,7 +6295,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * int[] array = 1..3
@@ -5447,7 +6339,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * long[] array = 1L..3L
@@ -5491,7 +6383,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * float[] array = 1f..3f
@@ -5535,7 +6427,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      * <pre class="groovyTestCase">
      * double[] array = 1d..3d
@@ -5559,6 +6451,44 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         if (!mutate) self = self.clone();
         for (int i=0, mid=len>>1, j=len-1; i<mid; i++, j--)
             swap(self, i, j);
+        return self;
+    }
+
+    /**
+     * Creates a new array containing items which are the same as this array but in reverse order.
+     *
+     * @param self    an array
+     * @return An array containing the reversed items.
+     * @see #reverse(Object[], boolean)
+     * @since 1.5.5
+     */
+    public static <T> T[] reverse(T[] self) {
+        return reverse(self, false);
+    }
+
+    /**
+     * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
+     * Otherwise, a new array containing the reversed items is produced.
+     *
+     * <pre class="groovyTestCase">
+     * def array = new Object[] {1,2,3}
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     *
+     * yarra = array.reverse(false)
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
+     * @param self   an array
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
+     * @return An array containing the reversed items.
+     * @since 1.8.1
+     */
+    public static <T> T[] reverse(T[] self, boolean mutate) {
+        if (!mutate) self = self.clone();
+        Collections.reverse(Arrays.asList(self));
         return self;
     }
 
@@ -5742,7 +6672,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterate over each element of the array in the reverse order.
+     * Iterates over each element of the array in the reverse order.
      *
      * @param self    an array
      * @param closure a closure to which each item is passed
@@ -5760,14 +6690,105 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // shuffle
 
+    private static Random r;
+
+    /**
+     * Randomly reorders the elements of the specified array.
+     * <pre class="groovyTestCase">
+     * Integer[] array = [10, 5, 20]
+     * def origSize = array.size()
+     * def items = array.toList()
+     * array.shuffle()
+     * assert array.size() == origSize
+     * assert items.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @since 3.0.0
+     */
+    public static <T> void shuffle(T[] self) {
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random(); // harmless race.
+        shuffle(self, rnd);
+    }
+
+    /**
+     * Randomly reorders the elements of the specified array using the
+     * specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * Integer[] array = [10, 5, 20]
+     * def origSize = array.size()
+     * def items = array.toList()
+     * array.shuffle(r)
+     * assert array.size() == origSize
+     * assert items.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @since 3.0.0
+     */
+    public static <T> void shuffle(T[] self, Random rnd) {
+        for (int i = 0; i < self.length-1; i++) {
+            int nextIndex = rnd.nextInt(self.length);
+            T tmp = self[i];
+            self[i] = self[nextIndex];
+            self[nextIndex] = tmp;
+        }
+    }
+
     //--------------------------------------------------------------------------
     // shuffled
+
+    /**
+     * Creates a new array containing the elements of the specified array but in a random order.
+     * <pre class="groovyTestCase">
+     * Integer[] orig = [10, 5, 20]
+     * def array = orig.shuffled()
+     * assert orig.size() == array.size()
+     * assert orig.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @return the shuffled array
+     * @since 3.0.0
+     */
+    public static <T> T[] shuffled(T[] self) {
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random(); // harmless race.
+        return shuffled(self, rnd);
+    }
+
+    /**
+     * Creates a new array containing the elements of the specified array but in a random
+     * order using the specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * Integer[] orig = [10, 5, 20]
+     * def array = orig.shuffled(r)
+     * assert orig.size() == array.size()
+     * assert orig.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @return the shuffled array
+     * @since 3.0.0
+     */
+    public static <T> T[] shuffled(T[] self, Random rnd) {
+        T[] result = self.clone();
+        List<T> items = Arrays.asList(self);
+        Collections.shuffle(items, rnd);
+        System.arraycopy(items.toArray(), 0, result, 0, items.size());
+        return result;
+    }
 
     //--------------------------------------------------------------------------
     // size
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      * <pre class="groovyTestCase">
      * boolean[] array = [true, false, true]
      * assert array.size() == 3
@@ -5782,7 +6803,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a byte array
      * @return the length of the array
@@ -5793,7 +6814,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a char array
      * @return the length of the array
@@ -5804,7 +6825,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a short array
      * @return the length of the array
@@ -5815,7 +6836,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self an int array
      * @return the length of the array
@@ -5826,7 +6847,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a long array
      * @return the length of the array
@@ -5837,7 +6858,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a float array
      * @return the length of the array
@@ -5848,7 +6869,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide arrays with a {@code size} method similar to collections.
+     * Provides arrays with a {@code size} method similar to collections.
      *
      * @param self a double array
      * @return the length of the array
@@ -5859,7 +6880,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide the standard Groovy <code>size()</code> method for an array.
+     * Provides the standard Groovy <code>size()</code> method for an array.
      *
      * @param self an object array
      * @return the length of the array
@@ -5872,8 +6893,149 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // sort
 
+    /**
+     * Modifies this array so that its elements are in sorted order.
+     * The array items are assumed to be comparable.
+     *
+     * @param self the array to be sorted
+     * @return the sorted array
+     * @since 1.5.5
+     */
+    public static <T> T[] sort(T[] self) {
+        Arrays.sort(self, new NumberAwareComparator<>());
+        return self;
+    }
+
+    /**
+     * Sorts the given array into sorted order.
+     * The array items are assumed to be comparable.
+     * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
+     * array is returned and the original array remains unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false)
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["Hey","hello","hi"] as String[]
+     * orig.sort(true)
+     * assert orig == ["Hey","hello","hi"] as String[]
+     * </pre>
+     *
+     * @param self   the array to be sorted
+     * @param mutate false will always cause a new array to be created, true will mutate the array in place
+     * @return the sorted array
+     * @since 1.8.1
+     */
+    public static <T> T[] sort(T[] self, boolean mutate) {
+        T[] answer = mutate ? self : self.clone();
+        Arrays.sort(answer, new NumberAwareComparator<>());
+        return answer;
+    }
+
+    /**
+     * Sorts the given array into sorted order using the given comparator.
+     *
+     * @param self the array to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return the sorted array
+     * @since 1.5.5
+     */
+    public static <T> T[] sort(T[] self, Comparator<? super T> comparator) {
+        return sort(self, true, comparator);
+    }
+
+    /**
+     * Modifies this array so that its elements are in sorted order as determined by the given comparator.
+     * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
+     * array is returned and the original array remains unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["hello","Hey","hi"] as String[]
+     * orig.sort(true, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ["hello","Hey","hi"] as String[]
+     * </pre>
+     *
+     * @param self       the array containing elements to be sorted
+     * @param mutate     false will always cause a new array to be created, true will mutate arrays in place
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted array
+     * @since 1.8.1
+     */
+    public static <T> T[] sort(T[] self, boolean mutate, Comparator<? super T> comparator) {
+        T[] answer = mutate ? self : self.clone();
+        Arrays.sort(answer, comparator);
+        return answer;
+    }
+
+    /**
+     * Sorts the elements from this array into a newly created array using
+     * the Closure to determine the correct ordering.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self the array containing the elements to be sorted
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 1.5.5
+     */
+    public static <T> T[] sort(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, false, closure);
+    }
+
+    /**
+     * Modifies this array so that its elements are in sorted order using the Closure to determine the correct ordering.
+     * If mutate is false, a new array is returned and the original array remains unchanged.
+     * Otherwise, the original array is sorted in place and returned.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * def orig = ["hello","hi","Hey"] as String[]
+     * def sorted = orig.sort(false) { it.size() }
+     * assert orig == ["hello","hi","Hey"] as String[]
+     * assert sorted == ["hi","Hey","hello"] as String[]
+     * orig.sort(true) { it.size() }
+     * assert orig == ["hi","Hey","hello"] as String[]
+     * </pre>
+     *
+     * @param self    the array to be sorted
+     * @param mutate  false will always cause a new array to be created, true will mutate arrays in place
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 1.8.1
+     */
+    public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        if (!mutate) self = self.clone();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(self, c);
+        return self;
+    }
+
     //--------------------------------------------------------------------------
     // split
+
+    /**
+     * Splits all items into two collections based on the closure condition.
+     * The first list contains all items which match the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    an Array
+     * @param closure a closure condition
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 2.5.0
+     */
+    public static <T> Collection<Collection<T>> split(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        List<T> accept = new ArrayList<>(), reject = new ArrayList<>();
+        return DefaultGroovyMethods.split(closure, accept, reject, new ArrayIterator<>(self));
+    }
 
     //--------------------------------------------------------------------------
     // sum
@@ -6507,17 +7669,128 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return Arrays.copyOfRange(self, 1, self.length);
     }
 
+    /**
+     * Returns the items from the array excluding the first item.
+     * <pre class="groovyTestCase">
+     * String[] strings = ["a", "b", "c"]
+     * def result = strings.tail()
+     * assert result.class.componentType == String
+     * String[] expected = ["b", "c"]
+     * assert result == expected
+     * </pre>
+     *
+     * @param self an array
+     * @return an array without its first element
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 1.7.3
+     */
+    public static <T> T[] tail(T[] self) {
+        Objects.requireNonNull(self);
+        throwNoSuchElementIfEmpty(self.length, "tail");
+        return Arrays.copyOfRange(self, 1, self.length);
+    }
+
     //--------------------------------------------------------------------------
     // take
+
+    /**
+     * Returns the first <code>num</code> elements from the head of this array.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.take( 0 ) == [] as String[]
+     * assert strings.take( 2 ) == [ 'a', 'b' ] as String[]
+     * assert strings.take( 5 ) == [ 'a', 'b', 'c' ] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to take from this array
+     * @return an array consisting of the first <code>num</code> elements of this array,
+     *         or else the whole array if it has less than <code>num</code> elements.
+     * @since 1.8.1
+     */
+    public static <T> T[] take(T[] self, int num) {
+        if (self.length == 0 || num <= 0) {
+            return createSimilarArray(self, 0);
+        }
+
+        if (self.length <= num) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, num);
+        System.arraycopy(self, 0, ret, 0, num);
+        return ret;
+    }
 
     //--------------------------------------------------------------------------
     // takeRight
 
+    /**
+     * Returns the last <code>num</code> elements from the tail of this array.
+     * <pre class="groovyTestCase">
+     * String[] strings = [ 'a', 'b', 'c' ]
+     * assert strings.takeRight( 0 ) == [] as String[]
+     * assert strings.takeRight( 2 ) == [ 'b', 'c' ] as String[]
+     * assert strings.takeRight( 5 ) == [ 'a', 'b', 'c' ] as String[]
+     * </pre>
+     *
+     * @param self the original array
+     * @param num  the number of elements to take from this array
+     * @return an array consisting of the last <code>num</code> elements of this array,
+     *         or else the whole array if it has less than <code>num</code> elements.
+     * @since 2.4.0
+     */
+    public static <T> T[] takeRight(T[] self, int num) {
+        if (self.length == 0 || num <= 0) {
+            return createSimilarArray(self, 0);
+        }
+
+        if (self.length <= num) {
+            T[] ret = createSimilarArray(self, self.length);
+            System.arraycopy(self, 0, ret, 0, self.length);
+            return ret;
+        }
+
+        T[] ret = createSimilarArray(self, num);
+        System.arraycopy(self, self.length - num, ret, 0, num);
+        return ret;
+    }
+
     //--------------------------------------------------------------------------
     // takeWhile
 
-    //--------------------------------------------------------------------------
-    // toArrayString
+    /**
+     * Returns the longest prefix of this array where each element
+     * passed to the given closure evaluates to true.
+     * <pre class="groovyTestCase">
+     * def nums = [ 1, 3, 2 ] as Integer[]
+     * assert nums.takeWhile{ it {@code <} 1 } == [] as Integer[]
+     * assert nums.takeWhile{ it {@code <} 3 } == [ 1 ] as Integer[]
+     * assert nums.takeWhile{ it {@code <} 4 } == [ 1, 3, 2 ] as Integer[]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the closure that must evaluate to true to
+     *                  continue taking elements
+     * @return A prefix of the given array where each element passed to
+     *         the given closure evaluates to true.
+     * @since 1.8.7
+     */
+    public static <T> T[] takeWhile(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        int num = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (num < self.length) {
+            T value = self[num];
+            if (bcw.call(value)) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
 
     //--------------------------------------------------------------------------
     // toList
@@ -6627,10 +7900,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows conversion of arrays into a mutable List.
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
      *
      * @param self an object array
-     * @return A list containing the contents of this array.
+     * @return A mutable list containing the contents of this array.
      * @since 1.0
      */
     public static <T> List<T> toList(T[] self) {
@@ -6790,6 +8064,79 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // toSorted
 
+    /**
+     * Returns a sorted version of the given array using the supplied comparator.
+     *
+     * @param self the array to be sorted
+     * @return the sorted array
+     * @see #toSorted(Object[], Comparator)
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self) {
+        return toSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Returns a sorted version of the given array using the supplied comparator to determine the resulting order.
+     * <pre class="groovyTestCase">
+     * def sumDigitsComparator = [compare: { num1, num2 {@code ->} num1.toString().toList()*.toInteger().sum() {@code <=>} num2.toString().toList()*.toInteger().sum() }] as Comparator
+     * Integer[] nums = [9, 44, 222, 7000]
+     * def result = nums.toSorted(sumDigitsComparator)
+     * assert result instanceof Integer[]
+     * assert result == [222, 7000, 44, 9]
+     * </pre>
+     *
+     * @param self the array to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return the sorted array
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self, Comparator<? super T> comparator) {
+        T[] answer = self.clone();
+        Arrays.sort(answer, comparator);
+        return answer;
+    }
+
+    /**
+     * Sorts the elements from this array into a newly created array using
+     * the Closure to determine the correct ordering.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self the array containing the elements to be sorted
+     * @param closure a Closure used to determine the correct ordering
+     * @return a sorted array
+     * @see #toSorted(Object[], Comparator)
+     * @since 2.4.0
+     */
+    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, false, closure);
+    }
+
+    //--------------------------------------------------------------------------
+    // toSpreadMap
+
+    /**
+     * Creates a spreadable map from this array.
+     * <p>
+     * @param self an object array
+     * @return a newly created SpreadMap
+     * @see groovy.lang.SpreadMap#SpreadMap(java.lang.Object[])
+     * @since 1.0
+     */
+    public static SpreadMap toSpreadMap(Object[] self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it is null.");
+        else if (self.length % 2 != 0)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because its size is not even.");
+        else
+            return new SpreadMap(self);
+    }
+
     //--------------------------------------------------------------------------
     // toString
 
@@ -6914,6 +8261,16 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return FormatHelper.toString(self);
     }
 
+    /**
+     * Returns the string representation of the given array.
+     *
+     * @param self an array
+     * @return the string representation
+     * @since 1.0
+     */
+    public static String toString(Object[] self) {
+        return FormatHelper.toArrayString(self);
+    }
 
     //--------------------------------------------------------------------------
     // toUnique
@@ -7202,19 +8559,162 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // union
 
+    /**
+     * Creates an object array containing elements from an original array plus those from a Collection.
+     * This is similar to {@link #plus(Object[], Collection)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union(['foo', 'bar'])
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right a Collection to be appended
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(Object[] left, Collection<?> right) {
+        Object[] result = new Object[left.length + right.size()];
+        System.arraycopy(left, 0, result, 0, left.length);
+        int i = left.length;
+        for (Object t : right) {
+            result[i] = t;
+            i += 1;
+        }
+        return result;
+    }
+
+    /**
+     * Creates an Object array containing elements from an original array plus those from an Iterable.
+     * This is similar to {@link #plus(Object[], Iterable)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * String[] array = ['x', 'y', 'z']
+     * def result = array.union(new AbcIterable())
+     * assert result.class == Object[]
+     * assert result == new Object[]{'x', 'y', 'z', 'a', 'b', 'c'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right an Iterable to be appended
+     * @return A new Object array containing elements from left with those from right appended.
+     * @since 4.0.0
+     */
+    public static Object[] union(Object[] left, Iterable<?> right) {
+        return union(left, DefaultGroovyMethods.toList(right));
+    }
+
+    /**
+     * Creates an Object array as a union of two arrays.
+     * This is similar to {@link #plus(Object[], Object[])} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * String[] b = ['foo', 'bar']
+     * def result = a.union(b)
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the left Array
+     * @param right the right Array
+     * @return A new Object array containing right appended to left.
+     * @since 4.0.0
+     */
+    public static Object[] union(Object[] left, Object[] right) {
+        Object[] result = new Object[left.length + right.length];
+        System.arraycopy(left, 0, result, 0, left.length);
+        System.arraycopy(right, 0, result, left.length, right.length);
+        return result;
+    }
+
+    /**
+     * Creates an Object array containing elements from an original array plus an additional appended element.
+     * This is similar to {@link #plus(Object[], Object)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union('foo')
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right the value to append
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(Object[] left, Object right) {
+        Object[] result = new Object[left.length + 1];
+        System.arraycopy(left, 0, result, 0, left.length);
+        result[left.length] = right;
+        return result;
+    }
+
     //--------------------------------------------------------------------------
+    // withCollectedKeys
 
-    private static void throwNoSuchElementIfEmpty(final int size, final String method) {
-        if (size == 0) {
-            throw new NoSuchElementException("Cannot access " + method + "() for an empty array");
-        }
+    /**
+     * A variant of withCollectedKeys for arrays.
+     *
+     * @param values       an array
+     * @param keyTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedKeys(Iterable, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(V[] values, Function<? super V, K> keyTransform) {
+        return DefaultGroovyMethods.withCollectedKeys(new ArrayIterator<>(values), new LinkedHashMap<>(), keyTransform);
     }
 
-    private static void throwUnsupportedOperationIfEmpty(final int size, final String method) {
-        if (size == 0) {
-            throw new UnsupportedOperationException("Accessing " + method + "() is unsupported for an empty array");
-        }
+    /**
+     * A variant of withCollectedKeys for arrays.
+     *
+     * @param values       an array
+     * @param collector    the Map into which the transformed entries are put
+     * @param keyTransform a function for transforming array elements into values
+     * @return the collector with all transformed values added to it
+     * @see #withCollectedKeys(Iterable, Map, Function)
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedKeys(V[] values, Map<K, V> collector, Function<? super V, K> keyTransform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(values), collector, keyTransform, Function.identity());
     }
+
+    //--------------------------------------------------------------------------
+    // withCollectedValues
+
+    /**
+     * A variant of withCollectedValues for arrays.
+     *
+     * @param keys           an array
+     * @param valueTransform a function for transforming array elements into values
+     * @return A map of the transformed entries.
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(K[] keys, Function<? super K, V> valueTransform) {
+        return DefaultGroovyMethods.withCollectedValues(new ArrayIterator<>(keys), new LinkedHashMap<>(), valueTransform);
+    }
+
+    /**
+     * A variant of withCollectedValues for arrays.
+     *
+     * @param keys           an array
+     * @param collector      the Map into which the transformed entries are put
+     * @param valueTransform a function for transforming array elements into values
+     * @return The collector with all transformed values added to it.
+     * @since 5.0.0
+     */
+    public static <K, V> Map<K, V> withCollectedValues(K[] keys, Map<K, V> collector, Function<? super K, V> valueTransform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(keys), collector, Function.identity(), valueTransform);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Implements the getAt(int) method for primitive type arrays.
@@ -7270,5 +8770,17 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    private static void throwNoSuchElementIfEmpty(final int size, final String method) {
+        if (size == 0) {
+            throw new NoSuchElementException("Cannot access " + method + "() for an empty array");
+        }
+    }
+
+    private static void throwUnsupportedOperationIfEmpty(final int size, final String method) {
+        if (size == 0) {
+            throw new UnsupportedOperationException("Accessing " + method + "() is unsupported for an empty array");
+        }
     }
 }
