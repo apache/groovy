@@ -2483,7 +2483,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an array
      * @param condition the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @return The index of the first matched object or -1 if no match was found.
      * @since 2.5.0
      */
     public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
@@ -2498,7 +2498,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an array
      * @param startIndex start matching from this index
      * @param condition  the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @return The index of the first matched object or -1 if no match was found.
      * @since 2.5.0
      */
     public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
@@ -2540,32 +2540,57 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // findLastIndexOf
 
     /**
-     * Iterates over the elements of an array and returns the index of the last
-     * item that matches the condition specified in the closure.
+     * Returns the index of the last item that matches the specified condition.
+     * <pre class="groovyTestCase">
+     * def array = new Number[]{1, 2, 1, 2, 1}
+     * assert array.findLastIndexOf{it==1} ==  4
+     * assert array.findLastIndexOf{it==2} ==  3
+     * assert array.findLastIndexOf{it==3} == -1
+     * assert array.findLastIndexOf{it&gt;=0} ==  4
+     * assert array.findLastIndexOf{it&lt;=0} == -1
+     * def empty = new Object[0]
+     * assert empty.findLastIndexOf {true} == -1
+     * </pre>
      *
      * @param self      an array
      * @param condition the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @return The index of the last matched object or -1 if no match was found.
      * @since 2.5.0
      */
     public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
-        return DefaultGroovyMethods.findLastIndexOf(new ArrayIterator<>(self), 0, condition);
+        return findLastIndexOf(self, 0, condition);
     }
 
     /**
-     * Iterates over the elements of an array, starting from a specified index,
-     * and returns the index of the last item that matches the condition
-     * specified in the closure.
+     * Returns the index of the last item that matches the specified condition
+     * that is at or beyond the given index.
+     * <pre class="groovyTestCase">
+     * def array = new Number[]{3, 1, 2, 1, 2, 1}
+     * assert array.findLastIndexOf(1,{it==0}) == -1
+     * assert array.findLastIndexOf(1,{it==1}) ==  5
+     * assert array.findLastIndexOf(1,{it==2}) ==  4
+     * assert array.findLastIndexOf(1,{it==3}) == -1
+     * assert array.findLastIndexOf(0,{it==3}) ==  0
+     * def empty = new Object[0]
+     * assert empty.findLastIndexOf( 2,{true}) == -1
+     * assert empty.findLastIndexOf(-2,{true}) == -1
+     * </pre>
      *
      * @param self       an array
-     * @param startIndex start matching from this index
+     * @param lowerBound the minimum index
      * @param condition  the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @return The index of the last matched object or -1 if no match was found.
      * @since 2.5.0
      */
-    public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
-        // TODO: Could this be made more efficient by using a reverse index?
-        return DefaultGroovyMethods.findLastIndexOf(new ArrayIterator<>(self), startIndex, condition);
+    public static <T> int findLastIndexOf(T[] self, int lowerBound, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        if (lowerBound < 0) lowerBound = 0; // ensure it's non-negative
+        for (int i = self.length - 1; i >= lowerBound; i -= 1) {
+            if (bcw.call(self[i])) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     //--------------------------------------------------------------------------

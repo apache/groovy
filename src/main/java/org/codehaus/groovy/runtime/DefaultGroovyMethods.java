@@ -96,7 +96,6 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.util.ArrayIterator;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
 
@@ -14904,33 +14903,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     @Deprecated(since = "5.0.0")
     public static <T> List<Number> findIndexValues(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexValues(self, 0, condition);
+        return ArrayGroovyMethods.findIndexValues(self, 0, condition);
     }
 
     @Deprecated(since = "5.0.0")
     public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexValues(new ArrayIterator<>(self), startIndex, condition);
+        return ArrayGroovyMethods.findIndexValues(self, startIndex, condition);
     }
 
     @Deprecated(since = "5.0.0")
     public static <T> int findIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexOf(self, 0, condition);
+        return ArrayGroovyMethods.findIndexOf(self, 0, condition);
     }
 
     @Deprecated(since = "5.0.0")
     public static <T> int findIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findIndexOf(new ArrayIterator<>(self), startIndex, condition);
+        return ArrayGroovyMethods.findIndexOf(self, startIndex, condition);
     }
 
     @Deprecated(since = "5.0.0")
     public static <T> int findLastIndexOf(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        return findLastIndexOf(new ArrayIterator<>(self), 0, condition);
+        return ArrayGroovyMethods.findLastIndexOf(self, 0, condition);
     }
 
     @Deprecated(since = "5.0.0")
     public static <T> int findLastIndexOf(T[] self, int startIndex, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        // TODO could be made more efficient by using a reverse index
-        return findLastIndexOf(new ArrayIterator<>(self), startIndex, condition);
+        return ArrayGroovyMethods.findLastIndexOf(self, startIndex, condition);
     }
 
     @Deprecated(since = "5.0.0")
