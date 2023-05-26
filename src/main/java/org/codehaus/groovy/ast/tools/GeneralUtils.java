@@ -87,8 +87,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 
 /**
  * Handy methods when working with the Groovy AST
@@ -465,13 +463,12 @@ public class GeneralUtils {
 
     private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
         for (ClassNode in : source.getInterfaces()) {
-            in = parameterizeType(source, in);
-            if (result.add(in))
-                addAllInterfaces(result, in);
+            in = GenericsUtils.parameterizeType(source, in);
+            if(result.add(in)) addAllInterfaces(result, in);
         }
         ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
-        if (sc != null && !isObjectType(sc)) {
-            addAllInterfaces(result, parameterizeType(source, sc));
+        if (sc != null && !ClassHelper.isObjectType(sc)) {
+            addAllInterfaces(result, GenericsUtils.parameterizeType(source, sc));
         }
     }
 
@@ -484,7 +481,7 @@ public class GeneralUtils {
 
     public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
-        if (isObjectType(cNode)) {
+        if (ClassHelper.isObjectType(cNode)) {
             result = new ArrayList<>();
         } else {
             result = getSuperNonPropertyFields(cNode.getSuperClass());
@@ -499,7 +496,7 @@ public class GeneralUtils {
 
     public static List<FieldNode> getSuperPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
-        if (isObjectType(cNode)) {
+        if (ClassHelper.isObjectType(cNode)) {
             result = new ArrayList<>();
         } else {
             result = getSuperPropertyFields(cNode.getSuperClass());
@@ -524,7 +521,7 @@ public class GeneralUtils {
                                                       final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters,
                                                       final boolean traverseSuperClasses, final boolean skipReadonly, final boolean reverse, final boolean allNames, final boolean includeStatic) {
         List<PropertyNode> result = new ArrayList<>();
-        if (!(isObjectType(cNode)) && traverseSuperClasses && !reverse) {
+        if (!(ClassHelper.isObjectType(cNode)) && traverseSuperClasses && !reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         if (includeProperties) {
@@ -560,7 +557,7 @@ public class GeneralUtils {
                 result.add(new PropertyNode(fNode, fNode.getModifiers() & 0x1F, null, null));
             }
         }
-        if (!(isObjectType(cNode)) && traverseSuperClasses && reverse) {
+        if (!(ClassHelper.isObjectType(cNode)) && traverseSuperClasses && reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         return result;
@@ -881,6 +878,7 @@ public class GeneralUtils {
     //--------------------------------------------------------------------------
 
     public static Parameter[] cloneParams(final Parameter[] parameters) {
+        if (parameters == null || parameters.length == 0) return parameters;
         return Arrays.stream(parameters).map(p -> param(p.getOriginType(), p.getName())).toArray(Parameter[]::new);
     }
 
