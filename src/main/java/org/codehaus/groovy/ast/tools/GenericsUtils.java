@@ -59,6 +59,7 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 
 /**
  * Utility methods to deal with generic types.
@@ -972,18 +973,21 @@ public class GenericsUtils {
      */
     public static Tuple2<ClassNode[], ClassNode> parameterizeSAM(final ClassNode samType) {
         MethodNode abstractMethod = ClassHelper.findSAM(samType);
+        ClassNode  declaringClass = abstractMethod.getDeclaringClass();
+        Map<GenericsType.GenericsTypeName, GenericsType> spec = extractPlaceholders(
+            samType.equals(declaringClass) ? samType : parameterizeType(samType, declaringClass));
 
-        Map<GenericsType, GenericsType> generics = makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), samType);
-        Function<ClassNode, ClassNode> resolver = t -> {
-            if (t.isGenericsPlaceHolder()) {
-                return findActualTypeByGenericsPlaceholderName(t.getUnresolvedName(), generics);
-            }
-            return t;
-        };
+        if (spec.isEmpty() && declaringClass.getGenericsTypes() != null) {
+            for (GenericsType tp : declaringClass.getGenericsTypes()) // apply erasure
+                spec.put(new GenericsType.GenericsTypeName(tp.getName()), erasure(tp));
+        } else {
+            // resolveClassNodeGenerics converts "T=? super Type" to Object, so convert "T=? super Type" to "T=Type"
+            spec.replaceAll((name, type) -> type.isWildcard() && type.getLowerBound() != null ? type.getLowerBound().asGenericsType() : type);
+        }
 
-        ClassNode[] parameterTypes = Arrays.stream(abstractMethod.getParameters()).map(Parameter::getType).map(resolver).toArray(ClassNode[]::new);
-        ClassNode returnType = resolver.apply(abstractMethod.getReturnType());
-        return tuple(parameterTypes, returnType);
+        ClassNode[] parameterTypes = Arrays.stream(abstractMethod.getParameters()).map(p -> resolveClassNodeGenerics(spec, null, p.getType())).toArray(ClassNode[]::new);
+        ClassNode returnType = resolveClassNodeGenerics(spec, null, abstractMethod.getReturnType());
+        return new Tuple2<>(parameterTypes, returnType);
     }
 
     /**

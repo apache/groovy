@@ -25,17 +25,13 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.List;
-
-import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 
 /**
  * Represents functional interface writer which contains some common methods to complete generating bytecode
@@ -46,9 +42,9 @@ public interface AbstractFunctionalInterfaceWriter {
     String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
     default ClassNode getFunctionalInterfaceType(final Expression expression) {
-        ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
+        ClassNode type = expression.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE);
         if (type == null) {
-            type = expression.getNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE);
+            type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE);
         }
         return type;
     }
@@ -105,61 +101,37 @@ public interface AbstractFunctionalInterfaceWriter {
         return arguments;
     }
 
-    default ClassNode convertParameterType(final ClassNode targetType, final ClassNode parameterType, final ClassNode inferredType) {
-        if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
-            throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
-        }
-
-        ClassNode type;
-        boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
-        boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
-        if (!isParameterTypePrimitive && isInferredTypePrimitive) {
-            if (ClassHelper.isDynamicTyped(parameterType) && ClassHelper.isPrimitiveType(targetType) // (1)
-                    || !parameterType.equals(getUnwrapper(parameterType)) && !inferredType.equals(getWrapper(inferredType)) // (2)
-            ) {
-                // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong
-                // (1) java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
-                // (2) java.lang.BootstrapMethodError: bootstrap method initialization exception
-                type = inferredType;
-            } else {
-                // The non-primitive type and primitive type are not allowed to mix since Java 9+
-                // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
-                type = getWrapper(inferredType);
-            }
-        } else if (isParameterTypePrimitive && !isInferredTypePrimitive) {
-            // The non-primitive type and primitive type are not allowed to mix since Java 9+
-            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
-            type = getUnwrapper(inferredType);
-        } else {
-            type = inferredType;
-        }
-        return type;
+    default ClassNode convertParameterType(final ClassNode parameterType, final ClassNode inferredType) {
+        return convertParameterType(parameterType, parameterType, inferredType);
     }
 
-    /**
-     * @deprecated use {@link #convertParameterType(ClassNode, ClassNode, ClassNode)} instead
-     */
-    @Deprecated
-    default ClassNode convertParameterType(final ClassNode parameterType, final ClassNode inferredType) {
-        if (!ClassHelper.getWrapper(inferredType.redirect()).isDerivedFrom(ClassHelper.getWrapper(parameterType.redirect()))) {
+    default ClassNode convertParameterType(final ClassNode targetType, final ClassNode parameterType, final ClassNode inferredType) {
+        if (!ClassHelper.getWrapper(inferredType).isDerivedFrom(ClassHelper.getWrapper(parameterType))) {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
-        } else {
-            boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
-            boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
-            ClassNode type;
-            if (!isParameterTypePrimitive && isInferredTypePrimitive) {
-                if (parameterType != ClassHelper.getUnwrapper(parameterType) && inferredType != ClassHelper.getWrapper(inferredType)) {
-                    type = inferredType;
-                } else {
-                    type = ClassHelper.getWrapper(inferredType);
-                }
-            } else if (isParameterTypePrimitive && !isInferredTypePrimitive) {
-                type = ClassHelper.getUnwrapper(inferredType);
-            } else {
-                type = inferredType;
-            }
-            return type;
         }
+
+        ClassNode type = inferredType;
+        if (ClassHelper.isPrimitiveType(parameterType)) {
+            if (!ClassHelper.isPrimitiveType(inferredType)) {
+                // The non-primitive type and primitive type are not allowed to mix since Java 9+
+                // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
+                type = ClassHelper.getUnwrapper(inferredType);
+            }
+        } else if (ClassHelper.isPrimitiveType(inferredType)) {
+            // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong
+            // (1) java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
+            // (2) java.lang.BootstrapMethodError: bootstrap method initialization exception
+            if (!(ClassHelper.isDynamicTyped(parameterType) && ClassHelper.isPrimitiveType(targetType)) // (1)
+                    && (parameterType.equals(ClassHelper.getUnwrapper(parameterType)) || inferredType.equals(ClassHelper.getWrapper(inferredType)))) { // (2)
+                // The non-primitive type and primitive type are not allowed to mix since Java 9+
+                // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
+                type = ClassHelper.getWrapper(inferredType);
+            }
+        }
+        if (type.isGenericsPlaceHolder()) {
+            type = type.redirect();
+        }
+        return type;
     }
 
     default Parameter prependParameter(final List<Parameter> parameterList, final String parameterName, final ClassNode parameterType) {
