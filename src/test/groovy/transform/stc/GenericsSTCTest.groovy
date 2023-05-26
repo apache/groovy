@@ -305,13 +305,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10053
-    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenericsA() {
         for (cast in ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }']) {
             assertScript """
                 Set<Number> f() {
                     Collections.<Number>singleton(42)
                 }
+                @groovy.transform.CompileStatic // works this way now
                 def <N extends Number> Set<N> g(Class<N> t) {
                     Set<N> result = new HashSet<>()
                     f().stream().filter(t::isInstance)
