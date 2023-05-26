@@ -59,6 +59,7 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 
 /**
  * Utility methods to deal with parameterized types.
@@ -909,6 +910,7 @@ public class GenericsUtils {
      *
      * @since 3.0.0
      */
+    @Deprecated(forRemoval = true, since = "5.0.0")
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver) {
         return correlateTypeParametersAndTypeArguments(declaringClass, actualReceiver, false);
     }
@@ -924,10 +926,12 @@ public class GenericsUtils {
      *
      * @since 3.0.0
      */
+    @Deprecated(forRemoval = true, since = "5.0.0")
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(final ClassNode declaringClass, final ClassNode actualReceiver) {
         return correlateTypeParametersAndTypeArguments(declaringClass, actualReceiver, true);
     }
 
+    @Deprecated(forRemoval = true, since = "5.0.0")
     private static Map<GenericsType, GenericsType> correlateTypeParametersAndTypeArguments(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
         if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
@@ -1049,14 +1053,20 @@ public class GenericsUtils {
      */
     public static Tuple2<ClassNode[], ClassNode> parameterizeSAM(final ClassNode samType) {
         MethodNode abstractMethod = ClassHelper.findSAM(samType);
+        ClassNode  declaringClass = abstractMethod.getDeclaringClass();
+        Map<GenericsType.GenericsTypeName, GenericsType> spec = extractPlaceholders(
+            samType.equals(declaringClass) ? samType : parameterizeType(samType, declaringClass));
 
-        Map<GenericsType, GenericsType> generics = makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), samType);
-        Function<ClassNode , ClassNode> resolver = t -> {
-            return t.isGenericsPlaceHolder() ? findActualTypeByGenericsPlaceholderName(t.getUnresolvedName(), generics) : t;
-        };
+        if (spec.isEmpty() && declaringClass.getGenericsTypes() != null) {
+            for (GenericsType tp : declaringClass.getGenericsTypes()) // apply erasure
+                spec.put(new GenericsType.GenericsTypeName(tp.getName()), erasure(tp));
+        } else {
+            // resolveClassNodeGenerics converts "T=? super Type" to Object, so convert "T=? super Type" to "T=Type"
+            spec.replaceAll((name, type) -> type.isWildcard() && type.getLowerBound() != null ? type.getLowerBound().asGenericsType() : type);
+        }
 
-        ClassNode[] parameterTypes = Arrays.stream(abstractMethod.getParameters()).map(Parameter::getType).map(resolver).toArray(ClassNode[]::new);
-        ClassNode returnType = resolver.apply(abstractMethod.getReturnType());
+        ClassNode[] parameterTypes = Arrays.stream(abstractMethod.getParameters()).map(p -> resolveClassNodeGenerics(spec, null, p.getType())).toArray(ClassNode[]::new);
+        ClassNode returnType = resolveClassNodeGenerics(spec, null, abstractMethod.getReturnType());
         return new Tuple2<>(parameterTypes, returnType);
     }
 
@@ -1068,6 +1078,7 @@ public class GenericsUtils {
      *
      * @since 3.0.0
      */
+    @Deprecated(forRemoval = true, since = "5.0.0")
     public static ClassNode findActualTypeByGenericsPlaceholderName(final String placeholderName, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
         Function<GenericsType, ClassNode> resolver = gt -> {
             if (gt.isWildcard()) {

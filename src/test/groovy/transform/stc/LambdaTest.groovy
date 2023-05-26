@@ -774,17 +774,17 @@ final class LambdaTest {
     void testFunctionalInterface4() {
         assertScript shell, '''
             class Value<V> {
-                final V val
+                final V val;
                 Value(V v) {
                     this.val = v
                 }
                 String toString() {
                     val as String
                 }
-                def <T> Value<T> replace(Supplier<T> supplier) {
+                def <Out> Value<Out> replace(Supplier<Out> supplier) {
                     new Value<>(supplier.get())
                 }
-                def <T> Value<T> replace(Function<? super V, ? extends T> function) {
+                def <Out> Value<Out> replace(Function<? super V, ? extends Out> function) {
                     new Value<>(function.apply(val))
                 }
             }
@@ -804,6 +804,44 @@ final class LambdaTest {
             I face = (List<Object> list) -> null
         '''
         assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
+    }
+
+    @Test // GROOVY-11013
+    void testFunctionalInterface6() {
+        assertScript shell, '''
+            interface I<T> {
+                def m(List<T> list_of_t)
+            }
+
+            I<String> face = (List<String> list) -> null
+        '''
+    }
+
+    @Test // GROOVY-11072
+    void testFunctionalInterface7() {
+        assertScript shell, '''
+            class Model {
+            }
+            class Table<T extends Model> {
+                interface ChunkReader<T> {
+                    void call(List<T> row)
+                }
+                void getAll(ChunkReader<T> reader) {
+                    List<T> chunk = []
+                    reader.call(chunk)
+                }
+            }
+            class TestModel extends Model {
+                int id = 0
+            }
+            class TestTable extends Table<TestModel> {
+            }
+
+            TestTable table = new TestTable()
+            table.getAll((List<TestModel> list) ->
+                list.each { TestModel tm -> println(tm.id) }
+            )
+        '''
     }
 
     @Test

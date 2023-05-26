@@ -1917,7 +1917,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
-            ClassNode cn = make(gt[0].getName()) , erasure = getCombinedBoundType(gt[0]);
+            ClassNode cn = make(gt[0].getName()) , erasure = getCombinedBoundType(gt[0]).redirect();
             cn.setGenericsPlaceHolder(true);
             cn.setGenericsTypes(gt);
             cn.setRedirect(erasure);

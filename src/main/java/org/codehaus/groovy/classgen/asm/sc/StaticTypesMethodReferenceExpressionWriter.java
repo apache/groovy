@@ -303,13 +303,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (inferredParamTypes != null) {
             for (int i = 0, n = parameters.length; i < n; i += 1) {
-                ClassNode inferredParamType = inferredParamTypes[i];
+                ClassNode inferredParamType = i < inferredParamTypes.length ? inferredParamTypes[i] : parameters[i].getType();
                 if (inferredParamType == null) continue;
-
                 Parameter parameter = parameters[i];
-                Parameter targetParameter = parameter;
 
-                ClassNode type = convertParameterType(targetParameter.getType(), parameter.getType(), inferredParamType);
+                ClassNode type = convertParameterType(parameter.getType(), inferredParamType);
                 parameter.setOriginType(type);
                 parameter.setType(type);
             }
