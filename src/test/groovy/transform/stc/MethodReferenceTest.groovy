@@ -294,6 +294,66 @@ final class MethodReferenceTest {
     }
 
     @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-11020
+    void testConsumerII2() {
+        assertScript imports + '''
+            def <C extends Consumer<String>> void m(C c) {
+                c.accept('string')
+            }
+
+            @CompileStatic
+            void test(ArrayDeque<String> strings) {
+                m(strings::addFirst) // NPE in STC
+                assert strings.contains('string')
+            }
+
+            test(new ArrayDeque<>())
+        '''
+
+        assertScript imports + '''
+            @Grab('org.apache.commons:commons-collections4:4.4')
+            import org.apache.commons.collections4.*
+
+            @CompileStatic
+            def test(Iterable<String> x, ArrayDeque<String> y) {
+                CollectionUtils.forAllButLastDo(x,y::addFirst)
+                IterableUtils.forEachButLast(x,y::addFirst)
+                Iterator<String> z = x.iterator()
+                IteratorUtils.forEachButLast(z,y::addFirst)
+            }
+
+            Iterable  <String> x = ['foo','bar','baz']
+            ArrayDeque<String> y = []
+            def z = test(x,y)
+
+            assert y.join('') == 'barfoo'*3 && z == 'baz'
+        '''
+    }
+
+    @Test // instance::instanceMethod -- GROOVY-11068
+    void testConsumerII3() {
+        assertScript imports + '''
+            @Grab('org.apache.pdfbox:pdfbox:2.0.28')
+            import org.apache.pdfbox.pdmodel.*
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            @CompileStatic
+            def test(PDDocument doc) {
+                extraPages().forEach {
+                    it.forEach(doc::addPage) // expect operand PDDocument
+                }
+            }
+
+            Try<Iterable<PDPage>> extraPages() {
+                Try.success([new PDPage()])
+            }
+
+            test(new PDDocument())
+        '''
+    }
+
+    @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
