@@ -1208,7 +1208,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 ClassNode classNode = controller.getClassNode();
 
                 if (isThisExpression(objectExpression)) {
-                    if (controller.isInGeneratedFunction()) { // params are stored as fields
+                    if (controller.isInGeneratedFunction()) { // params/variables are stored as fields
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
                     } else {
                         fieldNode = classNode.getDeclaredField(name);
@@ -1322,7 +1322,8 @@ public class AsmClassGenerator extends ClassGenerator {
         if (field.isHolder() && !controller.isInGeneratedFunctionConstructor()) {
             mv.visitFieldInsn(GETSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
-            operandStack.push(ClassHelper.OBJECT_TYPE);
+            operandStack.push(ClassHelper.OBJECT_TYPE); // erased return type
+            operandStack.doGroovyCast(field.getOriginType()); // GROOVY-11068
         } else {
             mv.visitFieldInsn(GETSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
             operandStack.push(type);
@@ -1343,7 +1344,8 @@ public class AsmClassGenerator extends ClassGenerator {
         OperandStack operandStack = controller.getOperandStack();
         if (field.isHolder() && !controller.isInGeneratedFunctionConstructor()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
-            operandStack.push(ClassHelper.OBJECT_TYPE);
+            operandStack.push(ClassHelper.OBJECT_TYPE); // erased return type
+            operandStack.doGroovyCast(field.getOriginType()); // GROOVY-11068
         } else {
             operandStack.push(type);
         }
@@ -1446,6 +1448,7 @@ public class AsmClassGenerator extends ClassGenerator {
             PropertyExpression pexp = thisPropX(true, variableName);
             pexp.getObjectExpression().setSourcePosition(expression);
             pexp.getProperty().setSourcePosition(expression);
+            pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
         }

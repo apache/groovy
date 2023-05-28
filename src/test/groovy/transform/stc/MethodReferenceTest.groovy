@@ -322,6 +322,29 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11068
+    void testConsumerII3() {
+        assertScript shell, '''
+            @Grab('org.apache.pdfbox:pdfbox:2.0.28')
+            import org.apache.pdfbox.pdmodel.*
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            @CompileStatic
+            def test(PDDocument doc) {
+                extraPages().forEach {
+                    it.forEach(doc::addPage) // expect operand PDDocument
+                }
+            }
+
+            Try<Iterable<PDPage>> extraPages() {
+                Try.success([new PDPage()])
+            }
+
+            test(new PDDocument())
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
@@ -741,7 +764,7 @@ final class MethodReferenceTest {
                 }
                 private static class Y extends B {
                     Y(A a) {
-                      super(a)
+                        super(a)
                     }
                 }
             }
@@ -809,7 +832,7 @@ final class MethodReferenceTest {
             void test() {
                 IntFunction<Integer[]> f = Integer[]::new;
                 def result = [1, 2, 3].stream().toArray(f)
-                result == new Integer[] {1, 2, 3}
+                assert result == new Integer[] {1, 2, 3}
             }
 
             test()
@@ -822,7 +845,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
-                assert [1, 2, 3] == result
+                assert result == [1, 2, 3]
             }
 
             test()
