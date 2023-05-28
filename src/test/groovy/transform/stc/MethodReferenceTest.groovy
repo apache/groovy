@@ -328,6 +328,29 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11068
+    void testConsumerII3() {
+        assertScript shell, '''
+            @Grab('org.apache.pdfbox:pdfbox:2.0.28')
+            import org.apache.pdfbox.pdmodel.*
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            @CompileStatic
+            def test(PDDocument doc) {
+                extraPages().forEach {
+                    it.forEach(doc::addPage) // expect operand PDDocument
+                }
+            }
+
+            Try<Iterable<PDPage>> extraPages() {
+                Try.success([new PDPage()])
+            }
+
+            test(new PDDocument())
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
         String asList = '''
