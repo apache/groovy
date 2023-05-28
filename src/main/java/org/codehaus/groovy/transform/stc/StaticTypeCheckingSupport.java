@@ -1329,16 +1329,15 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return fullyResolveType(type.getComponentType(), placeholders).makeArray();
         }
-        if (!type.isUsingGenerics()) {
-            return type;
-        }
         if (type.isGenericsPlaceHolder()) {
             GenericsType gt = placeholders.get(new GenericsTypeName(type.getUnresolvedName()));
             if (gt != null) {
                 return gt.getType();
             }
-            ClassNode cn = extractType(type.asGenericsType()); // GROOVY-10756
-            return cn != type ? cn : OBJECT_TYPE; // do not return placeholder
+            return type.redirect(); // GROOVY-10756: don't return placeholder
+        }
+        if (!type.isUsingGenerics()) {
+            return type;
         }
 
         GenericsType[] gts = type.getGenericsTypes();
@@ -1912,10 +1911,10 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
-            ClassNode cn = make(gt[0].getName());
-            cn.setRedirect(gt[0].getType());
+            ClassNode cn = make(gt[0].getName()) , erasure = getCombinedBoundType(gt[0]).redirect();
             cn.setGenericsPlaceHolder(true);
             cn.setGenericsTypes(gt);
+            cn.setRedirect(erasure);
             return cn;
         }
 

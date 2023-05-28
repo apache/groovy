@@ -293,7 +293,6 @@ final class MethodReferenceTest {
         '''
     }
 
-    @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-11020
     void testConsumerII2() {
         assertScript imports + '''

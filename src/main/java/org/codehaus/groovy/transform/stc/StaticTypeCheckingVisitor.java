@@ -3082,15 +3082,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
 
                     for (GenericsType tp : typeParameters) {
-                        context.computeIfAbsent(new GenericsTypeName(tp.getName()), x -> fullyResolve(tp, context));
+                        GenericsTypeName name = new GenericsTypeName(tp.getName());
+                        context.computeIfAbsent(name, x -> fullyResolve(tp, context));
                     }
                 }
             }
 
-            ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(applyGenericsContext(context, target.getType())).getV1();
-
             ClassNode[] paramTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
             if (paramTypes == null) {
+                ClassNode targetType = target.getType();
+                if (targetType != null && targetType.isGenericsPlaceHolder())
+                    targetType = getCombinedBoundType(targetType.asGenericsType());
+                targetType = applyGenericsContext(context, targetType); // fill place-holders
+                ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
+
                 int n; Parameter[] p = expression.getParameters();
                 if (p == null) {
                     // zero parameters
