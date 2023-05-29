@@ -293,7 +293,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     void testForInLoopWithRange() {
         assertScript '''
-            for (int i in 1..10) { i*2 }
+            for (int i in 1..10) { i * 2 }
         '''
     }
 
@@ -392,7 +392,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5177
-    void testShouldNotAllowArrayAssignment() {
+    void testShouldNotAllowArrayAssignment1() {
         shouldFailWithMessages '''
             class Foo {
                 def say() {
@@ -400,37 +400,124 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class FooAnother {
-
             }
         ''',
         'Cannot assign value of type Foo[] to variable of type FooAnother'
     }
 
-    // GROOVY-10720
+    // GROOVY-8984
     void testShouldNotAllowArrayAssignment2() {
         shouldFailWithMessages '''
-            int[] array = new Integer[0]
+            List<String> m() { }
+            Number[] array = m()
         ''',
-        'Cannot assign value of type java.lang.Integer[] to variable of type int[]'
+        'Cannot assign value of type java.util.List <String> to variable of type java.lang.Number[]'
 
         shouldFailWithMessages '''
-            double[] array = new Double[0]
+            void test(Set<String> set) {
+                Number[] array = set
+            }
         ''',
-        'Cannot assign value of type java.lang.Double[] to variable of type double[]'
+        'Cannot assign value of type java.util.Set <String> to variable of type java.lang.Number[]'
+
+        shouldFailWithMessages '''
+            List<? super CharSequence> m() { }
+            CharSequence[] array = m()
+        ''',
+        'Cannot assign value of type java.util.List <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+
+        shouldFailWithMessages '''
+            void test(Set<? super CharSequence> set) {
+                CharSequence[] array = set
+            }
+        ''',
+        'Cannot assign value of type java.util.Set <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+
+        shouldFailWithMessages '''
+            List<? super Runnable> m() { }
+            Runnable[] array = m()
+        ''',
+        'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
+
+        shouldFailWithMessages '''
+            void test(List<? super Runnable> list) {
+                Runnable[] array = list
+            }
+        ''',
+        'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
-    void testShouldAllowArrayAssignment() {
+    // GROOVY-8983
+    @NotYetImplemented
+    void testShouldAllowArrayAssignment1() {
         assertScript '''
-            Object[] array = new Double[0]
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                String[] one = m()
+                String[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
         '''
 
         assertScript '''
-            int[] array = new long[0] // ?
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                CharSequence[] one = m()
+                CharSequence[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                Object[] one = m()
+                Object[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<? extends CharSequence> m() { ['foo'] }
+            void test(Set<? extends CharSequence> set) {
+                CharSequence[] one = m()
+                CharSequence[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<? super CharSequence> m() { [null] }
+            void test(Set<? super CharSequence> set) {
+                Object[] one = m()
+                Object[] two = set
+                assert one + two == [null,null]
+            }
+            test([null].toSet())
+        '''
+    }
+
+    // GROOVY-8983
+    @NotYetImplemented
+    void testShouldAllowArrayAssignment2() {
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                String[] one, two
+                one = m()
+                two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
         '''
     }
 
     // GROOVY-9517
-    void testShouldAllowArrayAssignment2() {
+    void testShouldAllowArrayAssignment3() {
         assertScript '''
             void test(File directory) {
                 File[] files = directory.listFiles()
@@ -439,12 +526,59 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                     // ...
                 }
             }
-            println 'works'
+            assert 'no error'
         '''
     }
 
+    // GROOVY-8983
     @NotYetImplemented
-    void testShouldAllowArrayAssignment3() {
+    void testShouldAllowArrayAssignment4() {
+        assertScript '''
+            class C {
+                List<String> list = []
+                void setX(String[] array) {
+                    Collections.addAll(list, array)
+                }
+            }
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                def c = new C()
+                c.x = m()
+                c.x = set
+                assert c.list == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+    }
+
+    void testShouldAllowArrayAssignment5() {
+        assertScript '''
+            Object[] array = new Double[]{1d}
+            assert array[0] instanceof Double
+        '''
+
+        assertScript '''
+            double[] array = new Double[]{1d}
+            assert array.length == 1
+            assert array[0] == 1.0
+        '''
+
+        assertScript '''
+            int[] array = new Integer[]{1}
+            assert array.length == 1
+            assert array[0] == 1
+        '''
+
+        assertScript '''
+            int[] array = new long[1]
+            assert array.length == 1
+            assert array[0] == 0
+        '''
+    }
+
+    // GROOVY-7506
+    @NotYetImplemented
+    void testShouldAllowArrayAssignment6() {
         String pogo = '''
             class C {
                 public String[] strings
@@ -453,7 +587,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         '''
-        // GROOVY-8983
+
         assertScript pogo + '''
             def list = ['foo','bar']
 
@@ -461,30 +595,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             c.p = list // implicit conversion
             assert c.strings == ['foo','bar']
         '''
-        // GROOVY-7506
+
         assertScript pogo + '''
             def c = new C()
             c.p = ['foo','bar']
             assert c.strings == ['foo','bar']
         '''
+
         assertScript pogo + '''
             def c = new C()
             c.p = ['foo', 123 ]
             assert c.strings == ['foo','123']
-        '''
-    }
-
-    void testListPlusEquals() {
-        assertScript '''
-            List<String> list = ['a','b']
-            list += ['c']
-            assert list == ['a','b','c']
-        '''
-
-        assertScript '''
-            Collection<String> list = ['a','b']
-            list += 'c'
-            assert list == ['a','b','c']
         '''
     }
 
@@ -534,7 +655,8 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['abc']
             arr.putAt(0, new Object())
-        ''', 'Cannot call <T,U extends T> java.lang.String[]#putAt(int, U) with arguments [int, java.lang.Object]'
+        ''',
+        'Cannot call <T,U extends T> java.lang.String[]#putAt(int, U) with arguments [int, java.lang.Object]'
     }
 
     void testStringArrayPutWithSubType() {
@@ -555,7 +677,8 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Serializable[] arr = ['abc']
             arr.putAt(0, new groovy.xml.XmlSlurper())
-        ''', 'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.xml.XmlSlurper]'
+        ''',
+        'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.xml.XmlSlurper]'
     }
 
     void testArrayGetOnPrimitiveArray() {
@@ -574,7 +697,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 String[] arr = ['1','2','3']
                 arr.getAt(1)
             }
-            assert m()=='2'
+            assert m() == '2'
         '''
     }
 
@@ -585,12 +708,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
-            Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it%2 == 0 }
+            Integer i = list.find { int it -> it % 2 == 0 }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
-            Integer i = list.find { int it -> it % 2 == 0 }
+            Integer j = org.codehaus.groovy.runtime.DefaultGroovyMethods.find(list) { int it -> it % 2 == 0 }
         '''
     }
 
@@ -697,7 +820,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6311
     void testSetSpread() {
-        assertScript """
+        assertScript '''
             class Inner {Set<String> strings}
             class Outer {Set<Inner> inners}
             Outer outer = new Outer(inners: [ new Inner(strings: ['abc', 'def'] as Set), new Inner(strings: ['ghi'] as Set) ] as Set)
@@ -705,36 +828,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert res[1].contains('ghi')
             assert res[0].contains('abc')
             assert res[0].contains('def')
-        """
-    }
-
-    // GROOVY-6241
-    void testAsImmutable() {
-        assertScript """
-            List<Integer> list = [1, 2, 3]
-            List<Integer> immutableList = [1, 2, 3].asImmutable()
-            Map<String, Integer> map = [foo: 123, bar: 456]
-            Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
-        """
-    }
-
-    // GROOVY-6350
-    void testListPlusList() {
-        assertScript """
-            def foo = [] + []
-            assert foo==[]
-        """
-    }
-
-    // GROOVY-7122
-    void testIterableLoop() {
-        assertScript '''
-            int countIt(Iterable<Integer> list) {
-                int count = 0
-                for (Integer obj : list) {count ++}
-                return count
-            }
-            countIt([1,2,3])==3
         '''
     }
 
@@ -749,6 +842,67 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 foos*.name
             }
             assert meth().toSet() == ['pls', 'bar'].toSet()
+        '''
+    }
+
+    // GROOVY-6241
+    void testAsImmutable() {
+        assertScript '''
+            List<Integer> list = [1,2,3]
+            List<Integer> immutableList = [1,2,3].asImmutable()
+            assert list !== immutableList && list.equals(immutableList)
+
+            Map<String,Integer> map = [a:1]
+            Map<String,Integer> immutableMap = [a:1].asImmutable()
+            assert map !== immutableMap && map.equals(immutableMap)
+        '''
+    }
+
+    void testAsUnmodifiable() {
+        assertScript '''
+            List<Integer> list = [1,2,3]
+            List<Integer> immutableList = [1,2,3].asUnmodifiable()
+            assert list !== immutableList && list.equals(immutableList)
+
+            Map<String,Integer> map = [a:1]
+            Map<String,Integer> immutableMap = [a:1].asUnmodifiable()
+            assert map !== immutableMap && map.equals(immutableMap)
+        '''
+    }
+
+    void testListPlusEquals() {
+        assertScript '''
+            List<String> list = ['a','b']
+            list += ['c']
+            assert list == ['a','b','c']
+        '''
+
+        assertScript '''
+            Collection<String> list = ['a','b']
+            list += 'c'
+            assert list == ['a','b','c']
+        '''
+    }
+
+    // GROOVY-6350
+    void testListPlusList() {
+        assertScript '''
+            def list = [] + []
+            assert list.isEmpty()
+        '''
+    }
+
+    // GROOVY-7122
+    void testIterableLoop() {
+        assertScript '''
+            int countIt(Iterable<Integer> list) {
+                int count = 0
+                for (Integer obj : list) {
+                    count++
+                }
+                return count
+            }
+            assert countIt([1,2,3]) == 3
         '''
     }
 
