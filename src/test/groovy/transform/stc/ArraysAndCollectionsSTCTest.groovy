@@ -448,19 +448,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.util.List<? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
-    // GROOVY-10720
-    void testShouldNotAllowArrayAssignment3() {
-        shouldFailWithMessages '''
-            int[] array = new Integer[0]
-        ''',
-        'Cannot assign value of type java.lang.Integer[] to variable of type int[]'
-
-        shouldFailWithMessages '''
-            double[] array = new Double[0]
-        ''',
-        'Cannot assign value of type java.lang.Double[] to variable of type double[]'
-    }
-
     // GROOVY-8983
     void testShouldAllowArrayAssignment1() {
         assertScript '''
@@ -564,11 +551,26 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldAllowArrayAssignment5() {
         assertScript '''
-            Object[] array = new Double[0]
+            Object[] array = new Double[]{1d}
+            assert array[0] instanceof Double
         '''
 
         assertScript '''
-            int[] array = new long[0] // ?
+            double[] array = new Double[]{1d}
+            assert array.length == 1
+            assert array[0] == 1.0
+        '''
+
+        assertScript '''
+            int[] array = new Integer[]{1}
+            assert array.length == 1
+            assert array[0] == 1
+        '''
+
+        assertScript '''
+            int[] array = new long[1]
+            assert array.length == 1
+            assert array[0] == 0
         '''
     }
 
