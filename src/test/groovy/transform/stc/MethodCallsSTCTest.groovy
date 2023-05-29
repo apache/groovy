@@ -1519,6 +1519,21 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11053
+    void testVargsSelection9() {
+        assertScript '''
+            @Grab('org.apache.commons:commons-lang3:3.11')
+            import org.apache.commons.lang3.ArrayUtils
+
+            byte[] one = new byte[1]
+            byte[] oneAlso = ArrayUtils.removeAll(one)
+            byte[] none = ArrayUtils.removeAll(one, 0)
+
+            assert none.length == 0
+            assert oneAlso.length == 1
+        '''
+    }
+
     // GROOVY-5702
     void testShouldFindInterfaceMethod() {
         assertScript '''
