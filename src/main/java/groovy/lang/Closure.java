@@ -397,35 +397,40 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * Invokes the closure without any parameters, returning any value if applicable.
+     * Invokes the closure with no arguments, returning any value if applicable.
      *
-     * @return the value if applicable or null if there is no return statement in the closure
+     * @return The value if applicable or null if there is no return statement in the closure.
      */
     public V call() {
         final Object[] NOARGS = EMPTY_OBJECT_ARRAY;
         return call(NOARGS);
     }
 
+    /**
+     * Invokes the closure with given argument(s), returning any value if applicable.
+     *
+     * @param arguments could be a single value or a List of values
+     * @return The value if applicable or null if there is no return statement in the closure.
+     */
+    public V call(final Object arguments) {
+        return call(new Object[]{arguments});
+    }
+
+    /**
+     * Invokes the closure with given argument(s), returning any value if applicable.
+     *
+     * @return The value if applicable or null if there is no return statement in the closure.
+     */
     @SuppressWarnings("unchecked")
-    public V call(Object... args) {
+    public V call(final Object... arguments) {
         try {
-            return (V) getMetaClass().invokeMethod(this,"doCall",args);
+            return (V) getMetaClass().invokeMethod(this, "doCall", arguments);
         } catch (InvokerInvocationException e) {
             UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable statement
         }  catch (Exception e) {
             return (V) throwRuntimeException(e);
         }
-    }
-
-    /**
-     * Invokes the closure, returning any value if applicable.
-     *
-     * @param arguments could be a single value or a List of values
-     * @return the value if applicable or null if there is no return statement in the closure
-     */
-    public V call(final Object arguments) {
-        return call(new Object[]{arguments});
     }
 
     protected static Object throwRuntimeException(Throwable throwable) {

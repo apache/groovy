@@ -74,6 +74,38 @@ final class MethodClosureTest {
     }
 
     @Test
+    void testMethodClosureForPrintln() {
+        assertScript '''
+            def closure = System.out.&println
+            closure('hello world')
+        '''
+    }
+
+    // GROOVY-9140
+    @Test
+    void testMethodClosureWithoutThis() {
+        String base = '''
+            class C {
+                def m() { 11 }
+            }
+            def closure = C.&m
+        '''
+
+        assertScript base + '''
+            Object result = closure(new C())
+            assert result == 11
+        '''
+
+        shouldFail MissingMethodException, base + '''
+            closure()
+        '''
+
+        shouldFail MissingMethodException, base + '''
+            closure("")
+        '''
+    }
+
+    @Test
     void testMethodClosureWithCategory() {
         assertScript '''
             class Bar {
@@ -82,13 +114,11 @@ final class MethodClosureTest {
                     methodClosure = this.&method
                 }
             }
-
             class Foo extends Bar {
                 def storeMethodClosure() {
                     methodClosure = super.&method
                 }
             }
-
             class BarCategory {
                 static method(Bar self) { 'result' }
             }
@@ -100,15 +130,31 @@ final class MethodClosureTest {
             try {
                 bar.methodClosure()
                 assert false
-            } catch(MissingMethodException ignore) {}
+            } catch(MissingMethodException ignore) {
+            }
             try {
                 foo.methodClosure()
                 assert false
-            } catch(MissingMethodException ignore) {}
+            } catch(MissingMethodException ignore) {
+            }
             use(BarCategory) {
                 assert bar.methodClosure() == 'result'
                 assert foo.methodClosure() == 'result'
             }
+        '''
+    }
+
+    // GROOVY-11075
+    @Test
+    void testMethodClosureCheckedException() {
+        shouldFail IOException, '''
+            class Foo {
+                static void bar(String str) {
+                    throw new IOException()
+                }
+            }
+            def baz = Foo.&bar
+            baz("")
         '''
     }
 
