@@ -245,6 +245,17 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-11051
+    void testPredicateCI2() {
+        [['null','Empty'],['new Object()','Present']].each { value, which ->
+            assertScript """import java.util.concurrent.atomic.AtomicReference
+                def opt = new AtomicReference<Object>($value).stream()
+                             .filter(AtomicReference::get).findFirst()
+                assert opt.is${which}()
+            """
+        }
+    }
+
     @Test // class::instanceMethod -- GROOVY-10791
     void testBiConsumerCI() {
         assertScript shell, '''

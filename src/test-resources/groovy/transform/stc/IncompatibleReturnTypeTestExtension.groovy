@@ -16,8 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-incompatibleReturnType { returnStmt, inferredReturnType ->
-    if (inferredReturnType==STRING_TYPE) {
+incompatibleReturnType { returnStmt, returnType ->
+    if (returnType == BigDecimal_TYPE || returnType == STRING_TYPE) {
         handled = true
     }
 }
