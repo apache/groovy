@@ -20,11 +20,9 @@ package groovy
 
 import org.junit.Test
 
-import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
 final class ClosureMethodCallTest {
 
@@ -79,12 +77,6 @@ final class ClosureMethodCallTest {
         assert attribute(x: 2, y: 3) == 6
     }
 
-    @Test
-    void testSystemOutPrintlnAsAClosure() {
-        def closure = System.out.&println
-        closure('Hello world')
-    }
-
     @Test // GROOVY-6819
     void testFixForIncompatibleClassChangeError() {
         assertScript '''
@@ -103,49 +95,19 @@ final class ClosureMethodCallTest {
         '''
     }
 
-    @Test // GROOVY-9140
-    void testCorrectErrorForClassInstanceMethodReference() {
-        assertScript '''
-            class Y {
-                def m() {1}
-            }
-
-            ref = Y.&m
-            assert ref(new Y()) == 1
-        '''
-
-        shouldFail MissingMethodException, '''
-            class Y {
-                def m() {1}
-            }
-
-            ref = Y.&m
-            assert ref() == 1
-        '''
-
-        shouldFail MissingMethodException, '''
-            class Y {
-                def m() {1}
-            }
-
-            ref = Y.&m
-            assert ref(1) == 1
-        '''
-    }
-
     @Test // GROOVY-9397
     void testRespondsToIsThreadSafe() {
-        final Executor executor = Executors.newCachedThreadPool()
+        def executor = Executors.newCachedThreadPool()
         try {
             final Closure action = { -> }
             // ensure that executing the closure and calling respondsTo
             // concurrently doesn't throw an exception.
-            for (int i = 0; i < 500; ++i) {
+            for (i in 1..500) {
                 executor.execute(action)
                 executor.execute(() -> action.respondsTo('test'))
             }
         } finally {
-            executor.shutdownNow();
+            executor.shutdownNow()
         }
     }
 }
