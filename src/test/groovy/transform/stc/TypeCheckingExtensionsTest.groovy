@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
@@ -323,21 +324,6 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Method [three] with matching argument found: [2, class java.util.Date]'
     }
 
-    void testIncompatibleAssignment() {
-        extension = null
-        shouldFailWithMessages '''
-            int x = 'foo'
-        ''',
-        'Cannot assign value of type java.lang.String to variable of type int'
-
-        extension = 'groovy/transform/stc/IncompatibleAssignmentTestExtension.groovy'
-        assertScript '''
-            try {
-                int x = 'foo'
-            } catch (e) {}
-        '''
-    }
-
     void testBinaryOperatorNotFound() {
         extension = null
         shouldFailWithMessages '''
@@ -484,18 +470,63 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testIncompatibleReturnType() {
+    void testIncompatibleAssignment() {
+        String source = '''
+            int x = 'x'
+            assert x == 120
+        '''
+
         extension = null
-        shouldFailWithMessages '''
+        shouldFailWithMessages source,
+            'Cannot assign value of type java.lang.String to variable of type int'
+
+        extension = 'groovy/transform/stc/IncompatibleAssignmentTestExtension.groovy'
+        assertScript source
+    }
+
+    void testIncompatibleReturnType() {
+        String source = '''
             Date foo() { '1' }
             true
-        ''',
-        'Cannot return value of type'
+        '''
+
+        extension = null
+        shouldFailWithMessages source,
+            'Cannot return value of type java.lang.String for method returning java.util.Date'
 
         extension = 'groovy/transform/stc/IncompatibleReturnTypeTestExtension.groovy'
+        assertScript source
+    }
+
+    // GROOVY-8168
+    void testIncompatibleReturnType2() {
+        extension = null
+        shouldFailWithMessages '''
+            @FunctionalInterface
+            interface Operation {
+                double calculate(int i)
+            }
+
+            Operation operation = { i -> return 1.0 }
+            def result = operation.calculate(2)
+            assert result == 1.0d
+        ''',
+        'Cannot return value of type java.math.BigDecimal for closure expecting double'
+    }
+
+    // GROOVY-8168
+    @NotYetImplemented
+    void testIncompatibleReturnType3() {
+        extension = 'groovy/transform/stc/IncompatibleReturnTypeTestExtension.groovy'
         assertScript '''
-            Date foo() { '1' }
-            true
+            @FunctionalInterface
+            interface Operation {
+                double calculate(int i)
+            }
+
+            Operation operation = { i -> return 1.0 }
+            def result = operation.calculate(2)
+            assert result == 1.0d
         '''
     }
 

@@ -37,16 +37,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9079
-    void testClosureWithoutArguments3() {
-        assertScript '''
-            java.util.concurrent.Callable<String> c = { -> return 'foo' }
-            assert c() == 'foo'
-        '''
-    }
-
     // GROOVY-10071
-    void testClosureWithoutArguments4() {
+    void testClosureWithoutArguments3() {
         assertScript '''
             def c = { ... zeroOrMore -> return 'foo' + zeroOrMore }
             assert c('bar', 'baz') == 'foo[bar, baz]'
@@ -56,7 +48,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10072, GROOVY-11023
-    void testClosureWithoutArguments5() {
+    void testClosureWithoutArguments4() {
         assertScript '''
             def c = { p = 'foo' -> return p }
             assert c('bar') == 'bar'
@@ -192,84 +184,53 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type X for closure expecting A<java.lang.Number>'
     }
 
-    // GROOVY-10128, GROOVY-10306
+    // GROOVY-10792
     void testClosureReturnTypeInference8() {
-        assertScript '''
-            java.util.function.Function<String, Number> x = { s ->
-                long n = 1
-                return n
+        shouldFailWithMessages '''
+            void proc(Closure<Boolean> c) {
+                boolean result = c().booleanValue()
+                assert !result
             }
-            assert x.apply('') == 1L
-        '''
-        assertScript '''
-            class C {
-                byte p = 1
-                void m() {
-                    byte v = 2
-                    java.util.function.Supplier<Number> one = { -> p }
-                    java.util.function.Supplier<Number> two = { -> v }
-                    assert one.get() == (byte)1
-                    assert two.get() == (byte)2
-                }
+            def list = []
+            proc {
+                list
             }
-            new C().m()
-        '''
-    }
-
-    // GROOVY-8427
-    void testClosureReturnTypeInference9() {
-        assertScript '''
-            import java.util.function.Consumer
-
-            class C {
-                static <T> void m(T a, Consumer<T> c) {
-                    c.accept(a)
-                }
-                static void main(args) {
-                    def c = { ->
-                        int x = 0
-                        m('') {
-                            print 'void return'
-                        }
-                    }
-                    c.call()
-                }
-            }
-        '''
+        ''',
+        'Cannot return value of type java.util.List<java.lang.Object> for closure expecting java.lang.Boolean'
     }
 
     // GROOVY-8202
-    void testClosureReturnTypeInference10() {
+    void testClosureReturnTypeInference9() {
         assertScript '''
             void proc() {
             }
             String test0(flag) {
-              if (flag) {
-                'foo'
-              } else {
-                proc()
-              }
+                if (flag) {
+                    'foo'
+                } else {
+                    proc()
+                }
             }
             String test1(flag) {
-              Closure<String> c = { ->
-                if (flag) {
-                  'bar'
-                } else {
-                  proc()
-                  null
+                Closure<String> c = { ->
+                    if (flag) {
+                        'bar'
+                    } else {
+                        proc()
+                        null
+                    }
                 }
-              }
-              c.call()
+                c.call()
             }
             String test2(flag) {
-              Closure<String> c = { -> // Cannot assign Closure<Object> to Closure<String>
-                if (flag) {
-                  'baz'
-                } else {
-                  proc()
+                Closure<String> c = { -> // Cannot assign Closure<Object> to Closure<String>
+                    if (flag) {
+                        'baz'
+                    } else {
+                        proc()
+                    }
                 }
-              }
-              c.call()
+                c.call()
             }
 
             assert test0(true) == 'foo'
@@ -515,7 +476,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // a case in Grails
+    // from Grails
     void testShouldNotThrowClosureSharedVariableError2() {
         assertScript '''
             class AntPathMatcher {
@@ -574,12 +535,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5705
     void testNPEWhenCallingClosureFromAField() {
         assertScript '''
-            import groovy.transform.*
-
             class Test {
                 Closure c = { it }
-
-                @TypeChecked
                 void test() {
                     c("123")
                 }
@@ -690,189 +647,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testSAMType() {
-        assertScript '''
-            interface I { def m() }
-
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE).name == 'I'
-            })
-            I i = { 1 }
-            assert i.m() == 1
-            def x = (I) { 2 }
-            assert x.m() == 2
-        '''
-
-        assertScript '''
-            interface I { int m() }
-            abstract class A implements I { }
-
-            I i = { 1 }
-            assert i.m() == 1
-            A a = { 2 }
-            assert a.m() == 2
-        '''
-
-        shouldFailWithMessages '''
-            interface I {
-                String toString()
-            }
-            I i = { p -> "" }
-        ''',
-        'Cannot assign'
-
-        shouldFailWithMessages '''
-            interface I {
-                String toString()
-            }
-            abstract class A implements I { }
-
-            A a = { "" } // implicit parameter
-        ''',
-        'Cannot assign'
-
-        assertScript '''
-            interface I { // non-functional, but every instance extends Object
-                boolean equals(Object)
-                int m()
-            }
-            I i = { 1 }
-            assert i.m() == 1
-        '''
-
-        shouldFailWithMessages '''
-            interface I {
-                boolean equals(Object)
-                int m()
-            }
-            abstract class A implements I { // no abstract methods
-                int m() { 1 }
-            }
-            A a = { 2 }
-        ''',
-        'Cannot assign'
-    }
-
-    // GROOVY-7927
-    void testSAMGenericsInAssignment() {
-        assertScript '''
-            interface SAM<T,R> { R accept(T t); }
-            SAM<Integer,Integer> s = { Integer n -> -n }
-            assert s.accept(1) == -1
-        '''
-    }
-
-    void testSAMProperty() {
-        assertScript '''
-            interface SAM { def foo(); }
-            class X {
-                SAM s
-            }
-            def x = new X(s:{1})
-            assert x.s.foo() == 1
-        '''
-    }
-
-    // GROOVY-7003
-    void testSAMProperty2() {
-        assertScript '''
-            import java.beans.*
-
-            class C {
-                static PropertyChangeListener listener = { PropertyChangeEvent event ->
-                    result = "${event.oldValue} -> ${event.newValue}"
-                }
-                public static result
-            }
-
-            def event = new PropertyChangeEvent(new Object(), 'foo', 'bar', 'baz')
-            C.getListener().propertyChange(event)
-            assert C.result == 'bar -> baz'
-        '''
-    }
-
-    void testSAMAttribute() {
-        assertScript '''
-            interface SAM { def foo(); }
-            class X {
-                public SAM s
-            }
-            def x = new X()
-            x.s = {1}
-            assert x.s.foo() == 1
-            x = new X()
-            x.@s = {2}
-            assert x.s.foo() == 2
-        '''
-    }
-
-    // GROOVY-10254
-    void testSAMReturnType() {
-        assertScript '''
-            interface SAM<T> { T get() }
-            SAM<Integer> foo() {
-                return { -> 42 }
-            }
-
-            def result = foo().get()
-            assert result == 42
-        '''
-    }
-
-    void testMultipleSAMSignature() {
-        assertScript '''
-            interface SAM { def foo() }
-            def method(SAM a, SAM b) {
-                a.foo()
-                b.foo()
-            }
-            method({println 'a'}, {println 'b'})
-        '''
-    }
-
-    void testMultipleSAMSignature2() {
-        assertScript '''
-            interface SAM { def foo() }
-            def method(Object o, SAM a, SAM b) {
-                a.foo()
-                b.foo()
-            }
-            method(new Object(), {println 'a'}, {println 'b'})
-        '''
-    }
-
-    void testMultipleSAMMethodWithClosure() {
-        assertScript '''
-            interface SAM { def foo() }
-            def method(SAM a, SAM b) {
-                a.foo()
-                b.foo()
-            }
-            def method(Closure a, SAM b) {
-                b.foo()
-            }
-            def called = false
-            method({called = true;println 'a'}, {println 'b'})
-            assert !called
-        '''
-    }
-
-    void testMultipleSAMMethodWithClosureInverted() {
-        assertScript '''
-            interface SAM { def foo() }
-            def method(SAM a, SAM b) {
-                a.foo()
-                b.foo()
-            }
-            def method(SAM a, Closure b) {
-                a.foo()
-            }
-            def called = false
-            method({println 'a'}, {called=true;println 'b'})
-            assert !called
-        '''
-    }
-
     // GROOVY-6238
     void testDirectMethodCallOnClosureExpression() {
         assertScript '''
@@ -944,20 +718,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                     assert delegate.p == 'inner delegate'
                 }
             }
-        '''
-    }
-
-    void testParameterlessClosureToSAMTypeArgumentCoercion() {
-        assertScript '''
-            interface SamType {
-                int sam()
-            }
-
-            int foo(SamType samt) {
-                samt.sam()
-            }
-
-            assert foo { -> 1 }  == 1
         '''
     }
 

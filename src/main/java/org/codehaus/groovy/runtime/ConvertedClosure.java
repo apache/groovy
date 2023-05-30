@@ -27,28 +27,29 @@ import java.lang.reflect.Method;
  * This class is a general adapter to adapt a closure to any Java interface.
  */
 public class ConvertedClosure extends ConversionHandler implements Serializable {
-    private final String methodName;
+
     private static final long serialVersionUID = 1162833713450835227L;
 
+    private final String methodName;
+
     /**
-     * to create a ConvertedClosure object.
-     * @param closure the closure object.
+     * @throws IllegalArgumentException if closure is null
      */
-    public ConvertedClosure(Closure closure, String method) {
-        super(closure);
-        this.methodName = method;
+    public ConvertedClosure(final Closure closure) {
+        this(closure, null);
     }
 
-    public ConvertedClosure(Closure closure) {
-        this(closure,null);
+    /**
+     * @throws IllegalArgumentException if closure is null
+     */
+    public ConvertedClosure(final Closure closure, final String methodName) {
+        super(closure); this.methodName = methodName;
     }
 
     @Override
-    public Object invokeCustom(Object proxy, Method method, Object[] args)
-    throws Throwable {
-        if (methodName!=null && !methodName.equals(method.getName())) return null;
-        return ((Closure) getDelegate()).call(args);
+    public Object invokeCustom(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        if (methodName != null && !methodName.equals(method.getName())) return null;
+        Object result = ((Closure)getDelegate()).call(args);
+        return result;
     }
-
 }
-
