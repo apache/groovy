@@ -1014,8 +1014,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, method, arguments, false, false);
-        } catch (GroovyRuntimeException e) { // GROOVY-10929: GroovyRuntimeException(cause:IllegalArgumentException) thrown for final fields
-            if (!(ownerIsClass && (e instanceof MissingMethodException || e instanceof InvokerInvocationException || e.getCause() instanceof IllegalArgumentException))) {
+        } catch (GroovyRuntimeException e) { // GroovyRuntimeException(cause:IllegalArgumentException) thrown for final fields
+                                             // InvokerInvocationException(cause:IllegalArgumentException) thrown for not this
+            if (!ownerIsClass || !(e instanceof MissingMethodException || e.getCause() instanceof IllegalArgumentException)) {
                 throw e;
             }
             if (MethodClosure.NEW.equals(method)) {
