@@ -927,40 +927,40 @@ public abstract class StaticTypeCheckingSupport {
                       - NUMBER_TYPES.getOrDefault(primB, NON_NUMBER_DEFAULT));
     }
 
-    static int getDistance(final ClassNode receiver, final ClassNode compare) {
-        if (receiver.isArray() && compare.isArray()) {
-            return getDistance(receiver.getComponentType(), compare.getComponentType());
+    static int getDistance(final ClassNode actual, final ClassNode expect) {
+        if (actual.isArray() && expect.isArray()) {
+            return getDistance(actual.getComponentType(), expect.getComponentType());
         }
-        if (isGStringOrGStringStringLUB(receiver) && isStringType(compare)) {
+        if (isGStringOrGStringStringLUB(actual) && isStringType(expect)) {
             return 3; // GROOVY-6668, GROOVY-8212: closer than Object and GroovyObjectSupport
         }
         int dist = 0;
-        ClassNode unwrapReceiver = getUnwrapper(receiver);
-        ClassNode unwrapCompare = getUnwrapper(compare);
-        if (isPrimitiveType(unwrapReceiver)
-                && isPrimitiveType(unwrapCompare)
-                && unwrapReceiver != unwrapCompare) {
-            dist = getPrimitiveDistance(unwrapReceiver, unwrapCompare);
+        ClassNode unwrapActual = getUnwrapper(actual);
+        ClassNode unwrapExpect = getUnwrapper(expect);
+        if (isPrimitiveType(unwrapActual)
+                && isPrimitiveType(unwrapExpect)
+                && unwrapActual != unwrapExpect) {
+            dist = getPrimitiveDistance(unwrapActual, unwrapExpect);
         }
-        // Add a penalty against boxing or unboxing, to get a resolution similar to JLS 15.12.2
+        // Add a penalty against boxing/unboxing to get a resolution similar to JLS 15.12.2
         // (http://docs.oracle.com/javase/specs/jls/se7/html/jls-15.html#jls-15.12.2).
-        if (isPrimitiveType(receiver) ^ isPrimitiveType(compare)) {
+        if (isPrimitiveType(actual) ^ isPrimitiveType(expect)) {
             dist = (dist + 1) << 1;
         }
-        if (unwrapCompare.equals(unwrapReceiver)
-                || receiver == UNKNOWN_PARAMETER_TYPE) {
+        if (unwrapExpect.equals(unwrapActual)
+                || actual == UNKNOWN_PARAMETER_TYPE) {
             return dist;
         }
-        if (receiver.isArray()) {
-            dist += 256; // GROOVY-5114: Object[] vs Object
+        if (actual.isArray()) {
+            dist += 131; // GROOVY-5114, GROOVY-11073: Object[] vs Object
         }
-        if (compare.isInterface()) { MethodNode sam;
-            if (receiver.implementsInterface(compare)) {
-                return dist + getMaximumInterfaceDistance(receiver, compare);
-            } else if (receiver.equals(CLOSURE_TYPE) && (sam = findSAM(compare)) != null) {
+        if (expect.isInterface()) { MethodNode sam;
+            if (actual.implementsInterface(expect)) {
+                return dist + getMaximumInterfaceDistance(actual, expect);
+            } else if (actual.equals(CLOSURE_TYPE) && (sam = findSAM(expect)) != null) {
                 // In the case of multiple overloads, give preference to equal parameter count
-                // with fuzzy matching of length for implicit arg Closures
-                Integer closureParamCount = receiver.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                // with fuzzy matching of length for implicit-argument Closures.
+                Integer closureParamCount = actual.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
                 if (closureParamCount != null) {
                     int samParamCount = sam.getParameters().length;
                     if ((closureParamCount == samParamCount) ||                                  // GROOVY-9881
@@ -971,8 +971,8 @@ public abstract class StaticTypeCheckingSupport {
                 return dist + 13; // GROOVY-9852: @FunctionalInterface vs Object
             }
         }
-        ClassNode cn = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? getWrapper(receiver) : receiver;
-        while (cn != null && !cn.equals(compare)) {
+        ClassNode cn = isPrimitiveType(actual) && !isPrimitiveType(expect) ? getWrapper(actual) : actual;
+        while (cn != null && !cn.equals(expect)) {
             cn = cn.getSuperClass();
             dist += 1;
             if (isObjectType(cn))

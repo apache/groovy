@@ -165,6 +165,22 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11073
+    void testArrayMaxOverloadSelection() {
+        assertScript '''import static org.codehaus.groovy.runtime.ArrayGroovyMethods.max
+            double[][] array2d = [ new double[0], new double[1], new double[2] ]
+            def theMax = max(array2d, { array1d -> array1d.length })
+            assert theMax instanceof double[]
+            assert theMax.length == 2
+        '''
+        assertScript '''
+            double[][] array2d = [ new double[0], new double[1], new double[2] ]
+            def theMax = array2d.max{ array1d -> array1d.length }
+            assert theMax instanceof double[]
+            assert theMax.length == 2
+        '''
+    }
+
     // GROOVY-7283
     void testArrayMinMaxSupportsOneAndTwoArgClosures() {
         assertScript '''
