@@ -103,7 +103,6 @@ final class MethodReferenceTest {
         assertScript imports + '''
             class One { String id }
 
-            @CompileStatic
             class Two extends One { }
 
             @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
@@ -352,16 +351,41 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11068
+    void testConsumerII4() {
+        assertScript imports + '''
+            @Grab('org.apache.pdfbox:pdfbox:2.0.28')
+            import org.apache.pdfbox.pdmodel.*
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            @CompileStatic
+            def test(List<PDDocument> docs) {
+                docs.each { doc ->
+                    extraPages().forEach {
+                        it.forEach(doc::addPage) // expect operand PDDocument
+                    }
+                }
+            }
+
+            Try<Iterable<PDPage>> extraPages() {
+                Try.success([new PDPage()])
+            }
+
+            test([new PDDocument()])
+        '''
+    }
+
     @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-9813
     void testFunctionII() {
-        String asList = '''
+        String asList = imports + '''
             def <T> List<T> asList(T... a) {
                 return Arrays.asList(a)
             }
         '''
 
-        assertScript imports + asList + '''
+        assertScript asList + '''
             @CompileStatic
             void test() {
                 Supplier<List> zero = this::asList
@@ -372,7 +396,7 @@ final class MethodReferenceTest {
             test()
         '''
 
-        assertScript imports + asList + '''
+        assertScript asList + '''
             @CompileStatic
             void test() {
                 Function<Integer, List> one = this::asList
@@ -384,7 +408,7 @@ final class MethodReferenceTest {
             test()
         '''
 
-        assertScript imports + asList + '''
+        assertScript asList + '''
             @CompileStatic
             void test() {
                 BiFunction<Integer, Integer, List> two = this::asList
@@ -397,7 +421,7 @@ final class MethodReferenceTest {
             test()
         '''
 
-        assertScript imports + asList + '''
+        assertScript asList + '''
             @CompileStatic
             void test() { def that = this
                 BiFunction<Integer, Integer, List> two = that::asList
@@ -447,6 +471,22 @@ final class MethodReferenceTest {
 
             int size = test("foo")
             assert size == 3
+        '''
+    }
+
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-10972
+    void testFunctionII4() {
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                LinkedList<String> list = new LinkedList<>()
+                list.add('works')
+                Function<Integer,String> func = list::remove
+                assert func.apply(0) == 'works'
+            }
+
+            test()
         '''
     }
 

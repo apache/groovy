@@ -39,7 +39,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -49,12 +48,12 @@ import java.util.Map;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -177,7 +176,7 @@ public class ClosureWriter {
     }
 
     private static boolean classNodeUsesReferences(final ClassNode classNode) {
-        boolean ret = classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+        boolean ret = classNode.getSuperClass().equals(ClassHelper.CLOSURE_TYPE);
         if (ret) return ret;
         if (classNode instanceof InnerClassNode) {
             InnerClassNode inner = (InnerClassNode) classNode;
@@ -188,18 +187,19 @@ public class ClosureWriter {
 
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         ClassNode classNode = controller.getClassNode();
-        ClassNode outerClass = controller.getOutermostClass();
-        String name = genClosureClassName();
+        ClassNode rootClass = controller.getOutermostClass();
+        MethodNode enclosingMethod = controller.getMethodNode();
+        String name = classNode.getName() + "$" + controller.getContext().getNextClosureInnerName(rootClass, classNode, enclosingMethod);
 
         Parameter[] parameters = expression.getParameters();
         if (parameters == null) {
             parameters = Parameter.EMPTY_ARRAY;
         } else if (parameters.length == 0) {
-            // let's create a default 'it' parameter
-            Parameter it = param(ClassHelper.OBJECT_TYPE, "it", nullX());
-            parameters = new Parameter[]{it};
-            Variable ref = expression.getVariableScope().getDeclaredVariable("it");
-            if (ref != null) it.setClosureSharedVariable(ref.isClosureSharedVariable());
+            // provide a default parameter
+            parameters = new Parameter[1];
+            parameters[0] = new Parameter(ClassHelper.OBJECT_TYPE, "it", nullX());
+            Variable decl = expression.getVariableScope().getDeclaredVariable("it");
+            if (decl != null) parameters[0].setClosureSharedVariable(decl.isClosureSharedVariable());
         }
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
@@ -213,12 +213,12 @@ public class ClosureWriter {
         else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
 
         InnerClassNode answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
-        answer.setEnclosingMethod(controller.getMethodNode());
+        answer.setEnclosingMethod(enclosingMethod);
         answer.setScriptBody(controller.isInScriptBody());
         answer.setSourcePosition(expression);
         answer.setStaticClass(controller.isStaticMethod() || classNode.isStaticClass());
         answer.setSynthetic(true);
-        answer.setUsingGenerics(outerClass.isUsingGenerics());
+        answer.setUsingGenerics(rootClass.isUsingGenerics());
 
         MethodNode method = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
         method.setSourcePosition(expression);
@@ -248,7 +248,7 @@ public class ClosureWriter {
         }
 
         // let's make the constructor
-        BlockStatement block = createBlockStatementForConstructor(expression, outerClass, classNode);
+        BlockStatement block = createBlockStatementForConstructor(expression, rootClass, classNode);
 
         // let's assign all the parameter fields from the outer context
         addFieldsAndGettersForLocalVariables(answer, localVariableParams);
@@ -262,8 +262,8 @@ public class ClosureWriter {
 
     protected ConstructorNode addConstructor(final ClosureExpression expression, final Parameter[] localVariableParams, final InnerClassNode answer, final BlockStatement block) {
         Parameter[] params = new Parameter[2 + localVariableParams.length];
-        params[0] = param(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
-        params[1] = param(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
+        params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
+        params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
         System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
 
         ConstructorNode constructorNode = answer.addConstructor(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, block);
@@ -272,32 +272,29 @@ public class ClosureWriter {
         return constructorNode;
     }
 
-    protected void addFieldsAndGettersForLocalVariables(final InnerClassNode answer, final Parameter[] localVariableParams) {
+    protected void addFieldsAndGettersForLocalVariables(final InnerClassNode closureClass, final Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
-            String paramName = param.getName();
-            ClassNode type = param.getType();
+            String     paramName = param.getName();
+            ClassNode  paramType = param.getType();
+
             VariableExpression initialValue = varX(paramName);
             initialValue.setAccessedVariable(param);
             initialValue.setUseReferenceDirectly(true);
-            ClassNode realType = type;
-            type = ClassHelper.makeReference();
             param.setType(ClassHelper.makeReference());
-            FieldNode paramField = answer.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, type, initialValue);
+
+            FieldNode paramField = closureClass.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, param.getType(), initialValue);
             paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
             paramField.setHolder(true);
-            String methodName = Verifier.capitalize(paramName);
 
-            // let's add a getter & setter
-            Expression fieldExp = fieldX(paramField);
-            markAsGenerated(answer,
-                    answer.addMethod(
-                            "get" + methodName,
-                            ACC_PUBLIC,
-                            realType.getPlainNodeReference(),
-                            Parameter.EMPTY_ARRAY,
-                            ClassNode.EMPTY_ARRAY,
-                            returnS(fieldExp)),
-                    true);
+            MethodNode getMethod = closureClass.addMethod(
+                "get" + capitalize(paramName),
+                ACC_PUBLIC,
+                paramType.getPlainNodeReference(),
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                returnS(fieldX(paramField))
+            );
+            markAsGenerated(closureClass, getMethod, true);
         }
     }
 
@@ -314,15 +311,6 @@ public class ClosureWriter {
         TupleExpression conArgs = new TupleExpression(outer, thisObject);
         block.addStatement(stmt(ctorSuperX(conArgs)));
         return block;
-    }
-
-    private String genClosureClassName() {
-        ClassNode classNode = controller.getClassNode();
-        ClassNode outerClass = controller.getOutermostClass();
-        MethodNode methodNode = controller.getMethodNode();
-
-        return classNode.getName() + "$"
-                + controller.getContext().getNextClosureInnerName(outerClass, classNode, methodNode);
     }
 
     protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
@@ -359,7 +347,7 @@ public class ClosureWriter {
     protected static void removeInitialValues(final Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
-                Parameter p = param(params[i].getType(), params[i].getName());
+                Parameter p = new Parameter(params[i].getType(), params[i].getName());
                 p.setOriginType(p.getOriginType());
                 params[i] = p;
             }
@@ -384,26 +372,29 @@ public class ClosureWriter {
         arguments.getExpression(1).visit(acg);
         operandStack.box();
         //TODO: replace with normal String, p not needed
-        Parameter p = param(ClassHelper.OBJECT_TYPE, "_p");
+        Parameter p = new Parameter(ClassHelper.OBJECT_TYPE, "_p");
         String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p, p});
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);
         operandStack.remove(2);
         return true;
     }
 
-    protected Parameter[] getClosureSharedVariables(final ClosureExpression ce) {
-        VariableScope scope = ce.getVariableScope();
-        Parameter[] ret = new Parameter[scope.getReferencedLocalVariablesCount()];
-        int index = 0;
-        for (Iterator<Variable> iter = scope.getReferencedLocalVariablesIterator(); iter.hasNext(); ) {
-            Variable element = iter.next();
-            Parameter p = param(element.getType(), element.getName());
-            p.setOriginType(element.getOriginType());
-            p.setClosureSharedVariable(element.isClosureSharedVariable());
-            ret[index] = p;
-            index++;
+    protected Parameter[] getClosureSharedVariables(final ClosureExpression expression) {
+        ClassNode classNode = controller.getClassNode();
+        TypeChooser typeChooser = controller.getTypeChooser();
+        VariableScope variableScope = expression.getVariableScope();
+
+        Parameter[] refs = new Parameter[variableScope.getReferencedLocalVariablesCount()]; int index = 0;
+        for (Iterator<Variable> iter = variableScope.getReferencedLocalVariablesIterator(); iter.hasNext(); ) {
+            Variable variable = iter.next();
+
+            ClassNode inferenceType = typeChooser.resolveType(varX(variable), classNode); // GROOVY-11068
+            Parameter p = new Parameter(inferenceType, variable.getName());
+            p.setClosureSharedVariable(variable.isClosureSharedVariable());
+
+            refs[index++] = p;
         }
-        return ret;
+        return refs;
     }
 
     protected void loadThis() {
