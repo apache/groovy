@@ -1507,11 +1507,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Gets a replacement corresponding to the matched pattern for {@link org.codehaus.groovy.runtime.StringGroovyMethods#replaceAll(CharSequence,Pattern,Closure)}.
      * <p>
-     * The closure take parameter:
+     * The closure is called with a parameter determined as follows:
      * <ul>
-     * <li>Whole of match if the pattern include no capturing group</li>
-     * <li>Object[] of capturing groups if the closure takes Object[] as parameter</li>
-     * <li>List of capturing groups</li>
+     * <li>The whole of the match if the pattern includes no capturing group</li>
+     * <li>An Object[] of capturing groups if the closure takes Object[] as parameter</li>
+     * <li>A List of capturing groups</li>
      * </ul>
      *
      * @param matcher the matcher object used for matching
@@ -1524,7 +1524,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         int count = matcher.groupCount();
-        List<String> groups = new ArrayList<String>();
+        List<String> groups = new ArrayList<>();
         for (int i = 0; i <= count; i++) {
             groups.add(matcher.group(i));
         }
@@ -2266,6 +2266,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Replaces each substring of this CharSequence that matches the given
      * regular expression with the given replacement.
+     * <p>
+     * <pre class="groovyTestCase">
+     * assert "foo".replaceAll('o', 'X') == 'fXX'
+     * </pre>
      *
      * @param self        a CharSequence
      * @param regex       the capturing regex
@@ -2325,14 +2329,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * compiled regular expression with the given replacement.
      * <p>
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
-     * replacement string may cause the results to be different than if it were
+     * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceAll}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
      * <p>
      * <pre class="groovyTestCase">
-     * assert "foo".replaceAll('o', 'X') == 'fXX'
+     * assert "foo".replaceAll(~'o', 'X') == 'fXX'
      * </pre>
      *
      * @param   self the CharSequence that is to be matched
@@ -2391,7 +2395,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(s.length() + 16);
             do {
                 String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
@@ -2448,7 +2452,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * compiled regular expression with the given replacement.
      * <p>
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
-     * replacement string may cause the results to be different than if it were
+     * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceFirst}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
@@ -2490,7 +2494,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(s.length() + 16);
             String replacement = getReplacement(matcher, closure);
             matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             matcher.appendTail(sb);
