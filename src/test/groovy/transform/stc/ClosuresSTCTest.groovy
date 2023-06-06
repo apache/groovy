@@ -547,7 +547,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6219, GROOVY-10277
-    void testShouldFailBecauseClosureReturnTypeDoesnMatchMethodSignature() {
+    void testClosureReturnDoesNotMatchTarget() {
         shouldFailWithMessages '''
             void printMessage(Closure<String> messageProvider) {
                 println "Received message : ${messageProvider()}"

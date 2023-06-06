@@ -469,4 +469,31 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             assert opt.isEmpty()
         '''
     }
+
+    // GROOVY-11079
+    void testCoerceToFunctionalInterface17() {
+        assertScript '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+            import io.vavr.Tuple2
+
+            Map<String,Object> getSpec() { [:] }
+
+            Try<Tuple2<String,Object>> tuple() {
+                Try.success(new Tuple2("",null))
+            }
+
+            void test(List list) {
+                list.forEach { item ->
+                    def map = getSpec()
+                    tuple().onSuccess {
+                        map.foo = it._1
+                    }
+                    //.map(Tuple2::_2)
+                }
+            }
+
+            test( [null] )
+        '''
+    }
 }
