@@ -3017,7 +3017,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     paramTypes = samParamTypes;
                 } else { // TODO: error for length mismatch
                     paramTypes = Arrays.copyOf(samParamTypes, n);
-                    for (int i = 0; i < Math.min(n, samParamTypes.length); i += 1) {
+                    for (int i = 0, j = Math.min(n, samParamTypes.length); i < j; i += 1) {
+                        if (p[i].isDynamicTyped()) { p[i].setType(samParamTypes[i]); } else // GROOVY-11083
                         checkParamType(p[i], paramTypes[i], i == n-1, expression instanceof LambdaExpression);
                     }
                 }
