@@ -18,27 +18,75 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : closures.
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
-    void testClosureWithoutArguments1() {
+    void testCallClosure1() {
         assertScript '''
             def c = { return 'foo' }
             assert c() == 'foo'
         '''
     }
 
-    void testClosureWithoutArguments2() {
+    void testCallClosure2() {
         assertScript '''
             def c = { -> return 'foo' }
             assert c() == 'foo'
         '''
     }
 
+    @NotYetImplemented
+    void testCallClosure3() {
+        shouldFailWithMessages '''
+            def c = { -> }
+            c('')
+        ''',
+        'Cannot call closure that accepts [] with [java.lang.String]'
+    }
+
+    void testCallClosure4() {
+        assertScript '''
+            def c = { int a, int b -> a + b }
+            assert c(5, 7) == 12
+        '''
+    }
+
+    void testCallClosure5() {
+        shouldFailWithMessages '''
+            def c = { int a, int b -> a + b }
+            c('5', '7')
+        ''',
+        'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'
+    }
+
+    void testCallClosure6() {
+        assertScript '''
+            def result = { int a, int b -> a + b }(5, 7)
+            assert result == 12
+        '''
+    }
+
+    void testCallClosure7() {
+        shouldFailWithMessages '''
+            { int a, int b -> a + b }('5', 7)
+        ''',
+        'Cannot call closure that accepts [int, int] with [java.lang.String, int]'
+    }
+
+    // GROOVY-6365
+    void testCallClosure8() {
+        assertScript '''
+            def c = { Object[] args -> args.length }
+            assert c('one', 'two') == 2
+        '''
+    }
+
     // GROOVY-10071
-    void testClosureWithoutArguments3() {
+    void testCallClosure9() {
         assertScript '''
             def c = { ... zeroOrMore -> return 'foo' + zeroOrMore }
             assert c('bar', 'baz') == 'foo[bar, baz]'
@@ -47,22 +95,33 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10072, GROOVY-11023
-    void testClosureWithoutArguments4() {
+    // GROOVY-10072
+    void testCallClosure10() {
         assertScript '''
             def c = { p = 'foo' -> return p }
             assert c('bar') == 'bar'
             assert c() == 'foo'
         '''
+    }
+
+    // GROOVY-10072
+    void testCallClosure11() {
         assertScript '''
-            def c = { p, q = p.toString() -> '' + p + q }
-            assert c('foo', 'bar') == 'foobar'
-            assert c('foo') == 'foofoo'
+            def c = { Number n, Number total = 41 -> total += n }
+            assert c(1) == 42
         '''
     }
 
+    // GROOVY-10072
+    void testCallClosure12() {
+        shouldFailWithMessages '''
+            def c = { Number n, Number total = new Date() -> total += n }
+        ''',
+        'Cannot assign value of type java.util.Date to variable of type java.lang.Number'
+    }
+
     // GROOVY-10636
-    void testClosureWithoutArguments5() {
+    void testCallClosure13() {
         assertScript '''
             def f(Closure<Number>... closures) {
                 closures*.call().sum()
@@ -70,6 +129,10 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             Object result = f({->1},{->2})
             assert result == 3
         '''
+    }
+
+    // GROOVY-10636
+    void testCallClosure14() {
         shouldFailWithMessages '''
             def f(Closure<Number>... closures) {
             }
@@ -78,36 +141,16 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for closure expecting java.lang.Number'
     }
 
-    void testClosureWithArguments1() {
+    // GROOVY-11023
+    void testCallClosure15() {
         assertScript '''
-            def c = { int a, int b -> a + b }
-            assert c(5, 7) == 12
+            def c = { p, q = p.toString() -> '' + p + q }
+            assert c('foo', 'bar') == 'foobar'
+            assert c('foo') == 'foofoo'
         '''
-        shouldFailWithMessages '''
-            def c = { int a, int b -> a + b }
-            c('5', '7')
-        ''',
-        'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'
     }
 
-    void testClosureWithArguments2() {
-        assertScript '''
-            def result = { int a, int b -> a + b }(5, 7)
-            assert result == 12
-        '''
-        shouldFailWithMessages '''
-            { int a, int b -> a + b }('5', 7)
-        ''',
-        'Cannot call closure that accepts [int, int] with [java.lang.String, int]'
-    }
-
-    // GROOVY-6365
-    void testClosureWithArguments3() {
-        assertScript '''
-            def c = { Object[] args -> args.length }
-            assert c('one', 'two') == 2
-        '''
-    }
+    //
 
     void testClosureReturnTypeInference1() {
         assertScript '''
@@ -400,24 +443,10 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureCallAsAMethod() {
-        assertScript '''
-            Closure cl = { 'foo' }
-            assert cl() == 'foo'
-        '''
-    }
-
-    void testClosureCallWithOneArgAsAMethod() {
-        assertScript '''
-            Closure cl = { int x -> "foo$x" }
-            assert cl(1) == 'foo1'
-        '''
-    }
-
     void testRecurseClosureCallAsAMethod() {
         assertScript '''
             Closure<Integer> cl
-            cl = { int x-> x==0?x:1+cl(x-1) }
+            cl = { int x -> x == 0 ? x : 1+cl(x-1) }
         '''
     }
 

@@ -493,4 +493,15 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             test( [null] )
         '''
     }
+
+    // GROOVY-11083
+    void testCoerceToFunctionalInterface18() {
+        shouldFailWithMessages '''
+            void setFoo(Consumer<Number> c) {}
+            void test(Date d) {
+                foo = { n = d -> }
+            }
+        ''',
+        'Cannot assign value of type java.util.Date to variable of type java.lang.Number'
+    }
 }
