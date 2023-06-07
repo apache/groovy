@@ -50,10 +50,10 @@ class WindowsLister {
     +listFiles(dir)
 }
 object dummy2<<HIDDEN>>
-hide DefaultLister fields
 class DefaultLister {
     +listFiles(dir)
 }
+hide DefaultLister fields
 object script
 script ..r..> "<<use>>" UnixLister
 UnixLister --> "forwardIfRequired" WindowsLister
