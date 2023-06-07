@@ -3105,6 +3105,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     paramTypes = samParamTypes;
                 } else { // TODO: error for length mismatch
                     paramTypes = Arrays.copyOf(samParamTypes, n);
+                    for (int i = 0, j = Math.min(n, samParamTypes.length); i < j; i += 1) {
+                        if (p[i].isDynamicTyped()) p[i].setType(samParamTypes[i]); // GROOVY-11085
+                    }
                 }
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
             }
@@ -4712,28 +4715,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode inferSAMTypeGenericsInAssignment(final ClassNode samType, final MethodNode abstractMethod, final ClassNode closureType, final ClosureExpression closureExpression) {
-        // if the sam type or closure type do not provide generics information,
-        // we cannot infer anything, thus we simply return the provided samUsage
-        GenericsType[] samTypeGenerics = samType.getGenericsTypes();
-        GenericsType[] closureGenerics = closureType.getGenericsTypes();
-        if (samTypeGenerics == null || closureGenerics == null) return samType;
-
-        // extract the generics from the return type
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+
+        // extract generics from the closure return type
         extractGenericsConnections(connections, wrapTypeIfNecessary(getInferredReturnType(closureExpression)), abstractMethod.getReturnType());
 
-        // next we get the block parameter types and set the generics
-        // information just like before
-        // TODO: add vargs handling
+        // extract generics from the closure parameters
         if (closureExpression.isParameterSpecified()) {
             Parameter[] closureParams = closureExpression.getParameters();
-            Parameter[] methodParams = abstractMethod.getParameters();
+            Parameter[]  methodParams =    abstractMethod.getParameters();
             for (int i = 0, n = Math.min(closureParams.length, methodParams.length); i < n; i += 1) {
                 ClassNode closureParamType = closureParams[i].getType();
-                ClassNode methodParamType = methodParams[i].getType();
-                extractGenericsConnections(connections, closureParamType, methodParamType);
+                ClassNode  methodParamType =  methodParams[i].getType();
+                extractGenericsConnections(connections, wrapTypeIfNecessary(closureParamType), methodParamType);
             }
         }
+
         return applyGenericsContext(connections, samType.redirect());
     }
 

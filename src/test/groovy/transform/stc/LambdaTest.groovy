@@ -26,103 +26,77 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class LambdaTest {
 
+    private static final imports = '''\
+        import groovy.transform.CompileStatic
+        import java.util.function.*
+        import java.util.stream.*
+    '''
+
     @Test
     void testFunction() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
-            def f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList())
             }
-
             assert f() == [2, 3, 4]
         '''
     }
 
     @Test
     void testFunction2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
-            def f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
             }
-
             assert f() == [2, 3, 4]
         '''
     }
 
     @Test
     void testFunctionWithTypeArgument() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-
-            @CompileStatic
-            List<String> f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
             }
-
             assert f() == [null, null, null]
         '''
     }
 
     @Test
     void testBinaryOperator() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
-            @CompileStatic
-            int f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e)
             }
-
             assert f() == 13
         '''
     }
 
     @Test // GROOVY-8917
     void testBinaryOperatorWithoutExplicitTypes() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-
-            @CompileStatic
-            int f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 [1, 2, 3].stream().reduce(7, (r, e) -> r + e)
             }
-
             assert f() == 13
         '''
     }
 
     @Test
     void testBinaryOperatorWithoutExplicitTypes2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.function.BinaryOperator
-
-            @CompileStatic
-            int f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 BinaryOperator<Integer> accumulator = (r, e) -> r + e
                 return [1, 2, 3].stream().reduce(7, accumulator)
             }
-
             assert f() == 13
         '''
     }
 
     @Test // GROOVY-10282
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.IntStream
-
-            @CompileStatic
-            def f() {
+        assertScript imports + '''
+            @CompileStatic f() {
                 IntStream.range(0, 10).boxed().reduce('', (s, i) -> s + '-', String::concat)
             }
             assert f() == '----------'
@@ -130,85 +104,51 @@ final class LambdaTest {
     }
 
     @Test
-    void testPredicate() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            class Tester {
-                static main(args) {
-                    def list = ['ab', 'bc', 'de']
-                    list.removeIf(e -> e.startsWith("a"))
-                    assert ['bc', 'de'] == list
-                }
+    void testPredicate1() {
+        assertScript imports + '''
+            @CompileStatic f() {
+                def list = ['ab', 'bc', 'de']
+                list.removeIf(e -> e.startsWith('a'))
+                list
             }
+            assert f() == ['bc', 'de']
         '''
     }
 
     @Test
-    void testPredicateWithoutExplicitTypeDef() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Function
-            import java.util.function.Predicate
-
-            @CompileStatic
-            class Tester {
-                static main(args) {
-                    List<String> myList = Arrays.asList("a1", "a2", "b2", "b1", "c2", "c1")
-                    Predicate<String> predicate = s -> s.startsWith("b")
-                    Function<String, String> mapper = s -> s.toUpperCase()
-
-                    List<String> result =
-                            myList
-                                .stream()
-                                .filter(predicate)
-                                .map(mapper)
-                                .sorted()
-                                .collect(Collectors.toList())
-
-                    assert ['B1', 'B2'] == result
-                }
+    void testPredicate2() {
+        assertScript imports + '''
+            @CompileStatic f() {
+                Predicate<String> tester = s -> s.startsWith('b')
+                Function<String, String> mapper = s -> s.toUpperCase()
+                List<String> myList = Arrays.asList('a1', 'a2', 'b2', 'b1', 'c2', 'c1')
+                List<String> result = myList.stream().filter(tester).map(mapper).sorted().collect(Collectors.toList())
             }
+            assert f() == ['B1', 'B2']
         '''
     }
 
     @Test
     void testUnaryOperator() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            class Tester {
-                static main(args) {
-                    def list = [1, 2, 3]
-                    list.replaceAll(e -> e + 10)
-                    assert [11, 12, 13] == list
-                }
+        assertScript imports + '''
+            @CompileStatic f() {
+                def list = [1, 2, 3]
+                list.replaceAll(e -> e + 10)
+                list
             }
+            assert f() == [11, 12, 13]
         '''
     }
 
     @Test
     void testBiConsumer() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            class Tester {
-                static main(args) {
-                    def map = [a: 1, b: 2, c: 3]
-                    map.forEach((k, v) -> System.out.println(k + ":" + v));
-                }
+        assertScript imports + '''
+            @CompileStatic f() {
+                def map = [a: 1, b: 2, c: 3], list = []
+                map.forEach((k, v) -> list.add(k + v))
+                list
             }
+            assert f() == ['a1', 'b2', 'c3']
         '''
     }
 

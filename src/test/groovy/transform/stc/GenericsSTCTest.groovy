@@ -411,7 +411,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def c = new HandleContainer(handle: h)
             test({k->c} as Input, {k->c} as State)
         '''
+    }
 
+    void testReturnTypeInferenceWithMethodGenerics1y() {
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
@@ -462,6 +464,49 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             cu.compile()
 
             loader.loadClass('Tester').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics1z() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'A.java')
+            a.write '''
+                interface A {
+                    int getCount();
+                }
+            '''
+            def b = new File(parentDir, 'B.java')
+            b.write '''
+                class B {
+                    public <T extends A> T getA(String id) {
+                        return null;
+                    }
+                }
+            '''
+            def c = new File(parentDir, 'C.groovy')
+            c.write '''
+                class C {
+                    static main(args) {
+                        def b = new B()
+                        b.getA("")?.count
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('C').main()
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
