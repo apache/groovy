@@ -84,7 +84,7 @@ class NullObjectTest extends GroovyTestCase {
         assert message == "Cannot execute null+null"
     }
 
-    void testNullPlusNumer() {
+    void testNullPlusNumber() {
       String message = shouldFail(NullPointerException) {
           null+1
       }
