@@ -542,21 +542,6 @@ public class JavaStubGenerator {
         }
     }
 
-    private static boolean isConcreteTraitMethod(final ClassNode trait, final MethodNode traitMethod) {
-        if (!(trait.redirect() instanceof DecompiledClassNode)) {
-            return !traitMethod.isAbstract();
-        }
-        boolean isSynthetic = (traitMethod.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
-        if (!isSynthetic && !traitMethod.getName().contains("$")) {
-            for (MethodNode helperMethod : Traits.findHelper(trait).getMethods(traitMethod.getName())) {
-                Parameter[] params = helperMethod.getParameters();
-                params = Arrays.copyOfRange(params, 1, params.length);
-                if (sameParameterTypes(params, traitMethod.getParameters())) return true;
-            }
-        }
-        return false;
-    }
-
     private static boolean sameParameterTypes(final MethodNode firstMethod, final MethodNode secondMethod) {
         return sameParameterTypes(firstMethod.getParameters(), secondMethod.getParameters());
     }
@@ -573,27 +558,31 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
-        printAnnotations(out, constructorNode);
-        // printModifiers(out, constructorNode.getModifiers());
+    private void printConstructor(final PrintWriter out, final ClassNode classNode, final ConstructorNode ctorNode) {
+        printAnnotations(out, ctorNode);
 
-        out.print("public "); // temporary hack
-        String className = clazz.getNameWithoutPackage();
-        if (clazz instanceof InnerClassNode)
+        int flags = ctorNode.getModifiers();
+        // http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.8.3
+        flags &= ~(Opcodes.ACC_FINAL | Opcodes.ACC_NATIVE | Opcodes.ACC_STATIC |
+                Opcodes.ACC_ABSTRACT | Opcodes.ACC_STRICT | Opcodes.ACC_SYNCHRONIZED);
+        if (classNode.isEnum()) flags &= ~(Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED);
+        else if (ctorNode.isSyntheticPublic() && hasPackageScopeXform(ctorNode, PackageScopeTarget.CONSTRUCTORS)) flags &= ~Opcodes.ACC_PUBLIC;
+        printModifiers(out, flags);
+
+        String className = classNode.getNameWithoutPackage();
+        if (classNode instanceof InnerClassNode)
             className = className.substring(className.lastIndexOf('$') + 1);
-        out.println(className);
+        out.print(className);
 
-        printParams(out, constructorNode);
+        printParams(out, ctorNode);
+        printExceptions(out, ctorNode.getExceptions());
 
-        ClassNode[] exceptions = constructorNode.getExceptions();
-        printExceptions(out, exceptions);
-
-        ConstructorCallExpression constrCall = getFirstIfSpecialConstructorCall(constructorNode.getCode());
-        if (constrCall == null) {
+        ConstructorCallExpression ctorCall = getFirstIfSpecialConstructorCall(ctorNode.getCode());
+        if (ctorCall == null) {
             out.println(" {}");
         } else {
             out.println(" {");
-            printSpecialConstructorArgs(out, constructorNode, constrCall);
+            printSpecialConstructorArgs(out, ctorNode, ctorCall);
             out.println("}");
         }
     }
@@ -733,11 +722,11 @@ public class JavaStubGenerator {
 
         printAnnotations(out, methodNode);
         if (!isInterfaceOrTrait(classNode)) {
-            int modifiers = methodNode.getModifiers();
-            if (isDefaultTraitImpl(methodNode)) {
-                modifiers ^= Opcodes.ACC_ABSTRACT;
-            }
-            printModifiers(out, modifiers & ~(classNode.isEnum() ? Opcodes.ACC_ABSTRACT : 0));
+            int flags = methodNode.getModifiers();
+            if (classNode.isEnum()) flags &= ~Opcodes.ACC_ABSTRACT;
+            else if (isDefaultTraitImpl(methodNode)) flags ^= Opcodes.ACC_ABSTRACT;
+            if (methodNode.isSyntheticPublic() && hasPackageScopeXform(methodNode, PackageScopeTarget.METHODS)) flags &= ~Opcodes.ACC_PUBLIC;
+            printModifiers(out, flags);
         }
 
         printTypeParameters(out, methodNode.getGenericsTypes());
@@ -817,14 +806,6 @@ public class JavaStubGenerator {
             }
             printType(out, exception);
         }
-    }
-
-    private static boolean isAbstract(final MethodNode methodNode) {
-        return methodNode.isAbstract() && !isDefaultTraitImpl(methodNode);
-    }
-
-    private static boolean isDefaultTraitImpl(final MethodNode methodNode) {
-        return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
     }
 
     private void printValue(final PrintWriter out, final ClassNode type, final Expression value) {
@@ -1088,6 +1069,29 @@ public class JavaStubGenerator {
 
     private static boolean isInterfaceOrTrait(final ClassNode cn) {
         return cn.isInterface() || Traits.isTrait(cn);
+    }
+
+    private static boolean isAbstract(final MethodNode methodNode) {
+        return methodNode.isAbstract() && !isDefaultTraitImpl(methodNode);
+    }
+
+    private static boolean isDefaultTraitImpl(final MethodNode methodNode) {
+        return Traits.isTrait(methodNode.getDeclaringClass()) && Traits.hasDefaultImplementation(methodNode);
+    }
+
+    private static boolean isConcreteTraitMethod(final ClassNode trait, final MethodNode method) {
+        if (!(trait.redirect() instanceof DecompiledClassNode)) {
+            return !method.isAbstract();
+        }
+        boolean isSynthetic = (method.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (!isSynthetic && !method.getName().contains("$")) {
+            for (MethodNode helperMethod : Traits.findHelper(trait).getMethods(method.getName())) {
+                Parameter[] params = helperMethod.getParameters();
+                params = Arrays.copyOfRange(params, 1, params.length);
+                if (sameParameterTypes(params, method.getParameters())) return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasPackageScopeXform(final AnnotatedNode node, final PackageScopeTarget type) {

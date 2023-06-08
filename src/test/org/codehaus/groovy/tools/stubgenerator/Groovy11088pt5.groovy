@@ -18,44 +18,35 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy9462 extends StringSourcesStubTestCase {
+final class Groovy11088pt5 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
+            'C.groovy': '''import groovy.transform.*
+                @PackageScope([
+                    PackageScopeTarget.METHODS,
+                    PackageScopeTarget.CONSTRUCTORS
+                ])
+                class C {
+                    @Deprecated C() {}
+                    @Deprecated m() {}
+                }
+            ''',
             'Main.java': '''
                 public class Main {
                     public static void main(String[] args) {
-                        new Neo4jRelationship<Byte, Character>(null, null, "Type");
+                        new C().m();
                     }
                 }
             ''',
-            'Neo4jRelationship.groovy': '''
-                @groovy.transform.CompileStatic
-                class Neo4jRelationship<F, T> implements Relationship<F, T> {
-                    String type
-
-                    Neo4jRelationship(F from, T to, String type) {
-                        this.from = from
-                        this.to = to
-                        this.type = type
-                    }
-                }
-            ''',
-            'Relationship.groovy': '''
-                @groovy.transform.CompileStatic
-                trait Relationship<F, T> {
-                    Long id
-                    F from
-                    T to
-                }
-            '''
         ]
     }
 
     @Override
     void verifyStubs() {
-        String stub = stubJavaSourceFor('Neo4jRelationship')
-        assert stub.contains("public Neo4jRelationship(F from, T to,")
+        String stub = stubJavaSourceFor('C')
+        assert stub.contains('@java.lang.Deprecated() C() {')
+        assert stub.contains('@java.lang.Deprecated()  java.lang.Object m() {')
     }
 }
