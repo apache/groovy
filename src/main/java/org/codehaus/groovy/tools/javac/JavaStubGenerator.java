@@ -18,12 +18,15 @@
  */
 package org.codehaus.groovy.tools.javac;
 
+import groovy.transform.PackageScope;
+import groovy.transform.PackageScopeTarget;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -98,6 +101,7 @@ public class JavaStubGenerator {
     private final File outputPath;
     private final List<ConstructorNode> constructors = new ArrayList<>();
     private final Map<String, MethodNode> propertyMethods = new LinkedHashMap<>();
+    private final static ClassNode PACKAGE_SCOPE_TYPE = ClassHelper.make(PackageScope.class);
 
     private ModuleNode currentModule;
 
@@ -298,13 +302,17 @@ public class JavaStubGenerator {
             }
             currentModule = classNode.getModule();
 
-            boolean isInterface = isInterfaceOrTrait(classNode);
             boolean isEnum = classNode.isEnum();
+            boolean isInterface = !isEnum && isInterfaceOrTrait(classNode);
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
             printAnnotations(out, classNode);
-            printModifiers(out, classNode.getModifiers()
-                    & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0)
-                    & ~(isEnum ? Opcodes.ACC_FINAL | Opcodes.ACC_ABSTRACT : 0));
+
+            int flags = classNode.getModifiers();
+            if (isEnum) flags &= ~Opcodes.ACC_FINAL;
+            if (isEnum || isInterface) flags &= ~Opcodes.ACC_ABSTRACT;
+            if (classNode.isSyntheticPublic() && hasPackageScopeXform(classNode,
+                        PackageScopeTarget.CLASS)) flags &= ~Opcodes.ACC_PUBLIC;
+            printModifiers(out, flags);
 
             if (isInterface) {
                 if (isAnnotationDefinition) {
@@ -347,7 +355,7 @@ public class JavaStubGenerator {
             }
             out.println(" {");
 
-            printFields(out, classNode);
+            printFields(out, classNode, isInterface);
             printMethods(out, classNode, isEnum);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
@@ -363,6 +371,93 @@ public class JavaStubGenerator {
             constructors.clear();
             propertyMethods.clear();
         }
+    }
+
+    private void printFields(PrintWriter out, ClassNode classNode, boolean ifaceOrTrait) {
+        List<FieldNode> fields = classNode.getFields();
+        if (!fields.isEmpty()) {
+            List<FieldNode> enumFields = new ArrayList<>();
+            List<FieldNode> normalFields = new ArrayList<>();
+            for (FieldNode field : fields) {
+                int flags = field.getModifiers();
+                if (hasPackageScopeXform(field, PackageScopeTarget.FIELDS)){
+                    flags &= ~(Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC);
+                    List<AnnotationNode> annotations = field.getAnnotations();
+                    field = new FieldNode(field.getName(), flags, field.getType(), field.getOwner(), field.getInitialExpression());
+                    field.setDeclaringClass(classNode);
+                    field.addAnnotations(annotations);
+                }
+
+                if (field.isEnum()) {
+                    enumFields.add(field);
+                } else if ((flags & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC)) == 0) {
+                    normalFields.add(field);
+                }
+            }
+
+            printEnumFields(out, enumFields);
+            for (FieldNode normalField : normalFields) {
+                printField(out, normalField, ifaceOrTrait);
+            }
+        }
+    }
+
+    private static void printEnumFields(final PrintWriter out, final List<FieldNode> fields) {
+        if (!fields.isEmpty()) {
+            int i = 0;
+            for (FieldNode field : fields) {
+                if (i++ != 0) {
+                    out.print(", ");
+                }
+                out.print(field.getName());
+            }
+        }
+        out.println(';');
+    }
+
+    private void printField(final PrintWriter out, final FieldNode field, final boolean ifaceOrTrait) {
+        printAnnotations(out, field);
+        if (!ifaceOrTrait) {
+            printModifiers(out, field.getModifiers());
+        }
+        ClassNode type = field.getType();
+        printType(out, type);
+        out.print(' ');
+        out.print(field.getName());
+
+        if (ifaceOrTrait || field.isFinal()) {
+            out.print(" = ");
+            if (field.isStatic()) {
+                Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
+                if (value instanceof ConstantExpression) {
+                    if (isPrimitiveType(type)) { // do not pass string of length 1 for String field:
+                        value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
+                    }
+                    if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
+                                || (isLongCategory(type) && value.getType().equals(ClassHelper.int_TYPE))
+                                || (isFloatingCategory(type) && ClassHelper.BigDecimal_TYPE.equals(value.getType())))
+                            && (type.equals(ClassHelper.boolean_TYPE) || isStaticConstantInitializerType(type))) {
+                        printValue(out, type, value);
+                        out.println(';');
+                        return;
+                    }
+                }
+
+                // GROOVY-5150, GROOVY-10902, GROOVY-10928, GROOVY-11019: dummy value that prevents inlining
+                if (isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
+                    out.print("new " + ClassHelper.getWrapper(type) + "(");
+                    printDefaultValue(out, type);
+                    out.print(')');
+                } else {
+                    out.print("null");
+                }
+            } else if (isPrimitiveType(type)) {
+                printDefaultValue(out, type);
+            } else {
+                out.print("null");
+            }
+        }
+        out.println(';');
     }
 
     private void printMethods(PrintWriter out, ClassNode classNode, boolean isEnum) {
@@ -438,85 +533,6 @@ public class JavaStubGenerator {
         for (ConstructorNode constructor : constructors) {
             printConstructor(out, classNode, constructor);
         }
-    }
-
-    private void printFields(final PrintWriter out, final ClassNode classNode) {
-        List<FieldNode> fields = classNode.getFields();
-        if (!fields.isEmpty()) {
-            List<FieldNode> enumFields = new LinkedList<>();
-            List<FieldNode> normalFields = new LinkedList<>();
-            for (FieldNode field : fields) {
-                if (field.isEnum()) {
-                    enumFields.add(field);
-                } else if (!field.isPrivate() && (field.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0) {
-                    normalFields.add(field);
-                }
-            }
-            boolean interfaceOrTrait = isInterfaceOrTrait(classNode);
-
-            printEnumFields(out, enumFields);
-            for (FieldNode normalField : normalFields) {
-                printField(out, normalField, interfaceOrTrait);
-            }
-        }
-    }
-
-    private static void printEnumFields(final PrintWriter out, final List<FieldNode> fields) {
-        if (!fields.isEmpty()) {
-            int i = 0;
-            for (FieldNode field : fields) {
-                if (i++ != 0) {
-                    out.print(", ");
-                }
-                out.print(field.getName());
-            }
-        }
-        out.println(';');
-    }
-
-    private void printField(final PrintWriter out, final FieldNode field, final boolean fromFaceOrTrait) {
-        printAnnotations(out, field);
-        if (!fromFaceOrTrait) {
-            printModifiers(out, field.getModifiers());
-        }
-        ClassNode type = field.getType();
-        printType(out, type);
-        out.print(' ');
-        out.print(field.getName());
-
-        if (fromFaceOrTrait || field.isFinal()) {
-            out.print(" = ");
-            if (field.isStatic()) {
-                Expression value = ExpressionUtils.transformInlineConstants(field.getInitialValueExpression(), type);
-                if (value instanceof ConstantExpression) {
-                    if (isPrimitiveType(type)) { // do not pass string of length 1 for String field:
-                        value = Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) value);
-                    }
-                    if ((type.equals(value.getType()) // GROOVY-10611: integer/decimal value
-                                || (isLongCategory(type) && value.getType().equals(ClassHelper.int_TYPE))
-                                || (isFloatingCategory(type) && ClassHelper.BigDecimal_TYPE.equals(value.getType())))
-                            && (type.equals(ClassHelper.boolean_TYPE) || isStaticConstantInitializerType(type))) {
-                        printValue(out, type, value);
-                        out.println(';');
-                        return;
-                    }
-                }
-
-                // GROOVY-5150, GROOVY-10902, GROOVY-10928, GROOVY-11019: dummy value that prevents inlining
-                if (isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
-                    out.print("new " + ClassHelper.getWrapper(type) + "(");
-                    printDefaultValue(out, type);
-                    out.print(')');
-                } else {
-                    out.print("null");
-                }
-            } else if (isPrimitiveType(type)) {
-                printDefaultValue(out, type);
-            } else {
-                out.print("null");
-            }
-        }
-        out.println(';');
     }
 
     private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
@@ -905,7 +921,8 @@ public class JavaStubGenerator {
     private void printAnnotations(PrintWriter out, AnnotatedNode annotated) {
         if (!java5) return;
         for (AnnotationNode annotation : annotated.getAnnotations()) {
-            printAnnotation(out, annotation);
+            if (!annotation.getClassNode().equals(PACKAGE_SCOPE_TYPE))
+                printAnnotation(out, annotation);
         }
     }
 
@@ -946,8 +963,6 @@ public class JavaStubGenerator {
                 val = writer.toString();
             } else if (constValue instanceof Number || constValue instanceof Boolean) {
                 val = constValue.toString();
-            } else if (constValue instanceof Enum) {
-                val = constValue.getClass().getName() + "." + constValue.toString();
             } else {
                 val = "\"" + escapeSpecialChars(constValue.toString()) + "\"";
                 replaceDollars = false;
@@ -1028,16 +1043,6 @@ public class JavaStubGenerator {
         out.println();
     }
 
-    public void clean() {
-        Stream<JavaFileObject> javaFileObjectStream =
-                javaStubCompilationUnitSet.size() < 2
-                        ? javaStubCompilationUnitSet.stream()
-                        : javaStubCompilationUnitSet.parallelStream();
-
-        javaFileObjectStream.forEach(FileObject::delete);
-        javaStubCompilationUnitSet.clear();
-    }
-
     private File createJavaStubFile(String path) {
         return new File(outputPath, path + ".java");
     }
@@ -1050,9 +1055,61 @@ public class JavaStubGenerator {
         return cn.isInterface() || Traits.isTrait(cn);
     }
 
+    private boolean hasPackageScopeXform(final AnnotatedNode node, final PackageScopeTarget type) {
+        boolean member = (!(node instanceof ClassNode) && type != PackageScopeTarget.CLASS);
+        for (AnnotationNode anno : node.getAnnotations()) {
+            if (anno.getClassNode().equals(PACKAGE_SCOPE_TYPE)) {
+                Expression expr = anno.getMember("value");
+                if (expr == null) {
+                    // if empty @PackageScope, node type and target type must be in alignment
+                    return member || (node instanceof ClassNode && type == PackageScopeTarget.CLASS);
+                }
+
+                final boolean[] val = new boolean[1];
+                expr.visit(new CodeVisitorSupport() {
+                    @Override
+                    public void visitPropertyExpression(final PropertyExpression property) {
+                        if (property.getObjectExpression().getText().equals("groovy.transform.PackageScopeTarget")
+                                && property.getPropertyAsString().equals(type.name())) {
+                            val[0] = true;
+                        }
+                    }
+                    @Override
+                    public void visitVariableExpression(final VariableExpression variable) {
+                        if (variable.getName().equals(type.name())) {
+                            ImportNode imp = currentModule.getStaticImports().get(type.name());
+                            if (imp != null && imp.getType().getName().equals("groovy.transform.PackageScopeTarget")) {
+                                val[0] = true;
+                            } else if (imp == null && currentModule.getStaticStarImports().get("groovy.transform.PackageScopeTarget") != null) {
+                                val[0] = true;
+                            }
+                        }
+                    }
+                });
+                return val[0];
+            }
+        }
+        if (member) { // check for @PackageScope(XXX) on class
+            return hasPackageScopeXform(node.getDeclaringClass(), type);
+        }
+        return false;
+    }
+
+    //--------------------------------------------------------------------------
+
     private final Set<JavaFileObject> javaStubCompilationUnitSet = new HashSet<>();
 
     public Set<JavaFileObject> getJavaStubCompilationUnitSet() {
         return javaStubCompilationUnitSet;
+    }
+
+    public void clean() {
+        Stream<JavaFileObject> javaFileObjectStream =
+                javaStubCompilationUnitSet.size() < 2
+                        ? javaStubCompilationUnitSet.stream()
+                        : javaStubCompilationUnitSet.parallelStream();
+
+        javaFileObjectStream.forEach(FileObject::delete);
+        javaStubCompilationUnitSet.clear();
     }
 }
