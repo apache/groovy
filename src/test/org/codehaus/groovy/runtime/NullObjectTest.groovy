@@ -70,6 +70,24 @@ class NullObjectTest extends GroovyTestCase {
         }
     }
 
+    void testInstantiation1() {
+        shouldFail(RuntimeException) {
+            new NullObject()
+        }
+    }
+
+    void testInstantiation2() {
+        shouldFail(RuntimeException) {
+            NullObject.newInstance()
+        }
+    }
+
+    void testInstantiation3() {
+        shouldFail(NoSuchMethodException) {
+            NullObject.getConstructor()
+        }
+    }
+
     void testEMC() {
         def oldMC = null.getMetaClass()
         NullObject.metaClass.hello = { -> "Greeting from null" }
