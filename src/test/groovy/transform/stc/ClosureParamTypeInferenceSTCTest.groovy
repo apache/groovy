@@ -32,7 +32,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             ['a','b'].collect { Date it -> it.toUpperCase() }
         ''',
-        'Expected parameter of type java.lang.String but got java.util.Date'
+        'Expected type java.lang.String for closure parameter: it'
     }
 
     void testInferenceForDGM_collectUsingImplicitIt() {
@@ -247,7 +247,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             void foo(@ClosureParams(value=FromString,options="java.lang.String") Closure cl) { cl.call('foo') }
             foo { Date str -> println str}
         ''',
-        'Expected parameter of type java.lang.String but got java.util.Date'
+        'Expected type java.lang.String for closure parameter: str'
     }
 
     void testFromStringWithGenericType() {
@@ -260,7 +260,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             void foo(@ClosureParams(value=FromString,options="java.util.List<java.lang.String>") Closure cl) { cl.call(['foo']) }
             foo { List<Date> d -> d.each { println it } }
         ''',
-        'Expected parameter of type java.util.List <java.lang.String> but got java.util.List <Date>'
+        'Expected type java.util.List <java.lang.String> for closure parameter: d'
     }
 
     void testFromStringWithTypeParameter1() {
@@ -388,19 +388,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testStringGroovyMethodsFindMethodWithVargs() {
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { all, zip, city -> println all.toUpperCase() }
-        '''
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, String zip, String city -> println all.toUpperCase() }
-        '''
-        shouldFailWithMessages '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, Date zip, String city -> println all.toUpperCase() }
-        ''',
-        'Expected parameter of type java.lang.String but got java.util.Date'
-    }
-
     void testFromStringInSameSourceUnit() {
         assertScript '''import groovy.transform.stc.FromString
             def <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
@@ -412,12 +399,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             doSomething(new Date()) {
                 println it.time
             }
-        '''
-    }
-
-    void testStringGroovyMethodsFindMethodWithList() {
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { List<String> all -> println all*.toUpperCase() }
         '''
     }
 
@@ -445,7 +426,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferenceForDGM_countBy() {
+    void testInferenceForDGM_countByCollection() {
         assertScript '''
             assert ['Groovy','yvoorG'].countBy { it.length() } == [6:2]
         '''
@@ -641,10 +622,18 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testInferenceForDGM_eachMatch() {
+        assertScript '''
+            'foo bar baz'.eachMatch(~/(?m)^(\s*).*\n$/) { all, ws ->
+                all.trim(); ws.length()
+            }
+        '''
+    }
+
     void testInferenceForDGM_eachWithIndexOnMap() {
         assertScript '''
-            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
             [a:'A',bb:'B',ccc:'C'].eachWithIndex { e,i -> assert e.key.toUpperCase() == e.value*(1+i) }
+            [a:'A',bb:'B',ccc:'C'].eachWithIndex { k,v,i -> assert k.toUpperCase() == v*(1+i) }
         '''
     }
     void testInferenceForDGM_eachWithIndexOnIterable() {
@@ -733,24 +722,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferenceForDGM_split() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
-            Collection items2 = ['foo','bar','baz']
-            assert items2.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
-        '''
-    }
-
-    void testInferenceForDGM_sum() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.sum { it.toUpperCase() } == 'FOOBARBAZ'
-            def items2 = ['fi','fo','fum']
-            assert items2.sum('FEE') { it.toUpperCase() } == 'FEEFIFOFUM'
-        '''
-    }
-
     void testInferenceForDGM_findOnCollection() {
         assertScript '''
             assert ['a','bbb','ccc'].find { String it -> it.length() == 3 } == 'bbb'
@@ -773,6 +744,36 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert [a:2,b:4,c:6].find { e -> e.key.toUpperCase()=='C' && 2*e.value==12 } instanceof Map.Entry
             assert [a:2,b:4,c:6].find { it.key.toUpperCase()=='C' && 2*it.value==12 } instanceof Map.Entry
         '''
+    }
+    void testInferenceForDGM_findOnStr() { // GROOVY-11076, GROOVY-11089
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { List<String> all_zip_city -> all_zip_city*.toUpperCase() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String[] all_zip_city -> all_zip_city*.toUpperCase() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { Object[] all_zip_city -> all_zip_city*.toString() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { all, zip, city -> all.size() + zip.size() + city.size() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, String zip, String city -> city + " " + zip }
+        '''
+        assertScript '''
+            "75001 Paris".find(~/\\d{5}/) { String zip -> zip }
+        '''
+
+        shouldFailWithMessages '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, Date zip, String city -> }
+        ''',
+        'Expected type java.lang.String for closure parameter: zip'
+
+        shouldFailWithMessages '''
+            "75001 Paris".find(~/\\d{5}/) { Number zip -> zip }
+        ''',
+        'Expected (java.util.List <java.lang.String>) or (java.lang.String) or (java.lang.String[]) but found (java.lang.Number)'
     }
 
     void testInferenceForDGM_findAllOnCollection() {
@@ -892,47 +893,54 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
      '''
     }
 
-    void testInferenceForDGM_injectOnMap() {
+    void testInferenceForDGM_injectOnCollectionWithInitialValue() {
         assertScript '''
-            assert [a:1,b:2].inject(0) { acc, entry -> acc += entry.value; acc} == 3
-            assert [a:1,b:2].inject(0) { acc, k, v -> acc += v; acc} == 3
+            assert ['a','bb','ccc'].inject(0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
-    void testInferenceForDGM_injectOnArray() {
-        assertScript '''
-            String[] array = ['a','bb','ccc']
-            assert array.inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
-        '''
-    }
+
     void testInferenceForDGM_injectOnArrayWithInitialValue() {
         assertScript '''
             String[] array = ['a','bb','ccc']
             assert array.inject(0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
+
     void testInferenceForDGM_injectOnIteratorWithInitialValue() {
         assertScript '''
             assert ['a','bb','ccc'].iterator().inject(0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
+
     void testInferenceForDGM_injectOnCollection() {
         assertScript '''
             assert ['a','bb','ccc'].inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
         '''
     }
+
+    void testInferenceForDGM_injectOnArray() {
+        assertScript '''
+            String[] array = ['a','bb','ccc']
+            assert array.inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
+        '''
+    }
+
+    void testInferenceForDGM_injectOnCollectionWithInitialValueDirect() {
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+            assert DGM.inject(['a','bb','ccc'],0) { acc, str -> acc += str.length(); acc } == 6
+        '''
+    }
+
     void testInferenceForDGM_injectOnCollectionDirect() {
         assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
             assert DGM.inject(['a','bb','ccc']) { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
         '''
     }
-    void testInferenceForDGM_injectOnCollectionWithInitialValue() {
+
+    void testInferenceForDGM_injectOnMap() {
         assertScript '''
-            assert ['a','bb','ccc'].inject(0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-    void testInferenceForDGM_injectOnCollectionWithInitialValueDirect() {
-        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
-            assert DGM.inject(['a','bb','ccc'], 0) { acc, str -> acc += str.length(); acc } == 6
+            assert [a:1,b:2].inject(0) { acc, entry -> acc += entry.value; acc} == 3
+            assert [a:1,b:2].inject(0) { acc, k, v -> acc += v; acc} == 3
         '''
     }
 
@@ -1079,9 +1087,28 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDGM_slitOnCollection() {
+    void testDGM_splitOnCollection() {
         assertScript '''
-            assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }
+            assert [1,2,3,4].split { it % 2 == 0 } == [[2,4],[1,3]]
+        '''
+        assertScript '''
+            Collection items = ['foo','bar','baz']
+            assert items.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
+        '''
+    }
+    void testDGM_splitOnArray() {
+        assertScript '''
+            String[] items = ['foo','bar','baz']
+            assert items.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
+        '''
+    }
+
+    void testDGM_sum() {
+        assertScript '''
+            String[] items1 = ['foo','bar','baz']
+            assert items1.sum { it.toUpperCase() } == 'FOOBARBAZ'
+            def items2 = ['fi','fo','fum']
+            assert items2.sum('FEE') { it.toUpperCase() } == 'FEEFIFOFUM'
         '''
     }
 
@@ -1176,6 +1203,13 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDGM_withDefaultOnMap() {
+        assertScript '''
+            def map = [a:'A'].withDefault { it.toUpperCase() }
+            assert map.b=='B'
+        '''
+    }
+
     void testDGM_anyOnMap() {
         assertScript '''
             assert [a:10, b:1].any { k,v -> k.length() == v }
@@ -1197,13 +1231,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] strings = ['abc','de','f']
             assert strings.any { it.length() == 2 }
-        '''
-    }
-
-    void testDGM_mapWithDefault() {
-        assertScript '''
-            def map = [a:'A'].withDefault { it.toUpperCase() }
-            assert map.b=='B'
         '''
     }
 
@@ -1238,33 +1265,27 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testInferenceWithSAMTypeCoercion2() {
-        assertScript '''import java.util.concurrent.Callable
+        assertScript '''
             interface Action<T> {
                 void execute(T thing)
             }
 
             class Wrapper<T> {
-
                 private final T thing
-
                 Wrapper(T thing) {
                     this.thing = thing
                 }
-
                 void contravariantTake(Action<? super T> action) {
                     action.execute(thing)
                 }
-
                 void invariantTake(Action<T> action) {
                     action.execute(thing)
                 }
-
             }
 
-            static <T> Wrapper<T> wrap(Callable<T> callable) {
+            static <T> Wrapper<T> wrap(java.util.concurrent.Callable<T> callable) {
                 new Wrapper(callable.call())
             }
-
             static Integer dub(Integer integer) {
                 integer * 2
             }
@@ -1282,6 +1303,8 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    //--------------------------------------------------------------------------
 
     @NotYetImplemented
     void testGroovy6022() {
@@ -1305,7 +1328,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             foo { Integer i -> println i }
         ''',
-        'Expected parameter of type java.lang.Number but got java.lang.Integer'
+        'Expected type java.lang.Number for closure parameter: i'
     }
 
     @NotYetImplemented
@@ -1343,27 +1366,20 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-            def method() {
-                assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
-                assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
-            }
-
-            method()
+            assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
+            assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
         '''
     }
 
     void testGroovy9058() {
         assertScript '''
-            List<Object[]> bar() { [['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[]] }
-
-            def foo() {
-                def result = []
-                List<Object[]> bar = bar()
-                bar.each { row -> result << row[0].toString().toUpperCase() }
-                result
+            List<Object[]> table() {
+                [ ['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[] ]
             }
 
-            assert foo() == ['FEE', 'FO']
+            List<String> result = []
+            table().each { row -> result << row[0].toString().toUpperCase() }
+            assert result == ['FEE', 'FO']
         '''
     }
 
@@ -1559,20 +1575,19 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    static class Java10756 {
-        static <T extends File> Collection<T> getFiles() {
-        }
-    }
-
     void testGroovy10756() {
-        assertScript """import ${Java10756.name.replace('$','.')}
-            Java10756.files?.collect { it.name }
-            //                         ^^ File
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            Pogo10756.files.collect { it.name }
+            //                        ^^ File
         """
 
-        assertScript """import ${Java10756.name.replace('$','.')}
-            def file = Java10756.files?[0]
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            def file = Pogo10756.files[0]
             file?.name
         """
+    }
+
+    static class Pogo10756 {
+        static <T extends File> Collection<T> getFiles() { [] }
     }
 }
