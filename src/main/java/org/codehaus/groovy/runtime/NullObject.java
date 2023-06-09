@@ -31,6 +31,9 @@ public class NullObject extends GroovyObjectSupport {
      * private constructor
      */
     private NullObject() {
+        if (INSTANCE != null) {
+            throw new RuntimeException("Can't instantiate NullObject. Use NullObject.getNullObject()");
+        }
     }
 
     /**
