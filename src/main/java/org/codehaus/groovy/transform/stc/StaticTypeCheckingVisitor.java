@@ -138,7 +138,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -3196,10 +3195,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
         List<ClassNode[]> candidates = new LinkedList<>();
-        for (ClassNode[] signature : closureSignatures) {
+        for (ClassNode[]  signature : closureSignatures) {
             resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
-            if (signature.length == closureParams.length // matching number of parameters
-                    || (closureParams.length > signature.length && last(signature).isArray())) { // vargs
+            if (closureParams.length == signature.length) {
+                candidates.add(signature);
+            }
+            if ((closureParams.length > 1 || closureParams.length == 1 && !isObjectType(closureParams[0].getOriginType()))
+                    && signature.length == 1 && isOrImplements(signature[0],LIST_TYPE)) { // ClosureMetaClass#invokeMethod
+                // list element(s) spread across the closure parameter(s)
+                ClassNode itemType = inferLoopElementType(signature[0]);
+                signature = new ClassNode[closureParams.length];
+                Arrays.fill(signature, itemType);
                 candidates.add(signature);
             }
         }
@@ -3212,13 +3218,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (candidates.size() > 1) {
             for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
-                ClassNode[] inferred = candIt.next();
-                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
-                    ClassNode declaredType = closureParam.getOriginType();
-                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, false)) candIt.remove();
-                }, () -> {
-                    candIt.remove();
-                });
+                ClassNode[] inferredTypes = candIt.next();
+                for (int i = 0; i < inferredTypes.length; i += 1) {
+                    ClassNode inferredType = inferredTypes[i], parameterType = closureParams[i].getOriginType();
+                    if (parameterType.getGenericsTypes() != null) parameterType = GenericsUtils.nonGeneric(parameterType);
+                    if (!typeCheckMethodArgumentWithGenerics(parameterType, inferredType, false)) { candIt.remove(); break; }
+                }
             }
             if (candidates.size() > 1 && resolverClass instanceof ClassExpression) {
                 candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
@@ -3229,36 +3234,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (candidates.size() == 1) {
-            ClassNode[] inferred = candidates.get(0);
-            if (hasImplicitParameter(expression) && inferred.length == 1) {
-                expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferred);
+            ClassNode[] inferredTypes = candidates.get(0);
+            if (inferredTypes.length == 1 && hasImplicitParameter(expression)) {
+                expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferredTypes);
             } else {
-                checkClosureSignature(closureParams, inferred, (closureParam, inferredType) -> {
-                    checkParamType(closureParam, inferredType, false, false);
-                    typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
-                }, () -> {
-                    addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
-                });
-            }
-        }
-    }
-
-    private static void checkClosureSignature(final Parameter[] declared, final ClassNode[] inferred, final BiConsumer<Parameter,ClassNode> consumer, final Runnable reject) {
-        for (int i = 0, j = inferred.length-1, n = declared.length; i < n; i += 1) {
-            ClassNode declaredType = declared[i].getOriginType();
-            ClassNode inferredType = inferred[Math.min(i, j)];
-            if (isDynamicTyped(inferredType)) continue;
-            if (i >= j) { // at or past end
-                if (inferredType.isArray()) {
-                    if (n > inferred.length || !declaredType.isArray() && !isObjectType(declaredType)) {
-                        inferredType = inferredType.getComponentType(); // spread array out
-                    }
-                } else if (i > j) {
-                    reject.run();
-                    continue;
+                for (int i = 0; i < inferredTypes.length; i += 1) {
+                    if (isDynamicTyped(inferredTypes[i])) continue; // GROOVY-6939
+                    checkParamType(closureParams[i], inferredTypes[i], false, false);
+                    typeCheckingContext.controlStructureVariables.put(closureParams[i], inferredTypes[i]);
                 }
             }
-            consumer.accept(declared[i], inferredType);
         }
     }
 

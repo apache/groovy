@@ -1029,16 +1029,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String find(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) final Closure closure) {
         Matcher matcher = pattern.matcher(self.toString());
         if (matcher.find()) {
-            if (hasGroup(matcher)) {
-                int count = matcher.groupCount();
-                List<String> groups = new ArrayList<>(count);
-                for (int i = 0; i <= count; i += 1) {
-                    groups.add(matcher.group(i));
-                }
-                return FormatHelper.toString(closure.call(groups));
-            } else {
-                return FormatHelper.toString(closure.call(matcher.group(0)));
-            }
+            return getReplacement(matcher, closure);
         }
         return null;
     }
@@ -1133,7 +1124,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 list.add((String) iter.next());
             }
         }
-        return new ArrayList<String>(list);
+        return new ArrayList<>(list);
     }
 
     /**
@@ -1518,22 +1509,29 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure specified with replaceAll() to get replacement
      * @return replacement correspond replacement for a match
      */
-    private static String getReplacement(final Matcher matcher, final Closure closure) {
-        if (!hasGroup(matcher)) {
-            return FormatHelper.toString(closure.call(matcher.group()));
+    private static String getReplacement(final Matcher matcher, final Closure<?> closure) {
+        if (hasGroup(matcher)) {
+            List<String> groups = getGroups(matcher);
+            Class<?>[] paramTypes = closure.getParameterTypes();
+            if (paramTypes.length == 1 && paramTypes[0].isArray()) {
+                Class<?> elementType = paramTypes[0].getComponentType();
+                if (elementType.isAssignableFrom(String.class)) { // GROOVY-11076
+                    return FormatHelper.toString(closure.call(groups.toArray()));
+                }
+            }
+            return FormatHelper.toString(closure.call(groups));
+        } else {
+            return FormatHelper.toString(closure.call(matcher.group(0)));
         }
+    }
 
-        int count = matcher.groupCount();
-        List<String> groups = new ArrayList<>();
-        for (int i = 0; i <= count; i++) {
-            groups.add(matcher.group(i));
+    private static List<String> getGroups(final Matcher matcher) {
+        final int n = matcher.groupCount() + 1;
+        List<String> list = new ArrayList<>(n);
+        for (int i = 0; i < n; i += 1) {
+            list.add(matcher.group(i));
         }
-
-        if (closure.getParameterTypes().length == 1
-                && closure.getParameterTypes()[0] == Object[].class) {
-            return FormatHelper.toString(closure.call(groups.toArray()));
-        }
-        return FormatHelper.toString(closure.call(groups));
+        return list;
     }
 
     /**
@@ -1792,13 +1790,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 found = false;
 
                 if (hasGroup(self)) {
-                    // are we using groups?
-                    // yes, so return the specified group as list
-                    List<String> list = new ArrayList<String>(self.groupCount());
-                    for (int i = 0; i <= self.groupCount(); i += 1) {
-                        list.add(self.group(i));
-                    }
-                    return list;
+                    // yes, so return the specified group list
+                    return getGroups(self);
                 } else {
                     // not using groups, so return the nth
                     // occurrence of the pattern
