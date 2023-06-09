@@ -2908,7 +2908,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
                         }
-                        if (isClosureWithType(targetType)) {
+                        if (coerceToMethod && targetType.isInterface()) { // @FunctionalInterface
+                            storeInferredReturnType(expression, GenericsUtils.parameterizeSAM(targetType).getV2());
+                        } else if (isClosureWithType(targetType)) {
                             storeInferredReturnType(expression, getCombinedBoundType(targetType.getGenericsTypes()[0]));
                         }
                     } else if (expression instanceof MethodReferenceExpression) {

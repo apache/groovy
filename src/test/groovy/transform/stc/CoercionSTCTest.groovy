@@ -225,7 +225,13 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type boolean for closure expecting java.lang.Number'
 
         shouldFailWithMessages '''
-            def s = (() -> ['']) as Supplier<Number>
+            def foo(Supplier<Number> s) { s.get() }
+            def n = foo { -> false }
+        ''',
+        'Cannot return value of type boolean for closure expecting java.lang.Number'
+
+        shouldFailWithMessages '''
+            def s = (() -> [""]) as Supplier<Number>
         ''',
         'Cannot return value of type java.util.ArrayList<java.lang.String> for lambda expecting java.lang.Number'
     }
