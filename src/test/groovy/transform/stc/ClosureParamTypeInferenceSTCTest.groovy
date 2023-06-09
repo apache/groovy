@@ -753,24 +753,33 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
     void testInferenceForDGM_findOnStr() { // GROOVY-11076, GROOVY-11089
         assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { List<String> all_zip_city -> all_zip_city*.toUpperCase() }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { List<String> all_zip_city -> all_zip_city*.toUpperCase() }
         '''
         assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String[] all_zip_city -> all_zip_city*.toUpperCase() }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String[] all_zip_city -> all_zip_city*.toUpperCase() }
         '''
         assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { Object[] all_zip_city -> all_zip_city*.toString() }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { Object[] all_zip_city -> all_zip_city*.toString() }
         '''
         assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { all, zip, city -> all.size() + zip.size() + city.size() }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { all, zip, city -> all.size() + zip.size() + city.size() }
         '''
         assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, String zip, String city -> city + " " + zip }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, String zip, String city -> city + " " + zip }
         '''
+        assertScript '''
+            "75001 Paris".find(~/\\d{5}/) { String zip -> zip }
+        '''
+
         shouldFailWithMessages '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, Date zip, String city -> }
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, Date zip, String city -> }
         ''',
         'Expected type java.lang.String for closure parameter: zip'
+
+        shouldFailWithMessages '''
+            "75001 Paris".find(~/\\d{5}/) { Number zip -> zip }
+        ''',
+        'Expected (java.util.List<java.lang.String>) or (java.lang.String) or (java.lang.String[]) but found (java.lang.Number)'
     }
 
     void testInferenceForDGM_findAllOnCollection() {
@@ -1200,6 +1209,13 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDGM_withDefaultOnMap() {
+        assertScript '''
+            def map = [a:'A'].withDefault { it.toUpperCase() }
+            assert map.b=='B'
+        '''
+    }
+
     void testDGM_anyOnMap() {
         assertScript '''
             assert [a:10, b:1].any { k,v -> k.length() == v }
@@ -1221,13 +1237,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] strings = ['abc','de','f']
             assert strings.any { it.length() == 2 }
-        '''
-    }
-
-    void testDGM_mapWithDefault() {
-        assertScript '''
-            def map = [a:'A'].withDefault { it.toUpperCase() }
-            assert map.b=='B'
         '''
     }
 
