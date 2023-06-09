@@ -1029,16 +1029,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String find(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) final Closure closure) {
         Matcher matcher = pattern.matcher(self.toString());
         if (matcher.find()) {
-            if (hasGroup(matcher)) {
-                int count = matcher.groupCount();
-                List<String> groups = new ArrayList<>(count);
-                for (int i = 0; i <= count; i += 1) {
-                    groups.add(matcher.group(i));
-                }
-                return FormatHelper.toString(closure.call(groups));
-            } else {
-                return FormatHelper.toString(closure.call(matcher.group(0)));
-            }
+            return getReplacement(matcher, closure);
         }
         return null;
     }
@@ -1133,7 +1124,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 list.add((String) iter.next());
             }
         }
-        return new ArrayList<String>(list);
+        return new ArrayList<>(list);
     }
 
     /**
@@ -1507,33 +1498,40 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Gets a replacement corresponding to the matched pattern for {@link org.codehaus.groovy.runtime.StringGroovyMethods#replaceAll(CharSequence,Pattern,Closure)}.
      * <p>
-     * The closure take parameter:
+     * The closure is called with a parameter determined as follows:
      * <ul>
-     * <li>Whole of match if the pattern include no capturing group</li>
-     * <li>Object[] of capturing groups if the closure takes Object[] as parameter</li>
-     * <li>List of capturing groups</li>
+     * <li>The whole of the match if the pattern includes no capturing group</li>
+     * <li>An Object[] of capturing groups if the closure takes Object[] as parameter</li>
+     * <li>A List of capturing groups</li>
      * </ul>
      *
      * @param matcher the matcher object used for matching
      * @param closure specified with replaceAll() to get replacement
      * @return replacement correspond replacement for a match
      */
-    private static String getReplacement(final Matcher matcher, final Closure closure) {
-        if (!hasGroup(matcher)) {
-            return FormatHelper.toString(closure.call(matcher.group()));
+    private static String getReplacement(final Matcher matcher, final Closure<?> closure) {
+        if (hasGroup(matcher)) {
+            List<String> groups = getGroups(matcher);
+            Class<?>[] paramTypes = closure.getParameterTypes();
+            if (paramTypes.length == 1 && paramTypes[0].isArray()) {
+                Class<?> elementType = paramTypes[0].getComponentType();
+                if (elementType.isAssignableFrom(String.class)) { // GROOVY-11076
+                    return FormatHelper.toString(closure.call(groups.toArray()));
+                }
+            }
+            return FormatHelper.toString(closure.call(groups));
+        } else {
+            return FormatHelper.toString(closure.call(matcher.group(0)));
         }
+    }
 
-        int count = matcher.groupCount();
-        List<String> groups = new ArrayList<String>();
-        for (int i = 0; i <= count; i++) {
-            groups.add(matcher.group(i));
+    private static List<String> getGroups(final Matcher matcher) {
+        final int n = matcher.groupCount() + 1;
+        List<String> list = new ArrayList<>(n);
+        for (int i = 0; i < n; i += 1) {
+            list.add(matcher.group(i));
         }
-
-        if (closure.getParameterTypes().length == 1
-                && closure.getParameterTypes()[0] == Object[].class) {
-            return FormatHelper.toString(closure.call(groups.toArray()));
-        }
-        return FormatHelper.toString(closure.call(groups));
+        return list;
     }
 
     /**
@@ -1792,13 +1790,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 found = false;
 
                 if (hasGroup(self)) {
-                    // are we using groups?
-                    // yes, so return the specified group as list
-                    List<String> list = new ArrayList<String>(self.groupCount());
-                    for (int i = 0; i <= self.groupCount(); i += 1) {
-                        list.add(self.group(i));
-                    }
-                    return list;
+                    // yes, so return the specified group list
+                    return getGroups(self);
                 } else {
                     // not using groups, so return the nth
                     // occurrence of the pattern
@@ -2266,6 +2259,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Replaces each substring of this CharSequence that matches the given
      * regular expression with the given replacement.
+     * <p>
+     * <pre class="groovyTestCase">
+     * assert "foo".replaceAll('o', 'X') == 'fXX'
+     * </pre>
      *
      * @param self        a CharSequence
      * @param regex       the capturing regex
@@ -2325,14 +2322,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * compiled regular expression with the given replacement.
      * <p>
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
-     * replacement string may cause the results to be different than if it were
+     * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceAll}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
      * meaning of these characters, if desired.
      * <p>
      * <pre class="groovyTestCase">
-     * assert "foo".replaceAll('o', 'X') == 'fXX'
+     * assert "foo".replaceAll(~'o', 'X') == 'fXX'
      * </pre>
      *
      * @param   self the CharSequence that is to be matched
@@ -2391,7 +2388,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(s.length() + 16);
             do {
                 String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
@@ -2448,7 +2445,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * compiled regular expression with the given replacement.
      * <p>
      * Note that backslashes ({@code \}) and dollar signs ({@code $}) in the
-     * replacement string may cause the results to be different than if it were
+     * replacement string may cause the results to be different from if it were
      * being treated as a literal replacement string; see
      * {@link java.util.regex.Matcher#replaceFirst}.
      * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
@@ -2490,7 +2487,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuffer sb = new StringBuffer(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(s.length() + 16);
             String replacement = getReplacement(matcher, closure);
             matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             matcher.appendTail(sb);

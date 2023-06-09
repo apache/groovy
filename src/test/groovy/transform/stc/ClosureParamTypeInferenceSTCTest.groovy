@@ -388,19 +388,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testStringGroovyMethodsFindMethodWithVargs() {
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { all, zip, city -> println all.toUpperCase() }
-        '''
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, String zip, String city -> println all.toUpperCase() }
-        '''
-        shouldFailWithMessages '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { String all, Date zip, String city -> println all.toUpperCase() }
-        ''',
-        'Expected type java.lang.String for closure parameter: zip'
-    }
-
     void testFromStringInSameSourceUnit() {
         assertScript '''import groovy.transform.stc.FromString
             public <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
@@ -412,12 +399,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             doSomething(new Date()) {
                 println it.time
             }
-        '''
-    }
-
-    void testStringGroovyMethodsFindMethodWithList() {
-        assertScript '''
-            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { List<String> all -> println all*.toUpperCase() }
         '''
     }
 
@@ -445,7 +426,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferenceForDGM_countBy() {
+    void testInferenceForDGM_countByCollection() {
         assertScript '''
             assert ['Groovy','yvoorG'].countBy { it.length() } == [6:2]
         '''
@@ -750,24 +731,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInferenceForDGM_split() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
-            Collection items2 = ['foo','bar','baz']
-            assert items2.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
-        '''
-    }
-
-    void testInferenceForDGM_sum() {
-        assertScript '''
-            String[] items1 = ['foo','bar','baz']
-            assert items1.sum { it.toUpperCase() } == 'FOOBARBAZ'
-            def items2 = ['fi','fo','fum']
-            assert items2.sum('FEE') { it.toUpperCase() } == 'FEEFIFOFUM'
-        '''
-    }
-
     void testInferenceForDGM_findOnCollection() {
         assertScript '''
             assert ['a','bbb','ccc'].find { String it -> it.length() == 3 } == 'bbb'
@@ -789,6 +752,30 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert [a:2,b:4,c:6].find { k, v -> k.toUpperCase()=='C' && 2*v==12 } instanceof Map.Entry
             assert [a:2,b:4,c:6].find { e -> e.key.toUpperCase()=='C' && 2*e.value==12 } instanceof Map.Entry
             assert [a:2,b:4,c:6].find { it.key.toUpperCase()=='C' && 2*it.value==12 } instanceof Map.Entry
+        '''
+    }
+    void testInferenceForDGM_findOnStr() { // GROOVY-11076, GROOVY-11089
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { List<String> all_zip_city -> all_zip_city*.toUpperCase() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String[] all_zip_city -> all_zip_city*.toUpperCase() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { Object[] all_zip_city -> all_zip_city*.toString() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { all, zip, city -> all.size() + zip.size() + city.size() }
+        '''
+        assertScript '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, String zip, String city -> city + " " + zip }
+        '''
+        shouldFailWithMessages '''
+            "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, Date zip, String city -> }
+        ''',
+        'Expected type java.lang.String for closure parameter: zip'
+        assertScript '''
+            "75001 Paris".find(~/\\d{5}/) { String zip -> zip }
         '''
     }
 
@@ -1103,9 +1090,28 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDGM_slitOnCollection() {
+    void testDGM_splitOnCollection() {
         assertScript '''
-            assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }
+            assert [1,2,3,4].split { it % 2 == 0 } == [[2,4],[1,3]]
+        '''
+        assertScript '''
+            Collection items = ['foo','bar','baz']
+            assert items.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
+        '''
+    }
+    void testDGM_splitOnArray() {
+        assertScript '''
+            String[] items = ['foo','bar','baz']
+            assert items.split { it.startsWith('ba') } == [['bar', 'baz'], ['foo']]
+        '''
+    }
+
+    void testDGM_sum() {
+        assertScript '''
+            String[] items1 = ['foo','bar','baz']
+            assert items1.sum { it.toUpperCase() } == 'FOOBARBAZ'
+            def items2 = ['fi','fo','fum']
+            assert items2.sum('FEE') { it.toUpperCase() } == 'FEEFIFOFUM'
         '''
     }
 
@@ -1200,6 +1206,13 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testDGM_withDefaultOnMap() {
+        assertScript '''
+            def map = [a:'A'].withDefault { it.toUpperCase() }
+            assert map.b=='B'
+        '''
+    }
+
     void testDGM_anyOnMap() {
         assertScript '''
             assert [a:10, b:1].any { k,v -> k.length() == v }
@@ -1221,13 +1234,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] strings = ['abc','de','f']
             assert strings.any { it.length() == 2 }
-        '''
-    }
-
-    void testDGM_mapWithDefault() {
-        assertScript '''
-            def map = [a:'A'].withDefault { it.toUpperCase() }
-            assert map.b=='B'
         '''
     }
 
