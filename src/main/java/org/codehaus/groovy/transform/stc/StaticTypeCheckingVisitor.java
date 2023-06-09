@@ -3090,6 +3090,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (candidates.size() > 1) {
+            closureSignatures = new ArrayList<>(candidates);
             for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
                 ClassNode[] inferredTypes = candIt.next();
                 for (int i = 0; i < inferredTypes.length; i += 1) {
@@ -3101,7 +3102,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (candidates.size() > 1 && resolverClass instanceof ClassExpression) {
                 candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
             }
-            if (candidates.size() > 1) {
+            if (candidates.isEmpty()) {
+                String actual = toMethodParametersString("", extractTypesFromParameters(closureParams));
+                String expect = closureSignatures.stream().map(sig -> toMethodParametersString("",sig)).collect(Collectors.joining(" or "));
+                addStaticTypeError("Incorrect parameter type(s). Expected " + expect + " but found " + actual, expression); // at least one fails
+            } else if (candidates.size() > 1) {
                 addError("Ambiguous prototypes for closure. More than one target method matches. Please use explicit argument types.", expression);
             }
         }

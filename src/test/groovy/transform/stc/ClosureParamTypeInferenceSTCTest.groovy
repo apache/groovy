@@ -770,13 +770,19 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, String zip, String city -> city + " " + zip }
         '''
+        assertScript '''
+            "75001 Paris".find(~/\\d{5}/) { String zip -> zip }
+        '''
+
         shouldFailWithMessages '''
             "75001 Paris".find(/(\\d{5})\\s(\\w+)/) { String all, Date zip, String city -> }
         ''',
         'Expected type java.lang.String for closure parameter: zip'
-        assertScript '''
-            "75001 Paris".find(~/\\d{5}/) { String zip -> zip }
-        '''
+
+        shouldFailWithMessages '''
+            "75001 Paris".find(~/\\d{5}/) { Number zip -> zip }
+        ''',
+        'Expected (java.util.List<java.lang.String>) or (java.lang.String) or (java.lang.String[]) but found (java.lang.Number)'
     }
 
     void testInferenceForDGM_findAllOnCollection() {
