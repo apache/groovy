@@ -167,6 +167,34 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incorrect number of parameters. Expected 1 or 2 but found 3'
     }
 
+    // GROOVY-11090
+    void testFromStringWithGenericType4() {
+        assertScript '''
+            void foo(@ClosureParams(value=FromString, options="List<Tuple2<String,Number>>") Closure c) {
+                c.call(Collections.singletonList(Tuple.tuple("",(Number)42)))
+            }
+            foo {
+                it.each { string, number ->
+                    number.doubleValue()
+                    string.toUpperCase()
+                }
+            }
+        '''
+    }
+
+    void testFromStringWithGenericType5() {
+        assertScript '''
+            void foo(@ClosureParams(value=FromString, options="Optional<Tuple2<String,? extends Number>>") Closure c) {
+                c(Optional.of(Tuple.tuple("",42)))
+            }
+            foo { opt ->
+                opt.ifPresent {
+                    it.v2.doubleValue()
+                }
+            }
+        '''
+    }
+
     void testFromStringWithTypeParameter1() {
         assertScript '''
             def <T> void foo(T t, @ClosureParams(value=FromString, options="T") Closure c) { c.call(t) }
