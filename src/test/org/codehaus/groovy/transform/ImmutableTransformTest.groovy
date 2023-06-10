@@ -825,7 +825,7 @@ final class ImmutableTransformTest {
         def tester = new GroovyClassLoader().parseClass('''\
             |@groovy.transform.Immutable(copyWith = true)
             |class Person {
-            |    String first, last
+            |    String firstname, lastname
             |    List<Person> copyWith( i ) {
             |        (1..i).collect { this }
             |    }
@@ -833,13 +833,13 @@ final class ImmutableTransformTest {
             |'''.stripMargin() )
 
         // One instance
-        def tim = tester.newInstance( first:'tim', last:'yates' )
-        assert tim.first == 'tim'
+        def tim = tester.newInstance( firstname:'tim', lastname:'yates' )
+        assert tim.firstname == 'tim'
 
         // Check original copyWith remains
         def result = tim.copyWith( 2 )
         assert result.size() == 2
-        assert result.first == [ 'tim', 'tim' ]
+        assert result.firstname == [ 'tim', 'tim' ]
     }
 
     @Test
@@ -848,7 +848,7 @@ final class ImmutableTransformTest {
             |@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.CompileStatic
             |class Person {
-            |    String first, last
+            |    String firstname, lastname
             |    List<Person> copyWith( i ) {
             |        (1..i).collect { this }
             |    }
@@ -856,13 +856,13 @@ final class ImmutableTransformTest {
             |'''.stripMargin() )
 
         // One instance
-        def tim = tester.newInstance( first:'tim', last:'yates' )
-        assert tim.first == 'tim'
+        def tim = tester.newInstance( firstname:'tim', lastname:'yates' )
+        assert tim.firstname == 'tim'
 
         // Check original copyWith remains
         def result = tim.copyWith( 2 )
         assert result.size() == 2
-        assert result.first == [ 'tim', 'tim' ]
+        assert result.firstname == [ 'tim', 'tim' ]
     }
 
     @Test
@@ -871,7 +871,7 @@ final class ImmutableTransformTest {
             |@groovy.transform.Immutable(copyWith = true)
             |@groovy.transform.TypeChecked
             |class Person {
-            |    String first, last
+            |    String firstname, lastname
             |    List<Person> copyWith( i ) {
             |        (1..i).collect { this }
             |    }
@@ -879,13 +879,13 @@ final class ImmutableTransformTest {
             |'''.stripMargin() )
 
         // One instance
-        def tim = tester.newInstance( first:'tim', last:'yates' )
-        assert tim.first == 'tim'
+        def tim = tester.newInstance( firstname:'tim', lastname:'yates' )
+        assert tim.firstname == 'tim'
 
         // Check original copyWith remains
         def result = tim.copyWith( 2 )
         assert result.size() == 2
-        assert result.first == [ 'tim', 'tim' ]
+        assert result.firstname == [ 'tim', 'tim' ]
     }
 
     // GROOVY-6293
