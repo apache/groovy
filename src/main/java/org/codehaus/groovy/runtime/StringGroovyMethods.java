@@ -2401,7 +2401,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuilder sb = new StringBuilder(s.length() + 16);
+            final StringBuffer sb = new StringBuffer(s.length() + 16);
             do {
                 String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
@@ -2500,7 +2500,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         final String s = self.toString();
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
-            final StringBuilder sb = new StringBuilder(s.length() + 16);
+            final StringBuffer sb = new StringBuffer(s.length() + 16);
             String replacement = getReplacement(matcher, closure);
             matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             matcher.appendTail(sb);
