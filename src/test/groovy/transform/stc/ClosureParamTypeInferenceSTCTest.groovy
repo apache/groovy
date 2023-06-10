@@ -146,6 +146,27 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11090
+    void testFromStringWithGenericType3() {
+        String foo = '''
+            void foo(@ClosureParams(value=FromString, options="Tuple2<String,Number>") Closure c) {
+                c.call( new Tuple2("",42) )
+            }
+        '''
+
+        assertScript foo + '''
+            foo { string, number ->
+                number.doubleValue()
+                string.toUpperCase()
+            }
+        '''
+
+        shouldFailWithMessages foo + '''
+            foo { one, two, xxx -> }
+        ''',
+        'Incorrect number of parameters. Expected 1 or 2 but found 3'
+    }
+
     void testFromStringWithTypeParameter1() {
         assertScript '''
             def <T> void foo(T t, @ClosureParams(value=FromString, options="T") Closure c) { c.call(t) }
@@ -756,6 +777,23 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             assert [1234, 3.14].collect { it.intValue() } == [1234,3]
         '''
+    }
+    void testDGM_collectOnList() { // GROOVY-11090
+        assertScript '''
+            def list_of_tuple2 = ['a','b'].withIndex()
+            def list_of_string = list_of_tuple2.collect { it.v1 + it.v2 }
+
+            assert list_of_string == ['a0','b1']
+        '''
+
+        for (spec in ['s,i','String s,int i']) {
+            assertScript """
+                def list_of_tuple2 = ['a','b'].withIndex()
+                def list_of_string = list_of_tuple2.collect { $spec -> s + i }
+
+                assert list_of_string == ['a0','b1']
+            """
+        }
     }
     void testDGM_collectOnMap() {
         assertScript '''
@@ -1722,7 +1760,19 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDGM_with() {
+    void testDGM_with0() { // GROOVY-11090: edge case
+        assertScript '''
+            Tuple0.INSTANCE.with { -> }
+        '''
+        assertScript '''
+            Tuple0.INSTANCE.with {
+                assert it instanceof List
+                assert it instanceof Tuple
+                assert it === Tuple0.INSTANCE
+            }
+        '''
+    }
+    void testDGM_with1() {
         assertScript '''
             "string".with { it.toUpperCase() }
         '''
