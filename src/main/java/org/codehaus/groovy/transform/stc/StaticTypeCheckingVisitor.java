@@ -128,6 +128,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -335,12 +336,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private   static final ClassNode SET_TYPE = ClassHelper.make(Set.class);
 
+    private static List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
+
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
-    // Cache closure call methods
-    public static final MethodNode CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
+    public static final MethodNode CLOSURE_CALL_NO_ARG  = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
     public static final MethodNode CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE, "arg")});
-    public static final MethodNode CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE.makeArray(), "args")});
+    public static final MethodNode CLOSURE_CALL_VARGS   = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE.makeArray(), "args")});
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         @Override
@@ -3025,7 +3027,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression value = annotation.getMember("value");
                 Expression options = annotation.getMember("options");
                 Expression conflictResolver = annotation.getMember("conflictResolutionStrategy");
-                doInferClosureParameterTypes(receiver, arguments, expression, method, value, conflictResolver, options);
+                processClosureParams(receiver, arguments, expression, method, value, conflictResolver, options);
             }
         } else if (isSAMType(target.getOriginType())) { // SAM-type coercion
             Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
@@ -3158,12 +3160,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addStaticTypeError("Expected type " + prettyPrintType(target) + " for " + (lambda ? "lambda" : "closure") + " parameter: " + source.getName(), source);
     }
 
-    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
+    private void processClosureParams(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
         Parameter[] closureParams = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(DYNAMIC_TYPE,"it")} : getParametersSafe(expression);
 
-        List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
+        List<ClassNode[]> closureSignatures = new LinkedList<>(getSignaturesFromHint(selectedMethod, hintClass, options, expression));
         List<ClassNode[]> candidates = new LinkedList<>();
-        for (ClassNode[]  signature : closureSignatures) {
+        for (ListIterator<ClassNode[]> it = closureSignatures.listIterator(); it.hasNext(); ) { ClassNode[] signature = it.next();
             resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
             if (closureParams.length == signature.length) {
                 candidates.add(signature);
@@ -3171,11 +3173,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if ((closureParams.length > 1 || closureParams.length == 1 && !closureParams[0].getOriginType().equals(OBJECT_TYPE))
                     && signature.length == 1 && isOrImplements(signature[0], LIST_TYPE)) { // see ClosureMetaClass#invokeMethod
                 // list element(s) spread across the closure parameter(s)
+                int itemCount = TUPLE_TYPES.indexOf(signature[0]);
+                if (itemCount >= 0) { // GROOVY-11090: Tuple[0-16]
+                    if (itemCount != closureParams.length) {
+                        // for param count error messages
+                        it.add(new ClassNode[itemCount]);
+                        continue;
+                    }
+                    GenericsType[] spec = signature[0].getGenericsTypes();
+                    if (spec != null) { // edge case: Tuple0 falls through
+                        signature = Arrays.stream(spec).map(GenericsType::getType).toArray(ClassNode[]::new);
+                        candidates.add(signature);
+                        continue;
+                    }
+                }
                 ClassNode itemType = inferLoopElementType(signature[0]);
                 signature = new ClassNode[closureParams.length];
                 Arrays.fill(signature, itemType);
                 candidates.add(signature);
             }
+        }
+
+        if (candidates.isEmpty() && !closureSignatures.isEmpty()) {
+            String spec = closureSignatures.stream().mapToInt(sig -> sig.length).distinct()
+                                           .sorted().mapToObj(Integer::toString).collect(Collectors.joining(" or "));
+            addError("Incorrect number of parameters. Expected " + spec + " but found " + closureParams.length, expression);
         }
 
         if (candidates.size() > 1) {
