@@ -148,6 +148,55 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11090, GROOVY-11092
+    void testFromStringWithGenericType3() {
+        String foo = '''
+            void foo(@ClosureParams(value=FromString, options="Tuple2<String,Number>") Closure c) {
+                c.call( new Tuple2("",42) )
+            }
+        '''
+/*
+        assertScript foo + '''
+            foo { string, number ->
+                number.doubleValue()
+                string.toUpperCase()
+            }
+        '''
+*/
+        shouldFailWithMessages foo + '''
+            foo { one, two, xxx -> }
+        ''',
+        'Incorrect number of parameters. Expected 1 or 2 but found 3'
+    }
+
+    // GROOVY-11090
+    void testFromStringWithGenericType4() {
+        assertScript '''
+            void foo(@ClosureParams(value=FromString, options="List<Tuple2<String,Number>>") Closure c) {
+                c.call(Collections.singletonList(Tuple.tuple("",(Number)42)))
+            }
+            foo {
+                it.each { string, number ->
+                    number.doubleValue()
+                    string.toUpperCase()
+                }
+            }
+        '''
+    }
+
+    void testFromStringWithGenericType5() {
+        assertScript '''
+            void foo(@ClosureParams(value=FromString, options="Optional<Tuple2<String,? extends Number>>") Closure c) {
+                c(Optional.of(Tuple.tuple("",42)))
+            }
+            foo { opt ->
+                opt.ifPresent {
+                    it.v2.doubleValue()
+                }
+            }
+        '''
+    }
+
     void testFromStringWithTypeParameter1() {
         assertScript '''
             def <T> void foo(T t, @ClosureParams(value=FromString, options="T") Closure c) { c.call(t) }
@@ -287,6 +336,107 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             tor.foo { r, e -> r.times { e.each { it.bar() } } }
             tor.foo { it.times { println 'polymorphic' } }
         '''
+    }
+
+    // GROOVY-6939
+    @NotYetImplemented
+    void testParamCountCheck1() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.each { x, y -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-6939
+    @NotYetImplemented
+    void testParamCountCheck2() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.eachWithIndex { x, y, z -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 2 but found 3'
+    }
+
+    // GROOVY-6939
+    @NotYetImplemented
+    void testParamCountCheck3() {
+        shouldFailWithMessages '''
+            def m(o) {
+                o.eachWithIndex { print it }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 2 but found 1'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck4() {
+        shouldFailWithMessages '''
+            def m(... array) {
+                array.each { x, y -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-6939
+    void testParamCountCheck5() {
+        shouldFailWithMessages '''
+            def m() {
+                [:].each { -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 or 2 but found 0'
+    }
+
+    // GROOVY-8499
+    void testParamCountCheck6() {
+        assertScript '''
+            def result = ['ab'.chars,'12'.chars].combinations { l,n -> "$l$n" }
+            assert result == ['a1','b1','a2','b2']
+        '''
+        // cannot know in advance how many list elements
+        def err = shouldFail '''
+            ['ab'.chars,'12'.chars].combinations((l,n,x) -> "$l$n")
+        '''
+        assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
+    }
+
+    // GROOVY-8816
+    void testParamCountCheck7() {
+        shouldFailWithMessages '''
+            def m() {
+                [].each { -> }
+            }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 0'
+    }
+
+    // GROOVY-9854
+    void testParamCountCheck8() {
+        shouldFailWithMessages '''
+            switch (42) { case { -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 0'
+    }
+
+    // GROOVY-9854
+    void testParamCountCheck9() {
+        shouldFailWithMessages '''
+            switch (42) { case { i, j -> }: break; }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
+    }
+
+    // GROOVY-11089
+    void testParamCountCheck10() {
+        shouldFailWithMessages '''
+            def array = new String[]{'a','b'}
+            array.with { a,b -> }
+        ''',
+        'Incorrect number of parameters. Expected 1 but found 2'
     }
 
     // GROOVY-7141
@@ -497,16 +647,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            switch (42) { case { -> }: break; }
-        ''',
-        'Incorrect number of parameters. Expected 1 but found 0'
-
-        shouldFailWithMessages '''
-            switch (42) { case { i, j -> }: break; }
-        ''',
-        'Incorrect number of parameters. Expected 1 but found 2'
-
-        shouldFailWithMessages '''
             switch (42) { case { String s -> }: break; }
         ''',
         'Expected type java.lang.Integer for closure parameter: s'
@@ -676,7 +816,24 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert [1234, 3.14].collect { it.intValue() } == [1234,3]
         '''
     }
-    void testDGM_collectMap() {
+    void testDGM_collectOnList() { // GROOVY-11090
+        assertScript '''
+            def list_of_tuple2 = ['a','b'].withIndex()
+            def list_of_string = list_of_tuple2.collect { it.v1 + it.v2 }
+
+            assert list_of_string == ['a0','b1']
+        '''
+
+        for (spec in ['s,i','String s,int i']) {
+            assertScript """
+                def list_of_tuple2 = ['a','b'].withIndex()
+                def list_of_string = list_of_tuple2.collect { $spec -> s + i }
+
+                assert list_of_string == ['a0','b1']
+            """
+        }
+    }
+    void testDGM_collectOnMap() {
         assertScript '''
             assert [a: 'foo',b:'bar'].collect { k,v -> k+v } == ['afoo','bbar']
             assert [a: 'foo',b:'bar'].collect { e -> e.key+e.value } == ['afoo','bbar']
@@ -1642,7 +1799,19 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDGM_with() {
+    void testDGM_with0() { // GROOVY-11090: edge case
+        assertScript '''
+            Tuple0.INSTANCE.with { -> }
+        '''
+        assertScript '''
+            Tuple0.INSTANCE.with {
+                assert it instanceof List
+                assert it instanceof Tuple
+                assert it === Tuple0.INSTANCE
+            }
+        '''
+    }
+    void testDGM_with1() {
         assertScript '''
             "string".with { it.toUpperCase() }
         '''

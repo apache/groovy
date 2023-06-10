@@ -129,6 +129,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -2933,7 +2934,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression value = annotation.getMember("value");
                 Expression options = annotation.getMember("options");
                 Expression conflictResolver = annotation.getMember("conflictResolutionStrategy");
-                doInferClosureParameterTypes(receiver, arguments, expression, method, value, conflictResolver, options);
+                processClosureParams(receiver, arguments, expression, method, value, conflictResolver, options);
             }
         } else if (isSAMType(target.getOriginType())) { // SAM-type coercion
             boolean isConstructor = method.isConstructor();
@@ -3068,24 +3069,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         throw new IllegalArgumentException("Unexpected options for @ClosureParams:" + options);
     }
 
-    private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
-        Parameter[] closureParams = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(dynamicType(),"it")} : getParametersSafe(expression);
+    private void processClosureParams(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
+        Parameter[] parameters = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(dynamicType(),"it")} : getParametersSafe(expression);
 
-        List<ClassNode[]> closureSignatures = getSignaturesFromHint(selectedMethod, hintClass, options, expression);
+        List<ClassNode[]> closureSignatures = new LinkedList<>(getSignaturesFromHint(selectedMethod, hintClass, options, expression));
         List<ClassNode[]> candidates = new LinkedList<>();
-        for (ClassNode[]  signature : closureSignatures) {
+        for (ListIterator<ClassNode[]> it = closureSignatures.listIterator(); it.hasNext(); ) { ClassNode[] signature = it.next();
             resolveGenericsFromTypeHint(receiver, arguments, selectedMethod, signature);
-            if (closureParams.length == signature.length) {
+            if (parameters.length == signature.length) {
                 candidates.add(signature);
             }
-            if ((closureParams.length > 1 || closureParams.length == 1 && !isObjectType(closureParams[0].getOriginType()))
-                    && signature.length == 1 && isOrImplements(signature[0],LIST_TYPE)) { // ClosureMetaClass#invokeMethod
-                // list element(s) spread across the closure parameter(s)
+            if ((parameters.length != 1 || !isObjectType(parameters[0].getOriginType()))
+                    && signature.length == 1 && isOrImplements(signature[0], LIST_TYPE)) {
+                // list element(s) spread across closure parameter(s) : ClosureMetaClass
+                int itemCount = TUPLE_TYPES.indexOf(signature[0]);
+                if (itemCount >= 0) { // GROOVY-11090: Tuple[0-16]
+                    if (itemCount != parameters.length) {
+                        // for param count error messages
+                        it.add(new ClassNode[itemCount]);
+                        continue;
+                    }
+                    GenericsType[] spec = signature[0].getGenericsTypes();
+                    if (spec != null) { // edge case: Tuple0 falls through
+                        signature = Arrays.stream(spec).map(GenericsType::getType).toArray(ClassNode[]::new);
+                        candidates.add(signature);
+                        continue;
+                    }
+                }
                 ClassNode itemType = inferLoopElementType(signature[0]);
-                signature = new ClassNode[closureParams.length];
+                signature = new ClassNode[parameters.length];
                 Arrays.fill(signature, itemType);
                 candidates.add(signature);
             }
+        }
+
+        if (candidates.isEmpty() && !closureSignatures.isEmpty()) {
+            String spec = closureSignatures.stream().mapToInt(sig -> sig.length).distinct()
+                                           .sorted().mapToObj(Integer::toString).collect(Collectors.joining(" or "));
+            addError("Incorrect number of parameters. Expected " + spec + " but found " + parameters.length, expression);
         }
 
         if (candidates.size() > 1) {
@@ -3093,7 +3114,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
                 ClassNode[] inferredTypes = candIt.next();
                 for (int i = 0; i < inferredTypes.length; i += 1) {
-                    ClassNode inferredType = inferredTypes[i], parameterType = closureParams[i].getOriginType();
+                    ClassNode inferredType = inferredTypes[i], parameterType = parameters[i].getOriginType();
                     if (parameterType.getGenericsTypes() != null) parameterType = GenericsUtils.nonGeneric(parameterType);
                     if (!typeCheckMethodArgumentWithGenerics(parameterType, inferredType, false)) { candIt.remove(); break; }
                 }
@@ -3102,7 +3123,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 candidates = resolveWithResolver(candidates, receiver, arguments, expression, selectedMethod, resolverClass, options);
             }
             if (candidates.isEmpty()) {
-                String actual = toMethodParametersString("", extractTypesFromParameters(closureParams));
+                String actual = toMethodParametersString("", extractTypesFromParameters(parameters));
                 String expect = closureSignatures.stream().map(sig -> toMethodParametersString("",sig)).collect(Collectors.joining(" or "));
                 addStaticTypeError("Incorrect parameter type(s). Expected " + expect + " but found " + actual, expression); // at least one fails
             } else if (candidates.size() > 1) {
@@ -3116,8 +3137,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferredTypes);
             } else {
                 for (int i = 0; i < inferredTypes.length; i += 1) {
-                    checkParamType(closureParams[i], inferredTypes[i], false, false);
-                    typeCheckingContext.controlStructureVariables.put(closureParams[i], inferredTypes[i]);
+                    checkParamType(parameters[i], inferredTypes[i], false, false);
+                    typeCheckingContext.controlStructureVariables.put(parameters[i], inferredTypes[i]);
                 }
             }
         }
