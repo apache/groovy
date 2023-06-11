@@ -6887,23 +6887,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     @SuppressWarnings("unchecked")
-    public static void putAt(List self, List splice, List values) {
+    public static void putAt(List self, List splice, Collection values) {
         if (splice.isEmpty()) {
-            if ( ! values.isEmpty() )
-                throw new IllegalArgumentException("Trying to replace 0 elements with "+values.size()+" elements");
+            if (!values.isEmpty())
+                throw new IllegalArgumentException("Trying to replace 0 elements with " + values.size() + " elements");
             return;
         }
         Object first = splice.iterator().next();
         if (first instanceof Integer) {
             if (values.size() != splice.size())
-                throw new IllegalArgumentException("Trying to replace "+splice.size()+" elements with "+values.size()+" elements");
+                throw new IllegalArgumentException("Trying to replace " + splice.size() + " elements with " + values.size() + " elements");
             Iterator<?> valuesIter = values.iterator();
             for (Object index : splice) {
                 putAt(self, (Integer) index, valuesIter.next());
             }
         } else {
-            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
+            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of " + first.getClass().getName());
         }
+    }
+
+    /**
+     * @deprecated use #putAt(List, List, Collection), retained for binary compatibility
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, List splice, List values) {
+        putAt(self, splice, (Collection) values);
     }
 
     /**
