@@ -231,7 +231,7 @@ final class WideningCategoriesTest extends GenericsTestCase {
 
     void testLUBWithTwoInterfacesAndSingleCommonInterface() {
         ClassNode a = extractTypesFromCode('List<Set> type').type
-        ClassNode b = extractTypesFromCode('List<List> type').type
+        ClassNode b = extractTypesFromCode('List<Queue> type').type
         ClassNode lub = lowestUpperBound(a,b)
         assert lub == LIST_TYPE
         assert lub.genericsTypes.length == 1
@@ -294,14 +294,14 @@ final class WideningCategoriesTest extends GenericsTestCase {
 
     void testCommonAssignableType2() {
         def typeA = extractTypesFromCode('LinkedHashSet type').type
-        def typeB = extractTypesFromCode('List type').type
+        def typeB = extractTypesFromCode('Queue type').type
         def superType = lowestUpperBound(typeA, typeB)
         assert superType == COLLECTION_TYPE
     }
 
     void testCommonAssignableTypeWithGenerics() {
         def typeA = extractTypesFromCode('LinkedHashSet<String> type').type
-        def typeB = extractTypesFromCode('List<String> type').type
+        def typeB = extractTypesFromCode('Queue<String> type').type
         def superType = lowestUpperBound(typeA, typeB)
         assert superType == COLLECTION_TYPE
     }
