@@ -579,17 +579,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type int for closure expecting java.lang.String'
     }
 
-    // GROOVY-6189, GROOVY-9852
-    void testSAMsInMethodSelection() {
-        // simple direct case
+    void testSAMsInMethodSelection1() {
         assertScript '''
             interface MySAM {
                 def someMethod()
             }
-            def foo(MySAM sam) {sam.someMethod()}
-            assert foo {1} == 1
+            def foo(MySAM sam) {
+                sam.someMethod()
+            }
+            assert foo { -> 1 } == 1
+            assert foo(() -> 1) == 1
         '''
+    }
 
+    // GROOVY-6189, GROOVY-9852
+    void testSAMsInMethodSelection2() {
         // overloads with classes implemented by Closure
         [
             'groovy.lang.Closure'            : 'not',
@@ -615,30 +619,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testSAMsInMethodSelection2() {
-        shouldFailWithMessages '''
-            interface One { void m() }
-            interface Two { void m() }
-            def foo(One one) { one.m() }
-            def foo(Two two) { two.m() }
-            foo {
-                print 'bar'
-            }
-        ''',
-        'Reference to method is ambiguous. Cannot choose between'
-
-        ['', 'x, y ->'].each { params ->
-            shouldFailWithMessages """
-                import java.util.function.Function
-                import java.util.function.Supplier
-                def foo(Function f) { f.apply(0) }
-                def foo(Supplier s) { s.get() }
-                foo { $params 'bar' }
-            """,
-            'Reference to method is ambiguous. Cannot choose between'
-        }
-    }
-
     // GROOVY-9881
     void testSAMsInMethodSelection3() {
         // Closure implements both and Runnable is "closer"
@@ -651,14 +631,44 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
             assert which == 'run'
         '''
+    }
 
-        ['->', 'x ->'].each { params ->
+    void testSAMsInMethodSelection4() {
+        shouldFailWithMessages '''
+            interface One { void m() }
+            interface Two { void m() }
+            def foo(One one) { one.m() }
+            def foo(Two two) { two.m() }
+            foo {
+                print 'bar'
+            }
+        ''',
+        'Reference to method is ambiguous. Cannot choose between'
+    }
+
+    void testSAMsInMethodSelection5() {
+        for (spec in ['','x,y ->']) {
+            shouldFailWithMessages """
+                import java.util.function.Function
+                import java.util.function.Supplier
+                def foo(Function f) { f.apply(0) }
+                def foo(Supplier s) { s.get() }
+                foo { $spec
+                    'bar'
+                }
+            """,
+            'Reference to method is ambiguous. Cannot choose between'
+        }
+    }
+
+    void testSAMsInMethodSelection6() {
+        for (spec in ['->','x ->']) {
             assertScript """
                 import java.util.function.Function
                 import java.util.function.Supplier
                 def foo(Function f) { f.apply(0) }
                 def foo(Supplier s) { s.get() }
-                def ret = foo { $params
+                def ret = foo { $spec
                     'bar'
                 }
                 assert ret == 'bar'

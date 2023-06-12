@@ -319,7 +319,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignature() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T,U> {
-                public void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
+                void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
             }
             def foo = new Foo<Integer,String>()
             foo.foo { it.each { println it.toUpperCase() } }
@@ -329,7 +329,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testFromStringWithTypeParameterFromClassWithTwoGenericsAndNoExplicitSignatureAndNoFQN() {
         assertScript '''import groovy.transform.stc.FromString
             class Foo<T,U> {
-                public void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call(['hey','ya']) }
+                void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call(['hey','ya']) }
             }
             def foo = new Foo<Integer,String>()
             foo.foo { it.each { println it.toUpperCase() } }
@@ -344,7 +344,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class Tor<D,U> {
-                public void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call([new Foo(), new Foo()]) }
+                void foo(@ClosureParams(value=FromString,options="List<U>") Closure cl) { cl.call([new Foo(), new Foo()]) }
             }
             def tor = new Tor<Integer,Foo>()
             tor.foo { it.each { it.bar() } }
@@ -359,7 +359,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class Tor<D,U> {
-                public void foo(@ClosureParams(value=FromString,options=["D,List<U>"]) Closure cl) { cl.call(3, [new Foo(), new Foo()]) }
+                void foo(@ClosureParams(value=FromString,options=["D,List<U>"]) Closure cl) { cl.call(3, [new Foo(), new Foo()]) }
             }
             def tor = new Tor<Integer,Foo>()
             tor.foo { r, e -> r.times { e.each { it.bar() } } }
@@ -374,7 +374,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class Tor<D,U> {
-                public void foo(@ClosureParams(value=FromString,options=["D,List<U>", "D"]) Closure cl) {
+                void foo(@ClosureParams(value=FromString,options=["D,List<U>", "D"]) Closure cl) {
                     if (cl.maximumNumberOfParameters==2) {
                         cl.call(3, [new Foo(), new Foo()])
                     } else {
@@ -390,7 +390,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testFromStringInSameSourceUnit() {
         assertScript '''import groovy.transform.stc.FromString
-            public <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
+            def <T> void doSomething(T val, @ClosureParams(value=FromString, options="T") Closure cl) {
                 cl(val)
             }
             doSomething('foo') {
@@ -1366,16 +1366,16 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy6735() {
         assertScript '''
             def extractInfo(String s) {
-              def squareNums = s.findAll(/\\d+/) { String num -> num.toInteger() }.collect{ Integer num -> num ** 2 }
-              def wordSizePlusNum = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, String word, String num -> word.size() + num.toInteger() }
-              def numPlusWordSize = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, word, num -> num.toInteger() + word.size() }
-              [squareNums, wordSizePlusNum, numPlusWordSize]
+                def squareNums = s.findAll(/\\d+/) { String num -> num.toInteger() }.collect{ Integer num -> num ** 2 }
+                def wordSizePlusNum = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, String word, String num -> word.size() + num.toInteger() }
+                def numPlusWordSize = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, word, num -> num.toInteger() + word.size() }
+                [squareNums, wordSizePlusNum, numPlusWordSize]
             }
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-          assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
-          assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
+            assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
+            assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
         '''
     }
 
