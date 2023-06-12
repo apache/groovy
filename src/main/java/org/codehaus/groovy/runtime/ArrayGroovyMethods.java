@@ -814,7 +814,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an array
      * @param size          the length of each sub-list in the returned list
      * @return a List containing the array values collated into sub-lists
-     * @see #collate(Iterable, int)
+     * @see DefaultGroovyMethods#collate(Iterable, int)
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size) {
@@ -828,7 +828,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned list
      * @param step          the number of elements to step through for each sub-list
      * @return a List containing the array elements collated into sub-lists
-     * @see #collate(Iterable, int, int)
+     * @see DefaultGroovyMethods#collate(Iterable, int, int)
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step) {
@@ -842,7 +842,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned list
      * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return a List containing the array elements collated into sub-lists
-     * @see #collate(Iterable, int, boolean)
+     * @see DefaultGroovyMethods#collate(Iterable, int, boolean)
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
@@ -965,7 +965,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return a Map of the transformed entries
-     * @see #collectEntries(Iterator, Map, Closure)
+     * @see DefaultGroovyMethods#collectEntries(Iterator, Map, Closure)
      * @since 1.7.9
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
@@ -993,7 +993,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
      * @return the collector with all transformed values added to it
-     * @see #collect(Map, Collection, Closure)
+     * @see DefaultGroovyMethods#collect(Map, Collection, Closure)
      * @since 1.7.9
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
@@ -4065,7 +4065,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   an array
-     * @param filter the filter to perform on each element of the array (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @param filter the filter to perform on each element of the array (using the {@link DefaultGroovyMethods#isCase(java.lang.Object, java.lang.Object)} method)
      * @return a list of objects which match the filter
      * @since 2.0
      */
@@ -5021,7 +5021,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the maximum value
-     * @see #max(Iterator)
+     * @see DefaultGroovyMethods#max(Iterator)
      * @since 1.5.5
      */
     public static <T> T max(T[] self) {
@@ -5231,7 +5231,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an array
      * @param comparator a Comparator
      * @return the maximum value
-     * @see #max(Iterator, Comparator)
+     * @see DefaultGroovyMethods#max(Iterator, Comparator)
      * @since 1.5.5
      */
     public static <T> T max(T[] self, Comparator<? super T> comparator) {
@@ -5497,7 +5497,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the minimum value
-     * @see #min(Iterator)
+     * @see DefaultGroovyMethods#min(Iterator)
      * @since 1.5.5
      */
     public static <T> T min(T[] self) {
@@ -5707,7 +5707,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an array
      * @param comparator a Comparator
      * @return the minimum value
-     * @see #min(Iterator, java.util.Comparator)
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
      * @since 1.5.5
      */
     public static <T> T min(T[] self, Comparator<? super T> comparator) {
@@ -5730,7 +5730,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an array
      * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
-     * @see #min(Iterator, groovy.lang.Closure)
+     * @see DefaultGroovyMethods#min(Iterator, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static <T> T min(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
@@ -7155,7 +7155,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The array of values to add together
      * @return The sum of all the items
-     * @see #sum(java.util.Iterator)
+     * @see DefaultGroovyMethods#sum(java.util.Iterator)
      * @since 1.7.1
      */
     public static Object sum(Object[] self) {
@@ -8690,7 +8690,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param values       an array
      * @param keyTransform a function for transforming array elements into values
      * @return the collector with all transformed values added to it
-     * @see #withCollectedKeys(Iterable, Function)
+     * @see DefaultGroovyMethods#withCollectedKeys(Iterable, Function)
      * @since 5.0.0
      */
     public static <K, V> Map<K, V> withCollectedKeys(V[] values, Function<? super V, K> keyTransform) {
@@ -8704,7 +8704,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param collector    the Map into which the transformed entries are put
      * @param keyTransform a function for transforming array elements into values
      * @return the collector with all transformed values added to it
-     * @see #withCollectedKeys(Iterable, Map, Function)
+     * @see DefaultGroovyMethods#withCollectedKeys(Iterable, Map, Function)
      * @since 5.0.0
      */
     public static <K, V> Map<K, V> withCollectedKeys(V[] values, Map<K, V> collector, Function<? super V, K> keyTransform) {
