@@ -40,6 +40,8 @@ configurations {
 }
 
 dependencies {
+    // TODO: Remove it after AsciidoctorJ 4.0.0 new release, workaround to fix NoClassDefFoundError on Gradle 7.6+,
+    // see https://github.com/asciidoctor/asciidoctor-gradle-plugin/issues/655#issuecomment-1374479836
     asciidocExtensions gradleApi()
 }
 
