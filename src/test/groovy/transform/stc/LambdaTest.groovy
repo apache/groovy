@@ -57,7 +57,7 @@ final class LambdaTest {
     @Test
     void testFunctionWithTypeArgument() {
         assertScript shell, '''
-            List<String> f() {
+            def f() {
                 [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
             }
             assert f() == [null, null, null]
@@ -67,7 +67,7 @@ final class LambdaTest {
     @Test
     void testBinaryOperator() {
         assertScript shell, '''
-            int f() {
+            def f() {
                 [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e)
             }
             assert f() == 13
@@ -77,7 +77,7 @@ final class LambdaTest {
     @Test // GROOVY-8917
     void testBinaryOperatorWithoutExplicitTypes() {
         assertScript shell, '''
-            int f() {
+            def f() {
                 [1, 2, 3].stream().reduce(7, (r, e) -> r + e)
             }
             assert f() == 13
@@ -87,7 +87,7 @@ final class LambdaTest {
     @Test
     void testBinaryOperatorWithoutExplicitTypes2() {
         assertScript shell, '''
-            int f() {
+            def f() {
                 BinaryOperator<Integer> accumulator = (r, e) -> r + e
                 return [1, 2, 3].stream().reduce(7, accumulator)
             }
@@ -127,79 +127,51 @@ final class LambdaTest {
     }
 
     @Test
-    void testPredicate() {
+    void testPredicate1() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    def list = ['ab', 'bc', 'de']
-                    list.removeIf(e -> e.startsWith('a'))
-                    assert ['bc', 'de'] == list
-                }
+            def f() {
+                def list = ['ab', 'bc', 'de']
+                list.removeIf(e -> e.startsWith('a'))
+                list
             }
+            assert f() == ['bc', 'de']
         '''
     }
 
     @Test
-    void testPredicateWithoutExplicitTypeDef() {
+    void testPredicate2() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    List<String> myList = Arrays.asList('a1', 'a2', 'b2', 'b1', 'c2', 'c1')
-                    Predicate<String> predicate = s -> s.startsWith('b')
-                    Function<String, String> mapper = s -> s.toUpperCase()
-
-                    List<String> result =
-                            myList
-                                .stream()
-                                .filter(predicate)
-                                .map(mapper)
-                                .sorted()
-                                .collect(Collectors.toList())
-
-                    assert ['B1', 'B2'] == result
-                }
+            def f() {
+                Predicate<String> tester = s -> s.startsWith('b')
+                Function<String, String> mapper = s -> s.toUpperCase()
+                List<String> myList = Arrays.asList('a1', 'a2', 'b2', 'b1', 'c2', 'c1')
+                List<String> result = myList.stream().filter(tester).map(mapper).sorted().collect(Collectors.toList())
             }
+            assert f() == ['B1', 'B2']
         '''
     }
 
     @Test
     void testUnaryOperator() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    def list = [1, 2, 3]
-                    list.replaceAll(e -> e + 10)
-                    assert [11, 12, 13] == list
-                }
+            def f() {
+                def list = [1, 2, 3]
+                list.replaceAll(e -> e + 10)
+                list
             }
+            assert f() == [11, 12, 13]
         '''
     }
 
     @Test
     void testBiConsumer() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    def map = [a: 1, b: 2, c: 3]
-                    map.forEach((k, v) -> System.out.println(k + ':' + v));
-                }
+            def f() {
+                def map = [a: 1, b: 2, c: 3], list = []
+                map.forEach((k, v) -> list.add(k + v))
+                list
             }
+            assert f() == ['a1', 'b2', 'c3']
         '''
     }
 

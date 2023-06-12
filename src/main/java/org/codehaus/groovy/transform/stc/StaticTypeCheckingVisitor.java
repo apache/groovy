@@ -117,7 +117,6 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1008,7 +1007,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (samParameterTypes.length == 1 && hasImplicitParameter(rhsExpression)) {
             Variable it = rhsExpression.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
-            closureParameters = new Parameter[]{it instanceof Parameter ? (Parameter) it : new Parameter(dynamicType(), "")};
+            closureParameters = new Parameter[]{it instanceof Parameter ? (Parameter) it : new Parameter(dynamicType(),"it")};
         }
 
         int n = closureParameters.length;
@@ -3150,48 +3149,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private List<ClassNode[]> getSignaturesFromHint(final MethodNode mn, final Expression hintType, final Expression options, final ASTNode usage) {
-        String hintTypeName = hintType.getText(); // load hint class using compiler's classloader
-        try {
-            @SuppressWarnings("unchecked")
-            Class<? extends ClosureSignatureHint> hintClass = (Class<? extends ClosureSignatureHint>) getTransformLoader().loadClass(hintTypeName);
-            List<ClassNode[]> closureSignatures = hintClass.getDeclaredConstructor().newInstance().getClosureSignatures(
-                    mn instanceof ExtensionMethodNode ? ((ExtensionMethodNode) mn).getExtensionMethodNode() : mn,
-                    typeCheckingContext.getSource(),
-                    typeCheckingContext.getCompilationUnit(),
-                    convertToStringArray(options),
-                    usage);
-            return closureSignatures;
-        } catch (ReflectiveOperationException e) {
-            throw new GroovyBugError(e);
-        }
-    }
-
-    private List<ClassNode[]> resolveWithResolver(final List<ClassNode[]> candidates, final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression resolverClass, final Expression options) {
-        // initialize resolver
-        try {
-            ClassLoader transformLoader = getTransformLoader();
-            @SuppressWarnings("unchecked")
-            Class<? extends ClosureSignatureConflictResolver> resolver = (Class<? extends ClosureSignatureConflictResolver>) transformLoader.loadClass(resolverClass.getText());
-            ClosureSignatureConflictResolver resolverInstance = resolver.getDeclaredConstructor().newInstance();
-            return resolverInstance.resolve(
-                    candidates,
-                    receiver,
-                    arguments,
-                    expression,
-                    selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod,
-                    typeCheckingContext.getSource(),
-                    typeCheckingContext.getCompilationUnit(),
-                    convertToStringArray(options));
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-            throw new GroovyBugError(e);
-        }
-    }
-
-    private ClassLoader getTransformLoader() {
-        return Optional.ofNullable(typeCheckingContext.getCompilationUnit()).map(CompilationUnit::getTransformLoader).orElseGet(() -> getSourceUnit().getClassLoader());
-    }
-
     private void processClosureParams(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
         Parameter[] parameters = hasImplicitParameter(expression) ? new Parameter[]{new Parameter(dynamicType(),"it")} : getParametersSafe(expression);
 
@@ -3268,6 +3225,62 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private List<ClassNode[]> getSignaturesFromHint(final MethodNode method, final Expression hintType, final Expression options, final ASTNode usage) {
+        String hintTypeName = hintType.getText();
+        try {
+            @SuppressWarnings("unchecked")
+            // load hint class using compiler's ClassLoader
+            Class<? extends ClosureSignatureHint> hintClass = (Class<? extends ClosureSignatureHint>) getTransformLoader().loadClass(hintTypeName);
+            ClosureSignatureHint hint = hintClass.getDeclaredConstructor().newInstance();
+            return hint.getClosureSignatures(
+                    method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).getExtensionMethodNode() : method,
+                    typeCheckingContext.getSource(),
+                    typeCheckingContext.getCompilationUnit(),
+                    convertToStringArray(options),
+                    usage);
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyBugError(e);
+        }
+    }
+
+    private List<ClassNode[]> resolveWithResolver(final List<ClassNode[]> candidates, final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode method, final Expression resolverType, final Expression options) {
+        String resolverTypeName = resolverType.getText();
+        try {
+            @SuppressWarnings("unchecked")
+            // load conflict resolver class using compiler's ClassLoader
+            Class<? extends ClosureSignatureConflictResolver> resolverClass = (Class<? extends ClosureSignatureConflictResolver>) getTransformLoader().loadClass(resolverTypeName);
+            ClosureSignatureConflictResolver resolver = resolverClass.getDeclaredConstructor().newInstance();
+            return resolver.resolve(
+                    candidates,
+                    receiver,
+                    arguments,
+                    expression,
+                    method instanceof ExtensionMethodNode ? ((ExtensionMethodNode) method).getExtensionMethodNode() : method,
+                    typeCheckingContext.getSource(),
+                    typeCheckingContext.getCompilationUnit(),
+                    convertToStringArray(options));
+        } catch (ReflectiveOperationException e) {
+            throw new GroovyBugError(e);
+        }
+    }
+
+    private static String[] convertToStringArray(final Expression options) {
+        if (options == null) {
+            return ResolveVisitor.EMPTY_STRING_ARRAY;
+        }
+        if (options instanceof ConstantExpression) {
+            return new String[]{options.getText()};
+        }
+        if (options instanceof ListExpression) {
+            return ((ListExpression) options).getExpressions().stream().map(Expression::getText).toArray(String[]::new);
+        }
+        throw new IllegalArgumentException("Unexpected options for @ClosureParams:" + options);
+    }
+
+    private ClassLoader getTransformLoader() {
+        return Optional.ofNullable(typeCheckingContext.getCompilationUnit()).map(CompilationUnit::getTransformLoader).orElseGet(() -> getSourceUnit().getClassLoader());
+    }
+
     /**
      * Computes the inferred types of the closure parameters using the following trick:
      * <ol>
@@ -3320,19 +3333,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 signature[i] = getCombinedBoundType(gt);
             }
         }
-    }
-
-    private static String[] convertToStringArray(final Expression options) {
-        if (options == null) {
-            return ResolveVisitor.EMPTY_STRING_ARRAY;
-        }
-        if (options instanceof ConstantExpression) {
-            return new String[]{options.getText()};
-        }
-        if (options instanceof ListExpression) {
-            return ((ListExpression) options).getExpressions().stream().map(Expression::getText).toArray(String[]::new);
-        }
-        throw new IllegalArgumentException("Unexpected options for @ClosureParams:" + options);
     }
 
     private void checkClosureWithDelegatesTo(final ClassNode receiver, final MethodNode mn, final ArgumentListExpression arguments, final Parameter[] params, final Expression expression, final Parameter param) {

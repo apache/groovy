@@ -258,7 +258,9 @@ public abstract class StaticTypeCheckingSupport {
     };
 
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
-
+    public static void clearExtensionMethodCache(final ClassLoader loader) {
+        EXTENSION_METHOD_CACHE.cache.remove(loader);
+    }
     public static void clearExtensionMethodCache() {
         EXTENSION_METHOD_CACHE.cache.clearAll();
     }

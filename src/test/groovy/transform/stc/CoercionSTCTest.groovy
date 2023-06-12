@@ -310,14 +310,13 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
 
     void testCoerceToFunctionalInterface6() {
         assertScript '''
-            interface SAM { def foo(); }
+            interface SAM { def foo() }
             class X {
                 public SAM s
             }
             def x = new X()
             x.s = {1}
             assert x.s.foo() == 1
-            x = new X()
             x.@s = {2}
             assert x.s.foo() == 2
         '''
@@ -325,12 +324,12 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
 
     void testCoerceToFunctionalInterface7() {
         assertScript '''
-            interface SAM { def foo(); }
+            interface SAM { def foo() }
             class X {
                 SAM s
             }
-            def x = new X(s:{1})
-            assert x.s.foo() == 1
+            def x = new X(s: {3})
+            assert x.s.foo() == 3
         '''
     }
 
@@ -509,5 +508,17 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Cannot assign value of type java.util.Date to variable of type java.lang.Number'
+    }
+
+    // GROOVY-11085
+    void testCoerceToFunctionalInterface19() {
+        for (type in ['','long','Long']) {
+            assertScript """
+                void setFoo(Predicate<Long> p) {
+                    assert p.test(1L)
+                }
+                foo = { $type n -> n instanceof Long }
+            """
+        }
     }
 }

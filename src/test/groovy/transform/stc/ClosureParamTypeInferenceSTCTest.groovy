@@ -502,16 +502,16 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy6735() {
         assertScript '''
             def extractInfo(String s) {
-              def squareNums = s.findAll(/\\d+/) { String num -> num.toInteger() }.collect{ Integer num -> num ** 2 }
-              def wordSizePlusNum = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, String word, String num -> word.size() + num.toInteger() }
-              def numPlusWordSize = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, word, num -> num.toInteger() + word.size() }
-              [squareNums, wordSizePlusNum, numPlusWordSize]
+                def squareNums = s.findAll(/\\d+/) { String num -> num.toInteger() }.collect{ Integer num -> num ** 2 }
+                def wordSizePlusNum = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, String word, String num -> word.size() + num.toInteger() }
+                def numPlusWordSize = s.findAll(/\\s*(\\w+)\\s*(\\d+)/) { _, word, num -> num.toInteger() + word.size() }
+                [squareNums, wordSizePlusNum, numPlusWordSize]
             }
             assert extractInfo(" ab 12 cdef 34 jhg ") == [[144, 1156], [14, 38], [14, 38]]
         '''
         assertScript '''
-          assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
-          assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
+            assert "foobarbaz".findAll('b(a)([rz])') { full, a, b -> assert "BA"=="B" + a.toUpperCase() }.size() == 2
+            assert "foobarbaz".findAll('ba') { String found -> assert "BA" == found.toUpperCase() }.size() == 2
         '''
     }
 
