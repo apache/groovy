@@ -28,9 +28,7 @@ import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -79,7 +77,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssi
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.DADD;
 import static org.objectweb.asm.Opcodes.DCONST_1;
@@ -199,10 +196,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     return;
                 }
             }
-        } else {
-            Expression rightExpression = expression.getRightExpression();
-            if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)
-                rightExpression.getNodeMetaData(PARAMETER_TYPE, x -> leftExpression.getNodeMetaData(INFERRED_TYPE));
         }
         // GROOVY-5620: spread-safe operator on LHS is not supported
         if (leftExpression instanceof PropertyExpression

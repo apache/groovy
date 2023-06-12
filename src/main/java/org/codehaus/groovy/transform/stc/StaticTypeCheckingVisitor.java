@@ -1001,31 +1001,50 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @see #inferClosureParameterTypes
      */
     private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
-        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
-        Parameter[] closureParameters = getParametersSafe(rhsExpression);
-        ClassNode[] samParameterTypes = typeInfo.getV1();
+        ClassNode[] samParameterTypes;
+        {
+            Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
+            storeInferredReturnType(rhsExpression, typeInfo.getV2());
+            samParameterTypes = typeInfo.getV1();
+        }
 
+        Parameter[] closureParameters = getParametersSafe(rhsExpression);
         if (samParameterTypes.length == 1 && hasImplicitParameter(rhsExpression)) {
             Variable it = rhsExpression.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
             closureParameters = new Parameter[]{it instanceof Parameter ? (Parameter) it : new Parameter(dynamicType(),"it")};
         }
 
         int n = closureParameters.length;
-        if (n == samParameterTypes.length) {
+        ClassNode[] expectedTypes = samParameterTypes;
+out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0], LIST_TYPE)) // GROOVY-11092
+                && (n != 1 || !typeCheckMethodArgumentWithGenerics(GenericsUtils.nonGeneric(closureParameters[0].getOriginType()), samParameterTypes[0], false))) {
+            int itemCount = TUPLE_TYPES.indexOf(samParameterTypes[0]);
+            if (itemCount >= 0) {//Tuple[0-16]
+                if (itemCount != n) break out;
+                GenericsType[] spec = samParameterTypes[0].getGenericsTypes();
+                if (spec != null) { // edge case: raw type or Tuple0 falls through
+                    expectedTypes = Arrays.stream(spec).map(GenericsType::getType).toArray(ClassNode[]::new);
+                    break out;
+                }
+            }
+            expectedTypes = new ClassNode[n];
+            Arrays.fill(expectedTypes, inferLoopElementType(samParameterTypes[0]));
+        }
+
+        if (n == expectedTypes.length) {
             for (int i = 0; i < n; i += 1) {
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(samParameterTypes[i]);
+                    parameter.setType(expectedTypes[i]);
                 } else {
-                    checkParamType(parameter, samParameterTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
+                    checkParamType(parameter, expectedTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
             }
         } else {
-            addStaticTypeError("Wrong number of parameters for method target " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
+            addStaticTypeError("Wrong number of parameters for method target: " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
         }
 
-        rhsExpression.putNodeMetaData(PARAMETER_TYPE, lhsType);
-        storeInferredReturnType(rhsExpression, typeInfo.getV2());
+        rhsExpression.putNodeMetaData(PARAMETER_TYPE, expectedTypes == samParameterTypes ? lhsType : null);
     }
 
     private void checkParamType(final Parameter source, final ClassNode target, final boolean isLast, final boolean lambda) {

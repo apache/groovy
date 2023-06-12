@@ -194,23 +194,29 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10277
+    // GROOVY-9991, GROOVY-10277
     void testCoerceToFunctionalInterface3() {
         assertScript '''
-            Consumer<Number> c = { n -> }
-            Supplier<Number> s = { -> 42 }
+            Consumer<Number>  c = { it }
+            Supplier<Number>  s = { 42 }
+            Predicate<Number> p = { true }
+        '''
+
+        assertScript '''
+            Consumer<Number>  c = { n -> }
+            Supplier<Number>  s = {   -> 42 }
             Predicate<Number> p = { n -> 42 }
         '''
 
         assertScript '''
-            def c = (Consumer<Number>) { n -> }
-            def s = (Supplier<Number>) { -> 42 }
+            def c = (Consumer<Number>)  { n -> }
+            def s = (Supplier<Number>)  {   -> 42 }
             def p = (Predicate<Number>) { n -> 42 }
         '''
 
         assertScript '''
-            def c = { n -> } as Consumer<Number>
-            def s = { -> 42 } as Supplier<Number>
+            def c = { n ->    } as Consumer<Number>
+            def s = {   -> 42 } as Supplier<Number>
             def p = { n -> 42 } as Predicate<Number>
         '''
 
@@ -520,5 +526,36 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
                 foo = { $type n -> n instanceof Long }
             """
         }
+    }
+
+    // GROOVY-11092
+    void testCoerceToFunctionalInterface20() {
+        for (spec in ['one, two','String one, String two','CharSequence one, Object two']) {
+            assertScript """
+                Function<List<String>,String> f = { $spec -> one + two }
+                assert f.apply(['foo','bar']) == 'foobar'
+            """
+        }
+        for (spec in ['s, n','String s, Integer n','String s, Number n']) {
+            assertScript """
+                ToIntFunction<Tuple2<String,Integer>> f = { $spec -> n.intValue() }
+                assert f.applyAsInt(Tuple.tuple("", 42)) == 42
+            """
+        }
+
+        shouldFailWithMessages '''
+            Consumer<List<String>> c = { Number not_list_or_string -> }
+        ''',
+        'Expected type java.lang.String for closure parameter'
+
+        shouldFailWithMessages '''
+            Consumer<List<String>> c = (Number xxx) -> { }
+        ''',
+        'Expected type java.lang.String for lambda parameter'
+
+        shouldFailWithMessages '''
+            Consumer<Tuple2> c = { -> }
+        ''',
+        'Wrong number of parameters for method target'
     }
 }

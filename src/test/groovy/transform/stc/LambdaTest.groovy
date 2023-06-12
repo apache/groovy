@@ -816,6 +816,14 @@ final class LambdaTest {
         '''
     }
 
+    @Test // GROOVY-11092
+    void testFunctionalInterface8() {
+        assertScript shell, '''
+            Function<List<String>,String> f = (one,two) -> { one + two }
+            assert f.apply(['foo','bar']) == 'foobar'
+        '''
+    }
+
     @Test
     void testFunctionWithUpdatingLocalVariable() {
         assertScript shell, '''
