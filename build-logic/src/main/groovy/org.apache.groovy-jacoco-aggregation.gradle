@@ -41,9 +41,8 @@ if (sharedConfiguration.hasCodeCoverage.get()) {
         }
 
         reports {
-            xml.enabled true
-
-            html.enabled true
+            xml.required = false
+            csv.required = false
         }
     }
 }
