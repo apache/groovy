@@ -36,6 +36,13 @@ configurations {
             artifact tasks.named('asciidoctor')
         }
     }
+    asciidocExtensions
+}
+
+dependencies {
+    // TODO: Remove it after AsciidoctorJ 4.0.0 new release, workaround to fix NoClassDefFoundError on Gradle 7.6+,
+    // see https://github.com/asciidoctor/asciidoctor-gradle-plugin/issues/655#issuecomment-1374479836
+    asciidocExtensions gradleApi()
 }
 
 tasks.withType(AbstractAsciidoctorTask).configureEach {
@@ -45,6 +52,7 @@ tasks.withType(AbstractAsciidoctorTask).configureEach {
 
 asciidoctor {
     baseDirFollowsSourceFile()
+    configurations 'asciidocExtensions'
     def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
