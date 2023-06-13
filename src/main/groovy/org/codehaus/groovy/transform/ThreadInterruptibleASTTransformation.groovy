@@ -18,18 +18,19 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.ast.stmt.Statement
+
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding Thread.currentThread().isInterrupted()
@@ -39,57 +40,51 @@ import org.codehaus.groovy.control.CompilePhase
  * @see groovy.transform.ThreadInterrupt
  * @since 1.8.0
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-@CompileStatic
+@AutoFinal @CompileStatic @GroovyASTTransformation
 class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
-    private static final ClassNode MY_TYPE = ClassHelper.make(ThreadInterrupt)
-    private static final ClassNode THREAD_TYPE = ClassHelper.make(Thread)
-    private static final MethodNode CURRENTTHREAD_METHOD
-    private static final MethodNode ISINTERRUPTED_METHOD
+    private static final ClassNode TYPE = ClassHelper.make(ThreadInterrupt)
+    private static final ClassNode THREAD_TYPE = ClassHelper.makeCached(Thread)
+    private static final MethodNode CURRENTTHREAD_METHOD = THREAD_TYPE.getMethod('currentThread')
+    private static final MethodNode ISINTERRUPTED_METHOD = THREAD_TYPE.getMethod('isInterrupted')
 
-    static {
-        CURRENTTHREAD_METHOD = THREAD_TYPE.getMethod('currentThread', Parameter.EMPTY_ARRAY)
-        ISINTERRUPTED_METHOD = THREAD_TYPE.getMethod('isInterrupted', Parameter.EMPTY_ARRAY)
-    }
-
+    @Override
     protected ClassNode type() {
-        MY_TYPE
+        TYPE
     }
 
+    @Override
     protected String getErrorMessage() {
         'Execution interrupted. The current thread has been interrupted.'
     }
 
+    @Override
     protected Expression createCondition() {
-        def currentThread = new MethodCallExpression(new ClassExpression(THREAD_TYPE),
-                'currentThread',
-                ArgumentListExpression.EMPTY_ARGUMENTS)
+        def currentThread = callX(classX(THREAD_TYPE), 'currentThread')
         currentThread.methodTarget = CURRENTTHREAD_METHOD
-        def isInterrupted = new MethodCallExpression(
-                currentThread,
-                'isInterrupted', ArgumentListExpression.EMPTY_ARGUMENTS)
+        currentThread.implicitThis = false
+
+        def isInterrupted = callX(currentThread, 'isInterrupted')
         isInterrupted.methodTarget = ISINTERRUPTED_METHOD
-        [currentThread, isInterrupted]*.implicitThis = false
+        isInterrupted.implicitThis = false
 
         isInterrupted
     }
 
-
     @Override
-    void visitClosureExpression(ClosureExpression closureExpr) {
-        def code = closureExpr.code
-        closureExpr.code = wrapBlock(code)
-        super.visitClosureExpression closureExpr
+    void visitClosureExpression(ClosureExpression closure) {
+        Statement code = closure.code
+        closure.code = wrapBlock(code)
+        super.visitClosureExpression(closure)
     }
 
     @Override
-    void visitMethod(MethodNode node) {
-        if (checkOnMethodStart && !node.isSynthetic() && !node.isAbstract()
-            && !(node.getDeclaringClass().isRecord() && node.annotations?.any(e -> 'groovy.transform.Generated' == e.classNode.name))) {
-            def code = node.code
-            node.code = wrapBlock(code)
+    void visitMethod(MethodNode method) {
+        if (checkOnMethodStart && !method.isAbstract() && !method.isSynthetic()
+                && !(method.getDeclaringClass().isRecord() && isGenerated(method))) {
+            Statement code = method.code
+            method.code = wrapBlock(code)
         }
-        super.visitMethod(node)
+        super.visitMethod(method)
     }
 }
