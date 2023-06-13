@@ -34,19 +34,83 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * A Collections utility class
- */
 public class GroovyCollections {
+
     /**
      * Finds all combinations of items from the given collections.
      *
      * @param collections the given collections
-     * @return a List of the combinations found
+     * @return A list of the combinations found.
      * @see #combinations(Iterable)
      */
-    public static List combinations(Object[] collections) {
+    public static List<List> combinations(Object[]    collections) {
         return combinations(Arrays.asList(collections));
+    }
+
+    /**
+     * Finds all combinations of items from the given collections.
+     * So, <code>combinations([[true, false], [true, false]])</code>
+     * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
+     * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
+     * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
+     * If a non-collection item is given, it is treated as a singleton collection,
+     * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
+     * If an empty collection is found within the given collections, the result will be an empty list.
+     *
+     * @param collections the Iterable of given collections
+     * @return A list of the combinations found.
+     * @since 2.2.0
+     */
+    public static List<List> combinations(Iterable<?> collections) {
+        List<List<Object>> combos = new ArrayList<>();
+        for (var collection : collections) {
+            if (combos.isEmpty()) {
+                for (var object : DefaultTypeTransformation.asCollection(collection)) {
+                    List<Object> list = new ArrayList<>();
+                    list.add(object);
+                    combos.add(list);
+                }
+            } else {
+                List<List<Object>> next = new ArrayList<>(); // each list plus each item
+                for (var object : DefaultTypeTransformation.asCollection(collection)) {
+                    for (var combo : combos) {
+                        List<Object> list = new ArrayList<>(combo);
+                        list.add(object);
+                        next.add(list);
+                    }
+                }
+                combos = next;
+            }
+            if (combos.isEmpty())
+                break;
+        }
+        return (List) combos;
+    }
+
+    /**
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> inits(Iterable<T> collections) {
+        List<T> copy = DefaultGroovyMethods.toList(collections);
+        List<List<T>> result = new ArrayList<>();
+        for (int i = copy.size(); i >= 0; i--) {
+            List<T> next = copy.subList(0, i);
+            result.add(next);
+        }
+        return result;
+    }
+
+    /**
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> tails(Iterable<T> collections) {
+        List<T> copy = DefaultGroovyMethods.toList(collections);
+        List<List<T>> result = new ArrayList<>();
+        for (int i = 0; i <= copy.size(); i++) {
+            List<T> next = copy.subList(i, copy.size());
+            result.add(next);
+        }
+        return result;
     }
 
     /**
@@ -56,6 +120,7 @@ public class GroovyCollections {
      *
      * @param items the List of items
      * @return the subsequences from items
+     * @since 1.8.0
      */
     public static <T> Set<List<T>> subsequences(List<T> items) {
         // items.inject([]){ ss, h -> ss.collect { it + [h] }  + ss + [[h]] }
@@ -74,69 +139,6 @@ public class GroovyCollections {
             ans = next;
         }
         return ans;
-    }
-
-    /**
-     * Finds all combinations of items from the given Iterable aggregate of collections.
-     * So, <code>combinations([[true, false], [true, false]])</code>
-     * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
-     * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
-     * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
-     * If a non-collection item is given, it is treated as a singleton collection,
-     * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
-     * If an empty collection is found within the given collections, the result will be an empty list.
-     *
-     * @param collections the Iterable of given collections
-     * @return a List of the combinations found
-     * @since 2.2.0
-     */
-    public static List combinations(Iterable collections) {
-        List collectedCombos = new ArrayList();
-        for (Object collection : collections) {
-            Iterable items = DefaultTypeTransformation.asCollection(collection);
-            if (collectedCombos.isEmpty()) {
-                for (Object item : items) {
-                    List l = new ArrayList();
-                    l.add(item);
-                    collectedCombos.add(l);
-                }
-            } else {
-                List savedCombos = new ArrayList(collectedCombos);
-                List newCombos = new ArrayList();
-                for (Object value : items) {
-                    for (Object savedCombo : savedCombos) {
-                        List oldList = new ArrayList((List) savedCombo);
-                        oldList.add(value);
-                        newCombos.add(oldList);
-                    }
-                }
-                collectedCombos = newCombos;
-            }
-
-            if (collectedCombos.isEmpty())
-                break;
-        }
-        return collectedCombos;
-    }
-
-    public static <T> List<List<T>> inits(Iterable<T> collections) {
-        List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<>();
-        for (int i = copy.size(); i >= 0; i--) {
-            List<T> next = copy.subList(0, i);
-            result.add(next);
-        }
-        return result;
-    }
-
-    public static <T> List<List<T>> tails(Iterable<T> collections) {
-        List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<>();
-        for (int i = 0; i <= copy.size(); i++) {
-            List<T> next = copy.subList(i, copy.size());
-            result.add(next);
-        }
-        return result;
     }
 
     /**
@@ -355,5 +357,4 @@ public class GroovyCollections {
                 : new ClosureComparator<>(condition);
         return union(iterables, comparator);
     }
-
 }
