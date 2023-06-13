@@ -828,6 +828,12 @@ final class LambdaTest {
             }
             fun = (one,two) -> { one + two }
         '''
+        assertScript shell, '''
+            void test(Function<List<String>,String> f) {
+                assert f.apply(['foo','bar']) == 'foobar'
+            }
+            test((one, two) -> { one + two })
+        '''
     }
 
     @Test
