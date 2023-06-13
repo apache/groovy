@@ -389,7 +389,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8499
     void testParamCountCheck6() {
         shouldFailWithMessages '''
-            ['ab'.chars,'12'.chars].combinations().stream().map((x, y) -> "$x$y")
+            ['ab'.chars,'12'.chars].combinations().collect((l,n) -> "$l$n")
         ''',
         'Incorrect number of parameters. Expected 1 but found 2'
     }

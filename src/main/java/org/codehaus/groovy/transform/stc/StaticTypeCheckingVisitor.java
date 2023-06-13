@@ -997,9 +997,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    /**
-     * @see #inferClosureParameterTypes
-     */
     private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
         ClassNode[] samParameterTypes;
         {
@@ -1035,11 +1032,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (int i = 0; i < n; i += 1) {
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(expectedTypes[i]);
+                    parameter.setType(expectedTypes[i]); // GROOVY-11083, GROOVY-11085, et al.
                 } else {
                     checkParamType(parameter, expectedTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
             }
+            rhsExpression.putNodeMetaData(CLOSURE_ARGUMENTS, expectedTypes);
         } else {
             addStaticTypeError("Wrong number of parameters for method target: " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
         }
@@ -1048,7 +1046,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void checkParamType(final Parameter source, final ClassNode target, final boolean isLast, final boolean lambda) {
-        if (/*lambda ? !source.getOriginType().equals(target) :*/!typeCheckMethodArgumentWithGenerics(source.getOriginType(), target, isLast))
+        if (/*lambda ? !source.getOriginType().isDerivedFrom(target) :*/!typeCheckMethodArgumentWithGenerics(source.getOriginType(), target, isLast))
             addStaticTypeError("Expected type " + prettyPrintType(target) + " for " + (lambda ? "lambda" : "closure") + " parameter: " + source.getName(), source);
     }
 
@@ -3143,27 +3141,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 ClassNode targetType = target.getType();
                 if (targetType != null && targetType.isGenericsPlaceHolder())
                     targetType = getCombinedBoundType(targetType.asGenericsType());
-                targetType = applyGenericsContext(context, targetType); // fill place-holders
-                ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
-
-                int n; Parameter[] p = expression.getParameters();
-                if (p == null) {
-                    // zero parameters
-                    paramTypes = ClassNode.EMPTY_ARRAY;
-                } else if ((n = p.length) == 0) {
-                    // implicit parameter(s)
-                    paramTypes = samParamTypes;
-                } else { // TODO: error for length mismatch
-                    paramTypes = Arrays.copyOf(samParamTypes, n);
-                    for (int i = 0, j = Math.min(n, samParamTypes.length); i < j; i += 1) {
-                        if (p[i].isDynamicTyped()) { p[i].setType(samParamTypes[i]); } else // GROOVY-11083
-                        checkParamType(p[i], paramTypes[i], i == n-1, expression instanceof LambdaExpression);
-                    }
-                }
-                if (paramTypes.length != samParamTypes.length) { // GROOVY-8499
-                    addError("Incorrect number of parameters. Expected " + samParamTypes.length + " but found " + paramTypes.length, expression);
-                }
-                expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
+                targetType = applyGenericsContext(context, targetType); // fill "T"
+                inferParameterAndReturnTypesOfClosureOnRHS(targetType, expression);
             }
         }
     }
