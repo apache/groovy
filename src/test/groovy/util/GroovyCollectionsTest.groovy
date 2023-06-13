@@ -18,7 +18,7 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
 import static groovy.util.GroovyCollections.combinations
 import static groovy.util.GroovyCollections.max
@@ -26,34 +26,39 @@ import static groovy.util.GroovyCollections.min
 import static groovy.util.GroovyCollections.sum
 import static groovy.util.GroovyCollections.transpose
 
-final class GroovyCollectionsTest extends GroovyTestCase {
+final class GroovyCollectionsTest {
 
-    void testCombinations() {
-        // use Sets because we don't care about order
-        Set expected = [
-                        ['a', 1], ['a', 2], ['a', 3],
-                        ['b', 1], ['b', 2], ['b', 3]
-                ]
-        Collection input = [['a', 'b'], [1, 2, 3]]
-
-        // normal varargs versions should match Object[]
-        assert GroovyCollections.combinations(['a', 'b'], [1, 2, 3]) as Set == expected
-        assert combinations(['a', 'b'], [1, 2, 3]) as Set == expected
-
-        // spread versions should match Object[]
-        assert GroovyCollections.combinations(*input) as Set == expected
-        assert combinations(*input) as Set == expected
-
-        // collection versions should match Collection
-        assert GroovyCollections.combinations(input) as Set == expected
-        assert combinations(input) as Set == expected
-
-        // an empty iterable should result in no combination
+    @Test
+    void testCombinations0() {
+        // an empty iterable at any stage should result in an empty result
+        def input = [['a', 'b'], [1, 2, 3]]
         assert combinations([[]] + input).isEmpty()
         assert combinations(input + [[]]).isEmpty()
         assert combinations(input + [[]] + input).isEmpty()
     }
 
+    @Test
+    void testCombinations1() {
+        // use Sets because we don't care about order
+        Set expected = [
+            ['a', 1], ['a', 2], ['a', 3], ['b', 1], ['b', 2], ['b', 3]
+        ]
+        def input = [['a', 'b'], [1, 2, 3]]
+
+        // varargs versions should match Object[]
+        assert GroovyCollections.combinations(input[0], input[1]) as Set == expected
+        assert combinations(input[0], input[1]) as Set == expected
+
+        // spread versions should match Object[]
+        assert GroovyCollections.combinations(*input) as Set == expected
+        assert combinations(*input) as Set == expected
+
+        // list versions should match Iterable
+        assert GroovyCollections.combinations(input) as Set == expected
+        assert combinations(input) as Set == expected
+    }
+
+    @Test
     void testTranspose() {
         // normal varargs versions should match Object[]
         assert GroovyCollections.transpose(['a', 'b'], [1, 2, 3]) == [['a', 1], ['b', 2]]
@@ -70,6 +75,7 @@ final class GroovyCollectionsTest extends GroovyTestCase {
         assert transpose([]) == []
     }
 
+    @Test
     void testMin() {
         // normal varargs versions should match Object[]
         assert GroovyCollections.min('a', 'b') == 'a'
@@ -84,6 +90,7 @@ final class GroovyCollectionsTest extends GroovyTestCase {
         assert min([1, 2, 3]) == 1
     }
 
+    @Test
     void testMax() {
         // normal varargs versions should match Object[]
         assert GroovyCollections.max('a', 'b') == 'b'
@@ -98,6 +105,7 @@ final class GroovyCollectionsTest extends GroovyTestCase {
         assert max([1, 2, 3]) == 3
     }
 
+    @Test
     void testSum() {
         // normal varargs versions should match Object[]
         assert GroovyCollections.sum('a', 'b') == 'ab'
@@ -112,7 +120,7 @@ final class GroovyCollectionsTest extends GroovyTestCase {
         assert sum([1, 2, 3]) == 6
     }
 
-    // GROOVY-7267
+    @Test // GROOVY-7267
     void testHashCodeCollisionInMinus() {
         assert ([[1:2],[2:3]]-[["b":"a"]]) == [[1:2],[2:3]]
     }

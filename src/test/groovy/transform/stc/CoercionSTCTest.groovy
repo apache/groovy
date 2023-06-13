@@ -561,10 +561,14 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-11092, GROOVY-8499
     void testCoerceToFunctionalInterface21() {
-        // TODO: if extension combinations indicates List<List<?>> this can work
-        shouldFailWithMessages '''
-            ['ab'.chars,'12'.chars].combinations().stream().map((l,n) -> "$l$n")
-        ''',
-        'Wrong number of parameters for method target: apply(java.lang.Object)'
+        assertScript '''
+            def result = ['ab'.chars,'12'.chars].combinations().stream().map((l,n) -> "$l$n").toList()
+            assert result == ['a1','b1','a2','b2']
+        '''
+        // cannot know in advance how many list elements
+        def err = shouldFail '''
+            ['ab'.chars,'12'.chars].combinations().stream().map((l,n,x) -> "").toList()
+        '''
+        assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
 }

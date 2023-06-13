@@ -4982,36 +4982,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds GroovyCollections#combinations(Iterable) as a method on Iterables.
+     * Finds all combinations of items from the given aggregate of collections.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]
+     * result = [['a', 'b'], [1, 2, 3]].combinations()
+     * assert result == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]
      * </pre>
      *
-     * @param self an Iterable of collections
-     * @return a List of the combinations found
-     * @see groovy.util.GroovyCollections#combinations(java.lang.Iterable)
+     * @param self an iterable of collections
+     * @return A list of the combinations (lists).
+     * @see GroovyCollections#combinations(Iterable)
      * @since 2.2.0
      */
-    public static List combinations(Iterable self) {
+    public static List<List> combinations(Iterable self) {
         return GroovyCollections.combinations(self);
     }
 
     /**
-     * Adds GroovyCollections#combinations(Iterable, Closure) as a method on collections.
+     * Finds all combinations of items from the given aggregate of collections,
+     * then returns the results of the supplied transform.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [[2, 3],[4, 5, 6]].combinations {x,y {@code ->} x*y } == [8, 12, 10, 15, 12, 18]</pre>
+     * <pre class="groovyTestCase">
+     * result = [[2, 3], [4, 5, 6]].combinations { x,y {@code ->} x*y }
+     * assert result == [8, 12, 10, 15, 12, 18]
+     * </pre>
      *
-     * @param self a Collection of lists
-     * @param function a closure to be called on each combination
-     * @return a List of the results of applying the closure to each combination found
-     * @see groovy.util.GroovyCollections#combinations(Iterable)
+     * @param self an iterable of collections
+     * @param function a closure to be called on each combination (list)
+     * @return A list of the results of applying the closure to each combination.
+     * @see GroovyCollections#combinations(Iterable)
+     * @see #collect(Iterable,Closure)
      * @since 2.2.0
      */
-    @SuppressWarnings("unchecked")
-    public static List combinations(Iterable self, Closure<?> function) {
+    public static <T> List<T> combinations(Iterable self, @ClosureParams(value=FromString.class, options="List") Closure<T> function) {
         return collect(GroovyCollections.combinations(self), function);
     }
 

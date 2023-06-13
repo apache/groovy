@@ -388,10 +388,15 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8499
     void testParamCountCheck6() {
-        shouldFailWithMessages '''
-            ['ab'.chars,'12'.chars].combinations().collect((l,n) -> "$l$n")
-        ''',
-        'Incorrect number of parameters. Expected 1 but found 2'
+        assertScript '''
+            def result = ['ab'.chars,'12'.chars].combinations { l,n -> "$l$n" }
+            assert result == ['a1','b1','a2','b2']
+        '''
+        // cannot know in advance how many list elements
+        def err = shouldFail '''
+            ['ab'.chars,'12'.chars].combinations((l,n,x) -> "$l$n")
+        '''
+        assert err =~ /No signature of method.* is applicable for argument types: \(ArrayList\)/
     }
 
     // GROOVY-8816
