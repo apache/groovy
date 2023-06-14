@@ -195,23 +195,29 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10277
+    // GROOVY-9991, GROOVY-10277
     void testCoerceToFunctionalInterface3() {
         assertScript '''
-            Consumer<Number> c = { n -> }
-            Supplier<Number> s = { -> 42 }
+            Consumer<Number>  c = { it }
+            Supplier<Number>  s = { 42 }
+            Predicate<Number> p = { true }
+        '''
+
+        assertScript '''
+            Consumer<Number>  c = { n -> }
+            Supplier<Number>  s = {   -> 42 }
             Predicate<Number> p = { n -> 42 }
         '''
 
         assertScript '''
-            def c = (Consumer<Number>) { n -> }
-            def s = (Supplier<Number>) { -> 42 }
+            def c = (Consumer<Number>)  { n -> }
+            def s = (Supplier<Number>)  {   -> 42 }
             def p = (Predicate<Number>) { n -> 42 }
         '''
 
         assertScript '''
-            def c = { n -> } as Consumer<Number>
-            def s = { -> 42 } as Supplier<Number>
+            def c = { n ->    } as Consumer<Number>
+            def s = {   -> 42 } as Supplier<Number>
             def p = { n -> 42 } as Predicate<Number>
         '''
 
@@ -226,14 +232,20 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type boolean for closure expecting java.lang.Number'
 
         shouldFailWithMessages '''
-            def s = (() -> ['']) as Supplier<Number>
+            def foo(Supplier<Number> s) { s.get() }
+            def n = foo { -> false }
+        ''',
+        'Cannot return value of type boolean for closure expecting java.lang.Number'
+
+        shouldFailWithMessages '''
+            def s = (() -> [""]) as Supplier<Number>
         ''',
         'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
     }
 
     void testCoerceToFunctionalInterface4() {
         assertScript '''
-            interface I { def m() }
+            interface I { int m() }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE).name == 'I'
@@ -391,6 +403,32 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             }
             c.call()
         '''
+    }
+
+    // GROOVY-8499, GROOVY-10963
+    void testCoerceToFunctionalInterface1x() {
+        shouldFailWithMessages '''
+            ['ab'.chars,'12'.chars].combinations().stream().map((l,n) -> "$l$n")
+        ''',
+        'Wrong number of parameters for method target: apply(java.lang.Object)'
+
+        shouldFailWithMessages '''
+            void test(Consumer c) {}
+            test(() -> {})
+        ''',
+        'Wrong number of parameters for method target: accept(java.lang.Object)'
+
+        shouldFailWithMessages '''import java.util.concurrent.Callable
+            void test(Callable c) {}
+            test(x -> { x })
+        ''',
+        'Wrong number of parameters for method target: call()'
+
+        shouldFailWithMessages '''
+            void test(Runnable r) {}
+            test(x -> { x })
+        ''',
+        'Wrong number of parameters for method target: run()'
     }
 
     // GROOVY-9079

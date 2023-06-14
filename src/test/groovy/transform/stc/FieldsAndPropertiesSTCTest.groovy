@@ -462,14 +462,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 java.util.function.Supplier<String> bar = { baz -> '' }
             }
         ''',
-        'Wrong number of parameters for method target get()'
+        'Wrong number of parameters for method target: get()'
 
         shouldFailWithMessages '''
             class C {
                 java.util.function.Consumer<String> bar = { -> null }
             }
         ''',
-        'Wrong number of parameters for method target accept(java.lang.String)'
+        'Wrong number of parameters for method target: accept(java.lang.String)'
     }
 
     // GROOVY-9991

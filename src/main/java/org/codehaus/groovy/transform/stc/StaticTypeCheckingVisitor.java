@@ -115,7 +115,6 @@ import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -317,6 +316,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLU
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
@@ -934,23 +934,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     inferParameterAndReturnTypesOfClosureOnRHS(target, (ClosureExpression) spec.get(0).getValueExpression());
                 }
             } else if (source instanceof MethodReferenceExpression) {
-                LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(target, (MethodReferenceExpression) source);
+                LambdaExpression lambda = constructLambdaExpressionForMethodReference(target, (MethodReferenceExpression) source);
 
-                inferParameterAndReturnTypesOfClosureOnRHS(target, lambdaExpression);
-                source.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
-                source.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
+                inferParameterAndReturnTypesOfClosureOnRHS(target, lambda);
+                source.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambda);
+                source.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
+                source.putNodeMetaData(CLOSURE_ARGUMENTS, extractTypesFromParameters(lambda.getParameters()));
             }
         }
     }
 
-    /**
-     * @see #inferClosureParameterTypes
-     */
     private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
-        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
-        Parameter[] closureParameters = getParametersSafe(rhsExpression);
-        ClassNode[] samParameterTypes = typeInfo.getV1();
+        ClassNode[] samParameterTypes;
+        {
+            Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
+            storeInferredReturnType(rhsExpression, typeInfo.getV2());
+            samParameterTypes = typeInfo.getV1();
+        }
 
+        Parameter[] closureParameters = getParametersSafe(rhsExpression);
         if (samParameterTypes.length == 1 && hasImplicitParameter(rhsExpression)) {
             Variable it = rhsExpression.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
             closureParameters = new Parameter[]{it instanceof Parameter ? (Parameter) it : new Parameter(dynamicType(),"it")};
@@ -961,20 +963,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (int i = 0; i < n; i += 1) {
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(samParameterTypes[i]);
+                    parameter.setType(samParameterTypes[i]); // GROOVY-11083, GROOVY-11085, et al.
                 } else {
                     checkParamType(parameter, samParameterTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
             }
+            rhsExpression.putNodeMetaData(PARAMETER_TYPE, lhsType);
+            rhsExpression.putNodeMetaData(CLOSURE_ARGUMENTS, samParameterTypes);
         } else {
-            addStaticTypeError("Wrong number of parameters for method target " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
+            addStaticTypeError("Wrong number of parameters for method target: " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
         }
-
-        storeInferredReturnType(rhsExpression, typeInfo.getV2());
     }
 
     private void checkParamType(final Parameter source, final ClassNode target, final boolean isLast, final boolean lambda) {
-        if (/*lambda ? !source.getOriginType().equals(target) :*/!typeCheckMethodArgumentWithGenerics(source.getOriginType(), target, isLast))
+        if (/*lambda ? !source.getOriginType().isDerivedFrom(target) :*/!typeCheckMethodArgumentWithGenerics(source.getOriginType(), target, isLast))
             addStaticTypeError("Expected type " + prettyPrintType(target) + " for " + (lambda ? "lambda" : "closure") + " parameter: " + source.getName(), source);
     }
 
@@ -3005,24 +3007,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode targetType = target.getType();
                 if (targetType != null && targetType.isGenericsPlaceHolder())
                     targetType = getCombinedBoundType(targetType.asGenericsType());
-                targetType = applyGenericsContext(context, targetType); // fill place-holders
-                ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
-
-                int n; Parameter[] p = expression.getParameters();
-                if (p == null) {
-                    // zero parameters
-                    paramTypes = ClassNode.EMPTY_ARRAY;
-                } else if ((n = p.length) == 0) {
-                    // implicit parameter(s)
-                    paramTypes = samParamTypes;
-                } else { // TODO: error for length mismatch
-                    paramTypes = Arrays.copyOf(samParamTypes, n);
-                    for (int i = 0, j = Math.min(n, samParamTypes.length); i < j; i += 1) {
-                        if (p[i].isDynamicTyped()) { p[i].setType(samParamTypes[i]); } else // GROOVY-11083
-                        checkParamType(p[i], paramTypes[i], i == n-1, expression instanceof LambdaExpression);
-                    }
-                }
-                expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
+                targetType = applyGenericsContext(context, targetType); // fill "T"
+                inferParameterAndReturnTypesOfClosureOnRHS(targetType, expression);
             }
         }
     }

@@ -231,18 +231,26 @@ final class LambdaTest {
 
     @Test
     void testCollectors1() {
-        assertScript shell, '''
-            Set<String> set = ['a', 'b', 'c'] as Set
-            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e))
-        '''
+        for (spec in ['', '<String,String,String>']) {
+            assertScript shell, """
+                def set = ['a', 'b', 'c'] as Set<String>
+                def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e))
+
+                assert map == [a: 'a', b: 'b', c: 'c']
+            """
+        }
     }
 
     @Test
     void testCollectors2() {
-        assertScript shell, '''
-            Set<String> set = ['a', 'b', 'c'] as Set
-            assert [a: 'a', b: 'b', c: 'c'] == set.stream().collect(Collectors.toMap(e -> e, e -> e, (o1, o2) -> o2))
-        '''
+        for (spec in ['', '<String,String,String>']) {
+            assertScript shell, """
+                def set = ['a', 'b', 'c'] as Set<String>
+                def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e, (v1,v2) -> v2))
+
+                assert map == [a: 'a', b: 'b', c: 'c']
+            """
+        }
     }
 
     @Test
@@ -689,60 +697,48 @@ final class LambdaTest {
     @Test
     void testFunctionalInterface1() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    SamCallable c = (int e) -> e
-                    assert 1 == c(1)
-                }
-            }
-
             interface SamCallable {
-                int call(int p)
+                int call(int i)
             }
+
+            void p() {
+                SamCallable c = (int x) -> x
+                assert c(1) == 1
+            }
+
+            p()
         '''
     }
 
     @Test
     void testFunctionalInterface2() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    SamCallable c = e -> e
-                    assert 1 == c(1)
-                }
-            }
-
             interface SamCallable {
-                int call(int p)
+                int call(int i)
             }
+
+            void p() {
+                SamCallable c = x -> x
+                assert c(1) == 1
+            }
+
+            p()
         '''
     }
 
     @Test
     void testFunctionalInterface3() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    SamCallable c = (int e) -> e // This is actually a closure(not a native lambda), because "Functional interface SamCallable is not an interface"
-                    assert 1 == c(1)
-                }
-            }
-
             abstract class SamCallable {
-                abstract int call(int p)
+                abstract int call(int i)
             }
+
+            void p() {
+                SamCallable c = (int x) -> x // this is a closure, not a native lambda
+                assert c(1) == 1
+            }
+
+            p()
         '''
     }
 
@@ -1189,11 +1185,7 @@ final class LambdaTest {
             class C implements Serializable {
                 private static final long serialVersionUID = -1L
                 String s = 'a'
-                SerializableFunction<Integer, String> f
-
-                {
-                    f = (Integer i) -> s + i
-                }
+                transient SerializableFunction<Integer, String> f = (Integer i) -> s + i
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1223,11 +1215,7 @@ final class LambdaTest {
 
             class C {
                 String s = 'a'
-                SerializableFunction<Integer, String> f
-
-                {
-                    f = (Integer i) -> s + i
-                }
+                SerializableFunction<Integer, String> f = (Integer i) -> s + i
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1367,7 +1355,7 @@ final class LambdaTest {
             package tests.lambda
 
             class C implements Serializable {
-                private static final long serialVersionUID = -1L;
+                private static final long serialVersionUID = -1L
                 private String s = 'a'
 
                 byte[] test() {
@@ -1430,7 +1418,7 @@ final class LambdaTest {
             package tests.lambda
 
             class C implements Serializable {
-                private static final long serialVersionUID = -1L;
+                private static final long serialVersionUID = -1L
                 private String getS() { 'a' }
 
                 byte[] test() {
