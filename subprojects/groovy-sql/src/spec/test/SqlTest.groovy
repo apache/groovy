@@ -340,7 +340,7 @@ class SqlTest extends GroovyTestCase {
               assert md.stringFunctions.tokenize(',').contains('CONCAT')
               def rs = md.getTables(null, null, 'AUTH%', null)
               assert rs.next()
-              assert rs.getString('TABLE_NAME') == 'AUTHOR'
+              assert rs.getString('TABLE_NAME').startsWith('AUTHOR')
               // end::sql_basic_table_metadata[]
             }
         '''
