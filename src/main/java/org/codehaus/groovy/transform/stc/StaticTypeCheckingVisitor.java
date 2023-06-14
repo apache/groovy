@@ -946,14 +946,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    /**
-     * @see #inferClosureParameterTypes
-     */
     private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
-        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
-        Parameter[] closureParameters = getParametersSafe(rhsExpression);
-        ClassNode[] samParameterTypes = typeInfo.getV1();
+        ClassNode[] samParameterTypes;
+        {
+            Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
+            storeInferredReturnType(rhsExpression, typeInfo.getV2());
+            samParameterTypes = typeInfo.getV1();
+        }
 
+        Parameter[] closureParameters = getParametersSafe(rhsExpression);
         if (samParameterTypes.length == 1 && hasImplicitParameter(rhsExpression)) {
             Variable it = rhsExpression.getVariableScope().getDeclaredVariable("it"); // GROOVY-7141
             closureParameters = new Parameter[]{it instanceof Parameter ? (Parameter) it : new Parameter(DYNAMIC_TYPE,"it")};
@@ -965,15 +966,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (samParameterTypes[i] == null) continue;
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(samParameterTypes[i]);
+                    parameter.setType(samParameterTypes[i]); // GROOVY-11085
                 }
             }
+            rhsExpression.putNodeMetaData(CLOSURE_ARGUMENTS, samParameterTypes);
         } else {
             String descriptor = toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes);
-            addStaticTypeError("Wrong number of parameters for method target " + descriptor, rhsExpression);
+            addStaticTypeError("Wrong number of parameters for method target: " + descriptor, rhsExpression);
         }
-
-        storeInferredReturnType(rhsExpression, typeInfo.getV2());
     }
 
     /**
@@ -3091,23 +3091,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode targetType = target.getType();
                 if (targetType != null && targetType.isGenericsPlaceHolder())
                     targetType = getCombinedBoundType(targetType.asGenericsType());
-                targetType = applyGenericsContext(context, targetType); // fill place-holders
-                ClassNode[] samParamTypes = GenericsUtils.parameterizeSAM(targetType).getV1();
-
-                int n; Parameter[] p = expression.getParameters();
-                if (p == null) {
-                    // zero parameters
-                    paramTypes = ClassNode.EMPTY_ARRAY;
-                } else if ((n = p.length) == 0) {
-                    // implicit parameter(s)
-                    paramTypes = samParamTypes;
-                } else { // TODO: error for length mismatch
-                    paramTypes = Arrays.copyOf(samParamTypes, n);
-                    for (int i = 0, j = Math.min(n, samParamTypes.length); i < j; i += 1) {
-                        if (p[i].isDynamicTyped()) p[i].setType(samParamTypes[i]); // GROOVY-11085
-                    }
-                }
-                expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
+                targetType = applyGenericsContext(context, targetType); // fill "T"
+                inferParameterAndReturnTypesOfClosureOnRHS(targetType, expression);
             }
         }
     }

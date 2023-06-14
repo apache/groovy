@@ -191,27 +191,36 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10277
-    @NotYetImplemented
+    // GROOVY-9991
     void testCoerceToFunctionalInterface3() {
         assertScript '''
-            Consumer<Number> c = { n -> }
-            Supplier<Number> s = { -> 42 }
-            Predicate<Number> p = { n -> 42 }
+            Consumer<Integer>  c = { it }
+            Supplier<Integer>  s = { 42 }
+            Predicate<Integer> p = { true }
         '''
 
         assertScript '''
-            def c = (Consumer<Number>) { n -> }
-            def s = (Supplier<Number>) { -> 42 }
-            def p = (Predicate<Number>) { n -> 42 }
+            Consumer<Integer>  c = { n -> }
+            Supplier<Integer>  s = {   -> 42 }
+            Predicate<Integer> p = { n -> 42 }
         '''
 
         assertScript '''
-            def c = { n -> } as Consumer<Number>
-            def s = { -> 42 } as Supplier<Number>
-            def p = { n -> 42 } as Predicate<Number>
+            def c = (Consumer<Integer>)  { n -> }
+            def s = (Supplier<Integer>)  {   -> 42 }
+            def p = (Predicate<Integer>) { n -> 42 }
         '''
 
+        assertScript '''
+            def c = { n ->    } as Consumer<Integer>
+            def s = {   -> 42 } as Supplier<Integer>
+            def p = { n -> 42 } as Predicate<Integer>
+        '''
+    }
+
+    // GROOVY-10277
+    @NotYetImplemented
+    void testCoerceToFunctionalInterfaceX() {
         shouldFailWithMessages '''
             def s = (Supplier<Number>) { -> false }
         ''',
@@ -223,9 +232,15 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type boolean for closure expecting java.lang.Number'
 
         shouldFailWithMessages '''
-            def s = (() -> ['']) as Supplier<Number>
+            def foo(Supplier<Number> s) { s.get() }
+            def n = foo { -> false }
         ''',
-        'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
+        'Cannot return value of type boolean for closure expecting java.lang.Number'
+
+        shouldFailWithMessages '''
+            def s = (() -> [""]) as Supplier<Number>
+        ''',
+        'Cannot return value of type java.util.List <java.lang.String> for lambda expecting java.lang.Number'
     }
 
     void testCoerceToFunctionalInterface4() {
@@ -401,6 +416,32 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8499, GROOVY-10963
+    void testCoerceToFunctionalInterface1x() {
+        shouldFailWithMessages '''
+            ['ab'.chars,'12'.chars].combinations().stream().map((l,n) -> "$l$n")
+        ''',
+        'Wrong number of parameters for method target: apply(java.lang.Object)'
+
+        shouldFailWithMessages '''
+            void test(Consumer c) {}
+            test(() -> {})
+        ''',
+        'Wrong number of parameters for method target: accept(java.lang.Object)'
+
+        shouldFailWithMessages '''import java.util.concurrent.Callable
+            void test(Callable c) {}
+            test(x -> { x })
+        ''',
+        'Wrong number of parameters for method target: call()'
+
+        shouldFailWithMessages '''
+            void test(Runnable r) {}
+            test(x -> { x })
+        ''',
+        'Wrong number of parameters for method target: run()'
+    }
+
     // GROOVY-9079
     void testCoerceToFunctionalInterface12() {
         assertScript '''import java.util.concurrent.Callable
@@ -498,5 +539,28 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             }
             test( [null] )
         '''
+    }
+
+    // GROOVY-11083
+    void testCoerceToFunctionalInterface18() {
+        shouldFailWithMessages '''
+            void setFoo(Consumer<Number> c) {}
+            void test(Date d) {
+                foo = { n = d -> }
+            }
+        ''',
+        'Cannot assign value of type java.util.Date to variable of type java.lang.Number'
+    }
+
+    // GROOVY-11085
+    void testCoerceToFunctionalInterface19() {
+        for (type in ['','long','Long']) {
+            assertScript """
+                void setFoo(Predicate<Long> p) {
+                    assert p.test(1L)
+                }
+                foo = { $type n -> n instanceof Long }
+            """
+        }
     }
 }

@@ -1254,11 +1254,7 @@ final class LambdaTest {
             class C implements Serializable {
                 private static final long serialVersionUID = -1L
                 String s = 'a'
-                SerializableFunction<Integer, String> f
-
-                {
-                    f = (Integer i) -> s + i
-                }
+                transient SerializableFunction<Integer, String> f = (Integer i) -> s + i
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1289,11 +1285,7 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             class C {
                 String s = 'a'
-                SerializableFunction<Integer, String> f
-
-                {
-                    f = (Integer i) -> s + i
-                }
+                SerializableFunction<Integer, String> f = (Integer i) -> s + i
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
@@ -1438,7 +1430,7 @@ final class LambdaTest {
 
             @groovy.transform.CompileStatic
             class C implements Serializable {
-                private static final long serialVersionUID = -1L;
+                private static final long serialVersionUID = -1L
                 private String s = 'a'
 
                 byte[] test() {
@@ -1503,7 +1495,7 @@ final class LambdaTest {
 
             @groovy.transform.CompileStatic
             class C implements Serializable {
-                private static final long serialVersionUID = -1L;
+                private static final long serialVersionUID = -1L
                 private String getS() { 'a' }
 
                 byte[] test() {
