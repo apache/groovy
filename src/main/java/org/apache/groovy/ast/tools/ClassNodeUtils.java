@@ -44,7 +44,6 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
-import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -52,6 +51,9 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * Utility class for working with ClassNodes
  */
 public class ClassNodeUtils {
+
+    private ClassNodeUtils() {
+    }
 
     /**
      * Formats a type name into a human readable version. For arrays, appends "[]" to the formatted
@@ -222,19 +224,16 @@ public class ClassNodeUtils {
      * @param name      the name of the method of interest
      * @param arguments the arguments to match against
      * @param trySpread whether to try to account for SpreadExpressions within the arguments
-     * @return true if a matching method was found
+     * @return {@code true} if a matching method was found.
      */
-    public static boolean hasPossibleStaticMethod(ClassNode cNode, String name, Expression arguments, boolean trySpread) {
-        int count = 0;
-        boolean foundSpread = false;
-
+    public static boolean hasPossibleStaticMethod(final ClassNode cNode, final String name, final Expression arguments, final boolean trySpread) {
+        int count = 0; boolean foundSpread = false;
         if (arguments instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) arguments;
-            for (Expression arg : tuple.getExpressions()) {
+            for (Expression arg : (TupleExpression) arguments) {
                 if (arg instanceof SpreadExpression) {
                     foundSpread = true;
                 } else {
-                    count++;
+                    count += 1;
                 }
             }
         } else if (arguments instanceof MapExpression) {
@@ -260,16 +259,29 @@ public class ClassNodeUtils {
                 int nonDefaultParameters = 0;
                 for (Parameter parameter : parameters) {
                     if (!parameter.hasInitialExpression()) {
-                        nonDefaultParameters++;
+                        nonDefaultParameters += 1;
                     }
                 }
 
                 if (count < parameters.length && nonDefaultParameters <= count) {
                     return true;
                 }
-                // TODO handle spread with nonDefaultParams?
+                // TODO: Handle spread with nonDefaultParams?
             }
         }
+
+        // GROOVY-11104: generated method
+        if (cNode.isPrimaryClassNode()) {
+            String pName = getPropNameForAccessor(name);
+            if (!pName.equals(name)) { // check isValidAccessorName
+                PropertyNode pNode = getStaticProperty(cNode, pName);
+                if (pNode != null && (name.startsWith("is") ? ClassHelper.boolean_TYPE.equals(pNode.getType())
+                                      : !name.startsWith("set") || !Modifier.isFinal(pNode.getModifiers()))) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -283,7 +295,7 @@ public class ClassNodeUtils {
         }
         String propName = getPropNameForAccessor(methodName);
         PropertyNode pNode = getStaticProperty(cNode, propName);
-        return pNode != null && (methodName.startsWith("get") || boolean_TYPE.equals(pNode.getType()));
+        return pNode != null && (methodName.startsWith("get") || ClassHelper.boolean_TYPE.equals(pNode.getType()));
     }
 
     /**
@@ -341,17 +353,13 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detect whether a given ClassNode is a inner class (non-static).
+     * Detect whether a given ClassNode is an inner class (non-static).
      *
      * @param cNode the ClassNode of interest
      * @return true if the given node is a (non-static) inner class, else false
      */
-    public static boolean isInnerClass(ClassNode cNode) {
-        return cNode.redirect().getOuterClass() != null
-                && !Modifier.isStatic(cNode.getModifiers());
-    }
-
-    private ClassNodeUtils() {
+    public static boolean isInnerClass(final ClassNode cNode) {
+        return cNode.getOuterClass() != null && !Modifier.isStatic(cNode.getModifiers());
     }
 
     public static boolean hasNoArgConstructor(ClassNode cNode) {
