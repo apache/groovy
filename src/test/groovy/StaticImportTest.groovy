@@ -317,6 +317,20 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
                 assert z == 'baz_set_get'
             """
         }
+
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import static Pogo.setP as store
+            class Pogo {
+                static p
+            }
+            assert Pogo.p == null
+            @CompileStatic test() {
+                store('')
+                assert Pogo.p == ''
+            }
+            test()
+        '''
     }
 
     // GROOVY-9382, GROOVY-10133
