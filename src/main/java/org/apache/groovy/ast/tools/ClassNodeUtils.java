@@ -232,19 +232,16 @@ public class ClassNodeUtils {
      * @param name      the name of the method of interest
      * @param arguments the arguments to match against
      * @param trySpread whether to try to account for SpreadExpressions within the arguments
-     * @return true if a matching method was found
+     * @return {@code true} if a matching method was found.
      */
     public static boolean hasPossibleStaticMethod(final ClassNode cNode, final String name, final Expression arguments, final boolean trySpread) {
-        int count = 0;
-        boolean foundSpread = false;
-
+        int count = 0; boolean foundSpread = false;
         if (arguments instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) arguments;
-            for (Expression arg : tuple.getExpressions()) {
+            for (Expression arg : (TupleExpression) arguments) {
                 if (arg instanceof SpreadExpression) {
                     foundSpread = true;
                 } else {
-                    count++;
+                    count += 1;
                 }
             }
         } else if (arguments instanceof MapExpression) {
@@ -270,16 +267,29 @@ public class ClassNodeUtils {
                 int nonDefaultParameters = 0;
                 for (Parameter parameter : parameters) {
                     if (!parameter.hasInitialExpression()) {
-                        nonDefaultParameters++;
+                        nonDefaultParameters += 1;
                     }
                 }
 
                 if (count < parameters.length && nonDefaultParameters <= count) {
                     return true;
                 }
-                // TODO handle spread with nonDefaultParams?
+                // TODO: Handle spread with nonDefaultParams?
             }
         }
+
+        // GROOVY-11104: generated method
+        if (cNode.isPrimaryClassNode()) {
+            for (PropertyNode pNode : cNode.getProperties()) {
+                if (pNode.getGetterNameOrDefault().equals(name)) {
+                    return pNode.isStatic();
+                }
+                if (pNode.getSetterNameOrDefault().equals(name)) {
+                    return pNode.isStatic() && !pNode.isFinal();
+                }
+            }
+        }
+
         return false;
     }
 
