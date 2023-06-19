@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
-final class MapTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+final class MapTest {
+
+    @Test
     void testMap() {
         def m = [1:'one', '2':'two', 3:'three']
 
@@ -73,6 +78,7 @@ final class MapTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEmptyMap() {
         def m = [:]
 
@@ -88,6 +94,7 @@ final class MapTest extends GroovyTestCase {
     /**
      * Map "empty" property isn't Map#isEmpty.
      */
+    @Test
     void testMapEmpty() {
         def m = [:].withDefault{ 'entry' }
 
@@ -100,6 +107,7 @@ final class MapTest extends GroovyTestCase {
     /**
      * Map "class" property isn't Object#getClass.
      */
+    @Test
     void testMapClass() {
         def m = [:].withDefault{ 'entry' }
 
@@ -110,67 +118,67 @@ final class MapTest extends GroovyTestCase {
     }
 
     // GROOVY-5001, GROOVY-11367
-    void testMapDelegate() {
-        for (mode in ['','static']) {
-            assertScript """import groovy.transform.*
-                class M {
-                    @Delegate final Map m = [:].withDefault{ 'entry' }
-                    def           $mode v = 'field'
-                    public        $mode w = 'field'
-                    protected     $mode x = 'field'
-                    @PackageScope $mode y = 'field'
-                    private       $mode z = 'field'
-                }
+    @ParameterizedTest @ValueSource(strings=['','static'])
+    void testMapDelegate(String mode) {
+        assertScript """import groovy.transform.*
+            class M {
+                @Delegate final Map m = [:].withDefault{ 'entry' }
+                def           $mode v = 'field'
+                public        $mode w = 'field'
+                protected     $mode x = 'field'
+                @PackageScope $mode y = 'field'
+                private       $mode z = 'field'
+            }
 
-                def map = new M()
-                assert map.m         === map.@m
-                assert map.v         == 'field'
-                assert map.w         == 'field'
-                assert map.x         == 'entry'
-                assert map.y         == 'entry'
-                assert map.z         == 'entry'
-                assert map.empty     == 'entry'
-                assert map.class     == 'entry'
-                assert map.metaClass instanceof MetaClass
+            def map = new M()
+            assert map.m         === map.@m
+            assert map.v         == 'field'
+            assert map.w         == 'field'
+            assert map.x         == 'entry'
+            assert map.y         == 'entry'
+            assert map.z         == 'entry'
+            assert map.empty     == 'entry'
+            assert map.class     == 'entry'
+            assert map.metaClass instanceof MetaClass
 
-                map.with {
-                    assert v         == 'field'
-                    assert w         == 'field'
-                    assert x         == 'entry'
-                    assert y         == 'entry'
-                    assert z         == 'entry'
-                    assert empty     == 'entry'
-                    assert it.class  == 'entry' // "class" cannot be a variable expression
-                    assert metaClass instanceof org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
-                }
-            """
-            assertScript """import groovy.transform.*
-                class M {
-                    @Delegate final Map m = [:].withDefault{ 'entry' }
-                    def           $mode getV() { 'getter' }
-                    public        $mode getW() { 'getter' }
-                    protected     $mode getX() { 'getter' }
-                    @PackageScope $mode getY() { 'getter' }
-                    private       $mode getZ() { 'getter' }
-                }
+            map.with {
+                assert v         == 'field'
+                assert w         == 'field'
+                assert x         == 'entry'
+                assert y         == 'entry'
+                assert z         == 'entry'
+                assert empty     == 'entry'
+                assert it.class  == 'entry' // "class" cannot be a variable expression
+                assert metaClass instanceof org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+            }
+        """
+        assertScript """import groovy.transform.*
+            class M {
+                @Delegate final Map m = [:].withDefault{ 'entry' }
+                def           $mode getV() { 'getter' }
+                public        $mode getW() { 'getter' }
+                protected     $mode getX() { 'getter' }
+                @PackageScope $mode getY() { 'getter' }
+                private       $mode getZ() { 'getter' }
+            }
 
-                def map = new M()
-                assert map.v == 'getter'
-                assert map.w == 'getter'
-                assert map.x == 'entry'
-                assert map.y == 'entry'
-                assert map.z == 'entry'
-                map.with {
-                    assert v == 'getter'
-                    assert w == 'getter'
-                    assert x == 'entry'
-                    assert y == 'entry'
-                    assert z == 'entry'
-                }
-            """
-        }
+            def map = new M()
+            assert map.v == 'getter'
+            assert map.w == 'getter'
+            assert map.x == 'entry'
+            assert map.y == 'entry'
+            assert map.z == 'entry'
+            map.with {
+                assert v == 'getter'
+                assert w == 'getter'
+                assert x == 'entry'
+                assert y == 'entry'
+                assert z == 'entry'
+            }
+        """
     }
 
+    @Test
     void testMapMutation() {
         def k = 'abc'
         def m = [(k): 'xyz', 'def': 123, ghi: null]
@@ -204,104 +212,103 @@ final class MapTest extends GroovyTestCase {
     }
 
     // GROOVY-5001, GROOVY-5491, GROOVY-11367
-    void testMapMutation2() {
-        for (mode in ['','static']) {
-            assertScript """import groovy.transform.*
-                class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
-                    def           $mode v = 'v'
-                    public        $mode w = 'w'
-                    protected     $mode x = 'x'
-                    @PackageScope $mode y = 'y'
-                    private       $mode z = 'z'
-                }
+    @ParameterizedTest @ValueSource(strings=['','static'])
+    void testMapMutation2(String mode) {
+        assertScript """import groovy.transform.*
+            class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                def           $mode v = 'v'
+                public        $mode w = 'w'
+                protected     $mode x = 'x'
+                @PackageScope $mode y = 'y'
+                private       $mode z = 'z'
+            }
 
-                def map = new M()
-                assert map.@v == 'v'
-                assert map.@w == 'w'
-                assert map.@x == 'x'
-                assert map.@y == 'y'
-                assert map.@z == 'z'
+            def map = new M()
+            assert map.@v == 'v'
+            assert map.@w == 'w'
+            assert map.@x == 'x'
+            assert map.@y == 'y'
+            assert map.@z == 'z'
 
+            map.v = 'V'
+            map.w = 'W'
+            map.x = 'X'
+            map.y = 'Y'
+            map.z = 'Z'
+
+            assert map.@v == 'V'
+            assert map.@w == 'W'
+            assert map.@x == 'x'
+            assert map.@y == 'y'
+            assert map.@z == 'z'
+
+            assert map.keySet() == ['x','y','z'].toSet()
+        """
+        assertScript """import groovy.transform.*
+            import static groovy.test.GroovyAssert.*
+            class M extends HashMap {
+                def           $mode final v = 'v'
+                public        $mode final w = 'w'
+                protected     $mode final x = 'x'
+                @PackageScope $mode final y = 'y'
+                private       $mode final z = 'z'
+            }
+
+            def map = new M()
+            shouldFail(ReadOnlyPropertyException) {
                 map.v = 'V'
+            }
+            shouldFail(ReadOnlyPropertyException) {
                 map.w = 'W'
-                map.x = 'X'
-                map.y = 'Y'
-                map.z = 'Z'
+            }
+            map.x = 'X'
+            map.y = 'Y'
+            map.z = 'Z'
 
-                assert map.@v == 'V'
-                assert map.@w == 'W'
-                assert map.@x == 'x'
-                assert map.@y == 'y'
-                assert map.@z == 'z'
+            assert map.@v == 'v'
+            assert map.@w == 'w'
+            assert map.@x == 'x'
+            assert map.@y == 'y'
+            assert map.@z == 'z'
 
-                assert map.keySet() == ['x','y','z'].toSet()
-            """
-            assertScript """import groovy.transform.*
-                import static groovy.test.GroovyAssert.*
-                class M extends HashMap {
-                    def           $mode final v = 'v'
-                    public        $mode final w = 'w'
-                    protected     $mode final x = 'x'
-                    @PackageScope $mode final y = 'y'
-                    private       $mode final z = 'z'
-                }
-
-                def map = new M()
-                shouldFail(ReadOnlyPropertyException) {
-                    map.v = 'V'
-                }
-                shouldFail(ReadOnlyPropertyException) {
-                    map.w = 'W'
-                }
-                map.x = 'X'
-                map.y = 'Y'
-                map.z = 'Z'
-
-                assert map.@v == 'v'
-                assert map.@w == 'w'
-                assert map.@x == 'x'
-                assert map.@y == 'y'
-                assert map.@z == 'z'
-
-                assert map.keySet() == ['x','y','z'].toSet()
-            """
-        }
+            assert map.keySet() == ['x','y','z'].toSet()
+        """
     }
 
     // GROOVY-5001, GROOVY-5491, GROOVY-11367
-    void testMapMutation3() {
-        for (mode in [''/*,'static'*/]) {
-            assertScript """import groovy.transform.*
-                class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
-                    def           $mode void setV(value) { put('setV', value) }
-                    public        $mode void setW(value) { put('setW', value) }
-                    protected     $mode void setX(value) { put('setX', value) }
-                    @PackageScope $mode void setY(value) { put('setY', value) }
-                    private       $mode void setZ(value) { put('setZ', value) }
-                }
+    @ParameterizedTest @ValueSource(strings=[''/*,'static'*/])
+    void testMapMutation3(String mode) {
+        assertScript """import groovy.transform.*
+            class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                def           $mode void setV(value) { put('setV', value) }
+                public        $mode void setW(value) { put('setW', value) }
+                protected     $mode void setX(value) { put('setX', value) }
+                @PackageScope $mode void setY(value) { put('setY', value) }
+                private       $mode void setZ(value) { put('setZ', value) }
+            }
 
-                def map = new M()
-                map.v = 'V'
-                map.w = 'W'
-                map.x = 'X'
-                map.y = 'Y'
-                map.z = 'Z'
+            def map = new M()
+            map.v = 'V'
+            map.w = 'W'
+            map.x = 'X'
+            map.y = 'Y'
+            map.z = 'Z'
 
-                assert map.v    == null
-                assert map.w    == null
-                assert map.x    ==  'X'
-                assert map.y    ==  'Y'
-                assert map.z    ==  'Z'
-                assert map.setV ==  'V'
-                assert map.setW ==  'W'
-                assert map.setX == null
-                assert map.setY == null
-                assert map.setZ == null
-                assert map.keySet() == ['setV','setW','x','y','z'].toSet()
-            """
-        }
+            assert map.v    == null
+            assert map.w    == null
+            assert map.x    ==  'X'
+            assert map.y    ==  'Y'
+            assert map.z    ==  'Z'
+            assert map.setV ==  'V'
+            assert map.setW ==  'W'
+            assert map.setX == null
+            assert map.setY == null
+            assert map.setZ == null
+            assert map.keySet() == ['setV','setW','x','y','z'].toSet()
+        """
     }
 
+    @Test
     void testMapLeftShift() {
         def map = [a:1, b:2]
         def other = [c:3]
@@ -312,6 +319,7 @@ final class MapTest extends GroovyTestCase {
         assert map == [a:1, b:2, c:3, d:4]
     }
 
+    @Test
     void testFindAll() {
         assert [a:1] == ['a':1, 'b':2].findAll {it.value == 1}
         assert [a:1] == ['a':1, 'b':2].findAll {it.key == 'a'}
@@ -320,6 +328,7 @@ final class MapTest extends GroovyTestCase {
         assert [:]   == ['a':1].findAll {false}
     }
 
+    @Test
     void testPutAllCollectionMapEntry() {
         def map1 = [a:1, b:2]
         def map2 = [c:3, d:4]
@@ -341,6 +350,7 @@ final class MapTest extends GroovyTestCase {
         assert map1 == control
     }
 
+    @Test
     void testRemoveAll() {
         // given:
         def map1 = [a:1, b:2]
@@ -361,6 +371,7 @@ final class MapTest extends GroovyTestCase {
         assert map2 == [d:4]
     }
 
+    @Test
     void testRetainAll() {
         // given:
         def map1 = [a:1, b:2]
@@ -381,6 +392,7 @@ final class MapTest extends GroovyTestCase {
         assert map2 == [c:3]
     }
 
+    @Test
     void testPlusCollectionMapEntry() {
         def map1 = [a:1, b:2]
         def map2 = [c:3, d:4]
@@ -401,6 +413,7 @@ final class MapTest extends GroovyTestCase {
         assert map1 == [a:1, b:2]
     }
 
+    @Test
     void testMapSort() {
         def map = [a:100, c:20, b:3]
         def mapByValue = map.sort{ it.value }
@@ -409,6 +422,7 @@ final class MapTest extends GroovyTestCase {
         assert mapByKey.collect{ it.value } == [100, 3, 20]
     }
 
+    @Test
     void testMapAdditionProducesCorrectValueAndPreservesOriginalMaps() {
         def left = [a:1, b:2]
         def right = [c:3]
@@ -416,12 +430,14 @@ final class MapTest extends GroovyTestCase {
         assert left == [a:1, b:2] && right == [c:3], 'LHS/RHS should not be modified'
     }
 
+    @Test
     void testMapAdditionGivesPrecedenceOfOverlappingValuesToRightMap() {
         def left = [a:1, b:1]
         def right = [a:2]
         assert left + right == [a:2, b:1], 'RHS should take precedence when entries have same key'
     }
 
+    @Test
     void testMapAdditionPreservesOriginalTypeForCommonCases() {
         def other = [c: 3]
         assert ([a: 1, b: 2] as Properties)    + other == [a:1, b:2, c:3] as Properties
@@ -430,6 +446,7 @@ final class MapTest extends GroovyTestCase {
         assert ([a: 1, b: 2] as TreeMap)       + other == [a:1, b:2, c:3] as TreeMap
     }
 
+    @Test
     void testFlattenUsingClosure() {
         def map = [a: 1, b: 2, c: 3, d: [e: 4, f: 5]]
         def findingNestedMapValues = { it.value instanceof Map ? it.value.entrySet() : it }
@@ -437,6 +454,7 @@ final class MapTest extends GroovyTestCase {
         assert result == [a: 1, b: 2, c: 3, e: 4, f: 5]
     }
 
+    @Test
     void testTreeMapEach() {
         TreeMap map = [c:2, b:3, a:1]
         String result1 = '', result2 = ''
@@ -446,6 +464,7 @@ final class MapTest extends GroovyTestCase {
         assert result2 == 'c2 b3 a1 '
     }
 
+    @Test
     void testMapWithDefault() {
         def m = [:].withDefault {k -> k * 2}
         m[1] = 3
@@ -455,6 +474,7 @@ final class MapTest extends GroovyTestCase {
         assert m == [1: 3, 2: 4]
     }
 
+    @Test
     void testMapIsCaseWithGrep() {
         def predicate = [apple:true, banana:true, lemon:false, orange:false, pear:true]
         def fruitList = ['apple', 'apple', 'pear', 'orange', 'pear', 'lemon', 'banana']
@@ -462,17 +482,23 @@ final class MapTest extends GroovyTestCase {
         assert fruitList.grep(predicate) == expected
     }
 
+    @Test
     void testMapIsCaseWithSwitch() {
         switch ('foo') {
-            case [foo: true, bar: false]: assert true; break
-            default: assert false
+          case [foo: true, bar: false]:
+            assert true; break
+          default:
+            assert false
         }
         switch ('bar') {
-            case [foo: true, bar: false]: assert false; break
-            default: assert true
+          case [foo: true, bar: false]:
+            assert false; break
+          default:
+            assert true
         }
     }
 
+    @Test
     void testMapWithDefaultCanBeConfiguredToNotStoreDefaultValue() {
         def defaultValue = 0
         def m = [:].withDefault(false, true) { defaultValue }

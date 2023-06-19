@@ -18,18 +18,23 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.util.StringUtil
+import org.junit.jupiter.api.Test
 
 import java.awt.Dimension
 import java.nio.CharBuffer
 import java.util.concurrent.LinkedBlockingQueue
 
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assumptions.assumeFalse
+
 /**
  * Tests various GDK methods
  */
-final class GroovyMethodsTest extends GroovyTestCase {
+final class GroovyMethodsTest {
 
+    @Test
     void testAbs() {
         def absoluteNumberOne = 1
         def negativeDouble = -1d
@@ -41,6 +46,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert absoluteNumberOne == negativeLong.abs()
     }
 
+    @Test
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
@@ -51,6 +57,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
     }
 
+    @Test
     void testGStringIsCase() {
         def one = 'one'
         def two = 'two'
@@ -62,6 +69,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert "one${two}".isCase("${one}two")
     }
 
+    @Test
     void testSpreadDot() {
         def animals = ['cat', 'dog']
         assert animals*.size() == [3, 3]
@@ -71,6 +79,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert animals.elements()*.size() == [3, 3]
     }
 
+    @Test
     void testCollectNested() {
         def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
         assert animalLists*.size() == [3, 2]
@@ -78,8 +87,9 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert animalLists.collectNested{ it.size() } == [[3, 5, 8], [4, 6]]
     }
 
+    @Test
     void testAsCoercion() {
-        if (HeadlessTestSupport.headless) return
+        assumeFalse(HeadlessTestSupport.headless)
 
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)
@@ -87,6 +97,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert d0 == [width: 100, height: 200] as Dimension
     }
 
+    @Test
     void testAsCoercionPropogatesCauseMessage() {
         try {
             ['one hundred', 200] as Dimension
@@ -96,6 +107,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAsCoercionInterface() {
         def letters = ['a', 'b', 'c']
         def ol = new ObserverLike()
@@ -115,6 +127,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
       void update(Observable o, arg) {observed << arg }
     }
 
+    @Test
     void testCombinations() {
         def lists = [['a', 'b'], [1, 2, 3]]
         def sets = [['a', 'b'] as Set, [1, 2, 3] as Set]
@@ -127,12 +140,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert lists.combinations() as Set == [['a', 3], ['b', 3]] as Set
     }
 
+    @Test
     void testCombinationsWithAction() {
         def lists = [[2, 3],[4, 5, 6]]
         def expected = [8, 12, 10, 15, 12, 18]
         assert lists.combinations {x,y -> x*y } as Set == expected as Set
     }
 
+    @Test
     void testEachCombination() {
         def lists = [[2, 3],[4, 5, 6]]
         Set expected = [8, 12, 10, 15, 12, 18]
@@ -141,6 +156,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert collector == expected
     }
 
+    @Test
     void testTranspose() {
         def list1 = [['a', 'b'], [1, 2, 3]]
         def list2 = [['a', 'b', 'c'], [1, 2]]
@@ -149,6 +165,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert list2.transpose() == expected
     }
 
+    @Test
     void testSum() {
         assert [].sum() == null
         assert [null].sum() == null
@@ -174,11 +191,13 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
     }
 
+    @Test
     void testSumForIteratorWithList() {
         def result = [1, 2, 3].iterator().sum([])
         assert result == [1, 2, 3]
     }
 
+    @Test
     void testEachLineString() {
         def twolines = 'one\ntwo'
         def result = ''
@@ -186,6 +205,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == '0: one\n1: two\n'
     }
 
+    @Test
     void testEachLineStringWithStartingLine() {
         def twolines = 'one\ntwo'
         def result = ''
@@ -193,11 +213,13 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == '1: one\n2: two\n'
     }
 
+    @Test
     void testSumForIteratorWithInt() {
         def result = [1, 2, 3].iterator().sum(0)
         assert result == 6
     }
 
+    @Test
     void testReverseForIterator() {
         def listIterator = [1, 2, 3].iterator()
         def result = []
@@ -209,18 +231,21 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == [3, 2, 1]
     }
 
+    @Test
     void testReverseForObjectArrays() {
         Object[] numbers = [1, 2, 3]
         def result = numbers.reverse()
         assert result == [3, 2, 1]
     }
 
+    @Test
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
         assert ["abc", 5, 2.34].join(", ") == "abc, 5, 2.34"
     }
 
+    @Test
     void testTimes() {
         def count = 0
         5.times {i -> count = count + i}
@@ -231,6 +256,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert count == 10
     }
 
+    @Test
     void testArraySubscript() {
         def list = [1, 2, 3, 4]
         def array = list.toArray()
@@ -241,12 +267,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert array[0..<0] == []
     }
 
+    @Test
     void testToCharacterMethod() {
         def s = 'c'
         def x = s.toCharacter()
         assert x instanceof Character
     }
 
+    @Test
     void testGetCharsMethod() {
         def s = 'abc'
         def x = s.chars
@@ -254,6 +282,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert x.size() == 3
     }
 
+    @Test
     void testCharacterToMethods() {
         char c1 = 'a'
         char c2 = 'Z'
@@ -261,6 +290,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c2.toLowerCase() == 'z'
     }
 
+    @Test
     void testCharacterIsMethods() {
         def f = false
         def t = true
@@ -271,8 +301,8 @@ final class GroovyMethodsTest extends GroovyTestCase {
         checkProperties('&', f, f, f, f, f, f)
     }
 
-    private def checkProperties(String s, boolean isUpperCase, boolean isLowerCase, boolean isWhitespace,
-                            boolean isDigit, boolean isLetter, boolean isLetterOrDigit) {
+    private def checkProperties(String s,
+            boolean isUpperCase, boolean isLowerCase, boolean isWhitespace, boolean isDigit, boolean isLetter, boolean isLetterOrDigit) {
         char c = s as char
         assert c.isUpperCase() == isUpperCase
         assert c.isLowerCase() == isLowerCase
@@ -282,6 +312,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c.isLetterOrDigit() == isLetterOrDigit
     }
 
+    @Test
     void testPutAtRange() {
         def list
         list = ['a', 'b', 'c']; list[4] = 'x'; assert list == ["a", "b", "c", null, "x"]
@@ -291,6 +322,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         list = ['a', 'b', 'c']; list[4..5] = 'x'; assert list == ["a", "b", "c", null, "x"]
     }
 
+    @Test
     void testGetAtRange() {
         def list = ['a', 'b', 'c']
         assert list[1..2] == ['b', 'c']
@@ -300,6 +332,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert list[0<..<1] == []
     }
 
+    @Test
     void testCharSequenceGetAt() {
         def x = "matrix"
         assert x[0, 5..0] == 'mxirtam'
@@ -309,6 +342,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert x[0..<0] == ''
     }
 
+    @Test
     void testListGrep() {
         def list = ["James", "Bob", "Guillaume", "Sam"]
         def answer = list.grep(~".*a.*")
@@ -317,6 +351,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert answer == ["Bob"]
     }
 
+    @Test
     void testCollectionToList() {
         def c = [1, 2, 3, 4, 5] // but it's a list
         def l = c.toList()
@@ -324,6 +359,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    @Test
     void testIteratorToList() {
         def c = [1, 2, 3, 4, 5]
         def l = c.iterator().toList()
@@ -331,12 +367,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    @Test
     void testIteratorSize() {
         def c = [1, 2, 3, 4, 5]
         def it = c.iterator()
         assert c.size() == it.size()
     }
 
+    @Test
     void testEnumerationToList() {
         def c = [1, 2, 3, 4, 5]
         def v = new Vector()
@@ -348,6 +386,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    @Test
     void testStringToList() {
         String s = 'hello 10'
         def gs = "hello ${5 + 5}"
@@ -357,6 +396,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert gs as String[] == expected
     }
 
+    @Test
     void testCollectionAsList() {
         Integer[] nums = [1, 2, 3, 4, 5]
         def numList = nums as List
@@ -364,6 +404,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert nums.size() == numList.size()
     }
 
+    @Test
     void testCollectionAsLinkedList() {
         Integer[] nums = [1, 2, 3, 4, 5]
         def numList = nums as LinkedList
@@ -372,6 +413,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert numList.class == LinkedList.class
     }
 
+    @Test
     void testArrayListAsLinkedList() {
         ArrayList nums = [1, 2, 3, 4, 5]
         def result = nums as LinkedList
@@ -379,20 +421,24 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result.class == LinkedList
     }
 
+    @Test
     void testFileSize() {
         assert new File('gradle.properties').size()
     }
 
+    @Test
     void testFileExtension() {
         assert new File('gradle.properties').extension == 'properties'
         assert new File('properties').extension == ""
     }
 
+    @Test
     void testFileBaseName() {
         assert new File('gradle.properties').baseName == 'gradle'
         assert new File('properties').baseName == 'properties'
     }
 
+    @Test
     void testMatcherSize() {
         assertEquals 3, ('aaa' =~ /./).count
         assertEquals 3, ('aaa' =~ /./).size()
@@ -400,12 +446,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assertEquals 0, ('a' =~ /x/).size()
     }
 
+    @Test
     void testJoinString() {
         String[] arr = ["a", "b", "c", "d"]
         def joined = arr.join(", ")
         assert joined == "a, b, c, d"
     }
 
+    @Test
     void testReverseEachForList() {
         def l = ["cheese", "loves", "Guillaume"]
         def expected = ["Guillaume", "loves", "cheese"]
@@ -414,6 +462,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert answer == expected
     }
 
+    @Test
     void testReverseEachForArray() {
         String[] items = ["cheese", "loves", "Guillaume"]
         String[] expected = ["Guillaume", "loves", "cheese"]
@@ -423,6 +472,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.reverse() == expected
     }
 
+    @Test
     void testGrep() {
         def list = ["Guillaume", "loves", "cheese"]
         def answer = list.grep(~".*ee.*")
@@ -435,6 +485,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert answer == [2, 3, 2]
     }
 
+    @Test
     void testMapGetWithDefault() {
         def map = [:]
         assert map.foo == null
@@ -445,12 +496,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
-    void testInForLists() {
-        def list = ['a', 'b', 'c']
-        assert 'b' in list
-        assert !('d' in list)
-    }
-
+    @Test
     void testFirstLastHeadTailInitForLists() {
         def list = ['a', 'b', 'c']
         assert 'a' == list.first()
@@ -479,6 +525,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert list.size() == 0
     }
 
+    @Test
     void testFirstLastHeadTailInitForIterables() {
         int a
         Iterable iterable = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
@@ -512,6 +559,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testFirstLastHeadTailInitForArrays() {
         String[] ary = ['a', 'b', 'c'] as String[]
         assert 'a' == ary.first()
@@ -540,6 +588,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert ary.length == 0
     }
 
+    @Test
     void testPushPopForLists() {
         def list = ['a', 'b', 'c']
         assert list.push('d')
@@ -548,12 +597,82 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert list.size() == 3
     }
 
-    void testInForArrays() {
-        String[] array = ['a', 'b', 'c']
-        assert 'b' in array
-        assert !('d' in array)
+    // GROOVY-9848
+    @Test
+    void testInForMaps() {
+        assert 'foo'  in [foo:true]
+        assert 'foo' !in [foo:false]
+        assert 'bar' !in [foo:false]
+        assert 'bar'  in [:].withDefault{ true }
+        assert 'bar' !in [:].withDefault{ false }
     }
 
+    @Test
+    void testInForSets() {
+        def set = ['a', 'b', 'c'] as Set
+        assert 'a' in set
+        assert 'b' in set
+        assert 'c' in set
+        assert 'd' !in set
+        assert !('d' in set)
+        assert !(null in set)
+        assert !(true in set)
+    }
+
+    @Test
+    void testInForLists() {
+        def list = ['a', 'b', 'c']
+        assert 'a' in list
+        assert 'b' in list
+        assert 'c' in list
+        assert 'd' !in list
+        assert !('d' in list)
+        assert !(null in list)
+        assert !(true in list)
+    }
+
+    @Test
+    void testInForArrays() {
+        def array = new String[]{'a', 'b', 'c'}
+        assert 'a' in array
+        assert 'b' in array
+        assert 'c' in array
+        assert 'd' !in array
+        assert !('d' in array)
+        assert !(null in array)
+        assert !(true in array)
+    }
+
+    // GROOVY-2456
+    @Test
+    void testInForStrings() {
+        def string = 'abc'
+        shouldFail { assert 'a'  in string }
+        shouldFail { assert 'b'  in string }
+        shouldFail { assert 'c'  in string }
+        shouldFail { assert 'ab' in string }
+        shouldFail { assert 'bc' in string }
+        assert 'abc' in string
+        assert !('d' in string)
+        assert !(null in string)
+        assert !(true in string)
+    }
+
+    // GROOVY-7919
+    @Test
+    void testInForIterables() {
+        Iterable iter = { -> ['a','b','c'].iterator() }
+        assert 'a' in iter
+        assert 'a' in iter
+        assert 'b' in iter
+        assert 'c' in iter
+        assert 'd' !in iter
+        assert !('d' in iter)
+        assert !(null in iter)
+        assert !(true in iter)
+    }
+
+    @Test
     void testMaxForIterable() {
         assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
         assert ['be', 'happy', null].max{ it == 'be' ? null : "" + it } == null
@@ -568,6 +687,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert nums.max{ it.toString().toList()*.toInteger().sum() } == 35
     }
 
+    @Test
     void testMinForIterable() {
         assert [-5, -3, -1, 0, 2, 4].min {it * it} == 0
         assert ['be', 'happy', null].min{ it == 'happy' ? null : "" + it } == 'happy'
@@ -580,18 +700,22 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert nums.min{ it.toString().toList()*.toInteger().sum() } == 100
     }
 
+    @Test
     void testSort() {
         assert [-5, -3, -1, 0, 2, 4].sort {it * it} == [0, -1, 2, -3, 4, -5]
     }
 
+    @Test
     void testMaxForIterator() {
         assert [-5, -3, -1, 0, 2, 4].collect { it * it }.iterator().max() == 25
     }
 
+    @Test
     void testMinForIterator() {
         assert [-5, -3, -1, 0, 2, 4].collect { it * it }.iterator().min() == 0
     }
 
+    @Test
     void testMinForObjectArray() {
         Integer[] numbers = [-5, -3, -1, 0, 2, 4]
         def result = numbers.min()
@@ -600,6 +724,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == 0
     }
 
+    @Test
     void testMaxForObjectArray() {
         Integer[] numbers = [-5, -3, -1, 0, 2, 4]
         def result = numbers.max()
@@ -608,34 +733,41 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == -5
     }
 
+    @Test
     void testCountForIterator() {
         assert [1, 2, 3, 2, 1].iterator().count(2) == 2
     }
 
+    @Test
     void testCountForPrimitiveArray() {
         int[] nums = [1, 2, 3, 2, 1]
         assert nums.count(2) == 2
     }
 
+    @Test
     void testCountForCollection() {
         def nums = [1, 2, 3, 2, 1]
         assert nums.count(2) == 2
     }
 
+    @Test
     void testCountForString() {
         def string = 'google'
         assert string.count('g') == 2
     }
 
+    @Test
     void testCountForStringEdgeCase_GROOVY5858() {
         def blank6 = ' ' * 6
         8.times { assert blank6.count(' ' * it) == 7 - it }
     }
 
+    @Test
     void testJoinForIterator() {
         assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
     }
 
+    @Test
     void testSortForIterator() {
         def result = []
         def iterator = [-5, -3, -1, 0, 2, 4].iterator().sort {it * it}
@@ -646,14 +778,17 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == [0, -1, 2, -3, 4, -5]
     }
 
+    @Test
     void testReplaceAllClosure() {
         assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
     }
 
+    @Test
     void testReplaceAllClosurePattern() {
         assert "1 a 2 b 3 c 4".replaceAll(~"\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
     }
 
+    @Test
     void testObjectSleep() {
         long start = System.currentTimeMillis()
         long sleeptime = 200
@@ -663,6 +798,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
                "Should have slept for at least $sleeptime ms (+/- epsilon ms) but slept only $slept ms"
     }
 
+    @Test
     void testObjectSleepInterrupted() {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
@@ -674,6 +810,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
                "Should have slept for at least $sleeptime ms (+/- epsilon ms) but slept only $slept ms"
     }
 
+    @Test
     void testObjectSleepWithOnInterruptHandlerStopSleeping() {
         def log = ''
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
@@ -689,6 +826,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
+    @Test
     void testObjectSleepWithOnInterruptHandlerContinueSleeping() {
         def log = ''
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
@@ -705,6 +843,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
+    @Test
     void testObjectIdentity() {
         def a = new Object()
         def b = a
@@ -715,6 +854,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !new WackyHashCode().is(new WackyHashCode())
     }
 
+    @Test
     void testGroupByListIdentity() {
         def items = [1, 2, 'foo']
         assert items.groupBy() == [1:[1], 2:[2], foo:['foo']]
@@ -724,6 +864,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.groupBy({it},{it}) == [1:[1:[1]], 2:[2:[2]], foo:[foo:['foo']]]
     }
 
+    @Test
     void testGroupByList() {
         def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
         def list = [1, "a", 2, "b", 3.5, 4.6]
@@ -734,6 +875,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert 3 == result.size()
     }
 
+    @Test
     void testGroupByListMultipleCriteria() {
         def list1 = [1, 'a', 2, 'b', 3.5, 4.6]
         def result1 = list1.groupBy({ it.class }, { it.class == Integer ? 'integer' : 'non-integer' })
@@ -754,6 +896,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [77: [[aa: 22, bb: 33, cc: 77]]] == result2[22][33]
     }
 
+    @Test
     void testGroupByMapIdentity() {
         def map = [a:1, b:2]
         def entries = map.entrySet()
@@ -764,6 +907,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result[entry_a] == [a:1]
     }
 
+    @Test
     void testMapGroupEntriesBy() {
         def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
         def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
@@ -778,6 +922,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert 3 == result.size()
     }
 
+    @Test
     void testMapGroupBy() {
         def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
         def result = map.groupBy {entry -> entry.value.class}
@@ -787,6 +932,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result[Integer] == [1:1, 3:2]
     }
 
+    @Test
     void testMapGroupByMultipleCriteria() {
         def map1 = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
         def result1 = map1.groupBy({entry -> entry.value.class}, {entry -> entry.key + 1})
@@ -806,6 +952,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result2['cc']['cd']['ce'] == [cc: 33]
     }
 
+    @Test
     void testCountBy() {
         def list = ['a', 'b', 'c', 'a']
         def result = list.countBy { it }
@@ -813,28 +960,31 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [a: 2, b: 1, c: 1] == result
     }
 
-    def leftCol = ["2"]
-    def rightCol = ["1", "2", "3"]
-
+    @Test
     void testList() {
         def lst = [] as LinkedList
         doIt(lst)
     }
 
+    @Test
     void testSetWithExplicitCoercion() {
         def set = [] as HashSet
         doIt(set)
     }
 
+    @Test
     void testSetWithImplicitCoercion() {
         Set set = []
         doIt(set)
     }
 
+    @Test
     void testVector() {
         def vctr = [] as Vector
         doIt(vctr)
     }
+
+    def leftCol = ["2"], rightCol = ["1", "2", "3"]
 
     void doIt(col) {
         col.clear()
@@ -843,24 +993,28 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert col.intersect(rightCol) as List == ["2"]
     }
 
+    @Test
     void testFileWithReader() {
         def f = new File('gradle.properties')
         def expected = f.text
         assert expected == f.withReader { r -> r.text }
     }
 
+    @Test
     void testFileWithInputStream() {
         def f = new File('gradle.properties')
         def buf = new byte[f.size()]
         assert buf.size() == f.withInputStream { i -> i.read(buf) }
     }
 
+    @Test
     void testUrlReader() {
         def u = new File('gradle.properties').toURL()
         def expected = u.text
         assert expected == u.withReader { r -> r.text }
     }
 
+    @Test
     void testUrlWithInputStream() {
         def f = new File('gradle.properties')
         def u = f.toURL()
@@ -868,6 +1022,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert buf.size() == u.withInputStream { i -> i.read(buf) }
     }
 
+    @Test
     void testMinus() {
         // collections and lists remove all - deemed most common behavior for these
         assert [1, 2, 1, 3] - 1 == [2, 3]
@@ -878,6 +1033,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [null] - [1] == [null]
     }
 
+    @Test
     void testListSplit() {
         def nums = 1..6
         def (evens, odds) = nums.split{ it % 2 == 0 }
@@ -889,6 +1045,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert others == ['cat', 'dog']
     }
 
+    @Test
     void testListDerivativesAreRetainedWithCommonOperators() {
         def x = new WackyList([1, 2, 3])
         assert x.size() == 3
@@ -901,6 +1058,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert y.class == WackyList
     }
 
+    @Test
     void testEachOnEnumClassIteratesThroughTheValuesOfTheEnum() {
         def expected = Suit.values().toList()
         def answer = []
@@ -908,6 +1066,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert answer == expected
     }
 
+    @Test
     void testForLoopWithEnumClassIteratesThroughTheValuesOfTheEnum() {
         def expected = Suit.values().toList()
         def answer = []
@@ -917,6 +1076,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert answer == expected
     }
 
+    @Test
     void testAsEnumType() {
         assert Suit.HEARTS == ("HEARTS" as Suit)
 
@@ -925,6 +1085,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testJavaEnumType() {
         def x = Language.English
         x++
@@ -935,6 +1096,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert Language.French in Language.English..Language.Spanish
     }
 
+    @Test
     void testStringBuilderPlusPutAtSizeLeftShift() {
         def sb = new StringBuilder('foo')
         assert sb + 'bar' == 'foobar'
@@ -950,6 +1112,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result == 'fooabcxyz'
     }
 
+    @Test
     void testDefiningQueue() {
         def result = [1, 2, 3, 4, 5] as Queue
         assert result instanceof Queue
@@ -957,6 +1120,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert result.sum() == 15
     }
 
+    @Test
     void testLinkedBlockingQueue() {
         def q = [1, 2, 3, 4, 5, 6, 7, 8, 9] as LinkedBlockingQueue
         assert q.size() == 9
@@ -973,6 +1137,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         [2, 8, 10].each{ assert it in s }
     }
 
+    @Test
     void testSubsequences() {
         def items = [1, 2, 3]
         assert items.subsequences() == [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]] as Set
@@ -995,6 +1160,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         ] as Set
     }
 
+    @Test
     void testPrettyPrintingRecursiveStructures() {
         def m = [a:1]
         m.self = m
@@ -1013,18 +1179,21 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert animals.toListString(40) == '[ant, bee, cat, [pets:[ant, bee, cat, [pets:[...]]]]]'
     }
 
+    @Test
     void testRemoveAll() {
         def items = [1, 2, 3, 4]
         assert items.removeAll{ it % 2 == 0 }
         assert items == [1, 3]
     }
 
+    @Test
     void testRetainAll() {
         def items = [1, 2, 3, 4]
         assert items.retainAll{ it % 2 == 0 }
         assert items == [2, 4]
     }
 
+    @Test
     void testPermutationsForLists() {
         def items = [1, 2, 3]
         assert items.permutations() == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as Set
@@ -1061,6 +1230,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         ] as Set
     }
 
+    @Test
     void testPermutationsForIterables() {
         int a = 1
         Iterable items = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1100,11 +1270,13 @@ final class GroovyMethodsTest extends GroovyTestCase {
         ] as Set
     }
 
+    @Test
     void testPermutationsWithAction() {
-            def items = [1, 2, 3]
-            assert items.permutations { it.collect { 2*it } } as Set == [[2, 4, 6], [2, 6, 4], [4, 2, 6], [4, 6, 2], [6, 2, 4], [6, 4, 2]] as Set
+        def items = [1, 2, 3]
+        assert items.permutations { it.collect { 2*it } } as Set == [[2, 4, 6], [2, 6, 4], [4, 2, 6], [4, 6, 2], [6, 2, 4], [6, 4, 2]] as Set
     }
 
+    @Test
     void testStringTranslate() {
         assert StringUtil.tr("abcdefghijklmn", "abcdefghijklmn", "ABCDEFGHIJKLMN") == "ABCDEFGHIJKLMN"
         assert StringUtil.tr("abcdefghijklmn", "abc", "ABC") == "ABCdefghijklmn"
@@ -1114,6 +1286,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert StringUtil.tr("abcdefghijklmn", "", "") == "abcdefghijklmn"
     }
 
+    @Test
     void testTr_Expand() {
         assert StringUtil.tr("abcdefghijklmn", "a-n", "ABCDEFGHIJKLMN") == "ABCDEFGHIJKLMN"
         assert StringUtil.tr("abcdefghijklmn", "abcdefghijklmn", "A-N") == "ABCDEFGHIJKLMN"
@@ -1136,6 +1309,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert 'Hello, World!'.tr(' --', 'Z') == 'HelloZZWorldZ'
     }
 
+    @Test
     void testBar() {
         assert StringUtil.bar(0, 0, 39) == '\u258f'
         assert StringUtil.bar(1, 0, 39) == '\u2588\u258f'
@@ -1148,6 +1322,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert StringUtil.bar(2, 0, 39, 20) == '\u2588\u258f'
     }
 
+    @Test
     void testListTake() {
         def data = [
             new ArrayList( [ 1, 2, 3 ] ),
@@ -1168,6 +1343,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testArrayTake() {
         String[] items = [ 'ant', 'bee', 'cat' ]
 
@@ -1182,6 +1358,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.takeRight(  4 ) == [ 'ant', 'bee', 'cat' ] as String[]
     }
 
+    @Test
     void testMapTake() {
         def data = [
             [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ],
@@ -1196,6 +1373,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIteratorTake() {
         int a = 1
         Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
@@ -1206,12 +1384,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.take(  4 ).toList() == [ 3, 4, 5, 6 ]
     }
 
+    @Test
     void testWellBehavedIteratorsForInfiniteStreams() {
         int a = 1
         def infiniterator = [ hasNext:{ true }, next:{ a++ } ] as Iterator
         assert infiniterator.drop(3).dropWhile{ it < 9 }.toUnique{ it % 100 }.init().tail().take(3).toList() == [10, 11, 12]
     }
 
+    @Test
     void testIterableTake() {
         int a = 1
         Iterable items = { [ hasNext:{ true }, next:{ a++ } ] as Iterator } as Iterable
@@ -1232,6 +1412,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.takeRight(  4 ) == [ 2, 3, 4, 5 ]
     }
 
+    @Test
     void testCharSequenceTake() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
@@ -1248,6 +1429,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testListDrop() {
         def data = [
             new ArrayList( [ 1, 2, 3 ] ),
@@ -1268,6 +1450,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testArrayDrop() {
         String[] items = [ 'ant', 'bee', 'cat' ]
 
@@ -1282,6 +1465,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.dropRight( -1 ) == [ 'ant', 'bee', 'cat' ] as String[]
     }
 
+    @Test
     void testMapDrop() {
         def data = [
             [ 'ant':10, 'bee':20, 'cat':30, 'dog':40 ],
@@ -1296,6 +1480,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIteratorDrop() {
         int a = 1
         Iterator items = [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator
@@ -1321,6 +1506,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert new ExplodingList('letters'.toList(), 4).iterator().dropRight(1).drop(1).take(1).toList() == ['e']
     }
 
+    @Test
     void testIterableDrop() {
         int a = 1
         Iterable items = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1343,6 +1529,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.dropRight( 5 ) == []
     }
 
+    @Test
     void testCharSequenceDrop() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
@@ -1359,6 +1546,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTakeDropClassSymmetry() {
         int a
         // NOTES:
@@ -1407,6 +1595,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testContainsForPrimitiveArrays() {
         boolean[] bools = [false]
         byte[] bytes = [1, 3]
@@ -1437,18 +1626,21 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !chars.contains('b' as char)
     }
 
+    @Test
     void testContainsForArrays() {
         String[] vowels = ['a', 'e', 'i', 'o', 'u']
         assert vowels.contains('u')
         assert !vowels.contains('x')
     }
 
+    @Test
     void testContainsForLists() {
         List vowels = ['a', 'e', 'i', 'o', 'u']
         assert vowels.contains('u')
         assert !vowels.contains('x')
     }
 
+    @Test
     void testContainsForIterables() {
         int a
         Iterable iterable = { [hasNext: { a < 6 }, next: { a++ }] as Iterator } as Iterable
@@ -1465,6 +1657,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !iterable.contains("a")
     }
 
+    @Test
     void testContainsAllForLists() {
         List vowels = ['a', 'e', 'i', 'o', 'u']
         assert vowels.containsAll([] as String[])
@@ -1472,6 +1665,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !vowels.containsAll(['a', 'x'] as String[])
     }
 
+    @Test
     void testContainsAllForIterables() {
         int a
         Iterable iterable = { [hasNext: { a < 6 }, next: { a++ }] as Iterator } as Iterable
@@ -1484,24 +1678,28 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !iterable.containsAll([1, 6] as int[])
     }
 
+    @Test
     void testCollectEntriesArray() {
         def arr = '1 San Francisco,2 Cupertino'.split(',')
         def map = arr.collectEntries { it.split(' ', 2); }
         assert map == ['1':'San Francisco', '2':'Cupertino']
     }
 
+    @Test
     void testCollectEntriesIterable() {
         def obj = new Things()
         def map = obj.collectEntries { Map.entry(it.toLowerCase(), it.toUpperCase()) }
         assert map == [a:'A', b:'B', c:'C']
     }
 
+    @Test
     void testCollectEntriesIterator() {
         def itr = ['a','bb','ccc'].iterator()
         def map = itr.collectEntries { [(it): it.size()] }
         assert map == [a:1, bb:2, ccc:3]
     }
 
+    @Test
     void testCollectEntriesListReturn() {
         def map = [[1,'a'], [2,'b'], [3]].collectEntries()
         assert map == [1:'a', 2:'b', 3:null]
@@ -1518,6 +1716,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
     }
 
     // GROOVY-10893
+    @Test
     void testCollectEntriesNullReturn() {
         def map = ['a','b','c','d','e'].collectEntries {
             if (it == 'a' || it == 'e') {
@@ -1527,6 +1726,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert map == [a:'vowel', e:'vowel']
     }
 
+    @Test
     void testListTakeWhile() {
         def data = [
             new ArrayList( [ 1, 3, 2 ] ),
@@ -1542,6 +1742,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testArrayTakeWhile() {
         String[] items = [ 'ant', 'bee', 'cat' ]
 
@@ -1550,6 +1751,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.takeWhile{ it != '' } == [ 'ant', 'bee', 'cat' ] as String[]
     }
 
+    @Test
     void testIteratorTakeWhile() {
         int a = 1
         Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
@@ -1557,6 +1759,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert items.takeWhile{ it < 5 }.toList() == [ 1, 2, 3, 4 ]
     }
 
+    @Test
     void testCharSequenceTakeWhile() {
         def data = [ 'groovy',      // String
                      "${'groovy'}", // GString
@@ -1570,6 +1773,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInjectWithoutIntialValue() {
         int a = 1
         def data = [
@@ -1585,6 +1789,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInjectWithIntialValue() {
         int a = 1
         def data = [
@@ -1600,6 +1805,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIntersectForLists() {
         assert [] == [].intersect([4, 5, 6, 7, 8])
         assert [] == [1, 2, 3, 4, 5].intersect([])
@@ -1607,6 +1813,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [[0, 1]] == [[0, 0], [0, 1]].intersect([[0, 1], [1, 1]])
     }
 
+    @Test
     void testIntersectForIterables() {
         int a = 1, b = 4
         Iterable iterableA = { [ hasNext:{ a <= 5 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1620,6 +1827,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [4, 5] == iterableA.intersect(iterableB)
     }
 
+    @Test
     void testIntersectForSets() {
         assert [].toSet() == [].toSet().intersect([] as Iterable)
         assert [].toSet() == [].toSet().intersect([1, 2, 3] as Iterable)
@@ -1629,8 +1837,9 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [2, 3].toSet() == [2, 3, 4, 5].toSet().intersect([1, 2, 3] as Iterable)
     }
 
+    // GROOVY-7602
+    @Test
     void testIntersectForMaps() {
-        // GROOVY-7602
         def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
         def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
         def intersection = list1.intersect(list2)
@@ -1644,6 +1853,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
     }
 
     // GROOVY-7602
+    @Test
     void testIntersectForURL() {
         def c1 = []
         def c2 = []
@@ -1652,8 +1862,9 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert c1.intersect(c2)
     }
 
+    // GROOVY-7530
+    @Test
     void testDisjointForMaps() {
-        // GROOVY-7530
         def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
         def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
         assert !list1.disjoint(list2)
@@ -1682,12 +1893,14 @@ final class GroovyMethodsTest extends GroovyTestCase {
     }
 
     // GROOVY-7530
+    @Test
     void testDisjointForFoo() {
         def a = [new Foo("foo")]
         def b = [new Foo("foo")]
         assert !a.disjoint(b)
     }
 
+    @Test
     void testDisjointForLists() {
         assert [].disjoint([])
         assert [].disjoint([4, 5, 6, 7, 8])
@@ -1697,6 +1910,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert ![[0, 0], [0, 1]].disjoint([[0, 1], [1, 1]])
     }
 
+    @Test
     void testDisjointForIterables() {
         int a = 1, b = 4
         Iterable iterableA = { [ hasNext:{ a <= 5 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1713,18 +1927,21 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert iterableA.disjoint(iterableB)
     }
 
+    @Test
     void testAsCollectionForIterables() {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
         assert [1, 2, 3] == iterable.asCollection()
     }
 
+    @Test
     void testToSetForIterables() {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 3 }, next:{ a++ } ] as Iterator } as Iterable
         assert ([1, 2, 3] as Set) == iterable.toSet()
     }
 
+    @Test
     void testToSpreadMapForArrays() {
         def spreadMap = ([1, 2, 3, 4] as Integer[]).toSpreadMap()
         assert 2 == spreadMap.size()
@@ -1733,6 +1950,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !spreadMap.containsKey(5)
     }
 
+    @Test
     void testToSpreadMapForLists() {
         def spreadMap = [1, 2, 3, 4].toSpreadMap()
         assert 2 == spreadMap.size()
@@ -1741,6 +1959,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !spreadMap.containsKey(5)
     }
 
+    @Test
     void testToSpreadMapForIterables() {
         int a = 1
         Iterable iterable = { [ hasNext:{ a <= 4 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1751,6 +1970,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert !spreadMap.containsKey(5)
     }
 
+    @Test
     void testPlusMinusClassSymmetryForCollections() {
         int a
         def data = [
@@ -1776,6 +1996,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPlusForLists() {
         assert [1, 2, 3] == [1, 2] + 3
 
@@ -1786,6 +2007,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 3, 4] == [1, 2] + [3, 4]
     }
 
+    @Test
     void testPlusForIterables() {
         int a, b
         Iterable iterableA = { [ hasNext:{ a <= 2 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1811,6 +2033,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 3, 4] == iterableA + [3, 4]
     }
 
+    @Test
     void testMinusForIterables() {
         int a, b
         Iterable iterableA = { [ hasNext:{ a <= 2 }, next:{ a++ } ] as Iterator } as Iterable
@@ -1838,11 +2061,13 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [3, 4] == iterableB - [1, 2]
     }
 
+    @Test
     void testMultiplyForLists() {
         assert [] == [] * 3
         assert [1, 2, 1, 2, 1, 2] == [1, 2] * 3
     }
 
+    @Test
     void testMultiplyForIterables() {
         Iterable iterableEmpty = { [ hasNext:{ false }, next:{ 0 } ] as Iterator } as Iterable
         assert [] == iterableEmpty * 3
@@ -1852,6 +2077,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 1, 2, 1, 2] == iterable * 3
     }
 
+    @Test
     void testUnionForSets() {
         Set empty = [] as Set
         Set a = [1,2,3,4] as Set
@@ -1870,6 +2096,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (a | c) !instanceof SortedSet
     }
 
+    @Test
     void testUnionForSortedSets() {
         SortedSet empty = [] as SortedSet
         SortedSet a = [1,2,3,4] as SortedSet
@@ -1888,6 +2115,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (a | c) instanceof SortedSet
     }
 
+    @Test
     void testInersectionForSets() {
         Set empty = [] as Set
         Set a = [1,2,3,4] as Set
@@ -1913,6 +2141,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (d.and(e, Comparator.naturalOrder())) !instanceof SortedSet
     }
 
+    @Test
     void testIntersectionForSortedSets() {
         SortedSet empty = [] as SortedSet
         SortedSet a = [1,2,3,4] as SortedSet
@@ -1938,6 +2167,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (d.and(e, Comparator.naturalOrder())) instanceof SortedSet
     }
 
+    @Test
     void testSymmetricDifferenceForSets() {
         Set empty = [] as Set
         Set a = [1,2,3,4] as Set
@@ -1963,6 +2193,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (d.xor(e, Comparator.naturalOrder())) !instanceof SortedSet
     }
 
+    @Test
     void testSymmetricDifferenceForSortedSets() {
         SortedSet empty = [] as SortedSet
         SortedSet a = [1,2,3,4] as SortedSet
@@ -1988,6 +2219,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert (d.xor(e, Comparator.naturalOrder())) instanceof SortedSet
     }
 
+    @Test
     void testSwap() {
         assert [1, 2, 3, 4] == [1, 2, 3, 4].swap(0, 0).swap(1, 1)
 
@@ -2013,6 +2245,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCharSequenceTakeRight() {
         def data = ['groovy',      // String
                     "${'groovy'}", // GString
@@ -2029,6 +2262,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCharSequenceTakeAfter() {
         def text = 'Groovy development. Groovy team'
 
@@ -2068,6 +2302,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testCharSequenceTakeBefore() {
         def text = "Groovy development. Groovy team"
 
@@ -2105,9 +2340,9 @@ final class GroovyMethodsTest extends GroovyTestCase {
                 }
             }
         }
-
     }
 
+    @Test
     void testCharSequenceDropRight() {
         def data = ['groovy',      // String
                     "${'groovy'}", // GString
@@ -2124,8 +2359,8 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCharSequenceTakeBetween() {
-
         def text = 'Time taken for Select Query = 12 ms, Update Query = 15 ms. Result = "One", "Two"'
 
         def data = [text,      // String
@@ -2238,6 +2473,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         assert 'one\ntwo\nthree'.takeBetween('\n') == 'two'
     }
 
+    @Test
     void testCharSequenceStartsWithIgnoreCase() {
         def text = 'Some Text'
 
@@ -2274,6 +2510,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCharSequenceEndsWithIgnoreCase() {
         def text = 'Some Text'
 
@@ -2310,6 +2547,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCharSequenceContainsIgnoreCase() {
         def text = 'Some Text'
 
@@ -2346,6 +2584,8 @@ final class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 }
+
+//---------------------------------------------------------------------------
 
 class WackyList extends LinkedList {
     WackyList(list) {super(list)}
