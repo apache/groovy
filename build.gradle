@@ -38,8 +38,8 @@ archivesBaseName = 'groovy'
 groovyLibrary {
     registerOptionalFeature 'gpars'
     registerOptionalFeature 'grapes'
-    registerOptionalFeature 'xstreamAst'
     registerOptionalFeature 'logging'
+    registerOptionalFeature 'xstreamAst'
 
     repackagedDependencies = [
             'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
