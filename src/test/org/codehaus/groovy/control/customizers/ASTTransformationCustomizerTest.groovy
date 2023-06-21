@@ -21,7 +21,6 @@ package org.codehaus.groovy.control.customizers
 import groovy.transform.TimedInterrupt
 import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
@@ -112,7 +111,7 @@ final class ASTTransformationCustomizerTest {
     @Test
     void testLocalTransformationPropertyExpressionParameter() {
         def customizer = new ASTTransformationCustomizer(TimedInterrupt)
-        customizer.annotationParameters = [value: 300, unit: propX(classX(ClassHelper.make(TimeUnit)),'MILLISECONDS')]
+        customizer.annotationParameters = [value: 500, unit: propX(classX(TimeUnit),'MILLISECONDS')]
         config.addCompilationCustomizers(customizer)
         assert shell.evaluate('''import java.util.concurrent.TimeoutException
             boolean interrupted = false
@@ -130,7 +129,7 @@ final class ASTTransformationCustomizerTest {
     @Test // GROOVY-10654
     void testLocalTransformationEnumerationConstantParameter() {
         def customizer = new ASTTransformationCustomizer(TimedInterrupt)
-        customizer.annotationParameters = [value: 300, unit: TimeUnit.MILLISECONDS]
+        customizer.annotationParameters = [value: 500, unit: TimeUnit.MILLISECONDS]
         config.addCompilationCustomizers(customizer)
         assert shell.evaluate('''import java.util.concurrent.TimeoutException
             boolean interrupted = false
