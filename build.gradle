@@ -25,15 +25,16 @@ buildscript {
             maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         mavenCentral()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'https://plugins.gradle.org/m2/' }
+        maven { url 'https://repo.spring.io/plugins-release/' }
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'https://jitpack.io' }
     }
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.32.0'
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.2.0'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath 'org.nosphere.apache:creadur-rat-gradle:0.8.0'
         classpath 'gradle.plugin.com.github.jk1:gradle-license-report:1.3'
