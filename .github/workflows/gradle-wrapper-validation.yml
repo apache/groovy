@@ -19,7 +19,7 @@ on: [push, pull_request]
 jobs:
   validation:
     name: "Validation"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@e2c57acffb2c9aa5a8dc6eda2bbae0b6e495bd4c #v1.0.3
