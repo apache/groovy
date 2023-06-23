@@ -26,14 +26,16 @@ buildscript {
         }
         mavenCentral()
         maven { url 'https://plugins.gradle.org/m2/' }
-        maven { url 'https://groovy.jfrog.io/artifactory/libs-release-local/' }
+        // uncomment next repo if jcenter isn't available
+        // we have some build components mirror there
+//        maven { url 'https://groovy.jfrog.io/artifactory/libs-release-local/' }
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'https://jitpack.io' }
     }
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
         classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath 'org.nosphere.apache:creadur-rat-gradle:0.8.0'
