@@ -558,7 +558,7 @@ class GStringTest extends GroovyTestCase {
     void testGStringArgumentForStringParameter() {
         def a = 1
         def b = "$a"
-        assert foo(b) == 1 
+        assert foo(b) == 1
     }
 
     /**
@@ -596,8 +596,21 @@ class GStringTest extends GroovyTestCase {
 
     // GROOVY-7494
     void testGStringCoercionForArrayPutAt() {
-        String[] fubar = new String[1]
-        fubar[0] = "x${'y'}"
-        assert fubar.toString() == '[xy]'
+        String[] array = new String[1]
+        array[0] = "x${'y'}"
+        assert array.toString() == '[xy]'
+    }
+
+    // GROOVY-11104
+    void testImplicitThisMethodCall() {
+        assertScript '''
+            static void test() {
+                def str = 'hello'.with {
+                    "${'toUpperCase'}"()
+                }
+                assert str == 'HELLO'
+            }
+            test()
+        '''
     }
 }

@@ -256,8 +256,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-10396: skip the instance method checks when the context is static with-respect-to current class
         boolean staticWrtCurrent = inSpecialConstructorCall || currentMethod != null && currentMethod.isStatic();
 
-        if (mce.isImplicitThis()) {
-            String name = mce.getMethodAsString();
+        String name = mce.getMethodAsString();
+        if (name != null && mce.isImplicitThis()) {
             boolean thisOrSuperMethod = staticWrtCurrent ? hasPossibleStaticMethod(currentClass, name, args, true) : currentClass.tryFindPossibleMethod(name, args) != null;
             if (!thisOrSuperMethod && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) { // GROOVY-5239
                 Expression result = findStaticMethodImportFromModule(method, args);
@@ -272,18 +272,16 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             return result;
         }
 
-        if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String && (mce.isImplicitThis() || isThisOrSuper(object))) {
-            String methodName = (String) ((ConstantExpression) method).getValue();
-
-            boolean foundInstanceMethod = !staticWrtCurrent && currentClass.hasPossibleMethod(methodName, args);
+        if (name != null && (mce.isImplicitThis() || isThisOrSuper(object))) {
+            boolean foundInstanceMethod = !staticWrtCurrent && currentClass.hasPossibleMethod(name, args);
 
             Predicate<ClassNode> hasPossibleStaticMember = cn -> {
-                if (hasPossibleStaticMethod(cn, methodName, args, true)) {
+                if (hasPossibleStaticMethod(cn, name, args, true)) {
                     return true;
                 }
                 // GROOVY-9587: don't check for property for non-empty call args
                 if (args instanceof TupleExpression && ((TupleExpression) args).getExpressions().isEmpty()
-                        && hasPossibleStaticProperty(cn, methodName)) {
+                        && hasPossibleStaticProperty(cn, name)) {
                     return true;
                 }
                 return false;
@@ -293,18 +291,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 if (isInnerClass(currentClass)) {
                     if (inSpecialConstructorCall && !foundInstanceMethod) {
                         // check for reference to outer class method in this(...) or super(...)
-                        if (currentClass.getOuterClass().hasPossibleMethod(methodName, args)) {
+                        if (currentClass.getOuterClass().hasPossibleMethod(name, args)) {
                             object = new PropertyExpression(new ClassExpression(currentClass.getOuterClass()), new ConstantExpression("this"));
                         } else if (hasPossibleStaticMember.test(currentClass.getOuterClass())) {
-                            Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), methodName, args);
+                            Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), name, args);
                             result.setSourcePosition(mce);
                             return result;
                         }
                     }
-                } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !methodName.equals("call"))) {
+                } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !name.equals("call"))) {
                     // check for reference to static method in this(...) or super(...) or when call not resolved
                     if (hasPossibleStaticMember.test(currentClass)) {
-                        Expression result = new StaticMethodCallExpression(currentClass, methodName, args);
+                        Expression result = new StaticMethodCallExpression(currentClass, name, args);
                         result.setSourcePosition(mce);
                         return result;
                     }
