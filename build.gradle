@@ -27,7 +27,7 @@ buildscript {
         mavenCentral()
         maven { url 'https://plugins.gradle.org/m2/' }
         // uncomment next repo if jcenter isn't available
-        // we have some build components mirror there
+        // we have some build components mirrored there
 //        maven { url 'https://groovy.jfrog.io/artifactory/libs-release-local/' }
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'https://jitpack.io' }
