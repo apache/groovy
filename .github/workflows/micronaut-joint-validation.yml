@@ -43,7 +43,7 @@ jobs:
 
       # Clone Micronaut Repos
       - name: Checkout Micronaut Core
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 3.9.x
+        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 3.8.x
 
       - name: Checkout Micronaut Groovy
         run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b 3.5.x
