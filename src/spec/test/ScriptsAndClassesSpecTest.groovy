@@ -48,6 +48,55 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
             }
             // end::groovy_script_equiv[]
         '''
+
+        assertScript '''
+            import groovy.transform.CompileStatic
+            // tag::script_with_explicit_static_main[]
+            @CompileStatic
+            static main(args) {
+                println 'Groovy world!'
+            }
+            // end::script_with_explicit_static_main[]
+        '''
+
+        assertScript '''
+            import groovy.transform.*
+            import com.fasterxml.jackson.annotation.*
+            import com.fasterxml.jackson.databind.ObjectMapper
+
+            // tag::script_with_explicit_instance_run[]
+            @JsonIgnoreProperties(["binding"])
+            def run() {
+                var mapper = new ObjectMapper()
+                assert mapper.writeValueAsString(this) == '{"pets":["cat","dog"]}'
+            }
+
+            public pets = ['cat', 'dog']
+            // end::script_with_explicit_instance_run[]
+        '''
+    }
+
+    void testJep445Definition() {
+        runScript '''
+            // tag::jep445_barescript[]
+            void main(args) {
+                println new Date()
+            }
+            // end::jep445_barescript[]
+        '''
+
+        runScript '''
+            // tag::jep445_script[]
+            def main() {
+                assert upper(foo) + lower(bar) == 'FOObar'
+            }
+
+            def upper(s) { s.toUpperCase() }
+
+            def lower = String::toLowerCase
+            def (foo, bar) = ['Foo', 'Bar']      // <1>
+            // end::jep445_script[]
+        '''
     }
 
     void testMethodDefinition() {
@@ -102,5 +151,9 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
             assert x+y == 3
             // end::script_with_untyped_variables[]
         '''
+    }
+
+    private static void runScript(String scriptText) {
+        new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
 }

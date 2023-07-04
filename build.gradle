@@ -119,6 +119,9 @@ dependencies {
     testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jacksonDatabind}"
+    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
