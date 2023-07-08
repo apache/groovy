@@ -635,7 +635,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Registers a factory for a JavaBean.<br>
-     * The JavaBean class should have a no-args constructor.
+     * The JavaBean class should have a no-arg constructor.
      *
      * @param theName   name of the node
      * @param beanClass the factory to handle the name
@@ -646,7 +646,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Registers a factory for a JavaBean.<br>
-     * The JavaBean class should have a no-args constructor.
+     * The JavaBean class should have a no-arg constructor.
      *
      * @param theName   name of the node
      * @param groupName thr group to register this node in

@@ -265,8 +265,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * } else if (theClass implements Runnable) {
      * if (theClass has a constructor with String[] params)
      * instantiate theClass with this constructor and run
-     * else if (theClass has a no-args constructor)
-     * instantiate theClass with the no-args constructor and run
+     * else if (theClass has a no-arg constructor)
+     * instantiate theClass with the no-arg constructor and run
      * }
      */
     private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {

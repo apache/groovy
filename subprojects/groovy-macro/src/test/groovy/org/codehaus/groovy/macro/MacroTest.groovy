@@ -218,7 +218,7 @@ class MacroTest extends GroovyTestCase {
 
     void testNotAMacroCall() {
         // FIXME should fail with "MissingMethodException" because none of MacroGroovy extension methods
-        // are defined with "no-args" version
+        // are defined with a "no-arg" variant
         shouldFail(MethodSelectionException) {
             assertScript 'macro()'
         }

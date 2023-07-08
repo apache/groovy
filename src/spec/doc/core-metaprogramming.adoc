@@ -3026,7 +3026,7 @@ There are two kinds of transformations: global and local transformations.
 wherever the transformation apply. Compiled classes that implement global transformations
 are in a JAR added to the classpath of the compiler and contain service locator file
 `META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
-transformation class. The transformation class must have a no-args constructor and implement the
+transformation class. The transformation class must have a no-arg constructor and implement the
 `org.codehaus.groovy.transform.ASTTransformation` interface.
 It will be run against *every source in the compilation*, so be sure to not create transformations which
 scan all the AST in an expansive and time-consuming manner, to keep the compiler fast.
