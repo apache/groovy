@@ -22,9 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
@@ -37,16 +35,16 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
@@ -87,57 +85,38 @@ public class ConstructorCallTransformer {
                         // with a call to <init>() or <init>(this) + appropriate setters
                         // for example, foo(x:1, y:2) is replaced with:
                         // { def tmp = new Foo(); tmp.x = 1; tmp.y = 2; return tmp }()
-                        MapStyleConstructorCall result = new MapStyleConstructorCall(
-                                staticCompilationTransformer,
-                                declaringClass,
-                                map,
-                                expr
-                        );
-
-                        return result;
+                        return new MapStyleConstructorCall(declaringClass, map, expr);
                     }
                 }
             }
-
         }
+
         return staticCompilationTransformer.superTransform(expr);
     }
 
-    private static class MapStyleConstructorCall extends BytecodeExpression {
-        private final StaticCompilationTransformer staticCompilationTransformer;
-        private AsmClassGenerator acg;
-        private final ClassNode declaringClass;
+    private class MapStyleConstructorCall extends BytecodeExpression {
         private final MapExpression map;
         private final ConstructorCallExpression originalCall;
         private final boolean innerClassCall;
+        private AsmClassGenerator acg;
 
-        public MapStyleConstructorCall(
-                final StaticCompilationTransformer transformer,
-                final ClassNode declaringClass,
-                final MapExpression map,
-                final ConstructorCallExpression originalCall) {
+        MapStyleConstructorCall(final ClassNode declaringClass, final MapExpression map, final ConstructorCallExpression originalCall) {
             super(declaringClass);
-            this.staticCompilationTransformer = transformer;
-            this.declaringClass = declaringClass;
             this.map = map;
             this.originalCall = originalCall;
-            this.setSourcePosition(originalCall);
             this.copyNodeMetaData(originalCall);
-            List<Expression> originalExpressions = originalCall.getArguments() instanceof TupleExpression
-                    ? ((TupleExpression) originalCall.getArguments()).getExpressions()
-                    : null;
-            this.innerClassCall = originalExpressions != null && originalExpressions.size() == 2;
+            this.setSourcePosition(originalCall);
+            Expression originalArgs = originalCall.getArguments();
+            this.innerClassCall = (2 == ((TupleExpression) originalArgs).getExpressions().size());
         }
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            Expression result = new MapStyleConstructorCall(
-                    staticCompilationTransformer, declaringClass,
+            Expression result = new MapStyleConstructorCall(getType(),
                     (MapExpression) map.transformExpression(transformer),
                     (ConstructorCallExpression) originalCall.transformExpression(transformer)
             );
             result.copyNodeMetaData(this);
-            result.setSourcePosition(this);
             return result;
         }
 
@@ -157,40 +136,38 @@ public class ConstructorCallTransformer {
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
 
-            // create a temporary variable to store the constructed object
-            int tmpObj = compileStack.defineTemporaryVariable("tmpObj", declaringClass, false);
-            String classInternalName = BytecodeHelper.getClassInternalName(declaringClass);
-            mv.visitTypeInsn(NEW, classInternalName);
+            ClassNode ctorType = getType();
+            // create temporary variable to store new object instance
+            int tmpObj = compileStack.defineTemporaryVariable("tmpObj", ctorType, false);
+            String ctorTypeName = BytecodeHelper.getClassInternalName(ctorType);
+            mv.visitTypeInsn(NEW, ctorTypeName);
             mv.visitInsn(DUP);
-            String desc = "()V";
-            if (innerClassCall && declaringClass.isRedirectNode() && declaringClass.redirect() instanceof InnerClassNode) {
-                // load "this"
-                mv.visitVarInsn(ALOAD, 0);
-                InnerClassNode icn = (InnerClassNode) declaringClass.redirect();
-                Parameter[] params = {new Parameter(icn.getOuterClass(), "$p$")};
-                desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
+            String signature = "()V";
+            if (innerClassCall && ctorType.getOuterClass() != null) {
+                acg.visitVariableExpression(varX("this")); // GROOVY-11122
+                Parameter[] params = {new Parameter(ctorType.getOuterClass(), "$p$")};
+                signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
             }
-            mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", desc, false);
-            mv.visitVarInsn(ASTORE, tmpObj); // store it into tmp variable
+            mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
+            mv.visitVarInsn(ASTORE, tmpObj);
 
-            // load every field
+            // process property initializers
             for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
                 Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
-                Expression valueExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
-                BinaryExpression bexp = binX(
+                Expression valExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
+                Expression setExpression = assignX(
                         propX(
-                                bytecodeX(declaringClass, v -> v.visitVarInsn(ALOAD, tmpObj)),
+                                bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj)),
                                 keyExpression
                         ),
-                        Token.newSymbol("=", entryExpression.getLineNumber(), entryExpression.getColumnNumber()),
-                        valueExpression
+                        valExpression
                 );
-                bexp.setSourcePosition(entryExpression);
-                bexp.visit(acg);
-                operandStack.pop(); // consume argument
+                setExpression.setSourcePosition(entryExpression);
+                setExpression.visit(acg);
+                operandStack.pop();
             }
 
-            // load object
+            // result object
             mv.visitVarInsn(ALOAD, tmpObj);
 
             // cleanup stack

@@ -536,6 +536,24 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11122
+    void testMapStyleInnerClassConstructorWithinClosure() {
+        assertScript '''
+            class A {
+                class B {
+                    def p
+                }
+                B test() {
+                    { ->
+                        new B(p:"x")
+                    }.call()
+                }
+            }
+
+            assert new A().test().getP() == "x"
+        '''
+    }
+
     // GROOVY-9422
     void testInnerClassConstructorCallWithinClosure() {
         assertScript '''
@@ -550,6 +568,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 }
               }
             }
+
             assert new A().test() == ['value']
         '''
     }
