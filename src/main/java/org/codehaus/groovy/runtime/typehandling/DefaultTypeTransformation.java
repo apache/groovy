@@ -754,15 +754,14 @@ public class DefaultTypeTransformation {
     }
 
     private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly) {
-        Exception cause = null;
         if (left == right) {
             return 0;
-        }
-        if (left == null) {
+        } else if (left == null) {
             return -1;
         } else if (right == null) {
             return 1;
         }
+        Exception cause = null;
         if (left instanceof Comparable || left instanceof Number) {
             if (left instanceof Number) {
                 if (right instanceof Character || right instanceof Number) {
@@ -788,18 +787,14 @@ public class DefaultTypeTransformation {
                 if (isValidCharacterString(left)) {
                     return DefaultGroovyMethods.compareTo(ShortTypeHandling.castToChar(left), (Number) right);
                 }
-            } else if (left instanceof String && right instanceof Character) {
+            } else if (left instanceof  String && (right instanceof String || right instanceof GString || right instanceof Character)) {
                 return ((String) left).compareTo(right.toString());
-            } else if (left instanceof String && right instanceof GString) {
-                return ((String) left).compareTo(right.toString());
-            } else if (left instanceof GString && right instanceof String) {
-                return ((GString) left).compareTo(right);
-            } else if (left instanceof GString && right instanceof Character) {
-                return ((GString) left).compareTo(right);
+            } else if (left instanceof GString && (right instanceof String || right instanceof GString || right instanceof Character)) {
+                return left.toString().compareTo(right.toString());
             }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
-                    || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass()) //GROOVY-4046
-                    || right instanceof Comparable) // GROOVY-7954
+                    || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass()) // GROOVY-4046
+                        || right instanceof Comparable) // GROOVY-7954
             ) {
                 // GROOVY-7876: when comparing for equality we try to only call compareTo when an assignable
                 // relationship holds but with a container/holder class and because of erasure, we might still end
@@ -816,6 +811,7 @@ public class DefaultTypeTransformation {
         if (equalityCheckOnly) {
             return -1; // anything other than 0
         }
+
         String message = MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
                 left.getClass().getName(), left, right.getClass().getName(), right);
         if (cause != null) {
