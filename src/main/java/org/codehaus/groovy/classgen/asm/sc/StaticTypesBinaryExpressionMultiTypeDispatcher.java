@@ -185,33 +185,28 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     @Override
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
-        if (!defineVariable) {
-            if (leftExpression instanceof PropertyExpression) {
-                PropertyExpression pexp = (PropertyExpression) leftExpression;
-                if (makeSetProperty(
-                        pexp.getObjectExpression(),
-                        pexp.getProperty(),
-                        expression.getRightExpression(),
-                        pexp.isSafe(),
-                        pexp.isSpreadSafe(),
-                        pexp.isImplicitThis(),
-                        pexp instanceof AttributeExpression)) {
-                    return;
-                }
-            }
-        } else {
-            Expression rightExpression = expression.getRightExpression();
-            if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
-                rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
-            }
+        Expression rightExpression = expression.getRightExpression();
+        if (defineVariable && (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)) {
+            rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
         }
-        // GROOVY-5620: spread-safe operator on LHS is not supported
-        if (leftExpression instanceof PropertyExpression
-                && ((PropertyExpression) leftExpression).isSpreadSafe()
-                && isAssignment(expression.getOperation().getType())) {
-            // rewrite it so that it can be statically compiled
-            transformSpreadOnLHS(expression);
-            return;
+        if (leftExpression instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) leftExpression;
+            if (!defineVariable && makeSetProperty(
+                    pexp.getObjectExpression(),
+                    pexp.getProperty(),
+                    rightExpression,
+                    pexp.isSafe(),
+                    pexp.isSpreadSafe(),
+                    pexp.isImplicitThis(),
+                    pexp instanceof AttributeExpression)) {
+                return;
+            }
+            // GROOVY-5620: spread-safe operator on LHS is not supported
+            if (pexp.isSpreadSafe() && isAssignment(expression.getOperation().getType())) {
+                // rewrite it so that it can be statically compiled
+                transformSpreadOnLHS(expression);
+                return;
+            }
         }
         super.evaluateEqual(expression, defineVariable);
     }
@@ -265,9 +260,10 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean isAttribute) {
         ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        boolean isThisReceiver = isThisExpression(receiver);
         String property = message.getText();
-        boolean isThisExpression = isThisExpression(receiver);
-        if (isAttribute || (isThisExpression && receiverType.getDeclaredField(property) != null)) {
+
+        if (isAttribute || (isThisReceiver && receiverType.getDeclaredField(property) != null)) {
             ClassNode current = receiverType;
             FieldNode fn = null;
             while (fn == null && current != null) {
@@ -299,27 +295,32 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 return true;
             }
         }
+
         if (!isAttribute) {
-            String setter = getSetterName(property);
-            MethodNode setterMethod = receiverType.getSetterMethod(setter, false);
-            ClassNode declaringClass = setterMethod != null ? setterMethod.getDeclaringClass() : null;
-            if (isThisExpression && declaringClass != null && declaringClass.equals(controller.getClassNode())) {
-                // this.x = ... shouldn't use a setter if in the same class
-                setterMethod = null;
-            } else if (setterMethod == null) {
+            String setterName = getSetterName(property);
+            MethodNode setterMethod = receiverType.getSetterMethod(setterName, false);
+            if (setterMethod != null) {
+                if (isThisReceiver && setterMethod.getDeclaringClass().equals(controller.getClassNode())) {
+                    // this.x = ... should not use setter from same class
+                    setterMethod = null;
+                } else { // GROOVY-11119
+                    java.util.List<MethodNode> setters = receiverType.getMethods(setterName);
+                    setters.removeIf(s -> s.isAbstract() || s.getParameters().length != 1);
+                    if (setters.size() > 1) setterMethod = null;
+                }
+            } else {
                 PropertyNode propertyNode = receiverType.getProperty(property);
-                if (propertyNode != null) {
-                    if (!Modifier.isFinal(propertyNode.getModifiers())) {
-                        setterMethod = new MethodNode(
-                                setter,
-                                ACC_PUBLIC,
-                                ClassHelper.VOID_TYPE,
-                                new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
-                                ClassNode.EMPTY_ARRAY,
-                                EmptyStatement.INSTANCE
-                        );
-                        setterMethod.setDeclaringClass(receiverType);
-                    }
+                if (propertyNode != null && !Modifier.isFinal(propertyNode.getModifiers())) {
+                    setterMethod = new MethodNode(
+                            setterName,
+                            ACC_PUBLIC,
+                            ClassHelper.VOID_TYPE,
+                            new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
+                            ClassNode.EMPTY_ARRAY,
+                            EmptyStatement.INSTANCE
+                    );
+                    setterMethod.setDeclaringClass(receiverType);
+                    setterMethod.setSynthetic(true);
                 }
             }
             if (setterMethod != null) {
@@ -336,13 +337,14 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 call.visit(controller.getAcg());
                 return true;
             }
-            if (isThisExpression && !controller.isInGeneratedFunction()) {
+            if (isThisReceiver && !controller.isInGeneratedFunction()) {
                 receiverType = controller.getClassNode();
             }
             if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, property, arguments, safe, spreadSafe, implicitThis)) {
                 return true;
             }
         }
+
         return false;
     }
 
