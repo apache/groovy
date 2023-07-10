@@ -1415,32 +1415,30 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     protected void checkGroovyConstructorMap(final Expression receiver, final ClassNode receiverType, final MapExpression mapExpression) {
-        // workaround for map-style checks putting setter info on wrong AST node
-        typeCheckingContext.pushEnclosingBinaryExpression(null);
         for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
             Expression keyExpression = entryExpression.getKeyExpression();
             if (!(keyExpression instanceof ConstantExpression)) {
                 addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpression);
             } else {
                 String propName = keyExpression.getText();
-                PropertyLookup requestor = new PropertyLookup(receiverType);
-                if (!existsProperty(propX(varX("_", receiverType), propName), false, requestor)) {
+                Set<ClassNode> propertyTypes = new HashSet<>();
+                Expression valueExpression = entryExpression.getValueExpression();
+                typeCheckingContext.pushEnclosingBinaryExpression(assignX(keyExpression, valueExpression, entryExpression));
+                if (!existsProperty(propX(varX("_", receiverType), propName), false, new PropertyLookup(receiverType, propertyTypes::add))) {
+                    typeCheckingContext.popEnclosingBinaryExpression();
                     addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), receiver);
                 } else {
-                    Expression valueExpression = entryExpression.getValueExpression();
-                    ClassNode  valueType = getType(valueExpression);
-
-                    ClassNode targetType = requestor.propertyType;
-                    ClassNode resultType = getResultType(targetType, ASSIGN, valueType,
-                                assignX(keyExpression, valueExpression, entryExpression));
-                    if (!checkCompatibleAssignmentTypes(targetType, resultType, valueExpression)
-                            && !extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
-                        addAssignmentError(targetType, valueType, entryExpression);
+                    ClassNode valueType = getType(valueExpression);
+                    BinaryExpression kv = typeCheckingContext.popEnclosingBinaryExpression();
+                    if (propertyTypes.stream().noneMatch(targetType -> checkCompatibleAssignmentTypes(targetType, getResultType(targetType, ASSIGN, valueType, kv), valueExpression))) {
+                        ClassNode targetType = propertyTypes.size() == 1 ? propertyTypes.iterator().next() : new UnionTypeClassNode(propertyTypes.toArray(ClassNode.EMPTY_ARRAY));
+                        if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
+                            addAssignmentError(targetType, valueType, entryExpression);
+                        }
                     }
                 }
             }
         }
-        typeCheckingContext.popEnclosingBinaryExpression();
     }
 
     @Deprecated(forRemoval = true, since = "4.0.0")
@@ -1753,9 +1751,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         GenericsType[] gts = compositeType.getGenericsTypes();
         ClassNode itemType = (gts != null && gts.length == 1 ? getCombinedBoundType(gts[0]) : OBJECT_TYPE);
 
-        PropertyLookup requestor = new PropertyLookup(itemType);
-        if (existsProperty(propX(varX("{}", itemType), prop), true, requestor)) {
-            return extension.buildListType(requestor.propertyType);
+        List<ClassNode> propertyTypes = new ArrayList<>();
+        if (existsProperty(propX(varX("_", itemType), prop), true, new PropertyLookup(itemType, propertyTypes::add))) {
+            return extension.buildListType(propertyTypes.get(0));
         }
         return null;
     }
@@ -5912,6 +5910,7 @@ out:                if (mn.size() != 1) {
     private static BinaryExpression assignX(final Expression lhs, final Expression rhs, final ASTNode pos) {
         BinaryExpression exp = (BinaryExpression) GeneralUtils.assignX(lhs, rhs);
         exp.setSourcePosition(pos);
+        exp.setSynthetic(true);
         return exp;
     }
 
@@ -6025,10 +6024,12 @@ out:                if (mn.size() != 1) {
     }
 
     private class PropertyLookup extends ClassCodeVisitorSupport {
-        ClassNode propertyType, receiverType;
+        private final ClassNode receiverType;
+        private final Consumer<ClassNode> propertyType;
 
-        PropertyLookup(final ClassNode type) {
-            receiverType = type;
+        PropertyLookup(final ClassNode receiverType, final Consumer<ClassNode> propertyType) {
+            this.receiverType = receiverType;
+            this.propertyType = propertyType;
         }
 
         @Override
@@ -6038,26 +6039,25 @@ out:                if (mn.size() != 1) {
 
         @Override
         public void visitField(final FieldNode node) {
-            storePropertyType(node.getType(), node.isStatic() ? null : node.getDeclaringClass());
+            reportPropertyType(node.getType(), node.isStatic() ? null : node.getDeclaringClass());
         }
 
         @Override
         public void visitMethod(final MethodNode node) {
-            storePropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
+            reportPropertyType(node.getReturnType(), node.isStatic() ? null : node.getDeclaringClass());
         }
 
         @Override
         public void visitProperty(final PropertyNode node) {
-            storePropertyType(node.getOriginType(), node.isStatic() ? null : node.getDeclaringClass());
+            reportPropertyType(node.getOriginType(), node.isStatic() ? null : node.getDeclaringClass());
         }
 
-        private void storePropertyType(ClassNode type, final ClassNode declaringClass) {
+        private void reportPropertyType(ClassNode type, final ClassNode declaringClass) {
             if (declaringClass != null && GenericsUtils.hasUnresolvedGenerics(type)) { // GROOVY-10787
                 Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(receiverType, declaringClass);
                 type = applyGenericsContext(spec, type);
             }
-            // TODO: if (propertyType != null) merge types
-            propertyType = type;
+            propertyType.accept(type);
         }
     }
 
