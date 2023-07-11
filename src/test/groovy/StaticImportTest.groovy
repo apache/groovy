@@ -18,25 +18,24 @@
  */
 package groovy
 
-import static java.lang.Boolean.FALSE as F
-import static java.text.DateFormat.MEDIUM as M
-import static java.util.regex.Pattern.*
-import static java.text.DateFormat.MEDIUM
-import static junit.framework.Assert.format
-import static junit.framework.Assert.assertEquals
-import static groovy.StaticImportTarget.x
-import static groovy.StaticImportTarget.z // do not remove
-import static java.lang.Math.*
-import static java.util.Calendar.getInstance as now
 import static groovy.API.*
-import static groovy.StaticImportChild.*
+import static groovy.Container5087.*
+import static groovy.Foo4964.*
 import static groovy.Outer1.*
 import static groovy.Outer2.Inner2
 import static groovy.Outer2.Inner2 as InnerAlias2
+import static groovy.StaticImportChild.*
+import static groovy.StaticImportTarget.x
+import static groovy.StaticImportTarget.z
+import static java.lang.Boolean.FALSE as F
+import static java.lang.Math.*
+import static java.text.DateFormat.MEDIUM
+import static java.text.DateFormat.MEDIUM as M
+import static java.util.Calendar.getInstance as now
 import static java.util.jar.Attributes.*
 import static java.util.jar.Attributes.Name as AttrName
-import static groovy.Container5087.*
-import static Foo4964.*
+import static java.util.regex.Pattern.*
+import static junit.framework.Assert.format
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
 
@@ -450,6 +449,40 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
             }
             assert test() == 'barfoobaz'
         '''
+    }
+
+    // GROOVY-8145
+    void testStaticImportAnyVsGeneratedField() {
+        for (what in ['*','log']) {
+            assertScript """
+                import static Foo.$what
+                class Foo {
+                    private static log = [info: Closure.IDENTITY]
+                }
+                @groovy.util.logging.Log
+                class Bar {
+                    def test() {
+                        log.info('bar')
+                    }
+                }
+                assert new Bar().test() == null // return from logger
+            """
+        }
+        for (which in ['public','protected'/*,'@groovy.transform.PackageScope'*/]) {
+            assertScript """
+                import static Foo.*
+                class Foo {
+                    $which static log = [info: Closure.IDENTITY]
+                }
+                @groovy.util.logging.Log
+                class Bar {
+                    def test() {
+                        log.info('bar')
+                    }
+                }
+                assert new Bar().test() == 'bar'
+            """
+        }
     }
 
     void testConstructorArgsAliasing() {

@@ -53,6 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static java.lang.reflect.Modifier.isPrivate;
+import static java.lang.reflect.Modifier.isProtected;
+import static java.lang.reflect.Modifier.isPublic;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getPropNameForAccessor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticMethod;
@@ -60,6 +63,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProper
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
@@ -511,14 +515,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private static String prefix(String name) {
-        return name.startsWith("is") ? "is" : name.substring(0, 3);
-    }
-
-    private String getAccessorName(String name) {
-        return inLeftExpression ? getSetterName(name) : getGetterName(name);
-    }
-
     private Expression findStaticPropertyAccessorByFullName(ClassNode staticImportType, String accessorName) {
         Expression argumentList = inLeftExpression ? new ArgumentListExpression(EmptyExpression.INSTANCE) : ArgumentListExpression.EMPTY_ARGUMENTS;
         Expression accessorExpr = findStaticMethod(staticImportType, accessorName, argumentList);
@@ -557,9 +553,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression expression = findStaticPropertyAccessor(staticImportType, variableName);
         if (expression == null) {
             if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
-                FieldNode field = getField(staticImportType, variableName);
-                if (field != null && field.isStatic())
+                FieldNode field = getField(staticImportType, variableName, FieldNode::isStatic);
+                if (field != null && isMemberAccessible(field.getDeclaringClass(), field.getModifiers())) { // GROOVY-8145
                     expression = newStaticPropertyX(staticImportType, variableName);
+                }
             }
         }
         return expression;
@@ -600,6 +597,29 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private static PropertyExpression newStaticPropertyX(ClassNode type, String name) {
         return new PropertyExpression(new ClassExpression(type.getPlainNodeReference()), name);
+    }
+
+    private boolean isMemberAccessible(ClassNode declaringClass, int modifiers) {
+        if (isPublic(modifiers)
+                || currentClass.equals(declaringClass)
+                || currentClass.getOuterClasses().contains(declaringClass)) {
+            return true;
+        }
+        if (isProtected(modifiers) && currentClass.isDerivedFrom(declaringClass)) {
+            return true;
+        }
+        if (!isPrivate(modifiers) && samePackageName(currentClass, declaringClass)) {
+            return true;
+        }
+        return false;
+    }
+
+    private String getAccessorName(String name) {
+        return inLeftExpression ? getSetterName(name) : getGetterName(name);
+    }
+
+    private static String prefix(String name) {
+        return name.startsWith("is") ? "is" : name.substring(0, 3);
     }
 
     @Override
