@@ -48,13 +48,13 @@ class JsonLexerTest extends GroovyTestCase {
     }
 
     void testNextToken() {
-        def content = [" true ", " false ", " null ", " -123.456e78 ", " [ ", " ] ", " { ", " } ", " : ", " , "]
+        def content = [" true ", "true", " false ", "false", " null ", "null", " -123.456e78 ", "-123.456e78", " [ ", " ] ", " { ", " } ", " : ", " , "]
 
         assert content.collect {
             def lexer = new JsonLexer(new StringReader(it))
-            lexer.nextToken().type
+            lexer.nextToken()?.type
         } == [
-                TRUE, FALSE, NULL, NUMBER,
+                TRUE, TRUE, FALSE, FALSE, NULL, NULL, NUMBER, NUMBER,
                 OPEN_BRACKET, CLOSE_BRACKET, OPEN_CURLY, CLOSE_CURLY, COLON, COMMA
         ]
     }
@@ -120,7 +120,7 @@ class JsonLexerTest extends GroovyTestCase {
     }
 
     void testUnescapingWithLexer() {
-        // use string concatenation so that the unicode escape characters are not decoded 
+        // use string concatenation so that the unicode escape characters are not decoded
         // by Groovy's lexer but by the JsonLexer
         def lexer = new JsonLexer(new StringReader('"\\' + 'u004A\\' + 'u0053\\' + 'u004F\\' + 'u004E"'))
 
