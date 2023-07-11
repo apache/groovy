@@ -130,7 +130,10 @@ public class JsonLexer implements Iterator<JsonToken> {
                 for (;;) {
                     reader.mark(1);
                     int read = reader.read();
-                    if (read == -1) return null;
+                    if (read == -1) {
+                        if (currentContent.length() == 0) return null;
+                        read = 32;
+                    }
                     char lastCharRead = (char) read;
 
                     if (lastCharRead >= ZERO && lastCharRead <= NINE ||
