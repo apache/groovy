@@ -383,9 +383,6 @@ public class ModuleNode extends ASTNode {
             result.addAnnotations(existingMain.getAnnotations());
             result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
-//            result.getAnnotations().forEach(a -> {
-//                // TODO handle AST transform annotations
-//            });
             methods.forEach(result::addMethod);
             fields.forEach(result::addField);
             return result;
