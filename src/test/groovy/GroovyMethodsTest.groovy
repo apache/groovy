@@ -1915,7 +1915,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         Set b = [3,4,5,6] as Set
         Set c = [5,6,7,8] as SortedSet
 
-        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        // NOTE: == has higher precedence than ^, so need to use parens to test correct logic
         assert (a ^ b) == [1,2,5,6] as Set
         assert (b ^ a) == [1,2,5,6] as Set
         assert (a ^ c) == [1,2,3,4,5,6,7,8] as Set
@@ -1933,7 +1933,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         Set b = [3,4,5,6] as Set
         Set c = [5,6,7,8] as SortedSet
 
-        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        // NOTE: == has higher precedence than ^, so need to use parens to test correct logic
         assert (a ^ b) == [1,2,5,6] as SortedSet
         assert (c ^ a) == [1,2,3,4,5,6,7,8] as SortedSet
         assert (a ^ c) == [1,2,3,4,5,6,7,8] as SortedSet
