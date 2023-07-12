@@ -1837,6 +1837,114 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 1, 2, 1, 2] == iterable * 3
     }
 
+    void testUnionForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than |, so need to use parens to test correct logic
+        assert (a | b) == [1,2,3,4,5,6] as Set
+        assert (b | a) == [1,2,3,4,5,6] as Set
+        assert (a | c) == [1,2,3,4,5,6,7,8] as Set
+        assert (b | c) == [3,4,5,6,7,8] as Set
+        assert (empty | a) == a
+        assert (a | empty) == a
+
+        assert (a | b) instanceof Set
+        assert (a | c) !instanceof SortedSet
+    }
+
+    void testUnionForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than |, so need to use parens to test correct logic
+        assert (a | b) == [1,2,3,4,5,6] as SortedSet
+        assert (a | c) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c | a) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c | b) == [3,4,5,6,7,8] as SortedSet
+        assert (empty | a) == a
+        assert (a | empty) == a
+
+        assert (a | b) instanceof SortedSet
+        assert (a | c) instanceof SortedSet
+    }
+
+    void testInersectionForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a & b) == [3,4] as Set
+        assert (b & a) == [3,4] as Set
+        assert (a & c) == [] as Set
+        assert (b & c) == [5,6] as Set
+        assert (empty & a) == empty
+        assert (a & empty) == empty
+
+        assert (a & b) instanceof Set
+        assert (a & c) !instanceof SortedSet
+    }
+
+    void testIntersectionForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a & b) == [3,4] as SortedSet
+        assert (c & a) == [] as SortedSet
+        assert (a & c) == [] as SortedSet
+        assert (c & b) == [5,6] as SortedSet
+        assert (empty & a) == empty
+        assert (a & empty) == empty
+
+        assert (a & b) instanceof SortedSet
+        assert (a & c) instanceof SortedSet
+    }
+
+    void testSymmetricDifferenceForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a ^ b) == [1,2,5,6] as Set
+        assert (b ^ a) == [1,2,5,6] as Set
+        assert (a ^ c) == [1,2,3,4,5,6,7,8] as Set
+        assert (b ^ c) == [3,4,7,8] as Set
+        assert (empty ^ a) == a
+        assert (a ^ empty) == a
+
+        assert (a ^ b) instanceof Set
+        assert (a ^ c) !instanceof SortedSet
+    }
+
+    void testSymmetricDifferenceForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a ^ b) == [1,2,5,6] as SortedSet
+        assert (c ^ a) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (a ^ c) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c ^ b) == [3,4,7,8] as SortedSet
+        assert (empty ^ a) == a
+        assert (a ^ empty) == a
+
+        assert (a ^ b) instanceof SortedSet
+        assert (a ^ c) instanceof SortedSet
+    }
+
     void testSwap() {
         assert [1, 2, 3, 4] == [1, 2, 3, 4].swap(0, 0).swap(1, 1)
 

@@ -14562,6 +14562,154 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sw.toString();
     }
 
+    /**
+     * Create a Set as a union of a Set and a Set.  Any
+     * elements that exist in either set are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as Set
+     * </pre>
+     *
+     * @param left  the left Set
+     * @param right the right Set
+     * @return the merged Set
+     * @since 5.0.0
+     * @see #plus(Set, Collection)
+     */
+    public static <T> Set<T> or(Set<T> left, Set<T> right) {
+        return plus(left, (Collection<T>) right);
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and a Set.  Any
+     * elements that exist in either set are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as SortedSet
+     * </pre>
+     *
+     * @param left  the left SortedSet
+     * @param right the right Set
+     * @return the merged SortedSet
+     * @since 5.0.0
+     * @see #plus(SortedSet, Collection)
+     */
+    public static <T> SortedSet<T> or(SortedSet<T> left, Set<T> right) {
+        return plus(left, (Collection<T>) right);
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and a Set.  Any
+     * elements that exist in both sets are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as Set
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a Set
+     * @param right a Set
+     * @return a Set as an intersection of a Set and a Set
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Set<T> right) {
+        return intersect(left, (Iterable<T>) right);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and a Set.  Any
+     * elements that exist in both sets are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as SortedSet
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a SortedSet
+     * @param right a Set
+     * @return a SortedSet as an intersection of a SortedSet and a Set
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Set<T> right) {
+        return intersect(left, (Iterable<T>) right);
+    }
+
+    /**
+     * Create a Set composed of the symmetric difference of a Set and a Set.  Any
+     * elements that exit in only one of the sets are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a ^ b) == [1,2,5,6] as Set
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a Set
+     * @param right a Set
+     * @return a Set as a symmetric difference of a Set and a Set
+     * @since 5.0.0
+     */
+    public static <T> Set<T> xor(Set<T> left, Set<T> right) {
+        return or((minus(left, (Collection<?>) right)), minus(right, (Collection<?>) left));
+    }
+
+    /**
+     * Create a SortedSet composed of the symmetric difference of a SortedSet and a Set.  Any
+     * elements that exist in only one of the sets are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a ^ b) == [1,2,5,6] as SortedSet
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a SortedSet
+     * @param right a Set
+     * @return a SortedSet as a symmetric difference of a SortedSet and a Set
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> xor(SortedSet<T> left, Set<T> right) {
+        return or((minus(left, (Collection<?>) right)), minus(right, (Collection<?>) left));
+    }
+
     //--------------------------------------------------------------------------
     // attic
 
