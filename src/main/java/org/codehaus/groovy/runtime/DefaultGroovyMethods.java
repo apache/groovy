@@ -16258,7 +16258,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * between two bit sets.
      *
      * @param left  a BitSet
-     * @param right another BitSet to bitwise AND
+     * @param right another BitSet to bitwise XOR
      * @return the bitwise XOR of both BitSets
      * @since 1.5.0
      */
@@ -16297,7 +16297,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * between two bit sets.
      *
      * @param left  a BitSet
-     * @param right another BitSet to bitwise AND
+     * @param right another BitSet to bitwise OR
      * @return the bitwise OR of both BitSets
      * @since 1.5.0
      */
