@@ -288,7 +288,7 @@ final class ClosureCurryTest {
                     println p
                 }
                 void test() {
-                    def proc = C.&m.curry(this, 'x') // was "this.&m.curry('x')"
+                    def proc = this.&m.curry('x')
                     proc()
                 }
             }

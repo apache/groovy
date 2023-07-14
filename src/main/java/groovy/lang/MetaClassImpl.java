@@ -1001,11 +1001,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeMethodClosure(final MethodClosure object, final Object[] arguments) {
-        Object owner = object.getOwner();
-        String method = object.getMethod();
-        boolean ownerIsClass = (owner instanceof Class);
-        Class ownerClass = ownerIsClass ? (Class) owner : owner.getClass();
-        final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
+        var owner = object.getOwner();
+        var method = object.getMethod();
+        var ownerClass = object.getOwnerClass();
+        var ownerIsClass = (owner instanceof Class);
+        var ownerMetaClass = registry.getMetaClass(ownerClass);
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, method, arguments, false, false);
         } catch (GroovyRuntimeException e) { // GroovyRuntimeException(cause:IllegalArgumentException) thrown for final fields
@@ -1027,7 +1027,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (arrayDimension < nArguments) {
                     throw new GroovyRuntimeException("The length[" + nArguments + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
                 }
-                Class elementType = arrayDimension == nArguments
+                var elementType = arrayDimension == nArguments
                         ? ArrayTypeUtils.elementType(ownerClass)
                         : ArrayTypeUtils.elementType(ownerClass, arrayDimension - nArguments);
                 return Array.newInstance(elementType, Arrays.stream(arguments).mapToInt(argument ->

@@ -300,9 +300,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             case DELEGATE_FIRST:
                 return getPropertyDelegateFirst(property);
             case DELEGATE_ONLY:
-                return InvokerHelper.getProperty(this.delegate, property);
+                return InvokerHelper.getProperty(getDelegate(), property);
             case OWNER_ONLY:
-                return InvokerHelper.getProperty(this.owner, property);
+                return InvokerHelper.getProperty(getOwner(), property);
             case TO_SELF:
                 return super.getProperty(property);
             default:
@@ -312,11 +312,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     private Object getPropertyDelegateFirst(String property) {
         if (delegate == null) return getPropertyOwnerFirst(property);
-        return getPropertyTryThese(property, this.delegate, this.owner);
+        return getPropertyTryThese(property, getDelegate(), getOwner());
     }
 
     private Object getPropertyOwnerFirst(String property) {
-        return getPropertyTryThese(property, this.owner, this.delegate);
+        return getPropertyTryThese(property, getOwner(), getDelegate());
     }
 
     private Object getPropertyTryThese(String property, Object firstTry, Object secondTry) {
@@ -354,10 +354,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                     setPropertyDelegateFirst(property, newValue);
                 break;
                 case DELEGATE_ONLY:
-                    InvokerHelper.setProperty(this.delegate, property, newValue);
+                    InvokerHelper.setProperty(getDelegate(), property, newValue);
                 break;
                 case OWNER_ONLY:
-                    InvokerHelper.setProperty(this.owner, property, newValue);
+                    InvokerHelper.setProperty(getOwner(), property, newValue);
                 break;
                 case TO_SELF:
                     super.setProperty(property, newValue);
@@ -370,11 +370,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     private void setPropertyDelegateFirst(String property, Object newValue) {
         if (delegate == null) setPropertyOwnerFirst(property, newValue);
-        else setPropertyTryThese(property, newValue, this.delegate, this.owner);
+        else setPropertyTryThese(property, newValue, getDelegate(), getOwner());
     }
 
     private void setPropertyOwnerFirst(String property, Object newValue) {
-        setPropertyTryThese(property, newValue, this.owner, this.delegate);
+        setPropertyTryThese(property, newValue, getOwner(), getDelegate());
     }
 
     private void setPropertyTryThese(String property, Object newValue, Object firstTry, Object secondTry) {
@@ -1112,8 +1112,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * @since 1.8.5
      */
-    @SuppressWarnings("unchecked")
     public Closure<V> dehydrate() {
+        @SuppressWarnings("unchecked")
         Closure<V> result = (Closure<V>) this.clone();
         result.delegate = null;
         result.owner = null;
@@ -1133,8 +1133,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * @since 1.8.5
      */
-    @SuppressWarnings("unchecked")
     public Closure<V> rehydrate(Object delegate, Object owner, Object thisObject) {
+        @SuppressWarnings("unchecked")
         Closure<V> result = (Closure<V>) this.clone();
         result.delegate = delegate;
         result.owner = owner;

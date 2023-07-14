@@ -22,6 +22,9 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Generates bytecode for method pointer expressions.
@@ -42,6 +45,12 @@ public class MethodPointerExpressionWriter {
         pointerOrReference.getExpression().visit(controller.getAcg());
         OperandStack operandStack = controller.getOperandStack();
         operandStack.box();
+
+        var type = operandStack.getTopOperand();
+        if (!isClassType(type) && !isObjectType(type)) {
+            // GROOVY-5051, GROOVY-10568: retain static type
+            controller.getAcg().loadWrapper(varX("", type));
+        }
 
         operandStack.pushDynamicName(pointerOrReference.getMethodName());
         // delegate to ScriptBytecodeAdapter#getMethodPointer

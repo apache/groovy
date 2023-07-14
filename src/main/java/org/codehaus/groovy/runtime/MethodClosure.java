@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.util.Arrays;
 
@@ -53,22 +54,21 @@ public class MethodClosure extends Closure {
         this.maximumNumberOfParameters = 0;
         this.parameterTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
 
-        Class<?> theClass = owner.getClass();
-        if (theClass == Class.class) theClass = (Class<?>) owner;
+        var ownerClass = getOwnerClass();
 
         if (method.equals(NEW)) {
-            if (theClass.isArray()) {
-                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(theClass)];
+            if (ownerClass.isArray()) {
+                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(ownerClass)];
                 Arrays.fill(sizeTypes, int.class);
                 setParameterTypesAndNumber(sizeTypes);
             } else {
-                for (var c : ReflectionCache.getCachedClass(theClass).getConstructors()) {
+                for (var c : ReflectionCache.getCachedClass(ownerClass).getConstructors()) {
                     setParameterTypesAndNumber(c.getNativeParameterTypes());
                 }
             }
         } else {
-            for (var m : InvokerHelper.getMetaClass(theClass).respondsTo(owner, method)) {
-                setParameterTypesAndNumber(makeParameterTypes(owner, m));
+            for (var m : InvokerHelper.getMetaClass(ownerClass).respondsTo(getOwner(), method)) {
+                setParameterTypesAndNumber(makeParameterTypes(getOwner(), m));
                 if (!m.isStatic()) {
                     this.anyInstanceMethodExists = true;
                 }
@@ -88,7 +88,7 @@ public class MethodClosure extends Closure {
      * String) and the method is instance method, we expand the original array of
      * parameter type by inserting the owner at the first position of the array.
      */
-    private Class[] makeParameterTypes(final Object owner, final MetaMethod m) {
+    private static Class[] makeParameterTypes(final Object owner, final MetaMethod m) {
         Class[] newParameterTypes;
 
         if (owner instanceof Class && !m.isStatic()) {
@@ -108,6 +108,27 @@ public class MethodClosure extends Closure {
 
     public String getMethod() {
         return method;
+    }
+
+    @Override
+    public Object getOwner() {
+        var owner = super.getOwner();
+        if (owner instanceof Wrapper) {
+            owner = ((Wrapper) owner).unwrap(); // GROOVY-5051
+        }
+        return owner;
+    }
+
+    /**
+     * @since 5.0.0
+     */
+    public Class<?> getOwnerClass() {
+        var owner = super.getOwner();
+        if (owner instanceof Wrapper) {
+            return ((Wrapper) owner).getType(); // GROOVY-5051
+        }
+        var theClass = owner.getClass();
+        return (theClass == Class.class ? (Class<?>) owner : theClass);
     }
 
     @Override
