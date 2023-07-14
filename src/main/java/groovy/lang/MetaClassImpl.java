@@ -2799,7 +2799,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         checkInitalised();
 
         //----------------------------------------------------------------------
-        // Unwrap wrapped values fo now - the new MOP will handle them properly
+        // Unwrap wrapped values for now - the new MOP will handle them properly
         //----------------------------------------------------------------------
         if (newValue instanceof Wrapper) newValue = ((Wrapper) newValue).unwrap();
 

@@ -20,7 +20,6 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.util.Arrays;
@@ -54,20 +53,21 @@ public class MethodClosure extends Closure {
         this.maximumNumberOfParameters = 0;
         this.parameterTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
 
-        Class<?> clazz = owner.getClass() == Class.class ? (Class<?>) owner : owner.getClass();
+        Class<?> theClass = owner.getClass();
+        if (theClass == Class.class) theClass = (Class<?>) owner;
 
-        if (NEW.equals(method)) {
-            if (clazz.isArray()) {
-                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(clazz)];
+        if (method.equals(NEW)) {
+            if (theClass.isArray()) {
+                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(theClass)];
                 Arrays.fill(sizeTypes, int.class);
                 setParameterTypesAndNumber(sizeTypes);
             } else {
-                for (CachedConstructor c : ReflectionCache.getCachedClass(clazz).getConstructors()) {
+                for (var c : ReflectionCache.getCachedClass(theClass).getConstructors()) {
                     setParameterTypesAndNumber(c.getNativeParameterTypes());
                 }
             }
         } else {
-            for (MetaMethod m : InvokerHelper.getMetaClass(clazz).respondsTo(owner, method)) {
+            for (var m : InvokerHelper.getMetaClass(theClass).respondsTo(owner, method)) {
                 setParameterTypesAndNumber(makeParameterTypes(owner, m));
                 if (!m.isStatic()) {
                     this.anyInstanceMethodExists = true;
@@ -76,19 +76,17 @@ public class MethodClosure extends Closure {
         }
     }
 
-    private void setParameterTypesAndNumber(final Class[] newParameterTypes) {
-        if (!(newParameterTypes.length > this.maximumNumberOfParameters)) {
-            return;
+    private void setParameterTypesAndNumber(final Class[] parameterTypes) {
+        if (parameterTypes.length > this.maximumNumberOfParameters) {
+            this.maximumNumberOfParameters = parameterTypes.length;
+            this.parameterTypes = parameterTypes;
         }
-        this.maximumNumberOfParameters = newParameterTypes.length;
-        this.parameterTypes = newParameterTypes;
     }
 
     /*
-     * Create a new array of parameter type.
-     *
-     * If the owner is a class instance(e.g. String) and the method is instance method,
-     * we expand the original array of parameter type by inserting the owner at the first place of the expanded array
+     * Creates an array of parameter types. If the owner is a class instance (ex:
+     * String) and the method is instance method, we expand the original array of
+     * parameter type by inserting the owner at the first position of the array.
      */
     private Class[] makeParameterTypes(final Object owner, final MetaMethod m) {
         Class[] newParameterTypes;

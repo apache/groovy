@@ -226,9 +226,10 @@ public class InvokerHelper {
     }
 
     /**
-     * Returns the method pointer for the given object name
+     * Returns a method closure for the given object and name.
      */
-    public static Closure getMethodPointer(Object object, String methodName) {
+    @SuppressWarnings("rawtypes")
+    public static Closure getMethodPointer(final Object object, final String methodName) {
         if (object == null) {
             throw new NullPointerException("Cannot access method pointer for '" + methodName + "' on null object");
         }

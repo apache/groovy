@@ -578,13 +578,13 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     /**
-     * Returns the method pointer for the given object name
+     * Returns a method closure for the given object and name.
      *
-     * @param object the object containing the method
-     * @param methodName the name of the method of interest
+     * @param object the object or class providing the method
+     * @param methodName the method(s) of interest
      * @return the resulting Closure
      */
-    public static Closure getMethodPointer(Object object, String methodName) {
+    public static Closure getMethodPointer(final Object object, final String methodName) {
         return InvokerHelper.getMethodPointer(object, methodName);
     }
 
