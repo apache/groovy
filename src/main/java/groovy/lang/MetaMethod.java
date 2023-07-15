@@ -319,15 +319,15 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
      * there is no guarantee that it will be called
      *
      * @param object The object the method is to be called at.
-     * @param argumentArray Arguments for the method invocation.
+     * @param arguments Arguments for the method invocation.
      * @return The return value of the invoked method.
      */
-    public Object doMethodInvoke(Object object, Object[] argumentArray) {
-        argumentArray = coerceArgumentsToClasses(argumentArray);
+    public Object doMethodInvoke(final Object object, Object[] arguments) {
+        arguments = coerceArgumentsToClasses(arguments);
         try {
-            return invoke(object, argumentArray);
+            return invoke(object, arguments);
         } catch (Exception e) {
-            throw processDoMethodInvokeException(e, object, argumentArray);
+            throw processDoMethodInvokeException(e, object, arguments);
         }
     }
 }

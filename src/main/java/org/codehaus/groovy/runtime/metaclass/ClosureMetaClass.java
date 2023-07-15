@@ -183,14 +183,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return CLOSURE_METACLASS.getMetaProperty(name);
     }
 
-    private static void unwrap(final Object[] arguments) {
-        for (int i = 0; i != arguments.length; i++) {
-            if (arguments[i] instanceof Wrapper) {
-                arguments[i] = ((Wrapper) arguments[i]).unwrap();
-            }
-        }
-    }
-
     private MetaMethod pickClosureMethod(final Class[] argClasses) {
         Object answer = chooser.chooseMethod(argClasses, false);
         return (MetaMethod) answer;
@@ -247,15 +239,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     @Override
-    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] originalArguments, final boolean isCallToSuper, final boolean fromInsideClass) {
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
         checkInitalised();
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        final Object[] arguments = makeArguments(originalArguments, methodName);
-        final Class<?>[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        unwrap(arguments);
+        final Object[] theArguments = arguments == null ? EMPTY_ARGUMENTS : arguments.clone();
+        final Class<?>[] argClasses = MetaClassHelper.convertToTypeArray(theArguments);
 
         MetaMethod method = null;
         final Closure<?> closure = (Closure<?>) object;
@@ -263,12 +254,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
-            if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
-                Object[] newArguments = ((List<?>) arguments[0]).toArray();
-                Class<?>[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
-                method = createTransformMetaMethod(pickClosureMethod(newArgClasses));
+            if (method == null && argClasses.length == 1 && List.class.isAssignableFrom(argClasses[0])) {
+                var list = (theArguments[0] instanceof Wrapper ? ((Wrapper) theArguments[0]).unwrap() : theArguments[0]);
+                if (list != null) {
+                    var newArguments = ((List<?>) list).toArray();
+                    var newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
+                    method = createTransformMetaMethod(pickClosureMethod(newArgClasses));
+                }
             }
-            if (method == null) throw new MissingMethodException(methodName, theClass, arguments, false);
+            if (method == null) throw new MissingMethodException(methodName, theClass, theArguments, false);
         }
 
         boolean shouldDefer = resolveStrategy == Closure.DELEGATE_ONLY && isInternalMethod(methodName);
@@ -276,7 +270,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
 
-        if (method != null) return method.doMethodInvoke(object, arguments);
+        if (method != null) return method.doMethodInvoke(object, theArguments);
 
         MissingMethodException last = null;
         Object callObject = object;
@@ -339,7 +333,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (metaClass instanceof ProxyMetaClass) {
                 return metaClass.invokeMethod(callObject, methodName, arguments);
             } else {
-                return method.doMethodInvoke(callObject, arguments);
+                return method.doMethodInvoke(callObject, theArguments);
             }
         } else {
             // no method was found; try to find a closure defined as a field of the class and run it
@@ -352,29 +346,24 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
                 Closure<?> cl = (Closure<?>) value;
                 MetaClass delegateMetaClass = cl.getMetaClass();
-                return delegateMetaClass.invokeMethod(cl.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+                return delegateMetaClass.invokeMethod(cl.getClass(), closure, CLOSURE_DO_CALL_METHOD, arguments, false, fromInsideClass);
             }
         }
 
-        throw last != null ? last : new MissingMethodException(methodName, theClass, arguments, false);
+        throw last != null ? last : new MissingMethodException(methodName, theClass, theArguments, false);
     }
 
     private static boolean isInternalMethod(final String methodName) {
         switch (methodName) {
-            case "curry":
-            case "ncurry":
-            case "rcurry":
-            case "leftShift":
-            case "rightShift":
-                return true;
-            default:
-                return false;
+          case "curry":
+          case "ncurry":
+          case "rcurry":
+          case "leftShift":
+          case "rightShift":
+            return true;
+          default:
+            return false;
         }
-    }
-
-    private static Object[] makeArguments(final Object[] arguments, final String methodName) {
-        if (arguments == null) return EMPTY_ARGUMENTS;
-        return arguments;
     }
 
     private static Throwable unwrap(final GroovyRuntimeException gre) {

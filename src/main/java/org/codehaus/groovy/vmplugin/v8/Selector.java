@@ -39,9 +39,11 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
@@ -769,31 +771,31 @@ public abstract class Selector {
                 return;
             }
 
-            Class<?> lastParam = params[params.length - 1];
-            Object lastArg = unwrapIfWrapped(args[args.length - 1]);
-            if (params.length == args.length) {
-                // may need rewrap
-                if (lastArg == null) return;
-                if (lastParam.isInstance(lastArg)) return;
-                if (lastArg.getClass().isArray()) return;
-                // arg is not null and not assignment compatible
-                // so we really need to rewrap
-                handle = handle.asCollector(lastParam, 1);
-            } else if (params.length > args.length) {
+            int aCount = args.length;
+            int pCount = params.length;
+            var vaType = params[pCount-1];
+            if (aCount == pCount) {
+                var lastArg = MetaClassHelper.convertToTypeArray(args)[aCount-1]; // GROOVY-6146
+                if (lastArg != null && (!lastArg.isArray() || (ArrayTypeUtils.dimension(lastArg)
+                            != ArrayTypeUtils.dimension(vaType) && vaType != Object[].class))) {
+                    // we depend on the method selection having done a good job previously
+                    // arg is null with cast or not assignment compatible; wrap with array
+                    handle = handle.asCollector(vaType, 1);
+                    if (LOG_ENABLED) LOG.info("changed last argument to be collected for variadic parameter");
+                }
+            } else if (aCount < pCount) {
                 // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
-                handle = MethodHandles.insertArguments(handle, params.length - 1, Array.newInstance(lastParam.getComponentType(), 0));
-                if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
-            } else { //params.length < args.length
+                handle = MethodHandles.insertArguments(handle, pCount - 1, Array.newInstance(vaType.getComponentType(), 0));
+                if (LOG_ENABLED) LOG.info("added empty array for variadic parameter");
+            } else { // aCount > pCount
                 // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // all trailing arguments belong into the vargs array
-                handle = handle.asCollector(
-                        lastParam,
-                        args.length - params.length + 1);
-                if (LOG_ENABLED) LOG.info("changed surplus arguments to be collected for vargs call");
+                handle = handle.asCollector(vaType, aCount - pCount + 1);
+                if (LOG_ENABLED) LOG.info("changed surplus arguments to be collected for variadic parameter");
             }
         }
 
@@ -1046,9 +1048,8 @@ public abstract class Selector {
      * Unwraps the given object from a {@link Wrapper}. If not
      * wrapped, the given object is returned.
      */
-    private static Object unwrapIfWrapped(Object object) {
-        if (object instanceof Wrapper) return unwrap(object);
-        return object;
+    private static Object unwrapIfWrapped(final Object object) {
+        return object instanceof Wrapper ? unwrap(object) : object;
     }
 
     /**

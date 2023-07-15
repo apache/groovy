@@ -81,10 +81,10 @@ final class VarargsMethodTest {
         assert varargsOnlyMethod(null, null) == 2
 
         // GROOVY-6146
+        assert varargsOnlyMethod((Object)null) == 1
+        assert varargsOnlyMethod(null as Object) == 1
         assert varargsOnlyMethod((Object[])null) == -1
         assert varargsOnlyMethod(null as Object[]) == -1
-        assert varargsOnlyMethod((Object)null) == -1 // TODO: 1
-        assert varargsOnlyMethod(null as Object) == -1 // TODO: 1
 
         // GROOVY-10099
         Object[] array = null
