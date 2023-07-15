@@ -1887,8 +1887,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert (empty & a) == empty
         assert (a & empty) == empty
 
+        Set d = ['a', 'B', 'c'] as Set
+        SortedSet e = ['A', 'b', 'D'] as SortedSet
+        assert ['a', 'B'] as Set == d.and(e, String.CASE_INSENSITIVE_ORDER)
+        assert empty == d.and(e, Comparator.naturalOrder())
+
         assert (a & b) instanceof Set
         assert (a & c) !instanceof SortedSet
+        assert (d.and(e, String.CASE_INSENSITIVE_ORDER)) instanceof Set
+        assert (d.and(e, Comparator.naturalOrder())) !instanceof SortedSet
     }
 
     void testIntersectionForSortedSets() {
@@ -1905,8 +1912,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert (empty & a) == empty
         assert (a & empty) == empty
 
+        SortedSet d = ['a', 'B', 'c'] as SortedSet
+        Set e = ['A', 'b', 'D'] as Set
+        assert ['a', 'B'] as SortedSet == d.and(e, String.CASE_INSENSITIVE_ORDER)
+        assert empty == d.and(e, Comparator.naturalOrder())
+
         assert (a & b) instanceof SortedSet
         assert (a & c) instanceof SortedSet
+        assert (d.and(e, String.CASE_INSENSITIVE_ORDER)) instanceof SortedSet
+        assert (d.and(e, Comparator.naturalOrder())) instanceof SortedSet
     }
 
     void testSymmetricDifferenceForSets() {
@@ -1923,8 +1937,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert (empty ^ a) == a
         assert (a ^ empty) == a
 
+        Set d = ['a', 'B', 'c'] as Set
+        SortedSet e = ['A', 'b', 'D'] as SortedSet
+        assert ['c', 'D'] as Set == d.xor(e, String.CASE_INSENSITIVE_ORDER)
+        assert ['a', 'B', 'c', 'A', 'b', 'D'] as Set == d.xor(e, Comparator.naturalOrder())
+
         assert (a ^ b) instanceof Set
         assert (a ^ c) !instanceof SortedSet
+        assert (d.xor(e, String.CASE_INSENSITIVE_ORDER)) instanceof Set
+        assert (d.xor(e, Comparator.naturalOrder())) !instanceof SortedSet
     }
 
     void testSymmetricDifferenceForSortedSets() {
@@ -1941,8 +1962,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert (empty ^ a) == a
         assert (a ^ empty) == a
 
+        SortedSet d = ['a', 'B', 'c'] as SortedSet
+        Set e = ['A', 'b', 'D'] as Set
+        assert ['c', 'D'] as SortedSet == d.xor(e, String.CASE_INSENSITIVE_ORDER)
+        assert ['a', 'B', 'c', 'A', 'b', 'D'] as SortedSet == d.xor(e, Comparator.naturalOrder())
+
         assert (a ^ b) instanceof SortedSet
         assert (a ^ c) instanceof SortedSet
+        assert (d.xor(e, String.CASE_INSENSITIVE_ORDER)) instanceof SortedSet
+        assert (d.xor(e, Comparator.naturalOrder())) instanceof SortedSet
     }
 
     void testSwap() {

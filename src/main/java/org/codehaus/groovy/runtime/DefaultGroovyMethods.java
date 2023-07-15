@@ -14563,8 +14563,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Set as a union of a Set and a Set.  Any
-     * elements that exist in either set are added to the resultant Set.
+     * Create a Set as a union of a Set and an Iterable.  Any
+     * elements that exist in either are added to the resultant Set.
      * <p>
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
@@ -14576,18 +14576,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param left  the left Set
-     * @param right the right Set
+     * @param right the right Iterable
      * @return the merged Set
      * @since 5.0.0
-     * @see #plus(Set, Collection)
+     * @see #plus(Set, Iterable)
      */
-    public static <T> Set<T> or(Set<T> left, Set<T> right) {
-        return plus(left, (Collection<T>) right);
+    public static <T> Set<T> or(Set<T> left, Iterable<T> right) {
+        return plus(left, right);
     }
 
     /**
-     * Create a SortedSet as a union of a SortedSet and a Set.  Any
-     * elements that exist in either set are added to the resultant SortedSet.
+     * Create a SortedSet as a union of a SortedSet and an Iterable.  Any
+     * elements that exist in either are added to the resultant SortedSet.
      * <p>
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
@@ -14599,18 +14599,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param left  the left SortedSet
-     * @param right the right Set
+     * @param right the right Iterable
      * @return the merged SortedSet
      * @since 5.0.0
-     * @see #plus(SortedSet, Collection)
+     * @see #plus(SortedSet, Iterable)
      */
-    public static <T> SortedSet<T> or(SortedSet<T> left, Set<T> right) {
-        return plus(left, (Collection<T>) right);
+    public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
+        return plus(left, right);
     }
 
     /**
-     * Create a Set composed of the intersection of a Set and a Set.  Any
-     * elements that exist in both sets are added to the resultant Set.
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both are added to the resultant Set.
      * <p>
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
@@ -14625,18 +14625,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * element exists in both sets.
      *
      * @param left  a Set
-     * @param right a Set
-     * @return a Set as an intersection of a Set and a Set
+     * @param right an Iterable
+     * @return a Set as an intersection of a Set and an Iterable
      * @see #intersect(Set, Iterable)
      * @since 5.0.0
      */
-    public static <T> Set<T> and(Set<T> left, Set<T> right) {
-        return intersect(left, (Iterable<T>) right);
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right) {
+        return intersect(left, right);
     }
 
     /**
-     * Create a SortedSet composed of the intersection of a SortedSet and a Set.  Any
-     * elements that exist in both sets are added to the resultant SortedSet.
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as Set == ([1,2,3,4] as Set).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both are added to the resultant SortedSet.
      * <p>
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
@@ -14651,18 +14673,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * element exists in both sets.
      *
      * @param left  a SortedSet
-     * @param right a Set
-     * @return a SortedSet as an intersection of a SortedSet and a Set
+     * @param right an Iterable
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
      * @see #intersect(Set, Iterable)
      * @since 5.0.0
      */
-    public static <T> SortedSet<T> and(SortedSet<T> left, Set<T> right) {
-        return intersect(left, (Iterable<T>) right);
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right) {
+        return intersect(left, right);
     }
 
     /**
-     * Create a Set composed of the symmetric difference of a Set and a Set.  Any
-     * elements that exit in only one of the sets are added to the resultant Set.
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as SortedSet == ([1,2,3,4] as SortedSet).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Create a Set composed of the symmetric difference of a Set and an Iterable.  Any
+     * elements that exit in only one are added to the resultant Set.
      * <p>
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
@@ -14677,16 +14721,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * element exists in both sets.
      *
      * @param left  a Set
-     * @param right a Set
-     * @return a Set as a symmetric difference of a Set and a Set
+     * @param right an Iterable
+     * @return a Set as a symmetric difference of a Set and an Iterable
      * @since 5.0.0
      */
-    public static <T> Set<T> xor(Set<T> left, Set<T> right) {
-        return or((minus(left, (Collection<?>) right)), minus(right, (Collection<?>) left));
+    public static <T> Set<T> xor(Set<T> left, Iterable<T> right) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return minus(or(left, rightCollection), and(left, rightCollection));
     }
 
     /**
-     * Create a SortedSet composed of the symmetric difference of a SortedSet and a Set.  Any
+     * Create a Set composed of the symmetric difference of a Set and an Iterable.  Any
+     * elements that exit in only one are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1,2,5,6] as Set == ([1,2,3,4] as Set).xor([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as a symmetric difference of a Set and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> Set<T> xor(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return (Set<T>) minus(or(left, rightCollection), and(left, rightCollection, comparator), comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the symmetric difference of a SortedSet and an Iterable.  Any
      * elements that exist in only one of the sets are added to the resultant SortedSet.
      * <p>
      * This operation will always create a new object for the result,
@@ -14702,14 +14769,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * element exists in both sets.
      *
      * @param left  a SortedSet
-     * @param right a Set
-     * @return a SortedSet as a symmetric difference of a SortedSet and a Set
+     * @param right an Iterable
+     * @return a SortedSet as a symmetric difference of a SortedSet and an Iterable
      * @since 5.0.0
      */
-    public static <T> SortedSet<T> xor(SortedSet<T> left, Set<T> right) {
-        return or((minus(left, (Collection<?>) right)), minus(right, (Collection<?>) left));
+    public static <T> SortedSet<T> xor(SortedSet<T> left, Iterable<T> right) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return minus(or(left, rightCollection), and(left, rightCollection));
     }
 
+    /**
+     * Create a SortedSet composed of the symmetric difference of a SortedSet and an Iterable.  Any
+     * elements that exit in only one are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1,2,5,6] as SortedSet == ([1,2,3,4] as SortedSet).xor([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a SortedSet as a symmetric difference of a SortedSet and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> xor(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return (SortedSet<T>) minus(or(left, rightCollection), and(left, rightCollection, comparator), comparator);
+    }
     //--------------------------------------------------------------------------
     // attic
 
