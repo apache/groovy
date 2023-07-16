@@ -18,14 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.Test
 
-import static groovy.lang.Closure.IDENTITY
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 import static java.lang.reflect.Modifier.isPublic
 import static java.lang.reflect.Modifier.isStatic
 
-final class ClosureTest extends GroovyTestCase {
+final class ClosureTest {
 
     private int count
 
@@ -51,16 +52,18 @@ final class ClosureTest extends GroovyTestCase {
 
     //--------------------------------------------------------------------------
 
+    @Test
     void testSimpleBlockCall() {
-        def c = { owner -> owner.incrementCallCount() }
+        def c = { ClosureTest ct -> ct.incrementCallCount() }
 
         assertClosure(c)
         assert count == 1
 
-        assertClosure({ owner -> owner.incrementCallCount() })
+        assertClosure { ClosureTest ct -> ct.incrementCallCount() }
         assert count == 2
     }
 
+    @Test
     void testVariableLengthParameterList() {
         def c1 = { Object[] args -> args.each { count += it } }
         c1(1, 2, 3)
@@ -89,14 +92,16 @@ final class ClosureTest extends GroovyTestCase {
         assert count == 6
     }
 
+    @Test
     void testBlockAsParameter() {
-        callBlock(5, { owner -> owner.incrementCallCount() })
+        callBlock(5, { ClosureTest ct -> ct.incrementCallCount() })
         assert count == 6
 
-        callBlock2(5, { owner -> owner.incrementCallCount() })
+        callBlock2(5, { ClosureTest ct -> ct.incrementCallCount() })
         assert count == 12
     }
 
+    @Test
     void testMethodClosure() {
         def block = this.&incrementCallCount
 
@@ -115,6 +120,7 @@ final class ClosureTest extends GroovyTestCase {
         int x
     }
 
+    @Test
     void testIntFieldAccess() {
         def agents = new ArrayList();
         numAgents.times {
@@ -127,6 +133,7 @@ final class ClosureTest extends GroovyTestCase {
     }
 
     // GROOVY-6989
+    @Test
     void testEach() {
         assertScript '''
             Object[] arr = new Object[1]
@@ -144,6 +151,7 @@ final class ClosureTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testEachWithArray() {
         def l = []
         l << ([1, 2] as Object[])
@@ -152,6 +160,7 @@ final class ClosureTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEachWithIndex() {
         def str = ''
         def sum = 0
@@ -159,6 +168,7 @@ final class ClosureTest extends GroovyTestCase {
         assert str == 'abcd' && sum == 6
     }
 
+    @Test
     void testMapEachWithIndex() {
         def keyStr = ''
         def valStr = ''
@@ -171,6 +181,7 @@ final class ClosureTest extends GroovyTestCase {
         assert keyStr == 'abcd' && valStr == 'zyxw' && sum == 6
     }
 
+    @Test
     void testMapEachWithIndexKV() {
         def keyStr = ''
         def valStr = ''
@@ -183,9 +194,8 @@ final class ClosureTest extends GroovyTestCase {
         assert keyStr == 'abcd' && valStr == 'zyxw' && sum == 6
     }
 
-    /**
-     * GROOVY-2089 access to Closure's properties
-     */
+    // GROOVY-2089: Closure properties
+    @Test
     void testGetProperties() {
         def c = { println it }
 
@@ -201,19 +211,21 @@ final class ClosureTest extends GroovyTestCase {
         assert c.metaClass != c.getMetaClass() // no idea why this isn't equal
     }
 
+    @Test
     void testGetPropertiesGenerically() {
-        // ensure closure metaclass is the original one
+        // ensure closure meta-class is the original
         Closure.metaClass = null
 
         Closure.metaClass.properties.each { property ->
             int modifiers = property.modifiers
             if (isPublic(modifiers) && !isStatic(modifiers)) {
                 Closure closure = { -> }
-                closure."$property.name" == closure."${MetaProperty.getGetterName(property.name, property.type)}"()
+                closure."$property.name" == closure.(MetaProperty.getGetterName(property.name, property.type))()
             }
         }
     }
 
+    @Test
     void testSetProperties() {
         def c = { println it }
 
@@ -230,18 +242,16 @@ final class ClosureTest extends GroovyTestCase {
         // like in testGetProperties(), don't know how to test metaClass property
     }
 
-    /**
-     * GROOVY-2150 ensure list call is available on closure
-     */
+    // GROOVY-2150: ensure list call is available on closure
+    @Test
     void testCallClosureWithList() {
         def list = [1, 2]
         def cl = { a, b -> a + b }
         assert cl(list) == 3
     }
 
-    /**
-     * GROOVY-4484 ensure variable can be used in assignment inside closure
-     */
+    // GROOVY-4484: ensure variable can be used in assignment inside closure
+    @Test
     void testDeclarationOutsideWithAssignmentInsideAndReferenceInNestedClosure() {
         assertScript '''
             class Dummy { }
@@ -256,31 +266,35 @@ final class ClosureTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testIdentity() {
-        assert IDENTITY(42) == 42
-        assert IDENTITY([42, true, 'foo']) == [42, true, 'foo']
+        def identity = Closure.IDENTITY
+
+        assert identity(42) == 42
+        assert identity([42, true, 'foo']) == [42, true, 'foo']
 
         def items = [0, 1, 2, '', 'foo', [], ['bar'], true, false]
-        assert items.grep(IDENTITY) == [1, 2, 'foo', ['bar'], true]
-        assert items.findAll(IDENTITY) == [1, 2, 'foo', ['bar'], true]
-        assert items.grep(IDENTITY).groupBy(IDENTITY) == [1: [1], 2: [2], 'foo': ['foo'], ['bar']: [['bar']], (true): [true]]
-        assert items.collect(IDENTITY) == items
+        assert items.grep(identity) == [1, 2, 'foo', ['bar'], true]
+        assert items.findAll(identity) == [1, 2, 'foo', ['bar'], true]
+        assert items.grep(identity).groupBy(identity) == [1: [1], 2: [2], 'foo': ['foo'], ['bar']: [['bar']], (true): [true]]
+        assert items.collect(identity) == items
 
         def twice = { it + it }
-        def alsoTwice = twice >> IDENTITY
+        def alsoTwice = twice >> identity
         assert alsoTwice(6) == 12
-        def twiceToo = IDENTITY >> twice
+        def twiceToo = identity >> twice
         assert twiceToo(6) == 12
 
-        def fortyTwo = IDENTITY.curry(42)
+        def fortyTwo = identity.curry(42)
         assert fortyTwo() == 42
-        def foo = IDENTITY.rcurry('foo')
+        def foo = identity.rcurry('foo')
         assert foo() == 'foo'
 
         def map = [a: 1, b: 2]
-        assert map.collectEntries(IDENTITY) == map
+        assert map.collectEntries(identity) == map
     }
 
+    @Test
     void testClosureDehydrateAndRehydrate() {
         def closure = { 'Hello' }
         assert closure.delegate != null
@@ -305,6 +319,7 @@ final class ClosureTest extends GroovyTestCase {
     }
 
     // GROOVY-5151
+    @Test
     void testClosureSerialization() {
         // without dehydrate, as Controller is not serializable, the serialization will fail
         shouldFail NotSerializableException, '''
@@ -397,6 +412,7 @@ final class ClosureTest extends GroovyTestCase {
     }
 
     // GROOVY-5875
+    @Test
     void testStaticInnerClassDelegateFirstAccess() {
         assertScript '''
             class Owner {
@@ -426,6 +442,7 @@ final class ClosureTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticInnerClassOwnerFirstAccess() {
         assertScript '''
             class Owner {
@@ -455,35 +472,33 @@ final class ClosureTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticInnerClassOwnerWithPropertyMissingImplementation() {
-        def gcl = new GroovyClassLoader()
-        def msg = shouldFail MultipleCompilationErrorsException, {
-            gcl.parseClass('''
-                class ClosureTestA {
-                    static class ClosureTestB {
-                        def propertyMissing(String myName, Object myValue) {
-                            return myValue
-                        }
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            class ClosureTestA {
+                static class ClosureTestB {
+                    def propertyMissing(String myName, Object myValue) {
+                        return myValue
+                    }
 
-                        def propertyMissing(String myName) {
-                            return 42
-                        }
+                    def propertyMissing(String myName) {
+                        return 42
+                    }
 
-                        def methodMissing(String myName, Object myArgs) {
-                            return 42
-                        }
+                    def methodMissing(String myName, Object myArgs) {
+                        return 42
                     }
                 }
-            ''')
-        }
+            }
+        '''
 
-        assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
-        assert msg.contains('"propertyMissing" implementations are not supported on static inner classes as a synthetic version of "propertyMissing" is added during compilation for the purpose of outer class delegation.')
+        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
+        assert err.message.contains('"propertyMissing" implementations are not supported on static inner classes as a synthetic version of "propertyMissing" is added during compilation for the purpose of outer class delegation.')
     }
 
+    @Test
     void testInnerClassOwnerWithPropertyMissingImplementation() {
-        def gcl = new GroovyClassLoader()
-        gcl.parseClass('''
+        assertScript '''
             class ClosureTestA {
                 class ClosureTestB {
                     def propertyMissing(String myName, Object myValue) {
@@ -499,25 +514,49 @@ final class ClosureTest extends GroovyTestCase {
                     }
                 }
             }
-        ''')
+
+            def a = new ClosureTestA()
+            def b = new ClosureTestA.ClosureTestB(a)
+        '''
     }
 
+    @Test
     void testStaticInnerClassHierarchyWithMethodMissing() {
-        def gcl = new GroovyClassLoader()
-        def msg = shouldFail MultipleCompilationErrorsException, {
-            gcl.parseClass('''
-                class ClosureTestA {
-                    static class ClosureTestB {
-                        def methodMissing(String myName, Object myArgs) {
-                            return 42
-                        }
-                    }
-
-                    static class ClosureTestB1 extends ClosureTestB {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            class ClosureTestA {
+                static class ClosureTestB {
+                    def methodMissing(String myName, Object myArgs) {
+                        return 42
                     }
                 }
-            ''')
-        }
-        assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
+
+                static class ClosureTestB1 extends ClosureTestB {
+                }
+            }
+        '''
+
+        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
+    }
+
+    // GROOVY-3142
+    @Test
+    void testClosureAccessToEnclosingClassPrivateField() {
+        assertScript '''
+            class C {
+                private String string = 'foo'
+                def test(List<String> strings) {
+                    strings.collect { this.@string + it }
+                }
+            }
+
+            def result = new C().test(['bar','baz'])
+            assert result == ['foobar','foobaz']
+
+            class D extends C {
+            }
+
+            result = new D().test(['bar','baz'])
+            assert result == ['foobar','foobaz']
+        '''
     }
 }

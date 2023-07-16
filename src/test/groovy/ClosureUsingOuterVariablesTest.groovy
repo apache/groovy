@@ -18,12 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class ClosureUsingOuterVariablesTest extends GroovyTestCase {
+final class ClosureUsingOuterVariablesTest {
 
+    @Test
     void testUseOfOuterVariable() {
-
         def x = 123
         def y = "hello"
 
@@ -35,19 +35,8 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         closure.call(321)
     }
 
-    /*
-    TODO: is this a valid test case?
-    void testInnerVariablesVisibleInOuterScope() {
-
-       closure = { z = 456 }
-       closure.call(321)
-
-       assert z == 456
-   }
-   */
-
+    @Test
     void testModifyingOuterVariable() {
-
         def m = 123
 
         def closure = { m = 456 }
@@ -56,6 +45,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         assert m == 456
     }
 
+    @Test
     void testCounting() {
         def sum = 0
 
@@ -64,6 +54,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         assert sum == 10
     }
 
+    @Test
     void testExampleUseOfClosureScopes() {
         def a = 123
         def b
@@ -73,6 +64,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         assert b == a + 5
     }
 
+    @Test
     void testExampleUseOfClosureScopesUsingEach() {
         def a = 123
         def b
