@@ -22,13 +22,13 @@ import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
@@ -204,7 +204,7 @@ public class IndyInterface {
      * @return the produced CallSite
      * @since Groovy 2.1.0
      */
-    public static CallSite bootstrap(Lookup caller, String callType, MethodType type, String name, int flags) {
+    public static CallSite bootstrap(MethodHandles.Lookup caller, String callType, MethodType type, String name, int flags) {
         CallType ct = CallType.fromCallSiteName(callType);
         if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
 
@@ -219,13 +219,17 @@ public class IndyInterface {
     /**
      * backing bootstrap method with all parameters
      */
-    private static CallSite realBootstrap(Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall, boolean spreadCall) {
-        // since indy does not give us the runtime types
-        // we produce first a dummy call site, which then changes the target to one when INDY_OPTIMIZE_THRESHOLD is reached,
-        // that does the method selection including the direct call to the
-        // real method.
+    private static CallSite realBootstrap(MethodHandles.Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall, boolean spreadCall) {
+        // first produce a dummy call site, since indy doesn't give the runtime types;
+        // the site then changes to the target when INDY_OPTIMIZE_THRESHOLD is reached
+        // that does the method selection including the direct call to the real method
         CacheableCallSite mc = new CacheableCallSite(type);
-        final Class<?> sender = caller.lookupClass();
+        Class<?> sender = caller.lookupClass();
+        if (thisCall) {
+            while (GeneratedClosure.class.isAssignableFrom(sender)) {
+                sender = sender.getEnclosingClass(); // GROOVY-2433
+            }
+        }
         MethodHandle mh = makeAdapter(mc, sender, name, callID, type, safe, thisCall, spreadCall);
         mc.setTarget(mh);
         mc.setDefaultTarget(mh);

@@ -538,6 +538,76 @@ final class ClosureTest {
         assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
 
+    // GROOVY-2433, GROOVY-3073, GROOVY-9987
+    @Test
+    void testClosureAccessToEnclosingClassPrivateMethod() {
+        assertScript '''
+            class C {
+                def getIds() {
+                    populateIds()
+                }
+                def populateIds = { ->
+                    this.sort([ 1, 5, 3, 4, 2 ])
+                }
+                private sort(list) {
+                    list.sort{ one, two -> one <=> two }
+                }
+            }
+
+            class D extends C {
+                void test() {
+                    assert ids == [1,2,3,4,5]
+                }
+            }
+
+            new D().test()
+        '''
+
+        assertScript '''
+            class C {
+                protected String protectedMethod() {
+                    def closure = { ->
+                        this.privateMethod()
+                    }
+                    closure()
+                }
+                private String privateMethod() {
+                    'hello world'
+                }
+            }
+
+            class D extends C {
+                void test() {
+                    def result = protectedMethod()
+                    assert result == 'hello world'
+                }
+            }
+
+            new D().test()
+        '''
+
+        assertScript '''
+            class C {
+                def publicMethod() {
+                    [1].each {
+                        this.privateStaticMethod()
+                    }
+                }
+                private static privateStaticMethod() {
+                    'hello world'
+                }
+            }
+
+            class D extends C {
+                void test() {
+                    publicMethod()
+                }
+            }
+
+            new D().test()
+        '''
+    }
+
     // GROOVY-3142
     @Test
     void testClosureAccessToEnclosingClassPrivateField() {
