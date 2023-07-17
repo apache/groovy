@@ -541,71 +541,73 @@ final class ClosureTest {
     // GROOVY-2433, GROOVY-3073, GROOVY-9987
     @Test
     void testClosureAccessToEnclosingClassPrivateMethod() {
-        assertScript '''
-            class C {
-                def getIds() {
-                    populateIds()
-                }
-                def populateIds = { ->
-                    this.sort([ 1, 5, 3, 4, 2 ])
-                }
-                private sort(list) {
-                    list.sort{ one, two -> one <=> two }
-                }
-            }
-
-            class D extends C {
-                void test() {
-                    assert ids == [1,2,3,4,5]
-                }
-            }
-
-            new D().test()
-        '''
-
-        assertScript '''
-            class C {
-                protected String protectedMethod() {
-                    def closure = { ->
-                        this.privateMethod()
+        for (who in ['this.', 'owner.', 'thisObject.']) {
+            assertScript """
+                class C {
+                    def getIds() {
+                        populateIds()
                     }
-                    closure()
-                }
-                private String privateMethod() {
-                    'hello world'
-                }
-            }
-
-            class D extends C {
-                void test() {
-                    def result = protectedMethod()
-                    assert result == 'hello world'
-                }
-            }
-
-            new D().test()
-        '''
-
-        assertScript '''
-            class C {
-                def publicMethod() {
-                    [1].each {
-                        this.privateStaticMethod()
+                    def populateIds = { ->
+                        ${who}sort([ 1, 5, 3, 4, 2 ])
+                    }
+                    private sort(list) {
+                        list.sort{ one, two -> one <=> two }
                     }
                 }
-                private static privateStaticMethod() {
-                    'hello world'
-                }
-            }
 
-            class D extends C {
-                void test() {
-                    publicMethod()
+                class D extends C {
+                    void test() {
+                        assert ids == [1,2,3,4,5]
+                    }
                 }
-            }
 
-            new D().test()
-        '''
+                new D().test()
+            """
+
+            assertScript """
+                class C {
+                    protected String protectedMethod() {
+                        def closure = { ->
+                            ${who}privateMethod()
+                        }
+                        closure()
+                    }
+                    private String privateMethod() {
+                        'hello world'
+                    }
+                }
+
+                class D extends C {
+                    void test() {
+                        def result = protectedMethod()
+                        assert result == 'hello world'
+                    }
+                }
+
+                new D().test()
+            """
+
+            assertScript """
+                class C {
+                    def publicMethod() {
+                        [1].each {
+                            ${who}privateStaticMethod()
+                        }
+                    }
+                    private static privateStaticMethod() {
+                        'hello world'
+                    }
+                }
+
+                class D extends C {
+                    void test() {
+                        publicMethod()
+                    }
+                }
+
+                new D().test()
+            """
+        }
     }
 
     // GROOVY-3142, GROOVY-5438, GROOVY-6335

@@ -29,7 +29,6 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
-import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.transform.Internal;
 import org.apache.groovy.runtime.ObjectUtil;
@@ -144,23 +143,23 @@ public abstract class Selector {
         }
     }
 
+    /**
+     * Returns {@link NullObject#getNullObject()} if the receiver
+     * (args[0]) is null.  If it is not null, the receiver itself
+     * is returned.
+     */
+    public Object getCorrectedReceiver() {
+        var receiver = args[0];
+        if (receiver == null) {
+            if (LOG_ENABLED) LOG.info("receiver is null");
+            receiver = NullObject.getNullObject();
+        }
+        return receiver;
+    }
+
     abstract void setCallSiteTarget();
 
-    /**
-     * Helper method to transform the given arguments, consisting of the receiver
-     * and the actual arguments in an Object[], into a new Object[] consisting
-     * of the receiver and the arguments directly. Before the size of args was
-     * always 2, the returned Object[] will have a size of 1+n, where n is the
-     * number arguments.
-     */
-    private static Object[] spread(Object[] args, boolean spreadCall) {
-        if (!spreadCall) return args;
-        Object[] normalArguments = (Object[]) args[1];
-        Object[] ret = new Object[normalArguments.length + 1];
-        ret[0] = args[0];
-        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
-        return ret;
-    }
+    //--------------------------------------------------------------------------
 
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
@@ -297,20 +296,19 @@ public abstract class Selector {
         }
 
         /**
-         * this method chooses a property from the metaclass.
+         * Chooses a property from the metaclass.
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
-            Object receiver = getCorrectedReceiver();
+            var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                Class<?> aClass = receiver.getClass();
                 try {
-                    Method reflectionMethod = aClass.getMethod("getProperty", String.class);
-                    if (!reflectionMethod.isSynthetic() && !isMarkedInternal(reflectionMethod)) {
+                    var propertyAccessMethod = receiver.getClass().getMethod("getProperty", String.class);
+                    if (!propertyAccessMethod.isSynthetic() && !isMarkedInternal(propertyAccessMethod)) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
-                } catch (ReflectiveOperationException ignored) {
+                } catch (ReflectiveOperationException ignore) {
                 }
             } else if (receiver instanceof Class) {
                 handle = MOP_GET;
@@ -320,17 +318,20 @@ public abstract class Selector {
             }
 
             if (method != null || mci == null) return;
-            Class<?> chosenSender = this.sender;
-            if (mci.getTheClass() != chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                chosenSender = mci.getTheClass();
+
+            selectionBase = sender;
+            if (sender != mci.getTheClass() && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+                selectionBase = mci.getTheClass(); // slow path for category property
             }
-            MetaProperty res = mci.getEffectiveGetMetaProperty(chosenSender, receiver, name, false);
-            if (res instanceof MethodMetaProperty) {
-                MethodMetaProperty mmp = (MethodMetaProperty) res;
+            if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
+
+            var mp = mci.getEffectiveGetMetaProperty(selectionBase, receiver, name, false);
+            if (mp instanceof MethodMetaProperty) {
+                MethodMetaProperty mmp = (MethodMetaProperty) mp;
                 method = mmp.getMetaMethod();
                 insertName = true;
-            } else if (res instanceof CachedField) {
-                CachedField cf = (CachedField) res;
+            } else if (mp instanceof CachedField) {
+                CachedField cf = (CachedField) mp;
                 Field f = cf.getCachedField();
                 try {
                     handle = LOOKUP.unreflectGetter(f);
@@ -339,13 +340,13 @@ public abstract class Selector {
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
                         // but because there is a bug in invokedynamic in all jdk7 versions
                         // maybe use Unsafe.ensureClassInitialized
-                        handle = META_PROPERTY_GETTER.bindTo(res);
+                        handle = META_PROPERTY_GETTER.bindTo(mp);
                     }
                 } catch (IllegalAccessException iae) {
                     throw new GroovyBugError(iae);
                 }
             } else {
-                handle = META_PROPERTY_GETTER.bindTo(res);
+                handle = META_PROPERTY_GETTER.bindTo(mp);
             }
         }
 
@@ -565,18 +566,16 @@ public abstract class Selector {
          * Gives the metaclass to an Object.
          */
         public MetaClass getMetaClass() {
-            Object receiver = args[0];
-            if (receiver == null) {
-                mc = NullObject.getNullObject().getMetaClass();
-            } else if (receiver instanceof GroovyObject) {
+            var receiver = getCorrectedReceiver();
+            if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
                 Class<?> c = (Class<?>) receiver;
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
-                this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
-                this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
             mc.initialize();
             if (LOG_ENABLED) LOG.info("meta class is " + mc);
@@ -989,15 +988,18 @@ public abstract class Selector {
         }
 
         /**
-         * Sets the selection base.
+         * Chooses the class passed to {@link MetaClassImpl#getMethodWithCaching}.
+         *
+         * @see #chooseMeta(MetaClassImpl)
          */
         public void setSelectionBase() {
-            if (thisCall) {
+            Class<?> sender = getThisType(this.sender);
+            if (thisCall || sender.isInstance(args[0])) { // GROOVY-2433
                 selectionBase = sender;
             } else {
                 selectionBase = mc.getTheClass();
             }
-            if (LOG_ENABLED) LOG.info("selection base set to " + selectionBase);
+            if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
         }
 
         /**
@@ -1044,6 +1046,53 @@ public abstract class Selector {
         }
     }
 
+    //--------------------------------------------------------------------------
+
+    /**
+     * Returns the MetaClassImpl if the given MetaClass is one of
+     * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
+     * none of these cases matches, this method returns null.
+     */
+    private static MetaClassImpl getMetaClassImpl(final MetaClass mc, final boolean includeEMC) {
+        Class<?> mcc = mc.getClass();
+        boolean valid = mcc == MetaClassImpl.class
+                || mcc == AdaptingMetaClass.class
+                || mcc == ClosureMetaClass.class
+                || (includeEMC && mcc == ExpandoMetaClass.class);
+        if (!valid) {
+            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
+            return null;
+        }
+        if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
+        return (MetaClassImpl) mc;
+    }
+
+    /**
+     * Helper method to transform the given arguments, consisting of the receiver
+     * and the actual arguments in an Object[], into a new Object[] consisting
+     * of the receiver and the arguments directly. Before the size of args was
+     * always 2, the returned Object[] will have a size of 1+n, where n is the
+     * number arguments.
+     */
+    private static Object[] spread(final Object[] args, final boolean spreadCall) {
+        if (!spreadCall) return args;
+        Object[] normalArguments = (Object[]) args[1];
+        Object[] ret = new Object[normalArguments.length + 1];
+        ret[0] = args[0];
+        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
+        return ret;
+    }
+
+    /**
+     * Helper method to remove the receiver from the argument array
+     * by producing a new array.
+     */
+    private static Object[] removeRealReceiver(final Object[] args) {
+        Object[] ar = new Object[args.length - 1];
+        System.arraycopy(args, 1, ar, 0, args.length - 1);
+        return ar;
+    }
+
     /**
      * Unwraps the given object from a {@link Wrapper}. If not
      * wrapped, the given object is returned.
@@ -1052,47 +1101,10 @@ public abstract class Selector {
         return object instanceof Wrapper ? unwrap(object) : object;
     }
 
-    /**
-     * Returns {@link NullObject#getNullObject()} if the receiver
-     * (args[0]) is null. If it is not null, the receiver itself
-     * is returned.
-     */
-    public Object getCorrectedReceiver() {
-        Object receiver = args[0];
-        if (receiver == null) {
-            if (LOG_ENABLED) LOG.info("receiver is null");
-            receiver = NullObject.getNullObject();
+    private static Class<?> getThisType(Class<?> sender) {
+        while (GeneratedClosure.class.isAssignableFrom(sender)) {
+            sender = sender.getEnclosingClass();
         }
-        return receiver;
-    }
-
-    /**
-     * Returns the MetaClassImpl if the given MetaClass is one of
-     * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
-     * none of these cases matches, this method returns null.
-     */
-    private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
-        Class<?> mcc = mc.getClass();
-        boolean valid = mcc == MetaClassImpl.class ||
-                mcc == AdaptingMetaClass.class ||
-                mcc == ClosureMetaClass.class ||
-                (includeEMC && mcc == ExpandoMetaClass.class);
-        if (!valid) {
-            if (LOG_ENABLED)
-                LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
-            return null;
-        }
-        if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
-        return (MetaClassImpl) mc;
-    }
-
-    /**
-     * Helper method to remove the receiver from the argument array
-     * by producing a new array.
-     */
-    private static Object[] removeRealReceiver(Object[] args) {
-        Object[] ar = new Object[args.length - 1];
-        System.arraycopy(args, 1, ar, 0, args.length - 1);
-        return ar;
+        return sender;
     }
 }
