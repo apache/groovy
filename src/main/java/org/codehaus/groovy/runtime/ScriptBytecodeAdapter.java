@@ -500,6 +500,17 @@ public class ScriptBytecodeAdapter {
         try {
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
+            if (gre instanceof MissingPropertyException
+                    && receiver instanceof GroovyObject
+                    && GeneratedClosure.class.isAssignableFrom(senderClass)) {
+                do {
+                    senderClass = senderClass.getEnclosingClass();
+                } while (GeneratedClosure.class.isAssignableFrom(senderClass));
+                if (senderClass != receiver.getClass() && senderClass.isInstance(receiver)) { // GROOVY-3142: retry with super sender class?
+                    ((GroovyObject) receiver).getMetaClass().setProperty(senderClass, receiver, messageName, messageArgument, false, false);
+                    return;
+                }
+            }
             throw unwrap(gre);
         }
     }

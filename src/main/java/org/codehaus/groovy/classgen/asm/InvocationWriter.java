@@ -332,15 +332,11 @@ public class InvocationWriter {
         OperandStack operandStack = controller.getOperandStack();
         AsmClassGenerator acg = controller.getAcg();
 
-        // ensure VariableArguments are read, not stored
+        // ensure variable arguments are read, not written
         compileStack.pushLHS(false);
 
-        // sender only for call sites
-        if (adapter == AsmClassGenerator.setProperty) {
-            ConstantExpression.NULL.visit(acg);
-        } else {
-            sender.visit(acg);
-        }
+        // sender
+        sender.visit(acg);
 
         String methodName = getMethodName(message);
         if (adapter == invokeMethodOnSuper && methodName != null) {

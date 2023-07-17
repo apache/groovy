@@ -613,7 +613,7 @@ final class ClosureTest {
     // GROOVY-3142, GROOVY-5438, GROOVY-6335
     @Test
     void testClosureAccessToEnclosingClassPrivateField() {
-        for (who in ['this.@', 'this.']) {
+        for (who in ['this.@', 'this.', 'owner.', 'thisObject.']) {
             assertScript """
                 class C {
                     String data
@@ -672,10 +672,8 @@ final class ClosureTest {
                 @groovy.util.logging.Log
                 class C {
                     void test() {
-                        2.times {
-                            1.times {
-                                ${who}log.info('sth')
-                            }
+                        1.times {
+                            ${who}log.info('sth')
                         }
                     }
                 }

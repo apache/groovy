@@ -320,8 +320,12 @@ public abstract class Selector {
             if (method != null || mci == null) return;
 
             selectionBase = sender;
-            if (sender != mci.getTheClass() && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                selectionBase = mci.getTheClass(); // slow path for category property
+            if (sender != mci.getTheClass()) {
+                if (GroovyCategorySupport.hasCategoryInCurrentThread()) { // slow path for category property
+                    selectionBase = mci.getTheClass();
+                } else if (getThisType(sender).isInstance(receiver)) { // GROOVY-5438 for private property
+                    selectionBase = getThisType(sender);
+                }
             }
             if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
 
