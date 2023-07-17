@@ -41,6 +41,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
@@ -158,8 +159,8 @@ public class InvokeDynamicWriter extends InvocationWriter {
     private static int getMethodCallFlags(final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spread) {
         int flags = 0;
         if (safe)                           flags |= SAFE_NAVIGATION;
-        if (adapter==invokeMethodOnCurrent) flags |= THIS_CALL;
         if (spread)                         flags |= SPREAD_CALL;
+        if (adapter==invokeMethodOnCurrent) flags |= THIS_CALL;
 
         return flags;
     }
@@ -169,18 +170,13 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeIndyCall(invokeMethod, receiver, false, safe, message, arguments);
     }
 
-    private static int getPropertyFlags(final boolean safe, final boolean implicitThis, final boolean groovyObject) {
-        int flags = 0;
-        if (implicitThis) flags |= IMPLICIT_THIS;
-        if (groovyObject) flags |= GROOVY_OBJECT;
-        if (safe)         flags |= SAFE_NAVIGATION;
-
-        return flags;
-    }
-
     protected void writeGetProperty(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis, final boolean groovyObject) {
-        String descriptor = prepareIndyCall(receiver, implicitThis) + ")Ljava/lang/Object;";
-        int flags = getPropertyFlags(safe,implicitThis,groovyObject);
+        var descriptor = prepareIndyCall(receiver, implicitThis) + ")Ljava/lang/Object;";
+        int flags = 0;
+        if (safe)         flags |= SAFE_NAVIGATION;
+        if (groovyObject) flags |= GROOVY_OBJECT;
+        if (implicitThis) flags |= IMPLICIT_THIS;
+        else if (isThisExpression(receiver)) flags |= THIS_CALL; // GROOVY-6335
         finishIndyCall(BSM, GET.getCallSiteName(), descriptor, 1, propertyName, flags);
     }
 

@@ -608,25 +608,81 @@ final class ClosureTest {
         '''
     }
 
-    // GROOVY-3142
+    // GROOVY-3142, GROOVY-5438, GROOVY-6335
     @Test
     void testClosureAccessToEnclosingClassPrivateField() {
-        assertScript '''
-            class C {
-                private String string = 'foo'
-                def test(List<String> strings) {
-                    strings.collect { this.@string + it }
+        for (who in ['this.@', 'this.']) {
+            assertScript """
+                class C {
+                    String data
+                    C(arg) {
+                        arg.each() { ${who}data = it } // MissingFieldException
+                    }
                 }
-            }
 
-            def result = new C().test(['bar','baz'])
-            assert result == ['foobar','foobaz']
+                class D extends C {
+                    D(arg) {
+                        super(arg)
+                    }
+                }
 
-            class D extends C {
-            }
+                new D(["test"])
+            """
 
-            result = new D().test(['bar','baz'])
-            assert result == ['foobar','foobaz']
-        '''
+            assertScript """
+                class C {
+                    private String data
+                    C(arg) {
+                        arg.each() { ${who}data = it } // ReadOnlyPropertyException
+                    }
+                    String getData() { this.@data }
+                    private void setData(String value) { this.@data = value }
+                }
+
+                class D extends C {
+                    D(arg) {
+                        super(arg)
+                    }
+                }
+
+                new D(["test"])
+            """
+
+            assertScript """
+                class C {
+                    private String string = 'foo'
+                    def test(List<String> strings) {
+                        strings.collect { ${who}string + it }
+                    }
+                }
+
+                def result = new C().test(['bar','baz'])
+                assert result == ['foobar','foobaz']
+
+                class D extends C {
+                }
+
+                result = new D().test(['bar','baz'])
+                assert result == ['foobar','foobaz']
+            """
+
+            assertScript """
+                @groovy.util.logging.Log
+                class C {
+                    void test() {
+                        2.times {
+                            1.times {
+                                ${who}log.info('sth')
+                            }
+                        }
+                    }
+                }
+
+                class D extends C {
+                }
+
+                new D().test()
+            """
+        }
     }
 }

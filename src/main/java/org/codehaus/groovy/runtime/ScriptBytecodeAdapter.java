@@ -498,7 +498,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver == null) receiver = NullObject.getNullObject();
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
@@ -522,7 +521,16 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getGroovyObjectProperty(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        return receiver.getProperty(messageName);
+        try {
+            return receiver.getProperty(messageName);
+        } catch (GroovyRuntimeException gre) {
+            /* TODO
+            if (gre instanceof MissingPropertyException && senderClass!=receiver.getClass() && senderClass.isInstance(receiver)) {
+                return receiver.getMetaClass().getProperty(senderClass, receiver, messageName, false, false);
+            }
+            */
+            throw unwrap(gre);
+        }
     }
 
     public static Object getGroovyObjectPropertySafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
@@ -546,7 +554,11 @@ public class ScriptBytecodeAdapter {
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         try {
             receiver.setProperty(messageName, messageArgument);
-        } catch (GroovyRuntimeException gre) {
+        } catch (GroovyRuntimeException gre) { // GROOVY-3142: retry with super sender class?
+            if (gre instanceof MissingPropertyException && senderClass != receiver.getClass() && senderClass.isInstance(receiver)) {
+                receiver.getMetaClass().setProperty(senderClass, receiver, messageName, messageArgument, false, false);
+                return;
+            }
             throw unwrap(gre);
         }
     }
