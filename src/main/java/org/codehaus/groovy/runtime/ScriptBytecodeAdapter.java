@@ -84,24 +84,20 @@ public class ScriptBytecodeAdapter {
     //                       methods for this
     //  --------------------------------------------------------
     public static Object invokeMethodOnCurrentN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {
-        Object result = null;
-        boolean intercepting = receiver instanceof GroovyInterceptable;
         try {
+            boolean intercepting = (receiver instanceof GroovyInterceptable);
             try {
-                // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
                 if (intercepting) {
-                    result = receiver.invokeMethod(messageName, messageArguments);
-                }
-                //else if there's a statically typed method or a GDK method
-                else {
-                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
+                    return receiver.invokeMethod(messageName, messageArguments);
+                } else {
+                    return receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
                 }
             } catch (MissingMethodException e) {
                 if (e instanceof MissingMethodExecutionFailed) {
                     throw (MissingMethodException)e.getCause();
                 } else if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
                     // in case there's nothing else, invoke the object's own invokeMethod()
-                    result = receiver.invokeMethod(messageName, messageArguments);
+                    return receiver.invokeMethod(messageName, messageArguments);
                 } else {
                     throw e;
                 }
@@ -109,7 +105,6 @@ public class ScriptBytecodeAdapter {
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
-        return result;
     }
 
     public static Object invokeMethodOnCurrentNSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {

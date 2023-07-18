@@ -30,12 +30,12 @@ import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
-import groovy.lang.MissingPropertyException;
 import groovy.lang.ProxyMetaClass;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.callsite.CallSite;
@@ -184,24 +184,27 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private MetaMethod pickClosureMethod(final Class[] argClasses) {
-        Object answer = chooser.chooseMethod(argClasses, false);
-        return (MetaMethod) answer;
+        return (MetaMethod) chooser.chooseMethod(argClasses, false);
     }
 
     private MetaMethod getDelegateMethod(final Closure closure, final Object delegate, final String methodName, final Class[] argClasses) {
-        if (delegate == closure || delegate == null) return null;
+        if (delegate == closure || delegate == null) {
+            return null;
+        }
+
         if (delegate instanceof Class) {
-            for (Class superClass = (Class) delegate;
-                 superClass != Object.class && superClass != null;
-                 superClass = superClass.getSuperclass())
-            {
-                MetaClass mc = registry.getMetaClass(superClass);
-                MetaMethod method = mc.getStaticMetaMethod(methodName, argClasses);
-                if (method != null) return method;
+            for (var type = (Class<?>) delegate; type != Object.class && type != null; type = type.getSuperclass()) {
+                MetaMethod method = registry.getMetaClass(type).getStaticMetaMethod(methodName, argClasses);
+                if (method != null) {
+                    return method;
+                }
             }
             return null;
-        } else if (delegate instanceof GroovyInterceptable) {
-            MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
+        }
+
+        MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
+
+        if (delegate instanceof GroovyInterceptable) {
             // GROOVY-3015: must route calls through GroovyObject#invokeMethod(String,Object)
             MetaMethod interceptMethod = delegateMetaClass.pickMethod("invokeMethod", new Class[]{String.class, Object.class});
             return new TransformMetaMethod(interceptMethod) {
@@ -210,32 +213,23 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     return super.invoke(object, new Object[]{methodName, arguments});
                 }
             };
-        } else {
-            MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
-            MetaMethod method = delegateMetaClass.pickMethod(methodName, argClasses);
-            if (method != null) {
-                return method;
-            }
+        }
 
+        MetaMethod method = delegateMetaClass.pickMethod(methodName, argClasses);
+        if (method == null) {
             if (delegateMetaClass instanceof ExpandoMetaClass) {
                 method = ((ExpandoMetaClass) delegateMetaClass).findMixinMethod(methodName, argClasses);
-
                 if (method != null) {
                     onMixinMethodFound(method);
-                    return method;
                 }
-            }
-
-            if (delegateMetaClass instanceof MetaClassImpl) {
+            } else if (delegateMetaClass instanceof MetaClassImpl) {
                 method = MetaClassImpl.findMethodInClassHierarchy(getTheClass(), methodName, argClasses, this);
                 if (method != null) {
                     onSuperMethodFoundInHierarchy(method);
-                    return method;
                 }
             }
-
-            return method;
         }
+        return method;
     }
 
     @Override
@@ -249,7 +243,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         final Class<?>[] argClasses = MetaClassHelper.convertToTypeArray(theArguments);
 
         MetaMethod method = null;
-        final Closure<?> closure = (Closure<?>) object;
+        final var closure = (Closure<?>) object;
         final int resolveStrategy = closure.getResolveStrategy();
 
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
@@ -265,92 +259,116 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (method == null) throw new MissingMethodException(methodName, theClass, theArguments, false);
         }
 
-        boolean shouldDefer = resolveStrategy == Closure.DELEGATE_ONLY && isInternalMethod(methodName);
-        if (method == null && !shouldDefer) {
+        if (method == null && (resolveStrategy != Closure.DELEGATE_ONLY || !isInternalMethod(methodName))) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
 
-        if (method != null) return method.doMethodInvoke(object, theArguments);
+        if (method != null) return method.doMethodInvoke(closure, theArguments);
 
-        MissingMethodException last = null;
-        Object callObject = object;
-        final Object owner = closure.getOwner();
-        final Object delegate = closure.getDelegate();
-        boolean invokeOnDelegate = false;
-        boolean invokeOnOwner = false;
-        boolean ownerFirst = true;
+        Object callObject = closure; // target for method
+        final Object delegate = closure.getDelegate(), owner = closure.getOwner();
+        boolean invokeOnDelegate = false, invokeOnOwner = false, ownerFirst = true;
 
         switch (resolveStrategy) {
-            case Closure.TO_SELF:
-                break;
-            case Closure.DELEGATE_ONLY:
-                method = getDelegateMethod(closure, delegate, methodName, argClasses);
-                callObject = delegate;
-                if (method == null) {
-                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
-                }
-                break;
-            case Closure.OWNER_ONLY:
-                method = getDelegateMethod(closure, owner, methodName, argClasses);
-                callObject = owner;
-                if (method == null) {
-                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                }
-                break;
-            case Closure.DELEGATE_FIRST:
-                method = getDelegateMethod(closure, delegate, methodName, argClasses);
-                callObject = delegate;
-                if (method == null) {
-                    invokeOnDelegate = delegate != closure;
-                    invokeOnOwner = owner != closure;
-                    ownerFirst = false;
-                }
-                break;
-            default: // Closure.OWNER_FIRST:
-                method = getDelegateMethod(closure, owner, methodName, argClasses);
-                callObject = owner;
-                if (method == null) {
-                    invokeOnDelegate = delegate != closure;
-                    invokeOnOwner = owner != closure;
-                    ownerFirst = true;
-                }
-                break;
-        }
-        if (method == null && (invokeOnOwner || invokeOnDelegate)) {
-            try {
-                if (ownerFirst) {
-                    return invokeOnDelegationObjects(invokeOnOwner, owner, invokeOnDelegate, delegate, methodName, arguments);
-                } else {
-                    return invokeOnDelegationObjects(invokeOnDelegate, delegate, invokeOnOwner, owner, methodName, arguments);
-                }
-            } catch (MissingMethodException mme) {
-                last = mme;
+          case Closure.TO_SELF:
+            break;
+          case Closure.DELEGATE_ONLY:
+            method = getDelegateMethod(closure, delegate, methodName, argClasses);
+            callObject = delegate;
+            if (method == null) {
+                invokeOnDelegate = (delegate != closure) && (delegate instanceof GroovyObject);
             }
+            break;
+          case Closure.OWNER_ONLY:
+            method = getDelegateMethod(closure, owner, methodName, argClasses);
+            callObject = owner;
+            if (method == null) {
+                invokeOnOwner = (owner != closure) && (owner instanceof GroovyObject);
+            }
+            break;
+          case Closure.DELEGATE_FIRST:
+            method = getDelegateMethod(closure, delegate, methodName, argClasses);
+            callObject = delegate;
+            if (method == null) {
+                invokeOnDelegate = (delegate != closure);
+                invokeOnOwner = (owner != closure);
+                ownerFirst = false;
+            }
+            break;
+          default: //Closure.OWNER_FIRST:
+            method = getDelegateMethod(closure, owner, methodName, argClasses);
+            callObject = owner;
+            if (method == null) {
+                invokeOnDelegate = (delegate != closure);
+                invokeOnOwner = (owner != closure);
+                ownerFirst = true;
+            }
+            break;
         }
 
         if (method != null) {
-            MetaClass metaClass = registry.getMetaClass(callObject.getClass());
+            var metaClass = registry.getMetaClass(callObject.getClass());
             if (metaClass instanceof ProxyMetaClass) {
                 return metaClass.invokeMethod(callObject, methodName, arguments);
             } else {
-                return method.doMethodInvoke(callObject, theArguments);
+                return method.doMethodInvoke(callObject, theArguments); // direct
             }
-        } else {
-            // no method was found; try to find a closure defined as a field of the class and run it
-            Object value = null;
-            try {
-                value = getProperty(sender, object, methodName, isCallToSuper, fromInsideClass);
-            } catch (MissingPropertyException mpe) {
-                // ignore
-            }
-            if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
-                Closure<?> cl = (Closure<?>) value;
-                MetaClass delegateMetaClass = cl.getMetaClass();
-                return delegateMetaClass.invokeMethod(cl.getClass(), closure, CLOSURE_DO_CALL_METHOD, arguments, false, fromInsideClass);
+        } else if (invokeOnOwner || invokeOnDelegate) {
+            if (ownerFirst) {
+                return invokeOnDelegationObjects(invokeOnOwner, owner, invokeOnDelegate, delegate, methodName, arguments, sender);
+            } else {
+                return invokeOnDelegationObjects(invokeOnDelegate, delegate, invokeOnOwner, owner, methodName, arguments, sender);
             }
         }
 
-        throw last != null ? last : new MissingMethodException(methodName, theClass, theArguments, false);
+        throw new MissingMethodException(methodName, theClass, theArguments, false);
+    }
+
+    private static Object invokeOnDelegationObjects(final boolean i1, final Object o1, final boolean i2, final Object o2, final String methodName, final Object[] args, final Class c) {
+        MissingMethodException first = null;
+        if (i1) {
+            try {
+                return invokeOnDelegationObject(c, o1, methodName, args);
+            } catch (MissingMethodException mme) {
+                first = mme;
+            }
+        }
+        if (i2 && (!i1 || o1 != o2)) {
+            try {
+                return invokeOnDelegationObject(c, o2, methodName, args);
+            } catch (MissingMethodException mme) {
+                if (first == null) first = mme;
+                else first.addSuppressed(mme);
+            }
+        }
+        throw first;
+    }
+
+    private static Object invokeOnDelegationObject(final Class sender, final Object object, final String methodName, final Object[] arguments) {
+        MissingMethodException first = null;
+        try {
+            return InvokerHelper.invokeMethod(object, methodName, arguments); // includes callable property
+        } catch (MissingMethodException mme) {
+            first = mme;
+        } catch (GroovyRuntimeException gre) {
+            Throwable t = gre;
+            while (t.getCause() != t && t.getCause() instanceof GroovyRuntimeException) t = t.getCause();
+            if (t instanceof MissingMethodException && methodName.equals(((MissingMethodException) t).getMethod())) {
+                first = (MissingMethodException) t;
+            } else {
+                throw gre;
+            }
+        }
+        Class thisType = sender;
+        while (GeneratedClosure.class.isAssignableFrom(thisType)) thisType = thisType.getEnclosingClass();
+        if (thisType != sender && thisType != object.getClass() && thisType.isInstance(object)) { // GROOVY-2433, GROOVY-11128
+            try {
+                return ((GroovyObject) object).getMetaClass().invokeMethod(thisType, object, methodName, arguments, false, true);
+            } catch (GroovyRuntimeException gre) {
+                first.addSuppressed(gre);
+            }
+        }
+        throw first;
     }
 
     private static boolean isInternalMethod(final String methodName) {
@@ -366,55 +384,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
-    private static Throwable unwrap(final GroovyRuntimeException gre) {
-        Throwable th = gre;
-        if (th.getCause() != null && th.getCause() != gre) th = th.getCause();
-        if (th != gre && (th instanceof GroovyRuntimeException)) return unwrap((GroovyRuntimeException) th);
-        return th;
-    }
-
-    private static Object invokeOnDelegationObjects(final boolean invoke1, final Object o1, final boolean invoke2, final Object o2, final String methodName, final Object[] args) {
-        MissingMethodException first = null;
-        if (invoke1) {
-            try {
-                return InvokerHelper.invokeMethod(o1, methodName, args);
-            } catch (MissingMethodException mme) {
-                first = mme;
-            } catch (GroovyRuntimeException gre) {
-                Throwable t = unwrap(gre);
-                if (t instanceof MissingMethodException && methodName.equals(((MissingMethodException) t).getMethod())) {
-                    first = (MissingMethodException) t;
-                } else {
-                    throw gre;
-                }
-            }
-        }
-        if (invoke2 && (!invoke1 || o1 != o2)) {
-            try {
-                return InvokerHelper.invokeMethod(o2, methodName, args);
-            } catch (MissingMethodException mme) {
-                // patch needed here too, but we need a test case to trip it first
-                if (first == null) first = mme;
-            } catch (GroovyRuntimeException gre) {
-                Throwable t = unwrap(gre);
-                if (t instanceof MissingMethodException) {
-                    first = (MissingMethodException) t;
-                } else {
-                    throw gre;
-                }
-            }
-        }
-        throw first;
-    }
-
     private synchronized void initAttributes() {
-        if (!attributes.isEmpty()) return;
-        attributes.put("!", null); // just a dummy for later
-        CachedField[] fieldArray = theCachedClass.getFields();
-        for (CachedField aFieldArray : fieldArray) {
-            attributes.put(aFieldArray.getName(), aFieldArray);
+        if (attributes.isEmpty()) {
+            attributes.put("!", null); // a dummy for later
+            for (var field : theCachedClass.getFields()) {
+                attributes.put(field.getName(), field);
+            }
+            attributeInitDone = !attributes.isEmpty();
         }
-        attributeInitDone = !attributes.isEmpty();
     }
 
     @Override
@@ -513,16 +490,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private MetaClass lookupObjectMetaClass(final Object object) {
+        MetaClass metaClass;
         if (object instanceof GroovyObject) {
-            GroovyObject go = (GroovyObject) object;
-            return go.getMetaClass();
+            metaClass = ((GroovyObject) object).getMetaClass();
+        } else if (object.getClass() == Class.class) {
+            metaClass = registry.getMetaClass((Class)object);
+        } else {
+            metaClass = InvokerHelper.getMetaClass(object);
         }
-        Class ownerClass = object.getClass();
-        if (ownerClass == Class.class) {
-            ownerClass = (Class) object;
-            return registry.getMetaClass(ownerClass);
-        }
-        MetaClass metaClass = InvokerHelper.getMetaClass(object);
         return metaClass;
     }
 

@@ -103,15 +103,15 @@ final class ClosureTest {
 
     @Test
     void testMethodClosure() {
-        def block = this.&incrementCallCount
+        def c = this.&incrementCallCount
 
-        block.call()
+        c.call()
 
         assert count == 1
 
-        block = Math.&min
+        c = Math.&min
 
-        assert block.call(3, 7) == 3
+        assert c.call(3, 7) == 3
     }
 
     private int numAgents = 4
@@ -122,7 +122,7 @@ final class ClosureTest {
 
     @Test
     void testIntFieldAccess() {
-        def agents = new ArrayList();
+        def agents = []
         numAgents.times {
             TinyAgent btn = new TinyAgent()
             testDone = true
@@ -242,7 +242,7 @@ final class ClosureTest {
         // like in testGetProperties(), don't know how to test metaClass property
     }
 
-    // GROOVY-2150: ensure list call is available on closure
+    // GROOVY-2150: list items spread over closure parameters
     @Test
     void testCallClosureWithList() {
         def list = [1, 2]
@@ -295,7 +295,7 @@ final class ClosureTest {
     }
 
     @Test
-    void testClosureDehydrateAndRehydrate() {
+    void testDehydrateAndRehydrate() {
         def closure = { 'Hello' }
         assert closure.delegate != null
         assert closure.owner != null
@@ -408,6 +408,20 @@ final class ClosureTest {
             baos.withObjectOutputStream {
                 it << cl.dehydrate()
             }
+        '''
+    }
+
+    @Test
+    void testCallablePropertyFallback() {
+        assertScript '''
+            class C {
+                def getX() {
+                    return { -> 'works' }
+                }
+            }
+
+            Object result = new C().with { x() }
+            assert result == 'works'
         '''
     }
 
@@ -538,10 +552,10 @@ final class ClosureTest {
         assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
 
-    // GROOVY-2433, GROOVY-3073, GROOVY-9987
+    // GROOVY-2433, GROOVY-3073, GROOVY-9987, GROOVY-11128
     @Test
     void testClosureAccessToEnclosingClassPrivateMethod() {
-        for (who in ['this.', 'owner.', 'thisObject.']) {
+        for (who in ['this.', 'owner.', 'thisObject.', '']) {
             assertScript """
                 class C {
                     def getIds() {
