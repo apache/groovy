@@ -624,10 +624,10 @@ final class ClosureTest {
         }
     }
 
-    // GROOVY-3142, GROOVY-5438, GROOVY-6335
+    // GROOVY-3142, GROOVY-5438, GROOVY-6335, GROOVY-11128
     @Test
     void testClosureAccessToEnclosingClassPrivateField() {
-        for (who in ['this.@', 'this.', 'owner.', 'thisObject.']) {
+        for (who in ['this.@', 'this.', 'owner.', 'thisObject.', '']) {
             assertScript """
                 class C {
                     String data

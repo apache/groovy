@@ -24,6 +24,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
@@ -263,143 +264,161 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return resolveStrategy;
     }
 
-    public Object getThisObject(){
+    public Object getThisObject() {
         return thisObject;
     }
 
+    private Class getThisType() {
+        Class thisType = getClass();
+        while (GeneratedClosure.class.isAssignableFrom(thisType)) {
+            thisType = thisType.getEnclosingClass();
+        }
+        return thisType;
+    }
+
     @Override
-    public Object getProperty(final String property) {
-        if ("delegate".equals(property)) {
-            return getDelegate();
-        }
-        if ("owner".equals(property)) {
+    public  Object getProperty(final String property) {
+        switch (property) {
+          case "owner":
             return getOwner();
-        }
-        if ("maximumNumberOfParameters".equals(property)) {
+          case "delegate":
+            return getDelegate();
+          case "thisObject":
+            return getThisObject();
+          case "class":
+            return getClass();
+          case "metaClass":
+            return getMetaClass();
+          case "directive":
+            return getDirective();
+          case "parameterTypes":
+            return getParameterTypes();
+          case "resolveStrategy":
+            return getResolveStrategy();
+          case "maximumNumberOfParameters":
             return getMaximumNumberOfParameters();
         }
-        if ("parameterTypes".equals(property)) {
-            return getParameterTypes();
-        }
-        if ("metaClass".equals(property)) {
-            return getMetaClass();
-        }
-        if ("class".equals(property)) {
-            return getClass();
-        }
-        if ("directive".equals(property)) {
-            return getDirective();
-        }
-        if ("resolveStrategy".equals(property)) {
-            return getResolveStrategy();
-        }
-        if ("thisObject".equals(property)) {
-            return getThisObject();
-        }
+
         switch(resolveStrategy) {
-            case DELEGATE_FIRST:
-                return getPropertyDelegateFirst(property);
-            case DELEGATE_ONLY:
-                return InvokerHelper.getProperty(getDelegate(), property);
-            case OWNER_ONLY:
-                return InvokerHelper.getProperty(getOwner(), property);
-            case TO_SELF:
-                return super.getProperty(property);
-            default:
-                return getPropertyOwnerFirst(property);
+          case DELEGATE_FIRST:
+            if (getDelegate() == null) return getProperty(getOwner(), property);
+            return getPropertyTryThese(getDelegate(), getOwner(), property);
+          case DELEGATE_ONLY:
+            return getProperty(getDelegate(), property);
+          case OWNER_ONLY:
+            return getProperty(getOwner(), property);
+          case TO_SELF:
+            return super.getProperty(property);
+          default:
+            return getPropertyTryThese(getOwner(), getDelegate(), property);
         }
     }
 
-    private Object getPropertyDelegateFirst(String property) {
-        if (delegate == null) return getPropertyOwnerFirst(property);
-        return getPropertyTryThese(property, getDelegate(), getOwner());
-    }
-
-    private Object getPropertyOwnerFirst(String property) {
-        return getPropertyTryThese(property, getOwner(), getDelegate());
-    }
-
-    private Object getPropertyTryThese(String property, Object firstTry, Object secondTry) {
+    private Object getProperty(final Object receiver, final String property) {
         try {
-            // let's try getting the property on the first object
-            return InvokerHelper.getProperty(firstTry, property);
-
-        } catch (MissingPropertyException | MissingFieldException e1) {
-            if (secondTry != null && firstTry != this && firstTry != secondTry) {
+            return InvokerHelper.getProperty(receiver, property);
+        } catch (GroovyRuntimeException e1) {
+            if (null != receiver && this != receiver && this instanceof GeneratedClosure
+                    && getThisType() != receiver.getClass() && getThisType().isInstance(receiver)) { // GROOVY-11128
                 try {
-                    // let's try getting the property on the second object
-                    return InvokerHelper.getProperty(secondTry, property);
+                    return ((GroovyObject) receiver).getMetaClass().getProperty(getThisType(), receiver, property, false, true);
                 } catch (GroovyRuntimeException e2) {
-                    // ignore, we'll throw e1
+                    e1.addSuppressed(e2);
                 }
             }
             throw e1;
+        }
+    }
 
+    private Object getPropertyTryThese(final Object o1, final Object o2, final String property) {
+        try {
+            return getProperty(o1, property);
+        } catch (MissingPropertyException | MissingFieldException e1) {
+            if (o2 != null && o1 != this && o1 != o2) {
+                try {
+                    return getProperty(o2, property);
+                } catch (GroovyRuntimeException e2) {
+                    e1.addSuppressed(e2);
+                }
+            }
+            throw e1;
         }
     }
 
     @Override
-    public void setProperty(String property, Object newValue) {
-        if ("delegate".equals(property)) {
+    public  void setProperty(final String property, final Object newValue) {
+        switch (property) {
+          case "delegate":
             setDelegate(newValue);
-        } else if ("metaClass".equals(property)) {
+            break;
+          case "metaClass":
             setMetaClass((MetaClass) newValue);
-        } else if ("resolveStrategy".equals(property)) {
-            setResolveStrategy(((Number) newValue).intValue());
-        } else if ("directive".equals(property)) {
+            break;
+          case "directive":
             setDirective(((Number) newValue).intValue());
-        } else {
+            break;
+          case "resolveStrategy":
+            setResolveStrategy(((Number) newValue).intValue());
+            break;
+          default:
             switch(resolveStrategy) {
-                case DELEGATE_FIRST:
-                    setPropertyDelegateFirst(property, newValue);
+              case DELEGATE_FIRST:
+                if (getDelegate() == null) setProperty(getOwner(), property, newValue);
+                else setPropertyTryThese(getDelegate(), getOwner(), property, newValue);
                 break;
-                case DELEGATE_ONLY:
-                    InvokerHelper.setProperty(getDelegate(), property, newValue);
+              case DELEGATE_ONLY:
+                setProperty(getDelegate(), property, newValue);
                 break;
-                case OWNER_ONLY:
-                    InvokerHelper.setProperty(getOwner(), property, newValue);
+              case OWNER_ONLY:
+                setProperty(getOwner(), property, newValue);
                 break;
-                case TO_SELF:
-                    super.setProperty(property, newValue);
+              case TO_SELF:
+                super.setProperty(property, newValue);
                 break;
-                default:
-                    setPropertyOwnerFirst(property, newValue);
+              default:
+                setPropertyTryThese(getOwner(), getDelegate(), property, newValue);
             }
         }
     }
 
-    private void setPropertyDelegateFirst(String property, Object newValue) {
-        if (delegate == null) setPropertyOwnerFirst(property, newValue);
-        else setPropertyTryThese(property, newValue, getDelegate(), getOwner());
-    }
-
-    private void setPropertyOwnerFirst(String property, Object newValue) {
-        setPropertyTryThese(property, newValue, getOwner(), getDelegate());
-    }
-
-    private void setPropertyTryThese(String property, Object newValue, Object firstTry, Object secondTry) {
+    private void setProperty(final Object receiver, final String property, final Object newValue) {
         try {
-            // let's try setting the property on the first object
-            InvokerHelper.setProperty(firstTry, property, newValue);
+            InvokerHelper.setProperty(receiver, property, newValue);
         } catch (GroovyRuntimeException e1) {
-            if (firstTry != null && firstTry != this && firstTry != secondTry) {
+            if (null != receiver && this != receiver && this instanceof GeneratedClosure
+                    && getThisType() != receiver.getClass() && getThisType().isInstance(receiver)) { // GROOVY-11128
                 try {
-                    // let's try setting the property on the second object
-                    InvokerHelper.setProperty(secondTry, property, newValue);
+                    ((GroovyObject) receiver).getMetaClass().setProperty(getThisType(), receiver, property, newValue, false, true);
                     return;
                 } catch (GroovyRuntimeException e2) {
-                    // ignore, we'll throw e1
+                    e1.addSuppressed(e2);
                 }
             }
             throw e1;
         }
     }
 
-    public boolean isCase(Object candidate){
-        if (bcw==null) {
+    private void setPropertyTryThese(final Object o1, final Object o2, final String property, final Object newValue) {
+        try {
+            setProperty(o1, property, newValue);
+        } catch (GroovyRuntimeException e1) {
+            if (o1 != null && o1 != this && o1 != o2) {
+                try {
+                    setProperty(o2, property, newValue);
+                    return;
+                } catch (GroovyRuntimeException e2) {
+                    e1.addSuppressed(e2);
+                }
+            }
+            throw e1;
+        }
+    }
+
+    public boolean isCase(final Object switchValue) {
+        if (bcw == null) {
             bcw = new BooleanClosureWrapper(this);
         }
-        return bcw.call(candidate);
+        return bcw.call(switchValue);
     }
 
     /**
