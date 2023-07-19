@@ -384,16 +384,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         while (iter.hasNext()) {
             c = iter.next();
 
-            for (final CachedMethod metaMethod : c.getMethods()) {
+            for (var metaMethod : c.getMethods()) {
                 addToAllMethodsIfPublic(metaMethod);
-                if (!metaMethod.isPrivate() || c == firstGroovySuper)
+                if (c == firstGroovySuper
+                      || !metaMethod.isPrivate()) {
                     addMetaMethodToIndex(metaMethod, header);
+                }
             }
 
-            for (final MetaMethod method : getNewMetaMethods(c)) {
-                if (!newGroovyMethodsSet.contains(method)) {
-                    newGroovyMethodsSet.add(method);
-                    addMetaMethodToIndex(method, header);
+            for (var metaMethod : getNewMetaMethods(c)) {
+                if (newGroovyMethodsSet.add(metaMethod)) {
+                    addMetaMethodToIndex(metaMethod, header);
                 }
             }
 
@@ -411,16 +412,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             last = header;
 
-            for (final CachedMethod metaMethod : c.getMethods()) {
+            for (var metaMethod : c.getMethods()) {
                 addToAllMethodsIfPublic(metaMethod);
                 addMetaMethodToIndex(metaMethod, header);
             }
 
-            for (final MetaMethod method : getNewMetaMethods(c)) {
-                if (method.getName().equals(CONSTRUCTOR_NAME) && !method.getDeclaringClass().equals(theCachedClass)) continue;
-                if (!newGroovyMethodsSet.contains(method)) {
-                    newGroovyMethodsSet.add(method);
-                    addMetaMethodToIndex(method, header);
+            for (var metaMethod : getNewMetaMethods(c)) {
+                if (metaMethod.getName().equals(CONSTRUCTOR_NAME)
+                        && !metaMethod.getDeclaringClass().equals(theCachedClass)) continue;
+                if (newGroovyMethodsSet.add(metaMethod)) {
+                    addMetaMethodToIndex(metaMethod, header);
                 }
             }
         }
@@ -648,15 +649,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (firstGroovy == null) {
-            firstGroovy = theCachedClass;
-        } else if (firstGroovy.getTheClass() == GroovyObjectSupport.class && iter.hasNext()) {
-            firstGroovy = iter.next();
-            if (firstGroovy.getTheClass() == Closure.class && iter.hasNext()) {
-                firstGroovy = iter.next();
+            return isGroovyObject ? theCachedClass.getCachedSuperClass() : theCachedClass;
+        }
+        // Closure for closures and GroovyObjectSupport for extenders (including Closure)
+        if (firstGroovy.getTheClass() == GroovyObjectSupport.class) {
+            if (iter.hasNext()) { var nextGroovy = iter.next() ;
+                if (nextGroovy.getTheClass() == Closure.class) {
+                    if (iter.hasNext()) return nextGroovy;
+                }
+                return firstGroovy; // GroovyObjectSupport
             }
         }
-
-        return GroovyObject.class.isAssignableFrom(firstGroovy.getTheClass()) ? firstGroovy.getCachedSuperClass() : firstGroovy;
+        return firstGroovy.getCachedSuperClass();
     }
 
     /**
@@ -1419,19 +1423,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return go.invokeMethod(methodName, originalArguments);
     }
 
-    public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
+    public MetaMethod getMethodWithCaching(final Class sender, final String methodName, final Object[] arguments, final boolean isCallToSuper) {
         if (!isCallToSuper && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         }
-        MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
-        if (isCallToSuper && e != null && e.methodsForSuper == null) {
-            // allow "super.name()" to find DGM if class declares method "name"
+        var e = metaMethodIndex.getMethods(sender, methodName);
+        if (e == null ? (sender == theClass && !sender.isEnum() && (sender.getModifiers() & Opcodes.ACC_ENUM) != 0) // GROOVY-9523: private
+                      : (isCallToSuper && e.methodsForSuper == null)) { // allow "super.name()" to find DGM if class declares method "name"
             e = metaMethodIndex.getMethods(sender.getSuperclass(), methodName);
         }
         if (e == null) {
             return null;
-        }
-        if (isCallToSuper) {
+        } else if (isCallToSuper) {
             return getSuperMethodWithCaching(arguments, e);
         } else {
             return getNormalMethodWithCaching(arguments, e);
@@ -3456,22 +3459,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @Override
     public synchronized void initialize() {
         if (!isInitialized()) {
-          reinitialize();
+            reinitialize();
         }
     }
 
     protected synchronized void reinitialize() {
-      fillMethodIndex();
-      try {
-        addProperties();
-      } catch (Throwable e) {
-        if (!AndroidSupport.isRunningAndroid()) {
-          UncheckedThrow.rethrow(e);
+        fillMethodIndex();
+        try {
+            addProperties();
+        } catch (Throwable t) {
+            if (!AndroidSupport.isRunningAndroid()) {
+                UncheckedThrow.rethrow(t);
+            }
+            // Introspection failure...
+            // May happen in Android
         }
-        // Introspection failure...
-        // May happen in Android
-      }
-      setInitialized(true);
+        setInitialized(true);
     }
 
     private void addProperties() {

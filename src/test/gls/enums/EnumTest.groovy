@@ -760,6 +760,29 @@ class EnumTest extends CompilableTestSupport {
             test()
         '''
     }
+
+    // GROOVY-9523
+    void testEnumConstMethodCallsAnEnumPrivateMethod() {
+        assertScript '''
+            class Foo {
+                String x
+                enum Bar {
+                    SOMETHING {
+                        @Override
+                        void accept(Foo foo) {
+                            foo.x = truncate(foo.x, 2)
+                        }
+                    }
+                    abstract void accept(Foo foo);
+                    private String truncate(String string, int maxLength) { string.take(maxLength) }
+                }
+            }
+
+            def foo = new Foo(x:'123456')
+            Foo.Bar.SOMETHING.accept(foo)
+            assert foo.getX().size() == 2
+        '''
+    }
 }
 
 enum UsCoin {
