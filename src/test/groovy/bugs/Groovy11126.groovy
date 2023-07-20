@@ -34,7 +34,9 @@ final class Groovy11126 {
                 test('1')
                 test('')
             }
-            test()
+            test(null)
+            test('22')
+            test(null)
         '''
     }
 
@@ -48,7 +50,9 @@ final class Groovy11126 {
                 test('1')
                 test('')
             }
-            test()
+            test(null)
+            test('22')
+            test(null)
         '''
     }
 }
