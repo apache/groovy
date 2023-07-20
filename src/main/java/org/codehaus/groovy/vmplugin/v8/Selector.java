@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -932,12 +933,11 @@ public abstract class Selector {
 
             // guards for receiver and parameter
             Class<?>[] pt = handle.type().parameterArray();
-            if (Arrays.stream(args).anyMatch(arg -> null == arg)) {
+            if (Arrays.stream(args).anyMatch(Objects::isNull)) {
                 for (int i = 0; i < args.length; i++) {
                     Object arg = args[i];
                     Class<?> paramType = pt[i];
                     MethodHandle test;
-
                     if (arg == null) {
                         test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
                         if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
@@ -946,9 +946,7 @@ public abstract class Selector {
                             // primitive types are also `final`
                             continue;
                         }
-                        test = SAME_CLASS.
-                                bindTo(arg.getClass()).
-                                asType(MethodType.methodType(boolean.class, paramType));
+                        test = SAME_CLASS.bindTo(arg.getClass()).asType(MethodType.methodType(boolean.class, paramType));
                         if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                     }
                     Class<?>[] drops = new Class[i];
@@ -957,15 +955,20 @@ public abstract class Selector {
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
             } else if (Arrays.stream(pt).anyMatch(paramType -> !Modifier.isFinal(paramType.getModifiers()))) {
-                // Avoid guards as much as possible
-                Class<?>[] argClasses = new Class[args.length];
-                for (int i = 0; i < args.length; i++) {
-                    argClasses[i] = args[i].getClass();
-                }
-                MethodHandle test = SAME_CLASSES.bindTo(argClasses)
+                MethodHandle test = SAME_CLASSES
+                        .bindTo(Arrays.stream(args).map(Object::getClass).toArray(Class[]::new))
                         .asCollector(Object[].class, pt.length)
                         .asType(MethodType.methodType(boolean.class, pt));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
+            } else if (safeNavigationOrig) { // GROOVY-11126
+                try {
+                    MethodHandle test = LOOKUP.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class))
+                            .asType(MethodType.methodType(boolean.class, pt[0]));
+                    handle = MethodHandles.guardWithTest(test, handle, fallback);
+                    if (LOG_ENABLED) LOG.info("added null receiver check");
+                } catch (ReflectiveOperationException e) {
+                    throw new GroovyBugError(e);
+                }
             }
         }
 
