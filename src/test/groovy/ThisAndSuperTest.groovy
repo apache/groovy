@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.Ignore
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -168,11 +168,13 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Ignore @Test // GROOVY-5285
+    // GROOVY-5285
+    @Test @NotYetImplemented
     void testSuperSetMetaClassChain() {
         assertScript '''
             class C {
                 void setMetaClass(MetaClass metaClass) {
+                    // want DGM setMetaClass (see MetaClassImpl#getMethodWithCaching)
                     super.setMetaClass(metaClass)
                 }
             }
@@ -182,7 +184,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-9884
+    // GROOVY-9884
+    @Test
     void testSuperSetPropertyChain() {
         assertScript '''
             class A {
@@ -202,7 +205,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-2555
+    // GROOVY-2555
+    @Test
     void testSuperDotAbstractMethodShouldBeTreatedLikeMissingMethod() {
         shouldFail MissingMethodException, '''
             abstract class A {
@@ -217,7 +221,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-4945
+    // GROOVY-4945
+    @Test
     void testSuperDotSelfMethod1() {
         def err = shouldFail MissingMethodException, '''
             class C {
@@ -233,7 +238,8 @@ final class ThisAndSuperTest {
         assert err =~ /No signature of method: java\.lang\.Object\.whatever\(\) is applicable for argument types: \(\) values: \[\]/
     }
 
-    @Test // GROOVY-9615
+    // GROOVY-9615
+    @Test
     void testSuperDotSelfMethod2() {
         def err = shouldFail MissingMethodException, '''
             class Outer {
@@ -251,7 +257,8 @@ final class ThisAndSuperTest {
         assert err =~ /No signature of method: java\.lang\.Object\.whatever\(\) is applicable for argument types: \(\) values: \[\]/
     }
 
-    @Test // GROOVY-6001
+    // GROOVY-6001
+    @Test
     void testSuperDotMethod1() {
         assertScript '''
             class The {
@@ -306,7 +313,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-7655
+    // GROOVY-7655
+    @Test
     void testSuperDotMethod2() {
         assertScript '''
             class A {
@@ -342,7 +350,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-7655
+    // GROOVY-7655
+    @Test
     void testSuperDotMethod3() {
         assertScript '''
             class A {
@@ -381,7 +390,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-10302
+    // GROOVY-10302
+    @Test
     void testSuperDotMethod4() {
         shouldFail ClassNotFoundException, '''
             void test() {
@@ -402,7 +412,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-9851
+    // GROOVY-9851
+    @Test
     void testPrivateSuperMethod() {
         shouldFail MissingMethodException, '''
             abstract class A {
@@ -418,7 +429,8 @@ final class ThisAndSuperTest {
         '''
     }
 
-    @Test // GROOVY-8999
+    // GROOVY-8999
+    @Test
     void testPrivateSuperField1() {
         def err = shouldFail MissingFieldException, '''
             abstract class A {
@@ -435,7 +447,8 @@ final class ThisAndSuperTest {
         assert err =~ /No such field: x for class: A/
     }
 
-    @Test // GROOVY-8999
+    // GROOVY-8999
+    @Test
     void testPrivateSuperField2() {
         def err = shouldFail MissingFieldException, '''
             abstract class A {
@@ -453,15 +466,23 @@ final class ThisAndSuperTest {
         assert err =~ /No such field: x for class: A/
     }
 
-    // https://github.com/apache/groovy/commit/b62e4d3165b4d899a3b6c71dba2858c9362b2e1b
-    @Test // TODO: Does this belong in another test suite?
-    void testStaticMetaClassClosure() {
+    // GROOVY-1729
+    @Test @NotYetImplemented
+    void testThisThatDifference() {
         assertScript '''
-            class A {
+            class C {
+                def p
+                def getP() {
+                    this.@p ?: 'default value'
+                }
+                def m() {
+                    def that = this
+                    assert that.@p == this.@p
+                    assert that. p == this. p
+                    assert that?.p == this?.p
+                }
             }
-            A.metaClass.static.something << { -> '123' }
-
-            assert A.something() == '123'
+            new C().m()
         '''
     }
 }
