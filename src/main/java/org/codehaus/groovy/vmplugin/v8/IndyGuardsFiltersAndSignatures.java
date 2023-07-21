@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
 
@@ -59,7 +60,7 @@ public class IndyGuardsFiltersAndSignatures {
             INVOKER = MethodType.methodType(Object.class, Object.class, String.class, Object[].class);
 
     protected static final MethodHandle
-            SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL,
+            SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
             META_METHOD_INVOKER, GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
@@ -81,6 +82,7 @@ public class IndyGuardsFiltersAndSignatures {
             SAME_CLASSES = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class[].class, Object[].class));
             SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
             IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
+            NON_NULL = LOOKUP.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class));
             UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
             UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
