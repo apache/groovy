@@ -74,7 +74,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.Transient;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -144,7 +143,6 @@ import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModi
  *     <li>Property accessor methods</li>
  *     <li>Covariant methods</li>
  *     <li>Additional methods/constructors as needed for default parameters</li>
- *     <li>{@link java.lang.invoke.MethodHandles.Lookup} getter</li>
  * </ul>
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
@@ -257,8 +255,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             addFastPathHelperFieldsAndHelperMethod(node, classInternalName);
             if (!node.isDerivedFrom(ClassHelper.GROOVY_OBJECT_SUPPORT_TYPE))
                 addGroovyObjectInterfaceAndMethods(node, classInternalName);
-
-            addGetLookupMethod(node);
         }
 
         addDefaultConstructor(node);
@@ -433,29 +429,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         constructor.setHasNoRealSourcePosition(true);
         markAsGenerated(node, constructor);
         node.addConstructor(constructor);
-    }
-
-    private static void addGetLookupMethod(final ClassNode node) {
-        int modifiers = ACC_PUBLIC;
-        if (isStatic(node.getModifiers()) || node.getOuterClass() == null) {
-            // static method cannot be declared in non-static inner class until Java 16
-            modifiers |= ACC_STATIC;
-        }
-
-        node.addSyntheticMethod(
-                "$getLookup",
-                modifiers,
-                ClassHelper.make(MethodHandles.Lookup.class),
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                new BytecodeSequence(new BytecodeInstruction() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-        );
     }
 
     private void addStaticMetaClassField(final ClassNode node, final String classInternalName) {

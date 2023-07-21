@@ -79,15 +79,6 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     public abstract CachedClass getDeclaringClass();
 
     /**
-     * Invoke this method
-     *
-     * @param object The object this method should be invoked on
-     * @param arguments The arguments for the method if applicable
-     * @return The return value of the invocation
-     */
-    public abstract Object invoke(Object object, Object[] arguments);
-
-    /**
      * Checks that the given parameters are valid to call this method
      *
      * @param arguments the arguments to check
@@ -282,7 +273,6 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return signature;
     }
 
-
     public String getMopName() {
         if (mopName == null) {
             mopName = (isPrivate() ? "this" : "super") + '$' + getDeclaringClass().getSuperClassDistance() + '$' + getName();
@@ -291,28 +281,13 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * This method is called when an exception occurs while invoking this method.
+     * Invoke this method
+     *
+     * @param object The object this method should be invoked on
+     * @param arguments The arguments for the method if applicable
+     * @return The return value of the invocation
      */
-    public final RuntimeException processDoMethodInvokeException (Exception e, Object object, Object [] argumentArray) {
-//        if (e instanceof IllegalArgumentException) {
-//            //TODO: test if this is OK with new MOP, should be changed!
-//            // we don't want the exception being unwrapped if it is a IllegalArgumentException
-//            // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
-//            // from the runtime
-//            //Note: the reason we want unwrapping sometimes and sometimes not is that the method
-//            // invocation tries to invoke the method with and then reacts with type transformation
-//            // if the invocation failed here. This is OK for IllegalArgumentException, but it is
-//            // possible that a Reflector will be used to execute the call and then an Exception from inside
-//            // the method is not wrapped in a InvocationTargetException and we will end here.
-//            boolean setReason = e.getClass() != IllegalArgumentException.class || this instanceof org.codehaus.groovy.reflection.GeneratedMetaMethod;
-//            return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, setReason);
-//        }
-
-        if (e instanceof RuntimeException)
-          return (RuntimeException) e;
-
-        return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, true);
-    }
+    public abstract Object invoke(Object object, Object[] arguments);
 
     /**
      * Invokes the method this object represents. This method is not final but it should be overloaded very carefully and only by generated methods
@@ -329,5 +304,30 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         } catch (Exception e) {
             throw processDoMethodInvokeException(e, object, arguments);
         }
+    }
+
+    /**
+     * Called when an exception occurs while invoking this method.
+     */
+    public final RuntimeException processDoMethodInvokeException(final Exception e, final Object object, final Object [] arguments) {
+        /*
+        if (e instanceof IllegalArgumentException) {
+            //TODO: test if this is OK with new MOP, should be changed!
+            // we don't want the exception being unwrapped if it is a IllegalArgumentException
+            // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
+            // from the runtime
+            //Note: the reason we want unwrapping sometimes and sometimes not is that the method
+            // invocation tries to invoke the method with and then reacts with type transformation
+            // if the invocation failed here. This is OK for IllegalArgumentException, but it is
+            // possible that a Reflector will be used to execute the call and then an Exception from inside
+            // the method is not wrapped in a InvocationTargetException and we will end here.
+            boolean setReason = e.getClass() != IllegalArgumentException.class || this instanceof org.codehaus.groovy.reflection.GeneratedMetaMethod;
+            return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, setReason);
+        }
+        */
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        }
+        return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, arguments, e, true);
     }
 }

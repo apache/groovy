@@ -33,8 +33,6 @@ import groovy.lang.Script;
 import groovy.lang.SpreadMap;
 import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
-import org.apache.groovy.internal.util.UncheckedThrow;
-import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
@@ -88,7 +86,6 @@ public class InvokerHelper {
         Class type = Class.forName(klass);
         return invokeStaticMethod(type, methodName, arguments);
     }
-
 
     public static Object invokeStaticNoArgumentsMethod(Class type, String methodName) {
         return invokeStaticMethod(type, methodName, EMPTY_ARGS);
@@ -610,14 +607,6 @@ public class InvokerHelper {
             Class<?> theClass = (Class<?>) object;
             MetaClass metaClass = metaRegistry.getMetaClass(theClass);
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
-        }
-
-        if ("clone".equals(methodName) && 0 == asArray(arguments).length) {
-            try {
-                return ObjectUtil.cloneObject(object);
-            } catch (Throwable t) {
-                UncheckedThrow.rethrow(t);
-            }
         }
 
         // it's an instance; check if it's a Java one

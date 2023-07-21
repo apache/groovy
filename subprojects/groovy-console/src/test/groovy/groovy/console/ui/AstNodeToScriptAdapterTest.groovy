@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX
@@ -55,6 +56,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     void testStringEscaping() {
         String script = ''' if (_out.toString().endsWith('\\n\\n')) { }  '''
         String result = compileToScript(script)
+
         assert result.contains("_out.toString().endsWith('\\n\\n')")
     }
 
@@ -62,20 +64,22 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = ''' package foo.bar
                             true '''
         String result = compileToScript(script)
+
         assert result.contains('package foo.bar\n')
     }
 
     void testSubScriptOperator() {
         String script = '''
             def file = new File((String)args[0])
-            println "File $args[0] cannot be found." '''
+            println "File $args[0] cannot be found."
+        '''
         String result = compileToScript(script)
+
         assert result.contains('println("File $args[0] cannot be found.")')
         assert result.contains('file = new java.io.File(((java.lang.String) args[0]))')
     }
 
     void testMethods() {
-
         String script = '''
             def method1() {}
             private Object method2() {}
@@ -88,8 +92,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             def method9(String parm1 = getValue(), String parm2 = "somevalue") {}
             Integer[] method10(String[] parm1, Object[] parm2) {}
         '''
-
         String result = compileToScript(script)
+
         assert result.contains('public java.lang.Object method1()')
         assert result.contains('private java.lang.Object method2()')
         assert result.contains('public java.lang.String method3() throws java.lang.Exception, java.lang.RuntimeException')
@@ -104,18 +108,22 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testGenerics() {
         String script = '''
-                public class MyList<E> extends AbstractList<E> implements List<E> {
-                   E get(int x) {}
-                   int size() {}
-                }'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+            public class MyList<E> extends AbstractList<E> implements List<E> {
+               E get(int x) {}
+               int size() {}
+            }
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('public class MyList<E> extends java.util.AbstractList<E> implements java.util.List<E> {')
     }
 
     void testGenericBoundsOnClass() {
         String script = '''import java.util.concurrent.Callable
-                    abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<? super Number> { }  '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+            abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<? super Number> { }
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('MyClass<T extends java.lang.String & java.util.concurrent.Callable<String>, U extends java.lang.Integer> ' +
                 'extends java.util.AbstractList<String> ' +
                 'implements java.util.concurrent.Callable<? super java.lang.Number> {')
@@ -123,16 +131,19 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testGenericsInVariables() {
         // you think you know Java generics? Just contemplate a load of this mess:
-        String script = ''' public class Tree<V> { }
-                            Tree<Number> t = new Tree<Number>(0);
-                            t.addBranch(new Tree<Integer>(1));
-                            Tree<? extends java.lang.Number> b = t.getBranch(0);
-                            Tree<?> b2 = t.getBranch(0);
-                            Tree<java.lang.Number> b3 = t.getBranch(0);
-                            Number value = b.getValue();
-                            b.setValue(3.0);
-                            b.addBranch(new Tree<java.lang.Double>(Math.PI));'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            public class Tree<V> { }
+            Tree<Number> t = new Tree<Number>(0);
+            t.addBranch(new Tree<Integer>(1));
+            Tree<? extends java.lang.Number> b = t.getBranch(0);
+            Tree<?> b2 = t.getBranch(0);
+            Tree<java.lang.Number> b3 = t.getBranch(0);
+            Number value = b.getValue();
+            b.setValue(3.0);
+            b.addBranch(new Tree<java.lang.Double>(Math.PI));
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('Tree<Number> t = new Tree<Number>(0)')
         assert result.contains('t.addBranch(new Tree<Integer>(1))')
         assert result.contains('Tree<? extends java.lang.Number> b = t.getBranch(0)')
@@ -145,17 +156,20 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testGenericsInMethods() {
         // you think you know Java generics? Just contemplate a load of this mess:
-        String script = ''' public class Tree<V> {
-                                 V value;
-                                 List<Tree<? extends V>> branches = new ArrayList<Tree<? extends V>>();
-                                 public Tree(V value) { this.value = value; }
-                                 V getValue() { return value; }
-                                 void setValue(V value) { this.value = value; }
-                                 int getNumBranches() { return branches.size(); }
-                                 Tree<? extends V> getBranch(int n) { return branches.get(n); }
-                                 void addBranch(Tree<? extends V> branch) { branches.add(branch); }
-                             } '''
+        String script = '''
+            public class Tree<V> {
+                V value;
+                List<Tree<? extends V>> branches = new ArrayList<Tree<? extends V>>();
+                public Tree(V value) { this.value = value; }
+                V getValue() { return value; }
+                void setValue(V value) { this.value = value; }
+                int getNumBranches() { return branches.size(); }
+                Tree<? extends V> getBranch(int n) { return branches.get(n); }
+                void addBranch(Tree<? extends V> branch) { branches.add(branch); }
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('public class Tree<V> extends java.lang.Object implements groovy.lang.GroovyObject')
         assert result.contains('private java.lang.Object<V> value') // todo: is Object<V> correct? How do you know?
         assert result.contains('private java.util.List<Tree> branches') // should the <? extends V> be dropped?
@@ -168,43 +182,55 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testBitwiseNegation() {
-        String script = '''def foo = { it }
-                        def bar = 2
-                        ~foo(~bar)'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            def foo = { it }
+            def bar = 2
+            ~foo(~bar)
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('~(foo.call(~( bar ) ))')
     }
 
     void testRangeExpression() {
         String script = '''
-                (1..4).each { println it }
-                ('1'..'4').collect { it -> it }'''
+            (1..4).each { println it }
+            ('1'..'4').collect { it -> it }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('(1..4).each')
         assert result.contains("('1'..'4').collect({ java.lang.Object it ->")
     }
 
     void testUnaryOperators() {
-        String script = '''def x = 1
-                            def y = 2
-                            (boolean) !(-x + (+y--)) '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            def x = 1
+            def y = 2
+            (boolean) !(-x + (+y--))
+        '''
+        String result = compileToScript(script)
         assert result.contains('((boolean) !(-x + +(y--)))')
 
-        script = '''boolean x = false
-                    !x'''
-        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        script = '''
+            boolean x = false
+            !x
+        '''
+        result = compileToScript(script)
         assert result.contains('!x')
 
-        script = '''int x = 0
-                    -x'''
-        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        script = '''
+            int x = 0
+            -x
+        '''
+        result = compileToScript(script)
         assert result.contains('-x')
 
-        script = '''int x = 0
-                    +x'''
-        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        script = '''
+            int x = 0
+            +x
+        '''
+        result = compileToScript(script)
         assert result.contains('+x')
     }
 
@@ -214,22 +240,24 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             class MyClass {
                 private final String[] arr = new String[0]
             }
-            '''
-
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('java.lang.String[] x = (([]) as java.lang.String[])')
         assert result.contains('private final java.lang.String[] arr')
         assert result.contains('arr = new java.lang.String[0]')
     }
 
     void testArrayHandling_Multidimension() {
-        String script = ''' String[][] x = [] as String[][]
-                            String[][][] y = [] as String[][][]
-                            class MyClass {
-                                private final String[][] arr = new String[xSize()][3]
-                            } '''
-
+        String script = '''
+            String[][] x = [] as String[][]
+            String[][][] y = [] as String[][][]
+            class MyClass {
+                private final String[][] arr = new String[xSize()][3]
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('java.lang.String[][] x = (([]) as java.lang.String[][])')
         assert result.contains('java.lang.String[][][] y = (([]) as java.lang.String[][][])')
         assert result.contains('private final java.lang.String[][] arr')
@@ -237,42 +265,51 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testForLoop() {
-        String script = '''for (int x = 0; x < 10;( x )++) {
-                            println x
-                            continue
-                        }'''
+        String script = '''
+            for (int x = 0; x < 10;( x )++) {
+                println x
+                continue
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('for (java.lang.Integer x = 0; x < 10; x++) {')
         assert result.contains('continue')
     }
 
     void testForLoopEmptyParameter() {
-        String script = '''int y = 0
-                        for (;;) {
-                            println y++
-                            if (y > 10) break
-                        }'''
+        String script = '''
+            int y = 0
+            for (;;) {
+                println y++
+                if (y > 10) break
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('java.lang.Integer y = 0')
         assert result.contains('for (;;) {')
     }
 
     void testPreAndPostFix() {
-        String script = '''def x = 1, y = 2
-                            x++ + --y - --x++'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            def x = 1, y = 2
+            x++ + --y - --x++
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('x++ + --y - --(x++)')
     }
 
     void testMultipleAssignments() {
-        String script = ''' def (a, b, c, d) = [1, 2, 3, 4]
-                            def (int e, String f, int g, String h) = [1, '2', 3, '4']
-                            def (_, month, year) = "18th June 2009".split()
-                            Object y, z = [1, 2] '''
+        String script = '''
+            def (a, b, c, d) = [1, 2, 3, 4]
+            def (int e, String f, int g, String h) = [1, '2', 3, '4']
+            def (_, month, year) = "18th June 2009".split()
+            Object y, z = [1, 2]
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('def (java.lang.Object a, java.lang.Object b, java.lang.Object c, java.lang.Object d) = [1, 2, 3, 4]')
         assert result.contains("def (java.lang.Integer e, java.lang.String f, java.lang.Integer g, java.lang.String h) = [1, '2', 3, '4']")
         assert result.contains("def (java.lang.Object _, java.lang.Object month, java.lang.Object year) = '18th June 2009'.split()")
@@ -281,45 +318,48 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testListsAndMaps() {
-        String script = '''def (bar, x, bif, qux) = [1, 2, 3, 4]
-                        ['foo', "$bar", x, Math.min(5, 3)]
-                        ['foo', "$bar"] as String []
-                        ['foo': 'bar', 'baz': bif + qux]'''
+        String script = '''
+            def (bar, x, bif, qux) = [1, 2, 3, 4]
+            ['foo', "$bar", x, Math.min(5, 3)]
+            ['foo', "$bar"] as String []
+            ['foo': 'bar', 'baz': bif + qux]
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("['foo', \"\$bar\", x, java.lang.Math.min(5, 3)]")
         assert result.contains("((['foo', \"\$bar\"]) as java.lang.String[])")
         assert result.contains("['foo': 'bar', 'baz': bif + qux ]")
     }
 
     void testForEachLoop() {
-        String script = '''for (int x : (1..10)) {
-                            println x
-                        }'''
+        String script = '''
+            for (int x : (1..10)) {
+                println x
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('for (int x : (1..10)) {')
     }
 
     void testSwitchStatements() {
-        String script = '''switch (someMethod()) {
-                              case 1:
-                              case 2: break;
-                              case "3": println '3'
-                              case "$four": println "$four"; break
-                              case java.awt.Color.red: print 'red'; break
-                              case foo(): 4+2; break
-                              case bar:
-                                    true
-                                    break;
-                              default: break;
-                            }
+        String script = '''import java.awt.Color
+            switch (someMethod()) {
+              case 1:
+              case 2:                       break
+              case "3": println '3'
+              case "$four": println "$four";break
+              case Color.red: print 'red';  break
+              case foo(): 4+2;              break
+              case bar: true;               break
+              default:                      break
+            }
 
-                            switch (testDefault) {
-                              case 1: 'foo'
-                            }'''
-
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+            switch (testDefault) {
+              case 1: 'foo'
+            }
+        '''
+        String result = compileToScript(script)
 
         assert result.contains('switch (this.someMethod())')
         assert result =~ /case 1:\s*case 2:\s*break/
@@ -329,19 +369,22 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 case 1: break;
             }
         '''
-        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        result = compileToScript(script)
+
         assert !result.contains('default:')
     }
 
     void testLogAnnotation() {
         String script = '''
-                   @groovy.util.logging.Log
-                   class Event {
-                       def logMethod() {
-                           log.fine(someMethod())
-                       }
-                   }'''
+            @groovy.util.logging.Log
+            class Event {
+                def logMethod() {
+                    log.fine(someMethod())
+                }
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('private static final transient java.util.logging.Logger log')
         assert result.contains("log = java.util.logging.Logger.getLogger('Event')")
         assert result.contains('return log.isLoggable(java.util.logging.Level.FINE) ? log.fine(this.someMethod()) : null')
@@ -349,11 +392,13 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testFieldDeclarationWithValue() {
         String script = '''
-                   class Event {
-                       String foo = 'xyz'
-                       static String bar = '123'
-                   }'''
+           class Event {
+               String foo = 'xyz'
+               static String bar = '123'
+           }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('private java.lang.String foo')
         assert result.contains('private static java.lang.String bar')
         assert result.contains("foo = 'xyz'")
@@ -364,8 +409,10 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '''
             class Event {
                 String title
-            }'''
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains('public void setTitle(java.lang.String value) {')
         assert result.contains('public java.lang.String getTitle() {')
         assert result.contains('private transient groovy.lang.MetaClass metaClass')
@@ -373,9 +420,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testClassAnnotations() {
-        String script = '''
-            import org.codehaus.groovy.transform.*
-
+        String script = '''import org.codehaus.groovy.transform.*
             @SuppressWarnings
             @SuppressWarnings('some parameter')
             @SuppressWarnings(['p1', 'p2'])
@@ -386,7 +431,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
             @interface MyAnnotation {
                 Class[] classes() default [];
-            }'''
+            }
+        '''
         String result = compileToScript(script)
 
         assert result.contains('@java.lang.SuppressWarnings')
@@ -399,9 +445,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testMethodAnnotations() {
-        String script = '''
-            import org.codehaus.groovy.transform.*
-
+        String script = '''import org.codehaus.groovy.transform.*
             class Event {
                 @SuppressWarnings
                 @SuppressWarnings('some parameter')
@@ -415,8 +459,10 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 Class[] classes() default [];
                 boolean p1() default false;
                 boolean p2() default false;
-            }'''
+            }
+        '''
         String result = compileToScript(script)
+
         assert result.contains('@java.lang.SuppressWarnings')
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
@@ -425,9 +471,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     }
 
     void testPropertyAnnotations() {
-        String script = '''
-            import org.codehaus.groovy.transform.*
-
+        String script = '''import org.codehaus.groovy.transform.*
             class Event {
                 @SuppressWarnings
                 @SuppressWarnings('some parameter')
@@ -441,8 +485,10 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 Class[] classes() default [];
                 boolean p1() default false;
                 boolean p2() default false;
-            }'''
+            }
+        '''
         String result = compileToScript(script)
+
         assert result.contains('@java.lang.SuppressWarnings')
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
@@ -452,7 +498,6 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testPackageAnnotations() {
         String script = '''
-
             @SuppressWarnings
             @SuppressWarnings('some parameter')
             @SuppressWarnings(['p1', 'p2'])
@@ -467,8 +512,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 boolean p1() default false;
                 boolean p2() default false;
             }
-            '''
-
+        '''
         String result = compileToScript(script)
 
         assert result.contains('@java.lang.SuppressWarnings')
@@ -481,7 +525,6 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testImportStatements() {
         String script = '''
-
             @SuppressWarnings
             @SuppressWarnings('some parameter')
             import java.lang.String
@@ -505,11 +548,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             import java.lang.Double as BadaBing
 
             'hello world'
-
-            '''
-
+        '''
         String result = compileToScript(script)
-
 
         assert result.contains("@java.lang.SuppressWarnings(value = ['p1', 'p2'])")
         assert result.contains('import static java.lang.Integer.MAX_VALUE')
@@ -530,43 +570,43 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testParameterAnnotations() {
         String script = '''
-
             def method(@SuppressWarnings @SuppressWarnings('foo') parameter) {
             }
-
-            '''
-
+        '''
         String result = compileToScript(script)
 
         assert result.contains("public java.lang.Object method(@java.lang.SuppressWarnings @java.lang.SuppressWarnings(value = 'foo') java.lang.Object parameter) {")
     }
 
     void testParenthesisInArgumentList() {
-        String script = '''public java.lang.String toString() {
-                            _result = new java.lang.StringBuffer()
-                            _result.append(Event)
-                            _result.append('(')
-                            _result.append(')')
-                            return _result.toString()
-                          }'''
+        String script = '''
+            public java.lang.String toString() {
+                _result = new java.lang.StringBuffer()
+                _result.append(Event)
+                _result.append('(')
+                _result.append(')')
+                return _result.toString()
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
         assert result.contains("_result.append('(')")
         assert result.contains("_result.append(')')")
     }
 
     void testStaticMethods() {
         String script = "Math.min(5, Math.min('str', 2))"
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains("java.lang.Math.min(5, java.lang.Math.min('str', 2))")
     }
 
     void testAtImmutableClass() {
         String script = '@groovy.transform.Immutable class Event { }'
-
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
+
         assert result.contains('private int $hash$code')
         assert result.contains('public Event(java.util.Map args)')
-
         // assert toString()... quotations marks were a hassle
         assert result.contains('public java.lang.String toString()')
         assert result.contains("_result.append('Event(')")
@@ -576,8 +616,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testToStringClassAndStaticMethodCallExpression() {
         String script = '@groovy.transform.ToString class Event { Date when }'
-
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
+
         // we had problems with the ast transform passing a VariableExpression as StaticMethodCallExpression arguments
         assert result.contains("_result.append(org.codehaus.groovy.runtime.FormatHelper.toString(this.getWhen())")
     }
@@ -589,7 +629,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 String title
                 Date when
                 java.awt.Color color
-            }'''
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
 
         assert result.contains('private final java.lang.String title')
@@ -604,7 +645,11 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
 
         // assert clones
-        assert result.contains("((java.util.Date) org.apache.groovy.runtime.ObjectUtil.cloneObject(when))")
+        if (CompilerConfiguration.DEFAULT.isIndyEnabled()) {
+            assert result =~ /this.when = \(\(java.util.Date\)\s*when ..BytecodeExpression../
+        } else {
+            assert result.contains("((org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(when, 'clone', null)) as java.util.Date)")
+        }
     }
 
     void testAnonymousInnerClass() {
@@ -613,7 +658,6 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 public String toString() { 'foo' }
             }
         '''
-
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
 
         assert result =~ /new script[0-9]+\$1\(this\)/
@@ -627,8 +671,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 @Lazy ArrayList speakers
             }
         '''
-
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
+
         assert result =~ /Lazy\s*private java\.util\.ArrayList .*speakers /
         assert result.contains('public java.util.ArrayList getSpeakers() {')
         assert result.contains('if ($speakers != null') || result.contains('if (null != $speakers')
@@ -639,7 +683,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '''
             class Event {
                 @Delegate Date when
-            }'''
+            }
+        '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
 
         assert result =~ /groovy\.lang\.Delegate\s*private java\.util\.Date when/
@@ -653,26 +698,29 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             class Event {
                 @SuppressWarnings('unchecked')
                 @Delegate(interfaces=false, deprecated=true) Date when
-            }'''
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("@java.lang.SuppressWarnings(value = 'unchecked')")
         assert result.contains('@groovy.lang.Delegate(deprecated = true, interfaces = false)') || result.contains('@groovy.lang.Delegate(interfaces = false, deprecated = true)')
         assert result.contains('private java.util.Date when ')
     }
 
     void testTryCatch() {
-        String script = '''try {
-                                throw new RuntimeException('message')
-                            } catch (RuntimeException e) {
-                                e.printStackTrace()
-                            } catch (Exception e) {
-                                e.printStackTrace()
-                            } finally {
-                                true
-                            }'''
+        String script = '''\
+            try {
+                throw new RuntimeException('message')
+            } catch (RuntimeException e) {
+                e.printStackTrace()
+            } catch (Exception e) {
+                e.printStackTrace()
+            } finally {
+                true
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('try {')
         assert result.contains("throw new java.lang.RuntimeException('message')")
         assert result.contains('catch (java.lang.Exception e) {')
@@ -685,7 +733,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             } catch (e) {
                 println 234
             }'''
-        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        result = compileToScript(script)
+
         assert !result.contains('finally {')
     }
 
@@ -700,31 +749,36 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 }
             }
         '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("this ('foo')")
         assert result.contains('super(foo)')
         assert result.contains('public MyClass(java.lang.Object foo) {')
     }
 
     void testTryCatchFinally() {
-        String script = '''try {
-                                false
-                            } finally {
-                                true
-                            }'''
+        String script = '''\
+            try {
+                false
+            } finally {
+                true
+            }
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result =~ /try\s*\{\s*false\s*\}\s*finally\s*\{\s*true\s*\}/
     }
 
     void testSynchronizedBlock() {
-        String script = '''synchronized(this) {
-                                synchronized(that) {
-                                    true
-                                }
-                            }'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''\
+            synchronized(this) {
+                synchronized(that) {
+                    true
+                }
+            }
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('synchronized ( this ) {')
         assert result.contains('    synchronized ( that ) {')
         assert result.contains('        true')
@@ -736,7 +790,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     void testTernaryOperaters() {
         String script = """true || false ? 'y' : 'n'
                             foo ?: 'y'"""
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
         assert result.contains("true || false ? 'y' : 'n'")
         assert result.contains("foo ? foo : 'y'")
     }
@@ -745,7 +799,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '''while ("foo") println 5
                             while ("foo") {println 5; println 5; break; }'''
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
         assert result.contains("while ('foo') {")
     }
 
@@ -760,14 +814,17 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         StringWriter writer = new StringWriter()
         new AstNodeToScriptVisitor(writer).visitDoWhileLoop doWhile
         String result = writer.toString()
+
         assert result.contains('do {')
         assert result.contains('} while (true)')
     }
 
     void testAssertStatement() {
-        String script = """assert 1 == 1; assert true == foo() : 'message'"""
+        String script = '''
+            assert 1 == 1; assert true == foo() : 'message'
+        '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('assert 1 == 1 : null')
         assert result.contains("assert true == this.foo() : 'message'")
     }
@@ -787,8 +844,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             def m3 = e.&'instanceMethod'
             assert 1 == m3(6)
         '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("java.lang.Object m1 = Event.&'staticMethod'")
         assert result.contains('assert 25 == m1.call(5) : null')
         assert result.contains("java.lang.Object m2 = new Event().&'instanceMethod'")
@@ -803,8 +860,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             assert "abc.def" =~ /[a-z]b[a-z]\\.def/
             assert "cheesecheese" =~ "cheese"
         '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("assert 'abc.def' =~ '[a-z]b[a-z]\\.def' : null")
         assert result.contains("assert 'cheesecheese' =~ 'cheese' : null")
     }
@@ -814,7 +871,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             def x = [4, 5, 6] as String[]
             [1, 2, 3] << new Integer[x.length]
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains('java.lang.Object x = (([4, 5, 6]) as java.lang.String[])')
         assert result.contains('[1, 2, 3] << new java.lang.Integer[x.length]')
     }
@@ -825,7 +883,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             assert x.a == [11, 21] //GPath notation
             assert x*.a == [11, 21] //spread dot notation
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains("java.lang.Object x = [['a': 11, 'b': 12], ['a': 21, 'b': 22]]")
         assert result.contains('assert x.a == [11, 21] : null')
         assert result.contains('assert x*.a == [11, 21] : null')
@@ -837,8 +896,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             assert x*.a == [11, 21, null] //caters for null values
             assert x*.a == x.collect{ it?.a } //equivalent notation
         '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("java.lang.Object x = [['a': 11, 'b': 12], ['a': 21, 'b': 22], null]")
         assert result.contains('assert x*.a == [11, 21, null] : null')
         assert result.contains('assert x*.a == x.collect({ ')
@@ -852,7 +911,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             def x = [ ['a':21, 'b':22], null, new MyClass() ]
             assert x*.a == [21, null, 'abc'] //properties treated like map subscripting
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains("java.lang.Object x = [['a': 21, 'b': 22], null, new MyClass()]")
         assert result.contains("assert x*.a == [21, null, 'abc'] : null")
     }
@@ -865,7 +925,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
              //spread dot also works for method calls
             assert [c1, c2]*.getA() == ['abc', 'abc']
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains('java.lang.Object c1 = new MyClass()')
         assert result.contains('java.lang.Object c2 = new MyClass()')
         assert result.contains('assert [c1, c2]*.getA() == [c1.getA(), c2.getA()] : null')
@@ -874,7 +935,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     void testVisitSafeMethodCall() {
         String script = 'someMethod()?.somethingElse()*.sum()'
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains('someMethod()?.somethingElse()*.sum()')
     }
 
@@ -883,7 +945,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             assert ['z':900, *:['a':100, 'b':200], 'a':300] == ['a':300, 'b':200, 'z':900]
             assert [ *:[3:3, *:[5:5] ], 7:7] == [3:3, 5:5, 7:7]
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains("assert ['z': 900, *: ['a': 100, 'b': 200], 'a': 300] == ['a': 300, 'b': 200, 'z': 900] : null")
         assert result.contains('assert [*: [3: 3, *: [5: 5]], 7: 7] == [3: 3, 5: 5, 7: 7] : null')
     }
@@ -898,7 +961,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             def f(m, i, j, k){ [m, i, j, k] }
             assert f('e':100, *[4, 5], *:['a':10, 'b':20, 'c':30], 6) == [ ["e":100, "b":20, "c":30, "a":10], 4, 5, 6 ]
         '''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String result = compileToScript(script)
+
         assert result.contains("assert [*: this.f(), 10: 'zz'] == [1: 'u', 10: 'zz', 2: 'v', 3: 'w'] : null")
         assert result.contains("assert this.f([*: ['a': 10, 'b': 20, 'c': 30], 'e': 50]) == 30 : null")
         assert result.contains("assert this.f(['e': 100, *: ['a': 10, 'b': 20, 'c': 30]], *[4, 5], 6) == [['e': 100, 'b': 20, 'c': 30, 'a': 10], 4, 5, 6] : null")
@@ -913,7 +977,6 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 { v = 2 }
             }
         '''
-
         String result = compileToScript(script)
         assert result =~ /\{\s*v = 2\s*\}/
 
@@ -963,8 +1026,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             label6:
             synchronized (this) { }
         '''
+        String result = compileToScript(script)
 
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('label1a:\nlabel1:\nfor (int x : (1..10)) {')
         assert result.contains('break label1')
         assert result.contains('continue label1a')
@@ -988,6 +1051,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         StringWriter writer = new StringWriter()
         new AstNodeToScriptVisitor(writer).visitDoWhileLoop doWhile
         String result = writer.toString()
+
         assert result.contains('label1:\ndo {')
         assert result.contains('} while (true)')
     }
@@ -1007,23 +1071,29 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                 }
             }
         '''
-
         String result = compileToScript(script)
+
         assert result =~ /\{\s*v = 2/
         assert result =~ /(?s)oi:.*?\{.*?v \+= 2.*?\}/
     }
 
     void testVisitIfElse() {
-        String script = '''String a = 'foo'
-                            if (a instanceof String) {}'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            String a = 'foo'
+            if (a instanceof String) {}
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('if (a instanceof java.lang.String) {')
     }
 
     void testVisitCastExpression() {
-        String script = '''String a = 'foo'
-                           a as String'''
-        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        String script = '''
+            String a = 'foo'
+            a as String
+        '''
+        String result = compileToScript(script)
+
         assert result.contains('(a as java.lang.String)')
     }
 }

@@ -82,7 +82,6 @@ public class CachedClass {
             CachedMethod[] declaredMethods = doPrivileged(() -> {
                 try {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
-                        .filter(m -> m.getName().indexOf('+') < 0) // no synthetic JDK 5+ methods
                         .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class) || (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())))
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);

@@ -18,11 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
-import org.apache.groovy.lang.GroovyObjectHelper;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -70,7 +67,6 @@ import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -120,17 +116,17 @@ public class Java8 implements VMPlugin {
 
     private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
         switch (value) {
-            case RUNTIME:
-                node.setRuntimeRetention(true);
-                break;
-            case SOURCE:
-                node.setSourceRetention(true);
-                break;
-            case CLASS:
-                node.setClassRetention(true);
-                break;
-            default:
-                throw new GroovyBugError("unsupported Retention " + value);
+          case RUNTIME:
+            node.setRuntimeRetention(true);
+            break;
+          case SOURCE:
+            node.setSourceRetention(true);
+            break;
+          case CLASS:
+            node.setClassRetention(true);
+            break;
+          default:
+            throw new GroovyBugError("unsupported Retention " + value);
         }
     }
 
@@ -151,28 +147,28 @@ public class Java8 implements VMPlugin {
 
     protected int getElementCode(final ElementType value) {
         switch (value) {
-            case TYPE:
-                return AnnotationNode.TYPE_TARGET;
-            case CONSTRUCTOR:
-                return AnnotationNode.CONSTRUCTOR_TARGET;
-            case METHOD:
-                return AnnotationNode.METHOD_TARGET;
-            case FIELD:
-                return AnnotationNode.FIELD_TARGET;
-            case PARAMETER:
-                return AnnotationNode.PARAMETER_TARGET;
-            case LOCAL_VARIABLE:
-                return AnnotationNode.LOCAL_VARIABLE_TARGET;
-            case ANNOTATION_TYPE:
-                return AnnotationNode.ANNOTATION_TARGET;
-            case PACKAGE:
-                return AnnotationNode.PACKAGE_TARGET;
-            case TYPE_PARAMETER:
-                return AnnotationNode.TYPE_PARAMETER_TARGET;
-            case TYPE_USE:
-                return AnnotationNode.TYPE_USE_TARGET;
-            default:
-                // falls through
+          case TYPE:
+            return AnnotationNode.TYPE_TARGET;
+          case CONSTRUCTOR:
+            return AnnotationNode.CONSTRUCTOR_TARGET;
+          case METHOD:
+            return AnnotationNode.METHOD_TARGET;
+          case FIELD:
+            return AnnotationNode.FIELD_TARGET;
+          case PARAMETER:
+            return AnnotationNode.PARAMETER_TARGET;
+          case LOCAL_VARIABLE:
+            return AnnotationNode.LOCAL_VARIABLE_TARGET;
+          case ANNOTATION_TYPE:
+            return AnnotationNode.ANNOTATION_TARGET;
+          case PACKAGE:
+            return AnnotationNode.PACKAGE_TARGET;
+          case TYPE_PARAMETER:
+            return AnnotationNode.TYPE_PARAMETER_TARGET;
+          case TYPE_USE:
+            return AnnotationNode.TYPE_USE_TARGET;
+          default:
+            // falls through
         }
         String name = value.name();
         if ("MODULE".equals(name)) { // JDK 9+
@@ -230,7 +226,7 @@ public class Java8 implements VMPlugin {
             return configureTypeVariableReference(((TypeVariable) type).getName());
         } else if (type instanceof Class) {
             return configureClass((Class<?>) type);
-        } else if (type==null) {
+        } else if (type == null) {
             throw new GroovyBugError("Type is null. Most probably you let a transform reuse existing ClassNodes with generics information, that is now used in a wrong context.");
         } else {
             throw new GroovyBugError("unknown type: " + type + " := " + type.getClass());
@@ -629,27 +625,13 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, final Class<?> caller) {
-        return metaMethod;
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
-    public <T> T doPrivileged(final java.security.PrivilegedAction<T> action) {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
-    public <T> T doPrivileged(final java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod) {
         return transformMetaMethod(metaClass, metaMethod, null);
+    }
+
+    @Override
+    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, final Class<?> caller) {
+        return metaMethod;
     }
 
     @Override
@@ -657,88 +639,56 @@ public class Java8 implements VMPlugin {
         IndyInterface.invalidateSwitchPoints();
     }
 
-    protected MethodHandles.Lookup getLookup(final Object receiver) {
-        Optional<MethodHandles.Lookup> lookup = Optional.empty();
-        if (receiver instanceof GroovyObject) {
-            lookup = GroovyObjectHelper.lookup((GroovyObject) receiver);
+    @Override
+    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
+        final Class<?> receiverClass = receiver.getClass();
+        try {
+            return newLookup(receiverClass).unreflectSpecial(method, receiverClass).bindTo(receiver);
+        } catch (ReflectiveOperationException e1) {
+            if (!method.isAccessible()) {
+                doPrivilegedInternal(() -> ReflectionUtils.trySetAccessible(method));
+            }
+            final Class<?> declaringClass = method.getDeclaringClass();
+            try {
+                return newLookup(declaringClass).unreflectSpecial(method, declaringClass).bindTo(receiver);
+            } catch (ReflectiveOperationException e2) {
+                var e3 = new GroovyBugError(e1);
+                e3.addSuppressed(e2);
+                throw e3;
+            }
         }
-        return lookup.orElseGet(() -> newLookup(receiver.getClass()));
     }
 
     @Override
-    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
-        try {
-            return getLookup(receiver)
-                    .unreflectSpecial(method, receiver.getClass())
-                    .bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            return getInvokeSpecialHandleFallback(method, receiver);
-        }
+    public Object invokeHandle(final Object handle, final Object[] arguments) throws Throwable {
+        return ((MethodHandle) handle).invokeWithArguments(arguments);
     }
 
-    private Object getInvokeSpecialHandleFallback(final Method method, final Object receiver) {
-        if (!method.isAccessible()) {
-            doPrivilegedInternal(() -> {
-                ReflectionUtils.trySetAccessible(method);
-                return null;
-            });
-        }
-        Class<?> declaringClass = method.getDeclaringClass();
-        try {
-            return newLookup(declaringClass).unreflectSpecial(method, declaringClass).bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            throw new GroovyBugError(e);
-        }
+    //--------------------------------------------------------------------------
+
+    @Deprecated(since = "5.0.0")
+    public static MethodHandles.Lookup of(final Class<?> targetClass) {
+        return ((Java8) VMPluginFactory.getPlugin()).newLookup(targetClass);
+    }
+
+    protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    @Deprecated(since = "4.0.2")
+    public <T> T doPrivileged(final java.security.PrivilegedAction<T> action) {
+        throw new UnsupportedOperationException("doPrivileged is no longer supported");
+    }
+
+    @Override
+    @Deprecated(since = "4.0.2")
+    public <T> T doPrivileged(final java.security.PrivilegedExceptionAction<T> action) {
+        throw new UnsupportedOperationException("doPrivileged is no longer supported");
     }
 
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private static <T> T doPrivilegedInternal(final java.security.PrivilegedAction<T> action) {
         return java.security.AccessController.doPrivileged(action);
-    }
-
-    @Override
-    public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {
-        return ((MethodHandle) handle).invokeWithArguments(args);
-    }
-
-    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
-        return of(declaringClass);
-    }
-
-    public static MethodHandles.Lookup of(final Class<?> declaringClass) {
-        try {
-            return LookupHolder.LOOKUP_Constructor.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
-        } catch (final IllegalAccessException | InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        } catch (final InvocationTargetException e) {
-            throw new GroovyRuntimeException(e);
-        }
-    }
-
-    private static class LookupHolder {
-        private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
-
-        static {
-            Constructor<MethodHandles.Lookup> lookup;
-            try {
-                lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, Integer.TYPE);
-            } catch (final NoSuchMethodException e) {
-                throw new IllegalStateException("Incompatible JVM", e);
-            }
-            try {
-                if (!lookup.isAccessible()) {
-                    final Constructor<MethodHandles.Lookup> finalReference = lookup;
-                    doPrivilegedInternal(() -> {
-                        ReflectionUtils.trySetAccessible(finalReference);
-                        return null;
-                    });
-                }
-            } catch (SecurityException ignore) {
-                lookup = null;
-            } catch (RuntimeException e) {
-                throw e;
-            }
-            LOOKUP_Constructor = lookup;
-        }
     }
 }

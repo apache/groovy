@@ -19,8 +19,6 @@
 package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
-import org.apache.groovy.lang.GroovyObjectHelper;
-import org.apache.groovy.runtime.ObjectUtil;
 import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -36,7 +34,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.ConvertedClosure;
@@ -89,8 +86,6 @@ import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -116,14 +111,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
-import static org.codehaus.groovy.reflection.ReflectionUtils.parameterTypeMatches;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -993,21 +986,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Invokes a method on the given receiver for the specified arguments.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
      *
-     * @param object            The object which the method was invoked on
-     * @param methodName        The name of the method
-     * @param originalArguments The arguments to the method
+     * @param object     The object which the method was invoked on
+     * @param methodName The name of the method
+     * @param arguments  The arguments to the method
      * @return The return value of the method
      * @see MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
     @Override
-    public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
-        return invokeMethod(theClass, object, methodName, originalArguments, false, false);
+    public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+        return invokeMethod(theClass, object, methodName, arguments, false, false);
     }
 
-    private Object invokeMethodClosure(final MethodClosure object, final Object[] arguments) {
-        var owner = object.getOwner();
-        var method = object.getMethod();
-        var ownerClass = object.getOwnerClass();
+    private Object invokeMethodClosure(final MethodClosure closure, final Object[] arguments) {
+        var owner = closure.getOwner();
+        var method = closure.getMethod();
+        var ownerClass = closure.getOwnerClass();
         var ownerIsClass = (owner instanceof Class);
         var ownerMetaClass = registry.getMetaClass(ownerClass);
         try {
@@ -1042,8 +1035,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                 // if the owner is a class and the method closure can be related to some instance method(s)
                 // try to invoke method with adjusted arguments -- first argument is instance of owner type
-                if (arguments.length > 0 && ownerClass.isAssignableFrom(arguments[0].getClass())
-                        && (Boolean) object.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS)) {
+                if (arguments.length > 0 && ownerClass.isInstance(arguments[0])
+                        && (Boolean) closure.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS)) {
                     try {
                         Object newReceiver = arguments[0];
                         Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
@@ -1058,7 +1051,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     } catch (MissingMethodException ignore) {}
                 }
 
-                return invokeMissingMethod(object, method, arguments);
+                return invokeMissingMethod(closure, method, arguments);
             }
         }
     }
@@ -1073,114 +1066,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param sender            The java.lang.Class instance that invoked the method
      * @param object            The object which the method was invoked on
      * @param methodName        The name of the method
-     * @param arguments         The arguments to the method
+     * @param originalArguments The arguments to the method
      * @param isCallToSuper     Whether the method is a call to a super class method
      * @param fromInsideClass   Whether the call was invoked from the inside or the outside of the class
-     * @return The return value of the method
+     * @return The return value of the method.
      * @see MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
     @Override
-    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
-        try {
-            return doInvokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
-        } catch (MissingMethodException mme) {
-            MethodHandles.Lookup lookup = null;
-            if (object instanceof GroovyObject) {
-                lookup = GroovyObjectHelper.lookup((GroovyObject) object).orElseThrow(() -> mme);
-            }
-
-            Class<?> receiverClass = object.getClass();
-
-            if (isCallToSuper) {
-                if (lookup == null) throw mme;
-                MethodHandles.Lookup theLookup = lookup;
-                MethodHandle methodHandle = findMethod(sender.getSuperclass(), methodName, MetaClassHelper.convertToTypeArray(arguments), method -> {
-                    try {
-                        return theLookup.unreflectSpecial(method, receiverClass);
-                    } catch (IllegalAccessException e) {
-                        return null;
-                    }
-                });
-                if (methodHandle == null) throw mme;
-                try {
-                    return methodHandle.bindTo(object).invokeWithArguments(arguments);
-                } catch (Throwable t) {
-                    throw new GroovyRuntimeException(t);
-                }
-            }
-
-            if (methodName.equals("clone") && arguments.length == 0) {
-                try {
-                    return ObjectUtil.cloneObject(object);
-                } catch (Throwable t) {
-                    throw new GroovyRuntimeException(t);
-                }
-            }
-
-            boolean spyFound = (lookup != null);
-            if (!spyFound) {
-                try {
-                    lookup = MethodHandles.lookup().in(receiverClass);
-                } catch (IllegalArgumentException e) {
-                    throw mme;
-                }
-            }
-            MethodHandles.Lookup theLookup = lookup;
-            MethodHandle methodHandle = findMethod(receiverClass, methodName, MetaClassHelper.convertToTypeArray(arguments), method -> {
-                try {
-                    return spyFound ? theLookup.unreflectSpecial(method, receiverClass) : theLookup.unreflect(method);
-                } catch (IllegalAccessException e) {
-                    return null;
-                }
-            });
-            if (methodHandle == null) throw mme;
-            try {
-                return methodHandle.bindTo(object).invokeWithArguments(arguments);
-            } catch (Throwable t) {
-                throw new GroovyRuntimeException(t);
-            }
-        }
-    }
-
-    private static final ClassValue<Map<String, Set<Method>>> SPECIAL_METHODS_MAP = new ClassValue<Map<String, Set<Method>>>() {
-        @Override
-        protected Map<String, Set<Method>> computeValue(final Class<?> type) {
-            return new ConcurrentHashMap<>(4);
-        }
-    };
-
-    private static MethodHandle findMethod(final Class<?> clazz, final String methodName, final Class[] argTypes, final Function<Method, MethodHandle> mhFunc) {
-        Map<String, Set<Method>> map = SPECIAL_METHODS_MAP.get(clazz);
-        Set<Method> methods = map.get(methodName);
-        Method foundMethod = null;
-        if (methods != null) {
-            for (Method method : methods) {
-                if (parameterTypeMatches(method.getParameterTypes(), argTypes)) {
-                    foundMethod = method;
-                    break;
-                }
-            }
-        }
-
-        if (foundMethod == null) {
-            for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
-                List<Method> declaredMethods = ReflectionUtils.getDeclaredMethods(c, methodName, argTypes);
-                if (!declaredMethods.isEmpty()) {
-                    Method method = declaredMethods.get(0);
-                    if (!Modifier.isAbstract(method.getModifiers())) {
-                        foundMethod = method;
-                        break;
-                    }
-                }
-            }
-            if (foundMethod == null) return null;
-            map.computeIfAbsent(methodName, k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2))).add(foundMethod);
-        }
-
-        return mhFunc.apply(foundMethod);
-    }
-
-    private Object doInvokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] originalArguments, final boolean isCallToSuper, final boolean fromInsideClass) {
         checkInitalised();
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
@@ -1190,28 +1083,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
-        final boolean isClosure = object instanceof Closure;
-        if (isClosure) {
-            final Closure closure = (Closure) object;
+        if (object instanceof Closure) {
+            final Closure closure = (Closure)object;
             final Object owner = closure.getOwner();
 
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
-                final Class objectClass = object.getClass();
-                if (objectClass == MethodClosure.class) {
-                    return this.invokeMethodClosure((MethodClosure) object, arguments);
-                } else if (objectClass == CurriedClosure.class) {
-                    final CurriedClosure cc = (CurriedClosure) object;
-                    // change the arguments for an uncurried call
-                    final Object[] curriedArguments = cc.getUncurriedArguments(arguments);
-                    final Class ownerClass = owner instanceof Class ? (Class) owner : owner.getClass();
-                    final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
-                    return ownerMetaClass.invokeMethod(owner, methodName, curriedArguments);
+                var closureClass = closure.getClass();
+                if (closureClass == MethodClosure.class) {
+                    return invokeMethodClosure((MethodClosure) closure, arguments);
+                } else if (closureClass == CurriedClosure.class) {
+                    MetaClass ownerMetaClass = registry.getMetaClass(owner instanceof Class ? (Class) owner : owner.getClass());
+                    return ownerMetaClass.invokeMethod(owner, methodName, ((CurriedClosure) closure).getUncurriedArguments(arguments));
                 }
                 if (method == null) invokeMissingMethod(object, methodName, arguments);
             }
 
             final Object delegate = closure.getDelegate();
-            final boolean isClosureNotOwner = owner != closure;
             final int resolveStrategy = closure.getResolveStrategy();
 
             final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
@@ -1221,6 +1108,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     method = closure.getMetaClass().pickMethod(methodName, argClasses);
                     if (method != null) return method.invoke(closure, arguments);
                     break;
+
                 case Closure.DELEGATE_ONLY:
                     if (method == null && delegate != closure && delegate != null) {
                         MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
@@ -1232,12 +1120,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         }
                     }
                     break;
+
                 case Closure.OWNER_ONLY:
                     if (method == null && owner != closure) {
                         MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
                         return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
                     }
                     break;
+
                 case Closure.DELEGATE_FIRST:
                     Tuple2<Object, MetaMethod> tuple = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
                     Object result = tuple.getV1();
@@ -1245,19 +1135,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     if (InvokeMethodResult.NONE != result) {
                         return result;
                     }
-
                     if (method == null && resolveStrategy != Closure.TO_SELF) {
                         // still no methods found, test if delegate or owner are GroovyObjects
                         // and invoke the method on them if so.
                         MissingMethodException last = null;
-                        if (delegate != closure && (delegate instanceof GroovyObject)) {
+                        if (delegate != closure && delegate instanceof GroovyObject) {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
                             } catch (MissingMethodException mme) {
                                 if (last == null) last = mme;
                             }
                         }
-                        if (isClosureNotOwner && (owner instanceof GroovyObject)) {
+                        if (owner != closure && owner instanceof GroovyObject) {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
                             } catch (MissingMethodException mme) {
@@ -1267,8 +1156,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         if (last != null)
                             return invokeMissingMethod(object, methodName, originalArguments, last, isCallToSuper);
                     }
-
                     break;
+
                 default:
                     Tuple2<Object, MetaMethod> t = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
                     Object r = t.getV1();
@@ -1276,12 +1165,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     if (InvokeMethodResult.NONE != r) {
                         return r;
                     }
-
                     if (method == null && resolveStrategy != Closure.TO_SELF) {
-                        // still no methods found, test if delegate or owner are GroovyObjects
-                        // and invoke the method on them if so.
+                        // still no methods found, if delegate or owner are GroovyObjects, invoke the method on them
                         MissingMethodException last = null;
-                        if (isClosureNotOwner && (owner instanceof GroovyObject)) {
+                        if (owner != closure && owner instanceof GroovyObject) {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
                             } catch (MissingMethodException mme) {
@@ -1303,7 +1190,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                                 }
                             }
                         }
-                        if (delegate != closure && (delegate instanceof GroovyObject)) {
+                        if (delegate != closure && delegate instanceof GroovyObject) {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
                             } catch (MissingMethodException mme) {
@@ -1323,8 +1210,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-            return transformedMetaMethod.doMethodInvoke(object, arguments);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method, sender);
+            try {
+                return transformedMetaMethod.doMethodInvoke(object, arguments);
+            } catch (InvokerInvocationException iie) {
+                if (arguments.length == 0 && methodName.equals("clone") && method.getDeclaringClass().equals(ReflectionCache.OBJECT_CLASS) && iie.getCause() instanceof IllegalAccessException) {
+                    RuntimeException e = method.processDoMethodInvokeException(new CloneNotSupportedException(), object, arguments);
+                    e.addSuppressed(iie);
+                    throw e;
+                }
+                throw iie;
+            }
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
         }

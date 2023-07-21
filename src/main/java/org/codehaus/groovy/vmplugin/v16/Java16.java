@@ -47,14 +47,13 @@ public class Java16 extends Java10 {
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
-            final Class<?> receiverType = receiver.getClass();
-            if (method.isDefault() && Proxy.isProxyClass(receiverType)) {
+            final Class<?> receiverClass = receiver.getClass();
+            if (method.isDefault() && Proxy.isProxyClass(receiverClass)) {
                 return new ProxyDefaultMethodHandle((Proxy) receiver, method);
             }
-
-            MethodHandles.Lookup lookup = getLookup(receiver);
-            if (0 != (MethodHandles.Lookup.PRIVATE & lookup.lookupModes())) {
-                return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
+            MethodHandles.Lookup lookup = newLookup(receiverClass);
+            if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) != 0) {
+                return lookup.unreflectSpecial(method, receiverClass).bindTo(receiver);
             }
             return lookup.unreflect(method).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
@@ -93,26 +92,25 @@ public class Java16 extends Java10 {
     }
 
     @Override
-    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
+    protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         try {
             final Method privateLookup = getPrivateLookup();
             if (privateLookup != null) {
                 MethodHandles.Lookup caller = MethodHandles.lookup();
                 Class<?> callerClass = caller.lookupClass();
                 Module callerModule = callerClass.getModule();
-                Module targetModule = declaringClass.getModule();
+                Module targetModule = targetClass.getModule();
                 if (targetModule != callerModule) {
                     if (targetModule.isNamed()) {
-                        String pn = declaringClass.getPackageName();
+                        String pn = targetClass.getPackageName();
                         if (!targetModule.isOpen(pn, callerModule)) {
-                            return MethodHandles.lookup().in(declaringClass);
+                            return MethodHandles.lookup().in(targetClass);
                         }
                     }
                 }
-
-                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, caller);
+                return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, caller);
             }
-            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
+            return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {

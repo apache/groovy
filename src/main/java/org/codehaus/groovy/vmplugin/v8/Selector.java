@@ -31,7 +31,6 @@ import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.transform.Internal;
-import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -52,6 +51,7 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.invoke.MethodHandle;
@@ -644,13 +644,37 @@ public abstract class Selector {
             }
 
             if (metaMethod instanceof CachedMethod) {
-                if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
-                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm, sender);
+                VMPlugin vmplugin = VMPluginFactory.getPlugin();
+                cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 isVargs = cm.isVargsMethod();
                 Method m = cm.getCachedMethod();
-                handle = dealWithClassForNameOrObjectCloneOtherwiseUnreflect(m);
-                if (LOG_ENABLED) LOG.info("successfully unreflected method");
+                try {
+                    String  methodName = m.getName();
+                    int parameterCount = m.getParameterCount();
+                    if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class && args[0].getClass().isArray()) {
+                        handle = MethodHandles.publicLookup().findVirtual(args[0].getClass(), "clone", MethodType.methodType(Object.class));
+                    } else if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
+                        handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                    } else {
+                        MethodHandles.Lookup lookup = LOOKUP; Class<?> redirect;
+                        if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class) {
+                            redirect = args[0].getClass();
+                        } else if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
+                            redirect = sender;
+                        } else {
+                            redirect = null;
+                        }
+                        if (redirect != null) {
+                            Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
+                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, redirect);
+                        }
+                        handle = lookup.unreflect(m);
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new GroovyBugError(e);
+                }
+
                 if (isStaticCategoryTypeMethod) {
                     handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                     handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
@@ -674,25 +698,6 @@ public abstract class Selector {
                 }
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
-            }
-        }
-
-        private MethodHandle dealWithClassForNameOrObjectCloneOtherwiseUnreflect(final Method m) {
-            int parameterCount = m.getParameterCount();
-            if (parameterCount == 1 && m.getName().equals("forName") && m.getDeclaringClass() == Class.class) {
-                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
-            } else if (parameterCount == 0 && m.getName().equals("clone") && args != null && args.length == 1 && m.getDeclaringClass() == Object.class) {
-                return ObjectUtil.getCloneObjectMethodHandle();
-            }
-
-            try {
-                MethodHandles.Lookup lookup = LOOKUP;
-                if (!Modifier.isPublic(m.getModifiers())) { // GROOVY-10070, et al.
-                    lookup = ((Java8)VMPluginFactory.getPlugin()).newLookup(sender);
-                }
-                return lookup.unreflect(m); // throws if sender cannot invoke method
-            } catch (IllegalAccessException e) {
-                throw new GroovyBugError(e);
             }
         }
 
