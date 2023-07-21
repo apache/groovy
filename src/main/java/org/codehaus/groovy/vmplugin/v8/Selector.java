@@ -52,7 +52,6 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -87,6 +86,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MET
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NON_NULL;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NULL_REF;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
@@ -95,6 +95,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unwrap;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG_ENABLED;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
@@ -961,14 +962,9 @@ public abstract class Selector {
                         .asType(MethodType.methodType(boolean.class, pt));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
             } else if (safeNavigationOrig) { // GROOVY-11126
-                try {
-                    MethodHandle test = LOOKUP.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class))
-                            .asType(MethodType.methodType(boolean.class, pt[0]));
-                    handle = MethodHandles.guardWithTest(test, handle, fallback);
-                    if (LOG_ENABLED) LOG.info("added null receiver check");
-                } catch (ReflectiveOperationException e) {
-                    throw new GroovyBugError(e);
-                }
+                MethodHandle test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[0]));
+                handle = MethodHandles.guardWithTest(test, handle, fallback);
+                if (LOG_ENABLED) LOG.info("added null receiver check");
             }
         }
 
