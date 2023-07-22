@@ -536,6 +536,42 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11119
+    void testMapStyleConstructorWithOverloadedSetterName() {
+        assertScript '''import java.util.regex.Pattern
+            class C {
+                void setP(Pattern p) {
+                    which = 'Pattern'
+                }
+                void setP(String re) {
+                    which = 'String'
+                }
+                def which
+            }
+
+            assert new C(p:"xx").which == 'String'
+            assert new C(p:~/x/).which == 'Pattern'
+        '''
+    }
+
+    // GROOVY-11122
+    void testMapStyleInnerClassConstructorWithinClosure() {
+        assertScript '''
+            class A {
+                class B {
+                    def p
+                }
+                B test() {
+                    { ->
+                        new B(p:"x")
+                    }.call()
+                }
+            }
+
+            assert new A().test().getP() == "x"
+        '''
+    }
+
     // GROOVY-9422
     void testInnerClassConstructorCallWithinClosure() {
         assertScript '''
@@ -550,6 +586,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 }
               }
             }
+
             assert new A().test() == ['value']
         '''
     }

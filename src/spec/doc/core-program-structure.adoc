@@ -166,8 +166,12 @@ include::../test/PackageTest.groovy[tags=alias_import,indent=0]
 
 == Scripts versus classes
 
-=== public static void main vs script
-Groovy supports both scripts and classes. Take the following code for example:
+Groovy supports both scripts and classes. From Groovy 5,
+Groovy also supports https://openjdk.org/jeps/445[JEP 445] compatible scripts.
+
+=== Motivation for scripts
+
+Take the following code for example:
 
 [source,groovy]
 .Main.groovy
@@ -187,9 +191,11 @@ Groovy makes it easier, the following code is equivalent:
 include::../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script,indent=0]
 ----
 
-A script can be considered as a class without needing to declare it, with some differences.
+A script can be considered as a class without needing to explicitly declare it.
+There are some differences which we'll cover next. First, we'll cover Groovy's
+main `Script` class. Then, we'll cover JEP 445 compatible classes.
 
-=== Script class
+=== `Script` class
 
 A gapi:groovy.lang.Script[script] is always compiled into a class. The Groovy compiler will compile the class for you,
 with the body of the script copied into a `run` method. The previous example is therefore compiled as if it was the
@@ -229,13 +235,17 @@ include::../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly
 <2> a method is defined within the script body
 <3> and script continues
 
-This code is internally converted into:
+Statements 1 and 3 are sometimes referred to as "loose" statements.
+They are not contained within an explicit enclosing method or class.
+Loose statements are assembled sequentially into the `run` method.
+
+So, the above code is internally converted into:
 
 [source,groovy]
 ----
 include::../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
 ----
-<1> the `power` method is copied as is into the generated script class
+<1> the `power` method is copied as-is into the generated script class
 <2> first statement is copied into the `run` method
 <3> second statement is copied into the `run` method
 
@@ -273,5 +283,94 @@ TIP: Another approach to making a variable visible to all methods, is to use the
 <<{core-metaprogramming}#xform-Field,@Field annotation>>.
 A variable annotated this way will become a field of the generated script class and,
 as for local variables, access won't involve the script `Binding`.
-While not recommended, if you have a local variable or script field with the same name as a binding variable,
+If you have a local variable or script field with the same name as a binding variable,
+we recommend renaming one of them to avoid potential confusion. If that's not possible,
 you can use `binding.varName` to access the binding variable.
+
+=== Convenience variations
+
+As mentioned previously, normally, `public static void main` and `run` methods
+are automatically added to your script, so it is normally illegal to add your own versions
+of either of those; you would see a duplicate method compiler error if you tried.
+
+However, there are some exceptions where the above rules don't apply.
+If your script contains _only_ a compatible main method and no other loose statements,
+or _only_ a no-arg `run` instance method (from Groovy 5), then it is allowed.
+In this case, no loose statements (because there aren't any) are collected into the `run` method.
+The method you supplied is used instead of Groovy adding the respective method(s).
+
+This can be useful if you need to add an annotation to the otherwise implicitly added
+`main` or `run` methods as this example shows:
+
+[source,groovy]
+----
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_explicit_static_main,indent=0]
+----
+
+To be recognised as a convenience variation, as well as having no loose statements,
+the parameter for the `main` method should be:
+
+* untyped as above (`Object` type),
+* or of type `String[]`,
+* or have no arguments (from Groovy 5).
+
+From Groovy 5, a no-arg instance `run` variant is also supported.
+This also allows annotations to be added.
+The `run` variant follows the JEP 445 rules for field declarations
+(hence doesn't need to use the `@Field` annotation)
+as this example involving Jackson JSON serialization shows:
+
+[source,groovy]
+----
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_explicit_instance_run,indent=0]
+----
+
+The `run` variant is recommended if you need your script to extend the `Script` class
+and have access to the script context and bindings. If you don't have that requirement,
+providing one of the `main` variants will create a JEP 445 compatible class which won't
+extend `Script`. We'll cover JEP 445 compatible scripts in more detail next.
+
+== JEP 445 compatible scripts
+
+From Groovy 5, support has been added for JEP 445 compatible scripts containing
+a `main` method. Such scripts have several differences to normal Groovy `Script` classes:
+
+* they won't have a `public static void main` method added
+* they won't extend the `Script` class and hence won't have access to the script
+context or binding variables
+* allows additional class-level _fields_ and _methods_ to be defined in addition to `main`
+* can't have "loose" statements outside the `main` method (excluding any field definitions)
+
+A simple example might look like:
+
+[source,groovy]
+----
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=jep445_barescript,indent=0]
+----
+
+An example with additional fields and methods might look like:
+
+[source,groovy]
+----
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=jep445_script,indent=0]
+----
+<1> Note that multi-assignment syntax is supported and results in separate field definitions for each component.
+
+=== Differences with Java JEP 445 behavior
+
+There are some differences with Groovy's JEP 445 support and that offered by Java:
+
+* Java supports either a no-arg `main` method or one containing a single `String[]` parameter.
+Groovy also adds support for a single untyped (`Object`) parameter, e.g. `def main(args) { ... }`.
+This addition is known by the Groovy runner but would not be known by the
+Java launch protocol for a JDK supporting JEP 445.
+* Java supports `void` main methods. Groovy also adds support for untyped `def` (`Object`) methods,
+e.g. `def main(...)` as well as `void main(...)`.
+This addition is known by the Groovy runner but would not be known by the Java launch protocol
+for a JDK supporting JEP 445.
+* For static `main` variants, Groovy _promotes_ the no-arg or untyped variants to have the
+standard `public static void main(String[] args)` signature. This is for compatibility
+with versions of Groovy prior to Groovy 5 (where JEP 445 support was added).
+As a consequence, such classes are compatible with the Java launch protocol prior to JEP 445 support.
+* Groovy's runner has been made aware of JEP 445 compatible classes and can run all variations
+for JDK11 and above and without the need for preview mode to be enabled.

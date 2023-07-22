@@ -16,25 +16,43 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package groovy.bugs
 
-plugins {
-    id 'groovy-gradle-plugin'
-}
+import org.junit.Test
 
-repositories {
-    gradlePluginPortal()
-    mavenCentral()
-}
+import static groovy.test.GroovyAssert.assertScript
 
-dependencies {
-    implementation 'org.asciidoctor:asciidoctor-gradle-jvm:3.3.2'
-    implementation 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:3.3.2'
-    implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:5.0.3'
-    implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.0'
-    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.14'
-    implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.1'
-}
+final class Groovy11126 {
 
-tasks.withType(Jar).configureEach {
-    duplicatesStrategy = DuplicatesStrategy.WARN
+    @Test
+    void testSafeCall() {
+        assertScript '''
+            def test(String string) {
+                string?.size()
+            }
+            10000.times {
+                test('1')
+                test('')
+            }
+            test(null)
+            test('22')
+            test(null)
+        '''
+    }
+
+    @Test
+    void testSafeName() {
+        assertScript '''
+            def test(String string) {
+                string?.chars
+            }
+            10000.times {
+                test('1')
+                test('')
+            }
+            test(null)
+            test('22')
+            test(null)
+        '''
+    }
 }

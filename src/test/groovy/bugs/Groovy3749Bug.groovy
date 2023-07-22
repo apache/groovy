@@ -24,48 +24,48 @@ class Groovy3749Bug extends GroovyTestCase {
     void testScriptsProvidingStaticMainMethod() {
         def scriptStr
 
-        // test various signatures of main()
+        // test various signatures of static main()
         scriptStr = """
             static main(args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         scriptStr = """
             static def main(args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         scriptStr = """
             static void main(args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         scriptStr = """
             static main(String[] args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         scriptStr = """
             static def main(String[] args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         scriptStr = """
             static void main(String[] args) {
                 throw new RuntimeException('main called')
             }
         """
-        verifyScriptRun(scriptStr, "RuntimeException")
+        assertScriptFails(scriptStr, "RuntimeException")
 
         // if both main() and the loose statements are provided, then the loose statements should run and not main
         scriptStr = """
@@ -74,20 +74,67 @@ class Groovy3749Bug extends GroovyTestCase {
             }
             throw new Error()
         """
-        verifyScriptRun(scriptStr, "Error")
+        assertScriptFails(scriptStr, "Error")
 
-        assertScript """
-            def main(args) {
+        scriptStr = """
+            static void main() {
+                throw new RuntimeException('main called')
+            }
+        """
+        assertScriptFails(scriptStr, "RuntimeException")
+
+        // if param type doesn't match, this main won't execute
+        runScript """
+            static main(Date args) {
                 throw new RuntimeException('main called')
             }
         """
     }
 
-    void verifyScriptRun(scriptText, expectedFailure) {
-        try{
-            assertScript(scriptText)
-        }catch(Throwable ex) {
-            assertTrue ex.class.name.contains(expectedFailure) 
+    void testScriptsProvidingInstanceMainMethod() {
+        def scriptStr
+
+        // test various signatures of instance main()
+        scriptStr = """
+            def main(String[] args) {
+                throw new RuntimeException('main called')
+            }
+        """
+        assertScriptFails(scriptStr, "RuntimeException")
+
+        scriptStr = """
+            void main(args) {
+                throw new RuntimeException('main called')
+            }
+        """
+        assertScriptFails(scriptStr, "RuntimeException")
+
+        scriptStr = """
+            void main() {
+                throw new RuntimeException('main called')
+            }
+        """
+        assertScriptFails(scriptStr, "RuntimeException")
+
+        // if param type doesn't match, this main won't execute
+        runScript """
+            def main(Date args) {
+                throw new RuntimeException('main called')
+            }
+        """
+    }
+
+    static void assertScriptFails(scriptText, expectedFailure) {
+        try {
+            runScript(scriptText)
+        } catch (Throwable ex) {
+            assert ex.class.name.contains(expectedFailure)
+            return
         }
+        fail("Expected script to fail with '$expectedFailure' but passed.")
+    }
+
+    private static void runScript(String scriptText) {
+        new GroovyShell().run(scriptText, 'Groovy3749Snippet', [] as String[])
     }
 }

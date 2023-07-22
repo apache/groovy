@@ -73,75 +73,74 @@ final class Groovy9103 {
     @Test
     void testClone4() {
         assertScript '''
-            int[] nums = [1, 2, 3]
-            int[] cloned = nums.clone()
-            assert nums == cloned
+            int[] nums = new int[] {1,2,3}
+            int[] copy = nums.clone()
+            assert copy !== nums
+            assert copy == nums
         '''
     }
 
-    @Test // GROOVY-10747
+    // GROOVY-10747
+    @Test
     void testClone5() {
         ['Object', 'Dolly'].each { typeName ->
             assertScript """
                 class Dolly implements Cloneable {
-                    String name
-
-                    @Override
                     public ${typeName} clone() {
                         return super.clone()
                     }
+                    String name
                 }
 
                 def dolly = new Dolly(name: "The Sheep")
-                def cloned = dolly.clone()
-                assert cloned instanceof Dolly
+                def clone = dolly.clone()
+                assert clone instanceof Dolly
             """
         }
     }
 
-    @Test // GROOVY-10747
+    // GROOVY-10747
+    @Test
     void testClone6() {
-        shouldFail(CloneNotSupportedException, '''
+        shouldFail CloneNotSupportedException, '''
             class Dolly {
                 String name
             }
 
             def dolly = new Dolly(name: "The Sheep")
             dolly.clone()
-        ''')
+        '''
     }
 
     @Test
     void testClone7() {
         ['Object', 'Dolly'].each { typeName ->
             assertScript """
-                import org.codehaus.groovy.runtime.InvokerHelper
+                import static org.codehaus.groovy.runtime.InvokerHelper.*
                 class Dolly implements Cloneable {
-                    String name
-
-                    @Override
                     public ${typeName} clone() {
                         return super.clone()
                     }
+                    String name
                 }
 
                 def dolly = new Dolly(name: "The Sheep")
-                def cloned = InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
-                assert cloned instanceof Dolly
+                def clone = invokeMethod(dolly, 'clone', EMPTY_ARGS)
+                assert clone instanceof Dolly
             """
         }
     }
 
     @Test
     void testClone8() {
-        shouldFail(CloneNotSupportedException, '''
-            import org.codehaus.groovy.runtime.InvokerHelper
+        shouldFail CloneNotSupportedException, '''
+            import static org.codehaus.groovy.runtime.InvokerHelper.*
             class Dolly {
                 String name
             }
 
             def dolly = new Dolly(name: "The Sheep")
-            InvokerHelper.invokeMethod(dolly, 'clone', [] as Object[])
-        ''')
+            invokeMethod(dolly, 'clone', EMPTY_ARGS)
+        '''
     }
 }

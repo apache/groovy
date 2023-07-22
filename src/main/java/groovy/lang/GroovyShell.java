@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.control.ResolveVisitor.EMPTY_STRING_ARRAY;
+import static org.codehaus.groovy.runtime.InvokerHelper.EMPTY_ARGS;
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
@@ -265,8 +268,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * } else if (theClass implements Runnable) {
      * if (theClass has a constructor with String[] params)
      * instantiate theClass with this constructor and run
-     * else if (theClass has a no-args constructor)
-     * instantiate theClass with the no-args constructor and run
+     * else if (theClass has a no-arg constructor)
+     * instantiate theClass with the no-arg constructor and run
      * }
      */
     private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {
@@ -290,36 +293,62 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         }
         try {
-            // let's find a main method
-            scriptClass.getMethod(MAIN_METHOD_NAME, String[].class);
-            // if that main method exist, invoke it
-            return InvokerHelper.invokeMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
-        } catch (NoSuchMethodException e) {
-            // if it implements Runnable, try to instantiate it
-            if (Runnable.class.isAssignableFrom(scriptClass)) {
-                return runRunnable(scriptClass, args);
-            }
-            GroovyRunnerRegistry runnerRegistry = GroovyRunnerRegistry.getInstance();
-            for (GroovyRunner runner : runnerRegistry) {
-                if (runner.canRun(scriptClass, this.loader)) {
-                    return runner.run(scriptClass, this.loader);
-                }
-            }
-            StringBuilder message = new StringBuilder("This script or class could not be run.\n" +
-                    "It should either:\n" +
-                    "- have a main method,\n" +
-                    "- be a JUnit test or extend GroovyTestCase,\n" +
-                    "- implement the Runnable interface,\n" +
-                    "- or be compatible with a registered script runner. Known runners:\n");
-            if (runnerRegistry.isEmpty()) {
-                message.append("  * <none>");
+            // let's find a String[] main method
+            Method stringArrayMain = scriptClass.getMethod(MAIN_METHOD_NAME, String[].class);
+            // if that main method exists, invoke it
+            if (Modifier.isStatic(stringArrayMain.getModifiers())) {
+                return InvokerHelper.invokeStaticMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
             } else {
-                for (String key : runnerRegistry.keySet()) {
-                    message.append("  * ").append(key).append("\n");
-                }
+                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
+                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, args);
             }
-            throw new GroovyRuntimeException(message.toString());
+        } catch (NoSuchMethodException ignore) { }
+        try {
+            // let's find an Object main method
+            Method stringArrayMain = scriptClass.getMethod(MAIN_METHOD_NAME, Object.class);
+            // if that main method exists, invoke it
+            if (Modifier.isStatic(stringArrayMain.getModifiers())) {
+                return InvokerHelper.invokeStaticMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
+            } else {
+                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
+                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, new Object[]{args});
+            }
+        } catch (NoSuchMethodException ignore) { }
+        try {
+            // let's find a no-arg main method
+            Method noArgMain = scriptClass.getMethod(MAIN_METHOD_NAME);
+            // if that main method exists, invoke it
+            if (Modifier.isStatic(noArgMain.getModifiers())) {
+                return InvokerHelper.invokeStaticNoArgumentsMethod(scriptClass, MAIN_METHOD_NAME);
+            } else {
+                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
+                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, EMPTY_ARGS);
+            }
+        } catch (NoSuchMethodException ignore) { }
+        // if it implements Runnable, try to instantiate it
+        if (Runnable.class.isAssignableFrom(scriptClass)) {
+            return runRunnable(scriptClass, args);
         }
+        GroovyRunnerRegistry runnerRegistry = GroovyRunnerRegistry.getInstance();
+        for (GroovyRunner runner : runnerRegistry) {
+            if (runner.canRun(scriptClass, this.loader)) {
+                return runner.run(scriptClass, this.loader);
+            }
+        }
+        StringBuilder message = new StringBuilder("This script or class could not be run.\n" +
+                "It should either:\n" +
+                "- have a main method,\n" +
+                "- be a JUnit test or extend GroovyTestCase,\n" +
+                "- implement the Runnable interface,\n" +
+                "- or be compatible with a registered script runner. Known runners:\n");
+        if (runnerRegistry.isEmpty()) {
+            message.append("  * <none>");
+        } else {
+            for (String key : runnerRegistry.keySet()) {
+                message.append("  * ").append(key).append("\n");
+            }
+        }
+        throw new GroovyRuntimeException(message.toString());
     }
 
     private static Object runRunnable(Class scriptClass, String[] args) {

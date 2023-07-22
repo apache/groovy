@@ -99,33 +99,26 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     }
 
     public static List<MetaMethod> createMethodList(final String name, final Class declaringClass, final Closure closure) {
-        List<MetaMethod> res = new ArrayList<MetaMethod>();
+        List<MetaMethod> mms = new ArrayList<>();
         if (closure instanceof MethodClosure) {
-            MethodClosure methodClosure = (MethodClosure) closure;
-            Object owner = closure.getOwner();
-            Class ownerClass = (Class) (owner instanceof Class ? owner : owner.getClass());
-            for (CachedMethod method : ReflectionCache.getCachedClass(ownerClass).getMethods() ) {
-                if (method.getName().equals(methodClosure.getMethod())) {
+            for (CachedMethod method : ReflectionCache.getCachedClass(((MethodClosure) closure).getOwnerClass()).getMethods()) {
+                if (method.getName().equals(((MethodClosure) closure).getMethod())) {
                     MetaMethod metaMethod = new MethodClosureMetaMethod(name, declaringClass, closure, method);
-                    res.add(adjustParamTypesForStdMethods(metaMethod, name));
+                    mms.add(adjustParamTypesForStdMethods(metaMethod, name));
                 }
             }
-        }
-        else {
-            if (closure instanceof GeneratedClosure) {
-                for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods() ) {
-                    if (method.getName().equals("doCall")) {
-                        MetaMethod metaMethod = new ClosureMetaMethod(name, declaringClass, closure, method);
-                        res.add(adjustParamTypesForStdMethods(metaMethod, name));
-                    }
+        } else if (closure instanceof GeneratedClosure) {
+            for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods()) {
+                if (method.getName().equals("doCall")) {
+                    MetaMethod metaMethod = new ClosureMetaMethod(name, declaringClass, closure, method);
+                    mms.add(adjustParamTypesForStdMethods(metaMethod, name));
                 }
             }
-            else {
-                MetaMethod metaMethod = new AnonymousMetaMethod(closure, name, declaringClass);
-                res.add(adjustParamTypesForStdMethods(metaMethod, name));
-            }
+        } else {
+            MetaMethod metaMethod = new AnonymousMetaMethod(closure, name, declaringClass);
+            mms.add(adjustParamTypesForStdMethods(metaMethod, name));
         }
-        return res;
+        return mms;
     }
 
     private static MetaMethod adjustParamTypesForStdMethods(MetaMethod metaMethod, String methodName) {

@@ -82,12 +82,15 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
     }
 
     private void changeBaseScriptTypeFromClass(final ClassNode parent, final AnnotationNode node) {
-//        Expression value = node.getMember("value");
-//        if (!(value instanceof ClassExpression)) {
-//            addError("Annotation " + MY_TYPE_NAME + " member 'value' should be a class literal.", value);
-//            return;
-//        }
-        changeBaseScriptType(parent, parent, parent.getSuperClass());
+        Expression value = node.getMember("value");
+        ClassNode superClass = parent.getSuperClass();
+        if (value instanceof ClassExpression) {
+            superClass = value.getType();
+        } else if (value != null) {
+            addError("Annotation " + MY_TYPE_NAME + " member 'value' should be a class literal.", value);
+            return;
+        }
+        changeBaseScriptType(parent, parent, superClass);
     }
 
     private void changeBaseScriptTypeFromDeclaration(final DeclarationExpression de, final AnnotationNode node) {

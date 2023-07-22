@@ -1136,6 +1136,18 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert 'Hello, World!'.tr(' --', 'Z') == 'HelloZZWorldZ'
     }
 
+    void testBar() {
+        assert StringUtil.bar(0, 0, 39) == '\u258f'
+        assert StringUtil.bar(1, 0, 39) == '\u2588\u258f'
+        assert StringUtil.bar(2, 0, 39) == '\u2588\u2588\u258f'
+        assert StringUtil.bar(0, 0, 39, 80) == '\u258f'
+        assert StringUtil.bar(1, 0, 39, 80) == '\u2588\u2588\u258f'
+        assert StringUtil.bar(2, 0, 39, 80) == '\u2588\u2588\u2588\u2588\u258f'
+        assert StringUtil.bar(0, 0, 39, 20) == '\u258f'
+        assert StringUtil.bar(1, 0, 39, 20) == '\u258b'
+        assert StringUtil.bar(2, 0, 39, 20) == '\u2588\u258f'
+    }
+
     void testListTake() {
         def data = [
             new ArrayList( [ 1, 2, 3 ] ),

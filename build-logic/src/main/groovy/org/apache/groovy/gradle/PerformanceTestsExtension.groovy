@@ -98,7 +98,7 @@ class PerformanceTestsExtension {
             it.dependencies.add(dependencies.create('org.cyberneko:html:1.9.8'))
             it.dependencies.add(dependencies.create('commons-net:commons-net:3.9.0'))
             it.dependencies.add(dependencies.create('net.sourceforge.htmlunit:htmlunit:2.70.0'))
-            it.dependencies.add(dependencies.create('berkeleydb:je:3.2.76'))
+            it.dependencies.add(dependencies.create('com.sleepycat:je:18.3.12'))
             it.dependencies.add(dependencies.create('commons-httpclient:commons-httpclient:3.1'))
             it.dependencies.add(dependencies.create('net.sf.jopt-simple:jopt-simple:5.0.4'))
             it.dependencies.add(dependencies.create('com.baulsupp.kolja:jcurses:0.9.5.3'))

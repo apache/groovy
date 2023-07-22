@@ -18,7 +18,12 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
@@ -343,6 +348,46 @@ public class ModuleNode extends ASTNode {
 
         MethodNode existingMain = handleMainMethodIfPresent(methods);
 
+        boolean hasUncontainedStatements = false;
+        List<FieldNode> fields = new ArrayList<>();
+        // check for uncontained statements (excluding decl statements)
+        for (Statement statement : statementBlock.getStatements()) {
+            if (!(statement instanceof ExpressionStatement)) {
+                hasUncontainedStatements = true;
+                break;
+            }
+            ExpressionStatement es = (ExpressionStatement) statement;
+            Expression expression = es.getExpression();
+            if (!(expression instanceof DeclarationExpression)) {
+                hasUncontainedStatements = true;
+                break;
+            }
+            DeclarationExpression de = (DeclarationExpression) expression;
+            if (de.isMultipleAssignmentDeclaration()) {
+                List<Expression> variables = de.getTupleExpression().getExpressions();
+                if (!(de.getRightExpression() instanceof ListExpression)) break;
+                List<Expression> values = ((ListExpression)de.getRightExpression()).getExpressions();
+                for (int i = 0; i < variables.size(); i++) {
+                    VariableExpression var = (VariableExpression) variables.get(i);
+                    Expression val = i >= values.size() ? null : values.get(i);
+                    fields.add(new FieldNode(var.getName(), var.getModifiers(), var.getType(), null, val));
+                }
+            } else {
+                VariableExpression ve = de.getVariableExpression();
+                fields.add(new FieldNode(ve.getName(), ve.getModifiers(), ve.getType(), null, de.getRightExpression()));
+            }
+        }
+
+        if (existingMain != null && !hasUncontainedStatements) {
+            ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
+            result.addAnnotations(existingMain.getAnnotations());
+            result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+            existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+            methods.forEach(result::addMethod);
+            fields.forEach(result::addField);
+            return result;
+        }
+
         classNode.addMethod(
             new MethodNode(
                 "main",
@@ -360,12 +405,22 @@ public class ModuleNode extends ASTNode {
             )
         );
 
-        MethodNode methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
-        methodNode.setIsScriptBody();
-        if (existingMain != null) {
-            methodNode.addAnnotations(existingMain.getAnnotations());
+        // we add the run method unless we find a no-arg instance run method
+        // and there are no uncontained statements
+        MethodNode existingRun = hasUncontainedStatements ? null : findRun();
+        if (existingRun == null) {
+            MethodNode methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
+            methodNode.setIsScriptBody();
+            if (existingMain != null) {
+                methodNode.addAnnotations(existingMain.getAnnotations());
+            }
+            classNode.addMethod(methodNode);
+        } else {
+            fields.forEach(classNode::addField);
+            classNode.addAnnotations(existingRun.getAnnotations());
+            classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
+            existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
-        classNode.addMethod(methodNode);
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
 
@@ -392,34 +447,42 @@ public class ModuleNode extends ASTNode {
         return classNode;
     }
 
+    private MethodNode findRun() {
+        for (MethodNode node : methods) {
+            if (node.getName().equals("run") && node.getParameters().length == 0) {
+                return node;
+            }
+        }
+        return null;
+    }
+
     /*
      * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.
      */
     private MethodNode handleMainMethodIfPresent(final List<MethodNode> methods) {
-        boolean found = false;
+        boolean foundInstance = false;
+        boolean foundStatic = false;
         MethodNode result = null;
         for (Iterator<MethodNode> iter = methods.iterator(); iter.hasNext(); ) {
             MethodNode node = iter.next();
-            if (node.getName().equals("main")) {
-                if (node.isStatic() && node.getParameters().length == 1) {
-                    boolean retTypeMatches, argTypeMatches;
-                    ClassNode argType = node.getParameters()[0].getType();
+            if (node.getName().equals("main") && !node.isPrivate()) {
+                int numParams = node.getParameters().length;
+                if (numParams < 2) {
+                    ClassNode argType = numParams > 0 ? node.getParameters()[0].getType() : null;
                     ClassNode retType = node.getReturnType();
 
-                    argTypeMatches = (ClassHelper.isObjectType(argType) || argType.getName().contains("String[]"));
-                    retTypeMatches = (ClassHelper.isPrimitiveVoid(retType) || ClassHelper.isObjectType(retType));
+                    boolean argTypeMatches = argType == null || ClassHelper.isObjectType(argType) || argType.getName().contains("String[]");
+                    boolean retTypeMatches = ClassHelper.isPrimitiveVoid(retType) || ClassHelper.isObjectType(retType);
                     if (retTypeMatches && argTypeMatches) {
-                        if (found) {
+                        if ((foundStatic && node.isStatic()) || (foundInstance && !node.isStatic())) {
                             throw new RuntimeException("Repetitive main method found.");
-                        } else {
-                            found = true;
+                        }
+                        if (!foundStatic) { // static trumps instance
                             result = node;
                         }
-                        // if script has both loose statements as well as main(), then main() is ignored
-                        if (statementBlock.isEmpty()) {
-                            addStatement(node.getCode());
-                        }
-                        iter.remove();
+
+                        if (node.isStatic()) foundStatic = true;
+                        else foundInstance = true;
                     }
                 }
             }

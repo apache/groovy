@@ -98,7 +98,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
         Parameter[] mNodeParams = mNode.getParameters();
         if (mNodeParams.length == 0) {
-            addError("Error during " + NAMED_VARIANT + " processing. No-args method not supported.", mNode);
+            addError("Error during " + NAMED_VARIANT + " processing. No-arg methods aren't supported.", mNode);
             return;
         }
 

@@ -201,7 +201,9 @@ class DocCommand extends CommandSupport {
             }
         }
 
-        if (ioe) fail "Sending a HEAD request to $url failed (${ioe}). Please check your network settings."
+        io.out.println "Sending a HEAD request to $url failed (${ioe}). Please check your network settings."
+        // allow timeout to fail since this will happen if we check e.g. for an early access URL for a release JDK version
+        if (ioe !instanceof SocketTimeoutException) fail "Unable to get URLs for documentation."
 
         return false
     }

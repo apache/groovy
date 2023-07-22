@@ -58,20 +58,19 @@ public class ArrayUtil {
     public static <T> T[] cloneArray(T[] array) {
         return array.clone();
     }
-
-    public static byte[] cloneArray(byte[] array) {
-        return array.clone();
-    }
-    public static short[] cloneArray(short[] array) {
-        return array.clone();
-    }
     public static int[] cloneArray(int[] array) {
+        return array.clone();
+    }
+    public static byte[] cloneArray(byte[] array) {
         return array.clone();
     }
     public static char[] cloneArray(char[] array) {
         return array.clone();
     }
     public static long[] cloneArray(long[] array) {
+        return array.clone();
+    }
+    public static short[] cloneArray(short[] array) {
         return array.clone();
     }
     public static float[] cloneArray(float[] array) {

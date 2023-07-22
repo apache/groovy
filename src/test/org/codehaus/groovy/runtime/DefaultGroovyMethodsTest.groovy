@@ -221,7 +221,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     /**
      * Tests that a List subclass without a constructor for Collections is still coerced
-     * into the correct list type. 
+     * into the correct list type.
      */
     void testCollectionTypeConstructors() {
         MyList list = DefaultGroovyMethods.asType([1, 2, 3], MyList.class)
@@ -229,6 +229,26 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(1, list.get(0))
         assertEquals(2, list.get(1))
         assertEquals(3, list.get(2))
+    }
+
+    void testCollectionMinusString() {
+        def values = ['foo','bar','baz']
+        def subset = null
+
+        String.metaClass = new DelegatingMetaClass(String) {
+            @Override invokeMethod(Object object, String methodName, Object[] arguments) {
+                if (methodName == 'compareTo') return -1 // what if?
+                super.invokeMethod(object, methodName, arguments)
+            }
+        }
+        try {
+            // (G)String <=> (G)String/Character should not be influenced!
+            subset = DefaultGroovyMethods.minus(values, new String('baz'))
+        } finally {
+            String.metaClass = null
+        }
+
+        assert subset.join('') == 'foobar'
     }
 
     // GROOVY-7654

@@ -18,14 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
+import org.junit.Test
 
-/**
- * Tests for curried closures
- */
-class ClosureCurryTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ClosureCurryTest {
+
+    @Test
     void testCurry() {
         def clos1 = {s1, s2 -> s1 + s2}
         def clos2 = clos1.curry("hi")
@@ -103,6 +103,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert value == "afg"
     }
 
+    @Test
     void testParameterTypes() {
         def cl1 = {String s1, int i -> return s1 + i }
         assert "foo5" == cl1("foo", 5)
@@ -114,6 +115,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert [int] == cl2.getParameterTypes().toList()
     }
 
+    @Test
     void testVarargParameterTypes() {
         def a = { Object one, Object[] others -> }
         def b = a.ncurry(2, 'x', 'y')
@@ -127,6 +129,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert h.parameterTypes.name == ['java.lang.String', '[Ljava.lang.Object;']
     }
 
+    @Test
     void testVarargCurry() {
         def c = { arg, Object[] extras -> arg + ', ' + extras.join(', ') }
         def d = c.curry( 1 ) //curry first param only
@@ -137,6 +140,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert f( 13, 15 ) == '1, 3, 5, 7, 9, 11, 13, 15'
     }
 
+    @Test
     void testDelegate() {
         def res = null
         def c = {a -> res = z}
@@ -147,6 +151,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert res == cc.delegate.z
     }
 
+    @Test
     void testExpandoWithCurry() {
         def sz = 'java.util.Date'.size()
         def c = {arg -> arg + delegate.getClass().name.size() }
@@ -157,18 +162,21 @@ class ClosureCurryTest extends GroovyTestCase {
         assert d.bar() == 'baz' + sz
     }
 
+    @Test
     void testCurryMultiply() {
         def multiply = { a, b -> a * b }
         def doubler = multiply.curry(2)
         assert doubler(4) == 8
     }
 
+    @Test
     void testRCurryDivide() {
         def divide = { a, b -> a / b }
         def halver = divide.rcurry(2)
         assert halver(8) == 4
     }
 
+    @Test
     void testNCurryBinarySearch() {
         def caseInsensitive = { a, b -> a.toLowerCase() <=> b.toLowerCase() } as Comparator
         def caseSensitive = { a, b -> a <=> b } as Comparator
@@ -185,6 +193,7 @@ class ClosureCurryTest extends GroovyTestCase {
         } == [-3, 2, -3, -4]
     }
 
+    @Test
     void testNestedNcurryRcurry() {
         def operation = { int x, Closure f, int y -> f(x, y) }
         def divider = operation.ncurry(1) { a, b -> a / b }
@@ -192,12 +201,14 @@ class ClosureCurryTest extends GroovyTestCase {
         assert 50 == halver(100)
     }
 
+    @Test
     void testEquivalentsNormal() {
         def a = {one, two, three, four, five -> "$one,$two,$three,$four,$five"}
         def expected = '1,2,3,4,5'
         checkEquivalents(a, expected)
     }
 
+    @Test
     void testEquivalentsVararg() {
         def a = {one, two, Object[] others -> "one=$one, two=$two, others=${others.join(',')}"}
         def expected = 'one=1, two=2, others=3,4,5'
@@ -229,6 +240,7 @@ class ClosureCurryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNullVariants() {
         assert { x, y -> x ?: y }.curry(null)(null) == null
         assert { x, y -> x ?: y }.curry(null)(2) == 2
@@ -253,7 +265,7 @@ class ClosureCurryTest extends GroovyTestCase {
     private a(b,c){ "2Obj: $b $c" }
     private a(b){ "1Obj: $b" }
 
-
+    @Test
     void testCurryWithMethodClosure() {
         def c = (this.&a).curry(0)
         assert c(1,2) == '3Int: 0 1 2'
@@ -268,6 +280,27 @@ class ClosureCurryTest extends GroovyTestCase {
         assert b() == '1Obj: 0'
     }
 
+    @Test // GROOVY-5051, GROOVY-10568
+    void testCurryWithMethodClosure2() {
+        assertScript '''
+            class C {
+                private void m(p) {
+                    println p
+                }
+                void test() {
+                    def proc = this.&m.curry('x')
+                    proc()
+                }
+            }
+            new C().test()
+
+            class D extends C {
+            }
+            new D().test() // IllegalArgumentException: Can't curry 1 arguments for a closure with 0 parameters
+        '''
+    }
+
+    @Test
     void testInsufficientSuppliedArgsWhenUsingNCurry() {
         def cl = { a, b, c = 'x' -> a + b + c }
         assert cl.ncurry(1, 'b')('a') == 'abx'
@@ -280,6 +313,7 @@ class ClosureCurryTest extends GroovyTestCase {
         assert cl.rcurry('b', 'c')() == 'bcx'
     }
 
+    @Test
     void testCurryInComboWithDefaultArgs() {
         def cl = { a, b, c='c', d='d' -> a + b + c + d }
         assert 'abcd' == cl.ncurry(0, 'a')('b')

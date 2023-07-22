@@ -29,19 +29,19 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
-import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.transform.Internal;
-import org.apache.groovy.runtime.ObjectUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
+import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
@@ -51,8 +51,8 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -86,6 +87,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MET
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NON_NULL;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NULL_REF;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
@@ -94,6 +96,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unwrap;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG_ENABLED;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
@@ -142,23 +145,23 @@ public abstract class Selector {
         }
     }
 
+    /**
+     * Returns {@link NullObject#getNullObject()} if the receiver
+     * (args[0]) is null.  If it is not null, the receiver itself
+     * is returned.
+     */
+    public Object getCorrectedReceiver() {
+        var receiver = args[0];
+        if (receiver == null) {
+            if (LOG_ENABLED) LOG.info("receiver is null");
+            receiver = NullObject.getNullObject();
+        }
+        return receiver;
+    }
+
     abstract void setCallSiteTarget();
 
-    /**
-     * Helper method to transform the given arguments, consisting of the receiver
-     * and the actual arguments in an Object[], into a new Object[] consisting
-     * of the receiver and the arguments directly. Before the size of args was
-     * always 2, the returned Object[] will have a size of 1+n, where n is the
-     * number arguments.
-     */
-    private static Object[] spread(Object[] args, boolean spreadCall) {
-        if (!spreadCall) return args;
-        Object[] normalArguments = (Object[]) args[1];
-        Object[] ret = new Object[normalArguments.length + 1];
-        ret[0] = args[0];
-        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
-        return ret;
-    }
+    //--------------------------------------------------------------------------
 
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
@@ -295,20 +298,19 @@ public abstract class Selector {
         }
 
         /**
-         * this method chooses a property from the metaclass.
+         * Chooses a property from the metaclass.
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
-            Object receiver = getCorrectedReceiver();
+            var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                Class<?> aClass = receiver.getClass();
                 try {
-                    Method reflectionMethod = aClass.getMethod("getProperty", String.class);
-                    if (!reflectionMethod.isSynthetic() && !isMarkedInternal(reflectionMethod)) {
+                    var propertyAccessMethod = receiver.getClass().getMethod("getProperty", String.class);
+                    if (!propertyAccessMethod.isSynthetic() && !isMarkedInternal(propertyAccessMethod)) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
-                } catch (ReflectiveOperationException ignored) {
+                } catch (ReflectiveOperationException ignore) {
                 }
             } else if (receiver instanceof Class) {
                 handle = MOP_GET;
@@ -318,17 +320,24 @@ public abstract class Selector {
             }
 
             if (method != null || mci == null) return;
-            Class<?> chosenSender = this.sender;
-            if (mci.getTheClass() != chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                chosenSender = mci.getTheClass();
+
+            selectionBase = sender;
+            if (sender != mci.getTheClass()) {
+                if (GroovyCategorySupport.hasCategoryInCurrentThread()) { // slow path for category property
+                    selectionBase = mci.getTheClass();
+                } else if (getThisType(sender).isInstance(receiver)) { // GROOVY-5438 for private property
+                    selectionBase = getThisType(sender);
+                }
             }
-            MetaProperty res = mci.getEffectiveGetMetaProperty(chosenSender, receiver, name, false);
-            if (res instanceof MethodMetaProperty) {
-                MethodMetaProperty mmp = (MethodMetaProperty) res;
+            if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
+
+            var mp = mci.getEffectiveGetMetaProperty(selectionBase, receiver, name, false);
+            if (mp instanceof MethodMetaProperty) {
+                MethodMetaProperty mmp = (MethodMetaProperty) mp;
                 method = mmp.getMetaMethod();
                 insertName = true;
-            } else if (res instanceof CachedField) {
-                CachedField cf = (CachedField) res;
+            } else if (mp instanceof CachedField) {
+                CachedField cf = (CachedField) mp;
                 Field f = cf.getCachedField();
                 try {
                     handle = LOOKUP.unreflectGetter(f);
@@ -337,13 +346,13 @@ public abstract class Selector {
                         // handle = MethodHandles.dropArguments(handle,0,Class.class);
                         // but because there is a bug in invokedynamic in all jdk7 versions
                         // maybe use Unsafe.ensureClassInitialized
-                        handle = META_PROPERTY_GETTER.bindTo(res);
+                        handle = META_PROPERTY_GETTER.bindTo(mp);
                     }
                 } catch (IllegalAccessException iae) {
                     throw new GroovyBugError(iae);
                 }
             } else {
-                handle = META_PROPERTY_GETTER.bindTo(res);
+                handle = META_PROPERTY_GETTER.bindTo(mp);
             }
         }
 
@@ -563,18 +572,16 @@ public abstract class Selector {
          * Gives the metaclass to an Object.
          */
         public MetaClass getMetaClass() {
-            Object receiver = args[0];
-            if (receiver == null) {
-                mc = NullObject.getNullObject().getMetaClass();
-            } else if (receiver instanceof GroovyObject) {
+            var receiver = getCorrectedReceiver();
+            if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
                 Class<?> c = (Class<?>) receiver;
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
-                this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
-                this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
             mc.initialize();
             if (LOG_ENABLED) LOG.info("meta class is " + mc);
@@ -637,13 +644,37 @@ public abstract class Selector {
             }
 
             if (metaMethod instanceof CachedMethod) {
-                if (LOG_ENABLED) LOG.info("meta method is CachedMethod instance");
                 CachedMethod cm = (CachedMethod) metaMethod;
-                cm = (CachedMethod) VMPluginFactory.getPlugin().transformMetaMethod(mc, cm, sender);
+                VMPlugin vmplugin = VMPluginFactory.getPlugin();
+                cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 isVargs = cm.isVargsMethod();
                 Method m = cm.getCachedMethod();
-                handle = dealWithClassForNameOrObjectCloneOtherwiseUnreflect(m);
-                if (LOG_ENABLED) LOG.info("successfully unreflected method");
+                try {
+                    String  methodName = m.getName();
+                    int parameterCount = m.getParameterCount();
+                    if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class && args[0].getClass().isArray()) {
+                        handle = MethodHandles.publicLookup().findVirtual(args[0].getClass(), "clone", MethodType.methodType(Object.class));
+                    } else if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
+                        handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                    } else {
+                        MethodHandles.Lookup lookup = LOOKUP; Class<?> redirect;
+                        if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class) {
+                            redirect = args[0].getClass();
+                        } else if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
+                            redirect = sender;
+                        } else {
+                            redirect = null;
+                        }
+                        if (redirect != null) {
+                            Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
+                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, redirect);
+                        }
+                        handle = lookup.unreflect(m);
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new GroovyBugError(e);
+                }
+
                 if (isStaticCategoryTypeMethod) {
                     handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                     handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
@@ -667,25 +698,6 @@ public abstract class Selector {
                 }
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
-            }
-        }
-
-        private MethodHandle dealWithClassForNameOrObjectCloneOtherwiseUnreflect(final Method m) {
-            int parameterCount = m.getParameterCount();
-            if (parameterCount == 1 && m.getName().equals("forName") && m.getDeclaringClass() == Class.class) {
-                return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
-            } else if (parameterCount == 0 && m.getName().equals("clone") && args != null && args.length == 1 && m.getDeclaringClass() == Object.class) {
-                return ObjectUtil.getCloneObjectMethodHandle();
-            }
-
-            try {
-                MethodHandles.Lookup lookup = LOOKUP;
-                if (!Modifier.isPublic(m.getModifiers())) { // GROOVY-10070, et al.
-                    lookup = ((Java8)VMPluginFactory.getPlugin()).newLookup(sender);
-                }
-                return lookup.unreflect(m); // throws if sender cannot invoke method
-            } catch (IllegalAccessException e) {
-                throw new GroovyBugError(e);
             }
         }
 
@@ -769,31 +781,31 @@ public abstract class Selector {
                 return;
             }
 
-            Class<?> lastParam = params[params.length - 1];
-            Object lastArg = unwrapIfWrapped(args[args.length - 1]);
-            if (params.length == args.length) {
-                // may need rewrap
-                if (lastArg == null) return;
-                if (lastParam.isInstance(lastArg)) return;
-                if (lastArg.getClass().isArray()) return;
-                // arg is not null and not assignment compatible
-                // so we really need to rewrap
-                handle = handle.asCollector(lastParam, 1);
-            } else if (params.length > args.length) {
+            int aCount = args.length;
+            int pCount = params.length;
+            var vaType = params[pCount-1];
+            if (aCount == pCount) {
+                var lastArg = MetaClassHelper.convertToTypeArray(args)[aCount-1]; // GROOVY-6146
+                if (lastArg != null && (!lastArg.isArray() || (ArrayTypeUtils.dimension(lastArg)
+                            != ArrayTypeUtils.dimension(vaType) && vaType != Object[].class))) {
+                    // we depend on the method selection having done a good job previously
+                    // arg is null with cast or not assignment compatible; wrap with array
+                    handle = handle.asCollector(vaType, 1);
+                    if (LOG_ENABLED) LOG.info("changed last argument to be collected for variadic parameter");
+                }
+            } else if (aCount < pCount) {
                 // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
-                handle = MethodHandles.insertArguments(handle, params.length - 1, Array.newInstance(lastParam.getComponentType(), 0));
-                if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
-            } else { //params.length < args.length
+                handle = MethodHandles.insertArguments(handle, pCount - 1, Array.newInstance(vaType.getComponentType(), 0));
+                if (LOG_ENABLED) LOG.info("added empty array for variadic parameter");
+            } else { // aCount > pCount
                 // we depend on the method selection having done a good
                 // job before already, so the only case for this here is, that
                 // all trailing arguments belong into the vargs array
-                handle = handle.asCollector(
-                        lastParam,
-                        args.length - params.length + 1);
-                if (LOG_ENABLED) LOG.info("changed surplus arguments to be collected for vargs call");
+                handle = handle.asCollector(vaType, aCount - pCount + 1);
+                if (LOG_ENABLED) LOG.info("changed surplus arguments to be collected for variadic parameter");
             }
         }
 
@@ -934,12 +946,11 @@ public abstract class Selector {
 
             // guards for receiver and parameter
             Class<?>[] pt = handle.type().parameterArray();
-            if (Arrays.stream(args).anyMatch(arg -> null == arg)) {
+            if (Arrays.stream(args).anyMatch(Objects::isNull)) {
                 for (int i = 0; i < args.length; i++) {
                     Object arg = args[i];
                     Class<?> paramType = pt[i];
                     MethodHandle test;
-
                     if (arg == null) {
                         test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
                         if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
@@ -948,9 +959,7 @@ public abstract class Selector {
                             // primitive types are also `final`
                             continue;
                         }
-                        test = SAME_CLASS.
-                                bindTo(arg.getClass()).
-                                asType(MethodType.methodType(boolean.class, paramType));
+                        test = SAME_CLASS.bindTo(arg.getClass()).asType(MethodType.methodType(boolean.class, paramType));
                         if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                     }
                     Class<?>[] drops = new Class[i];
@@ -959,15 +968,15 @@ public abstract class Selector {
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
             } else if (Arrays.stream(pt).anyMatch(paramType -> !Modifier.isFinal(paramType.getModifiers()))) {
-                // Avoid guards as much as possible
-                Class<?>[] argClasses = new Class[args.length];
-                for (int i = 0; i < args.length; i++) {
-                    argClasses[i] = args[i].getClass();
-                }
-                MethodHandle test = SAME_CLASSES.bindTo(argClasses)
+                MethodHandle test = SAME_CLASSES
+                        .bindTo(Arrays.stream(args).map(Object::getClass).toArray(Class[]::new))
                         .asCollector(Object[].class, pt.length)
                         .asType(MethodType.methodType(boolean.class, pt));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
+            } else if (safeNavigationOrig) { // GROOVY-11126
+                MethodHandle test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[0]));
+                handle = MethodHandles.guardWithTest(test, handle, fallback);
+                if (LOG_ENABLED) LOG.info("added null receiver check");
             }
         }
 
@@ -987,15 +996,18 @@ public abstract class Selector {
         }
 
         /**
-         * Sets the selection base.
+         * Chooses the class passed to {@link MetaClassImpl#getMethodWithCaching}.
+         *
+         * @see #chooseMeta(MetaClassImpl)
          */
         public void setSelectionBase() {
-            if (thisCall) {
+            Class<?> sender = getThisType(this.sender);
+            if (thisCall || sender.isInstance(args[0])) { // GROOVY-2433
                 selectionBase = sender;
             } else {
                 selectionBase = mc.getTheClass();
             }
-            if (LOG_ENABLED) LOG.info("selection base set to " + selectionBase);
+            if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
         }
 
         /**
@@ -1042,43 +1054,21 @@ public abstract class Selector {
         }
     }
 
-    /**
-     * Unwraps the given object from a {@link Wrapper}. If not
-     * wrapped, the given object is returned.
-     */
-    private static Object unwrapIfWrapped(Object object) {
-        if (object instanceof Wrapper) return unwrap(object);
-        return object;
-    }
-
-    /**
-     * Returns {@link NullObject#getNullObject()} if the receiver
-     * (args[0]) is null. If it is not null, the receiver itself
-     * is returned.
-     */
-    public Object getCorrectedReceiver() {
-        Object receiver = args[0];
-        if (receiver == null) {
-            if (LOG_ENABLED) LOG.info("receiver is null");
-            receiver = NullObject.getNullObject();
-        }
-        return receiver;
-    }
+    //--------------------------------------------------------------------------
 
     /**
      * Returns the MetaClassImpl if the given MetaClass is one of
      * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
      * none of these cases matches, this method returns null.
      */
-    private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
+    private static MetaClassImpl getMetaClassImpl(final MetaClass mc, final boolean includeEMC) {
         Class<?> mcc = mc.getClass();
-        boolean valid = mcc == MetaClassImpl.class ||
-                mcc == AdaptingMetaClass.class ||
-                mcc == ClosureMetaClass.class ||
-                (includeEMC && mcc == ExpandoMetaClass.class);
+        boolean valid = mcc == MetaClassImpl.class
+                || mcc == AdaptingMetaClass.class
+                || mcc == ClosureMetaClass.class
+                || (includeEMC && mcc == ExpandoMetaClass.class);
         if (!valid) {
-            if (LOG_ENABLED)
-                LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
+            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
             return null;
         }
         if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
@@ -1086,12 +1076,43 @@ public abstract class Selector {
     }
 
     /**
+     * Helper method to transform the given arguments, consisting of the receiver
+     * and the actual arguments in an Object[], into a new Object[] consisting
+     * of the receiver and the arguments directly. Before the size of args was
+     * always 2, the returned Object[] will have a size of 1+n, where n is the
+     * number arguments.
+     */
+    private static Object[] spread(final Object[] args, final boolean spreadCall) {
+        if (!spreadCall) return args;
+        Object[] normalArguments = (Object[]) args[1];
+        Object[] ret = new Object[normalArguments.length + 1];
+        ret[0] = args[0];
+        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
+        return ret;
+    }
+
+    /**
      * Helper method to remove the receiver from the argument array
      * by producing a new array.
      */
-    private static Object[] removeRealReceiver(Object[] args) {
+    private static Object[] removeRealReceiver(final Object[] args) {
         Object[] ar = new Object[args.length - 1];
         System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;
+    }
+
+    /**
+     * Unwraps the given object from a {@link Wrapper}. If not
+     * wrapped, the given object is returned.
+     */
+    private static Object unwrapIfWrapped(final Object object) {
+        return object instanceof Wrapper ? unwrap(object) : object;
+    }
+
+    private static Class<?> getThisType(Class<?> sender) {
+        while (GeneratedClosure.class.isAssignableFrom(sender)) {
+            sender = sender.getEnclosingClass();
+        }
+        return sender;
     }
 }

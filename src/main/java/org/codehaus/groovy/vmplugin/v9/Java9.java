@@ -139,14 +139,16 @@ public class Java9 extends Java8 {
         return result;
     }
 
+    //--------------------------------------------------------------------------
+
     @Override
-    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
+    protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         try {
             final Method privateLookup = getPrivateLookup();
             if (privateLookup != null) {
-                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, MethodHandles.lookup());
+                return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, MethodHandles.lookup());
             }
-            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
+            return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
@@ -190,10 +192,10 @@ public class Java9 extends Java8 {
 
     @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, Class<?> caller) {
-        CachedClass declaringClass = metaMethod.getDeclaringClass();
-        if (declaringClass != null && metaMethod instanceof CachedMethod) {
+        if (metaMethod instanceof CachedMethod) {
             if (caller == null) caller = ReflectionUtils.class;
-            CachedMethod cachedMethod = (CachedMethod) metaMethod;
+            CachedMethod  cachedMethod = (CachedMethod) metaMethod;
+            CachedClass declaringClass = metaMethod.getDeclaringClass();
             Optional<CachedMethod> transformedMethod = Optional.ofNullable(cachedMethod.getTransformedMethod());
             if (!transformedMethod.isPresent()
                     // if caller can access the method legally, there is no need to transform the cached method
@@ -201,18 +203,14 @@ public class Java9 extends Java8 {
                 Class<?> theClass = metaClass.getTheClass();
                 if (declaringClass.getTheClass() == theClass) {
                     transformedMethod = transformDirectAccess(theClass, cachedMethod, caller);
-
                 } else if (declaringClass.isAssignableFrom(theClass)) {
                     // try to find the corresponding method in its derived class
                     transformedMethod = findAccessibleMetaMethod(cachedMethod, cachedMethod.getPT(), caller, theClass, false);
                 }
-
                 transformedMethod.ifPresent(cachedMethod::setTransformedMethod);
             }
-
             return transformedMethod.orElse(cachedMethod);
         }
-
         return metaMethod;
     }
 

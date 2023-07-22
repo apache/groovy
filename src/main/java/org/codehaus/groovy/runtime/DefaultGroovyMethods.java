@@ -134,6 +134,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -7032,6 +7033,102 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return answer;
     }
 
+    //--------------------------------------------------------------------------
+    // asChecked
+
+    /**
+     * Creates a checked view of a List.
+     *
+     * @see Collections#checkedList
+     * @since 5.0.0
+     */
+    public static <T> List<T> asChecked(List<T> self, Class<T> type) {
+        return Collections.checkedList(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Queue.
+     *
+     * @see Collections#checkedQueue
+     * @since 5.0.0
+     */
+    public static <T> Queue<T> asChecked(Queue<T> self, Class<T> type) {
+        return Collections.checkedQueue(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Collection.
+     *
+     * @see Collections#checkedCollection
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> asChecked(Collection<T> self, Class<T> type) {
+        return Collections.checkedCollection(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Set.
+     *
+     * @see Collections#checkedSet
+     * @since 5.0.0
+     */
+    public static <T> Set<T> asChecked(Set<T> self, Class<T> type) {
+        return Collections.checkedSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a SortedSet.
+     *
+     * @see Collections#checkedSortedSet
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> asChecked(SortedSet<T> self, Class<T> type) {
+        return Collections.checkedSortedSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a NavigableSet.
+     *
+     * @see Collections#checkedNavigableSet
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asChecked(NavigableSet<T> self, Class<T> type) {
+        return Collections.checkedNavigableSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Map.
+     *
+     * @see Collections#checkedMap
+     * @since 5.0.0
+     */
+    public static <K,V> Map<K,V> asChecked(Map<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedMap(self, keyType, valueType);
+    }
+
+    /**
+     * Creates a checked view of a SortedMap.
+     *
+     * @see Collections#checkedSortedMap
+     * @since 5.0.0
+     */
+    public static <K,V> SortedMap<K,V> asChecked(SortedMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedSortedMap(self, keyType, valueType);
+    }
+
+    /**
+     * Creates a checked view of a NavigableMap.
+     *
+     * @see Collections#checkedNavigableMap
+     * @since 5.0.0
+     */
+    public static <K,V> NavigableMap<K,V> asChecked(NavigableMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedNavigableMap(self, keyType, valueType);
+    }
+
+    //--------------------------------------------------------------------------
+    // asImmutable (really toImmutable)
+
     /**
      * A convenience method for creating an immutable Map.
      *
@@ -7041,7 +7138,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.Map)
      * @since 1.0
      */
-    public static <K, V> Map<K, V> asImmutable(Map<K, V> self) {
+    public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
         return asUnmodifiable(new LinkedHashMap<>(self));
     }
 
@@ -7054,7 +7151,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.SortedMap)
      * @since 1.0
      */
-    public static <K, V> SortedMap<K, V> asImmutable(SortedMap<K, V> self) {
+    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
         return asUnmodifiable(new TreeMap<>(self));
     }
 
@@ -7119,8 +7216,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static <T> Collection<T> asImmutable(Collection<T> self) {
-        return asUnmodifiable((Collection<T>)new ArrayList<>(self));
+        return asUnmodifiable((Collection<T>) new ArrayList<>(self));
     }
+
+    //--------------------------------------------------------------------------
+    // asUnmodifiable
 
     /**
      * Creates an unmodifiable view of a Map.
@@ -7131,7 +7231,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.List)
      * @since 2.5.0
      */
-    public static <K, V> Map<K, V> asUnmodifiable(Map<K, V> self) {
+    public static <K,V> Map<K,V> asUnmodifiable(Map<K,V> self) {
         return Collections.unmodifiableMap(self);
     }
 
@@ -7144,8 +7244,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.List)
      * @since 2.5.0
      */
-    public static <K, V> SortedMap<K, V> asUnmodifiable(SortedMap<K, V> self) {
+    public static <K,V> SortedMap<K,V> asUnmodifiable(SortedMap<K,V> self) {
         return Collections.unmodifiableSortedMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a NavigableMap.
+     *
+     * @param self a NavigableMap
+     * @return an unmodifiable view of the NavigableMap
+     * @see java.util.Collections#unmodifiableNavigableMap(java.util.NavigableMap)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 5.0.0
+     */
+    public static <K,V> SortedMap<K,V> asUnmodifiable(NavigableMap<K,V> self) {
+        return Collections.unmodifiableNavigableMap(self);
     }
 
     /**
@@ -7199,6 +7312,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates an unmodifiable view of a NavigableSet.
+     *
+     * @param self a NavigableSet
+     * @return an unmodifiable view of the NavigableSet
+     * @see java.util.Collections#unmodifiableNavigableSet(java.util.NavigableSet)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asUnmodifiable(NavigableSet<T> self) {
+        return Collections.unmodifiableNavigableSet(self);
+    }
+
+    /**
      * Creates an unmodifiable view of a Collection.
      *
      * @param self a Collection
@@ -7211,8 +7337,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return Collections.unmodifiableCollection(self);
     }
 
+    //--------------------------------------------------------------------------
+    // asSynchronized
+
     /**
-     * A convenience method for creating a synchronized Map.
+     * Creates a synchronized view of a Map.
      *
      * @param self a Map
      * @return a synchronized Map
@@ -7224,7 +7353,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating a synchronized SortedMap.
+     * Creates a synchronized view of a SortedMap.
      *
      * @param self a SortedMap
      * @return a synchronized SortedMap
@@ -7236,7 +7365,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating a synchronized Collection.
+     * Creates a synchronized view of a NavigableMap.
+     *
+     * @param self a NavigableMap
+     * @return a synchronized NavigableMap
+     * @see java.util.Collections#synchronizedNavigableMap(java.util.NavigableMap)
+     * @since 5.0.0
+     */
+    public static <K,V> NavigableMap<K,V> asSynchronized(NavigableMap<K,V> self) {
+        return Collections.synchronizedNavigableMap(self);
+    }
+
+    /**
+     * Creates a synchronized view of a Collection.
      *
      * @param self a Collection
      * @return a synchronized Collection
@@ -7248,7 +7389,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating a synchronized List.
+     * Creates a synchronized view of a List.
      *
      * @param self a List
      * @return a synchronized List
@@ -7260,7 +7401,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating a synchronized Set.
+     * Creates a synchronized view of a Set.
      *
      * @param self a Set
      * @return a synchronized Set
@@ -7272,7 +7413,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for creating a synchronized SortedSet.
+     * Creates a synchronized view of a SortedSet.
      *
      * @param self a SortedSet
      * @return a synchronized SortedSet
@@ -7284,7 +7425,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a synchronized view of a NavigableSet.
+     *
+     * @param self a NavigableSet
+     * @return a synchronized NavigableSet
+     * @see java.util.Collections#synchronizedNavigableSet(java.util.NavigableSet)
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asSynchronized(NavigableSet<T> self) {
+        return Collections.synchronizedNavigableSet(self);
+    }
+
+    //--------------------------------------------------------------------------
+
+    /**
      * Synonym for {@link #toSpreadMap(java.util.Map)}.
+     *
      * @param self a map
      * @return a newly created SpreadMap
      * @since 1.0
@@ -9601,7 +9757,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this Iterable to a Collection. Returns the original Iterable
+     * Converts this Iterable to a Collection. Returns the original argument
      * if it is already a Collection.
      * <p>
      * Example usage:
@@ -12404,7 +12560,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * between two bit sets.
      *
      * @param left  a BitSet
-     * @param right another BitSet to bitwise AND
+     * @param right another BitSet to bitwise XOR
      * @return the bitwise XOR of both BitSets
      * @since 1.5.0
      */
@@ -12443,7 +12599,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * between two bit sets.
      *
      * @param left  a BitSet
-     * @param right another BitSet to bitwise AND
+     * @param right another BitSet to bitwise OR
      * @return the bitwise OR of both BitSets
      * @since 1.5.0
      */

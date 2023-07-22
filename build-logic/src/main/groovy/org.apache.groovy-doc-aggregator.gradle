@@ -65,6 +65,7 @@ dependencies {
 }
 
 def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
+    dependsOn ':generateGrammarSource'
     from configurations.allSources
     archiveClassifier = 'sources'
 }
