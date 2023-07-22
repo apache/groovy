@@ -1830,12 +1830,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
+        MetaProperty mp = methodAndProperty.getV2();
 
-        if (method == null || isSpecialProperty(name)) {
+        if (method == null || isSpecialProperty(name) || isVisibleProperty(mp, method, sender)) {
             //------------------------------------------------------------------
             // public field
             //------------------------------------------------------------------
-            MetaProperty mp = methodAndProperty.getV2();
             if (mp != null && Modifier.isPublic(mp.getModifiers())) {
                 try {
                     return mp.getProperty(object);
@@ -1945,19 +1945,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
+        MetaProperty mp = methodAndProperty.getV2();
 
-        if (method == null || isSpecialProperty(name)) {
+        if (method == null || isSpecialProperty(name) || isVisibleProperty(mp, method, sender)) {
             //------------------------------------------------------------------
             // public field
             //------------------------------------------------------------------
-            MetaProperty mp = methodAndProperty.getV2();
             if (mp != null && Modifier.isPublic(mp.getModifiers())) {
                 return mp;
             }
 
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             // java.util.Map get method
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             if (isMap && !isStatic) {
                 return new MetaProperty(name, Object.class) {
                     @Override
@@ -2092,6 +2092,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private boolean isSpecialProperty(final String name) {
         return "class".equals(name) || (isMap && ("empty".equals(name) || "metaClass".equals(name)));
+    }
+
+    private boolean isVisibleProperty(final MetaProperty field, final MetaMethod method, final Class<?> sender) {
+        if (!(field instanceof CachedField)) return false;
+        if (Modifier.isPrivate(field.getModifiers())) return false;
+        Class<?> owner = ((CachedField) field).getDeclaringClass();
+        // ensure access originates within the type hierarchy of the field owner
+        if (owner.equals(sender) || !owner.isAssignableFrom(sender)) return false;
+
+        if (!Modifier.isPublic(field.getModifiers())
+            && !Modifier.isProtected(field.getModifiers())
+            && !inSamePackage(owner, sender)) return false;
+
+        // GROOVY-8283: non-private field that hides class access method
+        return !owner.isAssignableFrom(method.getDeclaringClass().getTheClass()) && !method.getDeclaringClass().isInterface();
     }
 
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
