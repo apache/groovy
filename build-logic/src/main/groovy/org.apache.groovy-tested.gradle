@@ -34,14 +34,13 @@ sourceSets {
 
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
-    def grapeDirectory = new File(temporaryDir, "grape")
+    def grapeDirectory = new File(temporaryDir, 'grape')
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
-    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
-//        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI', '--illegal-access=debug']
-    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en"]
+    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI'/*, '--illegal-access=debug'*/]
+    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
     if (JavaVersion.current().isJava9Compatible()) {
         jvmArgs(*common, *jdk9)
-        systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
+        systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     } else {
         jvmArgs(*common, *jdk8)
     }

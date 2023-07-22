@@ -61,14 +61,14 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
 
     // GROOVY-5988
     void testMapArraySetPropertyAssignment() {
-        assertScript '''
-            Map<String, Object> props(Object p) {
+        assertScript '''import static java.lang.reflect.Modifier.isPrivate
+            Map<String, Object> props(Object o) {
                 Map<String, Object> props = [:]
-
-                for(String property in p.properties.keySet()){
-                    props[property] = 'TEST'
-                    // I need to use calling put directly to make it work
-                    // props.put property, 'TEST'
+                for (property in o.metaClass.properties) {
+                    if (!isPrivate(property.modifiers)) {
+                        props[property.name] = 'TEST'
+                        //props.put(property, 'TEST')
+                    }
                 }
                 props
             }

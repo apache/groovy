@@ -341,9 +341,9 @@ public abstract class Selector {
                 Field f = cf.getCachedField();
                 try {
                     handle = LOOKUP.unreflectGetter(f);
-                    if (Modifier.isStatic(f.getModifiers())) {
+                    if (cf.isStatic()) {
                         // normally we would do the following
-                        // handle = MethodHandles.dropArguments(handle,0,Class.class);
+                        // handle = MethodHandles.dropArguments(handle, 0, Class.class);
                         // but because there is a bug in invokedynamic in all jdk7 versions
                         // maybe use Unsafe.ensureClassInitialized
                         handle = META_PROPERTY_GETTER.bindTo(mp);
@@ -620,7 +620,7 @@ public abstract class Selector {
          */
         public void setHandleForMetaMethod() {
             MetaMethod metaMethod = method;
-            isCategoryMethod = method instanceof CategoryMethod;
+            isCategoryMethod = (method instanceof CategoryMethod);
 
             if (metaMethod instanceof NumberNumberMetaMethod
                     || (method instanceof GeneratedMetaMethod && (name.equals("next") || name.equals("previous")))) {
@@ -632,54 +632,47 @@ public abstract class Selector {
                 }
             }
 
-            boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
+            boolean isCategoryTypeMethod = (metaMethod instanceof NewInstanceMetaMethod);
             if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
-            boolean isStaticCategoryTypeMethod = metaMethod instanceof NewStaticMetaMethod;
+            boolean isStaticCategoryTypeMethod = (metaMethod instanceof NewStaticMetaMethod);
             if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isCategoryTypeMethod);
 
             if (metaMethod instanceof ReflectionMetaMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is reflective method");
-                ReflectionMetaMethod rmm = (ReflectionMetaMethod) metaMethod;
-                metaMethod = rmm.getCachedMethod();
+                metaMethod = ((ReflectionMetaMethod) metaMethod).getCachedMethod();
             }
 
             if (metaMethod instanceof CachedMethod) {
+                isVargs = metaMethod.isVargsMethod();
                 CachedMethod cm = (CachedMethod) metaMethod;
                 VMPlugin vmplugin = VMPluginFactory.getPlugin();
                 cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
-                isVargs = cm.isVargsMethod();
-                Method m = cm.getCachedMethod();
                 try {
-                    String  methodName = m.getName();
-                    int parameterCount = m.getParameterCount();
-                    if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class && args[0].getClass().isArray()) {
-                        handle = MethodHandles.publicLookup().findVirtual(args[0].getClass(), "clone", MethodType.methodType(Object.class));
-                    } else if (parameterCount == 1 && methodName.equals("forName") && m.getDeclaringClass() == Class.class) {
+                    var declaringClass = cm.getDeclaringClass().getTheClass();
+                    int parameterCount = cm.getParamsCount();
+                    if (parameterCount == 0 && name.equals("clone") && declaringClass == Object.class) {
+                        var receiverClass = getCorrectedReceiver().getClass();
+                        if (receiverClass.isArray()) { // GROOVY-10733, et al.
+                            handle = MethodHandles.publicLookup().findVirtual(receiverClass, "clone", MethodType.methodType(Object.class));
+                        } else { // GROOVY-10319
+                            handle = MethodHandles.throwException(Object.class, CloneNotSupportedException.class) // prevent illegal access
+                                                                    .bindTo(new CloneNotSupportedException());
+                            handle = MethodHandles.dropArguments(handle, 0, Object.class); // discard receiver
+                        }
+                    } else if (parameterCount == 1 && name.equals("forName") && declaringClass == Class.class) {
                         handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
                     } else {
-                        MethodHandles.Lookup lookup = LOOKUP; Class<?> redirect;
-                        if (parameterCount == 0 && methodName.equals("clone") && m.getDeclaringClass() == Object.class) {
-                            redirect = args[0].getClass();
-                        } else if (!vmplugin.checkAccessible(lookup.lookupClass(), m.getDeclaringClass(), m.getModifiers(), false)) {
-                            redirect = sender;
-                        } else {
-                            redirect = null;
-                        }
-                        if (redirect != null) {
-                            Method newLookup = vmplugin.getClass().getMethod("of", Class.class);
-                            lookup = (MethodHandles.Lookup) newLookup.invoke(null, redirect);
-                        }
-                        handle = lookup.unreflect(m);
+                        MethodHandles.Lookup lookup = cm.isPublic() ? LOOKUP : ((Java8)vmplugin).newLookup(sender); // GROOVY-10070, et al.
+                        handle = lookup.unreflect(cm.getCachedMethod()); // throws if sender cannot invoke method
                     }
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
                 }
-
                 if (isStaticCategoryTypeMethod) {
                     handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                     handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
-                } else if (!isCategoryTypeMethod && Modifier.isStatic(m.getModifiers())) {
-                    // we drop the receiver, which might be a Class (invocation on Class)
+                } else if (!isCategoryTypeMethod && cm.isStatic()) {
+                    // drop the receiver, which might be a Class (invocation on Class)
                     // or it might be an object (static method invocation on instance)
                     // Object.class handles both cases at once
                     handle = MethodHandles.dropArguments(handle, 0, Object.class);

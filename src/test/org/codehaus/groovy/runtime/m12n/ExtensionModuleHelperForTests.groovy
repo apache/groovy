@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.m12n
 
 import groovy.ant.AntBuilder
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
-
 class ExtensionModuleHelperForTests {
 
     static void doInFork(String baseTestClass = 'groovy.test.GroovyTestCase', String code) {
@@ -57,13 +55,9 @@ class ExtensionModuleHelperForTests {
                 }
             }
         } finally {
+            baseDir.deleteDir()
             String out = ant.project.properties.out
             String err = ant.project.properties.err
-            baseDir.deleteDir()
-            // FIX_JDK9: remove once we have no warnings when running Groovy
-            if (isAtLeastJdk('9.0')) {
-                err = err?.replaceAll(/WARNING: .*/, '')?.trim()
-            }
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
             }

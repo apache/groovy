@@ -18,15 +18,15 @@
  */
 package groovy.ui
 
-import groovy.test.GroovyTestCase
+import org.junit.Ignore
+import org.junit.Test
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
-
-final class GroovyMainTest extends GroovyTestCase {
+final class GroovyMainTest {
 
     private baos = new ByteArrayOutputStream()
     private ps = new PrintStream(baos)
 
+    @Test
     void testHelp() {
         String[] args = ['-h']
         GroovyMain.processArgs(args, ps)
@@ -37,6 +37,7 @@ final class GroovyMainTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testVersion() {
         String[] args = ['-v']
         GroovyMain.processArgs(args, ps)
@@ -45,6 +46,7 @@ final class GroovyMainTest extends GroovyTestCase {
         assert out.contains('JVM:')
     }
 
+    @Test
     void testNoArgs() {
         String[] args = []
         GroovyMain.processArgs(args, ps)
@@ -52,6 +54,7 @@ final class GroovyMainTest extends GroovyTestCase {
         assert out.contains('error: neither -e or filename provided')
     }
 
+    @Test
     void testAttemptToRunJavaFile() {
         String[] args = ['abc.java']
         GroovyMain.processArgs(args, ps)
@@ -62,6 +65,7 @@ final class GroovyMainTest extends GroovyTestCase {
     /**
      * GROOVY-1512: Add support for begin() and end() methods when processing files by line with -a -ne
      */
+    @Test
     void testAandNEparametersWithBeginEndFunctions() {
         def originalErr = System.err
         System.setErr(ps)
@@ -83,6 +87,7 @@ final class GroovyMainTest extends GroovyTestCase {
      * GROOVY-6561 : Correct handling of scripts from a URI.
      * GROOVY-1642 : Enable a script to get its URI by annotating a field.
      */
+    @Test
     void testURISource() {
         def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")
         tempFile.text = """
@@ -108,6 +113,7 @@ print myURI
 
     // Gotta use configscript for this because : separated paths can't have : in them
     // and GroovyMain ignores -cp.
+    @Test
     void testURIClasspath() {
         def tempDir1 = new File("build/tmp/GroovyMainTest1")
         tempDir1.mkdirs()
@@ -143,6 +149,7 @@ assert new MyConcreteClass() != null"""
     }
 
     // GROOVY-10483
+    @Test
     void testSourceEncoding() {
         def configScript = File.createTempFile('config', '.groovy')
         def sourceCoding = System.setProperty('groovy.source.encoding', 'US-ASCII')
@@ -159,10 +166,8 @@ assert new MyConcreteClass() != null"""
         }
     }
 
+    @Test @Ignore('current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions')
     void testGroovyASTDump() {
-        // current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions
-        if (isAtLeastJdk('9.0')) return
-
         def temporaryDirectory = new File("build/tmp/testGroovyXMLAstGeneration/")
         temporaryDirectory.mkdirs()
 
@@ -183,17 +188,4 @@ assert new MyConcreteClass() != null"""
             System.clearProperty('groovy.ast')
         }
     }
-
-    // This works for a URL in the classpath, but there isn't a way to do this from the command line.
-//    public void testConfigURIClasspath() {
-//        URI baseURI = new URI("https://raw.github.com/jimwhite/groovy-snippets/master/GROOVY-6451/")
-//        GroovyCodeSource codeSource = new GroovyCodeSource(baseURI.resolve("run_from_uri_test.groovy"))
-//        def shell = new GroovyShell()
-//        shell.classLoader.addURL(baseURI.toURL())
-//        // We're testing whether this fails:
-//        def script = shell.parse(codeSource)
-//        script.run()
-//    }
-
-
 }

@@ -113,10 +113,10 @@ public class Java9 extends Java8 {
             } finally {
                 result.putAll(javaDefaultImportsFuture.get());
             }
-        } catch (Exception ignore) {
+        } catch (Exception e) {
             Logger logger = Logger.getLogger(getClass().getName());
             if (logger.isLoggable(Level.FINEST)) {
-                logger.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
+                logger.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(e));
             }
         }
 
@@ -144,11 +144,12 @@ public class Java9 extends Java8 {
     @Override
     protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         try {
-            final Method privateLookup = getPrivateLookup();
+            var privateLookup = getPrivateLookup();
             if (privateLookup != null) {
                 return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, MethodHandles.lookup());
             }
             return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
+
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
@@ -287,14 +288,14 @@ public class Java9 extends Java8 {
         }
 
         Member member = (Member) accessibleObject;
-
         Class<?> declaringClass = member.getDeclaringClass();
-        Module declaringModule = declaringClass.getModule();
-        Module callerModule = callerClass.getModule();
 
-        if (!declaringModule.isNamed()) return true;
+        Module callerModule = callerClass.getModule();
+        Module declaringModule = declaringClass.getModule();
+
         if (callerModule == declaringModule) return true;
         if (callerModule == Object.class.getModule()) return true;
+        if (!declaringModule.isNamed()) return true;
 
         return checkAccessible(callerClass, declaringClass, member.getModifiers(), true);
     }

@@ -127,20 +127,31 @@ final class ImmutableTransformTest {
     }
 
     @Test
+    void testImmutableArrayProp() {
+        def objects = shell.evaluate '''
+            @Immutable class HasArray {
+                String[] letters
+            }
+            def letters = 'A,B,C'.split(',')
+            [new HasArray(letters:letters), new HasArray(letters)]
+        '''
+        assert objects[0].hashCode() == objects[1].hashCode()
+        assert objects[0].equals( objects[1] )
+        assert objects[0].letters.size() == 3
+    }
+
+    @Test
     void testImmutableListProp() {
         def objects = shell.evaluate '''
             @Immutable class HasList {
-                String[] letters
-                List nums
+                List numbers
             }
-            def letters = 'A,B,C'.split(',')
-            def nums = [1, 2]
-            [new HasList(letters:letters, nums:nums), new HasList(letters, nums)]
+            def numbers = [1,2,3]
+            [new HasList(numbers:numbers), new HasList(numbers)]
         '''
         assert objects[0].hashCode() == objects[1].hashCode()
-        assert objects[0] == objects[1]
-        assert objects[0].letters.size() == 3
-        assert objects[0].nums.size() == 2
+        assert objects[0].equals( objects[1] )
+        assert objects[0].numbers.size() == 3
     }
 
     @Test

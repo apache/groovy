@@ -259,8 +259,7 @@ class ASTComparatorCategory {
                         new LinkedList(bValue?.getClass()?.isArray() ? Arrays.asList(bValue) : (bValue ?: [])).sort {c1, c2 -> c1."${orderName}" <=> c2."${orderName}"}
             }
 
-
-            !(name in ignore) && (name != 'nodeMetaData' && name != 'metaDataMap' && name != 'groovydoc') && a."$name" != b."$name"
+            !(name in ignore) && (name != 'groovydoc' && name != 'metaDataMap' && name != 'nodeMetaData') && !a."$name".equals(b."$name")
         }
 
         if (difference)

@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -48,14 +46,15 @@ public class Java16 extends Java10 {
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
             final Class<?> receiverClass = receiver.getClass();
+            // GROOVY-10145, GROOVY-10391: default interface method proxy
             if (method.isDefault() && Proxy.isProxyClass(receiverClass)) {
                 return new ProxyDefaultMethodHandle((Proxy) receiver, method);
             }
-            MethodHandles.Lookup lookup = newLookup(receiverClass);
-            if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) != 0) {
-                return lookup.unreflectSpecial(method, receiverClass).bindTo(receiver);
+            var  lookup = newLookup(receiverClass);
+            if (!lookup.hasFullPrivilegeAccess()) {
+                return lookup.unreflect(method).bindTo(receiver);
             }
-            return lookup.unreflect(method).bindTo(receiver);
+            return lookup.unreflectSpecial(method, receiverClass).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return new GroovyRuntimeException(e);
         }
@@ -89,32 +88,5 @@ public class Java16 extends Java10 {
                     }).collect(Collectors.toList()));
                 })
                 .collect(Collectors.toList()));
-    }
-
-    @Override
-    protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
-        try {
-            final Method privateLookup = getPrivateLookup();
-            if (privateLookup != null) {
-                MethodHandles.Lookup caller = MethodHandles.lookup();
-                Class<?> callerClass = caller.lookupClass();
-                Module callerModule = callerClass.getModule();
-                Module targetModule = targetClass.getModule();
-                if (targetModule != callerModule) {
-                    if (targetModule.isNamed()) {
-                        String pn = targetClass.getPackageName();
-                        if (!targetModule.isOpen(pn, callerModule)) {
-                            return MethodHandles.lookup().in(targetClass);
-                        }
-                    }
-                }
-                return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, caller);
-            }
-            return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
-        } catch (final IllegalAccessException | InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        } catch (final InvocationTargetException e) {
-            throw new GroovyRuntimeException(e);
-        }
     }
 }

@@ -30,7 +30,7 @@ import java.lang.reflect.Modifier
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assume.assumeTrue
+import static org.junit.Assume.assumeFalse
 
 /**
  * Tests for the {@link ThreadInterrupt} AST transform.
@@ -43,40 +43,41 @@ final class ThreadInterruptTest {
             normal 'groovy.mock.interceptor.StubFor'
         }
     }
-    private static final boolean jdk12plus = isAtLeastJdk('12.0')
     private Map<String, MethodNode> oldValues = [:]
-
-    @After
-    void tearDown() {
-        if (jdk12plus) return
-        Thread.metaClass = null
-        ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
-            def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
-            def modifiersField = ov.class.getDeclaredField('modifiers')
-            modifiersField.accessible = true
-            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL)
-            ov.accessible = true
-            ov.set(ThreadInterruptibleASTTransformation, oldValues[it])
-        }
-    }
 
     @Before
     void setUp() {
         // JDK12+ doesn't allow adjusting static final fields even via reflection, so
         // skip all tests on such JDK versions - it is only test code that's affected
         // and currently we have coverage from builds with lower JDK versions.
-        assumeTrue(!jdk12plus)
+        assumeFalse(isAtLeastJdk('12.0'))
 
-        ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
-            def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
-            def modifiersField = ov.class.getDeclaredField('modifiers')
-            modifiersField.accessible = true
-            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL)
-            ov.accessible = true
-            oldValues[it] = ov.get(ThreadInterruptibleASTTransformation)
-            ov.set(ThreadInterruptibleASTTransformation, null)
+        ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each { name ->
+            oldValues[name] = writeField(name, null)
         }
     }
+
+    @After
+    void tearDown() {
+        Thread.metaClass = null
+        if (isAtLeastJdk('12.0')) return
+        oldValues.each(this.&writeField)
+    }
+
+    private Object writeField(String name, Object value) {
+        def field = ThreadInterruptibleASTTransformation.getDeclaredField(name)
+
+        def modifiers = field.class.getDeclaredField('modifiers')
+        modifiers.accessible = true
+        modifiers.setInt(field, field.modifiers & ~Modifier.FINAL)
+
+        field.accessible = true
+        def v = field.get(ThreadInterruptibleASTTransformation)
+        field.set(ThreadInterruptibleASTTransformation, value)
+        return v
+    }
+
+    //--------------------------------------------------------------------------
 
     @Test
     void testDefaultParameters_Method() {

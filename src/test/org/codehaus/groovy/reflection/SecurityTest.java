@@ -277,7 +277,6 @@ public class SecurityTest extends GroovyTestCase {
         assertTrue(invokesCachedMethod());
     }
 
-
     @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager, for now not run for JDK16+
     public void testChecksCreateClassLoaderPermissionForClassLoaderProtectedMethodAccess() throws Exception {
         // Illegal access to java.lang.ClassLoader.defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)
@@ -320,5 +319,4 @@ public class SecurityTest extends GroovyTestCase {
         cachedFieldUnderTest.setProperty(object, "value");
         assertEquals("value", cachedFieldUnderTest.getProperty(object));
     }
-
 }

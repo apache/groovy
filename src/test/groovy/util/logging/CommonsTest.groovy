@@ -239,9 +239,9 @@ class CommonsTest extends GroovyTestCase {
         // JDK12+ doesn't allow adjusting static final fields even via reflection
         // so skip this test on such JDK versions - it is only this test which is affected
         // and currently we have coverage from builds with lower JDK versions.
-        if (isAtLeastJdk('12')) return
+        if (isAtLeastJdk('12.0')) return
 
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             class LogDecorator extends groovy.util.Proxy {
                 boolean isTraceEnabled() { false }
             }
@@ -266,8 +266,8 @@ class CommonsTest extends GroovyTestCase {
             }
             def o = new MyClass()
             o.loggingMethod()
-            o.traceCalled''')
-
+            o.traceCalled
+        '''
         Script s = (Script) clazz.newInstance()
         def result = s.run()
         assert !result

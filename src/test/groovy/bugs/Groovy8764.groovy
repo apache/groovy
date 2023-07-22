@@ -53,7 +53,6 @@ final class Groovy8764 {
         assertScript '''
             import groovy.transform.*
             import java.util.function.Function
-            import static groovy.test.GroovyAssert.isAtLeastJdk
 
             @CompileStatic
             class Outer {
@@ -69,13 +68,8 @@ final class Groovy8764 {
             }
 
             def oi = new Outer.Inner()
-            assert !oi.test(0)
-            if (isAtLeastJdk('9.0')) {
-                assert oi.test(1).get() == 1
-            } else {
-                // confirm accessing private field okay on older JDK versions
-                assert oi.test(1).value == 1
-            }
+            assert oi.test(0).isEmpty()
+            assert oi.test(1).get() == 1
         '''
     }
 }
