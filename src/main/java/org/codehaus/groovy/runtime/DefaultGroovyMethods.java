@@ -10739,7 +10739,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [1,2,3,4,5,6.7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in the resultant collection.
      *
