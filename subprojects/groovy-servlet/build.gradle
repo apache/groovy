@@ -34,7 +34,6 @@ dependencies {
     testImplementation("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
         transitive = false
     }
-    testImplementation "jmock:jmock:${versions.jmock}"
     testImplementation projects.groovyJson
     testImplementation projects.groovyTest
 }

@@ -111,8 +111,6 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyMacro
     testImplementation projects.groovyDateutil
-    testImplementation "jmock:jmock:${versions.jmock}"
-    testImplementation "jmock:jmock-cglib:${versions.jmock}"
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "ch.qos.logback:logback-classic:${versions.logback}"
     testImplementation "log4j:log4j:${versions.log4j}"
