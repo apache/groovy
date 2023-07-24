@@ -31,6 +31,8 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,27 +52,41 @@ public class CachedClass {
 
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
+    @SuppressWarnings("removal") // TODO: perform the action as not privileged
+    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
+    }
+
+    private static <M extends AccessibleObject & Member> boolean isAccessibleOrCanSetAccessible(M m) {
+        if (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())) {
+            return true;
+        }
+        return ReflectionUtils.checkCanSetAccessible(m, CachedClass.class);
+    }
+
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
         private static final long serialVersionUID = 5450437842165410025L;
 
         @Override
         public CachedField[] initValue() {
             return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredFields())
-                .filter(f -> ReflectionUtils.checkCanSetAccessible(f, CachedClass.class))
-                .map(CachedField::new).toArray(CachedField[]::new));
+                .filter(CachedClass::isAccessibleOrCanSetAccessible)
+                .map(CachedField::new).toArray(CachedField[]::new)
+            );
         }
     };
 
-    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+    private final LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
         private static final long serialVersionUID = -5834446523983631635L;
 
         @Override
         public CachedConstructor[] initValue() {
             return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
-                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class) || (isProtected(c.getModifiers()) && isPublic(c.getDeclaringClass().getModifiers())))
+                .filter(CachedClass::isAccessibleOrCanSetAccessible)
                 .map(c -> new CachedConstructor(CachedClass.this, c))
-                .toArray(CachedConstructor[]::new));
+                .toArray(CachedConstructor[]::new)
+            );
         }
     };
 
@@ -82,7 +98,7 @@ public class CachedClass {
             CachedMethod[] declaredMethods = doPrivileged(() -> {
                 try {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
-                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class) || (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())))
+                        .filter(CachedClass::isAccessibleOrCanSetAccessible)
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);
                 } catch (LinkageError e) {
@@ -115,26 +131,6 @@ public class CachedClass {
             return methods.toArray(CachedMethod.EMPTY_ARRAY);
         }
     };
-
-    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
-        private static final long serialVersionUID = -4663740963306806058L;
-
-        @Override
-        public CachedClass initValue() {
-            if (!isArray) {
-                return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
-            } else if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class) {
-                return ReflectionCache.OBJECT_CLASS;
-            } else {
-                return ReflectionCache.OBJECT_ARRAY_CLASS;
-            }
-        }
-    };
-
-    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the action not as a privileged action
-    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
 
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
         private static final long serialVersionUID = 4410385968428074090L;
@@ -207,6 +203,23 @@ public class CachedClass {
         }
     };
 
+    private final LazyReference<CachedClass> superClass = new LazyReference<CachedClass>(softBundle) {
+        private static final long serialVersionUID = -4663740963306806058L;
+
+        @Override
+        public CachedClass initValue() {
+            if (!isArray) {
+                return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
+            } else if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class) {
+                return ReflectionCache.OBJECT_CLASS;
+            } else {
+                return ReflectionCache.OBJECT_ARRAY_CLASS;
+            }
+        }
+    };
+
+    //--------------------------------------------------------------------------
+
     private final Class<?> cachedClass;
     public ClassInfo classInfo;
     public final boolean isArray;
@@ -237,7 +250,7 @@ public class CachedClass {
     }
 
     public CachedClass getCachedSuperClass() {
-        return cachedSuperClass.get();
+        return superClass.get();
     }
 
     public Set<CachedClass> getInterfaces() {
@@ -476,6 +489,21 @@ public class CachedClass {
         return hierarchy.get();
     }
 
+    /**
+     * compatibility method
+     * @return this
+     */
+    public CachedClass getCachedClass() {
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return cachedClass.toString();
+    }
+
+    //--------------------------------------------------------------------------
+
     public static class CachedMethodComparatorByName implements Comparator<CachedMethod> {
         public static final Comparator INSTANCE = new CachedMethodComparatorByName();
 
@@ -495,18 +523,5 @@ public class CachedClass {
             else
                 return ((String) o1).compareTo(((CachedMethod) o2).getName());
         }
-    }
-
-    @Override
-    public String toString() {
-        return cachedClass.toString();
-    }
-
-    /**
-     * compatibility method
-     * @return this
-     */
-    public CachedClass getCachedClass () {
-        return this;
     }
 }

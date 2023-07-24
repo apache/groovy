@@ -231,14 +231,14 @@ final class IllegalAccessTests {
             }
             assert reader.readLine() == '1234567890'
         '''
-if (!isAtLeastJdk('16.0')) // TODO
+
         assertScript '''
             class MyFilterReader extends FilterReader {
                 MyFilterReader(Reader reader) {
                     super(new BufferedReader(reader))
                 }
                 String nextLine() {
-                    ((BufferedReader) in).readLine()?.trim()
+                    in.readLine()?.trim()
                 }
             }
 

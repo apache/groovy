@@ -32,7 +32,6 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -46,34 +45,30 @@ import java.util.function.Function;
  */
 @SuppressWarnings("rawtypes")
 public class ReflectionUtils {
-    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
+
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = {};
 
     /** The packages in the call stack that are only part of the Groovy MOP. */
-    private static final Set<String> IGNORED_PACKAGES;
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+    private static final Set<String> IGNORED_PACKAGES = Set.of(
+        "groovy.lang",
+        "sun.reflect",
+        "java.security",
+        "java.lang.invoke",
+      //"java.lang.reflect",
+        "org.codehaus.groovy.reflection",
+        "org.codehaus.groovy.runtime",
+        "org.codehaus.groovy.runtime.callsite",
+        "org.codehaus.groovy.runtime.metaclass",
+        "org.codehaus.groovy.vmplugin.v5",
+        "org.codehaus.groovy.vmplugin.v6",
+        "org.codehaus.groovy.vmplugin.v7",
+        "org.codehaus.groovy.vmplugin.v8",
+        "org.codehaus.groovy.vmplugin.v9",
+        "org.codehaus.groovy.vmplugin.v10",
+        "org.codehaus.groovy.vmplugin.v16"
+    );
 
-    static {
-        Set<String> set = new HashSet<>();
-
-        set.add("groovy.lang");
-        set.add("sun.reflect");
-        set.add("java.security");
-        set.add("java.lang.invoke");
-      //set.add("java.lang.reflect");
-        set.add("org.codehaus.groovy.reflection");
-        set.add("org.codehaus.groovy.runtime");
-        set.add("org.codehaus.groovy.runtime.callsite");
-        set.add("org.codehaus.groovy.runtime.metaclass");
-        set.add("org.codehaus.groovy.vmplugin.v5");
-        set.add("org.codehaus.groovy.vmplugin.v6");
-        set.add("org.codehaus.groovy.vmplugin.v7");
-        set.add("org.codehaus.groovy.vmplugin.v8");
-        set.add("org.codehaus.groovy.vmplugin.v9");
-        set.add("org.codehaus.groovy.vmplugin.v10");
-        set.add("org.codehaus.groovy.vmplugin.v16");
-
-        IGNORED_PACKAGES = Collections.unmodifiableSet(set);
-    }
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     private static final ClassContextHelper HELPER = new ClassContextHelper();
 

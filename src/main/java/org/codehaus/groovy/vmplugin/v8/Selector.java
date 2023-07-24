@@ -60,7 +60,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -283,7 +282,7 @@ public abstract class Selector {
     }
 
     private static class PropertySelector extends MethodSelector {
-        private boolean insertName = false;
+        private boolean insertName;
 
         public PropertySelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
@@ -333,23 +332,15 @@ public abstract class Selector {
 
             var mp = mci.getEffectiveGetMetaProperty(selectionBase, receiver, name, false);
             if (mp instanceof MethodMetaProperty) {
-                MethodMetaProperty mmp = (MethodMetaProperty) mp;
-                method = mmp.getMetaMethod();
-                insertName = true;
-            } else if (mp instanceof CachedField) {
-                CachedField cf = (CachedField) mp;
-                Field f = cf.getCachedField();
+                method = ((MethodMetaProperty) mp).getMetaMethod();
+                insertName = true; // pass "name" field as argument
+            } else if (mp instanceof CachedField && !Modifier.isStatic(mp.getModifiers())) {
                 try {
-                    handle = LOOKUP.unreflectGetter(f);
-                    if (cf.isStatic()) {
-                        // normally we would do the following
-                        // handle = MethodHandles.dropArguments(handle, 0, Class.class);
-                        // but because there is a bug in invokedynamic in all jdk7 versions
-                        // maybe use Unsafe.ensureClassInitialized
-                        handle = META_PROPERTY_GETTER.bindTo(mp);
-                    }
-                } catch (IllegalAccessException iae) {
-                    throw new GroovyBugError(iae);
+                    MethodHandles.Lookup lookup = Modifier.isPublic(mp.getModifiers()) ? LOOKUP
+                      : ((Java8) VMPluginFactory.getPlugin()).newLookup(sender); // GROOVY-9596
+                    handle = lookup.unreflectGetter(((CachedField) mp).getCachedField());
+                } catch (IllegalAccessException e) {
+                    throw new GroovyBugError(e);
                 }
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(mp);
@@ -599,14 +590,15 @@ public abstract class Selector {
             Object[] newArgs = removeRealReceiver(args);
             if (receiver instanceof Class) {
                 if (LOG_ENABLED) LOG.info("receiver is a class");
-                if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
-            } else {
+                if (!mci.hasCustomStaticInvokeMethod())
+                    method = mci.retrieveStaticMethod(name, newArgs);
+            }
+            else if (!mci.hasCustomInvokeMethod()) {
                 String name = this.name;
                 if (name.equals("call") && receiver instanceof GeneratedClosure) {
                     name = "doCall";
                 }
-                if (!mci.hasCustomInvokeMethod())
-                    method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
+                method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
             }
             if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
