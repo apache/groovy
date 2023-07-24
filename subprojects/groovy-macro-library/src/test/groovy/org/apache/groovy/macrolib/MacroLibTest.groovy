@@ -18,89 +18,87 @@
  */
 package org.apache.groovy.macrolib
 
-import groovy.test.GroovyTestCase
-import groovy.transform.CompileStatic
+import org.junit.Test
 
-@CompileStatic
-class MacroLibTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    def BASE = '''
-    def num = 42
-    def list = [1 ,2, 3]
-    def range = 0..5
-    def string = 'foo'
+final class MacroLibTest {
+
+    private static final String BASE = '''\
+        def num = 42
+        def list = [1 ,2, 3]
+        def range = 0..5
+        def string = 'foo'
     '''
 
+    @Test
     void testSV() {
-        assertScript """
-        $BASE
-        assert SV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
-        """
+        assertScript BASE + '''\
+            assert SV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+        '''
     }
 
+    @Test
     void testSVInClosure() {
-        assertScript """
-        $BASE
-        def cl = {
-            SV(num, list, range, string).toString()
-        }
-
-        assert cl().toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
-        """
+        assertScript BASE + '''\
+            def cl = {
+                SV(num, list, range, string).toString()
+            }
+            assert cl().toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+        '''
     }
 
+    @Test
     void testList() {
-        assertScript """
-        $BASE
-        assert [SV(num, list), SV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo]'
-        """
+        assertScript BASE + '''\
+            assert [SV(num, list), SV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo]'
+        '''
     }
 
+    @Test
     void testSVInclude() {
-        assertScript """
-        $BASE
-        def numSV = SV(num)
-        assert SV(numSV, list, range, string).toString() == 'numSV=num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
-        """
+        assertScript BASE + '''\
+            def numSV = SV(num)
+            assert SV(numSV, list, range, string).toString() == 'numSV=num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+        '''
     }
 
+    @Test
     void testNested() {
-        assertScript """
-        $BASE
-        def result = SV(SV(num), string)
-        def strip = 'org.codehaus.groovy.macro.runtime.MacroStub.INSTANCE.'
-        assert result - strip == 'macroMethod()=num=42, string=foo'
-        """
+        assertScript BASE + '''\
+            def result = SV(SV(num), string)
+            def strip = 'org.codehaus.groovy.macro.runtime.MacroStub.INSTANCE.'
+            assert result - strip == 'macroMethod()=num=42, string=foo'
+        '''
     }
 
+    @Test
     void testSVI() {
-        assertScript """
-        $BASE
-        assert SVI(num, list, range, string).toString() == /num=42, list=[1, 2, 3], range=0..5, string='foo'/
-        """
+        assertScript BASE + '''\
+            assert SVI(num, list, range, string).toString() == /num=42, list=[1, 2, 3], range=0..5, string='foo'/
+        '''
     }
 
+    @Test
     void testSVD() {
-        assertScript """
-        $BASE
-        def result = SVD(num, list, range, string)
-        def trimmed = result.replaceAll(/@[^>]+/, '@...')
-        assert trimmed == /num=<java.lang.Integer@...>, list=<java.util.ArrayList@...>, range=<groovy.lang.IntRange@...>, string=<java.lang.String@...>/
-        """
+        assertScript BASE + '''\
+            def result = SVD(num, list, range, string)
+            def trimmed = result.replaceAll(/@[^>]+/, '@...')
+            assert trimmed == /num=<java.lang.Integer@...>, list=<java.util.ArrayList@...>, range=<groovy.lang.IntRange@...>, string=<java.lang.String@...>/
+        '''
     }
 
+    @Test
     void testNV() {
-        assertScript """
-        $BASE
-        assert NV(num).toString() == 'num=42'
-        """
+        assertScript BASE + '''\
+            assert NV(num).toString() == 'num=42'
+        '''
     }
 
+    @Test
     void testNVL() {
-        assertScript """
-        $BASE
-        assert NVL(num, list, range, string).toString() == "[num=42, list=[1, 2, 3], range=0..5, string='foo']"
-        """
+        assertScript BASE + '''\
+            assert NVL(num, list, range, string).toString() == "[num=42, list=[1, 2, 3], range=0..5, string='foo']"
+        '''
     }
-
 }

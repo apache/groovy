@@ -205,13 +205,13 @@ final class TimedInterruptTest {
             new C()
         '''
         def system = new StubFor(System)
-        // start time initialized to the Long of the Beast
         system.demand.nanoTime(4) { 666L } // 2 times to cover full instantiation
         system.demand.nanoTime() { 1000000667L }
         system.use {
             def instance = shell.evaluate(script)
             // may get false positives if multiple annotations with the same expireTime defined in test script
-            assert instance.dump().matches('.*timedInterrupt\\S+\\$expireTime=1000000666 .*')
+            def expired = instance.class.declaredFields.find { it.name =~ 'timedInterrupt\\S+\\$expireTime' }
+            assert instance.@(expired.name) == 1000000666L
 
             shouldFail(TimeoutException) {
                 instance.m()
@@ -223,7 +223,6 @@ final class TimedInterruptTest {
 
     static void assertPassesNormalFailsSlowExecution(Map<String,?> args, Class type) {
         def system = new StubFor(System)
-        // start time initialized to ...
         system.demand.nanoTime() { 666L }
         def instance
         system.use {
@@ -232,7 +231,8 @@ final class TimedInterruptTest {
         long expireTime = args.getOrDefault('expireTime', 1000000666L)
         String methodName = args.getOrDefault('methodName', 'myMethod')
         // may get false positives if multiple annotations with the same expireTime defined
-        assert instance.dump().matches('.*timedInterrupt\\S+\\$expireTime=' + expireTime + ' .*')
+        def expired = instance.class.declaredFields.find { it.name =~ 'timedInterrupt\\S+\\$expireTime' }
+        assert instance.@(expired.name) == expireTime
 
         system.demand.nanoTime() { expireTime }
         system.use {
@@ -242,7 +242,7 @@ final class TimedInterruptTest {
         // one nanosecond too slow
         system.demand.nanoTime() { expireTime + 1 }
         system.use {
-            def err = shouldFail(args.getOrDefault('exception', java.util.concurrent.TimeoutException)) {
+            def err = shouldFail(args.getOrDefault('exception', TimeoutException)) {
                 instance.(methodName)()
             }
             assert err.message.contains('Execution timed out after ' + args.getOrDefault('units', '1') + ' ' + args.getOrDefault('timeUnitName', 'seconds'))
@@ -251,7 +251,6 @@ final class TimedInterruptTest {
 
     static void assertPassesSlowExecution(Class c) {
         def system = new StubFor(System)
-        // start time initialized to the Long of the Beast
         system.demand.nanoTime() { 666L }
         def instance
         system.use {

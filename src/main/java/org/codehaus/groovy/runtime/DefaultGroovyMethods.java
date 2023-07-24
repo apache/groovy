@@ -57,6 +57,7 @@ import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.util.ReversedList;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -114,7 +115,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URL;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
@@ -439,45 +439,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return "null";
         }
         StringBuilder buffer = new StringBuilder("<");
-        Class klass = self.getClass();
+        Class<?> klass = self.getClass();
         buffer.append(klass.getName());
         buffer.append("@");
         buffer.append(Integer.toHexString(self.hashCode()));
         boolean groovyObject = self instanceof GroovyObject;
-
         while (klass != null) {
-            for (final Field field : klass.getDeclaredFields()) {
-                if ((field.getModifiers() & Modifier.STATIC) == 0) {
-                    if (groovyObject && field.getName().equals("metaClass")) {
+            for (Field field : klass.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers()) || (groovyObject && field.getName().equals("metaClass"))) {
+                    continue;
+                }
+                buffer.append(" ");
+                buffer.append(field.getName());
+                buffer.append("=");
+                if (!field.canAccess(self)) { // GROOVY-9144
+                    if (!SystemUtil.getBooleanSafe("groovy.force.illegal.access")
+                            || ReflectionUtils.makeAccessibleInPrivilegedAction(field).isEmpty()) {
+                        buffer.append("inaccessible");
                         continue;
                     }
-                    trySetAccessible(field);
-                    buffer.append(" ");
-                    buffer.append(field.getName());
-                    buffer.append("=");
-                    try {
-                        buffer.append(FormatHelper.toString(field.get(self)));
-                    } catch (IllegalAccessException e) {
-                        buffer.append("inaccessible");
-                    } catch (Exception e) {
-                        buffer.append(e);
-                    }
+                }
+                try {
+                    buffer.append(FormatHelper.toString(field.get(self)));
+                } catch (Exception e) {
+                    buffer.append(e);
                 }
             }
-
             klass = klass.getSuperclass();
         }
-
         buffer.append(">");
         return buffer.toString();
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the accessible check not as a privileged action
-    private static void trySetAccessible(final Field field) {
-        java.security.AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            ReflectionUtils.trySetAccessible(field);
-            return null;
-        });
     }
 
     /**

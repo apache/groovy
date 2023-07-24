@@ -336,9 +336,9 @@ public abstract class Selector {
                 insertName = true; // pass "name" field as argument
             } else if (mp instanceof CachedField && !Modifier.isStatic(mp.getModifiers())) {
                 try {
-                    MethodHandles.Lookup lookup = Modifier.isPublic(mp.getModifiers()) ? LOOKUP
-                      : ((Java8) VMPluginFactory.getPlugin()).newLookup(sender); // GROOVY-9596
-                    handle = lookup.unreflectGetter(((CachedField) mp).getCachedField());
+                    // GROOVY-9144, GROOVY-9596: get lookup for sender and unreflect before forcing access
+                    MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
+                    handle = ((CachedField) mp).asAccessMethod(lookup);
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }

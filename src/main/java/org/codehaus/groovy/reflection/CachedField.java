@@ -20,36 +20,36 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaProperty;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
+import static org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.castToType;
 
 public class CachedField extends MetaProperty {
-    private final Field field;
 
     public CachedField(final Field field) {
         super(field.getName(), field.getType());
         this.field = field;
     }
 
+    private final Field field;
+    private boolean madeAccessible;
+    private void makeAccessible() {
+        ReflectionUtils.makeAccessibleInPrivilegedAction(field);
+        AccessPermissionChecker.checkAccessPermission(field);
+        madeAccessible = true;
+    }
+
     public Field getCachedField() {
-        makeAccessibleIfNecessary();
+        if (!madeAccessible) makeAccessible();
         return field;
     }
 
     public Class getDeclaringClass() {
         return field.getDeclaringClass();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getModifiers() {
-        return field.getModifiers();
     }
 
     public boolean isFinal() {
@@ -64,8 +64,16 @@ public class CachedField extends MetaProperty {
      * {@inheritDoc}
      */
     @Override
+    public int getModifiers() {
+        return field.getModifiers();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Object getProperty(final Object object) {
-        makeAccessibleIfNecessary();
+        var field = getCachedField();
         try {
             return field.get(object);
         } catch (IllegalAccessException | IllegalArgumentException e) {
@@ -77,25 +85,33 @@ public class CachedField extends MetaProperty {
      * {@inheritDoc}
      */
     @Override
-    public void setProperty(final Object object, final Object newValue) {
+    public  void  setProperty(final Object object, Object newValue) {
         if (isFinal()) {
             throw new GroovyRuntimeException("Cannot set the property '" + name + "' because the backing field is final.");
         }
-        makeAccessibleIfNecessary();
-        Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
+        newValue = castToType(newValue, field.getType());
+        var field = getCachedField();
         try {
-            field.set(object, goalValue);
+            field.set(object, newValue);
         } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", e);
         }
     }
 
-    private transient boolean madeAccessible;
-    private void makeAccessibleIfNecessary() {
-        if (!madeAccessible) {
-            makeAccessibleInPrivilegedAction(field);
-            madeAccessible = true;
+    public MethodHandle asAccessMethod(final MethodHandles.Lookup lookup) throws IllegalAccessException {
+        try {
+            return lookup.unreflectGetter(field);
+        } catch (IllegalAccessException e) {
+            if (!madeAccessible) {
+                try {
+                    makeAccessible();
+                    return lookup.unreflectGetter(field);
+                } catch (IllegalAccessException ignore) {
+                } catch (Throwable t) {
+                    e.addSuppressed(t);
+                }
+            }
+            throw e;
         }
-        AccessPermissionChecker.checkAccessPermission(field);
     }
 }

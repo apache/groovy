@@ -58,6 +58,9 @@ public class CachedClass {
     }
 
     private static <M extends AccessibleObject & Member> boolean isAccessibleOrCanSetAccessible(M m) {
+        if (isPublic(m.getModifiers()) && m.getDeclaringClass().getPackageName().startsWith("sun.")) {
+            return false;
+        }
         if (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())) {
             return true;
         }
