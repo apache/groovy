@@ -19,6 +19,7 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaMember;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
@@ -26,18 +27,17 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
-import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
+public class CachedConstructor extends ParameterTypes implements MetaMember {
 
-public class CachedConstructor extends ParameterTypes {
     private final CachedClass clazz;
     private final Constructor cachedConstructor;
 
-    public CachedConstructor(CachedClass clazz, final Constructor c) {
-        this.cachedConstructor = c;
+    public CachedConstructor(final CachedClass clazz, final Constructor c) {
         this.clazz = clazz;
+        this.cachedConstructor = c;
     }
 
-    public CachedConstructor(Constructor c) {
+    public CachedConstructor(final Constructor c) {
         this(ReflectionCache.getCachedClass(c.getDeclaringClass()), c);
     }
 
@@ -45,6 +45,28 @@ public class CachedConstructor extends ParameterTypes {
     protected Class[] getPT() {
         return cachedConstructor.getParameterTypes();
     }
+
+    @Override
+    public String getName() {
+        return cachedConstructor.getName();
+    }
+
+    @Override
+    public int getModifiers() {
+        return cachedConstructor.getModifiers();
+    }
+
+    @Override
+    public boolean isSynthetic() {
+        return cachedConstructor.isSynthetic();
+    }
+
+    @Override
+    public String toString() {
+        return cachedConstructor.toString();
+    }
+
+    //--------------------------------------------------------------------------
 
     public static CachedConstructor find(Constructor constructor) {
         CachedConstructor[] constructors = ReflectionCache.getCachedClass(constructor.getDeclaringClass()).getConstructors();
@@ -96,15 +118,6 @@ public class CachedConstructor extends ParameterTypes {
                 setReason ? e : null);
     }
 
-    @Override
-    public String toString() {
-        return cachedConstructor.toString();
-    }
-
-    public int getModifiers () {
-        return cachedConstructor.getModifiers();
-    }
-
     public CachedClass getCachedClass() {
         return clazz;
     }
@@ -125,7 +138,7 @@ public class CachedConstructor extends ParameterTypes {
     private boolean makeAccessibleDone = false;
     private void makeAccessibleIfNecessary() {
         if (!makeAccessibleDone) {
-            makeAccessibleInPrivilegedAction(cachedConstructor);
+            ReflectionUtils.makeAccessibleInPrivilegedAction(cachedConstructor);
             makeAccessibleDone = true;
         }
     }

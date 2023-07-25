@@ -25,7 +25,7 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
 /**
  * Represents a property on a bean which may have a getter and/or a setter
  */
-public abstract class MetaProperty {
+public abstract class MetaProperty implements MetaMember {
 
     public static final String PROPERTY_SET_PREFIX = "set";
 
@@ -56,15 +56,18 @@ public abstract class MetaProperty {
     public abstract void setProperty(Object object, Object newValue);
 
     /**
-     * Return the name of the property
+     * Returns the name of the property.
      *
      * @return the name of the property
      */
+    @Override
     public String getName() {
         return name;
     }
 
     /**
+     * Returns the ntypeame of the property.
+     *
      * @return the type of the property
      */
     public Class getType() {
@@ -72,9 +75,11 @@ public abstract class MetaProperty {
     }
 
     /**
-     * Returns the access modifier.
-     * @return Modifier.PUBLIC
+     * Returns the access modifiers.
+     *
+     * @return {@link Modifier#PUBLIC}
      */
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }

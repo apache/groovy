@@ -45,7 +45,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -230,10 +229,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             }
         } else {
             CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
-
             for (CachedMethod method : methods) {
-                final int mod = method.getModifiers();
-                if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getAnnotation(Deprecated.class) == null) {
+                if (method.isStatic() && method.isPublic() && method.getAnnotation(Deprecated.class) == null) {
                     if (disabling && disabledNames.contains(method.getName())) continue;
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {

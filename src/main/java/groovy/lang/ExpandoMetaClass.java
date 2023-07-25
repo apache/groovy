@@ -976,11 +976,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         MetaBeanProperty beanProperty = (MetaBeanProperty) propertyCache.get(propertyName);
         if (beanProperty==null) {
             MetaProperty metaProperty = super.getMetaProperty(propertyName);
-            if (metaProperty instanceof MetaBeanProperty) {
-                boolean staticProp = Modifier.isStatic(metaProperty.getModifiers());
-                if (isStatic==staticProp) {
-                    beanProperty = (MetaBeanProperty) metaProperty;
-                }
+            if (metaProperty instanceof MetaBeanProperty && isStatic == metaProperty.isStatic()) {
+                beanProperty = (MetaBeanProperty) metaProperty;
             }
         }
         if (beanProperty == null) {

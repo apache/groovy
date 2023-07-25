@@ -28,7 +28,6 @@ import org.codehaus.groovy.runtime.callsite.CallSiteGenerator;
 import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
-import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
 import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
@@ -220,21 +219,17 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return getName() + getDescriptor();
     }
 
+    @Override
+    public boolean isSynthetic() {
+        return cachedMethod.isSynthetic();
+    }
+
     public CachedMethod getTransformedMethod() {
         return transformedMethod;
     }
 
     public void setTransformedMethod(final CachedMethod transformedMethod) {
         this.transformedMethod = transformedMethod;
-    }
-
-    @Override
-    public boolean isStatic() {
-        return MethodHelper.isStatic(cachedMethod);
-    }
-
-    public boolean isSynthetic() {
-        return cachedMethod.isSynthetic();
     }
 
     //--------------------------------------------------------------------------

@@ -30,19 +30,20 @@ import java.lang.reflect.Modifier;
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
  * except without using reflection to invoke the method
  */
-public abstract class MetaMethod extends ParameterTypes implements Cloneable {
+public abstract class MetaMethod extends ParameterTypes implements MetaMember, Cloneable {
+
     public static final MetaMethod[] EMPTY_ARRAY = new MetaMethod[0];
     private String signature;
     private String mopName;
 
     /**
-     * Constructor for a metamethod with an empty parameter list
+     * Constructor for a metamethod with an empty parameter list.
      */
     public MetaMethod() {
     }
 
     /**
-     *Constructor wit a list of parameter classes
+     * Constructor with a list of parameter classes.
      *
      * @param pt A list of parameters types
      */
@@ -51,35 +52,35 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     *Returns the modifiers for this method
+     * Returns the modifiers of this method.
      *
      * @return modifiers as an int.
      */
     public abstract int getModifiers();
 
     /**
-     * Returns the name of the method represented by this class
+     * Returns the name of this method.
      *
      * @return name of this method
      */
     public abstract String getName();
 
     /**
-     * Access the return type for this method
+     * Returns the return type for this method.
      *
      *@return the return type of this method
      */
     public abstract Class getReturnType();
 
     /**
-     * Gets the class where this method is declared
+     * Gets the class where this method is declared.
      *
      * @return class of this method
      */
     public abstract CachedClass getDeclaringClass();
 
     /**
-     * Checks that the given parameters are valid to call this method
+     * Checks that the given parameters are valid to call this method.
      *
      * @param arguments the arguments to check
      * @throws IllegalArgumentException if the parameters are not valid
@@ -134,9 +135,6 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return false;
     }
 
-    /**
-     * Returns a string representation of this method
-     */
     @Override
     public String toString() {
         return super.toString()
@@ -162,14 +160,6 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether this method is static.
-     * @return true if this method is static
-     */
-    public boolean isStatic() {
-        return (getModifiers() & Modifier.STATIC) != 0;
-    }
-
-    /**
      * Returns whether this method is abstract.
      * @return true if this method is abstract
      */
@@ -186,33 +176,10 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether this method is private.
-     * @return true if this method is private
-     */
-    public final boolean isPrivate() {
-        return (getModifiers() & Modifier.PRIVATE) != 0;
-    }
-
-    /**
-     * Returns whether this method is protected.
-     * @return true if this method is protected
-     */
-    public final boolean isProtected() {
-        return (getModifiers() & Modifier.PROTECTED) != 0;
-    }
-
-    /**
-     * Returns whether this method is public.
-     * @return true if this method is public
-     */
-    public final boolean isPublic() {
-        return (getModifiers() & Modifier.PUBLIC) != 0;
-    }
-
-    /**
+     * Determines if the given method has the same name, parameters, return type
+     * and modifiers but may be defined on another type.
+     *
      * @param method the method to compare against
-     * @return true if the given method has the same name, parameters, return type
-     * and modifiers but may be defined on another type
      */
     public final boolean isSame(MetaMethod method) {
         return getName().equals(method.getName())
@@ -222,8 +189,8 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Checks the compatibility between two modifier masks. Checks that they are equal
-     * in regard to access and static modifier.
+     * Checks the compatibility between two modifier masks. Checks that they are
+     * equal in regard to access and static modifier.
      *
      * @return true if the modifiers are compatible
      */
@@ -233,21 +200,21 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Returns whether this object is cacheable
+     * Returns whether this object is cacheable.
      */
     public boolean isCacheable() {
         return true;
     }
 
     /**
-     * Return a descriptor of this method based on the return type and parameters of this method.
+     * Returns a descriptor of this method based on the return type and parameters of this method.
      */
     public String getDescriptor() {
         return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
     }
 
     /**
-     * Returns the signature of this method
+     * Returns the signature of this method.
      *
      * @return The signature of this method
      */
@@ -281,7 +248,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
-     * Invoke this method
+     * Invokes this method.
      *
      * @param object The object this method should be invoked on
      * @param arguments The arguments for the method if applicable
@@ -290,8 +257,10 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     public abstract Object invoke(Object object, Object[] arguments);
 
     /**
-     * Invokes the method this object represents. This method is not final but it should be overloaded very carefully and only by generated methods
-     * there is no guarantee that it will be called
+     * Invokes the method this object represents.
+     * <p>
+     * This method is not final but it should be overloaded very carefully and
+     * only by generated methods there is no guarantee that it will be called.
      *
      * @param object The object the method is to be called at.
      * @param arguments Arguments for the method invocation.

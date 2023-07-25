@@ -34,7 +34,6 @@ import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +55,7 @@ public class MixinInMetaClass {
 
     private static CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
         for (CachedConstructor constr : mixinClass.getConstructors()) {
-            if (!Modifier.isPublic(constr.getModifiers()))
+            if (!constr.isPublic())
                 continue;
 
             CachedClass[] classes = constr.getParameterTypes();
@@ -129,25 +128,22 @@ public class MixinInMetaClass {
                 }
 
             for (MetaMethod method : metaClass.getMethods()) {
-                final int mod = method.getModifiers();
-
-                if (!Modifier.isPublic(mod))
+                if (!method.isPublic())
                     continue;
 
-                if (method instanceof CachedMethod && ((CachedMethod) method).isSynthetic())
+                if (method instanceof CachedMethod && method.isSynthetic())
                     continue;
 
                 if (method instanceof CachedMethod && hasAnnotation((CachedMethod) method, Internal.class))
                     continue;
 
-                if (Modifier.isStatic(mod)) {
+                if (method.isStatic()) {
                     if (method instanceof CachedMethod)
                         staticMethod(self, arr, (CachedMethod) method);
                 } else if (method.getDeclaringClass().getTheClass() != Object.class || method.getName().equals("toString")) {
-//                    if (self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
-                    final MixinInstanceMetaMethod metaMethod = new MixinInstanceMetaMethod(method, mixin);
-                    arr.add(metaMethod);
-//                    }
+                  //if (self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
+                        arr.add(new MixinInstanceMetaMethod(method, mixin));
+                  //}
                 }
             }
         }
