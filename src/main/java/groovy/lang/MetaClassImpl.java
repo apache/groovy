@@ -1210,20 +1210,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method, sender);
-            try {
-                return transformedMetaMethod.doMethodInvoke(object, arguments);
-            } catch (InvokerInvocationException iie) {
-                if (arguments.length == 0 && methodName.equals("clone") && method.getDeclaringClass().equals(ReflectionCache.OBJECT_CLASS) && iie.getCause() instanceof IllegalAccessException) {
-                    RuntimeException e = method.processDoMethodInvokeException(new CloneNotSupportedException(), object, arguments);
-                    e.addSuppressed(iie);
-                    throw e;
-                }
-                throw iie;
+            if (arguments.length == 0 && methodName.equals("clone") && method.getDeclaringClass() == ReflectionCache.OBJECT_CLASS) {
+                throw method.processDoMethodInvokeException(new CloneNotSupportedException(), object, arguments);
             }
-        } else {
-            return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
+            return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
+
+        return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
     }
 
     private MetaMethod getMetaMethod(Class sender, Object object, String methodName, boolean isCallToSuper, Object... arguments) {
