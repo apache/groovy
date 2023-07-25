@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.transform.PackageScope
 import org.junit.Test
 
 import java.awt.Font
@@ -36,6 +37,18 @@ import static groovy.test.GroovyAssert.shouldFail
  * In JDK versions >= 16, permissive access is restricted and Groovy's support for this feature is limited.
  */
 final class IllegalAccessTests {
+
+    static class MultipleProperties {
+        def a
+        public b
+        private c
+        protected d
+        @PackageScope e
+        public getF() {}
+        private getG() {}
+        protected getH() {}
+        @PackageScope getI() {}
+    }
 
     static class ProtectedConstructor {
         protected ProtectedConstructor() {}
@@ -75,7 +88,7 @@ final class IllegalAccessTests {
     @Test
     void testClone3() {
         Object obj = new Tuple1('abc')
-        assert obj.clone().getClass() === Tuple1.class
+        assert obj.clone().getClass() === Tuple1
     }
 
     @Test
@@ -159,8 +172,8 @@ final class IllegalAccessTests {
 
     @Test
     void testAsType2() {
-        assertScript """import ${this.class.name}.ProtectedConstructor
-            [run: {}] as ProtectedConstructor
+        assertScript """
+            [run: {}] as ${ProtectedConstructor.name.replace('$','.')}
         """
     }
 
@@ -172,10 +185,23 @@ final class IllegalAccessTests {
         }
     }
 
+    // GROOVY-9081
     @Test
     void testGetProperties() {
-        String str = ''
-        assert str.properties
+        def kv = "".properties
+        assert 'value' !in kv.keySet()
+        assert kv.keySet().containsAll(['blank','bytes','class','empty'])
+    }
+
+    // GROOVY-10438, GROOVY-10555
+    @Test
+    void testGetProperties2() {
+        assertScript """
+            Object obj = new ${MultipleProperties.name.replace('$','.')}()
+            assert obj.properties.keySet() == ['a','b','c','class','d','e','f','g','h','i'] as Set
+            // TODO work out why all properties are returned and then test with:
+            obj.metaClass.permissivePropertyAccess = true
+        """
     }
 
     @Test
@@ -268,14 +294,14 @@ final class IllegalAccessTests {
 
     @Test
     void testFavorMethodWithExactParameterType() {
-        def em1 = new EnumMap(RetentionPolicy.class)
-        def em2 = new EnumMap(RetentionPolicy.class)
+        def em1 = new EnumMap(RetentionPolicy)
+        def em2 = new EnumMap(RetentionPolicy)
         assert em1 == em2
     }
 
     @Test
     void testShouldChoosePublicGetterInsteadOfPrivateField1() {
-        def f = Integer.class.getDeclaredField('MIN_VALUE')
+        def f = Integer.getDeclaredField('MIN_VALUE')
         assert f.modifiers != 0
     }
 

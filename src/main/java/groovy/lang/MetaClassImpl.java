@@ -117,6 +117,7 @@ import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
+import static org.codehaus.groovy.reflection.ReflectionUtils.checkAccessible;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -2160,9 +2161,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Get all the properties defined for this type
+     * Returns the available properties for this type.
      *
-     * @return a list of MetaProperty objects
+     * @return a list of {@code MetaProperty} objects
      */
     @Override
     public List<MetaProperty> getProperties() {
@@ -2175,10 +2176,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
-            if (mp instanceof CachedField && (mp.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0) {
-                continue;
-            }
-            if (mp instanceof MetaBeanProperty) {
+            if (mp instanceof CachedField) {
+                int modifiers = mp.getModifiers();
+                if ((modifiers & Opcodes.ACC_SYNTHETIC) != 0
+                        // GROOVY-5169, GROOVY-9081, GROOVY-9103, GROOVY-10438, GROOVY-10555, et al.
+                        || (!permissivePropertyAccess && !checkAccessible(getClass(), ((CachedField) mp).getDeclaringClass(), modifiers, false))) {
+                    continue;
+                }
+            } else if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
                 // filter out extrinsic properties (DGM, ...)
                 boolean getter = true, setter = true;
@@ -2190,17 +2195,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (setterMetaMethod == null || setterMetaMethod instanceof GeneratedMetaMethod || setterMetaMethod instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
-                if (!setter && !getter) continue;
+                if (!getter && !setter) continue;
 
-//  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests
-//                if (!setter && mbp.getSetter() != null) {
-//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), mbp.getGetter(), null);
-//                }
-//                if (!getter && mbp.getGetter() != null) {
-//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), null, mbp.getSetter());
-//                }
-
-                if (!permissivePropertyAccess) {
+                if (!permissivePropertyAccess) { // GROOVY-5169, GROOVY-9081, GROOVY-9103
                     boolean getterAccessible = canAccessLegally(getterMetaMethod);
                     boolean setterAccessible = canAccessLegally(setterMetaMethod);
                     if (!(getterAccessible && setterAccessible)) continue;
@@ -2212,14 +2209,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return ret;
     }
 
-    private static boolean canAccessLegally(MetaMethod accessor) {
-        boolean accessible = true;
-        if (accessor instanceof CachedMethod) {
-            CachedMethod cm = (CachedMethod) accessor;
-            accessible = cm.canAccessLegally(MetaClassImpl.class);
-        }
-
-        return accessible;
+    private static boolean canAccessLegally(final MetaMethod method) {
+        return !(method instanceof CachedMethod)
+            || ((CachedMethod) method).canAccessLegally(MetaClassImpl.class);
     }
 
     /**
