@@ -404,7 +404,7 @@ public class MetaMethodIndex {
         CachedClass inIndexDC = inIndex.getDeclaringClass();
         CachedClass toIndexDC = toIndex.getDeclaringClass();
         if (inIndexDC == toIndexDC) {
-            return isNonRealMethod(toIndex) || (inIndex.getModifiers() & 0x1000) != 0; // GROOVY-10136, GROOVY-10594
+            return isNonRealMethod(toIndex) || inIndex.isSynthetic(); // GROOVY-10136, GROOVY-10594
         }
 
         // interface vs instance method; be careful...

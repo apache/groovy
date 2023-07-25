@@ -24,7 +24,6 @@ import groovy.lang.MetaProperty;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 import static org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.castToType;
 
@@ -50,14 +49,6 @@ public class CachedField extends MetaProperty {
 
     public Class getDeclaringClass() {
         return field.getDeclaringClass();
-    }
-
-    public boolean isFinal() {
-        return Modifier.isFinal(getModifiers());
-    }
-
-    public boolean isStatic() {
-        return Modifier.isStatic(getModifiers());
     }
 
     /**

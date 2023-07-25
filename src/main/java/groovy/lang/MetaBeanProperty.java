@@ -71,7 +71,7 @@ public class MetaBeanProperty extends MetaProperty {
     public void setProperty(Object object, Object newValue) {
         MetaMethod setter = getSetter();
         if (setter == null) {
-            if (field != null && !Modifier.isFinal(field.getModifiers())) {
+            if (field != null && !field.isFinal()) {
                 field.setProperty(object, newValue);
                 return;
             }
@@ -111,7 +111,7 @@ public class MetaBeanProperty extends MetaProperty {
     /**
      * This is for MetaClass to patch up the object later when looking for set*() methods.
      *
-     * @param setter The setter for this property 
+     * @param setter The setter for this property
      */
     void setSetter(MetaMethod setter) {
         this.setter = setter;

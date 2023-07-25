@@ -323,9 +323,8 @@ public class Inspector {
 
     protected String[] methodInfo(MetaMethod method) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
-        int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = GROOVY;
-        result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
+        result[MEMBER_MODIFIER_IDX] = Modifier.toString(method.getModifiers());
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass().getTheClass());
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();

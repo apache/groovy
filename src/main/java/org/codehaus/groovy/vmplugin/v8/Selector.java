@@ -334,7 +334,7 @@ public abstract class Selector {
             if (mp instanceof MethodMetaProperty) {
                 method = ((MethodMetaProperty) mp).getMetaMethod();
                 insertName = true; // pass "name" field as argument
-            } else if (mp instanceof CachedField && !Modifier.isStatic(mp.getModifiers())) {
+            } else if (mp instanceof CachedField && !mp.isStatic()) {
                 try {
                     // GROOVY-9144, GROOVY-9596: get lookup for sender and unreflect before forcing access
                     MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);

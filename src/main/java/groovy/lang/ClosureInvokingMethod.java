@@ -24,23 +24,11 @@ package groovy.lang;
  * @see groovy.lang.ExpandoMetaClass
  * @since 1.5
  */
-public interface ClosureInvokingMethod {
+public interface ClosureInvokingMethod extends MetaMember {
 
     /**
      * Returns the original closure that this method invokes
      * @return The closure
      */
     Closure getClosure();
-
-    /**
-     * Is it a static method?
-     * @return True if it is
-     */
-    boolean isStatic();
-
-    /**
-     * The method name
-     * @return The method name
-     */
-    String getName();
 }

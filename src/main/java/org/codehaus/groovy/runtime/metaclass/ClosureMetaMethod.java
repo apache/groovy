@@ -58,7 +58,6 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
     }
 
-
     @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
@@ -88,7 +87,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         return doCall.invoke(cloned, arguments);
     }
 
-  /**
+    /**
      * Retrieves the closure that is invoked by this MetaMethod
      *
      * @return The closure

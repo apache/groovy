@@ -89,7 +89,6 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.security.PrivilegedActionException;
@@ -1409,10 +1408,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (constructor != null) {
             return constructor.getCachedConstructor();
         }
-        constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, arguments);
-        if (constructor != null) {
-            return constructor.getCachedConstructor();
-        }
         return null;
     }
 
@@ -1575,18 +1570,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         CachedConstructor constructor = createCachedConstructor(arguments);
-        List l = new ArrayList(constructors.toList());
-        Comparator comp = (arg0, arg1) -> {
-            CachedConstructor c0 = (CachedConstructor) arg0;
-            CachedConstructor c1 = (CachedConstructor) arg1;
-            String descriptor0 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c0.getNativeParameterTypes());
-            String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c1.getNativeParameterTypes());
+        List<CachedConstructor> list = new ArrayList(constructors.toList());
+        list.sort((Comparator<CachedConstructor>) (cc0, cc1) -> {
+            String descriptor0 = BytecodeHelper.getMethodDescriptor(Void.TYPE, cc0.getNativeParameterTypes());
+            String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, cc1.getNativeParameterTypes());
             return descriptor0.compareTo(descriptor1);
-        };
-        l.sort(comp);
+        });
         int found = -1;
-        for (int i = 0, n = l.size(); i < n; i++) {
-            if (l.get(i) != constructor) continue;
+        for (int i = 0, n = list.size(); i < n; i++) {
+            if (list.get(i) != constructor) continue;
             found = i;
             break;
         }
@@ -1599,16 +1591,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
         CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argClasses);
-        if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argClasses);
+        if (constructor != null) {
+            return constructor;
         }
-        if (constructor == null) {
-            throw new GroovyRuntimeException(
-                    "Could not find matching constructor for: "
-                            + theClass.getName()
-                            + "(" + FormatHelper.toTypeString(arguments) + ")");
-        }
-        return constructor;
+        throw new GroovyRuntimeException(
+            "Could not find matching constructor for: "
+                + theClass.getName()
+                + "(" + FormatHelper.toTypeString(arguments) + ")");
     }
 
     /**
@@ -1658,11 +1647,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * This is a helper class introduced in Groovy 2.1.0, which is used only by
-     * indy. This class is for internal use only.
+     * This is a helper class which is used only by indy. It is for internal use.
      *
-     * @since Groovy 2.1.0
+     * @since 2.1.0
      */
+    @groovy.transform.Internal
     public static final class MetaConstructor extends MetaMethod {
         private final CachedConstructor cc;
         private final boolean beanConstructor;
@@ -1709,11 +1698,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * This is a helper method added in Groovy 2.1.0, which is used only by indy.
-     * This method is for internal use only.
+     * This is a helper method which is used only by indy. It is for internal use.
      *
-     * @since Groovy 2.1.0
+     * @since 2.1.0
      */
+    @groovy.transform.Internal
     public MetaMethod retrieveConstructor(Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
@@ -1831,7 +1820,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // public field
             //------------------------------------------------------------------
             MetaProperty mp = methodAndProperty.getV2();
-            if (mp != null && Modifier.isPublic(mp.getModifiers())) {
+            if (mp != null && mp.isPublic()) {
                 try {
                     return mp.getProperty(object);
                 } catch (GroovyRuntimeException e) {
@@ -1946,7 +1935,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // public field
             //------------------------------------------------------------------
             MetaProperty mp = methodAndProperty.getV2();
-            if (mp != null && Modifier.isPublic(mp.getModifiers())) {
+            if (mp != null && mp.isPublic()) {
                 return mp;
             }
 
@@ -2177,10 +2166,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
             if (mp instanceof CachedField) {
-                int modifiers = mp.getModifiers();
-                if ((modifiers & Opcodes.ACC_SYNTHETIC) != 0
+                if (mp.isSynthetic()
                         // GROOVY-5169, GROOVY-9081, GROOVY-9103, GROOVY-10438, GROOVY-10555, et al.
-                        || (!permissivePropertyAccess && !checkAccessible(getClass(), ((CachedField) mp).getDeclaringClass(), modifiers, false))) {
+                        || (!permissivePropertyAccess && !checkAccessible(getClass(), ((CachedField) mp).getDeclaringClass(), mp.getModifiers(), false))) {
                     continue;
                 }
             } else if (mp instanceof MetaBeanProperty) {
@@ -2471,8 +2459,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @javax.annotation.Nullable CachedClass klass) {
         for (Map.Entry<String, MetaProperty> entry : from.entrySet()) {
             CachedField field = (CachedField) entry.getValue();
-            int modifiers = field.getModifiers();
-            if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) || (!Modifier.isPrivate(modifiers)
+            if (field.isPublic() || field.isProtected() || (!field.isPrivate()
                     && klass != null && inSamePackage(field.getDeclaringClass(), klass.getTheClass()))) {
                 to.put(entry.getKey(), field);
             }
@@ -2701,7 +2688,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
                 method = mbp.getSetter();
                 MetaProperty f = mbp.getField();
-                if (method != null || (f != null && !Modifier.isFinal(f.getModifiers()))) {
+                if (method != null || (f != null && !f.isFinal())) {
                     arguments = new Object[]{newValue};
                     field = f;
                 }
@@ -2750,15 +2737,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (method == null && field != null) {
             boolean mapInstance = (isMap && !isStatic);
-            int modifiers = field.getModifiers();
-            if (Modifier.isFinal(modifiers)) {
+            if (field.isFinal()) {
                 if (mapInstance) { // GROOVY-8065
                     ((Map) object).put(name, newValue);
                     return;
                 }
                 throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
             }
-            if (!mapInstance || Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+            if (!mapInstance || field.isPublic() || field.isProtected()) {
                 field.setProperty(object, newValue);
                 return;
             }
@@ -3184,9 +3170,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             MetaMethod method = (MetaMethod) methods;
             if (method.getName().equals(aMethod.getName())
-//                    TODO: should be better check for case when only diff in modifiers can be SYNTHETIC flag
-//                    && method.getModifiers() == aMethod.getModifiers()
                     && method.getReturnType().equals(aMethod.getReturnType())
+            // TODO && method.compatibleModifiers(method.getModifiers(), aMethod.getModifiers())
                     && MetaMethod.equal(method.getParameterTypes(), aMethod.getParameterTypes())) {
                 return method;
             }
@@ -3209,14 +3194,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments) throws MethodSelectionException {
-        if (methodOrList instanceof MetaMethod) {
+        if (methodOrList instanceof ParameterTypes) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
             }
             return null;
         }
 
-        FastArray methods = (FastArray) methodOrList;
+        var methods = (FastArray) methodOrList;
         if (methods == null) return null;
         int methodCount = methods.size();
         if (methodCount <= 0) {
@@ -3228,45 +3213,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             return null;
         }
-        Object answer;
         if (arguments == null || arguments.length == 0) {
-            answer = MetaClassHelper.chooseEmptyMethodParams(methods);
-        } else {
-            Object matchingMethods = null;
-
-            final int len = methods.size;
-            Object[] data = methods.getArray();
-            for (int i = 0; i != len; ++i) {
-                Object method = data[i];
-                if (((ParameterTypes) method).isValidMethod(arguments)) {
-                    if (matchingMethods == null) {
-                        matchingMethods = method;
-                    } else if (matchingMethods instanceof ArrayList) {
-                        ((ArrayList) matchingMethods).add(method);
-                    } else {
-                        List arr = new ArrayList(4);
-                        arr.add(matchingMethods);
-                        arr.add(method);
-                        matchingMethods = arr;
-                    }
-                }
+            var method = MetaClassHelper.chooseEmptyMethodParams(methods);
+            if (method != null) {
+                return method;
             }
-            if (matchingMethods == null) {
-                return null;
-            } else if (!(matchingMethods instanceof ArrayList)) {
-                return matchingMethods;
+            throw new MethodSelectionException(methodName, methods, arguments);
+        }
+
+        List<MetaMember> matchingMethods = new ArrayList<>(methodCount);
+        Object[] methodArray = methods.getArray();
+        for (int i = 0; i < methodCount; i += 1) {
+            var method = (ParameterTypes & MetaMember) methodArray[i];
+            if (method.isValidMethod(arguments)) {
+                matchingMethods.add(method);
             }
-            return chooseMostSpecificParams(methodName, (List) matchingMethods, arguments);
-
         }
-        if (answer != null) {
-            return answer;
+        methodCount = matchingMethods.size();
+        if (methodCount == 0) {
+            return null;
+        } else if (methodCount == 1) {
+            return matchingMethods.get(0);
         }
-        throw new MethodSelectionException(methodName, methods, arguments);
-    }
-
-    private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
-        return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, false);
+        return doChooseMostSpecificParams(theClass.getName(), methodName, matchingMethods, arguments, false);
     }
 
     protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
@@ -3282,14 +3251,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         int size = matches.size();
-        if (1 == size) {
+        if (size == 1) {
             return matches.getFirst();
         }
-        if (0 == size) {
+        if (size == 0) {
             return null;
         }
-
-        //more than one matching method found --> ambiguous!
+        // more than one matching method found --> ambiguous!
         throw new GroovyRuntimeException(createErrorMessageForAmbiguity(theClassName, name, arguments, matches));
     }
 
