@@ -30,7 +30,7 @@ pluginManagement {
 
 // check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
 plugins {
-    id "com.gradle.enterprise" version "3.13" // 3.13 was the latest plugin version that the ASF hosted GE supports at time of commit
+    id "com.gradle.enterprise" version "3.14" // 3.14 was the latest plugin version that the ASF hosted GE supports at time of commit
     id 'com.gradle.common-custom-user-data-gradle-plugin' version '1.11'
 }
 
