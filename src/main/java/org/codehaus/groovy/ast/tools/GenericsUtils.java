@@ -423,7 +423,9 @@ public class GenericsUtils {
                     newgTypes[i] = fixed;
                 } else if (oldgType.isPlaceholder()) {
                     // correct "T"
-                    newgTypes[i] = new GenericsType(genericsSpec.getOrDefault(oldgType.getName(), ClassHelper.OBJECT_TYPE));
+                    ClassNode t = genericsSpec.get(oldgType.getName());
+                    if (t == null) t = ClassHelper.OBJECT_TYPE;
+                    newgTypes[i] = new GenericsType(t);
                 } else {
                     // correct "List<T>", etc.
                     newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec, correctToGenericsSpec(genericsSpec, oldgType), exclusions));
