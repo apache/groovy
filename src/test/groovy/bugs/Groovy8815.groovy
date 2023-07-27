@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyAssert
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
@@ -26,6 +27,8 @@ final class Groovy8815 {
 
     @Test
     void testGenerics() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [stubDir: File.createTempDir()]

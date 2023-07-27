@@ -2621,6 +2621,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10648
     void testShouldUseMethodGenericType16() {
+        if (!GroovyAssert.isAtLeastJdk('1.8')) return
+
         assertScript '''
             def <T extends Number> Set<T> test(Iterable<T> iterable) {
                 final Set<T> result = new HashSet<>()
