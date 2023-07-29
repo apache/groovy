@@ -26,9 +26,9 @@ import java.util.List;
 
 public class FastArray implements Cloneable, Serializable {
     private static final long serialVersionUID = -9143440116071577249L;
+    public static final FastArray EMPTY_LIST = new FastArray(0);
     private Object[] data;
     public int size;
-    public static final FastArray EMPTY_LIST = new FastArray(0);
 
     public FastArray(int initialCapacity) {
         data = new Object[initialCapacity];
@@ -140,5 +140,17 @@ public class FastArray implements Cloneable, Serializable {
     public String toString() {
         if (size() == 0) return "[]";
         return toList().toString();
+    }
+
+    @Override
+    public FastArray clone() {
+        try {
+            FastArray clone = (FastArray) super.clone();
+            clone.size = size;
+            clone.data = data.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }
