@@ -66,7 +66,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.Permission;
@@ -998,7 +997,12 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     private static String decodeFileName(String fileName) {
         String decodedFile = fileName;
-        decodedFile = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        try {
+            decodedFile = URLDecoder.decode(fileName, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("Encountered an invalid encoding scheme when trying to use URLDecoder.decode() inside of the GroovyClassLoader.decodeFileName() method.  Returning the unencoded URL.");
+            System.err.println("Please note that if you encounter this error and you have spaces in your directory you will run into issues.  Refer to GROOVY-1787 for description of this bug.");
+        }
 
         return decodedFile;
     }
