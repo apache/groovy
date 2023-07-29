@@ -1,4 +1,5 @@
 user.gradle
+!gradle/wrapper/gradle-wrapper.jar
 .gradle/
 target/
 build/
