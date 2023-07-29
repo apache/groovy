@@ -262,7 +262,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
             try {
                 return super.parseClass(codeSource);
             } finally {
-                modelTypes.set(null);
+                modelTypes.remove();
             }
         }
     }

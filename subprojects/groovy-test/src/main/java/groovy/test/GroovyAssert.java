@@ -394,7 +394,7 @@ public class GroovyAssert {
             // method execution failed, it is really "not yet implemented"
         }
         finally {
-            notYetImplementedFlag.set(null);
+            notYetImplementedFlag.remove();
         }
         return true;
     }
