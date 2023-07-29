@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -99,7 +100,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
         ArrayList<String> names = new ArrayList<String>();
         try {
             in = u.openStream();
-            r = new BufferedReader(new InputStreamReader(in, "utf-8"));
+            r = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             int lc = 1;
             while ((lc = parseLine(service, u, r, lc, names)) >= 0) ;
         } catch (IOException x) {
