@@ -62,6 +62,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Java9 extends Java8 {
+    private Map<ElementType, Integer> elementTypeTargetMap;
 
     @Override
     public int getVersion() {
@@ -70,8 +71,11 @@ public class Java9 extends Java8 {
 
     @Override
     protected Map<ElementType, Integer> getElementTypeTargetMap() {
-        Map<ElementType, Integer> elementTypeTargetMap = new EnumMap<>(super.getElementTypeTargetMap());
-        elementTypeTargetMap.put(ElementType.MODULE, AnnotationNode.TYPE_TARGET); // TODO Add MODULE_TARGET too?
+        if (null == elementTypeTargetMap) {
+            Map<ElementType, Integer> ettm = new EnumMap<>(super.getElementTypeTargetMap());
+            ettm.put(ElementType.MODULE, AnnotationNode.TYPE_TARGET); // TODO Add MODULE_TARGET too?
+            elementTypeTargetMap = ettm;
+        }
         return elementTypeTargetMap;
     }
 

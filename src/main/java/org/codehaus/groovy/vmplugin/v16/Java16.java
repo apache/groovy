@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
  * Additional Java 16 based functions will be added here as needed.
  */
 public class Java16 extends Java10 {
+    private Map<ElementType, Integer> elementTypeTargetMap;
 
     @Override
     public int getVersion() {
@@ -47,8 +48,11 @@ public class Java16 extends Java10 {
 
     @Override
     protected Map<ElementType, Integer> getElementTypeTargetMap() {
-        Map<ElementType, Integer> elementTypeTargetMap = new EnumMap<>(super.getElementTypeTargetMap());
-        elementTypeTargetMap.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
+        if (null == elementTypeTargetMap) {
+            Map<ElementType, Integer> ettm = new EnumMap<>(super.getElementTypeTargetMap());
+            ettm.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
+            elementTypeTargetMap = ettm;
+        }
         return elementTypeTargetMap;
     }
 
