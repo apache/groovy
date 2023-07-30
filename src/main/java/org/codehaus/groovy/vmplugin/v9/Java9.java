@@ -23,12 +23,14 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
+import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
@@ -45,6 +47,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,6 +66,13 @@ public class Java9 extends Java8 {
     @Override
     public int getVersion() {
         return 9;
+    }
+
+    @Override
+    protected Map<ElementType, Integer> getElementTypeTargetMap() {
+        Map<ElementType, Integer> elementTypeTargetMap = new EnumMap<>(super.getElementTypeTargetMap());
+        elementTypeTargetMap.put(ElementType.MODULE, AnnotationNode.TYPE_TARGET); // TODO Add MODULE_TARGET too?
+        return elementTypeTargetMap;
     }
 
     @Override

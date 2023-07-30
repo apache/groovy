@@ -161,18 +161,15 @@ public class Java8 implements VMPlugin {
         return 8;
     }
 
+    protected Map<ElementType, Integer> getElementTypeTargetMap() {
+        return ELEMENT_TYPE_TARGET_MAP;
+    }
+
     protected int getElementCode(final ElementType value) {
-        Integer code = ELEMENT_TYPE_TARGET_MAP.get(value);
+        Integer code = getElementTypeTargetMap().get(value);
         if (null != code) return code;
 
-        String name = value.name();
-        if ("MODULE".equals(name)) { // JDK 9+
-            return AnnotationNode.TYPE_TARGET; // TODO Add MODULE_TARGET too?
-        } else if ("RECORD_COMPONENT".equals(name)) { // JDK 16+
-            return AnnotationNode.RECORD_COMPONENT_TARGET;
-        } else {
-            throw new GroovyBugError("unsupported Target " + value);
-        }
+        throw new GroovyBugError("unsupported Target " + value);
     }
 
     @Override

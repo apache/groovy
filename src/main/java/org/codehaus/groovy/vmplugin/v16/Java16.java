@@ -26,10 +26,13 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
+import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +43,13 @@ public class Java16 extends Java10 {
     @Override
     public int getVersion() {
         return 16;
+    }
+
+    @Override
+    protected Map<ElementType, Integer> getElementTypeTargetMap() {
+        Map<ElementType, Integer> elementTypeTargetMap = new EnumMap<>(super.getElementTypeTargetMap());
+        elementTypeTargetMap.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
+        return elementTypeTargetMap;
     }
 
     @Override
