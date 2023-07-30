@@ -142,7 +142,7 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        m.entrySet().forEach(e -> put(e.getKey(), e.getValue()));
+        m.forEach(this::put);
     }
 
     @Override
