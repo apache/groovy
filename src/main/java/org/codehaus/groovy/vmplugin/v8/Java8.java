@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -66,7 +67,9 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -79,6 +82,19 @@ public class Java8 implements VMPlugin {
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
+
+    private static final Map<ElementType, Integer> ELEMENT_TYPE_TARGET_MAP = new EnumMap<>(Maps.of(
+        ElementType.TYPE, AnnotationNode.TYPE_TARGET,
+        ElementType.CONSTRUCTOR, AnnotationNode.CONSTRUCTOR_TARGET,
+        ElementType.METHOD, AnnotationNode.METHOD_TARGET,
+        ElementType.FIELD, AnnotationNode.FIELD_TARGET,
+        ElementType.PARAMETER, AnnotationNode.PARAMETER_TARGET,
+        ElementType.LOCAL_VARIABLE, AnnotationNode.LOCAL_VARIABLE_TARGET,
+        ElementType.ANNOTATION_TYPE, AnnotationNode.ANNOTATION_TARGET,
+        ElementType.PACKAGE, AnnotationNode.PACKAGE_TARGET,
+        ElementType.TYPE_PARAMETER, AnnotationNode.TYPE_PARAMETER_TARGET,
+        ElementType.TYPE_USE, AnnotationNode.TYPE_USE_TARGET
+    ));
 
     public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] cBounds) {
         ClassNode redirect = base.redirect();
@@ -146,30 +162,9 @@ public class Java8 implements VMPlugin {
     }
 
     protected int getElementCode(final ElementType value) {
-        switch (value) {
-          case TYPE:
-            return AnnotationNode.TYPE_TARGET;
-          case CONSTRUCTOR:
-            return AnnotationNode.CONSTRUCTOR_TARGET;
-          case METHOD:
-            return AnnotationNode.METHOD_TARGET;
-          case FIELD:
-            return AnnotationNode.FIELD_TARGET;
-          case PARAMETER:
-            return AnnotationNode.PARAMETER_TARGET;
-          case LOCAL_VARIABLE:
-            return AnnotationNode.LOCAL_VARIABLE_TARGET;
-          case ANNOTATION_TYPE:
-            return AnnotationNode.ANNOTATION_TARGET;
-          case PACKAGE:
-            return AnnotationNode.PACKAGE_TARGET;
-          case TYPE_PARAMETER:
-            return AnnotationNode.TYPE_PARAMETER_TARGET;
-          case TYPE_USE:
-            return AnnotationNode.TYPE_USE_TARGET;
-          default:
-            // falls through
-        }
+        Integer code = ELEMENT_TYPE_TARGET_MAP.get(value);
+        if (null != code) return code;
+
         String name = value.name();
         if ("MODULE".equals(name)) { // JDK 9+
             return AnnotationNode.TYPE_TARGET; // TODO Add MODULE_TARGET too?
