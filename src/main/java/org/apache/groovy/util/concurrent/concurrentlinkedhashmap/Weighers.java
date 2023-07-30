@@ -182,7 +182,7 @@ public final class Weighers {
   }
 
   static final class EntryWeigherView<K, V> implements EntryWeigher<K, V>, Serializable {
-    static final long serialVersionUID = 1;
+    private static final long serialVersionUID = 1;
     final Weigher<? super V> weigher;
 
     EntryWeigherView(Weigher<? super V> weigher) {
