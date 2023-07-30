@@ -231,16 +231,17 @@ public final class ExpressionUtils {
             if (pe.getObjectExpression() instanceof ClassExpression) {
                 ClassNode clazz = pe.getObjectExpression().getType();
                 FieldNode field = ClassNodeUtils.getField(clazz, pe.getPropertyAsString());
-                if (field != null && field.isStatic() && field.isFinal() && !field.isEnum()
-                        && field.getInitialValueExpression() instanceof ConstantExpression) {
-                    ConstantExpression value = (ConstantExpression) field.getInitialValueExpression();
-                    value = new ConstantExpression(value.getValue());
-                    // GROOVY-10068, et al.: retain field's type
-                    if (!value.getType().equals(field.getType())
-                            && ClassHelper.isNumberType(field.getType()))
-                        value.setType(field.getType());
-                    // TODO: Boolean, Character, String
-                    return configure(exp, value);
+                if (field != null && !field.isEnum() && field.isFinal() && field.isStatic() && field.hasInitialExpression()) {
+                    Expression value = transformInlineConstants(field.getInitialValueExpression()); // GROOVY-10750
+                    if (value instanceof ConstantExpression) {
+                        value = new ConstantExpression(((ConstantExpression) value).getValue());
+                        // GROOVY-10068, et al.: retain field's type
+                        if (!value.getType().equals(field.getType())
+                                && ClassHelper.isNumberType(field.getType()))
+                            value.setType(field.getType());
+                        // TODO: Boolean, Character, String
+                        return configure(exp, (ConstantExpression) value);
+                    }
                 }
             }
         } else if (exp instanceof BinaryExpression) {

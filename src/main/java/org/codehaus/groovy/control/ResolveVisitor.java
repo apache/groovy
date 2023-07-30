@@ -1330,8 +1330,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // initialize scopes/variables now that imports and super types are resolved
             new VariableScopeVisitor(source).visitClass(node);
 
+            visitPackage(node.getPackage());
+            visitImports(node.getModule());
+
+            node.visitContents(this);
+            visitObjectInitializerStatements(node);
+
+            // GROOVY-10750: do last for inlining
             visitTypeAnnotations(node);
-            super.visitClass(node);
+            visitAnnotations(node);
         }
         currentClass = oldNode;
     }
