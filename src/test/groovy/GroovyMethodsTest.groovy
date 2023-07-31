@@ -1837,6 +1837,142 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1, 2, 1, 2, 1, 2] == iterable * 3
     }
 
+    void testUnionForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than |, so need to use parens to test correct logic
+        assert (a | b) == [1,2,3,4,5,6] as Set
+        assert (b | a) == [1,2,3,4,5,6] as Set
+        assert (a | c) == [1,2,3,4,5,6,7,8] as Set
+        assert (b | c) == [3,4,5,6,7,8] as Set
+        assert (empty | a) == a
+        assert (a | empty) == a
+
+        assert (a | b) instanceof Set
+        assert (a | c) !instanceof SortedSet
+    }
+
+    void testUnionForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than |, so need to use parens to test correct logic
+        assert (a | b) == [1,2,3,4,5,6] as SortedSet
+        assert (a | c) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c | a) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c | b) == [3,4,5,6,7,8] as SortedSet
+        assert (empty | a) == a
+        assert (a | empty) == a
+
+        assert (a | b) instanceof SortedSet
+        assert (a | c) instanceof SortedSet
+    }
+
+    void testInersectionForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a & b) == [3,4] as Set
+        assert (b & a) == [3,4] as Set
+        assert (a & c) == [] as Set
+        assert (b & c) == [5,6] as Set
+        assert (empty & a) == empty
+        assert (a & empty) == empty
+
+        Set d = ['a', 'B', 'c'] as Set
+        SortedSet e = ['A', 'b', 'D'] as SortedSet
+        assert ['a', 'B'] as Set == d.and(e, String.CASE_INSENSITIVE_ORDER)
+        assert empty == d.and(e, Comparator.naturalOrder())
+
+        assert (a & b) instanceof Set
+        assert (a & c) !instanceof SortedSet
+        assert (d.and(e, String.CASE_INSENSITIVE_ORDER)) instanceof Set
+        assert (d.and(e, Comparator.naturalOrder())) !instanceof SortedSet
+    }
+
+    void testIntersectionForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than &, so need to use parens to test correct logic
+        assert (a & b) == [3,4] as SortedSet
+        assert (c & a) == [] as SortedSet
+        assert (a & c) == [] as SortedSet
+        assert (c & b) == [5,6] as SortedSet
+        assert (empty & a) == empty
+        assert (a & empty) == empty
+
+        SortedSet d = ['a', 'B', 'c'] as SortedSet
+        Set e = ['A', 'b', 'D'] as Set
+        assert ['a', 'B'] as SortedSet == d.and(e, String.CASE_INSENSITIVE_ORDER)
+        assert empty == d.and(e, Comparator.naturalOrder())
+
+        assert (a & b) instanceof SortedSet
+        assert (a & c) instanceof SortedSet
+        assert (d.and(e, String.CASE_INSENSITIVE_ORDER)) instanceof SortedSet
+        assert (d.and(e, Comparator.naturalOrder())) instanceof SortedSet
+    }
+
+    void testSymmetricDifferenceForSets() {
+        Set empty = [] as Set
+        Set a = [1,2,3,4] as Set
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than ^, so need to use parens to test correct logic
+        assert (a ^ b) == [1,2,5,6] as Set
+        assert (b ^ a) == [1,2,5,6] as Set
+        assert (a ^ c) == [1,2,3,4,5,6,7,8] as Set
+        assert (b ^ c) == [3,4,7,8] as Set
+        assert (empty ^ a) == a
+        assert (a ^ empty) == a
+
+        Set d = ['a', 'B', 'c'] as Set
+        SortedSet e = ['A', 'b', 'D'] as SortedSet
+        assert ['c', 'D'] as Set == d.xor(e, String.CASE_INSENSITIVE_ORDER)
+        assert ['a', 'B', 'c', 'A', 'b', 'D'] as Set == d.xor(e, Comparator.naturalOrder())
+
+        assert (a ^ b) instanceof Set
+        assert (a ^ c) !instanceof SortedSet
+        assert (d.xor(e, String.CASE_INSENSITIVE_ORDER)) instanceof Set
+        assert (d.xor(e, Comparator.naturalOrder())) !instanceof SortedSet
+    }
+
+    void testSymmetricDifferenceForSortedSets() {
+        SortedSet empty = [] as SortedSet
+        SortedSet a = [1,2,3,4] as SortedSet
+        Set b = [3,4,5,6] as Set
+        Set c = [5,6,7,8] as SortedSet
+
+        // NOTE: == has higher precedence than ^, so need to use parens to test correct logic
+        assert (a ^ b) == [1,2,5,6] as SortedSet
+        assert (c ^ a) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (a ^ c) == [1,2,3,4,5,6,7,8] as SortedSet
+        assert (c ^ b) == [3,4,7,8] as SortedSet
+        assert (empty ^ a) == a
+        assert (a ^ empty) == a
+
+        SortedSet d = ['a', 'B', 'c'] as SortedSet
+        Set e = ['A', 'b', 'D'] as Set
+        assert ['c', 'D'] as SortedSet == d.xor(e, String.CASE_INSENSITIVE_ORDER)
+        assert ['a', 'B', 'c', 'A', 'b', 'D'] as SortedSet == d.xor(e, Comparator.naturalOrder())
+
+        assert (a ^ b) instanceof SortedSet
+        assert (a ^ c) instanceof SortedSet
+        assert (d.xor(e, String.CASE_INSENSITIVE_ORDER)) instanceof SortedSet
+        assert (d.xor(e, Comparator.naturalOrder())) instanceof SortedSet
+    }
+
     void testSwap() {
         assert [1, 2, 3, 4] == [1, 2, 3, 4].swap(0, 0).swap(1, 1)
 

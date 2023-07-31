@@ -10882,6 +10882,258 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a Collection composed of the union of both collections.  Any
+     * elements that exist in either collections are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in the resultant collection.
+     *
+     * @param left  a Collection
+     * @param right a Collection
+     * @return a Collection as a union of both collections
+     * @see #union(Collection, Collection, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> union(Collection<T> left, Collection<T> right) {
+        return union(left, right, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Create a Collection composed of the union of both collections.  Any
+     * elements that exist in either collections are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
+     * assert [4,8,12,16,20,1,3] == [4,8,12,16,20].union([1,2,3,4], (x, y) {@code -> x * x <=> y})
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
+     * assert one.union(two) == ['a', 'B', 'c', 'd', 'b', 'C', 'e']
+     * assert two.union(one) == ['b', 'C', 'd', 'e', 'a', 'B', 'c']
+     * assert one.union(two, compareIgnoreCase) == ['a', 'B', 'c', 'd', 'e']
+     * assert two.union(one, compareIgnoreCase) == ['b', 'C', 'd', 'e', 'a']
+     * </pre>
+     *
+     * @param left  a Collection
+     * @param right a Collection
+     * @param comparator a Comparator
+     * @return a Collection as a union of both collections
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> union(Collection<T> left, Collection<T> right, Comparator<? super T> comparator) {
+        if (left.isEmpty() && right.isEmpty()) {
+            return createSimilarCollection(left, 0);
+        }
+
+        Collection<T> result = createSimilarCollection(left, left.size() + right.size());
+        //creates the collection to look for values.
+        Collection<T> compareWith = new TreeSet<>(comparator);
+
+        for (final T leftElement : left) {
+            if (compareWith.add(leftElement)) {
+                result.add(leftElement);
+            }
+        }
+
+        for (final T rightElement : right) {
+            if (compareWith.add(rightElement)) {
+                result.add(rightElement);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Create a Collection composed of the union of both iterables.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element already exists in the resultant collection.
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @return a Collection as a union of both iterables
+     * @see #union(Iterable, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> union(Iterable<T> left, Iterable<T> right) {
+        return union(asCollection(left), asCollection(right));
+    }
+
+    /**
+     * Create a Collection composed of the union of both iterables.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Collection as a union of both iterables
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> union(Iterable<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return union(asCollection(left), asCollection(right), comparator);
+    }
+
+    /**
+     * Create a Collection composed of the union of both iterables.
+     * Elements from the first iterable and second iterable are added to the result if the elements are not
+     * already in the result (according to the comparator closure).
+     * If the closure takes a single parameter, the argument passed will be each element,
+     * and the closure should return a value used for comparison (either using
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * If the closure takes two parameters, two items from the Iterator
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are deemed equal).
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { it.toLowerCase() }
+     * assert one.union(two, compareIgnoreCase) == ['a', 'B', 'c', 'd', 'e']
+     * assert two.union(one, compareIgnoreCase) == ['b', 'C', 'd', 'e', 'a']
+     * </pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param condition a Closure used to determine unique items
+     * @return a Collection as a union of both iterables
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> union(Iterable<T> left, Iterable<T> right, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+            ? new OrderBy<>(condition, true)
+            : new ClosureComparator<>(condition);
+        return union(left, right, comparator);
+    }
+
+    /**
+     * Create a List composed of the union of a List and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element already exists in the resultant collection.
+     *
+     * @param left  a List
+     * @param right an Iterable
+     * @return a List as a union of a List and an Iterable
+     * @see #union(List, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> List<T> union(List<T> left, Iterable<T> right) {
+        return (List<T>) union((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a List composed of the union of a List and an Iterable.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6])
+     * </pre>
+     *
+     * @param left  a List
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a List as a union of a List and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> List<T> union(List<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (List<T>) union((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a Set composed of the union of a Set and an Iterable.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6,7,8] as Set == ([1,2,3,4,5] as Set).union([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element already exists in the resultant collection.
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @return a Set as a union of a Set and an Iterable
+     * @see #union(Set, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> union(Set<T> left, Iterable<T> right) {
+        return (Set<T>) union((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a Set composed of the union of a Set and an Iterable.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6] as Set == ([1,2,3,4] as Set).union([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as a union of a Set and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> Set<T> union(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (Set<T>) union((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the union of a SortedSet and an Iterable.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6,7,8] as SortedSet == ([1,2,3,4,5] as SortedSet).union([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element already exists in the resultant collection.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a Set as a union of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> union(SortedSet<T> left, Iterable<T> right) {
+        return (SortedSet<T>) union((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in either iterables are added to the resultant collection, such
+     * that no elements are duplicated in the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [1,2,3,4,5,6,7,8] as SortedSet == ([1,2,3,4,5] as SortedSet).union([4,5,6,7,8])
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as a union of a SortedSet and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> SortedSet<T> union(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (SortedSet<T>) union((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
      * Chops the Iterable into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the Iterable isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
@@ -14709,6 +14961,243 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sw.toString();
     }
 
+    /**
+     * Create a Set as a union of a Set and an Iterable.  Any
+     * elements that exist in either are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as Set
+     * </pre>
+     *
+     * @param left  the left Set
+     * @param right the right Iterable
+     * @return the merged Set
+     * @since 5.0.0
+     * @see #plus(Set, Iterable)
+     */
+    public static <T> Set<T> or(Set<T> left, Iterable<T> right) {
+        return plus(left, right);
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and an Iterable.  Any
+     * elements that exist in either are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as SortedSet
+     * </pre>
+     *
+     * @param left  the left SortedSet
+     * @param right the right Iterable
+     * @return the merged SortedSet
+     * @since 5.0.0
+     * @see #plus(SortedSet, Iterable)
+     */
+    public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
+        return plus(left, right);
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as Set
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right) {
+        return intersect(left, right);
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as Set == ([1,2,3,4] as Set).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as SortedSet
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right) {
+        return intersect(left, right);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as SortedSet == ([1,2,3,4] as SortedSet).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Create a Set composed of the symmetric difference of a Set and an Iterable.  Any
+     * elements that exit in only one are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a ^ b) == [1,2,5,6] as Set
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @return a Set as a symmetric difference of a Set and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> Set<T> xor(Set<T> left, Iterable<T> right) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return minus(or(left, rightCollection), and(left, rightCollection));
+    }
+
+    /**
+     * Create a Set composed of the symmetric difference of a Set and an Iterable.  Any
+     * elements that exit in only one are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1,2,5,6] as Set == ([1,2,3,4] as Set).xor([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as a symmetric difference of a Set and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> Set<T> xor(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return (Set<T>) minus(or(left, rightCollection), and(left, rightCollection, comparator), comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the symmetric difference of a SortedSet and an Iterable.  Any
+     * elements that exist in only one of the sets are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a ^ b) == [1,2,5,6] as SortedSet
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a SortedSet as a symmetric difference of a SortedSet and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> xor(SortedSet<T> left, Iterable<T> right) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return minus(or(left, rightCollection), and(left, rightCollection));
+    }
+
+    /**
+     * Create a SortedSet composed of the symmetric difference of a SortedSet and an Iterable.  Any
+     * elements that exit in only one are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1,2,5,6] as SortedSet == ([1,2,3,4] as SortedSet).xor([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a SortedSet as a symmetric difference of a SortedSet and an Iterable
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> xor(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
+        return (SortedSet<T>) minus(or(left, rightCollection), and(left, rightCollection, comparator), comparator);
+    }
     //--------------------------------------------------------------------------
     // attic
 
