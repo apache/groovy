@@ -29,6 +29,7 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
 class GroovyJUnitRunnerHelper {
+    @SuppressWarnings('Println')
     static Throwable execute(Class testClass) {
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectClass(testClass)).build()
