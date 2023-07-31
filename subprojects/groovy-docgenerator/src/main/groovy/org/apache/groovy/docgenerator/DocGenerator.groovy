@@ -39,10 +39,10 @@ import java.util.concurrent.ConcurrentHashMap
  * that enhance the standard JDK classes.
  */
 class DocGenerator {
-    private static final MessageSource messages = new MessageSource(DocGenerator)
-    private static final Logger log = Logger.create(DocGenerator)
-    private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> return a.sortKey.compareTo(b.sortKey) }] as Comparator
-    private static final Map<String, Object> CONFIG = new ConcurrentHashMap<String, Object>();
+    private static final MessageSource MESSAGES = new MessageSource(DocGenerator)
+    private static final Logger LOG = Logger.create(DocGenerator)
+    private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> a.sortKey <=> b.sortKey }] as Comparator
+    private static final Map<String, Object> CONFIG = new ConcurrentHashMap<>()
 
     List<File> sourceFiles
     File outputDir
@@ -63,9 +63,9 @@ class DocGenerator {
         sourceFiles.each {
             if (it.exists()) {
                 builder.addSource(it.newReader())
-                log.debug "adding reader for $it"
+                LOG.debug "adding reader for $it"
             } else {
-                log.debug "not found, skipping: $it.path"
+                LOG.debug "not found, skipping: $it.path"
             }
         }
 
@@ -77,7 +77,7 @@ class DocGenerator {
 
         def docSource = new DocSource()
         methods.each { JavaMethod method ->
-            if (!method.isPublic() || !method.isStatic()) {
+            if (!method.public || !method.static) {
                 return // skip it
             }
 
@@ -86,11 +86,11 @@ class DocGenerator {
             docSource.add(firstParamType, method)
         }
         docSource.populateInheritedMethods()
-        return docSource
+        docSource
     }
 
     /**
-     * Builds an HTML page from the structure of DefaultGroovyMethods.
+     * Builds an HTML page from the structure of extension method classes.
      */
     void generateAll() {
         def engine = new SimpleTemplateEngine()
@@ -161,7 +161,7 @@ class DocGenerator {
 
     private Template createTemplate(TemplateEngine templateEngine, String resourceFile) {
         def resourceUrl = getClass().getResource(resourceFile)
-        return templateEngine.createTemplate(resourceUrl.text)
+        templateEngine.createTemplate(resourceUrl.text)
     }
 
     /**
@@ -200,7 +200,7 @@ class DocGenerator {
         for (indexItem in indexItems) {
             indexMap[indexItem['index']] << indexItem
         }
-        return indexMap
+        indexMap
     }
 
     /**
@@ -208,12 +208,12 @@ class DocGenerator {
      */
     static void main(String... args) {
         def cli = new CliBuilderInternal(usage : 'DocGenerator [options] [sourcefiles]', posix:false)
-        cli.help(longOpt: 'help', messages['cli.option.help.description'])
-        cli._(longOpt: 'version', messages['cli.option.version.description'])
-        cli.o(longOpt: 'outputDir', args:1, argName: 'path', messages['cli.option.output.dir.description'])
-        cli.title(longOpt: 'title', args:1, argName: 'text', messages['cli.option.title.description'])
+        cli.help(longOpt: 'help', MESSAGES['cli.option.help.description'])
+        cli._(longOpt: 'version', MESSAGES['cli.option.version.description'])
+        cli.o(longOpt: 'outputDir', args:1, argName: 'path', MESSAGES['cli.option.output.dir.description'])
+        cli.title(longOpt: 'title', args:1, argName: 'text', MESSAGES['cli.option.title.description'])
         cli.link(args:2, valueSeparator:'=', argName:'comma-separated-package-prefixes=url',
-                messages['cli.option.link.patterns.description'])
+                MESSAGES['cli.option.link.patterns.description'])
         def options = cli.parse(args)
 
         if (options.help) {
@@ -221,20 +221,20 @@ class DocGenerator {
             return
         }
 
-        if (options.links && options.links.size() % 2 == 1) {
-            throw new IllegalArgumentException("Links should be specified in pattern=url pairs")
+        if (options.links && options.links.size() % 2 != 0) {
+            throw new IllegalArgumentException('Links should be specified in pattern=url pairs')
         }
 
         if (options.version) {
-            println messages.format('cli.info.version', GroovySystem.version)
+            LOG.warn MESSAGES.format('cli.info.version', GroovySystem.version)
             return
         }
 
         def start = System.currentTimeMillis()
 
-        def outputDir = new File(options.outputDir ?: "build/html/groovy-jdk")
+        def outputDir = new File(options.outputDir ?: 'build/html/groovy-jdk')
         outputDir.mkdirs()
-        CONFIG.title = options.title ?: "Groovy JDK"
+        CONFIG.title = options.title ?: 'Groovy JDK'
         if (options.links) {
             CONFIG.links = options.links.collate(2).collectMany{ prefixes, url -> prefixes.tokenize(',').collect{[it, url]} }.collectEntries()
         }
@@ -251,14 +251,14 @@ class DocGenerator {
             }
         } catch (MissingPropertyException e) { // TODO is it still needed?
             // no call site change available, so ignore it
-            log.error e.message, e
+            LOG.error e.message, e
         }
 
         def docGen = new DocGenerator(srcFiles, outputDir)
         docGen.generateAll()
 
         def end = System.currentTimeMillis()
-        log.debug "Done. Took ${end - start} milliseconds."
+        LOG.debug "Done. Took ${end - start} milliseconds."
     }
 
     private static class DocSource {
@@ -295,7 +295,7 @@ class DocGenerator {
                     next = next.javaClass.superClass
                 }
                 def remaining = docType.javaClass.implementedInterfaces.toList()
-                while (!remaining.isEmpty()) {
+                while (!remaining.empty) {
                     def nextInt = remaining.remove(0)
                     if (allTypes.keySet().contains(nextInt.fullyQualifiedName)) {
                         docType.inheritedMethods[allTypes[nextInt.fullyQualifiedName]] = allTypes[nextInt.fullyQualifiedName].docMethods
@@ -308,7 +308,7 @@ class DocGenerator {
         SortedSet<DocType> getAllDocTypes() {
             def allSet = new TreeSet(SORT_KEY_COMPARATOR)
             allSet.addAll(packages.collectMany { it.docTypes })
-            return allSet
+            allSet
         }
     }
 
@@ -328,7 +328,7 @@ class DocGenerator {
 
     private static class DocType {
         private Type type
-        final String shortComment = "" // empty because cannot get a comment of JDK
+        final String shortComment = '' // empty because cannot get a comment of JDK
         SortedSet<DocMethod> docMethods = new TreeSet<DocMethod>(SORT_KEY_COMPARATOR)
         Map<String, List<DocMethod>> inheritedMethods = new LinkedHashMap<String, List<DocMethod>>()
 
@@ -341,8 +341,8 @@ class DocGenerator {
                 return DocPackage.PRIMITIVE_TYPE_PSEUDO_PACKAGE
             }
             def fqcn = fullyQualifiedClassName
-            if (fqcn.indexOf(".") < 0) {
-                return ""
+            if (fqcn.indexOf('.') < 0) {
+                return ''
             }
             fqcn.replaceAll(/\.[^.]*$/, '')
         }
@@ -359,7 +359,7 @@ class DocGenerator {
         }
 
         boolean isInterface() {
-            type.javaClass.isInterface()
+            type.javaClass.interface
         }
 
         String getSortKey() {
@@ -386,23 +386,23 @@ class DocGenerator {
          * @return a list of parameters without the first one
          */
         List<JavaParameter> getParameters() {
-            if (javaMethod.getParameters().size() > 1) {
-                return javaMethod.getParameters().toList()[1..-1]
+            if (javaMethod.parameters.size() > 1) {
+                return javaMethod.parameters.toList()[1..-1]
             }
-            return []
+            []
         }
 
         String getParametersSignature() {
-            parameters.collect { DocUtil.resolveJdkClassName(it.type.toString()) }.join(", ")
+            parameters.collect { DocUtil.resolveJdkClassName(it.type.toString()) }.join(', ')
         }
 
         String getParametersDocUrl() {
-            parameters.collect { "${DocUtil.getLinkAnchor(it.type.toString(), declaringDocType.packageName)} $it.name" }.join(", ")
+            parameters.collect { "${DocUtil.getLinkAnchor(it.type.toString(), declaringDocType.packageName)} $it.name" }.join(', ')
         }
 
         String getReturnTypeDocUrl() {
             def returnType = javaMethod.returnType
-            def resolvedReturnType = (returnType) ? DocUtil.resolveJdkClassName(returnType.toString()) : ""
+            def resolvedReturnType = (returnType) ? DocUtil.resolveJdkClassName(returnType.toString()) : ''
             DocUtil.getLinkAnchor(resolvedReturnType, declaringDocType.packageName)
         }
 
@@ -415,11 +415,11 @@ class DocGenerator {
         }
 
         String getReturnComment() {
-            DocUtil.formatJavadocText(javaMethod.getTagByName("return")?.value ?: '', declaringDocType.packageName)
+            DocUtil.formatJavadocText(javaMethod.getTagByName('return')?.value ?: '', declaringDocType.packageName)
         }
 
         Map getParameterComments() {
-            javaMethod.getTagsByName("param").drop(1).collectEntries { // first arg is the "real this"
+            javaMethod.getTagsByName('param').drop(1).collectEntries { // first arg is the "real this"
                 def name = it.value.replaceAll(/ .*/, '')
                 def comment = DocUtil.formatJavadocText(it.value.replaceAll(/^\w*/, ''), declaringDocType.packageName)
                 [name, comment]
@@ -427,15 +427,15 @@ class DocGenerator {
         }
 
         List<String> getSeeComments() {
-            javaMethod.getTagsByName("see").collect { DocUtil.getLinkAnchor(it.value, declaringDocType.packageName) }
+            javaMethod.getTagsByName('see').collect { DocUtil.getLinkAnchor(it.value, declaringDocType.packageName) }
         }
 
         String getSinceComment() {
-            javaMethod.getTagByName("since")?.value
+            javaMethod.getTagByName('since')?.value
         }
 
         boolean isStatic() {
-            javaMethod.parentClass.name == 'DefaultGroovyStaticMethods'
+            javaMethod.parentClass.name.endsWith('StaticMethods') || javaMethod.parentClass.name.endsWith('StaticExtensions')
         }
 
         String getSortKey() {
@@ -451,7 +451,7 @@ class DocGenerator {
             if (className in ('A'..'Z').collect{ it + '[]' }) {
                 return 'java.lang.Object[]'
             }
-            return className
+            className
         }
 
         static String formatJavadocText(String text, String packageName) {
@@ -460,8 +460,7 @@ class DocGenerator {
 
         private static String linkify(String text, String packageName) {
             text.replaceAll(/\{@link\s+([^}]*)\s*\}/) { String all, String destination ->
-                // A class name cannot be omitted: https://issues.apache.org/jira/browse/GROOVY-6740 TODO: remove DocUtil once fixed?
-                DocUtil.getLinkAnchor(destination, packageName)
+                getLinkAnchor(destination, packageName)
             }
         }
 
@@ -471,13 +470,13 @@ class DocGenerator {
 
         static String getFirstSentence(String text) {
             def boundary = BreakIterator.getSentenceInstance(CONFIG.locale)
-            boundary.setText(text)
+            boundary.text = text
             int start = boundary.first()
             int end = boundary.next()
             if (start > -1 && end > -1) {
                 return text.substring(start, end)
             }
-            return text
+            text
         }
 
         static String getLinkAnchor(String destination, String originPackageName) {
@@ -493,7 +492,7 @@ class DocGenerator {
 
             def fullyQualifiedClassName = resolveJdkClassName(destination.replaceFirst(/#.*$/, ''))
             def methodSignatureHash = destination.replaceFirst(/^[^#]*/, '')
-            def simpleClassName = fullyQualifiedClassName.replaceFirst(/.*\./, "")
+            def simpleClassName = fullyQualifiedClassName.replaceFirst(/.*\./, '')
             def packageName = fullyQualifiedClassName.replaceFirst(/.?[^.]+$/, '')
 
             // If a package is empty, a destination text should be just returned
@@ -518,18 +517,18 @@ class DocGenerator {
             }
 
             def url = "${apiBaseUrl}${packageName.replace('.', '/')}/${simpleClassName}.html${methodSignatureHash}"
-            return """<a href="$url" title="$title">${simpleClassName}${methodSignatureHash}</a>"""
+            """<a href="$url" title="$title">${simpleClassName}${methodSignatureHash}</a>"""
         }
 
         static File createPackageDirectory(File outputDir, String packageName) {
             def packagePath = filePathOf(packageName)
             def dir = new File(outputDir, packagePath)
             dir.mkdirs()
-            return dir
+            dir
         }
 
         private static String filePathOf(String packageName) {
-            return packageName.replace('.', File.separator)
+            packageName.replace('.', File.separator)
         }
 
         static File sourceFileOf(String pathOrClassName) {
