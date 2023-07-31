@@ -38,7 +38,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
@@ -234,7 +234,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private String genericTypesAsString(GenericsType[] genericsTypes) {
         if (genericsTypes == null || genericsTypes.length == 0)
             return "";
-        return "<" + DefaultGroovyMethods.join(genericsTypes, ", ") + ">";
+        return "<" + ArrayGroovyMethods.join(genericsTypes, ", ") + ">";
     }
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
