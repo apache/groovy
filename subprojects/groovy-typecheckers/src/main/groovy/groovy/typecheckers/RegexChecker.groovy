@@ -100,8 +100,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  */
 @Incubating
 class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
-    private static final String REGEX_GROUP_COUNT = RegexChecker.simpleName + "_INFERRED_GROUP_COUNT"
-    private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.simpleName + "_MATCHER_RESULT_INFERRED_TYPE"
+    private static final String REGEX_GROUP_COUNT = RegexChecker.simpleName + '_INFERRED_GROUP_COUNT'
+    private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.simpleName + '_MATCHER_RESULT_INFERRED_TYPE'
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)
 
     @Override
@@ -242,7 +242,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         if (maxCnt != null) {
                             def cnt = findConstExp(call.arguments.getExpression(0), Integer).value
                             if (cnt > maxCnt) {
-                                addStaticTypeError("Invalid group count " + cnt + " for regex with " + maxCnt + " group" + (maxCnt == 1 ? "" : "s"), call)
+                                addStaticTypeError('Invalid group count ' + cnt + ' for regex with ' + maxCnt + ' group' + (maxCnt == 1 ? '' : 's'), call)
                             }
                         }
                     }
@@ -256,7 +256,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         if (maxCnt != null) {
                             def cnt = findConstExp(expression.rightExpression, Integer).value
                             if (cnt > maxCnt) {
-                                addStaticTypeError("Invalid group count " + cnt + " for regex with " + maxCnt + " group" + (maxCnt == 1 ? "" : "s"), expression)
+                                addStaticTypeError('Invalid group count ' + cnt + ' for regex with ' + maxCnt + ' group' + (maxCnt == 1 ? '' : 's'), expression)
                             }
                         }
                     }
@@ -286,8 +286,8 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             target.putNodeMetaData(REGEX_GROUP_COUNT, m.groupCount())
         } catch (PatternSyntaxException ex) {
             String additional = regex.lineNumber != target.lineNumber ?
-                " @ line $regex.lineNumber, column $regex.columnNumber: " : ": "
-            addStaticTypeError("Bad regex" + additional + ex.message, target)
+                " @ line $regex.lineNumber, column $regex.columnNumber: " : ': '
+            addStaticTypeError('Bad regex' + additional + ex.message, target)
         }
     }
 

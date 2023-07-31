@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
 
 @CompileStatic
+@SuppressWarnings('Instanceof')
 class CheckingVisitor extends ClassCodeVisitorSupport {
     protected final Map<Expression, Expression> localConstVars = new HashMap<>()
 
@@ -44,22 +45,22 @@ class CheckingVisitor extends ClassCodeVisitorSupport {
                 return findConstExp(localConstVars.get(var), type)
             }
         }
-        return null
+        null
     }
 
     @Override
     protected SourceUnit getSourceUnit() {
-        return null
+        null
     }
 
     static Variable findTargetVariable(final VariableExpression ve) {
-        Variable accessedVariable = ve.getAccessedVariable()
+        Variable accessedVariable = ve.accessedVariable
         if (accessedVariable != null && accessedVariable != ve) {
             if (accessedVariable instanceof VariableExpression) {
                 return findTargetVariable((VariableExpression) accessedVariable)
             }
             return accessedVariable
         }
-        return ve
+        ve
     }
 }
