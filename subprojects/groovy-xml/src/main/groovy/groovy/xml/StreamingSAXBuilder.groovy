@@ -23,6 +23,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 import org.xml.sax.ext.LexicalHandler
 import org.xml.sax.helpers.AttributesImpl
 
+@SuppressWarnings('Instanceof')
 class StreamingSAXBuilder extends AbstractStreamingBuilder {
     def pendingStack = []
 
@@ -58,13 +59,13 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
             def k = (key == ':' ? '' : key)
             hiddenNamespaces[k] = namespaces[key]
             namespaces[k] = value
-            attributes.addAttribute("http://www.w3.org/2000/xmlns/", k, "xmlns${k == '' ? '' : ":$k"}", "CDATA", "$value")
+            attributes.addAttribute('http://www.w3.org/2000/xmlns/', k, "xmlns${k == '' ? '' : ":$k"}", 'CDATA', "$value")
             contentHandler.startPrefixMapping(k, value)
         }
         // set up the tag info
-        def uri = ""
+        def uri = ''
         def qualifiedName = tag
-        if (prefix != "") {
+        if (prefix != '') {
             if (namespaces.containsKey(prefix)) {
                 uri = namespaces[prefix]
             } else if (pendingNamespaces.containsKey(prefix)) {
@@ -72,8 +73,8 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
             } else {
                 throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
             }
-            if (prefix != ":") {
-                qualifiedName = prefix + ":" + tag
+            if (prefix != ':') {
+                qualifiedName = prefix + ':' + tag
             }
         }
         contentHandler.startElement(uri, tag, qualifiedName, attributes)
@@ -99,12 +100,12 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
             def parts = key.tokenize('$')
             if (namespaces.containsKey(parts[0])) {
                 def namespaceUri = namespaces[parts[0]]
-                attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", "$value")
+                attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", 'CDATA', "$value")
             } else {
                 throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
             }
         } else {
-            attributes.addAttribute("", key, key, "CDATA", "$value")
+            attributes.addAttribute('', key, key, 'CDATA', "$value")
         }
     }
 
@@ -150,7 +151,7 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
         this.builder = new BaseMarkupBuilder(nsSpecificTags)
     }
 
-    public bind(closure) {
+    def bind(closure) {
         def boundClosure = this.builder.bind(closure)
         return {contentHandler ->
             contentHandler.startDocument()

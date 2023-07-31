@@ -51,11 +51,11 @@ package groovy.xml
  * assert writer.toString() == '''{"root1":{"@a":"5","@b":"7","elem1":"hello1","elem2":"hello2","elem3":{"@x":"7"}}}'''
  * </pre>
  */
-public class StaxBuilder extends BuilderSupport {
+class StaxBuilder extends BuilderSupport {
 
     def writer
 
-    public StaxBuilder(xmlStreamWriter) {
+    StaxBuilder(xmlStreamWriter) {
         writer = xmlStreamWriter
         writer.writeStartDocument()
     }
@@ -85,6 +85,7 @@ public class StaxBuilder extends BuilderSupport {
         name
     }
 
+    @SuppressWarnings('UnusedMethodParameter')
     protected void nodeCompleted(parent, node) {
         writer.writeEndElement()
         if (!parent) {
@@ -93,6 +94,7 @@ public class StaxBuilder extends BuilderSupport {
         }
     }
 
+    @SuppressWarnings(['UnusedMethodParameter', 'EmptyMethod'])
     protected void setParent(parent, child) {
     }
 

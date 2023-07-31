@@ -24,9 +24,10 @@ import org.w3c.dom.Node
 
 import javax.xml.parsers.DocumentBuilderFactory
 
+@SuppressWarnings('Instanceof')
 class StreamingDOMBuilder extends AbstractStreamingBuilder {
     def pendingStack = []
-    def defaultNamespaceStack = [""]
+    def defaultNamespaceStack = ['']
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         def comment = dom.document.createComment(body)
         if (comment != null) {
@@ -95,11 +96,11 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         pendingNamespaces.each {key, value ->
             if (key == ':') {
                 defaultNamespace = "$value"
-                nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns", defaultNamespace])
+                nsAttributes.add(['http://www.w3.org/2000/xmlns/', 'xmlns', defaultNamespace])
             } else {
                 hiddenNamespaces[key] = namespaces[key]
                 namespaces[key] = value
-                nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
+                nsAttributes.add(['http://www.w3.org/2000/xmlns/', "xmlns:${key}", "$value"])
             }
         }
 
@@ -108,7 +109,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         def uri = defaultNamespace
         def qualifiedName = tag
 
-        if (prefix != "") {
+        if (prefix != '') {
             if (namespaces.containsKey(prefix)) {
                 uri = namespaces[prefix]
             } else if (pendingNamespaces.containsKey(prefix)) {
@@ -116,8 +117,8 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
             } else {
                 throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
             }
-            if (prefix != ":") {
-                qualifiedName = prefix + ":" + tag
+            if (prefix != ':') {
+                qualifiedName = prefix + ':' + tag
             }
         }
 
@@ -165,7 +166,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
             defaultNamespaceStack.pop()
         }
 
-        dom.element = dom.element.getParentNode()
+        dom.element = dom.element.parentNode
 
         hiddenNamespaces.each { key, value ->
             if (value == null) namespaces.remove key
@@ -180,9 +181,11 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                             'yieldUnescaped':noopClosure,
                             'comment':commentClosure,
                             'pi':piClosure])
-        def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
-                          'http://www.w3.org/2000/xmlns/'                  : [tagClosure, tagClosure, [:]],
-                          'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+        def nsSpecificTags = [
+            ':'                                             : [tagClosure, tagClosure, [:]],    // the default namespace
+            'http://www.w3.org/2000/xmlns/'                 : [tagClosure, tagClosure, [:]],
+            'http://www.codehaus.org/Groovy/markup/keywords': [badTagClosure, tagClosure, specialTags]
+        ]
         this.builder = new BaseMarkupBuilder(nsSpecificTags)
     }
 
@@ -190,7 +193,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         def boundClosure = this.builder.bind(closure)
         return {
             if (it instanceof Node) {
-                def document = it.getOwnerDocument()
+                def document = it.ownerDocument
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
             }
@@ -198,7 +201,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
             dBuilder.namespaceAware = true
             def newDocument = dBuilder.newDocumentBuilder().newDocument()
             boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
-            return newDocument
+            newDocument
         }
     }
 }

@@ -26,10 +26,11 @@ class AbstractStreamingBuilder {
         }
         throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
     }
+
     def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
         attrs.each { key, value ->
-            if ( key == "") {
-                key = ":"    // marker for default namespace
+            if ( key == '') {
+                key = ':'    // marker for default namespace
             }
             value = value.toString()     // in case it's not a string
             if (namespaces[key] != value) {
@@ -41,6 +42,8 @@ class AbstractStreamingBuilder {
             }
         }
     }
+
+    @SuppressWarnings('Instanceof')
     def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
         attrs.each { key, value ->
             if (value instanceof Map) {
@@ -60,6 +63,7 @@ class AbstractStreamingBuilder {
             }
         }
     }
+
     def getNamespaceClosure = { doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces] }
 
     def toMapStringClosure = { Map instruction, checkDoubleQuotationMarks={ value -> !value.toString().contains('"') } ->
@@ -71,7 +75,7 @@ class AbstractStreamingBuilder {
                 buf.append(" $name='$value'")
             }
         }
-        return buf.toString()
+        buf.toString()
     }
 
     def specialTags = ['declareNamespace':namespaceSetupClosure,
