@@ -18,7 +18,12 @@
  */
 package groovy.grape
 
-import groovy.transform.*
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.transform.EqualsAndHashCode
+import groovy.transform.NamedParam
+import groovy.transform.NamedParams
 import org.apache.groovy.plugin.GroovyRunner
 import org.apache.groovy.plugin.GroovyRunnerRegistry
 import org.apache.ivy.Ivy
@@ -49,7 +54,10 @@ import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.reflection.ReflectionUtils
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+import org.w3c.dom.Element
 
+import javax.xml.parsers.DocumentBuilderFactory
+import java.text.ParseException
 import java.util.jar.JarFile
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
@@ -97,7 +105,7 @@ class GrapeIvy implements GrapeEngine {
         if (grapeConfig.exists()) {
             try {
                 settings.load(grapeConfig)
-            } catch (java.text.ParseException e) {
+            } catch (ParseException e) {
                 System.err.println("Local Ivy config file '${grapeConfig.getCanonicalPath()}' appears corrupt - ignoring it and using default config instead\nError was: ${e.getMessage()}")
                 settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
             }
@@ -525,11 +533,11 @@ class GrapeIvy implements GrapeEngine {
                         // TODO: handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
-                        def db = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                        def db = DocumentBuilderFactory.newInstance().newDocumentBuilder()
                         def root = db.parse(ivyFile).getDocumentElement()
                         def publis = root.getElementsByTagName('publications')
                         for (int i = 0; i < publis.length; i += 1) {
-                            def artifacts = ((org.w3c.dom.Element) publis.item(i)).getElementsByTagName('artifact')
+                            def artifacts = ((Element) publis.item(i)).getElementsByTagName('artifact')
                             processArtifacts(artifacts, rev, jardir)
                         }
                         ivyFile.delete()
