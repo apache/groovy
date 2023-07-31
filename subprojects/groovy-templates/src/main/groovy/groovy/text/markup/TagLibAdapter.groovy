@@ -44,26 +44,28 @@ package groovy.text.markup
  *     g.emoticon(happy:'true') { 'Hi John' }
  * </pre>
  *
- * Performance-wise, it would be better to reimplement the taglib, but this makes it easier to reuse
- * existing code.
+ * Performance-wise, it would be better to reimplement the taglib,
+ * but this makes it easier to reuse existing code.
  */
 class TagLibAdapter {
     private final BaseTemplate template
     private final List<Object> tagLibs = []
 
-    public TagLibAdapter(BaseTemplate tpl) {
+    TagLibAdapter(BaseTemplate tpl) {
         this.template = tpl
     }
 
-    public void registerTagLib(Class tagLibClass) {
-        tagLibs.add(tagLibClass.newInstance())
+    @SuppressWarnings('UnnecessaryGetter')
+    void registerTagLib(Class tagLibClass) {
+        tagLibs.add(tagLibClass.getConstructor().newInstance())
     }
 
-    public void registerTagLib(Object tagLib) {
+    void registerTagLib(Object tagLib) {
         tagLibs.add(tagLib)
     }
 
-    public Object methodMissing(String name, args) {
+    @SuppressWarnings('Instanceof')
+    def methodMissing(String name, args) {
         for (Object tagLib : tagLibs) {
             def p = tagLib."$name"
             if (p instanceof Closure) {

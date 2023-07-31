@@ -90,7 +90,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
             }
         }
         methodNotFound { receiver, name, argList, argTypes, call ->
-            if ("getAt" == name && OBJECT_TYPE == receiver) {
+            if ('getAt' == name && OBJECT_TYPE == receiver) {
                 // GROOVY-6940
                 def enclosingBinaryExpression = context.enclosingBinaryExpression
                 if (enclosingBinaryExpression.leftExpression.is(call.objectExpression)) {
@@ -103,15 +103,14 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
                                 // type checker looks for getAt() but we need to replace the super binary expression with a putAt
                                 // foo[x] = y --> foo.putAt(x,y)
                                 def mce = new MethodCallExpression(
-                                        enclosingBinaryExpression.leftExpression,
-                                        "putAt",
-                                        new ArgumentListExpression(enclosingBinaryExpression.rightExpression, superEnclosing.rightExpression))
+                                    enclosingBinaryExpression.leftExpression,
+                                    'putAt',
+                                    new ArgumentListExpression(enclosingBinaryExpression.rightExpression, superEnclosing.rightExpression))
                                 makeDynamic(mce)
                                 currentScope.binaryExpressions.put(superEnclosing, mce)
                                 return null
-                            } else {
-                                throw new UnsupportedOperationException("Operation not supported in templates: ${superEnclosing.text}. Please declare an explicit type for the variable.")
                             }
+                            throw new UnsupportedOperationException("Operation not supported in templates: ${superEnclosing.text}. Please declare an explicit type for the variable.")
                         }
                     }
                     currentScope.binaryExpressions.put(enclosingBinaryExpression, call)
@@ -189,7 +188,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
             }
         }
         visitor.startResolving(dummyClass, ctx.source)
-        return dummyMethod.returnType
+        dummyMethod.returnType
     }
 
     private static class BuilderMethodReplacer extends ClassCodeExpressionTransformer {
@@ -212,12 +211,8 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         }
 
         @Override
-        void visitClosureExpression(final ClosureExpression expression) {
-            super.visitClosureExpression(expression)
-        }
-
-        @Override
-        public Expression transform(final Expression exp) {
+        @SuppressWarnings('Instanceof')
+        Expression transform(final Expression exp) {
             if (exp instanceof BinaryExpression && binaryExpressionsToBeReplaced.containsKey(exp)) {
                 return binaryExpressionsToBeReplaced.get(exp)
             }
@@ -226,10 +221,10 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
                 args*.visit(this)
                 // replace with direct call to methodMissing
                 def call = new MethodCallExpression(
-                        new VariableExpression("this"),
-                        "methodMissing",
+                        new VariableExpression('this'),
+                        'methodMissing',
                         new ArgumentListExpression(
-                                new ConstantExpression(exp.getMethodAsString()),
+                                new ConstantExpression(exp.methodAsString),
                                 new ArrayExpression(
                                         OBJECT_TYPE,
                                         [*args]
