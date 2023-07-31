@@ -18,7 +18,10 @@
  */
 package groovy.transform
 
-import java.lang.annotation.Documented
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Target
 
 /**
  * An annotation which is just a shortcut for @CompileStatic(TypeCheckingMode.SKIP).
@@ -27,7 +30,10 @@ import java.lang.annotation.Documented
  *
  * @since 2.1.0
  */
-@Documented
 @AnnotationCollector(processor = 'org.codehaus.groovy.transform.CompileDynamicProcessor')
+@Retention(RetentionPolicy.SOURCE)
+@Target([ElementType.TYPE,
+         ElementType.METHOD,
+         ElementType.CONSTRUCTOR])
 @interface CompileDynamic {
 }

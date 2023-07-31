@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,30 +30,30 @@ import java.lang.annotation.Target;
  * Method annotation that creates a cache for the results of the execution of the annotated method. Whenever the method
  * is called, the mapping between the parameters and the return value is preserved in a cache making subsequent calls with
  * the same arguments fast.
- * 
+ *
  * <p>
  * Example usage:
- * 
+ *
  * <pre>
  * class MemoizedExample {
- * 
+ *
  *     {@code @Memoized}
  *     int sum(int n1, int n2) {
- *         println "$n1 + $n2 = ${n1 + n2}" 
+ *         println "$n1 + $n2 = ${n1 + n2}"
  *         n1 + n2
  *     }
  * }
  * </pre>
- * 
+ *
  * which becomes (approximately):
- * 
+ *
  * <pre>
  * class MemoizedExample {
- * 
+ *
  *     private final Closure memoizedSum = { int n1, int n2 {@code ->}
  *         private$method$memoizedSum(n1,n2)
  *     }.memoize()
- * 
+ *
  *     int sum(int n1, int n2) {
  *         memoizedSum(n1, n2)
  *     }
@@ -63,10 +64,10 @@ import java.lang.annotation.Target;
  *     }
  * }
  * </pre>
- * 
+ *
  * <p>
  * Upon execution of this code:
- * 
+ *
  * <pre>
  * def instance = new MemoizedExample()
  * println instance.sum(1, 2)
@@ -74,9 +75,9 @@ import java.lang.annotation.Target;
  * println instance.sum(2, 3)
  * println instance.sum(2, 3)
  * </pre>
- * 
+ *
  * The following will be output:
- * 
+ *
  * <pre>
  * 1 + 2 = 3
  * 3
@@ -85,21 +86,21 @@ import java.lang.annotation.Target;
  * 5
  * 5
  * </pre>
- * 
+ *
  * <p>More examples:</p>
  * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
  * // Script variable which is changed when increment()
- * // method is invoked. 
+ * // method is invoked.
  * // If cached method call is invoked then the value
  * // of this variable will not change.
  * &#64;Field boolean incrementChange = false
  *
- * &#64;Memoized 
+ * &#64;Memoized
  * int increment(int value) {
  *     incrementChange = true
- *     value + 1 
+ *     value + 1
  * }
  *
  * // Invoke increment with argument 10.
@@ -127,9 +128,9 @@ import java.lang.annotation.Target;
  *
  * @since 2.2.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ ElementType.METHOD })
+@Target(ElementType.METHOD)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.MemoizedASTTransformation")
 public @interface Memoized {
 

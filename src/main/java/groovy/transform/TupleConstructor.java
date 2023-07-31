@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -213,9 +214,9 @@ import java.lang.annotation.Target;
  * @see VisibilityOptions
  * @since 1.8.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.TupleConstructorASTTransformation")
 public @interface TupleConstructor {
     /**

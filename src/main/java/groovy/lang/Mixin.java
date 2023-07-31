@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -28,13 +29,13 @@ import java.lang.annotation.Target;
 /**
  * Provides a mechanism for mixing in methods into a class.
  *
- * @deprecated static mixins have been deprecated in favour of traits (trait keyword).
+ * @deprecated Static mixins have been deprecated in favour of traits.
  */
-@java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Deprecated(since = "2.3.0")
+@Documented
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.ast.MixinASTTransformation")
-@Deprecated
 public @interface Mixin {
-    Class [] value ();
+    Class[] value();
 }

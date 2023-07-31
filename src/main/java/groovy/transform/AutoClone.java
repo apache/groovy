@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -234,9 +235,9 @@ import java.lang.annotation.Target;
  * @see ExternalizeMethods
  * @since 1.8.0
  */
-@java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@Documented
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoCloneASTTransformation")
 public @interface AutoClone {
     /**

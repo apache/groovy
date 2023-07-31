@@ -18,115 +18,110 @@
  */
 package groovy.transform
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AnnotationCollectorTransform
+import org.junit.Test
 
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 
-class AnnotationCollectorTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class AnnotationCollectorTest {
 
     static class MyProcessor extends AnnotationCollectorTransform {
+        @Override
         List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
-            def excludes = aliasAnnotationUsage.getMember("excludes")
+            def excludes = aliasAnnotationUsage.getMember('excludes')
             if (excludes) {
-                addError("use myex instead of excludes", aliasAnnotationUsage, source)
+                addError('use myex instead of excludes', aliasAnnotationUsage, source)
                 return []
             }
-            def myex = aliasAnnotationUsage.getMembers().remove("myex")
-            if (myex) aliasAnnotationUsage.addMember("excludes", myex)
-            return super.visit(collector, aliasAnnotationUsage, aliasAnnotated, source)
+            def myex = aliasAnnotationUsage.getMembers().remove('myex')
+            if (myex) aliasAnnotationUsage.addMember('excludes', myex)
+
+            super.visit(collector, aliasAnnotationUsage, aliasAnnotated, source)
         }
     }
 
-    void assertScript(String script) {
-        GroovyShell shell = new GroovyShell(this.class.classLoader)
-        shell.evaluate(script, getTestClassName())
-    }
-
-    void shouldNotCompile(String script, Closure failureAction) {
-        GroovyShell shell = new GroovyShell(this.class.classLoader)
-        try {
-            shell.parse(script, getTestClassName())
-            assert false
-        } catch (MultipleCompilationErrorsException mce) {
-            failureAction(mce)
-        }
-    }
-
+    @Test
     void testSimpleUsage() {
         def data = PreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
-        assert data.length == 0
         assert data instanceof Object[][]
-        assertScript '''
-            import groovy.transform.PreCompiledAlias
+        assert data.length == 0
+
+        assertScript '''import groovy.transform.PreCompiledAlias
             @PreCompiledAlias
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
+            assert Foo.class.annotations.size() == 0
             assert new Foo(a: 1, b: 2).toString() == "Foo(1, 2)"
             assert PreCompiledAlias.CollectorHelper.value().length == 0
             assert PreCompiledAlias.CollectorHelper.value() instanceof Object[][]
         '''
 
-        assertScript '''
-            import groovy.transform.*
-            @AnnotationCollector([ToString, EqualsAndHashCode, Sortable])
+        assertScript '''import groovy.transform.*
+            @AnnotationCollector([EqualsAndHashCode, ToString, Sortable])
             @interface NotPreCompiledAlias {}
+
+            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
+            assert data instanceof Object[][]
+            assert data.length == 0
 
             @NotPreCompiledAlias
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
+            assert Foo.class.annotations.size() == 0
             assert new Foo(a: 1, b: 2).toString() == "Foo(1, 2)"
-            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 0
-            assert data instanceof Object[][]
         '''
     }
 
+    @Test
     void testUsageWithArgument() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @PreCompiledAlias(excludes=["a"])
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
+            assert Foo.class.annotations.size() == 0
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-            assert PreCompiledAlias.CollectorHelper.value().length == 0
-            assert PreCompiledAlias.CollectorHelper.value() instanceof Object[][]
         '''
 
-        assertScript '''
-            import groovy.transform.*
+        assertScript '''import groovy.transform.*
             @AnnotationCollector([ToString, EqualsAndHashCode, Sortable])
             @interface NotPreCompiledAlias {}
+
+            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
+            assert data instanceof Object[][]
+            assert data.length == 0
 
             @NotPreCompiledAlias(excludes=["a"])
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
+            assert Foo.class.annotations.size() == 0
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 0
-            assert data instanceof Object[][]
         '''
     }
 
+    @Test
     void testClosureAnnotation() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript '''import groovy.transform.*
             @AnnotationCollector([ConditionalInterrupt])
             @interface NotPreCompiledAlias {}
+
+            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
+            assert data instanceof Object[][]
+            assert data.length == 0
 
             @NotPreCompiledAlias(applyToAllClasses=false, value={ counter++> 10})
             class X {
@@ -135,6 +130,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
                   4.times {null}
                  }
             }
+
             def x = new X(counter:20)
             try {
                 x.method()
@@ -142,13 +138,9 @@ class AnnotationCollectorTest extends GroovyTestCase {
             } catch (InterruptedException ie)  {
                 assert true
             }
-            def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 0
-            assert data instanceof Object[][]
         '''
-        assertScript '''
-            import groovy.transform.*
 
+        assertScript '''import groovy.transform.*
             @OtherPreCompiledAlias(applyToAllClasses=false, value={ counter++> 10})
             class X {
                 def counter = 0
@@ -156,6 +148,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
                   4.times {null}
                  }
             }
+
             def x = new X(counter:20)
             try {
                 x.method()
@@ -163,39 +156,38 @@ class AnnotationCollectorTest extends GroovyTestCase {
             } catch (InterruptedException ie)  {
                 assert true
             }
-            assert OtherPreCompiledAlias.CollectorHelper.value().length == 0
-            assert OtherPreCompiledAlias.CollectorHelper.value() instanceof Object[][]
         '''
     }
 
+    @Test
     void testAST() {
-        assertScript '''
-            import groovy.transform.*
-            @AnnotationCollector([ToString, EqualsAndHashCode, Sortable])
+        assertScript '''import groovy.transform.*
+            @AnnotationCollector([EqualsAndHashCode, ToString, Sortable])
             @interface Alias {}
+
+            def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
+            assert data instanceof Object[][]
+            assert data.length == 0
 
             @Alias(excludes=["a"])
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def annotations = node.annotations
-                assert annotations.size() == 4 //ASTTest + 3
+                assert annotations.size() == 4 // ASTTest + 3
                 annotations.each {
-                    assert it.lineNumber == 6 || it.classNode.name.contains("ASTTest")
+                    assert it.lineNumber == 9 || it.classNode.name.endsWith('ASTTest')
                 }
             })
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-            def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 0
-            assert data instanceof Object[][]
         '''
     }
 
+    @Test
     void testConflictingAnnotations() {
-        shouldNotCompile '''
-            import groovy.transform.*
+        def err = shouldFail '''import groovy.transform.*
             @interface ConflictingA {String foo()}
             @interface ConflictingB {int foo()}
 
@@ -203,33 +195,29 @@ class AnnotationCollectorTest extends GroovyTestCase {
             @interface Alias {}
 
             @Alias(foo="1") class X{}
-        ''', { exception ->
-            exception.message.contains("line 9, column 24")
-            exception.message.contains("Attribute 'foo' should have type 'java.lang.Integer'")
-        }
+        '''
+        assert err.message.contains("line 8, column 24")
+        assert err.message.contains("Attribute 'foo' should have type 'java.lang.Integer'")
     }
 
+    @Test
     void testCustomProcessor() {
-        assertScript '''
-            import groovy.transform.*
-            @AnnotationCollector(value=[ToString, EqualsAndHashCode, Sortable], processor='groovy.transform.AnnotationCollectorTest$MyProcessor')
+        assertScript '''import groovy.transform.*
+            @AnnotationCollector(value=[EqualsAndHashCode, ToString, Sortable], processor='groovy.transform.AnnotationCollectorTest$MyProcessor')
             @interface Alias {}
 
             @Alias(myex=["a"])
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-            def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 0
-            assert data instanceof Object[][]
         '''
     }
 
+    @Test
     void testProcessorThrowingCustomMessage() {
-        shouldNotCompile '''
-            import groovy.transform.*
+        def err = shouldFail '''import groovy.transform.*
             @AnnotationCollector(value=[ToString, EqualsAndHashCode, Sortable], processor='groovy.transform.AnnotationCollectorTest$MyProcessor')
             @interface Alias {}
 
@@ -237,16 +225,15 @@ class AnnotationCollectorTest extends GroovyTestCase {
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-        ''', { ex ->
-            assert ex.message.contains("use myex instead of excludes @ line 6, column 13")
-        }
+        '''
+        assert err.message.contains("use myex instead of excludes @ line 5, column 13")
     }
 
+    @Test
     void testWrongProcessorName() {
-        shouldNotCompile '''
-            import groovy.transform.*
+        def err = shouldFail '''import groovy.transform.*
             @AnnotationCollector(value=[ToString, EqualsAndHashCode, Sortable], processor='MyProcessor')
             @interface Alias {}
 
@@ -254,34 +241,32 @@ class AnnotationCollectorTest extends GroovyTestCase {
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-        ''', { ex ->
-            assert ex.message.contains('Could not find class for Transformation Processor MyProcessor declared by Alias')
-        }
+        '''
+        assert err.message.contains('Could not find class for Transformation Processor MyProcessor declared by Alias')
     }
 
     // GROOVY-10570
-    void testCollectorOnJavaAnno() {
-        shouldNotCompile '''
+    @Test
+    void testCollectorOnJavaAnno1() {
+        def err = shouldFail '''
             @groovy.transform.Groovy10570 // Java @interface with @AnnotationCollector
             class Foo {
                 def bar
             }
-        ''', { ex ->
-            assert ex.message.contains('Expecting static method `Object[][] value()` in groovy.transform.Groovy10570. Was it compiled from a Java source?')
-        }
+        '''
+        assert err.message.contains('Expecting static method `Object[][] value()` in groovy.transform.Groovy10570. Was it compiled from a Java source?')
     }
 
     // GROOVY-10570
+    @Test
     void testCollectorOnJavaAnno2() {
         assertScript '''
             @groovy.transform.Groovy10570emu // Java @interface with @AnnotationCollector and value array
             class Foo {
                 def bar
             }
-            assert Foo.class.annotations.size() == 1
-            assert Foo.class.annotations[0].annotationType().name == 'groovy.transform.EqualsAndHashCode'
 
             // test application of "@EqualsAndHashCode(canEqual=false)"
             groovy.test.GroovyAssert.shouldFail NoSuchMethodException,{
@@ -290,20 +275,19 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAnnotationOnAnnotation() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @PreCompiledAlias3
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 2
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
 
             def data = PreCompiledAlias3.CollectorHelper.value()
-            assert data.length == 2
             assert data instanceof Object[][]
+            assert data.length == 2
             assert data[0].length == 2
             assert data[0][0] == groovy.transform.Sortable
             assert data[0][1] instanceof Map
@@ -315,18 +299,17 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert data[1][1].excludes[0] == "a"
         '''
 
-        assertScript '''
-            import groovy.transform.*
+        assertScript '''import groovy.transform.*
             @Sortable
             @ToString(excludes=["a"])
-            @AnnotationCollector()
+            @AnnotationCollector
             class Alias {}
 
             @Alias
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 2
+
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
 
             def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
@@ -344,25 +327,18 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testIgnoreIncubating() {
-        assertScript '''
-            import groovy.transform.*
+        assertScript '''import groovy.transform.*
             @Sortable
             @org.apache.groovy.lang.annotation.Incubating
             @ToString(excludes=["a"])
-            @AnnotationCollector()
+            @AnnotationCollector
             class Alias {}
 
-            @Alias
-            class Foo {
-                Integer a, b
-            }
-            assert Foo.class.annotations.size() == 2
-            assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
-
             def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 2
             assert data instanceof Object[][]
+            assert data.length == 2
             assert data[0].length == 2
             assert data[0][0] == groovy.transform.Sortable
             assert data[0][1] instanceof Map
@@ -372,24 +348,23 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert data[1][1].size() == 1
             assert data[1][1].excludes instanceof Object[]
             assert data[1][1].excludes[0] == "a"
+
+            @Alias
+            class Foo {
+                Integer a, b
+            }
+
+            assert Foo.class.annotations.size() == 0
+            assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
         '''
     }
 
+    @Test
     void testAnnotationTakingAnnotationParams() {
-        assertScript '''
-            import groovy.transform.*
-
-            @TheSuperGroovyHeroes
-            class Team {}
-
-            assert Team.class.annotations.size() == 1
-            assert Team.class.annotations[0] instanceof GroovyCoreTeam
-            assert Team.class.annotations[0].value().size() == 4
-            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
-
+        assertScript '''import groovy.transform.*
             def data = TheSuperGroovyHeroes.CollectorHelper.value()
-            assert data.length == 1
             assert data instanceof Object[][]
+            assert data.length == 1
             assert data[0].length == 2
             assert data[0][0] == groovy.transform.GroovyCoreTeam
             assert data[0][1] instanceof Map
@@ -404,11 +379,17 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert data[2][1].value == "Jochen"
             assert data[3][0] == GroovyDeveloper
             assert data[3][1].value == "Guillaume"
+
+            @TheSuperGroovyHeroes
+            class Team {}
+
+            assert Team.class.annotations.size() == 1
+            assert Team.class.annotations[0] instanceof GroovyCoreTeam
+            assert Team.class.annotations[0].value().size() == 4
+            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
         '''
 
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @GroovyCoreTeam([
                 @GroovyDeveloper('Paul'),
                 @GroovyDeveloper('Cedric'),
@@ -418,17 +399,9 @@ class AnnotationCollectorTest extends GroovyTestCase {
             @AnnotationCollector
             @interface SuperHeroes {}
 
-            @SuperHeroes
-            class Team {}
-
-            assert Team.class.annotations.size() == 1
-            assert Team.class.annotations[0] instanceof GroovyCoreTeam
-            assert Team.class.annotations[0].value().size() == 4
-            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
-
             def data = SuperHeroes.getAnnotation(AnnotationCollector).serializeClass().value()
-            assert data.length == 1
             assert data instanceof Object[][]
+            assert data.length == 1
             assert data[0].length == 2
             assert data[0][0] == groovy.transform.GroovyCoreTeam
             assert data[0][1] instanceof Map
@@ -443,13 +416,20 @@ class AnnotationCollectorTest extends GroovyTestCase {
             assert data[2][1].value == "Jochen"
             assert data[3][0] == GroovyDeveloper
             assert data[3][1].value == "Guillaume"
+
+            @SuperHeroes
+            class Team {}
+
+            assert Team.class.annotations.size() == 1
+            assert Team.class.annotations[0] instanceof GroovyCoreTeam
+            assert Team.class.annotations[0].value().size() == 4
+            assert Team.class.annotations[0].value().collect { it.value() } == ['Paul', 'Cedric', 'Jochen', 'Guillaume']
         '''
     }
 
+    @Test
     void testAnnotationCollectorModePreferCollector() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @ToString(includeNames=true)
             @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_COLLECTOR)
             @interface ToStringNames {}
@@ -467,10 +447,9 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAnnotationCollectorModePreferCollectorMerged() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @ToString(includeNames=true)
             @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_COLLECTOR_MERGED)
             @interface ToStringNames {}
@@ -488,10 +467,9 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAnnotationCollectorModePreferCollectorExplicit() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @ToString(includeNames=true)
             @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT)
             @interface ToStringNames {}
@@ -509,10 +487,9 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAnnotationCollectorModePreferCollectorExplicitMerged() {
-        assertScript '''
-            import groovy.transform.*
-
+        assertScript '''import groovy.transform.*
             @ToString(includeNames=true)
             @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
             @interface ToStringNames {}
@@ -531,16 +508,19 @@ class AnnotationCollectorTest extends GroovyTestCase {
     }
 }
 
-@AnnotationCollector([ToString, EqualsAndHashCode, Sortable])
-@interface PreCompiledAlias {}
+@AnnotationCollector([EqualsAndHashCode, ToString, Sortable])
+@interface PreCompiledAlias {
+}
 
 @AnnotationCollector([ConditionalInterrupt])
-@interface OtherPreCompiledAlias {}
+@interface OtherPreCompiledAlias {
+}
 
 @Sortable
 @ToString(excludes = ["a"])
 @AnnotationCollector()
-class PreCompiledAlias3 {}
+class PreCompiledAlias3 {
+}
 
 @Retention(RetentionPolicy.RUNTIME)
 @interface GroovyCoreTeam {
@@ -553,10 +533,11 @@ class PreCompiledAlias3 {}
 }
 
 @GroovyCoreTeam([
-        @GroovyDeveloper('Paul'),
-        @GroovyDeveloper('Cedric'),
-        @GroovyDeveloper('Jochen'),
-        @GroovyDeveloper('Guillaume')
+    @GroovyDeveloper('Paul'),
+    @GroovyDeveloper('Cedric'),
+    @GroovyDeveloper('Jochen'),
+    @GroovyDeveloper('Guillaume')
 ])
 @AnnotationCollector
-@interface TheSuperGroovyHeroes {}
+@interface TheSuperGroovyHeroes {
+}

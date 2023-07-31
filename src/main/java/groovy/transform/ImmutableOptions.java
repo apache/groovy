@@ -20,6 +20,7 @@ package groovy.transform;
 
 import groovy.transform.options.ImmutablePropertyHandler;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,9 +34,9 @@ import java.lang.annotation.Target;
  * @see ImmutablePropertyHandler
  * @since 2.5.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 public @interface ImmutableOptions {
     /**
      * Allows you to provide {@code @Immutable} with a list of classes which

@@ -17,6 +17,12 @@
  *  under the License.
  */
 package groovy.transform
+
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Target
+
 /**
  * The {@code @Canonical} meta-annotation combines the {@code @EqualsAndHashCode},
  * {@code @ToString} and {@code @TupleConstructor} annotations. It is used to assist in
@@ -128,4 +134,7 @@ package groovy.transform
  * @since 1.8.0
  */
 @AnnotationCollector(value=[ToString, TupleConstructor, EqualsAndHashCode], mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
-@interface Canonical { }
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+@interface Canonical {
+}

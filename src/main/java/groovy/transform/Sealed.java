@@ -21,6 +21,7 @@ package groovy.transform;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -31,10 +32,10 @@ import java.lang.annotation.Target;
  *
  * @since 4.0.0
  */
-@java.lang.annotation.Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@Documented
 @Incubating
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
 @GroovyASTTransformationClass({
         "org.codehaus.groovy.transform.SealedASTTransformation",
         "org.codehaus.groovy.transform.SealedCompletionASTTransformation"})

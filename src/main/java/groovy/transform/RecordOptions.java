@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,9 +34,9 @@ import java.lang.annotation.Target;
  * @see RecordBase
  * @since 4.0.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 public @interface RecordOptions {
     /**
      * Mode to use when creating record type classes.

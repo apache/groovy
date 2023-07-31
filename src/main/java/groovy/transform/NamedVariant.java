@@ -18,7 +18,6 @@
  */
 package groovy.transform;
 
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
@@ -108,7 +107,6 @@ import java.lang.annotation.Target;
  * @see NamedDelegate
  * @since 2.5.0
  */
-@Incubating
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NamedVariantASTTransformation")

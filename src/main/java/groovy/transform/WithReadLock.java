@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,16 +92,16 @@ import java.lang.annotation.Target;
  *
  * @since 1.8.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ReadWriteLockASTTransformation")
 public @interface WithReadLock {
     /**
      * @return if a user specified lock object with the given name should be used
-     *      the lock object must exist. If the annotated method is static then the 
-     *      lock object must be static. If the annotated method is not static then 
-     *      the lock object must not be static. 
+     *      the lock object must exist. If the annotated method is static then the
+     *      lock object must be static. If the annotated method is not static then
+     *      the lock object must not be static.
      */
     String value () default "";
 }

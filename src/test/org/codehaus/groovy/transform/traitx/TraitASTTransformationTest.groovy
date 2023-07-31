@@ -1768,7 +1768,7 @@ final class TraitASTTransformationTest {
     void testTraitWithDelegate() {
         assertScript shell, '''
             trait ListTrait<T> {
-                private @Delegate ArrayList<T> list = new ArrayList<T>()
+                private @Delegate List<T> list = new ArrayList<T>()
             }
             class Person implements ListTrait<String> {
                 void foo() {

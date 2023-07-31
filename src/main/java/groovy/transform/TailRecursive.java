@@ -80,7 +80,7 @@ import java.lang.annotation.Target;
  * @since 2.3
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @GroovyASTTransformationClass({"org.codehaus.groovy.transform.tailrec.TailRecursiveASTTransformation"})
 public @interface TailRecursive {
 }

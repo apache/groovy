@@ -21,6 +21,7 @@ package groovy.transform;
 import groovy.transform.options.DefaultPropertyHandler;
 import groovy.transform.options.PropertyHandler;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,9 +36,9 @@ import java.lang.annotation.Target;
  * @see TupleConstructor
  * @since 2.5.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 public @interface PropertyOptions {
     /**
      * The property handler class which creates the necessary code for getting, setting or initializing properties.

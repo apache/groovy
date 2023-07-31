@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,9 +36,9 @@ import java.lang.annotation.Target;
  * This annotation is typically used in conjunction with the {@code @ExternalizeMethods} annotation but
  * most usually not directly but rather via {@code @AutoExternalizable} which is a shortcut for both annotations.
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ExternalizeVerifierASTTransformation")
 public @interface ExternalizeVerifier {
     /**

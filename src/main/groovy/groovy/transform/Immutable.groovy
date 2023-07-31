@@ -198,8 +198,8 @@ import java.lang.annotation.Target
 @MapConstructor(noArg = true, includeSuperProperties = true, includeFields = true)
 @KnownImmutable
 @AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
-@Retention(RetentionPolicy.RUNTIME)
-@Target([ElementType.TYPE])
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
 @interface Immutable {
     /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
     Class[] knownImmutableClasses() default []

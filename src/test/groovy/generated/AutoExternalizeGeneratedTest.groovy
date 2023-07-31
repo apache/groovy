@@ -18,38 +18,37 @@
  */
 package groovy.generated
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
-@CompileStatic
-class AutoExternalizeGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> implicitAutoExternalize = parseClass('''@groovy.transform.AutoExternalize
-       class ClassUnderTest {
-       }''')
-
-    final Class<?> explicitAutoExternalize = parseClass('''@groovy.transform.AutoExternalize
-       class ClassUnderTest {
-           void writeExternal(ObjectOutput out) throws IOException { }
-           void readExternal(ObjectInput oin) { }
-       }''')
+final class AutoExternalizeGeneratedTest extends AbstractGeneratedAstTestCase {
 
     @Test
-    void test_writeExternal_is_annotated() {
+    void testImplicit() {
+        def implicitAutoExternalize = parseClass '''
+            @groovy.transform.AutoExternalize
+            class ClassUnderTest {
+            }
+        '''
+        assert implicitAutoExternalize.annotations.size() == 0
+        assert implicitAutoExternalize.declaredAnnotations.size() == 0
+        assertMethodIsAnnotated(implicitAutoExternalize, 'readExternal', ObjectInput)
         assertMethodIsAnnotated(implicitAutoExternalize, 'writeExternal', ObjectOutput)
     }
 
     @Test
-    void test_readExternal_is_annotated() {
-        assertMethodIsAnnotated(implicitAutoExternalize, 'readExternal', ObjectInput)
-    }
-
-    @Test
-    void test_writeExternal_is_not_annotated() {
-        assertMethodIsNotAnnotated(explicitAutoExternalize, 'writeExternal', ObjectOutput)
-    }
-
-    @Test
-    void test_readExternal_is_not_annotated() {
+    void testExplicit() {
+        def explicitAutoExternalize = parseClass '''
+            @groovy.transform.AutoExternalize
+            class ClassUnderTest {
+                void readExternal(ObjectInput in) {
+                }
+                void writeExternal(ObjectOutput out) throws IOException {
+                }
+            }
+        '''
+        assert explicitAutoExternalize.annotations.size() == 0
+        assert explicitAutoExternalize.declaredAnnotations.size() == 0
         assertMethodIsNotAnnotated(explicitAutoExternalize, 'readExternal', ObjectInput)
+        assertMethodIsNotAnnotated(explicitAutoExternalize, 'writeExternal', ObjectOutput)
     }
 }

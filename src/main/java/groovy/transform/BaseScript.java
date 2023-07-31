@@ -21,6 +21,7 @@ package groovy.transform;
 import groovy.lang.Script;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -141,7 +142,7 @@ import java.lang.annotation.Target;
  * </pre>
  * @since 2.2.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE, ElementType.PACKAGE, ElementType.TYPE /*, ElementType.IMPORT*/})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BaseScriptASTTransformation")

@@ -18,8 +18,13 @@
  */
 package groovy.transform
 
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Target
+
 /**
- * Class annotation used to assist in the creation of {@code Externalizable} classes.
+ * Annotation used to assist in the creation of {@code Externalizable} classes.
  * The {@code @AutoExternalize} annotation instructs the compiler to execute an
  * AST transformation which adds {@code writeExternal()} and {@code readExternal()} methods
  * to a class and adds {@code Externalizable} to the interfaces which the class implements.
@@ -63,4 +68,7 @@ package groovy.transform
  * @since 1.8.0
  */
 @AnnotationCollector([ExternalizeMethods, ExternalizeVerifier])
-@interface AutoExternalize { }
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+@interface AutoExternalize {
+}

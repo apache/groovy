@@ -35,5 +35,6 @@ import java.lang.annotation.Target
 @PropertyOptions(propertyHandler = ImmutablePropertyHandler)
 @AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @Retention(RetentionPolicy.SOURCE)
-@Target([ElementType.TYPE])
-@interface ImmutableProperties { }
+@Target(ElementType.TYPE)
+@interface ImmutableProperties {
+}

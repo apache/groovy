@@ -21,6 +21,7 @@ package groovy.transform
 import groovy.transform.stc.POJO
 import org.apache.groovy.lang.annotation.Incubating
 
+import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -44,7 +45,7 @@ import java.lang.annotation.Target
  *
  * The {@code @RecordType} meta-annotation corresponds to adding the following annotations:
  * {@link RecordBase} (which internally piggybacks on {@code @ToString} and {@code @EqualsAndHashCode}),
- * {@link ImmutableOptions},
+ * {@link RecordOptions},
  * {@link PropertyOptions},
  * {@link CompileStatic},
  * {@link POJO},
@@ -67,7 +68,7 @@ import java.lang.annotation.Target
  * Record-like classes are particularly useful for data structures.
  *
  * @see RecordBase
- * @see ImmutableOptions
+ * @see RecordOptions
  * @see PropertyOptions
  * @see TupleConstructor
  * @see KnownImmutable
@@ -83,8 +84,8 @@ import java.lang.annotation.Target
 @POJO
 @CompileStatic
 @AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
-@Retention(RetentionPolicy.RUNTIME)
-@Target([ElementType.TYPE])
-@Incubating
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+@Documented @Incubating
 @interface RecordType {
 }

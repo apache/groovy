@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
  * Sometimes we will need more than one grab per class, but we can only add
  * one annotation type per annotatable node.  This class allows for multiple
@@ -57,6 +60,7 @@ package groovy.lang;
  * It is also sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
  * are grabbed. See {@code @GrabConfig} for further information.
  */
+@Retention(RetentionPolicy.SOURCE)
 public @interface Grapes {
     Grab[] value();
 

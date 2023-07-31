@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -43,6 +44,7 @@ import java.lang.annotation.Target;
  * @since 5.0.0
  */
 @Documented
+@Incubating
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.OperatorRenameASTTransformation")

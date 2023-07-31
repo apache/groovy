@@ -27,8 +27,11 @@ import java.lang.annotation.Target;
 
 /**
  * Marker interface to indicate that the normal GroovyObject methods should not be added.
+ *
+ * @since 4.0.0
  */
 @Incubating
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface POJO { }
+public @interface POJO {
+}

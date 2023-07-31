@@ -20,6 +20,7 @@ package groovy.transform
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
+import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -104,10 +105,10 @@ import java.lang.annotation.Target
  * @see ThreadInterrupt
  * @since 1.8.0
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
-@GroovyASTTransformationClass(['org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation'])
+@GroovyASTTransformationClass('org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation')
 @interface ConditionalInterrupt {
     /**
      * Set this to false if you have multiple classes within one source file and only

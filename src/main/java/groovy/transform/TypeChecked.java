@@ -27,12 +27,14 @@ import java.lang.annotation.Target;
 
 /**
  * This will let the Groovy compiler use compile time checks in the style of Java.
+ *
+ * @since 2.0.0
  */
-@java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR })
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
+
     TypeCheckingMode value() default TypeCheckingMode.PASS;
 
     /**
@@ -44,8 +46,8 @@ public @interface TypeChecked {
 
     /**
      * This annotation is added by @TypeChecked on methods which have type checking turned on.
-     * It is used to embed type information into binary, so that the type checker can use this information,
-     * if available, for precompiled classes.
+     * It is used to embed type information into binary, so that the type checker can use this
+     * information, if available, for pre-compiled classes.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)

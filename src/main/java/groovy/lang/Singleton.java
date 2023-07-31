@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,9 +42,9 @@ import java.lang.annotation.Target;
  * to create instances that are independent of the singleton instance returned by the singleton property</li>
  * </ul>
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
+@Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.SingletonASTTransformation")
 public @interface Singleton {
     /**
