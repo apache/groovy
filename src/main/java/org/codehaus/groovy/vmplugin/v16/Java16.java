@@ -26,34 +26,23 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
-import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Additional Java 16 based functions will be added here as needed.
- */
+import static java.lang.annotation.ElementType.RECORD_COMPONENT;
+
 public class Java16 extends Java10 {
-    private Map<ElementType, Integer> elementTypeTargetMap;
+
+    {
+        elementTypeToTarget.put(RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
+    }
 
     @Override
     public int getVersion() {
         return 16;
-    }
-
-    @Override
-    protected Map<ElementType, Integer> getElementTypeTargetMap() {
-        if (null == elementTypeTargetMap) {
-            Map<ElementType, Integer> ettm = new EnumMap<>(super.getElementTypeTargetMap());
-            ettm.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
-            elementTypeTargetMap = ettm;
-        }
-        return elementTypeTargetMap;
     }
 
     @Override

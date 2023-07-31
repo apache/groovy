@@ -83,19 +83,6 @@ public class Java8 implements VMPlugin {
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 
-    private static final Map<ElementType, Integer> ELEMENT_TYPE_TARGET_MAP = new EnumMap<>(Maps.of(
-        ElementType.TYPE, AnnotationNode.TYPE_TARGET,
-        ElementType.CONSTRUCTOR, AnnotationNode.CONSTRUCTOR_TARGET,
-        ElementType.METHOD, AnnotationNode.METHOD_TARGET,
-        ElementType.FIELD, AnnotationNode.FIELD_TARGET,
-        ElementType.PARAMETER, AnnotationNode.PARAMETER_TARGET,
-        ElementType.LOCAL_VARIABLE, AnnotationNode.LOCAL_VARIABLE_TARGET,
-        ElementType.ANNOTATION_TYPE, AnnotationNode.ANNOTATION_TARGET,
-        ElementType.PACKAGE, AnnotationNode.PACKAGE_TARGET,
-        ElementType.TYPE_PARAMETER, AnnotationNode.TYPE_PARAMETER_TARGET,
-        ElementType.TYPE_USE, AnnotationNode.TYPE_USE_TARGET
-    ));
-
     public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] cBounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
@@ -146,6 +133,8 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    //--------------------------------------------------------------------------
+
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         return new Class[]{PluginDefaultGroovyMethods.class};
@@ -159,17 +148,6 @@ public class Java8 implements VMPlugin {
     @Override
     public int getVersion() {
         return 8;
-    }
-
-    protected Map<ElementType, Integer> getElementTypeTargetMap() {
-        return ELEMENT_TYPE_TARGET_MAP;
-    }
-
-    protected int getElementCode(final ElementType value) {
-        Integer code = getElementTypeTargetMap().get(value);
-        if (null != code) return code;
-
-        throw new GroovyBugError("unsupported Target " + value);
     }
 
     @Override
@@ -363,10 +341,22 @@ public class Java8 implements VMPlugin {
 
     //
 
+    protected final Map<ElementType, Integer> elementTypeToTarget = new EnumMap<>(Maps.of(
+        ElementType.TYPE,            AnnotationNode.TYPE_TARGET,
+        ElementType.FIELD,           AnnotationNode.FIELD_TARGET,
+        ElementType.METHOD,          AnnotationNode.METHOD_TARGET,
+        ElementType.PARAMETER,       AnnotationNode.PARAMETER_TARGET,
+        ElementType.CONSTRUCTOR,     AnnotationNode.CONSTRUCTOR_TARGET,
+        ElementType.LOCAL_VARIABLE,  AnnotationNode.LOCAL_VARIABLE_TARGET,
+        ElementType.ANNOTATION_TYPE, AnnotationNode.ANNOTATION_TARGET,
+        ElementType.PACKAGE,         AnnotationNode.PACKAGE_TARGET,
+        ElementType.TYPE_PARAMETER,  AnnotationNode.TYPE_PARAMETER_TARGET,
+        ElementType.TYPE_USE,        AnnotationNode.TYPE_USE_TARGET
+    ));
+
     @Override
     public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
-        ClassNode type = definition.getClassNode();
-        final String typeName = type.getName();
+        String typeName = definition.getClassNode().getName();
         if ("java.lang.annotation.Retention".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
@@ -377,16 +367,18 @@ public class Java8 implements VMPlugin {
         } else if ("java.lang.annotation.Target".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
-            ListExpression le = (ListExpression) exp;
-            int bitmap = 0;
-            for (Expression e : le.getExpressions()) {
+            ListExpression list = (ListExpression) exp;
+            int targets = 0;
+            for (Expression e : list.getExpressions()) {
                 if (!(e instanceof PropertyExpression)) return;
                 PropertyExpression element = (PropertyExpression) e;
                 String name = element.getPropertyAsString();
-                ElementType value = ElementType.valueOf(name);
-                bitmap |= getElementCode(value);
+                ElementType type = ElementType.valueOf(name);
+                Integer target = elementTypeToTarget.get(type);
+                if (target == null) throw new GroovyBugError("unsupported Target " + type);
+                targets |= target.intValue();
             }
-            root.setAllowedTargets(bitmap);
+            root.setAllowedTargets(targets);
         }
     }
 
