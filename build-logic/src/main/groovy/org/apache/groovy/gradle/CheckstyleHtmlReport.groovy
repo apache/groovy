@@ -48,7 +48,8 @@ class CheckstyleHtmlReport extends DefaultTask {
     @PathSensitive(PathSensitivity.RELATIVE)
     final RegularFileProperty configFile = project.objects.fileProperty()
 
-    @InputFile
+    @InputFiles
+    @SkipWhenEmpty
     @PathSensitive(PathSensitivity.RELATIVE)
     final RegularFileProperty checkstyleReportFile = project.objects.fileProperty()
 
@@ -60,6 +61,7 @@ class CheckstyleHtmlReport extends DefaultTask {
         def configFile = this.configFile.get().asFile
         def configDir = configFile.parentFile
         def reportFile = checkstyleReportFile.get().asFile
+        if (!reportFile || !reportFile.exists()) return // @SkipWhenEmpty not working?
         def htmlReportFile = outputFile.get().asFile
         def templateConfiguration = new TemplateConfiguration()
         templateConfiguration.with {
@@ -68,7 +70,7 @@ class CheckstyleHtmlReport extends DefaultTask {
         }
         def engine = new MarkupTemplateEngine(this.class.classLoader, configDir, templateConfiguration)
         def xml = new XmlSlurper().parse(reportFile.newReader('utf-8'))
-       def model = buildModel(xml)
+        def model = buildModel(xml)
         htmlReportFile.parentFile.mkdirs()
         htmlReportFile.withWriter('utf-8') { wrt ->
             engine.createTemplateByPath('checkstyle-report.groovy').make(model).writeTo(wrt)
