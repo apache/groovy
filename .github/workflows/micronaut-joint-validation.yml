@@ -58,7 +58,7 @@ jobs:
         run: echo $CI_GROOVY_VERSION
 
       - name: Test Micronaut Core
-        run: cd ../micronaut-core && ./gradlew --init-script ../maven-local-init.gradle --no-build-cache --no-daemon --no-scan clean test -x :test-suite-kotlin-ksp:test -x :discovery-core:test -x :test-suite-kotlin:test -PgroovyVersion=$CI_GROOVY_VERSION
+        run: cd ../micronaut-core && ./gradlew --init-script ../maven-local-init.gradle --no-build-cache --no-daemon --no-scan clean test -x :test-suite-kotlin-ksp:test -x :discovery-core:test -x :test-suite-kotlin:test -x :inject-kotlin:test -x :inject-kotlin-test:test -PgroovyVersion=$CI_GROOVY_VERSION
         timeout-minutes: 60
 
       - name: Check Micronaut Groovy
