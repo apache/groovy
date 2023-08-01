@@ -289,16 +289,71 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11070
+    void testArrayGetAt1() {
+        String array = 'int[] array = [0, 1, 2, 3]'
+
+        assertScript array + '''
+            assert array?.getAt( 0) == 0
+            assert array?.getAt( 3) == 3
+            assert array?.getAt(-1) == 3
+            assert array?.getAt(-2) == 2
+            assert array?.getAt(-3) == 1
+            assert array?.getAt(-4) == 0
+        '''
+
+        shouldFail ArrayIndexOutOfBoundsException, array + '''
+            assert array?.getAt(4)
+        '''
+
+        shouldFail ArrayIndexOutOfBoundsException, array + '''
+            assert array?.getAt(-5)
+        '''
+    }
+
+    void testArrayGetAt2() {
+        assertScript '''
+            Serializable m() {
+                String[] arr = ['1','2','3']
+                arr.getAt(1)
+            }
+            assert m() == '2'
+        '''
+    }
+
+    void testArrayPutAt1() {
+        assertScript '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, new Integer(1))
+        '''
+
+        assertScript '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, 1)
+        '''
+    }
+
+    void testArrayPutAt2() {
+        shouldFailWithMessages '''
+            String[] arr = ['abc']
+            arr.putAt(0, new Object())
+        ''',
+        '#putAt(T[], int, U) with arguments [java.lang.String[], int, java.lang.Object]'
+
+        shouldFailWithMessages '''
+            Serializable[] arr = ['abc']
+            arr.putAt(0, new groovy.xml.XmlSlurper())
+        ''',
+        '#putAt(T[], int, U) with arguments [java.io.Serializable[], int, groovy.xml.XmlSlurper]'
+    }
+
     void testListGetAtNext() {
         assertScript '''
-            def test() {
-                def list = [0, 1, 2, 3]
-                for (i in 1..2) {
-                    list[i-1]++
-                }
-                list
+            def list = [0, 1, 2, 3]
+            for (i in 1..2) {
+                list[i-1]++
             }
-            assert test() == [1, 2, 2, 3]
+            assert list == [1, 2, 2, 3]
         '''
     }
 

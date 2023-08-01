@@ -598,101 +598,93 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11070
+    void testNumberArrayGet() {
+        String array = 'int[] array = [0, 1, 2, 3]'
+
+        assertScript array + '''
+            assert array?[ 0] == 0
+            assert array?[ 3] == 3
+            assert array?[-1] == 3
+            assert array?[-2] == 2
+            assert array?[-3] == 1
+            assert array?[-4] == 0
+        '''
+
+        shouldFail ArrayIndexOutOfBoundsException, array + '''
+            assert array?[4]
+        '''
+
+        shouldFail ArrayIndexOutOfBoundsException, array + '''
+            assert array?[-5]
+        '''
+    }
+
     void testObjectArrayGet() {
         assertScript '''
             Object[] arr = [new Object()]
-            arr.getAt(0)
+            assert arr[0] != null
+        '''
+
+        assertScript '''
+            Object[] arr = null
+            assert arr?[0] == null
         '''
     }
 
     void testStringArrayGet() {
         assertScript '''
             String[] arr = ['abc']
-            arr.getAt(0)
+            assert arr[0] == 'abc'
+        '''
+
+        assertScript '''
+            String[] arr = null
+            assert arr?[0] == null
         '''
     }
 
     void testObjectArrayPut() {
         assertScript '''
-            Object[] arr = [new Object()]
-            arr.putAt(0, new Object())
+            Object[] arr = [null]
+            arr[0] = new Object()
+            assert arr[0] != null
         '''
-    }
 
-    void testObjectArrayPutWithNull() {
         assertScript '''
             Object[] arr = [new Object()]
-            arr.putAt(0, null)
+            arr[0] = null
+            assert arr[0] == null
+        '''
+
+        assertScript '''
+            Object[] arr = null
+            arr?[0] = null
         '''
     }
 
     void testStringArrayPut() {
         assertScript '''
             String[] arr = ['abc']
-            arr.putAt(0, 'def')
+            arr[0] = 'def'
+            assert arr[0] == 'def'
         '''
-    }
 
-    void testStringArrayPutWithNull() {
         assertScript '''
             String[] arr = ['abc']
-            arr.putAt(0, null)
+            arr[0] = null
+            assert arr[0] == null
         '''
-    }
 
-    void testStringArrayPutWithWrongType() {
-        shouldFailWithMessages '''
-            String[] arr = ['abc']
-            arr.putAt(0, new Object())
-        ''',
-        '#putAt(T[], int, U) with arguments [java.lang.String[], int, java.lang.Object]'
-    }
-
-    void testStringArrayPutWithSubType() {
         assertScript '''
-            Serializable[] arr = ['abc']
-            arr.putAt(0, new Integer(1))
-        '''
-    }
-
-    void testStringArrayPutWithSubTypeAsPrimitive() {
-        assertScript '''
-            Serializable[] arr = ['abc']
-            arr.putAt(0, 1)
-        '''
-    }
-
-    void testStringArrayPutWithIncorrectSubType() {
-        shouldFailWithMessages '''
-            Serializable[] arr = ['abc']
-            arr.putAt(0, new groovy.xml.XmlSlurper())
-        ''',
-        '#putAt(T[], int, U) with arguments [java.io.Serializable[], int, groovy.xml.XmlSlurper]'
-    }
-
-    void testArrayGetOnPrimitiveArray() {
-        assertScript '''
-            int m() {
-                int[] arr = [1,2,3]
-                arr.getAt(1)
-            }
-            assert m()==2
-        '''
-    }
-
-    void testReturnTypeOfArrayGet() {
-        assertScript '''
-            Serializable m() {
-                String[] arr = ['1','2','3']
-                arr.getAt(1)
-            }
-            assert m() == '2'
+            String[] arr = null
+            arr?[0] = null
         '''
     }
 
     void testInferredTypeWithListAndFind() {
         assertScript '''
-            List<Integer> list = [ 1, 2, 3, 4 ]
+            List<Integer> list = [1, 2, 3, 4]
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE

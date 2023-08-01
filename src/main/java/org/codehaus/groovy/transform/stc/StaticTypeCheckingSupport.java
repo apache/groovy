@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -2311,105 +2312,121 @@ public abstract class StaticTypeCheckingSupport {
     //--------------------------------------------------------------------------
 
     /**
-     * A DGM-like class which adds support for method calls which are handled
-     * specifically by the Groovy compiler.
+     * A DGM-like class which adds support for method calls which are handled by
+     * the Groovy compiler.
      */
     public static class ObjectArrayStaticTypesHelper {
         public static <T> T getAt(final T[] array, final int index) {
-            return array != null ? array[index] : null;
+            @SuppressWarnings("unchecked")
+            T t = (T)BytecodeInterface8.objectArrayGet(array, index);
+            return t;
         }
         public static <T, U extends T> void putAt(final T[] array, final int index, final U value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.objectArraySet(array, index, value);
         }
     }
 
     public static class BooleanArrayStaticTypesHelper {
-        public static Boolean getAt(final boolean[] array, final int index) {
+        public static boolean getAt(final boolean[] array, final int index) {
+            return BytecodeInterface8.zArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Boolean getAt$$bridge(final boolean[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final boolean[] array, final int index, final boolean value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.zArraySet(array, index, value);
         }
     }
 
     public static class CharArrayStaticTypesHelper {
-        public static Character getAt(final char[] array, final int index) {
+        public static char getAt(final char[] array, final int index) {
+            return BytecodeInterface8.cArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Character getAt$$bridge(final char[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final char[] array, final int index, final char value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.cArraySet(array, index, value);
         }
     }
 
     public static class ByteArrayStaticTypesHelper {
-        public static Byte getAt(final byte[] array, final int index) {
+        public static byte getAt(final byte[] array, final int index) {
+            return BytecodeInterface8.bArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Byte getAt$$bridge(final byte[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final byte[] array, final int index, final byte value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.bArraySet(array, index, value);
         }
     }
 
     public static class ShortArrayStaticTypesHelper {
-        public static Short getAt(final short[] array, final int index) {
+        public static short getAt(final short[] array, final int index) {
+            return BytecodeInterface8.sArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Short getAt$$bridge(final short[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final short[] array, final int index, final short value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.sArraySet(array, index, value);
         }
     }
 
     public static class IntArrayStaticTypesHelper {
-        public static Integer getAt(final int[] array, final int index) {
+        public static int getAt(final int[] array, final int index) {
+            return BytecodeInterface8.intArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Integer getAt$$bridge(final int[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final int[] array, final int index, final int value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.intArraySet(array, index, value);
         }
     }
 
     public static class LongArrayStaticTypesHelper {
-        public static Long getAt(final long[] array, final int index) {
+        public static long getAt(final long[] array, final int index) {
+            return BytecodeInterface8.lArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Long getAt$$bridge(final long[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final long[] array, final int index, final long value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.lArraySet(array, index, value);
         }
     }
 
     public static class FloatArrayStaticTypesHelper {
-        public static Float getAt(final float[] array, final int index) {
+        public static float getAt(final float[] array, final int index) {
+            return BytecodeInterface8.fArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Float getAt$$bridge(final float[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final float[] array, final int index, final float value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.fArraySet(array, index, value);
         }
     }
 
     public static class DoubleArrayStaticTypesHelper {
-        public static Double getAt(final double[] array, final int index) {
+        public static double getAt(final double[] array, final int index) {
+            return BytecodeInterface8.dArrayGet(array, index);
+        }
+        @Deprecated(since = "5.0.0")
+        public static Double getAt$$bridge(final double[] array, final int index) {
             return array != null ? array[index] : null;
         }
         public static void putAt(final double[] array, final int index, final double value) {
-            if (array != null) {
-                array[index] = value;
-            }
+            BytecodeInterface8.dArraySet(array, index, value);
         }
     }
 }

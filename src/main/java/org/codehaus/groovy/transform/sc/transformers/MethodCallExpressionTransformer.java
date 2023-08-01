@@ -20,23 +20,20 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -55,18 +52,15 @@ public class MethodCallExpressionTransformer {
         if (trn!=null) {
             return trn;
         }
-        ClassNode superCallReceiver = expr.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
-        if (superCallReceiver != null) {
-            return transformMethodCallExpression(transformToMopSuperCall(superCallReceiver, expr));
+        var superCallReceiver = expr.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+        if (superCallReceiver instanceof ClassNode) {
+            return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, expr));
         }
-        Expression objectExpression = expr.getObjectExpression();
-        ClassNode type = staticCompilationTransformer.getTypeChooser().resolveType(objectExpression, staticCompilationTransformer.getClassNode());
-        if (isCallOnClosure(expr) && staticCompilationTransformer.getClassNode() != null) {
-            FieldNode field = staticCompilationTransformer.getClassNode().getField(expr.getMethodAsString());
-            if (field != null) {
-                VariableExpression vexp = new VariableExpression(field);
+        if (isCallOnClosure(expr)) {
+            var field = Optional.ofNullable(staticCompilationTransformer.getClassNode()).map(cn -> cn.getField(expr.getMethodAsString()));
+            if (field.isPresent()) {
                 MethodCallExpression result = new MethodCallExpression(
-                        vexp,
+                        new VariableExpression(field.get()),
                         "call",
                         staticCompilationTransformer.transform(expr.getArguments())
                 );
@@ -77,58 +71,6 @@ public class MethodCallExpressionTransformer {
                 result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS);
                 result.copyNodeMetaData(expr);
                 return result;
-            }
-        }
-        if (type != null && type.isArray()) {
-            String method = expr.getMethodAsString();
-            ClassNode componentType = type.getComponentType();
-            if ("getAt".equals(method)) {
-                Expression arguments = expr.getArguments();
-                if (arguments instanceof TupleExpression) {
-                    List<Expression> argList = ((TupleExpression) arguments).getExpressions();
-                    if (argList.size() == 1) {
-                        Expression indexExpr = argList.get(0);
-                        ClassNode argType = staticCompilationTransformer.getTypeChooser().resolveType(indexExpr, staticCompilationTransformer.getClassNode());
-                        ClassNode indexType = ClassHelper.getWrapper(argType);
-                        if (componentType.isEnum() && ClassHelper.Number_TYPE.equals(indexType)) {
-                            // workaround for generated code in enums which use .next() returning a Number
-                            indexType = ClassHelper.Integer_TYPE;
-                        }
-                        if (argType != null && ClassHelper.isWrapperInteger(indexType)) {
-                            BinaryExpression binaryExpression = new BinaryExpression(
-                                    objectExpression,
-                                    Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
-                                    indexExpr
-                            );
-                            binaryExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType);
-                            return staticCompilationTransformer.transform(binaryExpression);
-                        }
-                    }
-                }
-            } else if ("putAt".equals(method)) {
-                Expression arguments = expr.getArguments();
-                if (arguments instanceof TupleExpression) {
-                    List<Expression> argList = ((TupleExpression) arguments).getExpressions();
-                    if (argList.size() == 2) {
-                        Expression indexExpr = argList.get(0);
-                        Expression objExpr = argList.get(1);
-                        ClassNode argType = staticCompilationTransformer.getTypeChooser().resolveType(indexExpr, staticCompilationTransformer.getClassNode());
-                        if (argType != null && ClassHelper.isWrapperInteger(ClassHelper.getWrapper(argType))) {
-                            BinaryExpression arrayGet = new BinaryExpression(
-                                    objectExpression,
-                                    Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
-                                    indexExpr
-                            );
-                            arrayGet.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, componentType);
-                            BinaryExpression assignment = new BinaryExpression(
-                                    arrayGet,
-                                    Token.newSymbol("=", objExpr.getLineNumber(), objExpr.getColumnNumber()),
-                                    objExpr
-                            );
-                            return staticCompilationTransformer.transform(assignment);
-                        }
-                    }
-                }
             }
         }
         return staticCompilationTransformer.superTransform(expr);

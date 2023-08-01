@@ -3791,28 +3791,6 @@ out:                if (mn.size() != 1) {
     }
 
     /**
-     * Adds various getAt and setAt methods for primitive arrays.
-     *
-     * @param receiver the receiver class
-     * @param name     the name of the method
-     * @param args     the argument classes
-     */
-    private static void addArrayMethods(final List<MethodNode> methods, final ClassNode receiver, final String name, final ClassNode[] args) {
-        if (!receiver.isArray()) return;
-        if (args == null || args.length != 1) return;
-        if (!isIntCategory(getUnwrapper(args[0]))) return;
-        if ("getAt".equals(name)) {
-            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, receiver.getComponentType(), new Parameter[]{new Parameter(args[0], "arg")}, null, null);
-            node.setDeclaringClass(receiver.redirect());
-            methods.add(node);
-        } else if ("setAt".equals(name)) {
-            MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC, VOID_TYPE, new Parameter[]{new Parameter(args[0], "arg")}, null, null);
-            node.setDeclaringClass(receiver.redirect());
-            methods.add(node);
-        }
-    }
-
-    /**
      * In the case of a <em>Object.with { ... }</em> call, this method is supposed to retrieve
      * the inferred closure return type.
      *
@@ -4893,9 +4871,6 @@ out:                if (mn.size() != 1) {
                         staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers())) {
                     methods.addAll(allowStaticAccessToMember(findMethodsWithGenerated(outer, name), staticOnly));
                 }
-            }
-            if (methods.isEmpty()) {
-                addArrayMethods(methods, receiver, name, args);
             }
             if (args == null || args.length == 0) {
                 // check for property accessor

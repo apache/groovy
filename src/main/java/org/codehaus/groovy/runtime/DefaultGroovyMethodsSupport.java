@@ -33,7 +33,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -64,17 +63,15 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
-import java.util.logging.Logger;
 
 /**
  * Support methods for DefaultGroovyMethods and PluginDefaultMethods.
  */
 public class DefaultGroovyMethodsSupport {
 
-    private static final Logger LOG = Logger.getLogger(DefaultGroovyMethodsSupport.class.getName());
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-
-    // helper method for getAt and putAt
+    /**
+     * Helper method for getAt and putAt.
+     */
     protected static RangeInfo subListBorders(int size, Range range) {
         if (range instanceof IntRange) {
             return ((IntRange) range).subListBorders(size);
@@ -95,18 +92,22 @@ public class DefaultGroovyMethodsSupport {
         return new RangeInfo(from, to + 1, reverse);
     }
 
-    // helper method for getAt and putAt
+    /**
+     * Helper method for getAt and putAt.
+     */
     protected static RangeInfo subListBorders(int size, EmptyRange range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         return new RangeInfo(from, from, false);
     }
 
-    // Helper method for primitive array getAt
+    /**
+     * Helper method for primitive array getAt.
+     */
     protected static IntRange subListRange(RangeInfo info, IntRange range) {
         int from = info.from;
         int to = info.to - 1;
 
-        // Undo inclusiveness effects done by subListBorders()
+        // undo inclusiveness effects done by subListBorders()
         if (!info.reverse) {
             if (Boolean.FALSE.equals(range.getInclusiveLeft())) {
                 from--;
@@ -130,7 +131,7 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * This converts a possibly negative index to a real index into the array.
+     * Converts a possibly negative index to a real index into the array.
      *
      * @param i    the unnormalized index
      * @param size the array size
@@ -172,7 +173,8 @@ public class DefaultGroovyMethodsSupport {
             } catch (Exception e) {
                 thrown = e;
                 if (logWarning) {
-                    LOG.warning("Caught exception during close(): " + e);
+                    String name = DefaultGroovyMethodsSupport.class.getName();
+                    java.util.logging.Logger.getLogger(name).warning("Caught exception during close(): " + e);
                 }
             }
         }
@@ -180,7 +182,7 @@ public class DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Close the Closeable. Ignore any problems that might occur.
+     * Closes the Closeable, ignoring any problems that might occur.
      *
      * @param c the thing to close
      */
@@ -188,30 +190,36 @@ public class DefaultGroovyMethodsSupport {
         if (c != null) {
             try {
                 c.close();
-            } catch (IOException e) {
-                /* ignore */
+            } catch (IOException ignore) {
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
-        Collection<T> answer = (Collection<T>) cloneObject(orig);
-        if (answer != null) return answer;
+    //--------------------------------------------------------------------------
 
-        // fall back to creation
-        answer = createSimilarCollection(orig, newCapacity);
-        answer.addAll(orig);
-        return answer;
+    protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
+        var copy = maybeClone(orig);
+        if (copy == null) {
+            copy = createSimilarCollection(orig, newCapacity);
+            copy.addAll(orig);
+        }
+        return copy;
     }
 
-    private static Object cloneObject(Object orig) {
-        if (orig instanceof Cloneable) {
-            try {
-                return InvokerHelper.invokeMethod(orig, "clone", EMPTY_OBJECT_ARRAY);
-            } catch (Exception ex) {
-                // ignore
-            }
+    protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
+        var copy = maybeClone(orig);
+        if (copy == null) {
+            copy = createSimilarMap(orig);
+            copy.putAll(orig);
+        }
+        return copy;
+    }
+
+    private static <T> T maybeClone(T object) {
+        if (object instanceof Cloneable) {
+            @SuppressWarnings("unchecked")
+            T copy = (T) InvokerHelper.invokeMethod(object, "clone", null);
+            return copy;
         }
         return null;
     }
@@ -220,14 +228,14 @@ public class DefaultGroovyMethodsSupport {
         if (object instanceof Collection) {
             return createSimilarCollection((Collection<?>) object);
         }
-        return new ArrayList();
+        return new ArrayList<>();
     }
 
     protected static <T> Collection<T> createSimilarCollection(Iterable<T> iterable) {
         if (iterable instanceof Collection) {
             return createSimilarCollection((Collection<T>) iterable);
         } else {
-            return new ArrayList<T>();
+            return new ArrayList<>();
         }
     }
 
@@ -245,23 +253,23 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof Queue) {
             return createSimilarQueue((Queue<T>) orig);
         }
-        return new ArrayList<T>(newCapacity);
+        return new ArrayList<>(newCapacity);
     }
 
     protected static <T> List<T> createSimilarList(List<T> orig, int newCapacity) {
-        if (orig instanceof LinkedList)
-            return new LinkedList<T>();
-
-        if (orig instanceof Stack)
-            return new Stack<T>();
-
-        if (orig instanceof Vector)
-            return new Vector<T>();
-
-        if (orig instanceof CopyOnWriteArrayList)
-            return new CopyOnWriteArrayList<T>();
-
-        return new ArrayList<T>(newCapacity);
+        if (orig instanceof LinkedList) {
+            return new LinkedList<>();
+        }
+        if (orig instanceof Stack) {
+            return new Stack<>();
+        }
+        if (orig instanceof Vector) {
+            return new Vector<>();
+        }
+        if (orig instanceof CopyOnWriteArrayList) {
+            return new CopyOnWriteArrayList<>();
+        }
+        return new ArrayList<>(newCapacity);
     }
 
     @SuppressWarnings("unchecked")
@@ -271,134 +279,98 @@ public class DefaultGroovyMethodsSupport {
         return (T[]) Array.newInstance(type.getComponentType(), newCapacity);
     }
 
-    @SuppressWarnings("unchecked")
     protected static <T> Set<T> createSimilarSet(Set<T> orig) {
         if (orig instanceof SortedSet) {
-            Comparator comparator = ((SortedSet) orig).comparator();
+            var comparator = ((SortedSet<T>)orig).comparator();
             if (orig instanceof ConcurrentSkipListSet) {
-                return new ConcurrentSkipListSet<T>(comparator);
+                return new ConcurrentSkipListSet<>(comparator);
             } else {
-                return new TreeSet<T>(comparator);
+                return new TreeSet<>(comparator);
             }
         } else {
             if (orig instanceof CopyOnWriteArraySet) {
-                return new CopyOnWriteArraySet<T>();
+                return new CopyOnWriteArraySet<>();
             } else {
-                // Do not use HashSet
-                return new LinkedHashSet<T>();
+                return new LinkedHashSet<>(); // not HashSet
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
     protected static <T> Queue<T> createSimilarQueue(Queue<T> orig) {
         if (orig instanceof ArrayBlockingQueue) {
-            ArrayBlockingQueue queue = (ArrayBlockingQueue) orig;
-            return new ArrayBlockingQueue<T>(queue.size() + queue.remainingCapacity());
+            ArrayBlockingQueue<T> queue = (ArrayBlockingQueue<T>) orig;
+            return new ArrayBlockingQueue<>(queue.size() + queue.remainingCapacity());
         } else if (orig instanceof ArrayDeque) {
-            return new ArrayDeque<T>();
+            return new ArrayDeque<>();
         } else if (orig instanceof ConcurrentLinkedQueue) {
-            return new ConcurrentLinkedQueue<T>();
+            return new ConcurrentLinkedQueue<>();
         } else if (orig instanceof DelayQueue) {
-            return new DelayQueue();
+            return new DelayQueue(); // T extends Delayed
         } else if (orig instanceof LinkedBlockingDeque) {
-            return new LinkedBlockingDeque<T>();
+            return new LinkedBlockingDeque<>();
         } else if (orig instanceof LinkedBlockingQueue) {
-            return new LinkedBlockingQueue<T>();
+            return new LinkedBlockingQueue<>();
         } else if (orig instanceof PriorityBlockingQueue) {
-            return new PriorityBlockingQueue<T>();
+            return new PriorityBlockingQueue<>();
         } else if (orig instanceof PriorityQueue) {
-            return new PriorityQueue<T>(11, ((PriorityQueue) orig).comparator());
+            return new PriorityQueue<>(11, ((PriorityQueue<T>) orig).comparator());
         } else if (orig instanceof SynchronousQueue) {
-            return new SynchronousQueue<T>();
+            return new SynchronousQueue<>();
         } else {
-            return new LinkedList<T>();
+            return new LinkedList<>();
         }
     }
 
-    @SuppressWarnings("unchecked")
     protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
         if (orig instanceof SortedMap) {
-            Comparator comparator = ((SortedMap) orig).comparator();
+            var comparator = ((SortedMap<K,V>)orig).comparator();
             if (orig instanceof ConcurrentSkipListMap) {
-                return new ConcurrentSkipListMap<K, V>(comparator);
+                return new ConcurrentSkipListMap<>(comparator);
             } else {
-                return new TreeMap<K, V>(comparator);
+                return new TreeMap<>(comparator);
             }
         } else {
             if (orig instanceof ConcurrentHashMap) {
-                return new ConcurrentHashMap<K, V>();
+                return new ConcurrentHashMap<>();
             } else if (orig instanceof Hashtable) {
                 if (orig instanceof Properties) {
-                    return (Map<K, V>) new Properties();
+                    @SuppressWarnings("unchecked") // safe?
+                    var props = (Map<K,V>)new Properties();
+                    return props;
                 } else {
-                    return new Hashtable<K, V>();
+                    return new Hashtable<>();
                 }
             } else if (orig instanceof IdentityHashMap) {
-                return new IdentityHashMap<K, V>();
+                return new IdentityHashMap<>();
             } else if (orig instanceof WeakHashMap) {
-                return new WeakHashMap<K, V>();
+                return new WeakHashMap<>();
             } else {
-                // Do not use HashMap
-                return new LinkedHashMap<K, V>();
+                return new LinkedHashMap<>(); // not HashMap
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
-        Map<K, V> answer = (Map<K, V>) cloneObject(orig);
-        if (answer != null) return answer;
-
-        // fall back to some defaults
-        if (orig instanceof SortedMap) {
-            if (orig instanceof ConcurrentSkipListMap) {
-                return new ConcurrentSkipListMap<K, V>(orig);
-            } else {
-                return new TreeMap<K, V>(orig);
-            }
-        } else {
-            if (orig instanceof ConcurrentHashMap) {
-                return new ConcurrentHashMap<K, V>(orig);
-            } else if (orig instanceof Hashtable) {
-                if (orig instanceof Properties) {
-                    Map<K, V> map = (Map<K, V>) new Properties();
-                    map.putAll(orig);
-                    return map;
-                } else {
-                    return new Hashtable<K, V>(orig);
-                }
-            } else if (orig instanceof IdentityHashMap) {
-                return new IdentityHashMap<K, V>(orig);
-            } else if (orig instanceof WeakHashMap) {
-                return new WeakHashMap<K, V>(orig);
-            } else {
-                // Do not use HashMap
-                return new LinkedHashMap<K, V>(orig);
-            }
-        }
-    }
+    //--------------------------------------------------------------------------
 
     /**
-     * Determines if all items of this array are of the same type.
+     * Determines if all items of given array are of the same type.
      *
      * @param cols an array of collections
      * @return true if the collections are all of the same type
      */
-    @SuppressWarnings("unchecked")
     protected static boolean sameType(Collection[] cols) {
-        List all = new LinkedList();
-        for (Collection col : cols) {
+        List<Object> all = new ArrayList<>(cols.length*8);
+        for (Collection<?> col : cols) {
             all.addAll(col);
         }
-        if (all.isEmpty())
+        if (all.isEmpty()) {
             return true;
+        }
 
         Object first = all.get(0);
-
-        //trying to determine the base class of the collections
-        //special case for Numbers
-        Class baseClass;
+        // trying to determine the base class of the collections
+        // special case for Numbers
+        Class<?> baseClass;
         if (first instanceof Number) {
             baseClass = Number.class;
         } else if (first == null) {
@@ -407,7 +379,7 @@ public class DefaultGroovyMethodsSupport {
             baseClass = first.getClass();
         }
 
-        for (Collection col : cols) {
+        for (Collection<?> col : cols) {
             for (Object o : col) {
                 if (!baseClass.isInstance(o)) {
                     return false;
@@ -417,12 +389,14 @@ public class DefaultGroovyMethodsSupport {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Determines if all items of given array are of the same type.
+     */
     protected static boolean sameType(Iterable[] iters) {
         Object first;
-        Class baseClass = null;
+        Class<?> baseClass = null;
 
-        for (Iterable iter : iters) {
+        for (var iter : iters) {
             for (Object o : iter) {
                 if (baseClass == null) {
                     first = o;

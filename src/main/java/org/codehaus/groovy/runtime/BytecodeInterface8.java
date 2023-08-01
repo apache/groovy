@@ -29,348 +29,277 @@ public class BytecodeInterface8 {
         return DefaultMetaClassInfo.disabledStandardMetaClass();
     }
 
-    // ------------------ int ------------------
+    // int ---------------------------------------------------------------------
 
     /**
      * @return true if integer has its default MetaClass
      */
-    public static boolean isOrigInt(){
-       return DefaultMetaClassInfo.isOrigInt(); 
+    public static boolean isOrigInt() {
+       return DefaultMetaClassInfo.isOrigInt();
     }
-
-    // ------------------ int[] ------------------
 
     /**
      * @return true if integer array has its default MetaClass
      */
-    public static boolean isOrigIntArray(){
-       return DefaultMetaClassInfo.isOrigIntArray(); 
+    public static boolean isOrigIntArray() {
+       return DefaultMetaClassInfo.isOrigIntArray();
     }
 
-
     /**
-     * get value from int[] using normalized index
+     * Gets value from int[] using normalized index.
      */
     public static int intArrayGet(int[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from int[] using normalized index
+     * Sets value into int[] using normalized index.
      */
     public static void intArraySet(int[] a, int i, int v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ byte ------------------
+    // byte --------------------------------------------------------------------
 
     /**
      * @return true if byte has its default MetaClass
      */
-    public static boolean isOrigB(){
-       return DefaultMetaClassInfo.isOrigByte(); 
+    public static boolean isOrigB() {
+       return DefaultMetaClassInfo.isOrigByte();
     }
-
-    // ------------------ byte[] ------------------
 
     /**
      * @return true if byte array has its default MetaClass
      */
-    public static boolean isOrigBArray(){
-       return false; 
+    public static boolean isOrigBArray() {
+       return false;
     }
 
-
     /**
-     * get value from byte[] using normalized index
+     * Gets value from byte[] using normalized index.
      */
     public static byte bArrayGet(byte[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from byte[] using normalized index
+     * Sets value into byte[] using normalized index.
      */
     public static void bArraySet(byte[] a, int i, byte v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ short ------------------
+    // short -------------------------------------------------------------------
 
     /**
      * @return true if short has its default MetaClass
      */
-    public static boolean isOrigS(){
-       return DefaultMetaClassInfo.isOrigShort(); 
+    public static boolean isOrigS() {
+       return DefaultMetaClassInfo.isOrigShort();
     }
-
-    // ------------------ short[] ------------------
 
     /**
      * @return true if short array has its default MetaClass
      */
-    public static boolean isOrigSArray(){
-       return false; 
+    public static boolean isOrigSArray() {
+       return false;
     }
 
-
     /**
-     * get value from short[] using normalized index
+     * Gets value from short[] using normalized index.
      */
     public static short sArrayGet(short[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from short[] using normalized index
+     * Sets value into short[] using normalized index.
      */
     public static void sArraySet(short[] a, int i, short v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ char ------------------
+    // char --------------------------------------------------------------------
 
     /**
      * @return true if char has its default MetaClass
      */
-    public static boolean isOrigC(){
-       return DefaultMetaClassInfo.isOrigChar(); 
+    public static boolean isOrigC() {
+       return DefaultMetaClassInfo.isOrigChar();
     }
-
-    // ------------------ char[] ------------------
 
     /**
      * @return true if char array has its default MetaClass
      */
-    public static boolean isOrigCArray(){
-       return false; 
+    public static boolean isOrigCArray() {
+       return false;
     }
 
-
     /**
-     * get value from char[] using normalized index
+     * Gets value from char[] using normalized index.
      */
     public static char cArrayGet(char[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from char[] using normalized index
+     * Sets value into char[] using normalized index.
      */
     public static void cArraySet(char[] a, int i, char v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ long ------------------
+    // long --------------------------------------------------------------------
 
     /**
      * @return true if long has its default MetaClass
      */
-    public static boolean isOrigL(){
-       return DefaultMetaClassInfo.isOrigLong(); 
+    public static boolean isOrigL() {
+       return DefaultMetaClassInfo.isOrigLong();
     }
-
-    // ------------------ long[] ------------------
 
     /**
      * @return true if long array has its default MetaClass
      */
-    public static boolean isOrigLArray(){
-       return false; 
+    public static boolean isOrigLArray() {
+       return false;
     }
 
-
     /**
-     * get value from long[] using normalized index
+     * Gets value from long[] using normalized index.
      */
     public static long lArrayGet(long[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from long[] using normalized index
+     * Sets value into long[] using normalized index.
      */
     public static void lArraySet(long[] a, int i, long v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ boolean ------------------
+    // boolean -----------------------------------------------------------------
 
     /**
      * @return true if boolean has its default MetaClass
      */
-    public static boolean isOrigZ(){
-       return DefaultMetaClassInfo.isOrigBool(); 
+    public static boolean isOrigZ() {
+       return DefaultMetaClassInfo.isOrigBool();
     }
-
-    // ------------------ boolean[] ------------------
 
     /**
      * @return true if boolean array has its default MetaClass
      */
-    public static boolean isOrigZArray(){
-       return false; 
+    public static boolean isOrigZArray() {
+       return false;
     }
 
     /**
-     * get value from boolean[] using normalized index
+     * Gets value from boolean[] using normalized index.
      */
     public static boolean zArrayGet(boolean[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from boolean[] using normalized index
+     * Sets value into boolean[] using normalized index.
      */
     public static void zArraySet(boolean[] a, int i, boolean v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ float ------------------
+    // float -------------------------------------------------------------------
 
     /**
      * @return true if float has its default MetaClass
      */
-    public static boolean isOrigF(){
-       return DefaultMetaClassInfo.isOrigFloat(); 
+    public static boolean isOrigF() {
+       return DefaultMetaClassInfo.isOrigFloat();
     }
-
-    // ------------------ float[] ------------------
 
     /**
      * @return true if float array has its default MetaClass
      */
-    public static boolean isOrigFArray(){
-       return false; 
+    public static boolean isOrigFArray() {
+       return false;
     }
 
     /**
-     * get value from float[] using normalized index
+     * Gets value from float[] using normalized index.
      */
     public static float fArrayGet(float[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from float[] using normalized index
+     * Sets value into float[] using normalized index.
      */
     public static void fArraySet(float[] a, int i, float v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ double ------------------
+    // double ------------------------------------------------------------------
 
     /**
      * @return true if double has its default MetaClass
      */
-    public static boolean isOrigD(){
-       return DefaultMetaClassInfo.isOrigDouble(); 
+    public static boolean isOrigD() {
+       return DefaultMetaClassInfo.isOrigDouble();
     }
-
-    // ------------------ double[] ------------------
 
     /**
      * @return true if double array has its default MetaClass
      */
-    public static boolean isOrigDArray(){
-       return false; 
+    public static boolean isOrigDArray() {
+       return false;
     }
 
     /**
-     * get value from double[] using normalized index
+     * Gets value from double[] using normalized index.
      */
     public static double dArrayGet(double[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from double[] using normalized index
+     * Sets value into double[] using normalized index.
      */
     public static void dArraySet(double[] a, int i, double v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 
-    // ------------------ Object[] ------------------
+    // Object ------------------------------------------------------------------
+
+    /**
+     * Gets value from Object[] using normalized index.
+     */
     public static Object objectArrayGet(Object[] a, int i) {
-        try {
-            return a[i];
-        } catch (Throwable t) {
-            return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        return a[i];
     }
 
     /**
-     * set value from double[] using normalized index
+     * Sets value into Object[] using normalized index.
      */
     public static void objectArraySet(Object[] a, int i, Object v) {
-        try {
-            a[i]=v;
-        } catch (Throwable t) {
-            a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
-        }
+        if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
+        a[i] = v;
     }
 }

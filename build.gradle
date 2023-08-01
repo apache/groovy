@@ -65,10 +65,15 @@ groovyLibrary {
 }
 
 groovyCore {
-    bridgedClasses 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
-            'org.codehaus.groovy.runtime.StringGroovyMethods',
+    def supportClasses = ['Boolean','Char','Byte','Short','Int','Long','Float','Double'].collect {
+        'org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport$'+it+'ArrayStaticTypesHelper'
+    }
+
+    bridgedClasses *supportClasses,
             'org.codehaus.groovy.classgen.Verifier',
             'org.codehaus.groovy.ast.tools.GeneralUtils',
+            'org.codehaus.groovy.runtime.StringGroovyMethods',
+            'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.transform.stc.DefaultTypeCheckingExtension'
 
     excludeFromJavadoc '**/GroovyRecognizer.java', '*.g4' // generated file

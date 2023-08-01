@@ -22,35 +22,34 @@ import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
+import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_CLASS;
+
 public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-    private static final CachedClass OBJECT_CLASS = ReflectionCache.getCachedClass(Object.class);
-    private static final CachedClass OBJECT_ARR_CLASS = ReflectionCache.OBJECT_ARRAY_CLASS;
-    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
 
     public ObjectArrayPutAtMetaMethod() {
-        parameterTypes = PARAM_CLASS_ARR;
+        parameterTypes = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
     }
 
     @Override
     public final CachedClass getDeclaringClass() {
-        return OBJECT_ARR_CLASS;
+        return OBJECT_ARRAY_CLASS;
     }
 
     @Override
-    public Object invoke(Object object, Object[] arguments) {
-        final Object[] objects = (Object[]) object;
-        final int index = normaliseIndex((Integer) arguments[0], objects.length);
-        objects[index] = adjustNewValue(objects, arguments[1]);
+    public Object invoke(final Object object, final Object[] arguments) {
+        var array = (Object[]) object;
+        int index = normaliseIndex((Integer) arguments[0], array.length);
+        array[index] = adjustNewValue(array, arguments[1]);
         return null;
     }
 
-    private static Object adjustNewValue(Object[] objects, Object newValue) {
-        Class arrayComponentClass = objects.getClass().getComponentType();
+    private static Object adjustNewValue(final Object[] objects, final Object newValue) {
+        Class<?> arrayComponentClass = objects.getClass().getComponentType();
         Object adjustedNewVal = newValue;
         if (newValue instanceof Number) {
             if (!arrayComponentClass.equals(newValue.getClass())) {
@@ -72,32 +71,28 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     }
 
     @Override
-    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (!(args[0] instanceof Integer))
+    public CallSite createPojoCallSite(final CallSite site, final MetaClassImpl metaClass, final MetaMethod metaMethod, final Class[] params, final Object receiver, final Object[] args) {
+        if (!(args[0] instanceof Integer)) {
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-        else
-            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-    }
-
-    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
-        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-        }
-
-        @Override
-        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
-            if (checkPojoMetaClass()) {
-                try {
-                    final Object[] objects = (Object[]) receiver;
-                    objects[normaliseIndex((Integer) arg1, objects.length)] = adjustNewValue(objects, arg2);
-                    return null;
+        } else {
+            return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
+                @Override
+                public Object call(final Object receiver, final Object index, final Object value) throws Throwable {
+                    if (checkPojoMetaClass()) {
+                        try {
+                            Object[] array = (Object[]) receiver;
+                            array[normaliseIndex((Integer) index, array.length)] = adjustNewValue(array, value);
+                            return null;
+                        }
+                        catch (ClassCastException e) {
+                            if ((receiver instanceof Object[]) && (index instanceof Integer)) {
+                                throw e;
+                            }
+                        }
+                    }
+                    return super.call(receiver, index, value);
                 }
-                catch (ClassCastException e) {
-                    if ((receiver instanceof Object[]) && (arg1 instanceof Integer))
-                        throw e;
-                }
-            }
-            return super.call(receiver, arg1, arg2);
+            };
         }
     }
 }
