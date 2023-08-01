@@ -3768,7 +3768,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * <pre class="groovyTestCase">
      * def map = [bread:3, milk:5, butter:2]
-     * def result = map.collectMany(['x']){ k, v {@code ->} k.startsWith('b') ? k.toList() : [] }
+     * def result = map.collectMany(['x']){ k, v {@code ->} if (k.startsWith('b')) k.toList() }
      * assert result == ['x', 'b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
      * </pre>
      *
@@ -3780,7 +3780,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K, V, C extends Collection<T>> C collectMany(Map<K, V> self, C collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            collector.addAll(callClosureForMapEntry(projection, entry));
+            Collection items = callClosureForMapEntry(projection, entry);
+            if (items != null && !items.isEmpty()) collector.addAll(items);
         }
         return collector;
     }
@@ -3853,7 +3854,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * <pre class="groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
-     * def squaresAndCubesOfEvens = numsIter.collectMany{ it % 2 ? [] : [it**2, it**3] }
+     * def squaresAndCubesOfEvens = numsIter.collectMany{ if (it % 2 == 0) [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
      *
@@ -3867,7 +3868,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, E, C extends Collection<T>> C collectMany(Iterator<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         while (self.hasNext()) {
             E element = self.next();
-            collector.addAll(projection.call(element));
+            Collection items= projection.call(element);
+            if (items != null) collector.addAll(items);
         }
         return collector;
     }
@@ -4202,12 +4204,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collectEntries(self, Closure.IDENTITY);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes","unchecked"})
     private static <K, V> void addEntry(Map<K, V> result, Object newEntry) {
-        if (newEntry instanceof Map) {
+        if (newEntry == null) {
+            // GROOVY-10893: insert nothing
+        } else if (newEntry instanceof Map) {
             leftShift(result, (Map)newEntry);
         } else if (newEntry instanceof List) {
-            List list = (List) newEntry;
+            List list = (List)newEntry;
             // def (key, value) == list
             Object key = list.isEmpty() ? null : list.get(0);
             Object value = list.size() <= 1 ? null : list.get(1);
@@ -4219,7 +4223,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             Object value = array.length <= 1 ? null : array[1];
             leftShift(result, new MapEntry(key, value));
         } else {
-            // TODO: enforce stricter behavior?
             // given Map.Entry is an interface, we get a proxy which gives us lots
             // of flexibility but sometimes the error messages might be unexpected
             leftShift(result, asType(newEntry, Map.Entry.class));

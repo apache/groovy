@@ -1462,32 +1462,47 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert !iterable.containsAll([1, 6] as int[])
     }
 
-    void testCollectEntriesIterator() {
-        def items = ['a', 'bb', 'ccc'].iterator()
-        def map = items.collectEntries { [it, it.size()] }
-        assert map == [a: 1, bb: 2, ccc: 3]
+    void testCollectEntriesArray() {
+        def arr = '1 San Francisco,2 Cupertino'.split(',')
+        def map = arr.collectEntries { it.split(' ', 2); }
+        assert map == ['1':'San Francisco', '2':'Cupertino']
     }
 
     void testCollectEntriesIterable() {
-        def things = new Things()
-        def map = things.collectEntries { [it.toLowerCase(), it.toUpperCase()] }
-        assert map == [a: 'A', b: 'B', c: 'C']
+        def obj = new Things()
+        def map = obj.collectEntries { [it.toLowerCase(), it.toUpperCase()] }
+        assert map == [a:'A', b:'B', c:'C']
     }
 
-    void testCollectEntriesListFallbackCases() {
-        assert [[[1,'a'], [2,'b'], [3]].collectEntries(),
-                [[1,'a'], [2,'b'], []].collectEntries(),
-                [[1,'a'], [2,'b'], [3, 'c', 42]].collectEntries()] == [[1:'a', 2:'b', 3:null], [1:'a', 2:'b', (null):null], [1:'a', 2:'b', 3:'c']]
+    void testCollectEntriesIterator() {
+        def itr = ['a','bb','ccc'].iterator()
+        def map = itr.collectEntries { [(it): it.size()] }
+        assert map == [a:1, bb:2, ccc:3]
+    }
+
+    void testCollectEntriesListReturn() {
+        def map = [[1,'a'], [2,'b'], [3]].collectEntries()
+        assert map == [1:'a', 2:'b', 3:null]
+
+        map = [[1,'a'], [2,'b'], []].collectEntries()
+        assert map == [1:'a', 2:'b', (null):null]
+
+        map = [[1,'a'], [2,'b'], [3, 'c', 42]].collectEntries()
+        assert map == [1:'a', 2:'b', 3:'c']
+
         shouldFail(NullPointerException) {
             [[1, 'a'], [3]].collectEntries(new Hashtable())
         }
     }
 
-    void testCollectEntriesWithArray() {
-        def cityList = '1 San Francisco,2 Cupertino'
-        def cityMap = cityList.split(',').
-                collectEntries{ it.split(' ', 2) }
-        assert cityMap == ['1': 'San Francisco', '2': 'Cupertino']
+    // GROOVY-10893
+    void testCollectEntriesNullReturn() {
+        def map = ['a','b','c','d','e'].collectEntries {
+            if (it == 'a' || it == 'e') {
+                return [it, 'vowel']
+            }
+        }
+        assert map == [a:'vowel', e:'vowel']
     }
 
     void testListTakeWhile() {
