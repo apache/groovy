@@ -19,7 +19,7 @@
 import me.champeau.gradle.japicmp.JapicmpTask
 
 plugins {
-    id "me.champeau.gradle.japicmp" version "0.4.1"
+    id "me.champeau.gradle.japicmp" version "0.4.2"
     id 'org.apache.groovy-aggregating-project'
     id 'org.apache.groovy-common'
 }
@@ -54,12 +54,11 @@ rootProject.allprojects {
                 ignoreMissingClasses = true
                 classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
                 packageExcludes = ["**internal**", "groovyjarjar**"]
-//                richReport {
-//                    destinationDir = file("${thisProject.buildDir}/reports/")
-//                    reportName = "${taskName}.html"
-//                }
-//                htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
-                txtOutputFile = file("${thisProject.buildDir}/reports/${taskName}.txt")
+                richReport {
+                    destinationDir = file("${thisProject.buildDir}/reports/")
+                    reportName = "${taskName}.html"
+                }
+                htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
             }
             checkBinaryCompatibility.configure {
                 dependsOn(singleProjectCheck)
