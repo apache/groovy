@@ -22,12 +22,7 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.math.BigDecimal;
-import java.security.PrivilegedAction;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
 
 /**
  * Factory class to get functionality based on the VM version.
@@ -35,51 +30,45 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
  * runtime.
  */
 public class VMPluginFactory {
-    private static final Logger LOGGER = Logger.getLogger(VMPluginFactory.class.getName());
-    private static final Map<BigDecimal, String> PLUGIN_MAP = Maps.of(
-            // Note: list the vm plugin entries in *descending* order:
-            new BigDecimal("16"), "org.codehaus.groovy.vmplugin.v16.Java16",
-            new BigDecimal("10"), "org.codehaus.groovy.vmplugin.v10.Java10",
-            new BigDecimal("9"), "org.codehaus.groovy.vmplugin.v9.Java9",
-            new BigDecimal("1.8"), "org.codehaus.groovy.vmplugin.v8.Java8"
+
+    private static final Map<BigDecimal,String> PLUGIN_MAP = Maps.of(
+        // NOTE: Declare the vm plugin entries in *descending* order!
+        new BigDecimal( "16"), "org.codehaus.groovy.vmplugin.v16.Java16",
+        new BigDecimal( "10"), "org.codehaus.groovy.vmplugin.v10.Java10",
+        new BigDecimal(  "9"), "org.codehaus.groovy.vmplugin.v9.Java9",
+        new BigDecimal("1.8"), "org.codehaus.groovy.vmplugin.v8.Java8"
     );
 
-    private static final VMPlugin PLUGIN;
-
-    static {
-        PLUGIN = createPlugin();
-    }
-
-    public static VMPlugin getPlugin() {
-        return PLUGIN;
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
+    private static final VMPlugin PLUGIN = createPlugin();
 
     private static VMPlugin createPlugin() {
-        return doPrivileged((PrivilegedAction<VMPlugin>) () -> {
-            final BigDecimal specVer = new BigDecimal(VMPlugin.getJavaVersion());
+        return doPrivileged(() -> {
             ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            for (Map.Entry<BigDecimal, String> entry : PLUGIN_MAP.entrySet()) {
-                if (isAtLeast(specVer, entry.getKey())) {
-                    final String pluginName = entry.getValue();
+            BigDecimal specVer = new BigDecimal(VMPlugin.getJavaVersion());
+            for (Map.Entry<BigDecimal,String> entry : PLUGIN_MAP.entrySet()) {
+                if (DefaultGroovyMethods.isAtLeast(specVer, entry.getKey())) {
+                    String fullName = entry.getValue();
                     try {
-                        return (VMPlugin) loader.loadClass(pluginName).getDeclaredConstructor().newInstance();
+                        return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
                     } catch (Throwable t) {
-                        if (LOGGER.isLoggable(Level.FINE)) {
-                            LOGGER.fine("Trying to create VM plugin `" + pluginName + "`, but failed:\n" + DefaultGroovyMethods.asString(t)
-                            );
+                        var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
+                        if (log.isLoggable(java.util.logging.Level.FINE)) {
+                            log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
                         }
-
                         return null;
                     }
                 }
             }
-
             return null;
         });
+    }
+
+    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
+        return java.security.AccessController.doPrivileged(action);
+    }
+
+    public static VMPlugin getPlugin() {
+        return PLUGIN;
     }
 }
