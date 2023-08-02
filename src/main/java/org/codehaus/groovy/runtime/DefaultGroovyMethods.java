@@ -7999,6 +7999,244 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // join
+
+    /**
+     * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterator, with the given String as a separator between each item. The
+     * iterator will become exhausted of elements after producing the resulting
+     * conjoined value.
+     *
+     * @param self      an Iterator of objects
+     * @param separator a String separator
+     * @return the joined String
+     * @since 1.5.5
+     */
+    public static String join(final Iterator<?> self, final String separator) {
+        StringJoiner joiner = new StringJoiner(separator != null ? separator : "");
+        while (self.hasNext()) {
+            Object obj = self.next();
+            String str = FormatHelper.toString(obj);
+            joiner.add(str);
+        }
+        return joiner.toString();
+    }
+
+    /**
+     * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterable, with the given String as a separator between each item.
+     * <p>
+     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
+     * <pre class="groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
+     *
+     * @param self      an Iterable of objects
+     * @param separator a String separator
+     * @return the joined String
+     * @since 1.0
+     */
+    public static String join(final Iterable<?> self, final String separator) {
+        return join(self.iterator(), separator);
+    }
+
+    //--------------------------------------------------------------------------
+    // last
+
+    /**
+     * Returns the last item from the List.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.last() == 2
+     * // check original is unaltered
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self a List
+     * @return the last item from the List
+     * @throws NoSuchElementException if you try to access last() for an empty List
+     * @since 1.5.5
+     */
+    public static <T> T last(List<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty List");
+        }
+        return self.get(self.size() - 1);
+    }
+
+    /**
+     * An optimized version of {@link #last(List)}.
+     *
+     * @since 2.5.15
+     */
+    public static <T> T last(Deque<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty Deque");
+        }
+        return self.getLast();
+    }
+
+    /**
+     * Returns the last item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.last() == 2
+     * // check original unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The last element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
+     *
+     * @param self an Iterable
+     * @return the last item from the Iterable
+     * @throws NoSuchElementException if you try to access last() for an empty Iterable
+     * @since 1.8.7
+     */
+    public static <T> T last(Iterable<T> self) {
+        Iterator<T> iterator = self.iterator();
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty Iterable");
+        }
+        T result = null;
+        while (iterator.hasNext()) {
+            result = iterator.next();
+        }
+        return result;
+    }
+
+    //--------------------------------------------------------------------------
+    // leftShift
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a Collection.
+     * <pre class="groovyTestCase">def list = [1,2]
+     * list &lt;&lt; 3
+     * assert list == [1,2,3]</pre>
+     *
+     * @param self  a Collection
+     * @param value an Object to be added to the collection.
+     * @return same collection, after the value was added to it.
+     * @since 1.0
+     */
+    public static <T> Collection<T> leftShift(Collection<T> self, T value) {
+        self.add(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a List.
+     * <pre class="groovyTestCase">def list = [1,2]
+     * list &lt;&lt; 3
+     * assert list == [1,2,3]</pre>
+     *
+     * @param self  a List
+     * @param value an Object to be added to the List.
+     * @return same List, after the value was added to it.
+     * @since 2.4.0
+     */
+    public static <T> List<T> leftShift(List<T> self, T value) {
+        return (List<T>) leftShift((Collection<T>) self, value);
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a Set.
+     * <pre class="groovyTestCase">def set = [1,2] as Set
+     * set &lt;&lt; 3
+     * assert set == [1,2,3] as Set</pre>
+     *
+     * @param self  a Set
+     * @param value an Object to be added to the Set.
+     * @return same Set, after the value was added to it.
+     * @since 2.4.0
+     */
+    public static <T> Set<T> leftShift(Set<T> self, T value) {
+        return (Set<T>) leftShift((Collection<T>) self, value);
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a SortedSet.
+     * <pre class="groovyTestCase">def set = [1,2] as SortedSet
+     * set &lt;&lt; 3
+     * assert set == [1,2,3] as SortedSet</pre>
+     *
+     * @param self  a SortedSet
+     * @param value an Object to be added to the SortedSet.
+     * @return same SortedSet, after the value was added to it.
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> leftShift(SortedSet<T> self, T value) {
+        return (SortedSet<T>) leftShift((Collection<T>) self, value);
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a BlockingQueue.
+     * In case of bounded queue the method will block till space in the queue become available
+     * <pre class="groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
+     * list &lt;&lt; 3 &lt;&lt; 2 &lt;&lt; 1
+     * assert list.iterator().collect{it} == [3,2,1]</pre>
+     *
+     * @param self  a Collection
+     * @param value an Object to be added to the collection.
+     * @return same collection, after the value was added to it.
+     * @since 1.7.1
+     */
+    public static <T> BlockingQueue<T> leftShift(BlockingQueue<T> self, T value) throws InterruptedException {
+        self.put(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * Map.Entry values to a Map.
+     *
+     * @param self  a Map
+     * @param entry a Map.Entry to be added to the Map.
+     * @return same map, after the value has been added to it.
+     * @since 1.6.0
+     */
+    public static <K, V> Map<K, V> leftShift(Map<K, V> self, Map.Entry<K, V> entry) {
+        self.put(entry.getKey(), entry.getValue());
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to put
+     * one maps entries into another map. This allows the compact syntax
+     * <code>map1 &lt;&lt; map2</code>; otherwise it's just a synonym for
+     * <code>putAll</code> though it returns the original map rather than
+     * being a <code>void</code> method. Example usage:
+     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * map &lt;&lt; [c:3, d:4]
+     * assert map == [a:1, b:2, c:3, d:4]</pre>
+     *
+     * @param self  a Map
+     * @param other another Map whose entries should be added to the original Map.
+     * @return same map, after the values have been added to it.
+     * @since 1.7.2
+     */
+    public static <K, V> Map<K, V> leftShift(Map<K, V> self, Map<K, V> other) {
+        self.putAll(other);
+        return self;
+    }
+
+    /**
+     * Implementation of the left shift operator for integral types.  Non-integral
+     * Number types throw UnsupportedOperationException.
+     *
+     * @param self    a Number object
+     * @param operand the shift distance by which to left shift the number
+     * @return the resulting number
+     * @since 1.5.0
+     */
+    public static Number leftShift(Number self, Number operand) {
+        return NumberMath.leftShift(self, operand);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Allows the closure to be called for the object reference self.
@@ -10249,43 +10487,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each item from
-     * the Iterator, with the given String as a separator between each item. The
-     * iterator will become exhausted of elements after producing the resulting
-     * conjoined value.
-     *
-     * @param self      an Iterator of objects
-     * @param separator a String separator
-     * @return the joined String
-     * @since 1.5.5
-     */
-    public static String join(final Iterator<?> self, final String separator) {
-        StringJoiner joiner = new StringJoiner(separator != null ? separator : "");
-        while (self.hasNext()) {
-            Object obj = self.next();
-            String str = FormatHelper.toString(obj);
-            joiner.add(str);
-        }
-        return joiner.toString();
-    }
-
-    /**
-     * Concatenates the <code>toString()</code> representation of each item from
-     * the Iterable, with the given String as a separator between each item.
-     * <p>
-     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
-     * <pre class="groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
-     *
-     * @param self      an Iterable of objects
-     * @param separator a String separator
-     * @return the joined String
-     * @since 1.0
-     */
-    public static String join(final Iterable<?> self, final String separator) {
-        return join(self.iterator(), separator);
-    }
-
-    /**
      * Adds min() method to Collection objects.
      * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
      *
@@ -11909,68 +12110,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * An optimized version of {@link #last(List)}.
-     *
-     * @since 2.5.15
-     */
-    public static <T> T last(Deque<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access last() element from an empty Deque");
-        }
-        return self.getLast();
-    }
-
-    /**
-     * Returns the last item from the List.
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * assert list.last() == 2
-     * // check original is unaltered
-     * assert list == [3, 4, 2]
-     * </pre>
-     *
-     * @param self a List
-     * @return the last item from the List
-     * @throws NoSuchElementException if you try to access last() for an empty List
-     * @since 1.5.5
-     */
-    public static <T> T last(List<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access last() element from an empty List");
-        }
-        return self.get(self.size() - 1);
-    }
-
-    /**
-     * Returns the last item from the Iterable.
-     * <pre class="groovyTestCase">
-     * def set = [3, 4, 2] as LinkedHashSet
-     * assert set.last() == 2
-     * // check original unaltered
-     * assert set == [3, 4, 2] as Set
-     * </pre>
-     * The last element returned by the Iterable's iterator is returned.
-     * If the Iterable doesn't guarantee a defined order it may appear like
-     * a random element is returned.
-     *
-     * @param self an Iterable
-     * @return the last item from the Iterable
-     * @throws NoSuchElementException if you try to access last() for an empty Iterable
-     * @since 1.8.7
-     */
-    public static <T> T last(Iterable<T> self) {
-        Iterator<T> iterator = self.iterator();
-        if (!iterator.hasNext()) {
-            throw new NoSuchElementException("Cannot access last() element from an empty Iterable");
-        }
-        T result = null;
-        while (iterator.hasNext()) {
-            result = iterator.next();
-        }
-        return result;
-    }
-
-    /**
      * Returns the items from the List excluding the first item.
      * <pre class="groovyTestCase">
      * def list = [3, 4, 2]
@@ -13483,136 +13622,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return ansMap;
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * objects to a Collection.
-     * <pre class="groovyTestCase">def list = [1,2]
-     * list &lt;&lt; 3
-     * assert list == [1,2,3]</pre>
-     *
-     * @param self  a Collection
-     * @param value an Object to be added to the collection.
-     * @return same collection, after the value was added to it.
-     * @since 1.0
-     */
-    public static <T> Collection<T> leftShift(Collection<T> self, T value) {
-        self.add(value);
-        return self;
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * objects to a List.
-     * <pre class="groovyTestCase">def list = [1,2]
-     * list &lt;&lt; 3
-     * assert list == [1,2,3]</pre>
-     *
-     * @param self  a List
-     * @param value an Object to be added to the List.
-     * @return same List, after the value was added to it.
-     * @since 2.4.0
-     */
-    public static <T> List<T> leftShift(List<T> self, T value) {
-        return (List<T>) leftShift((Collection<T>) self, value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * objects to a Set.
-     * <pre class="groovyTestCase">def set = [1,2] as Set
-     * set &lt;&lt; 3
-     * assert set == [1,2,3] as Set</pre>
-     *
-     * @param self  a Set
-     * @param value an Object to be added to the Set.
-     * @return same Set, after the value was added to it.
-     * @since 2.4.0
-     */
-    public static <T> Set<T> leftShift(Set<T> self, T value) {
-        return (Set<T>) leftShift((Collection<T>) self, value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * objects to a SortedSet.
-     * <pre class="groovyTestCase">def set = [1,2] as SortedSet
-     * set &lt;&lt; 3
-     * assert set == [1,2,3] as SortedSet</pre>
-     *
-     * @param self  a SortedSet
-     * @param value an Object to be added to the SortedSet.
-     * @return same SortedSet, after the value was added to it.
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> leftShift(SortedSet<T> self, T value) {
-        return (SortedSet<T>) leftShift((Collection<T>) self, value);
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * objects to a BlockingQueue.
-     * In case of bounded queue the method will block till space in the queue become available
-     * <pre class="groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
-     * list &lt;&lt; 3 &lt;&lt; 2 &lt;&lt; 1
-     * assert list.iterator().collect{it} == [3,2,1]</pre>
-     *
-     * @param self  a Collection
-     * @param value an Object to be added to the collection.
-     * @return same collection, after the value was added to it.
-     * @since 1.7.1
-     */
-    public static <T> BlockingQueue<T> leftShift(BlockingQueue<T> self, T value) throws InterruptedException {
-        self.put(value);
-        return self;
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to append
-     * Map.Entry values to a Map.
-     *
-     * @param self  a Map
-     * @param entry a Map.Entry to be added to the Map.
-     * @return same map, after the value has been added to it.
-     * @since 1.6.0
-     */
-    public static <K, V> Map<K, V> leftShift(Map<K, V> self, Map.Entry<K, V> entry) {
-        self.put(entry.getKey(), entry.getValue());
-        return self;
-    }
-
-    /**
-     * Overloads the left shift operator to provide an easy way to put
-     * one maps entries into another map. This allows the compact syntax
-     * <code>map1 &lt;&lt; map2</code>; otherwise it's just a synonym for
-     * <code>putAll</code> though it returns the original map rather than
-     * being a <code>void</code> method. Example usage:
-     * <pre class="groovyTestCase">def map = [a:1, b:2]
-     * map &lt;&lt; [c:3, d:4]
-     * assert map == [a:1, b:2, c:3, d:4]</pre>
-     *
-     * @param self  a Map
-     * @param other another Map whose entries should be added to the original Map.
-     * @return same map, after the values have been added to it.
-     * @since 1.7.2
-     */
-    public static <K, V> Map<K, V> leftShift(Map<K, V> self, Map<K, V> other) {
-        self.putAll(other);
-        return self;
-    }
-
-    /**
-     * Implementation of the left shift operator for integral types.  Non-integral
-     * Number types throw UnsupportedOperationException.
-     *
-     * @param self    a Number object
-     * @param operand the shift distance by which to left shift the number
-     * @return the resulting number
-     * @since 1.5.0
-     */
-    public static Number leftShift(Number self, Number operand) {
-        return NumberMath.leftShift(self, operand);
     }
 
     /**
