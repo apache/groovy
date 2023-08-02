@@ -220,7 +220,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
     private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(  Long.MAX_VALUE);
     private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(  Long.MIN_VALUE);
-    private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
 
     private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
         private final Comparator<V> delegate = new NumberAwareComparator<>();
@@ -229,6 +228,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
             return delegate.compare(e1.getValue(), e2.getValue());
         }
+    }
+
+    private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
+
+    // internal helper method
+    protected static <T> T callClosureForLine(@ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure, String line, int counter) {
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(line, counter);
+        }
+        return closure.call(line);
+    }
+
+    // internal helper method
+    protected static <T, K, V> T callClosureForMapEntry(@ClosureParams(value=FromString.class, options={"K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry) {
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(entry.getKey(), entry.getValue());
+        }
+        return closure.call(entry);
+    }
+
+    // internal helper method
+    protected static <T, K, V> T callClosureForMapEntryAndCounter(@ClosureParams(value=FromString.class, options={"K,V,Integer", "K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry, int counter) {
+        if (closure.getMaximumNumberOfParameters() == 3) {
+            return closure.call(entry.getKey(), entry.getValue(), counter);
+        }
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(entry, counter);
+        }
+        return closure.call(entry);
     }
 
     //--------------------------------------------------------------------------
@@ -9340,6 +9368,1311 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // or
+
+    /**
+     * Bitwise OR together two numbers.
+     *
+     * @param left  a Number
+     * @param right another Number to bitwise OR
+     * @return the bitwise OR of both Numbers
+     * @since 1.0
+     */
+    public static Number or(Number left, Number right) {
+        return NumberMath.or(left, right);
+    }
+
+    /**
+     * Bitwise OR together two BitSets.  Called when the '|' operator is used
+     * between two bit sets.
+     *
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise OR
+     * @return the bitwise OR of both BitSets
+     * @since 1.5.0
+     */
+    public static BitSet or(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.or(right);
+        return result;
+    }
+
+    /**
+     * Logical disjunction of two boolean operators
+     *
+     * @param left left operator
+     * @param right right operator
+     * @return result of logical disjunction
+     * @since 1.0
+     */
+    public static Boolean or(Boolean left, Boolean right) {
+        return left || Boolean.TRUE.equals(right);
+    }
+
+    /**
+     * Create a Set as a union of a Set and an Iterable.  Any
+     * elements that exist in either are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as Set
+     * </pre>
+     *
+     * @param left  the left Set
+     * @param right the right Iterable
+     * @return the merged Set
+     * @since 5.0.0
+     * @see #plus(Set, Iterable)
+     */
+    public static <T> Set<T> or(Set<T> left, Iterable<T> right) {
+        return plus(left, right);
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and an Iterable.  Any
+     * elements that exist in either are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a | b) == [1,2,3,4,5,6] as SortedSet
+     * </pre>
+     *
+     * @param left  the left SortedSet
+     * @param right the right Iterable
+     * @return the merged SortedSet
+     * @since 5.0.0
+     * @see #plus(SortedSet, Iterable)
+     */
+    public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
+        return plus(left, right);
+    }
+
+    //--------------------------------------------------------------------------
+    // permutations
+
+    /**
+     * Finds all permutations of an iterable.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
+     * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
+     *
+     * @param self the Iterable of items
+     * @return the permutations from the list
+     * @since 1.7.0
+     */
+    public static <T> Set<List<T>> permutations(Iterable<T> self) {
+        Set<List<T>> ans = new HashSet<>();
+        PermutationGenerator<T> generator = new PermutationGenerator<>(self);
+        while (generator.hasNext()) {
+            ans.add(generator.next());
+        }
+        return ans;
+    }
+
+    /**
+     * Finds all permutations of an iterable, applies a function to each permutation and collects the result
+     * into a list.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v {@code ->} 2*v }}
+     * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
+     *
+     * @param self the Iterable of items
+     * @param function the function to apply on each permutation
+     * @return the list of results of the application of the function on each permutation
+     * @since 2.2.0
+     */
+    public static <T,V> List<V> permutations(Iterable<T> self, Closure<V> function) {
+        return collect(permutations(self), function);
+    }
+
+    //--------------------------------------------------------------------------
+    // plus
+
+    /**
+     * Create a Collection as a union of two collections. If the left collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
+     *
+     * @param left  the left Collection
+     * @param right the right Collection
+     * @return the merged Collection
+     * @since 1.5.0
+     */
+    public static <T> Collection<T> plus(Collection<T> left, Collection<T> right) {
+        final Collection<T> answer = cloneSimilarCollection(left, left.size() + right.size());
+        answer.addAll(right);
+        return answer;
+    }
+
+    /**
+     * Create a Collection as a union of two iterables. If the left iterable
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
+     *
+     * @param left  the left Iterable
+     * @param right the right Iterable
+     * @return the merged Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> plus(Iterable<T> left, Iterable<T> right) {
+        return plus(asCollection(left), asCollection(right));
+    }
+
+    /**
+     * Create a Collection as a union of a Collection and an Iterable. If the left collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left Collection
+     * @param right the right Iterable
+     * @return the merged Collection
+     * @since 1.8.7
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> Collection<T> plus(Collection<T> left, Iterable<T> right) {
+        return plus(left, asCollection(right));
+    }
+
+    /**
+     * Create a List as a union of a List and an Iterable.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left List
+     * @param right the right Iterable
+     * @return the merged List
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> List<T> plus(List<T> left, Iterable<T> right) {
+        return (List<T>) plus((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a List as a union of a List and a Collection.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left List
+     * @param right the right Collection
+     * @return the merged List
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> List<T> plus(List<T> left, Collection<T> right) {
+        return (List<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Create a Set as a union of a Set and an Iterable.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left Set
+     * @param right the right Iterable
+     * @return the merged Set
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> Set<T> plus(Set<T> left, Iterable<T> right) {
+        return (Set<T>) plus((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a Set as a union of a Set and a Collection.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left Set
+     * @param right the right Collection
+     * @return the merged Set
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> Set<T> plus(Set<T> left, Collection<T> right) {
+        return (Set<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and an Iterable.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left SortedSet
+     * @param right the right Iterable
+     * @return the merged SortedSet
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> SortedSet<T> plus(SortedSet<T> left, Iterable<T> right) {
+        return (SortedSet<T>) plus((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and a Collection.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @param left  the left SortedSet
+     * @param right the right Collection
+     * @return the merged SortedSet
+     * @since 2.4.0
+     * @see #plus(Collection, Collection)
+     */
+    public static <T> SortedSet<T> plus(SortedSet<T> left, Collection<T> right) {
+        return (SortedSet<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Creates a new List by inserting all the elements in the specified array
+     * to the elements from the original List at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).
+     * The new elements will appear in the resulting List in the order that
+     * they occur in the original array.
+     * The behavior of this operation is undefined if the list or
+     * array operands are modified while the operation is in progress.
+     * The original list and array operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c' as String[])
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self  an original list
+     * @param items array containing elements to be merged with elements from the original list
+     * @param index index at which to insert the first element from the specified array
+     * @return the new list
+     * @see #plus(List, int, List)
+     * @since 1.8.1
+     */
+    public static <T> List<T> plus(List<T> self, int index, T[] items) {
+        return plus(self, index, Arrays.asList(items));
+    }
+
+    /**
+     * Creates a new List by inserting all the elements in the given additions List
+     * to the elements from the original List at the specified index.
+     * Shifts the element currently at that index (if any) and any subsequent
+     * elements to the right (increasing their indices).  The new elements
+     * will appear in the resulting List in the order that they occur in the original lists.
+     * The behavior of this operation is undefined if the original lists
+     * are modified while the operation is in progress. The original lists remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3]
+     * def newItems = items.plus(2, 'a'..'c')
+     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
+     * assert items == [1, 2, 3]
+     * </pre>
+     *
+     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
+     * the changes on the original list itself.
+     *
+     * @param self      an original List
+     * @param additions a List containing elements to be merged with elements from the original List
+     * @param index     index at which to insert the first element from the given additions List
+     * @return the new list
+     * @since 1.8.1
+     */
+    public static <T> List<T> plus(List<T> self, int index, List<T> additions) {
+        final List<T> answer = new ArrayList<>(self);
+        answer.addAll(index, additions);
+        return answer;
+    }
+
+    /**
+     * Creates a new List by inserting all the elements in the given Iterable
+     * to the elements from this List at the specified index.
+     *
+     * @param self      an original list
+     * @param additions an Iterable containing elements to be merged with the elements from the original List
+     * @param index     index at which to insert the first element from the given additions Iterable
+     * @return the new list
+     * @since 1.8.7
+     * @see #plus(List, int, List)
+     */
+    public static <T> List<T> plus(List<T> self, int index, Iterable<T> additions) {
+        return plus(self, index, toList(additions));
+    }
+
+    /**
+     * Create a collection as a union of a Collection and an Object. If the collection
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  a Collection
+     * @param right an object to add/append
+     * @return the resulting Collection
+     * @since 1.5.0
+     */
+    public static <T> Collection<T> plus(Collection<T> left, T right) {
+        final Collection<T> answer = cloneSimilarCollection(left, left.size() + 1);
+        answer.add(right);
+        return answer;
+    }
+
+    /**
+     * Create a collection as a union of an Iterable and an Object. If the iterable
+     * is a Set, then the returned collection will be a Set otherwise a List.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  an Iterable
+     * @param right an object to add/append
+     * @return the resulting Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> plus(Iterable<T> left, T right) {
+        return plus(asCollection(left), right);
+    }
+
+    /**
+     * Create a List as a union of a List and an Object.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  a List
+     * @param right an object to add/append
+     * @return the resulting List
+     * @since 2.4.0
+     */
+    public static <T> List<T> plus(List<T> left, T right) {
+        return (List<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Create a Set as a union of a Set and an Object.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  a Set
+     * @param right an object to add/append
+     * @return the resulting Set
+     * @since 2.4.0
+     */
+    public static <T> Set<T> plus(Set<T> left, T right) {
+        return (Set<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Create a SortedSet as a union of a SortedSet and an Object.
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     *
+     * @param left  a SortedSet
+     * @param right an object to add/append
+     * @return the resulting SortedSet
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> plus(SortedSet<T> left, T right) {
+        return (SortedSet<T>) plus((Collection<T>) left, right);
+    }
+
+    /**
+     * Returns a new <code>Map</code> containing all entries from <code>left</code> and <code>right</code>,
+     * giving precedence to <code>right</code>.  Any keys appearing in both Maps
+     * will appear in the resultant map with values from the <code>right</code>
+     * operand. If the <code>left</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
+     * <p>
+     * Roughly equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * but with some additional logic to preserve the <code>left</code> Map type for common cases as
+     * described above.
+     * <pre class="groovyTestCase">
+     * assert [a:10, b:20] + [a:5, c:7] == [a:5, b:20, c:7]
+     * </pre>
+     *
+     * @param left  a Map
+     * @param right a Map
+     * @return a new Map containing all entries from left and right
+     * @since 1.5.0
+     */
+    public static <K, V> Map<K, V> plus(Map<K, V> left, Map<K, V> right) {
+        Map<K, V> map = cloneSimilarMap(left);
+        map.putAll(right);
+        return map;
+    }
+
+    /**
+     * Returns a new <code>Map</code> containing all entries from <code>self</code> and <code>entries</code>,
+     * giving precedence to <code>entries</code>.  Any keys appearing in both Maps
+     * will appear in the resultant map with values from the <code>entries</code>
+     * operand. If <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
+     *
+     * @param self    a Map
+     * @param entries a Collection of Map.Entry items to be added to the Map.
+     * @return a new Map containing all key, value pairs from self and entries
+     * @since 1.6.1
+     */
+    public static <K, V> Map<K, V> plus(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
+        Map<K, V> map = cloneSimilarMap(self);
+        putAll(map, entries);
+        return map;
+    }
+
+    /**
+     * Add a Character and a Number. The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @see java.lang.Integer#valueOf(int)
+     * @param left  a Character
+     * @param right a Number
+     * @return the Number corresponding to the addition of left and right
+     * @since 1.0
+     */
+    public static Number plus(Character left, Number right) {
+        return NumberNumberPlus.plus(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Add a Number and a Character.  The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @see java.lang.Integer#valueOf(int)
+     * @param left  a Number
+     * @param right a Character
+     * @return The Number corresponding to the addition of left and right
+     * @since 1.0
+     */
+    public static Number plus(Number left, Character right) {
+        return NumberNumberPlus.plus(left, Integer.valueOf(right));
+    }
+
+    /**
+     * Add one Character to another. The ordinal values of the Characters
+     * are used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * @see #plus(java.lang.Number, java.lang.Character)
+     * @param left  a Character
+     * @param right a Character
+     * @return the Number corresponding to the addition of left and right
+     * @since 1.0
+     */
+    public static Number plus(Character left, Character right) {
+        return plus(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Appends a String to the literal of the Map instance.
+     *
+     * <pre class="groovyTestCase">
+     * assert '[a:1] is a map' == [a:1] + ' is a map'
+     * </pre>
+     *
+     * @param left  a Map
+     * @param right a String
+     * @return the concatenated string
+     * @since 4.0.3
+     */
+    public static String plus(Map left, String right) {
+        return DefaultGroovyMethods.toString(left) + right;
+    }
+
+    /**
+     * Appends a GString to the literal of the Map instance.
+     *
+     * <pre class="groovyTestCase">
+     * assert '[a:1] is a map' == [a:1] + " is ${'a'} map"
+     * </pre>
+     *
+     * @param left  a Map
+     * @param right a GString
+     * @return the concatenated string
+     * @since 4.0.3
+     */
+    public static String plus(Map left, GString right) {
+        return DefaultGroovyMethods.toString(left) + right;
+    }
+
+    //--------------------------------------------------------------------------
+    // pop
+
+    /**
+     * Removes the initial item from the List.
+     *
+     * <pre class="groovyTestCase">
+     * def list = ["a", false, 2]
+     * assert list.pop() == 'a'
+     * assert list == [false, 2]
+     * </pre>
+     *
+     * This is similar to pop on a Stack where the first item in the list
+     * represents the top of the stack.
+     *
+     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
+     * If you need the old behavior use 'removeLast'.
+     *
+     * @param self a List
+     * @return the item removed from the List
+     * @throws NoSuchElementException if the list is empty
+     * @since 1.0
+     */
+    public static <T> T pop(List<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot pop() an empty List");
+        }
+        return self.remove(0);
+    }
+
+    //--------------------------------------------------------------------------
+    // power
+
+    /**
+     * Power of a Number to a certain exponent. Called by the '**' operator.
+     *
+     * @param self     a Number
+     * @param exponent a Number exponent
+     * @return a Number to the power of a certain exponent
+     * @since 1.0
+     */
+    public static Number power(Number self, Number exponent) {
+        double base, exp, answer;
+        base = self.doubleValue();
+        exp = exponent.doubleValue();
+
+        answer = Math.pow(base, exp);
+        if ((double) ((int) answer) == answer) {
+            return (int) answer;
+        } else if ((double) ((long) answer) == answer) {
+            return (long) answer;
+        } else {
+            return answer;
+        }
+    }
+
+    /**
+     * Power of a BigDecimal to an integer certain exponent. If the
+     * exponent is positive, call the BigDecimal.pow(int) method to
+     * maintain precision. Called by the '**' operator.
+     *
+     * @param self     a BigDecimal
+     * @param exponent an Integer exponent
+     * @return a Number to the power of the exponent
+     */
+    public static Number power(BigDecimal self, Integer exponent) {
+        if (exponent >= 0) {
+            return self.pow(exponent);
+        } else {
+            return power(self, (double) exponent);
+        }
+    }
+
+    /**
+     * Power of a BigInteger to an integer certain exponent. If the
+     * exponent is positive, call the BigInteger.pow(int) method to
+     * maintain precision. Called by the '**' operator.
+     *
+     *  @param self     a BigInteger
+     *  @param exponent an Integer exponent
+     *  @return a Number to the power of the exponent
+     */
+    public static Number power(BigInteger self, Integer exponent) {
+        if (exponent >= 0) {
+            return self.pow(exponent);
+        } else {
+            return power(self, (double) exponent);
+        }
+    }
+
+    /**
+     * Power of an integer to an integer certain exponent. If the
+     * exponent is positive, convert to a BigInteger and call
+     * BigInteger.pow(int) method to maintain precision. Called by the
+     * '**' operator.
+     *
+     *  @param self     an Integer
+     *  @param exponent an Integer exponent
+     *  @return a Number to the power of the exponent
+     */
+    public static Number power(Integer self, Integer exponent) {
+        if (exponent >= 0) {
+            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
+            if (answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
+                return answer.intValue();
+            } else {
+                return answer;
+            }
+        } else {
+            return power(self, (double) exponent);
+        }
+    }
+
+    /**
+     * Power of a long to an integer certain exponent. If the
+     * exponent is positive, convert to a BigInteger and call
+     * BigInteger.pow(int) method to maintain precision. Called by the
+     * '**' operator.
+     *
+     * @param self     a Long
+     * @param exponent an Integer exponent
+     * @return a Number to the power of the exponent
+     */
+    public static Number power(Long self, Integer exponent) {
+        if (exponent >= 0) {
+            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
+            if (answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
+                return answer.longValue();
+            } else {
+                return answer;
+            }
+        } else {
+            return power(self, (double) exponent);
+        }
+    }
+
+    /**
+     * Power of a BigInteger to a BigInteger certain exponent. Called by the '**' operator.
+     *
+     * @param self     a BigInteger
+     * @param exponent a BigInteger exponent
+     * @return a BigInteger to the power of the exponent
+     * @since 2.3.8
+     */
+    public static BigInteger power(BigInteger self, BigInteger exponent) {
+        if ((exponent.signum() >= 0) && (exponent.compareTo(BI_INT_MAX) <= 0)) {
+            return self.pow(exponent.intValue());
+        } else {
+            return BigDecimal.valueOf(Math.pow(self.doubleValue(), exponent.doubleValue())).toBigInteger();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // previous
+
+    /**
+     * Decrement a Character by one.
+     *
+     * @param self a Character
+     * @return a decremented Character
+     * @since 1.5.7
+     */
+    public static Character previous(Character self) {
+        return (char) (self - 1);
+    }
+
+    /**
+     * Decrement a Number by one.
+     *
+     * @param self a Number
+     * @return a decremented Number
+     * @since 1.0
+     */
+    public static Number previous(Number self) {
+        return NumberNumberMinus.minus(self, Integer.valueOf(1));
+    }
+
+    //--------------------------------------------------------------------------
+    // print
+
+    /**
+     * Print a value formatted Groovy style to self if it
+     * is a Writer, otherwise to the standard output stream.
+     *
+     * @param self  any Object
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void print(Object self, Object value) {
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            try {
+                ((Writer) self).write(FormatHelper.toString(value));
+            } catch (IOException e) {
+                // TODO: Should we have some unified function like PrintWriter.checkError()?
+            }
+        } else {
+            System.out.print(FormatHelper.toString(value));
+        }
+    }
+
+    /**
+     * Print a value formatted Groovy style to the print writer.
+     *
+     * @param self  a PrintWriter
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void print(PrintWriter self, Object value) {
+        self.print(FormatHelper.toString(value));
+    }
+
+    /**
+     * Print a value formatted Groovy style to the print stream.
+     *
+     * @param self  a PrintStream
+     * @param value the value to print
+     * @since 1.6.0
+     */
+    public static void print(PrintStream self, Object value) {
+        self.print(FormatHelper.toString(value));
+    }
+
+    /**
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
+     * @param out  the PrintWriter used for printing
+     * @since 1.0
+     */
+    public static void print(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
+        out.print(FormatHelper.toString(self));
+    }
+
+    /**
+     * Print a value to the standard output stream.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self  a generated closure
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void print(Closure self, Object value) {
+        Object owner = getClosureOwner(self);
+        InvokerHelper.invokeMethod(owner, "print", new Object[]{value});
+    }
+
+    private static Object getClosureOwner(Closure<?> cl) {
+        Object owner = cl.getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure<?>)owner).getOwner();
+        }
+        return owner;
+    }
+
+    //--------------------------------------------------------------------------
+    // printf
+
+    /**
+     * Printf to the standard output stream.
+     *
+     * @param self   any Object
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string
+     * @since 1.0
+     */
+    public static void printf(Object self, String format, Object[] values) {
+        if (self instanceof PrintStream)
+            ((PrintStream)self).printf(format, values);
+        else
+            System.out.printf(format, values);
+    }
+
+    /**
+     * Printf 0 or more values to the standard output stream using a format string.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self   a generated closure
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string
+     * @since 3.0.0
+     */
+    public static void printf(Closure self, String format, Object[] values) {
+        Object owner = getClosureOwner(self);
+        Object[] newValues = new Object[values.length + 1];
+        newValues[0] = format;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        InvokerHelper.invokeMethod(owner, "printf", newValues);
+    }
+
+    /**
+     * Printf a value to the standard output stream using a format string.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self   a generated closure
+     * @param format a format string
+     * @param value  value referenced by the format specifier in the format string
+     * @since 3.0.0
+     */
+    public static void printf(Closure self, String format, Object value) {
+        Object owner = getClosureOwner(self);
+        Object[] newValues = new Object[2];
+        newValues[0] = format;
+        newValues[1] = value;
+        InvokerHelper.invokeMethod(owner, "printf", newValues);
+    }
+
+    /**
+     * Prints a formatted string using the specified format string and arguments.
+     * <p>
+     * Examples:
+     * <pre>
+     *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
+     *     printf ( "Hello, %s!\n" , [ "Groovy" ])
+     *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
+     *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
+     *
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
+     *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
+     *     ( 07..011 ).each { printf ( "-- %d\n" , [ it ] as byte[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as short[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as long[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
+     * </pre>
+     *
+     * @param self   any Object
+     * @param format A format string
+     * @param arg    Argument which is referenced by the format specifiers in the format
+     *               string.  The type of <code>arg</code> should be one of Object[], List,
+     *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
+     * @since 1.0
+     */
+    public static void printf(Object self, String format, Object arg) {
+        if (self instanceof PrintStream)
+            printf((PrintStream) self, format, arg);
+        else if (self instanceof Writer)
+            printf((Writer) self, format, arg);
+        else
+            printf(System.out, format, arg);
+    }
+
+    private static void printf(PrintStream self, String format, Object arg) {
+        self.print(sprintf(self, format, arg));
+    }
+
+    private static void printf(Writer self, String format, Object arg) {
+        try {
+            self.write(sprintf(self, format, arg));
+        } catch (IOException e) {
+            printf(System.out, format, arg);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // println
+
+    /**
+     * Print a linebreak to the standard output stream.
+     *
+     * @param self any Object
+     * @since 1.0
+     */
+    public static void println(Object self) {
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = new GroovyPrintWriter((Writer) self);
+            pw.println();
+        } else {
+            System.out.println();
+        }
+    }
+
+    /**
+     * Print a linebreak to the standard output stream.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self  a closure
+     * @since 1.0
+     */
+    public static void println(Closure self) {
+        Object owner = getClosureOwner(self);
+        InvokerHelper.invokeMethod(owner, "println", InvokerHelper.EMPTY_ARGS);
+    }
+
+    /**
+     * Print a value formatted Groovy style (followed by a newline) to self
+     * if it is a Writer, otherwise to the standard output stream.
+     *
+     * @param self  any Object
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void println(Object self, Object value) {
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            final PrintWriter pw = new GroovyPrintWriter((Writer) self);
+            pw.println(value);
+        } else {
+            System.out.println(FormatHelper.toString(value));
+        }
+    }
+
+    /**
+     * Print a value formatted Groovy style (followed by a newline) to the print writer.
+     *
+     * @param self  a PrintWriter
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void println(PrintWriter self, Object value) {
+        self.println(FormatHelper.toString(value));
+    }
+
+    /**
+     * Print a value formatted Groovy style (followed by a newline) to the print stream.
+     *
+     * @param self  any Object
+     * @param value the value to print
+     * @since 1.6.0
+     */
+    public static void println(PrintStream self, Object value) {
+        self.println(FormatHelper.toString(value));
+    }
+
+    /**
+     * Print a value (followed by a newline) to the standard output stream.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self  a closure
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void println(Closure self, Object value) {
+        Object owner = getClosureOwner(self);
+        InvokerHelper.invokeMethod(owner, "println", new Object[]{value});
+    }
+
+    /**
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
+     * @param out  the PrintWriter used for printing
+     * @since 1.0
+     */
+    public static void println(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
+        out.println(FormatHelper.toString(self));
+    }
+
+    //--------------------------------------------------------------------------
+    // push
+
+    /**
+     * Prepends an item to the start of the List.
+     *
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * list.push("x")
+     * assert list == ['x', 3, 4, 2]
+     * </pre>
+     *
+     * This is similar to push on a Stack where the first item in the list
+     * represents the top of the stack.
+     *
+     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
+     * If you need the old behavior use 'add'.
+     *
+     * @param self a List
+     * @param value element to be prepended to this list.
+     * @return <tt>true</tt> (for legacy compatibility reasons).
+     * @since 1.5.5
+     */
+    public static <T> boolean push(List<T> self, T value) {
+        self.add(0, value);
+        return true;
+    }
+
+    //--------------------------------------------------------------------------
+    // putAll
+
+    /**
+     * Provides an easy way to append multiple Map.Entry values to a Map.
+     *
+     * @param self    a Map
+     * @param entries a Collection of Map.Entry items to be added to the Map.
+     * @return the same map, after the items have been added to it.
+     * @since 1.6.1
+     */
+    public static <K, V> Map<K, V> putAll(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
+        for (Map.Entry<? extends K, ? extends V> entry : entries) {
+            self.put(entry.getKey(), entry.getValue());
+        }
+        return self;
+    }
+
+    //--------------------------------------------------------------------------
+    // putAt
+
+    /**
+     * Allows the subscript operator to be used to set dynamically named property values.
+     * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation
+     * of groovy is neater and more concise but only works with property names which
+     * are known at compile time.
+     *
+     * @param self     the object to act upon
+     * @param property the name of the property to set
+     * @param newValue the value to set
+     * @since 1.0
+     */
+    public static void putAt(Object self, String property, Object newValue) {
+        InvokerHelper.setProperty(self, property, newValue);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = [2, 3]
+     * list[0] = 1
+     * assert list == [1, 3]</pre>
+     *
+     * @param self  a List
+     * @param idx   an index
+     * @param value the value to put at the given index
+     * @since 1.0
+     */
+    public static <T> void putAt(List<T> self, int idx, T value) {
+        int size = self.size();
+        idx = normaliseIndex(idx, size);
+        if (idx < size) {
+            self.set(idx, value);
+        } else {
+            while (size < idx) {
+                self.add(size++, null);
+            }
+            self.add(idx, value);
+        }
+    }
+
+    /**
+     * Support subscript operator for list modification.
+     */
+    public static <T> void putAt(List<T> self, Number idx, T value) {
+        putAt(self, idx.intValue(), value);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">
+     * def list = ["a", true]
+     * {@code list[1..<1] = 5}
+     * assert list == ["a", 5, true]
+     * </pre>
+     *
+     * @param self  a List
+     * @param range the (in this case empty) subset of the list to set
+     * @param value the values to put at the given sublist or a Collection of values
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, EmptyRange range, Object value) {
+        RangeInfo info = subListBorders(self.size(), range);
+        List sublist = self.subList(info.from, info.to);
+        sublist.clear();
+        if (value instanceof Collection) {
+            Collection col = (Collection) value;
+            if (col.isEmpty()) return;
+            sublist.addAll(col);
+        } else {
+            sublist.add(value);
+        }
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">
+     * def list = ["a", true]
+     * {@code list[1..<1] = [4, 3, 2]}
+     * assert list == ["a", 4, 3, 2, true]
+     * </pre>
+     *
+     * @param self  a List
+     * @param range the (in this case empty) subset of the list to set
+     * @param value the Collection of values
+     * @since 1.0
+     * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
+     */
+    public static void putAt(List self, EmptyRange range, Collection value) {
+        putAt(self, range, (Object)value);
+    }
+
+    private static <T> List<T> resizeListWithRangeAndGetSublist(List<T> self, IntRange range) {
+        RangeInfo info = subListBorders(self.size(), range);
+        int size = self.size();
+        if (info.to >= size) {
+            while (size < info.to) {
+                self.add(size++, null);
+            }
+        }
+        List<T> sublist = self.subList(info.from, info.to);
+        sublist.clear();
+        return sublist;
+    }
+
+    /**
+     * List subscript assignment operator when given a range as the index and
+     * the assignment operand is a collection.
+     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * myList[3..5] = ["a", true]
+     * assert myList == [4, 3, 5, "a", true, 10]</pre>
+     *
+     * Items in the given
+     * range are replaced with items from the collection.
+     *
+     * @param self  a List
+     * @param range the subset of the list to set
+     * @param col   the collection of values to put at the given sublist
+     * @since 1.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, IntRange range, Collection col) {
+        List sublist = resizeListWithRangeAndGetSublist(self, range);
+        if (col.isEmpty()) return;
+        sublist.addAll(col);
+    }
+
+    /**
+     * List subscript assignment operator when given a range as the index.
+     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * myList[3..5] = "b"
+     * assert myList == [4, 3, 5, "b", 10]</pre>
+     *
+     * Items in the given
+     * range are replaced with the operand.  The <code>value</code> operand is
+     * always treated as a single value.
+     *
+     * @param self  a List
+     * @param range the subset of the list to set
+     * @param value the value to put at the given sublist
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, IntRange range, Object value) {
+        List sublist = resizeListWithRangeAndGetSublist(self, range);
+        sublist.add(value);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * list[1, 4] = ["x", false]
+     * assert list == ["a", "x", 42, 9.4, false]</pre>
+     *
+     * @param self   a List
+     * @param splice the subset of the list to set
+     * @param values the value to put at the given sublist
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, List splice, Collection values) {
+        if (splice.isEmpty()) {
+            if (!values.isEmpty())
+                throw new IllegalArgumentException("Trying to replace 0 elements with " + values.size() + " elements");
+            return;
+        }
+        Object first = splice.iterator().next();
+        if (first instanceof Integer) {
+            if (values.size() != splice.size())
+                throw new IllegalArgumentException("Trying to replace " + splice.size() + " elements with " + values.size() + " elements");
+            Iterator<?> valuesIter = values.iterator();
+            for (Object index : splice) {
+                putAt(self, (Integer) index, valuesIter.next());
+            }
+        } else {
+            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of " + first.getClass().getName());
+        }
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * list[1, 3] = 5
+     * assert list == ["a", 5, 42, 5]</pre>
+     *
+     * @param self   a List
+     * @param splice the subset of the list to set
+     * @param value  the value to put at the given sublist
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static void putAt(List self, List splice, Object value) {
+        if (splice.isEmpty()) {
+            return;
+        }
+        Object first = splice.get(0);
+        if (first instanceof Integer) {
+            for (Object index : splice) {
+                self.set((Integer) index, value);
+            }
+        } else {
+            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
+        }
+    }
+
+    /**
+     * A helper method to allow maps to work with subscript operators
+     *
+     * @param self  a Map
+     * @param key   an Object as a key for the map
+     * @param value the value to put into the map
+     * @return the value corresponding to the given key
+     * @since 1.0
+     */
+    public static <K,V> V putAt(Map<K,V> self, K key, V value) {
+        self.put(key, value);
+        return value;
+    }
+
+    /**
+     * Support assigning a range of values with a single assignment statement.
+     *
+     * @param self  a BitSet
+     * @param range the range of values to set
+     * @param value value
+     * @see java.util.BitSet
+     * @see groovy.lang.Range
+     * @since 1.5.0
+     */
+    public static void putAt(BitSet self, IntRange range, boolean value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.set(info.from, info.to, value);
+    }
+
+    /**
+     * Support subscript-style assignment for a BitSet.
+     *
+     * @param self  a BitSet
+     * @param index index of the entry to set
+     * @param value value
+     * @see java.util.BitSet
+     * @since 1.5.0
+     */
+    public static void putAt(BitSet self, int index, boolean value) {
+        self.set(index, value);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Allows the closure to be called for the object reference self.
@@ -9441,61 +10774,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the closure to be called for the object reference self (similar
-     * to <code>with</code>) and always returns self.
-     * <p>
-     * Any method invoked inside the closure will first be invoked on the
-     * self reference. For instance, the following method calls to the append()
-     * method are invoked on the StringBuilder instance:
-     * <pre>
-     * def b = new StringBuilder().tap {
-     *   append('foo')
-     *   append('bar')
-     * }
-     * assert b.toString() == 'foobar'
-     * </pre>
-     * This is commonly used to simplify object creation, such as this example:
-     * <pre>
-     * def p = new Person().tap {
-     *   firstName = 'John'
-     *   lastName = 'Doe'
-     * }
-     * </pre>
-     *
-     * @param self    the object to have a closure act upon
-     * @param closure the closure to call on the object
-     * @return self
-     * @see #with(Object, boolean, Closure)
-     * @see #with(Object, Closure)
-     * @since 2.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T,U> U tap(
-            @DelegatesTo.Target("self") U self,
-            @DelegatesTo(value=DelegatesTo.Target.class,
-                    target="self",
-                    strategy=Closure.DELEGATE_FIRST)
-            @ClosureParams(FirstParam.class)
-            Closure<T> closure) {
-        return (U) with(self, true, (Closure<Object>)closure);
-    }
-
-    /**
-     * Allows the subscript operator to be used to set dynamically named property values.
-     * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation
-     * of groovy is neater and more concise but only works with property names which
-     * are known at compile time.
-     *
-     * @param self     the object to act upon
-     * @param property the name of the property to set
-     * @param newValue the value to set
-     * @since 1.0
-     */
-    public static void putAt(Object self, String property, Object newValue) {
-        InvokerHelper.setProperty(self, property, newValue);
-    }
-
-    /**
      * Scoped use method
      *
      * @param self          any Object
@@ -9557,269 +10835,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
-    // print/println/printf/sprintf
-
-    /**
-     * Print a value formatted Groovy style to self if it
-     * is a Writer, otherwise to the standard output stream.
-     *
-     * @param self  any Object
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void print(Object self, Object value) {
-        // we won't get here if we are a PrintWriter
-        if (self instanceof Writer) {
-            try {
-                ((Writer) self).write(FormatHelper.toString(value));
-            } catch (IOException e) {
-                // TODO: Should we have some unified function like PrintWriter.checkError()?
-            }
-        } else {
-            System.out.print(FormatHelper.toString(value));
-        }
-    }
-
-    /**
-     * Print a value formatted Groovy style to the print writer.
-     *
-     * @param self  a PrintWriter
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void print(PrintWriter self, Object value) {
-        self.print(FormatHelper.toString(value));
-    }
-
-    /**
-     * Print a value formatted Groovy style to the print stream.
-     *
-     * @param self  a PrintStream
-     * @param value the value to print
-     * @since 1.6.0
-     */
-    public static void print(PrintStream self, Object value) {
-        self.print(FormatHelper.toString(value));
-    }
-
-    /**
-     * Print a value to the standard output stream.
-     * This method delegates to the owner to execute the method.
-     *
-     * @param self  a generated closure
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void print(Closure self, Object value) {
-        Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "print", new Object[]{value});
-    }
-
-    /**
-     * Print to a console in interactive format.
-     *
-     * @param self any Object
-     * @param out  the PrintWriter used for printing
-     * @since 1.0
-     */
-    public static void print(Object self, PrintWriter out) {
-        if (out == null) {
-            out = new PrintWriter(System.out);
-        }
-        out.print(FormatHelper.toString(self));
-    }
-
-    /**
-     * Print a linebreak to the standard output stream.
-     *
-     * @param self any Object
-     * @since 1.0
-     */
-    public static void println(Object self) {
-        // we won't get here if we are a PrintWriter
-        if (self instanceof Writer) {
-            PrintWriter pw = new GroovyPrintWriter((Writer) self);
-            pw.println();
-        } else {
-            System.out.println();
-        }
-    }
-
-    /**
-     * Print a linebreak to the standard output stream.
-     * This method delegates to the owner to execute the method.
-     *
-     * @param self  a closure
-     * @since 1.0
-     */
-    public static void println(Closure self) {
-        Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", InvokerHelper.EMPTY_ARGS);
-    }
-
-    /**
-     * Print a value formatted Groovy style (followed by a newline) to self
-     * if it is a Writer, otherwise to the standard output stream.
-     *
-     * @param self  any Object
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void println(Object self, Object value) {
-        // we won't get here if we are a PrintWriter
-        if (self instanceof Writer) {
-            final PrintWriter pw = new GroovyPrintWriter((Writer) self);
-            pw.println(value);
-        } else {
-            System.out.println(FormatHelper.toString(value));
-        }
-    }
-
-    /**
-     * Print a value formatted Groovy style (followed by a newline) to the print writer.
-     *
-     * @param self  a PrintWriter
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void println(PrintWriter self, Object value) {
-        self.println(FormatHelper.toString(value));
-    }
-
-    /**
-     * Print a value formatted Groovy style (followed by a newline) to the print stream.
-     *
-     * @param self  any Object
-     * @param value the value to print
-     * @since 1.6.0
-     */
-    public static void println(PrintStream self, Object value) {
-        self.println(FormatHelper.toString(value));
-    }
-
-    /**
-     * Print a value (followed by a newline) to the standard output stream.
-     * This method delegates to the owner to execute the method.
-     *
-     * @param self  a closure
-     * @param value the value to print
-     * @since 1.0
-     */
-    public static void println(Closure self, Object value) {
-        Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", new Object[]{value});
-    }
-
-    /**
-     * Print to a console in interactive format.
-     *
-     * @param self any Object
-     * @param out  the PrintWriter used for printing
-     * @since 1.0
-     */
-    public static void println(Object self, PrintWriter out) {
-        if (out == null) {
-            out = new PrintWriter(System.out);
-        }
-        out.println(FormatHelper.toString(self));
-    }
-
-    /**
-     * Printf to the standard output stream.
-     *
-     * @param self   any Object
-     * @param format a format string
-     * @param values values referenced by the format specifiers in the format string
-     * @since 1.0
-     */
-    public static void printf(Object self, String format, Object[] values) {
-        if (self instanceof PrintStream)
-            ((PrintStream)self).printf(format, values);
-        else
-            System.out.printf(format, values);
-    }
-
-    /**
-     * Printf 0 or more values to the standard output stream using a format string.
-     * This method delegates to the owner to execute the method.
-     *
-     * @param self   a generated closure
-     * @param format a format string
-     * @param values values referenced by the format specifiers in the format string
-     * @since 3.0.0
-     */
-    public static void printf(Closure self, String format, Object[] values) {
-        Object owner = getClosureOwner(self);
-        Object[] newValues = new Object[values.length + 1];
-        newValues[0] = format;
-        System.arraycopy(values, 0, newValues, 1, values.length);
-        InvokerHelper.invokeMethod(owner, "printf", newValues);
-    }
-
-    /**
-     * Printf a value to the standard output stream using a format string.
-     * This method delegates to the owner to execute the method.
-     *
-     * @param self   a generated closure
-     * @param format a format string
-     * @param value  value referenced by the format specifier in the format string
-     * @since 3.0.0
-     */
-    public static void printf(Closure self, String format, Object value) {
-        Object owner = getClosureOwner(self);
-        Object[] newValues = new Object[2];
-        newValues[0] = format;
-        newValues[1] = value;
-        InvokerHelper.invokeMethod(owner, "printf", newValues);
-    }
-
-    /**
-     * Prints a formatted string using the specified format string and arguments.
-     * <p>
-     * Examples:
-     * <pre>
-     *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
-     *     printf ( "Hello, %s!\n" , [ "Groovy" ])
-     *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
-     *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
-     *
-     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
-     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
-     *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
-     *     ( 07..011 ).each { printf ( "-- %d\n" , [ it ] as byte[] ) }
-     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as short[] ) }
-     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as long[] ) }
-     *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
-     *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
-     * </pre>
-     *
-     * @param self   any Object
-     * @param format A format string
-     * @param arg    Argument which is referenced by the format specifiers in the format
-     *               string.  The type of <code>arg</code> should be one of Object[], List,
-     *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
-     * @since 1.0
-     */
-    public static void printf(Object self, String format, Object arg) {
-        if (self instanceof PrintStream)
-            printf((PrintStream) self, format, arg);
-        else if (self instanceof Writer)
-            printf((Writer) self, format, arg);
-        else
-            printf(System.out, format, arg);
-    }
-
-    private static void printf(PrintStream self, String format, Object arg) {
-        self.print(sprintf(self, format, arg));
-    }
-
-    private static void printf(Writer self, String format, Object arg) {
-        try {
-            self.write(sprintf(self, format, arg));
-        } catch (IOException e) {
-            printf(System.out, format, arg);
-        }
-    }
+    // sprintf
 
     /**
      * Sprintf to a string.
@@ -9929,15 +10945,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sprintf(self, format, ans);
     }
 
-    private static Object getClosureOwner(Closure<?> cls) {
-        Object owner =  cls.getOwner();
-        while (owner instanceof GeneratedClosure) {
-            owner = ((Closure<?>) owner).getOwner();
-        }
-        return owner;
+    //--------------------------------------------------------------------------
+    // tap
+
+    /**
+     * Allows the closure to be called for the object reference self (similar
+     * to <code>with</code>) and always returns self.
+     * <p>
+     * Any method invoked inside the closure will first be invoked on the
+     * self reference. For instance, the following method calls to the append()
+     * method are invoked on the StringBuilder instance:
+     * <pre>
+     * def b = new StringBuilder().tap {
+     *   append('foo')
+     *   append('bar')
+     * }
+     * assert b.toString() == 'foobar'
+     * </pre>
+     * This is commonly used to simplify object creation, such as this example:
+     * <pre>
+     * def p = new Person().tap {
+     *   firstName = 'John'
+     *   lastName = 'Doe'
+     * }
+     * </pre>
+     *
+     * @param self    the object to have a closure act upon
+     * @param closure the closure to call on the object
+     * @return self
+     * @see #with(Object, boolean, Closure)
+     * @see #with(Object, Closure)
+     * @since 2.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T,U> U tap(
+            @DelegatesTo.Target("self") U self,
+            @DelegatesTo(value=DelegatesTo.Target.class,
+                    target="self",
+                    strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class)
+            Closure<T> closure) {
+        return (U) with(self, true, (Closure<Object>)closure);
     }
 
     //--------------------------------------------------------------------------
+    // unique
 
     /**
      * Returns an iterator equivalent to this iterator with all duplicated items removed
@@ -11262,43 +12314,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Finds all permutations of an iterable.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
-     * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
-     *
-     * @param self the Iterable of items
-     * @return the permutations from the list
-     * @since 1.7.0
-     */
-    public static <T> Set<List<T>> permutations(Iterable<T> self) {
-        Set<List<T>> ans = new HashSet<>();
-        PermutationGenerator<T> generator = new PermutationGenerator<>(self);
-        while (generator.hasNext()) {
-            ans.add(generator.next());
-        }
-        return ans;
-    }
-
-    /**
-     * Finds all permutations of an iterable, applies a function to each permutation and collects the result
-     * into a list.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v {@code ->} 2*v }}
-     * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
-     *
-     * @param self the Iterable of items
-     * @param function the function to apply on each permutation
-     * @return the list of results of the application of the function on each permutation
-     * @since 2.2.0
-     */
-    public static <T,V> List<V> permutations(Iterable<T> self, Closure<V> function) {
-        return collect(permutations(self), function);
-    }
-
-    /**
      * Adds GroovyCollections#transpose(List) as a method on lists.
      * A Transpose Function takes a collection of columns and returns a collection of
      * rows. The first row consists of the first element from each column. Successive
@@ -11321,33 +12336,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List transpose(List self) {
         return GroovyCollections.transpose(self);
-    }
-
-    // internal helper method
-    protected static <T, K, V> T callClosureForMapEntry(@ClosureParams(value=FromString.class, options={"K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry) {
-        if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(entry.getKey(), entry.getValue());
-        }
-        return closure.call(entry);
-    }
-
-    // internal helper method
-    protected static <T> T callClosureForLine(@ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure, String line, int counter) {
-        if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(line, counter);
-        }
-        return closure.call(line);
-    }
-
-    // internal helper method
-    protected static <T, K, V> T callClosureForMapEntryAndCounter(@ClosureParams(value=FromString.class, options={"K,V,Integer", "K,V","Map.Entry<K,V>"}) Closure<T> closure, Map.Entry<K,V> entry, int counter) {
-        if (closure.getMaximumNumberOfParameters() == 3) {
-            return closure.call(entry.getKey(), entry.getValue(), counter);
-        }
-        if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(entry, counter);
-        }
-        return closure.call(entry);
     }
 
     /**
@@ -11585,244 +12573,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = [2, 3]
-     * list[0] = 1
-     * assert list == [1, 3]</pre>
-     *
-     * @param self  a List
-     * @param idx   an index
-     * @param value the value to put at the given index
-     * @since 1.0
-     */
-    public static <T> void putAt(List<T> self, int idx, T value) {
-        int size = self.size();
-        idx = normaliseIndex(idx, size);
-        if (idx < size) {
-            self.set(idx, value);
-        } else {
-            while (size < idx) {
-                self.add(size++, null);
-            }
-            self.add(idx, value);
-        }
-    }
-
-    /**
-     * Support subscript operator for list modification.
-     */
-    public static <T> void putAt(List<T> self, Number idx, T value) {
-        putAt(self, idx.intValue(), value);
-    }
-
-    /**
-     * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">
-     * def list = ["a", true]
-     * {@code list[1..<1] = 5}
-     * assert list == ["a", 5, true]
-     * </pre>
-     *
-     * @param self  a List
-     * @param range the (in this case empty) subset of the list to set
-     * @param value the values to put at the given sublist or a Collection of values
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, EmptyRange range, Object value) {
-        RangeInfo info = subListBorders(self.size(), range);
-        List sublist = self.subList(info.from, info.to);
-        sublist.clear();
-        if (value instanceof Collection) {
-            Collection col = (Collection) value;
-            if (col.isEmpty()) return;
-            sublist.addAll(col);
-        } else {
-            sublist.add(value);
-        }
-    }
-
-    /**
-     * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">
-     * def list = ["a", true]
-     * {@code list[1..<1] = [4, 3, 2]}
-     * assert list == ["a", 4, 3, 2, true]
-     * </pre>
-     *
-     * @param self  a List
-     * @param range the (in this case empty) subset of the list to set
-     * @param value the Collection of values
-     * @since 1.0
-     * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
-     */
-    public static void putAt(List self, EmptyRange range, Collection value) {
-        putAt(self, range, (Object)value);
-    }
-
-    private static <T> List<T> resizeListWithRangeAndGetSublist(List<T> self, IntRange range) {
-        RangeInfo info = subListBorders(self.size(), range);
-        int size = self.size();
-        if (info.to >= size) {
-            while (size < info.to) {
-                self.add(size++, null);
-            }
-        }
-        List<T> sublist = self.subList(info.from, info.to);
-        sublist.clear();
-        return sublist;
-    }
-
-    /**
-     * List subscript assignment operator when given a range as the index and
-     * the assignment operand is a collection.
-     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
-     * myList[3..5] = ["a", true]
-     * assert myList == [4, 3, 5, "a", true, 10]</pre>
-     *
-     * Items in the given
-     * range are replaced with items from the collection.
-     *
-     * @param self  a List
-     * @param range the subset of the list to set
-     * @param col   the collection of values to put at the given sublist
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, IntRange range, Collection col) {
-        List sublist = resizeListWithRangeAndGetSublist(self, range);
-        if (col.isEmpty()) return;
-        sublist.addAll(col);
-    }
-
-    /**
-     * List subscript assignment operator when given a range as the index.
-     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
-     * myList[3..5] = "b"
-     * assert myList == [4, 3, 5, "b", 10]</pre>
-     *
-     * Items in the given
-     * range are replaced with the operand.  The <code>value</code> operand is
-     * always treated as a single value.
-     *
-     * @param self  a List
-     * @param range the subset of the list to set
-     * @param value the value to put at the given sublist
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, IntRange range, Object value) {
-        List sublist = resizeListWithRangeAndGetSublist(self, range);
-        sublist.add(value);
-    }
-
-    /**
-     * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
-     * list[1, 4] = ["x", false]
-     * assert list == ["a", "x", 42, 9.4, false]</pre>
-     *
-     * @param self   a List
-     * @param splice the subset of the list to set
-     * @param values the value to put at the given sublist
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, List splice, Collection values) {
-        if (splice.isEmpty()) {
-            if (!values.isEmpty())
-                throw new IllegalArgumentException("Trying to replace 0 elements with " + values.size() + " elements");
-            return;
-        }
-        Object first = splice.iterator().next();
-        if (first instanceof Integer) {
-            if (values.size() != splice.size())
-                throw new IllegalArgumentException("Trying to replace " + splice.size() + " elements with " + values.size() + " elements");
-            Iterator<?> valuesIter = values.iterator();
-            for (Object index : splice) {
-                putAt(self, (Integer) index, valuesIter.next());
-            }
-        } else {
-            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of " + first.getClass().getName());
-        }
-    }
-
-    /**
-     * @deprecated use #putAt(List, List, Collection), retained for binary compatibility
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, List splice, List values) {
-        putAt(self, splice, (Collection) values);
-    }
-
-    /**
-     * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
-     * list[1, 3] = 5
-     * assert list == ["a", 5, 42, 5]</pre>
-     *
-     * @param self   a List
-     * @param splice the subset of the list to set
-     * @param value  the value to put at the given sublist
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static void putAt(List self, List splice, Object value) {
-        if (splice.isEmpty()) {
-            return;
-        }
-        Object first = splice.get(0);
-        if (first instanceof Integer) {
-            for (Object index : splice) {
-                self.set((Integer) index, value);
-            }
-        } else {
-            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
-        }
-    }
-
-    /**
-     * Returns a new <code>Map</code> containing all entries from <code>left</code> and <code>right</code>,
-     * giving precedence to <code>right</code>.  Any keys appearing in both Maps
-     * will appear in the resultant map with values from the <code>right</code>
-     * operand. If the <code>left</code> map is one of TreeMap, LinkedHashMap, Hashtable
-     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
-     * be returned.
-     * <p>
-     * Roughly equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
-     * but with some additional logic to preserve the <code>left</code> Map type for common cases as
-     * described above.
-     * <pre class="groovyTestCase">
-     * assert [a:10, b:20] + [a:5, c:7] == [a:5, b:20, c:7]
-     * </pre>
-     *
-     * @param left  a Map
-     * @param right a Map
-     * @return a new Map containing all entries from left and right
-     * @since 1.5.0
-     */
-    public static <K, V> Map<K, V> plus(Map<K, V> left, Map<K, V> right) {
-        Map<K, V> map = cloneSimilarMap(left);
-        map.putAll(right);
-        return map;
-    }
-
-    /**
-     * A helper method to allow maps to work with subscript operators
-     *
-     * @param self  a Map
-     * @param key   an Object as a key for the map
-     * @param value the value to put into the map
-     * @return the value corresponding to the given key
-     * @since 1.0
-     */
-    public static <K,V> V putAt(Map<K,V> self, K key, V value) {
-        self.put(key, value);
-        return value;
     }
 
     /**
@@ -12653,33 +13403,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Removes the initial item from the List.
-     *
-     * <pre class="groovyTestCase">
-     * def list = ["a", false, 2]
-     * assert list.pop() == 'a'
-     * assert list == [false, 2]
-     * </pre>
-     *
-     * This is similar to pop on a Stack where the first item in the list
-     * represents the top of the stack.
-     *
-     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
-     * If you need the old behavior use 'removeLast'.
-     *
-     * @param self a List
-     * @return the item removed from the List
-     * @throws NoSuchElementException if the list is empty
-     * @since 1.0
-     */
-    public static <T> T pop(List<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot pop() an empty List");
-        }
-        return self.remove(0);
-    }
-
-    /**
      * Removes the last item from the List.
      *
      * <pre class="groovyTestCase">
@@ -12701,65 +13424,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new NoSuchElementException("Cannot removeLast() an empty List");
         }
         return self.remove(self.size() - 1);
-    }
-
-    /**
-     * Provides an easy way to append multiple Map.Entry values to a Map.
-     *
-     * @param self    a Map
-     * @param entries a Collection of Map.Entry items to be added to the Map.
-     * @return the same map, after the items have been added to it.
-     * @since 1.6.1
-     */
-    public static <K, V> Map<K, V> putAll(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
-        for (Map.Entry<? extends K, ? extends V> entry : entries) {
-            self.put(entry.getKey(), entry.getValue());
-        }
-        return self;
-    }
-
-    /**
-     * Returns a new <code>Map</code> containing all entries from <code>self</code> and <code>entries</code>,
-     * giving precedence to <code>entries</code>.  Any keys appearing in both Maps
-     * will appear in the resultant map with values from the <code>entries</code>
-     * operand. If <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
-     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
-     * be returned.
-     *
-     * @param self    a Map
-     * @param entries a Collection of Map.Entry items to be added to the Map.
-     * @return a new Map containing all key, value pairs from self and entries
-     * @since 1.6.1
-     */
-    public static <K, V> Map<K, V> plus(Map<K, V> self, Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
-        Map<K, V> map = cloneSimilarMap(self);
-        putAll(map, entries);
-        return map;
-    }
-
-    /**
-     * Prepends an item to the start of the List.
-     *
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * list.push("x")
-     * assert list == ['x', 3, 4, 2]
-     * </pre>
-     *
-     * This is similar to push on a Stack where the first item in the list
-     * represents the top of the stack.
-     *
-     * Note: The behavior of this method changed in Groovy 2.5 to align with Java.
-     * If you need the old behavior use 'add'.
-     *
-     * @param self a List
-     * @param value element to be prepended to this list.
-     * @return <tt>true</tt> (for legacy compatibility reasons).
-     * @since 1.5.5
-     */
-    public static <T> boolean push(List<T> self, T value) {
-        self.add(0, value);
-        return true;
     }
 
     /**
@@ -13399,303 +14063,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Collection as a union of two collections. If the left collection
-     * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
-     *
-     * @param left  the left Collection
-     * @param right the right Collection
-     * @return the merged Collection
-     * @since 1.5.0
-     */
-    public static <T> Collection<T> plus(Collection<T> left, Collection<T> right) {
-        final Collection<T> answer = cloneSimilarCollection(left, left.size() + right.size());
-        answer.addAll(right);
-        return answer;
-    }
-
-    /**
-     * Create a Collection as a union of two iterables. If the left iterable
-     * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
-     *
-     * @param left  the left Iterable
-     * @param right the right Iterable
-     * @return the merged Collection
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> plus(Iterable<T> left, Iterable<T> right) {
-        return plus(asCollection(left), asCollection(right));
-    }
-
-    /**
-     * Create a Collection as a union of a Collection and an Iterable. If the left collection
-     * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left Collection
-     * @param right the right Iterable
-     * @return the merged Collection
-     * @since 1.8.7
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> Collection<T> plus(Collection<T> left, Iterable<T> right) {
-        return plus(left, asCollection(right));
-    }
-
-    /**
-     * Create a List as a union of a List and an Iterable.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left List
-     * @param right the right Iterable
-     * @return the merged List
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> List<T> plus(List<T> left, Iterable<T> right) {
-        return (List<T>) plus((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a List as a union of a List and a Collection.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left List
-     * @param right the right Collection
-     * @return the merged List
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> List<T> plus(List<T> left, Collection<T> right) {
-        return (List<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
-     * Create a Set as a union of a Set and an Iterable.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left Set
-     * @param right the right Iterable
-     * @return the merged Set
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> Set<T> plus(Set<T> left, Iterable<T> right) {
-        return (Set<T>) plus((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a Set as a union of a Set and a Collection.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left Set
-     * @param right the right Collection
-     * @return the merged Set
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> Set<T> plus(Set<T> left, Collection<T> right) {
-        return (Set<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
-     * Create a SortedSet as a union of a SortedSet and an Iterable.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left SortedSet
-     * @param right the right Iterable
-     * @return the merged SortedSet
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> SortedSet<T> plus(SortedSet<T> left, Iterable<T> right) {
-        return (SortedSet<T>) plus((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a SortedSet as a union of a SortedSet and a Collection.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @param left  the left SortedSet
-     * @param right the right Collection
-     * @return the merged SortedSet
-     * @since 2.4.0
-     * @see #plus(Collection, Collection)
-     */
-    public static <T> SortedSet<T> plus(SortedSet<T> left, Collection<T> right) {
-        return (SortedSet<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
-     * Creates a new List by inserting all the elements in the specified array
-     * to the elements from the original List at the specified index.
-     * Shifts the element currently at that index (if any) and any subsequent
-     * elements to the right (increasing their indices).
-     * The new elements will appear in the resulting List in the order that
-     * they occur in the original array.
-     * The behavior of this operation is undefined if the list or
-     * array operands are modified while the operation is in progress.
-     * The original list and array operands remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 3]
-     * def newItems = items.plus(2, 'a'..'c' as String[])
-     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
-     * assert items == [1, 2, 3]
-     * </pre>
-     *
-     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
-     * the changes on the original list itself.
-     *
-     * @param self  an original list
-     * @param items array containing elements to be merged with elements from the original list
-     * @param index index at which to insert the first element from the specified array
-     * @return the new list
-     * @see #plus(List, int, List)
-     * @since 1.8.1
-     */
-    public static <T> List<T> plus(List<T> self, int index, T[] items) {
-        return plus(self, index, Arrays.asList(items));
-    }
-
-    /**
-     * Creates a new List by inserting all the elements in the given additions List
-     * to the elements from the original List at the specified index.
-     * Shifts the element currently at that index (if any) and any subsequent
-     * elements to the right (increasing their indices).  The new elements
-     * will appear in the resulting List in the order that they occur in the original lists.
-     * The behavior of this operation is undefined if the original lists
-     * are modified while the operation is in progress. The original lists remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 3]
-     * def newItems = items.plus(2, 'a'..'c')
-     * assert newItems == [1, 2, 'a', 'b', 'c', 3]
-     * assert items == [1, 2, 3]
-     * </pre>
-     *
-     * See also <code>addAll</code> for similar functionality with modify semantics, i.e. which performs
-     * the changes on the original list itself.
-     *
-     * @param self      an original List
-     * @param additions a List containing elements to be merged with elements from the original List
-     * @param index     index at which to insert the first element from the given additions List
-     * @return the new list
-     * @since 1.8.1
-     */
-    public static <T> List<T> plus(List<T> self, int index, List<T> additions) {
-        final List<T> answer = new ArrayList<>(self);
-        answer.addAll(index, additions);
-        return answer;
-    }
-
-    /**
-     * Creates a new List by inserting all the elements in the given Iterable
-     * to the elements from this List at the specified index.
-     *
-     * @param self      an original list
-     * @param additions an Iterable containing elements to be merged with the elements from the original List
-     * @param index     index at which to insert the first element from the given additions Iterable
-     * @return the new list
-     * @since 1.8.7
-     * @see #plus(List, int, List)
-     */
-    public static <T> List<T> plus(List<T> self, int index, Iterable<T> additions) {
-        return plus(self, index, toList(additions));
-    }
-
-    /**
-     * Create a collection as a union of a Collection and an Object. If the collection
-     * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
-     *
-     * @param left  a Collection
-     * @param right an object to add/append
-     * @return the resulting Collection
-     * @since 1.5.0
-     */
-    public static <T> Collection<T> plus(Collection<T> left, T right) {
-        final Collection<T> answer = cloneSimilarCollection(left, left.size() + 1);
-        answer.add(right);
-        return answer;
-    }
-
-    /**
-     * Create a collection as a union of an Iterable and an Object. If the iterable
-     * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
-     *
-     * @param left  an Iterable
-     * @param right an object to add/append
-     * @return the resulting Collection
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> plus(Iterable<T> left, T right) {
-        return plus(asCollection(left), right);
-    }
-
-    /**
-     * Create a List as a union of a List and an Object.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
-     *
-     * @param left  a List
-     * @param right an object to add/append
-     * @return the resulting List
-     * @since 2.4.0
-     */
-    public static <T> List<T> plus(List<T> left, T right) {
-        return (List<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
-     * Create a Set as a union of a Set and an Object.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
-     *
-     * @param left  a Set
-     * @param right an object to add/append
-     * @return the resulting Set
-     * @since 2.4.0
-     */
-    public static <T> Set<T> plus(Set<T> left, T right) {
-        return (Set<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
-     * Create a SortedSet as a union of a SortedSet and an Object.
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
-     *
-     * @param left  a SortedSet
-     * @param right an object to add/append
-     * @return the resulting SortedSet
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> plus(SortedSet<T> left, T right) {
-        return (SortedSet<T>) plus((Collection<T>) left, right);
-    }
-
-    /**
      * Create a Collection composed of the union of both collections.  Any
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
@@ -13974,34 +14341,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support assigning a range of values with a single assignment statement.
-     *
-     * @param self  a BitSet
-     * @param range the range of values to set
-     * @param value value
-     * @see java.util.BitSet
-     * @see groovy.lang.Range
-     * @since 1.5.0
-     */
-    public static void putAt(BitSet self, IntRange range, boolean value) {
-        RangeInfo info = subListBorders(self.length(), range);
-        self.set(info.from, info.to, value);
-    }
-
-    /**
-     * Support subscript-style assignment for a BitSet.
-     *
-     * @param self  a BitSet
-     * @param index index of the entry to set
-     * @param value value
-     * @see java.util.BitSet
-     * @since 1.5.0
-     */
-    public static void putAt(BitSet self, int index, boolean value) {
-        self.set(index, value);
-    }
-
-    /**
      * Convert a Collection to a Set. Always returns a new Set
      * even if the Collection is already a Set.
      * <p>
@@ -14070,20 +14409,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(self.nextElement());
         }
         return answer;
-    }
-
-    /**
-     * Implements the setAt(int idx) method for primitive type arrays.
-     *
-     * @param self     an object
-     * @param idx      the index of interest
-     * @param newValue the new value to be put into the index of interest
-     * @return the added value
-     * @since 1.5.0
-     */
-    protected static Object primitiveArrayPut(Object self, int idx, Object newValue) {
-        Array.set(self, normaliseIndex(idx, Array.getLength(self)), newValue);
-        return newValue;
     }
 
     /**
@@ -14187,282 +14512,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //-------------------------------------------------------------------------
     // Number based methods
-
-    /**
-     * Decrement a Character by one.
-     *
-     * @param self a Character
-     * @return a decremented Character
-     * @since 1.5.7
-     */
-    public static Character previous(Character self) {
-        return (char) (self - 1);
-    }
-
-    /**
-     * Decrement a Number by one.
-     *
-     * @param self a Number
-     * @return a decremented Number
-     * @since 1.0
-     */
-    public static Number previous(Number self) {
-        return NumberNumberMinus.minus(self, Integer.valueOf(1));
-    }
-
-    /**
-     * Add a Character and a Number. The ordinal value of the Character
-     * is used in the addition (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @see java.lang.Integer#valueOf(int)
-     * @param left  a Character
-     * @param right a Number
-     * @return the Number corresponding to the addition of left and right
-     * @since 1.0
-     */
-    public static Number plus(Character left, Number right) {
-        return NumberNumberPlus.plus(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Add a Number and a Character.  The ordinal value of the Character
-     * is used in the addition (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @see java.lang.Integer#valueOf(int)
-     * @param left  a Number
-     * @param right a Character
-     * @return The Number corresponding to the addition of left and right
-     * @since 1.0
-     */
-    public static Number plus(Number left, Character right) {
-        return NumberNumberPlus.plus(left, Integer.valueOf(right));
-    }
-
-    /**
-     * Add one Character to another. The ordinal values of the Characters
-     * are used in the addition (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * @see #plus(java.lang.Number, java.lang.Character)
-     * @param left  a Character
-     * @param right a Character
-     * @return the Number corresponding to the addition of left and right
-     * @since 1.0
-     */
-    public static Number plus(Character left, Character right) {
-        return plus(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Appends a String to the literal of the Map instance.
-     *
-     * <pre class="groovyTestCase">
-     * assert '[a:1] is a map' == [a:1] + ' is a map'
-     * </pre>
-     *
-     * @param left  a Map
-     * @param right a String
-     * @return the concatenated string
-     * @since 4.0.3
-     */
-    public static String plus(Map left, String right) {
-        return DefaultGroovyMethods.toString(left) + right;
-    }
-
-    /**
-     * Appends a GString to the literal of the Map instance.
-     *
-     * <pre class="groovyTestCase">
-     * assert '[a:1] is a map' == [a:1] + " is ${'a'} map"
-     * </pre>
-     *
-     * @param left  a Map
-     * @param right a GString
-     * @return the concatenated string
-     * @since 4.0.3
-     */
-    public static String plus(Map left, GString right) {
-        return DefaultGroovyMethods.toString(left) + right;
-    }
-
-    /**
-     * Power of a Number to a certain exponent. Called by the '**' operator.
-     *
-     * @param self     a Number
-     * @param exponent a Number exponent
-     * @return a Number to the power of a certain exponent
-     * @since 1.0
-     */
-    public static Number power(Number self, Number exponent) {
-        double base, exp, answer;
-        base = self.doubleValue();
-        exp = exponent.doubleValue();
-
-        answer = Math.pow(base, exp);
-        if ((double) ((int) answer) == answer) {
-            return (int) answer;
-        } else if ((double) ((long) answer) == answer) {
-            return (long) answer;
-        } else {
-            return answer;
-        }
-    }
-
-    /**
-     * Power of a BigDecimal to an integer certain exponent. If the
-     * exponent is positive, call the BigDecimal.pow(int) method to
-     * maintain precision. Called by the '**' operator.
-     *
-     * @param self     a BigDecimal
-     * @param exponent an Integer exponent
-     * @return a Number to the power of the exponent
-     */
-    public static Number power(BigDecimal self, Integer exponent) {
-        if (exponent >= 0) {
-            return self.pow(exponent);
-        } else {
-            return power(self, (double) exponent);
-        }
-    }
-
-    /**
-     * Power of a BigInteger to an integer certain exponent. If the
-     * exponent is positive, call the BigInteger.pow(int) method to
-     * maintain precision. Called by the '**' operator.
-     *
-     *  @param self     a BigInteger
-     *  @param exponent an Integer exponent
-     *  @return a Number to the power of the exponent
-     */
-    public static Number power(BigInteger self, Integer exponent) {
-        if (exponent >= 0) {
-            return self.pow(exponent);
-        } else {
-            return power(self, (double) exponent);
-        }
-    }
-
-    /**
-     * Power of an integer to an integer certain exponent. If the
-     * exponent is positive, convert to a BigInteger and call
-     * BigInteger.pow(int) method to maintain precision. Called by the
-     * '**' operator.
-     *
-     *  @param self     an Integer
-     *  @param exponent an Integer exponent
-     *  @return a Number to the power of the exponent
-     */
-    public static Number power(Integer self, Integer exponent) {
-        if (exponent >= 0) {
-            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
-            if (answer.compareTo(BI_INT_MIN) >= 0 && answer.compareTo(BI_INT_MAX) <= 0) {
-                return answer.intValue();
-            } else {
-                return answer;
-            }
-        } else {
-            return power(self, (double) exponent);
-        }
-    }
-
-    /**
-     * Power of a long to an integer certain exponent. If the
-     * exponent is positive, convert to a BigInteger and call
-     * BigInteger.pow(int) method to maintain precision. Called by the
-     * '**' operator.
-     *
-     * @param self     a Long
-     * @param exponent an Integer exponent
-     * @return a Number to the power of the exponent
-     */
-    public static Number power(Long self, Integer exponent) {
-        if (exponent >= 0) {
-            BigInteger answer = BigInteger.valueOf(self).pow(exponent);
-            if (answer.compareTo(BI_LONG_MIN) >= 0 && answer.compareTo(BI_LONG_MAX) <= 0) {
-                return answer.longValue();
-            } else {
-                return answer;
-            }
-        } else {
-            return power(self, (double) exponent);
-        }
-    }
-
-    /**
-     * Power of a BigInteger to a BigInteger certain exponent. Called by the '**' operator.
-     *
-     * @param self     a BigInteger
-     * @param exponent a BigInteger exponent
-     * @return a BigInteger to the power of the exponent
-     * @since 2.3.8
-     */
-    public static BigInteger power(BigInteger self, BigInteger exponent) {
-        if ((exponent.signum() >= 0) && (exponent.compareTo(BI_INT_MAX) <= 0)) {
-            return self.pow(exponent.intValue());
-        } else {
-            return BigDecimal.valueOf(Math.pow(self.doubleValue(), exponent.doubleValue())).toBigInteger();
-        }
-    }
-
-    /**
-     * Bitwise OR together two numbers.
-     *
-     * @param left  a Number
-     * @param right another Number to bitwise OR
-     * @return the bitwise OR of both Numbers
-     * @since 1.0
-     */
-    public static Number or(Number left, Number right) {
-        return NumberMath.or(left, right);
-    }
-
-    /**
-     * Bitwise XOR together two BitSets.  Called when the '^' operator is used
-     * between two bit sets.
-     *
-     * @param left  a BitSet
-     * @param right another BitSet to bitwise XOR
-     * @return the bitwise XOR of both BitSets
-     * @since 1.5.0
-     */
-    public static BitSet xor(BitSet left, BitSet right) {
-        BitSet result = (BitSet) left.clone();
-        result.xor(right);
-        return result;
-    }
-
-    /**
-     * Bitwise OR together two BitSets.  Called when the '|' operator is used
-     * between two bit sets.
-     *
-     * @param left  a BitSet
-     * @param right another BitSet to bitwise OR
-     * @return the bitwise OR of both BitSets
-     * @since 1.5.0
-     */
-    public static BitSet or(BitSet left, BitSet right) {
-        BitSet result = (BitSet) left.clone();
-        result.or(right);
-        return result;
-    }
-
-    /**
-     * Bitwise XOR together two Numbers.  Called when the '^' operator is used.
-     *
-     * @param left  a Number
-     * @param right another Number to bitwise XOR
-     * @return the bitwise XOR of both Numbers
-     * @since 1.0
-     */
-    public static Number xor(Number left, Number right) {
-        return NumberMath.xor(left, right);
-    }
 
     /**
      * Performs a division modulus operation.  Called by the '%' operator.
@@ -15107,33 +15156,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
-    // Boolean based methods
-
-    /**
-     * Logical disjunction of two boolean operators
-     *
-     * @param left left operator
-     * @param right right operator
-     * @return result of logical disjunction
-     * @since 1.0
-     */
-    public static Boolean or(Boolean left, Boolean right) {
-        return left || Boolean.TRUE.equals(right);
-    }
-
-    /**
-     * Exclusive disjunction of two boolean operators
-     *
-     * @param left left operator
-     * @param right right operator
-     * @return result of exclusive disjunction
-     * @since 1.0
-     */
-    public static Boolean xor(Boolean left, Boolean right) {
-        return left ^ Boolean.TRUE.equals(right);
-    }
-
-    //--------------------------------------------------------------------------
 
     /**
      * Allows a simple syntax for using timers. This timer will execute the
@@ -15339,50 +15361,46 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self.remove(o);
     }
 
+    //--------------------------------------------------------------------------
+    // xor
+
     /**
-     * Create a Set as a union of a Set and an Iterable.  Any
-     * elements that exist in either are added to the resultant Set.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
+     * Bitwise XOR together two Numbers.  Called when the '^' operator is used.
      *
-     * <pre class="groovyTestCase">
-     * def a = [1,2,3,4] as Set
-     * def b = [3,4,5,6] as Set
-     * assert (a | b) == [1,2,3,4,5,6] as Set
-     * </pre>
-     *
-     * @param left  the left Set
-     * @param right the right Iterable
-     * @return the merged Set
-     * @since 5.0.0
-     * @see #plus(Set, Iterable)
+     * @param left  a Number
+     * @param right another Number to bitwise XOR
+     * @return the bitwise XOR of both Numbers
+     * @since 1.0
      */
-    public static <T> Set<T> or(Set<T> left, Iterable<T> right) {
-        return plus(left, right);
+    public static Number xor(Number left, Number right) {
+        return NumberMath.xor(left, right);
     }
 
     /**
-     * Create a SortedSet as a union of a SortedSet and an Iterable.  Any
-     * elements that exist in either are added to the resultant SortedSet.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
+     * Bitwise XOR together two BitSets.  Called when the '^' operator is used
+     * between two bit sets.
      *
-     * <pre class="groovyTestCase">
-     * def a = [1,2,3,4] as SortedSet
-     * def b = [3,4,5,6] as Set
-     * assert (a | b) == [1,2,3,4,5,6] as SortedSet
-     * </pre>
-     *
-     * @param left  the left SortedSet
-     * @param right the right Iterable
-     * @return the merged SortedSet
-     * @since 5.0.0
-     * @see #plus(SortedSet, Iterable)
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise XOR
+     * @return the bitwise XOR of both BitSets
+     * @since 1.5.0
      */
-    public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
-        return plus(left, right);
+    public static BitSet xor(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.xor(right);
+        return result;
+    }
+
+    /**
+     * Exclusive disjunction of two boolean operators
+     *
+     * @param left left operator
+     * @param right right operator
+     * @return result of exclusive disjunction
+     * @since 1.0
+     */
+    public static Boolean xor(Boolean left, Boolean right) {
+        return left ^ Boolean.TRUE.equals(right);
     }
 
     /**
@@ -16454,6 +16472,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Implements the putAt(int) method for primitive type arrays.
+     *
+     * @param self     an object
+     * @param idx      the index of interest
+     * @param newValue the new value to be put into the index of interest
+     * @return the added value
+     * @since 1.5.0
+     */
+    @Deprecated(since = "5.0.0")
+    protected static Object primitiveArrayPut(Object self, int idx, Object newValue) {
+        Array.set(self, normaliseIndex(idx, Array.getLength(self)), newValue);
+        return newValue;
+    }
+
+    @Deprecated(since = "2.4.0")
+    public static void putAt(List self, List splice, List values) {
+        putAt(self, splice, (Collection) values);
     }
 
     @Deprecated(since = "5.0.0")
