@@ -3396,6 +3396,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def squaresAndCubesOfEvens = numsIter.collectMany{ if (it % 2 == 0) [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
+     * <p>
+     * <pre class="groovyTestCase">
+     * var letters = 'a'..'z'
+     * var pairs = letters.collectMany{ a ->
+     *     letters.collectMany{ b ->
+     *         if (a != b) ["$a$b"]
+     *     }
+     * }
+     * assert pairs.join(',').matches('ab,ac,ad,.*,zw,zx,zy')
+     * </pre>
      *
      * @param self       an iterator
      * @param collector  an initial collection to add the projected items to
