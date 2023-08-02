@@ -222,6 +222,1450 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(  Long.MIN_VALUE);
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
 
+    //--------------------------------------------------------------------------
+    // abs
+
+    /**
+     * Gets the absolute value.
+     * <p>
+     * Note: This method is NOT called if number is a BigInteger or BigDecimal,
+     *       because those classes implement a method with a better exact match.
+     *
+     * @param number a Number
+     * @return the absolute value of that Number
+     * @since 1.0
+     */
+    public static int abs(Number number) {
+        return Math.abs(number.intValue());
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number a Long
+     * @return the absolute value of that Long
+     * @since 1.0
+     */
+    public static long abs(Long number) {
+        return Math.abs(number);
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number a Float
+     * @return the absolute value of that Float
+     * @since 1.0
+     */
+    public static float abs(Float number) {
+        return Math.abs(number);
+    }
+
+    /**
+     * Gets the absolute value.
+     *
+     * @param number a Double
+     * @return the absolute value of that Double
+     * @since 1.0
+     */
+    public static double abs(Double number) {
+        return Math.abs(number);
+    }
+
+    //--------------------------------------------------------------------------
+    // addAll
+
+    /**
+     * Adds all items from the iterator to the Collection.
+     *
+     * @param self the collection
+     * @param items the items to add
+     * @return true if the collection changed
+     */
+    public static <T> boolean addAll(Collection<T> self, Iterator<? extends T> items) {
+        boolean changed = false;
+        while (items.hasNext()) {
+            T next =  items.next();
+            if (self.add(next)) changed = true;
+        }
+        return changed;
+    }
+
+    /**
+     * Adds all items from the iterable to the Collection.
+     *
+     * @param self the collection
+     * @param items the items to add
+     * @return true if the collection changed
+     */
+    public static <T> boolean addAll(Collection<T> self, Iterable<? extends T> items) {
+        boolean changed = false;
+        for (T next : items) {
+            if (self.add(next)) changed = true;
+        }
+        return changed;
+    }
+
+    /**
+     * Modifies the collection by adding all the elements in the specified array
+     * to the collection. The behavior of this operation is undefined if the
+     * specified array is modified while the operation is in progress.
+     * <p>
+     * See also {@link plus} or the '+' operator if wanting to produce a new collection
+     * containing additional items but while leaving the original collection unchanged.
+     *
+     * @param  self  a Collection to be modified
+     * @param  items array containing elements to be added to this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Collections#addAll
+     * @since 1.7.2
+     */
+    public static <T> boolean addAll(Collection<T> self, T[] items) {
+        return Collections.addAll(self, items);
+    }
+
+    /**
+     * Modifies this list by inserting all the elements in the specified array into the
+     * list at the specified position.  Shifts the
+     * element currently at that position (if any) and any subsequent
+     * elements to the right (increases their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress.
+     *
+     * See also <code>plus</code> for similar functionality with copy semantics, i.e. which produces a new
+     * list after adding the additional items at the specified position but leaves the original list unchanged.
+     *
+     * @param self  a list to be modified
+     * @param items array containing elements to be added to this collection
+     * @param index index at which to insert the first element from the
+     *              specified array
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    List#addAll(int, Collection)
+     * @since 1.7.2
+     */
+    public static <T> boolean addAll(List<T> self, int index, T[] items) {
+        return self.addAll(index, Arrays.asList(items));
+    }
+
+    //--------------------------------------------------------------------------
+    // addShutdownHook
+
+    /**
+     * Allows the usage of addShutdownHook without getting the runtime first.
+     *
+     * @param self    the object the method is called on (ignored)
+     * @param closure the shutdown hook action
+     * @since 1.5.0
+     */
+    public static void addShutdownHook(Object self, Closure closure) {
+        Runtime.getRuntime().addShutdownHook(new Thread(closure));
+    }
+
+    //--------------------------------------------------------------------------
+    // and
+
+    /**
+     * Bitwise AND together two Numbers.
+     *
+     * @param left  a Number
+     * @param right another Number to bitwise AND
+     * @return the bitwise AND of both Numbers
+     * @since 1.0
+     */
+    public static Number and(Number left, Number right) {
+        return NumberMath.and(left, right);
+    }
+
+    /**
+     * Bitwise AND together two BitSets.
+     *
+     * @param left  a BitSet
+     * @param right another BitSet to bitwise AND
+     * @return the bitwise AND of both BitSets
+     * @since 1.5.0
+     */
+    public static BitSet and(BitSet left, BitSet right) {
+        BitSet result = (BitSet) left.clone();
+        result.and(right);
+        return result;
+    }
+
+    /**
+     * Logical conjunction of two boolean operators.
+     *
+     * @param left left operator
+     * @param right right operator
+     * @return result of logical conjunction
+     * @since 1.0
+     */
+    public static Boolean and(Boolean left, Boolean right) {
+        return left && Boolean.TRUE.equals(right);
+    }
+
+    /**
+     * Creates a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both are added to the resultant Set.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as Set
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as Set
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right) {
+        return intersect(left, right);
+    }
+
+    /**
+     * Creates a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as Set == ([1,2,3,4] as Set).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> Set<T> and(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Creates a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both are added to the resultant SortedSet.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * def a = [1,2,3,4] as SortedSet
+     * def b = [3,4,5,6] as Set
+     * assert (a & b) == [3,4] as SortedSet
+     * </pre>
+     *
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both sets.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
+     * @see #intersect(Set, Iterable)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right) {
+        return intersect(left, right);
+    }
+
+    /**
+     * Creates a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <p>
+     * This operation will always create a new object for the result,
+     * while the operands remain unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * assert [3,4] as SortedSet == ([1,2,3,4] as SortedSet).and([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a SortedSet as an intersection of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(left, right, comparator);
+    }
+
+    //--------------------------------------------------------------------------
+    // any
+
+    /**
+     * Iterates over the elements of a collection, and checks whether at least
+     * one element is true according to the Groovy Truth.
+     * Equivalent to self.any({element {@code ->} element})
+     * <pre class="groovyTestCase">
+     * assert [false, true].any()
+     * assert [0, 1].any()
+     * assert ![0, 0].any()
+     * </pre>
+     *
+     * @param self the object over which we iterate
+     * @return true if any item in the collection matches the closure predicate
+     * @since 1.5.0
+     */
+    public static boolean any(Object self) {
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
+        for (var iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
+            if (bmi.convertToBoolean(iter.next())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over the contents of an object or collection, and checks whether a
+     * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it {@code >} 3 }
+     * </pre>
+     *
+     * @param self      the object over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
+     * @since 1.0
+     */
+    public static boolean any(Object self, Closure predicate) {
+        return any(InvokerHelper.asIterator(self), predicate);
+    }
+
+    /**
+     * Iterates over the contents of an iterator, and checks whether a
+     * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].iterator().any { it == 2 }
+     * assert ![1, 2, 3].iterator().any { it {@code >} 3 }
+     * </pre>
+     *
+     * @param self      the iterator over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
+     * @since 1.0
+     */
+    public static <T> boolean any(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        while (self.hasNext()) {
+            if (bcw.call(self.next())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over the contents of an iterable, and checks whether a
+     * predicate is valid for at least one element.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].any { it == 2 }
+     * assert ![1, 2, 3].any { it {@code >} 3 }
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the closure predicate used for matching
+     * @return true if any iteration for the object matches the closure predicate
+     * @since 1.0
+     */
+    public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
+        return any(self.iterator(), predicate);
+    }
+
+    /**
+     * Iterates over the entries of a map, and checks whether a predicate is
+     * valid for at least one entry. If the
+     * closure takes one parameter then it will be passed the Map.Entry
+     * otherwise if the closure takes two parameters then it will be
+     * passed the key and the value.
+     * <pre class="groovyTestCase">
+     * assert [2:3, 4:5, 5:10].any { key, value {@code ->} key * 2 == value }
+     * assert ![2:3, 4:5, 5:10].any { entry {@code ->} entry.key == entry.value * 2 }
+     * </pre>
+     *
+     * @param self      the map over which we iterate
+     * @param predicate the 1 or 2 arg closure predicate used for matching
+     * @return true if any entry in the map matches the closure predicate
+     * @since 1.5.0
+     */
+    public static <K, V> boolean any(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> predicate) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
+        for (var entry : self.entrySet()) {
+            if (bcw.callForMap(entry)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //--------------------------------------------------------------------------
+    // asBoolean
+
+    /**
+     * Coerce an object instance to a boolean value.
+     * An object is coerced to true if it's not null, to false if it is null.
+     *
+     * @param object the object to coerce
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Object object) {
+        return object != null;
+    }
+
+    /**
+     * Coerce a Boolean instance to a boolean value.
+     * <pre class="groovyTestCase">
+     * // you can omit ".asBoolean()"
+     * assert Boolean.TRUE.asBoolean()
+     * assert !Boolean.FALSE.asBoolean()
+     * </pre>
+     *
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Boolean bool) {
+        return bool != null && bool.booleanValue();
+    }
+
+    /**
+     * Coerce an AtomicBoolean instance to a boolean value.
+     * <pre class="groovyTestCase">
+     * import java.util.concurrent.atomic.AtomicBoolean
+     *
+     * // you can omit ".asBoolean()"
+     * assert  new AtomicBoolean(true).asBoolean()
+     * assert !new AtomicBoolean(false).asBoolean()
+     * assert !new AtomicBoolean(true).tap{set(false)}
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static boolean asBoolean(AtomicBoolean bool) {
+        return bool != null && bool.get();
+    }
+
+    /**
+     * Coerce a collection instance to a boolean value.
+     * A collection is coerced to false if it's empty, and to true otherwise.
+     * <pre class="groovyTestCase">assert [1,2].asBoolean() == true</pre>
+     * <pre class="groovyTestCase">assert [].asBoolean() == false</pre>
+     *
+     * @param collection the collection
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Collection collection) {
+        return collection != null && !collection.isEmpty();
+    }
+
+    /**
+     * Coerce a map instance to a boolean value.
+     * A map is coerced to false if it's empty, and to true otherwise.
+     * <pre class="groovyTestCase">assert [:] as Boolean == false
+     * assert [a:2] as Boolean == true</pre>
+     *
+     * @param map the map
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Map map) {
+        return map != null && !map.isEmpty();
+    }
+
+    /**
+     * Coerce an iterator instance to a boolean value.
+     * An iterator is coerced to false if there are no more elements to iterate over,
+     * and to true otherwise.
+     *
+     * @param iterator the iterator
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Iterator iterator) {
+        return iterator != null && iterator.hasNext();
+    }
+
+    /**
+     * Coerce an enumeration instance to a boolean value.
+     * An enumeration is coerced to false if there are no more elements to enumerate,
+     * and to true otherwise.
+     *
+     * @param enumeration the enumeration
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Enumeration enumeration) {
+        return enumeration != null && enumeration.hasMoreElements();
+    }
+
+    /**
+     * Coerce a character to a boolean value.
+     * A character is coerced to false if it's character value is equal to 0,
+     * and to true otherwise.
+     *
+     * @param character the character
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Character character) {
+        return character != null && character != 0;
+    }
+
+    /**
+     * Coerce a Float instance to a boolean value.
+     *
+     * @param object the Float
+     * @return {@code true} for non-zero and non-NaN values, else {@code false}
+     * @since 2.6.0
+     */
+    public static boolean asBoolean(Float object) {
+        float f = object;
+        return f != 0.0f && !Float.isNaN(f);
+    }
+
+    /**
+     * Coerce a Double instance to a boolean value.
+     *
+     * @param object the Double
+     * @return {@code true} for non-zero and non-NaN values, else {@code false}
+     * @since 2.6.0
+     */
+    public static boolean asBoolean(Double object) {
+        double d = object;
+        return d != 0.0d && !Double.isNaN(d);
+    }
+
+    /**
+     * Coerce a number to a boolean value.
+     * A number is coerced to false if its double value is equal to 0, and to true otherwise.
+     *
+     * @param number the number
+     * @return the boolean value
+     * @since 1.7.0
+     */
+    public static boolean asBoolean(Number number) {
+        return number != null && number.doubleValue() != 0;
+    }
+
+    //--------------------------------------------------------------------------
+    // asChecked
+
+    /**
+     * Creates a checked view of a List.
+     *
+     * @see Collections#checkedList
+     * @since 5.0.0
+     */
+    public static <T> List<T> asChecked(List<T> self, Class<T> type) {
+        return Collections.checkedList(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Queue.
+     *
+     * @see Collections#checkedQueue
+     * @since 5.0.0
+     */
+    public static <T> Queue<T> asChecked(Queue<T> self, Class<T> type) {
+        return Collections.checkedQueue(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Collection.
+     *
+     * @see Collections#checkedCollection
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> asChecked(Collection<T> self, Class<T> type) {
+        return Collections.checkedCollection(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Set.
+     *
+     * @see Collections#checkedSet
+     * @since 5.0.0
+     */
+    public static <T> Set<T> asChecked(Set<T> self, Class<T> type) {
+        return Collections.checkedSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a SortedSet.
+     *
+     * @see Collections#checkedSortedSet
+     * @since 5.0.0
+     */
+    public static <T> SortedSet<T> asChecked(SortedSet<T> self, Class<T> type) {
+        return Collections.checkedSortedSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a NavigableSet.
+     *
+     * @see Collections#checkedNavigableSet
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asChecked(NavigableSet<T> self, Class<T> type) {
+        return Collections.checkedNavigableSet(self, type);
+    }
+
+    /**
+     * Creates a checked view of a Map.
+     *
+     * @see Collections#checkedMap
+     * @since 5.0.0
+     */
+    public static <K,V> Map<K,V> asChecked(Map<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedMap(self, keyType, valueType);
+    }
+
+    /**
+     * Creates a checked view of a SortedMap.
+     *
+     * @see Collections#checkedSortedMap
+     * @since 5.0.0
+     */
+    public static <K,V> SortedMap<K,V> asChecked(SortedMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedSortedMap(self, keyType, valueType);
+    }
+
+    /**
+     * Creates a checked view of a NavigableMap.
+     *
+     * @see Collections#checkedNavigableMap
+     * @since 5.0.0
+     */
+    public static <K,V> NavigableMap<K,V> asChecked(NavigableMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+        return Collections.checkedNavigableMap(self, keyType, valueType);
+    }
+
+    //--------------------------------------------------------------------------
+    // asCollection
+
+    /**
+     * Converts this Iterable to a Collection. Returns the original argument
+     * if it is already a Collection.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert new HashSet().asCollection() instanceof Collection
+     * </pre>
+     *
+     * @param self an Iterable to be converted into a Collection
+     * @return a newly created List if this Iterable is not already a Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> asCollection(Iterable<T> self) {
+        if (self instanceof Collection) {
+            return (Collection<T>) self;
+        } else {
+            return toList(self);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // asImmutable (really toImmutable)
+
+    /**
+     * A convenience method for creating an immutable Map.
+     *
+     * @param self a Map
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Map)
+     * @since 1.0
+     */
+    public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
+        return asUnmodifiable(new LinkedHashMap<>(self));
+    }
+
+    /**
+     * A convenience method for creating an immutable SortedMap.
+     *
+     * @param self a SortedMap
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.SortedMap)
+     * @since 1.0
+     */
+    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
+        return asUnmodifiable(new TreeMap<>(self));
+    }
+
+    /**
+     * A convenience method for creating an immutable List.
+     * <pre class="groovyTestCase">
+     * def mutable = [1,2,3]
+     * def immutable = mutable.asImmutable()
+     * try {
+     *     immutable &lt;&lt; 4
+     *     assert false
+     * } catch (UnsupportedOperationException) {
+     *     assert true
+     * }
+     * mutable &lt;&lt; 4
+     * assert mutable.size() == 4
+     * assert immutable.size() == 3
+     * </pre>
+     *
+     * @param self a List
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asUnmodifiable(java.util.List)
+     * @since 1.0
+     */
+    public static <T> List<T> asImmutable(List<T> self) {
+        return asUnmodifiable(new ArrayList<>(self));
+    }
+
+    /**
+     * A convenience method for creating an immutable Set.
+     *
+     * @param self a Set
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Set)
+     * @since 1.0
+     */
+    public static <T> Set<T> asImmutable(Set<T> self) {
+        return asUnmodifiable(new LinkedHashSet<>(self));
+    }
+
+    /**
+     * A convenience method for creating an immutable SortedSet.
+     *
+     * @param self a SortedSet
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.SortedSet)
+     * @since 1.0
+     */
+    public static <T> SortedSet<T> asImmutable(SortedSet<T> self) {
+        return asUnmodifiable(new TreeSet<>(self));
+    }
+
+    /**
+     * A convenience method for creating an immutable Collection.
+     *
+     * @param self a Collection
+     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
+     * @see #asImmutable(java.util.List)
+     * @see #asUnmodifiable(java.util.Collection)
+     * @since 1.5.0
+     */
+    public static <T> Collection<T> asImmutable(Collection<T> self) {
+        return asUnmodifiable((Collection<T>) new ArrayList<>(self));
+    }
+
+    //--------------------------------------------------------------------------
+    // asList
+
+    /**
+     * Converts this Iterable to a List. Returns the original Iterable
+     * if it is already a List.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert new HashSet().asList() instanceof List
+     * </pre>
+     *
+     * @param self an Iterable to be converted into a List
+     * @return a newly created List if this Iterable is not already a List
+     * @since 2.2.0
+     */
+    public static <T> List<T> asList(Iterable<T> self) {
+        if (self instanceof List) {
+            return (List<T>) self;
+        } else {
+            return toList(self);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // asReversed
+
+    /**
+     * Creates a view list with reversed order, and the order of original list will not change.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 6, true]
+     * assert list.asReversed() == [true, 6, "a"]
+     * assert list == ["a", 6, true]
+     * </pre>
+     *
+     * @param self a list
+     * @param <T> the type of element
+     * @return the reversed list
+     * @since 4.0.0
+     */
+    public static <T> List<T> asReversed(List<T> self) {
+        return new ReversedList<>(self);
+    }
+
+    /**
+     * Creates a reverse order view of the set. The order of original list will not change.
+     * <pre class="groovyTestCase">
+     * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
+     * assert navSet.asReversed() == [4, 3, 2, 1] as Set
+     * </pre>
+     *
+     * @param self a NavigableSet
+     * @param <T> the type of element
+     * @return the reversed view NavigableSet
+     * @since 4.0.11
+     */
+    public static <T> NavigableSet<T> asReversed(NavigableSet<T> self) {
+        return self.descendingSet();
+    }
+
+    //--------------------------------------------------------------------------
+    // asString
+
+    /**
+     * Get the detail information of {@link Throwable} instance's stack trace
+     *
+     * @param self a Throwable instance
+     * @return the detail information of stack trace
+     * @since 2.5.3
+     */
+    public static String asString(Throwable self) {
+        StringBuilderWriter sw = new StringBuilderWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            self.printStackTrace(pw);
+        }
+        return sw.toString();
+    }
+
+    //--------------------------------------------------------------------------
+    // asSynchronized
+
+    /**
+     * Creates a synchronized view of a Map.
+     *
+     * @param self a Map
+     * @return a synchronized Map
+     * @see java.util.Collections#synchronizedMap(java.util.Map)
+     * @since 1.0
+     */
+    public static <K,V> Map<K,V> asSynchronized(Map<K,V> self) {
+        return Collections.synchronizedMap(self);
+    }
+
+    /**
+     * Creates a synchronized view of a SortedMap.
+     *
+     * @param self a SortedMap
+     * @return a synchronized SortedMap
+     * @see java.util.Collections#synchronizedSortedMap(java.util.SortedMap)
+     * @since 1.0
+     */
+    public static <K,V> SortedMap<K,V> asSynchronized(SortedMap<K,V> self) {
+        return Collections.synchronizedSortedMap(self);
+    }
+
+    /**
+     * Creates a synchronized view of a NavigableMap.
+     *
+     * @param self a NavigableMap
+     * @return a synchronized NavigableMap
+     * @see java.util.Collections#synchronizedNavigableMap(java.util.NavigableMap)
+     * @since 5.0.0
+     */
+    public static <K,V> NavigableMap<K,V> asSynchronized(NavigableMap<K,V> self) {
+        return Collections.synchronizedNavigableMap(self);
+    }
+
+    /**
+     * Creates a synchronized view of a Collection.
+     *
+     * @param self a Collection
+     * @return a synchronized Collection
+     * @see java.util.Collections#synchronizedCollection(java.util.Collection)
+     * @since 1.0
+     */
+    public static <T> Collection<T> asSynchronized(Collection<T> self) {
+        return Collections.synchronizedCollection(self);
+    }
+
+    /**
+     * Creates a synchronized view of a List.
+     *
+     * @param self a List
+     * @return a synchronized List
+     * @see java.util.Collections#synchronizedList(java.util.List)
+     * @since 1.0
+     */
+    public static <T> List<T> asSynchronized(List<T> self) {
+        return Collections.synchronizedList(self);
+    }
+
+    /**
+     * Creates a synchronized view of a Set.
+     *
+     * @param self a Set
+     * @return a synchronized Set
+     * @see java.util.Collections#synchronizedSet(java.util.Set)
+     * @since 1.0
+     */
+    public static <T> Set<T> asSynchronized(Set<T> self) {
+        return Collections.synchronizedSet(self);
+    }
+
+    /**
+     * Creates a synchronized view of a SortedSet.
+     *
+     * @param self a SortedSet
+     * @return a synchronized SortedSet
+     * @see java.util.Collections#synchronizedSortedSet(java.util.SortedSet)
+     * @since 1.0
+     */
+    public static <T> SortedSet<T> asSynchronized(SortedSet<T> self) {
+        return Collections.synchronizedSortedSet(self);
+    }
+
+    /**
+     * Creates a synchronized view of a NavigableSet.
+     *
+     * @param self a NavigableSet
+     * @return a synchronized NavigableSet
+     * @see java.util.Collections#synchronizedNavigableSet(java.util.NavigableSet)
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asSynchronized(NavigableSet<T> self) {
+        return Collections.synchronizedNavigableSet(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // asType
+
+    /**
+     * Converts the given iterable to another type.
+     *
+     * @param iterable an Iterable
+     * @param clazz    the desired class
+     * @return the object resulting from this type conversion
+     * @see #asType(Collection, Class)
+     * @since 2.4.12
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Iterable iterable, Class<T> clazz) {
+        if (Collection.class.isAssignableFrom(clazz)) {
+            return asType((Collection) toList(iterable), clazz);
+        }
+
+        return asType((Object) iterable, clazz);
+    }
+
+    /**
+     * Converts the given collection to another type. A default concrete
+     * type is used for List, Set, or SortedSet. If the given type has
+     * a constructor taking a collection, that is used. Otherwise, the
+     * call is deferred to {@link #asType(Object,Class)}.  If this
+     * collection is already of the given type, the same instance is
+     * returned.
+     *
+     * @param col   a collection
+     * @param clazz the desired class
+     * @return the object resulting from this type conversion
+     * @see #asType(java.lang.Object, java.lang.Class)
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Collection col, Class<T> clazz) {
+        if (col.getClass() == clazz) {
+            return (T) col;
+        }
+        if (clazz == List.class) {
+            return (T) asList(col);
+        }
+        if (clazz == Set.class) {
+            if (col instanceof Set) return (T) col;
+            return (T) new LinkedHashSet(col);
+        }
+        if (clazz == SortedSet.class) {
+            if (col instanceof SortedSet) return (T) col;
+            return (T) new TreeSet(col);
+        }
+        if (clazz == Queue.class) {
+            if (col instanceof Queue) return (T) col;
+            return (T) new LinkedList(col);
+        }
+        if (clazz == Stack.class) {
+            if (col instanceof Stack) return (T) col;
+            final Stack stack = new Stack();
+            stack.addAll(col);
+            return (T) stack;
+        }
+
+        if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
+            try {
+                return (T) asArrayType(col, clazz);
+            } catch (GroovyCastException e) {
+                /* ignore */
+            }
+        }
+
+        Object[] args = {col};
+        try {
+            return (T) InvokerHelper.invokeConstructorOf(clazz, args);
+        } catch (Exception e) {
+            // ignore, the constructor that takes a Collection as an argument may not exist
+        }
+        if (Collection.class.isAssignableFrom(clazz)) {
+            try {
+                Collection result = (Collection) InvokerHelper.invokeConstructorOf(clazz, null);
+                result.addAll(col);
+                return (T)result;
+            } catch (Exception e) {
+                // ignore, the no arg constructor might not exist.
+            }
+        }
+
+        return asType((Object) col, clazz);
+    }
+
+    /**
+     * Coerces the closure to an implementation of the given class. The class
+     * is assumed to be an interface or class with a single method definition.
+     * The closure is used as the implementation of that single method.
+     *
+     * @param impl the implementation of the single method
+     * @param type the target type
+     * @return A proxy of the given type which wraps this closure.
+     *
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(final Closure impl, final Class<T> type) {
+        if (type.isInterface() && !type.isInstance(impl)) {
+            return (T) CachedSAMClass.coerceToSAM(impl, CachedSAMClass.getSAMMethod(type), type, true);
+        }
+
+        try {
+            return asType((Object) impl, type);
+        } catch (GroovyCastException gce) {
+            try {
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(impl, type);
+            } catch (GroovyRuntimeException gre) {
+                throw new GroovyCastException("Error casting closure to " + type.getName() + ", Reason: " + gre.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Coerces this map to the given type, using the map's keys as the public
+     * method names, and values as the implementation.  Typically the value
+     * would be a closure which behaves like the method implementation.
+     *
+     * @param map   this map
+     * @param clazz the target type
+     * @return a Proxy of the given type, which defers calls to this map's elements.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Map map, Class<T> clazz) {
+        if (!(clazz.isInstance(map)) && clazz.isInterface() && !Traits.isTrait(clazz)) {
+            return (T) Proxy.newProxyInstance(
+                    clazz.getClassLoader(),
+                    new Class[]{clazz},
+                    new ConvertedMap(map));
+        }
+        try {
+            return asType((Object) map, clazz);
+        } catch (GroovyCastException ce) {
+            try {
+                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
+            } catch (GroovyRuntimeException cause) {
+                throw new GroovyCastException("Error casting map to " + clazz.getName() +
+                        ", Reason: " + cause.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Transform this number to the given type, using the 'as' operator.  The
+     * following types are supported in addition to the default
+     * {@link #asType(java.lang.Object, java.lang.Class)}:
+     * <ul>
+     *  <li>BigDecimal</li>
+     *  <li>BigInteger</li>
+     *  <li>Double</li>
+     *  <li>Float</li>
+     * </ul>
+     * @param self this number
+     * @param type the desired type of the transformed result
+     * @return an instance of the given type
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Number self, Class<T> type) {
+        if (type == BigDecimal.class) {
+            return (T) toBigDecimal(self);
+        } else if (type == BigInteger.class) {
+            return (T) toBigInteger(self);
+        } else if (type == Double.class) {
+            return (T) toDouble(self);
+        } else if (type == Float.class) {
+            return (T) toFloat(self);
+        }
+        return asType((Object) self, type);
+    }
+
+    /**
+     * Converts a given object to a type. This method is used through
+     * the "as" operator and is overloadable as any other operator.
+     *
+     * @param obj  the object to convert
+     * @param type the goal type
+     * @return the resulting object
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T asType(Object obj, Class<T> type) {
+        if (String.class == type) {
+            return (T) FormatHelper.toString(obj);
+        }
+
+        // fall back to cast
+        try {
+            return (T) DefaultTypeTransformation.castToType(obj, type);
+        }
+        catch (GroovyCastException e) {
+            MetaClass mc = InvokerHelper.getMetaClass(obj);
+            if (mc instanceof ExpandoMetaClass) {
+                ExpandoMetaClass emc = (ExpandoMetaClass) mc;
+                Object mixedIn = emc.castToMixedType(obj, type);
+                if (mixedIn != null)
+                    return (T) mixedIn;
+            }
+            if (type.isInterface()) {
+                try {
+                    List<Class> interfaces = new ArrayList<>();
+                    interfaces.add(type);
+                    return (T) ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, obj);
+                } catch (GroovyRuntimeException cause) {
+                    // ignore
+                }
+            }
+            throw e;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object asArrayType(Object object, Class type) {
+        if (type.isAssignableFrom(object.getClass())) {
+            return object;
+        }
+        Collection list = DefaultTypeTransformation.asCollection(object);
+        int size = list.size();
+        Class elementType = type.getComponentType();
+        Object array = Array.newInstance(elementType, size);
+        int idx = 0;
+
+        if (boolean.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setBoolean(array, idx, (Boolean) invokeAsType(element, boolean.class));
+            }
+        } else if (byte.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setByte(array, idx, (Byte) invokeAsType(element, byte.class));
+            }
+        } else if (char.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setChar(array, idx, (Character) invokeAsType(element, char.class));
+            }
+        } else if (double.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setDouble(array, idx, (Double) invokeAsType(element, double.class));
+            }
+        } else if (float.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setFloat(array, idx, (Float) invokeAsType(element, float.class));
+            }
+        } else if (int.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setInt(array, idx, (Integer) invokeAsType(element, int.class));
+            }
+        } else if (long.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setLong(array, idx, (Long) invokeAsType(element, long.class));
+            }
+        } else if (short.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setShort(array, idx, (Short) invokeAsType(element, short.class));
+            }
+        } else for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+            Object element = iter.next();
+            Array.set(array, idx, invokeAsType(element, elementType));
+        }
+        return array;
+    }
+
+    private static Object invokeAsType(Object element, Class<?> elementType) {
+        Class<?> target = element instanceof CharSequence ? StringGroovyMethods.class : DefaultGroovyMethods.class;
+        return InvokerHelper.invokeStaticMethod(target, "asType", new Object[]{element, elementType});
+    }
+
+    //--------------------------------------------------------------------------
+    // asUnmodifiable
+
+    /**
+     * Creates an unmodifiable view of a Map.
+     *
+     * @param self a Map
+     * @return an unmodifiable view of the Map
+     * @see java.util.Collections#unmodifiableMap(java.util.Map)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <K,V> Map<K,V> asUnmodifiable(Map<K,V> self) {
+        return Collections.unmodifiableMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a SortedMap.
+     *
+     * @param self a SortedMap
+     * @return an unmodifiable view of the SortedMap
+     * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <K,V> SortedMap<K,V> asUnmodifiable(SortedMap<K,V> self) {
+        return Collections.unmodifiableSortedMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a NavigableMap.
+     *
+     * @param self a NavigableMap
+     * @return an unmodifiable view of the NavigableMap
+     * @see java.util.Collections#unmodifiableNavigableMap(java.util.NavigableMap)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 5.0.0
+     */
+    public static <K,V> SortedMap<K,V> asUnmodifiable(NavigableMap<K,V> self) {
+        return Collections.unmodifiableNavigableMap(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a List.
+     * <pre class="groovyTestCase">
+     * def mutable = [1,2,3]
+     * def unmodifiable = mutable.asUnmodifiable()
+     * try {
+     *     unmodifiable &lt;&lt; 4
+     *     assert false
+     * } catch (UnsupportedOperationException) {
+     *     assert true
+     * }
+     * mutable &lt;&lt; 4
+     * assert unmodifiable.size() == 4
+     * </pre>
+     *
+     * @param self a List
+     * @return an unmodifiable view of the List
+     * @see java.util.Collections#unmodifiableList(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> List<T> asUnmodifiable(List<T> self) {
+        return Collections.unmodifiableList(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a Set.
+     *
+     * @param self a Set
+     * @return an unmodifiable view of the Set
+     * @see java.util.Collections#unmodifiableSet(java.util.Set)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> Set<T> asUnmodifiable(Set<T> self) {
+        return Collections.unmodifiableSet(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a SortedSet.
+     *
+     * @param self a SortedSet
+     * @return an unmodifiable view of the SortedSet
+     * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> SortedSet<T> asUnmodifiable(SortedSet<T> self) {
+        return Collections.unmodifiableSortedSet(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a NavigableSet.
+     *
+     * @param self a NavigableSet
+     * @return an unmodifiable view of the NavigableSet
+     * @see java.util.Collections#unmodifiableNavigableSet(java.util.NavigableSet)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 5.0.0
+     */
+    public static <T> NavigableSet<T> asUnmodifiable(NavigableSet<T> self) {
+        return Collections.unmodifiableNavigableSet(self);
+    }
+
+    /**
+     * Creates an unmodifiable view of a Collection.
+     *
+     * @param self a Collection
+     * @return an unmodifiable view of the Collection
+     * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
+     * @see #asUnmodifiable(java.util.List)
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> asUnmodifiable(Collection<T> self) {
+        return Collections.unmodifiableCollection(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // average
+
+    /**
+     * Averages the items in an Iterable. This is equivalent to invoking the
+     * "plus" method on all items in the Iterable and then dividing by the
+     * total count using the "div" method for the resulting sum.
+     * <pre class="groovyTestCase">
+     * assert 3 == [1, 2, 6].average()
+     * </pre>
+     *
+     * @param self Iterable of values to average
+     * @return The average of all the items
+     * @see #average(Iterator)
+     * @since 3.0.0
+     */
+    public static Object average(Iterable<?> self) {
+        return average(self.iterator());
+    }
+
+    /**
+     * Averages the items from an Iterator. This is equivalent to invoking the
+     * "plus" method on all items in the array and then dividing by the
+     * total count using the "div" method for the resulting sum.
+     * The iterator will become exhausted of elements after determining the average value.
+     * While most frequently used with aggregates of numbers,
+     * {@code average} will work with any class supporting {@code plus} and {@code div}, e.g.:
+     * <pre class="groovyTestCase">
+     * class Stars {
+     *     int numStars = 0
+     *     String toString() {
+     *         '*' * numStars
+     *     }
+     *     Stars plus(Stars other) {
+     *         new Stars(numStars: numStars + other.numStars)
+     *     }
+     *     Stars div(Number divisor) {
+     *         int newSize = numStars.intdiv(divisor)
+     *         new Stars(numStars: newSize)
+     *     }
+     * }
+     *
+     * def stars = [new Stars(numStars: 1), new Stars(numStars: 3)]
+     * assert stars*.toString() == ['*', '***']
+     * assert stars.average().toString() == '**'
+     * </pre>
+     *
+     * @param self an Iterator for the values to average
+     * @return The average of all the items
+     * @since 3.0.0
+     */
+    public static Object average(Iterator<?> self) {
+        Object result = null;
+        long count = 0;
+        Object[] param = new Object[1];
+        while (self.hasNext()) {
+            param[0] = self.next();
+            if (count == 0) {
+                result = param[0];
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(result);
+                result = metaClass.invokeMethod(result, "plus", param);
+            }
+            count++;
+        }
+        MetaClass metaClass = InvokerHelper.getMetaClass(result);
+        result = metaClass.invokeMethod(result, "div", count);
+        return result;
+    }
+
+    /**
+     * Averages the result of applying a closure to each item of an Iterable.
+     * <code>iter.average(closure)</code> is equivalent to:
+     * <code>iter.collect(closure).average()</code>.
+     * <pre class="groovyTestCase">
+     * assert 20 == [1, 3].average { it * 10 }
+     * assert 3 == ['to', 'from'].average { it.size() }
+     * </pre>
+     *
+     * @param self    an Iterable
+     * @param closure a single parameter closure that returns a (typically) numeric value.
+     * @return The average of the values returned by applying the closure to each
+     *         item of the Iterable.
+     * @since 3.0.0
+     */
+    public static <T> Object average(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return average(self.iterator(), closure);
+    }
+
+    /**
+     * Averages the result of applying a closure to each item returned from an iterator.
+     * <code>iter.average(closure)</code> is equivalent to:
+     * <code>iter.collect(closure).average()</code>.
+     * The iterator will become exhausted of elements after determining the average value.
+     *
+     * @param self    An Iterator
+     * @param closure a single parameter closure that returns a (typically) numeric value.
+     * @return The average of the values returned by applying the closure to each
+     *         item from the Iterator.
+     * @since 3.0.0
+     */
+    public static <T> Object average(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        Object result = null;
+        long count = 0;
+        Object[] closureParam = new Object[1];
+        Object[] plusParam = new Object[1];
+        while (self.hasNext()) {
+            closureParam[0] = self.next();
+            plusParam[0] = closure.call(closureParam);
+            if (count == 0) {
+                result = plusParam[0];
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(result);
+                result = metaClass.invokeMethod(result, "plus", plusParam);
+            }
+            count++;
+        }
+        MetaClass metaClass = InvokerHelper.getMetaClass(result);
+        result = metaClass.invokeMethod(result, "div", count);
+        return result;
+    }
+
+    //--------------------------------------------------------------------------
+
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
@@ -607,17 +2051,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         CodeSource codeSource = self.getProtectionDomain().getCodeSource();
 
         return null == codeSource ? null : codeSource.getLocation();
-    }
-
-    /**
-     * Allows the usage of addShutdownHook without getting the runtime first.
-     *
-     * @param self    the object the method is called on (ignored)
-     * @param closure the shutdown hook action
-     * @since 1.5.0
-     */
-    public static void addShutdownHook(Object self, Closure closure) {
-        Runtime.getRuntime().addShutdownHook(new Thread(closure));
     }
 
     /**
@@ -2550,111 +3983,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return true;
-    }
-
-    /**
-     * Iterates over the contents of an object or collection, and checks whether a
-     * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
-     * assert [1, 2, 3].any { it == 2 }
-     * assert ![1, 2, 3].any { it {@code >} 3 }
-     * </pre>
-     *
-     * @param self      the object over which we iterate
-     * @param predicate the closure predicate used for matching
-     * @return true if any iteration for the object matches the closure predicate
-     * @since 1.0
-     */
-    public static boolean any(Object self, Closure predicate) {
-        return any(InvokerHelper.asIterator(self), predicate);
-    }
-
-    /**
-     * Iterates over the contents of an iterator, and checks whether a
-     * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
-     * assert [1, 2, 3].iterator().any { it == 2 }
-     * assert ![1, 2, 3].iterator().any { it {@code >} 3 }
-     * </pre>
-     *
-     * @param self      the iterator over which we iterate
-     * @param predicate the closure predicate used for matching
-     * @return true if any iteration for the object matches the closure predicate
-     * @since 1.0
-     */
-    public static <T> boolean any(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
-        while (self.hasNext()) {
-            if (bcw.call(self.next())) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Iterates over the contents of an iterable, and checks whether a
-     * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
-     * assert [1, 2, 3].any { it == 2 }
-     * assert ![1, 2, 3].any { it {@code >} 3 }
-     * </pre>
-     *
-     * @param self      the iterable over which we iterate
-     * @param predicate the closure predicate used for matching
-     * @return true if any iteration for the object matches the closure predicate
-     * @since 1.0
-     */
-    public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
-        return any(self.iterator(), predicate);
-    }
-
-    /**
-     * Iterates over the entries of a map, and checks whether a predicate is
-     * valid for at least one entry. If the
-     * closure takes one parameter then it will be passed the Map.Entry
-     * otherwise if the closure takes two parameters then it will be
-     * passed the key and the value.
-     * <pre class="groovyTestCase">
-     * assert [2:3, 4:5, 5:10].any { key, value {@code ->} key * 2 == value }
-     * assert ![2:3, 4:5, 5:10].any { entry {@code ->} entry.key == entry.value * 2 }
-     * </pre>
-     *
-     * @param self      the map over which we iterate
-     * @param predicate the 1 or 2 arg closure predicate used for matching
-     * @return true if any entry in the map matches the closure predicate
-     * @since 1.5.0
-     */
-    public static <K, V> boolean any(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> predicate) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (bcw.callForMap(entry)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Iterates over the elements of a collection, and checks whether at least
-     * one element is true according to the Groovy Truth.
-     * Equivalent to self.any({element {@code ->} element})
-     * <pre class="groovyTestCase">
-     * assert [false, true].any()
-     * assert [0, 1].any()
-     * assert ![0, 0].any()
-     * </pre>
-     *
-     * @param self the object over which we iterate
-     * @return true if any item in the collection matches the closure predicate
-     * @since 1.5.0
-     */
-    public static boolean any(Object self) {
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (bmi.convertToBoolean(iter.next())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -4856,48 +6184,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies the collection by adding all the elements in the specified array to the collection.
-     * The behavior of this operation is undefined if
-     * the specified array is modified while the operation is in progress.
-     *
-     * See also <code>plus</code> or the '+' operator if wanting to produce a new collection
-     * containing additional items but while leaving the original collection unchanged.
-     *
-     * @param  self  a Collection to be modified
-     * @param  items array containing elements to be added to this collection
-     * @return <tt>true</tt> if this collection changed as a result of the call
-     * @see    Collection#addAll(Collection)
-     * @since 1.7.2
-     */
-    public static <T> boolean addAll(Collection<T> self, T[] items) {
-        return self.addAll(Arrays.asList(items));
-    }
-
-    /**
-     * Modifies this list by inserting all the elements in the specified array into the
-     * list at the specified position.  Shifts the
-     * element currently at that position (if any) and any subsequent
-     * elements to the right (increases their indices).  The new elements
-     * will appear in this list in the order that they occur in the array.
-     * The behavior of this operation is undefined if the specified array
-     * is modified while the operation is in progress.
-     *
-     * See also <code>plus</code> for similar functionality with copy semantics, i.e. which produces a new
-     * list after adding the additional items at the specified position but leaves the original list unchanged.
-     *
-     * @param self  a list to be modified
-     * @param items array containing elements to be added to this collection
-     * @param index index at which to insert the first element from the
-     *              specified array
-     * @return <tt>true</tt> if this collection changed as a result of the call
-     * @see    List#addAll(int, Collection)
-     * @since 1.7.2
-     */
-    public static <T> boolean addAll(List<T> self, int index, T[] items) {
-        return self.addAll(index, Arrays.asList(items));
-    }
-
-    /**
      * Splits all items into two lists based on the closure condition.
      * The first list contains all items matching the closure expression.
      * The second list all those that don't.
@@ -5839,125 +7125,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             MetaClass metaClass = InvokerHelper.getMetaClass(result);
             result = metaClass.invokeMethod(result, "plus", plusParam);
         }
-        return result;
-    }
-
-    /**
-     * Averages the items in an Iterable. This is equivalent to invoking the
-     * "plus" method on all items in the Iterable and then dividing by the
-     * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">
-     * assert 3 == [1, 2, 6].average()
-     * </pre>
-     *
-     * @param self Iterable of values to average
-     * @return The average of all the items
-     * @see #average(Iterator)
-     * @since 3.0.0
-     */
-    public static Object average(Iterable<?> self) {
-        return average(self.iterator());
-    }
-
-    /**
-     * Averages the items from an Iterator. This is equivalent to invoking the
-     * "plus" method on all items in the array and then dividing by the
-     * total count using the "div" method for the resulting sum.
-     * The iterator will become exhausted of elements after determining the average value.
-     * While most frequently used with aggregates of numbers,
-     * {@code average} will work with any class supporting {@code plus} and {@code div}, e.g.:
-     * <pre class="groovyTestCase">
-     * class Stars {
-     *     int numStars = 0
-     *     String toString() {
-     *         '*' * numStars
-     *     }
-     *     Stars plus(Stars other) {
-     *         new Stars(numStars: numStars + other.numStars)
-     *     }
-     *     Stars div(Number divisor) {
-     *         int newSize = numStars.intdiv(divisor)
-     *         new Stars(numStars: newSize)
-     *     }
-     * }
-     *
-     * def stars = [new Stars(numStars: 1), new Stars(numStars: 3)]
-     * assert stars*.toString() == ['*', '***']
-     * assert stars.average().toString() == '**'
-     * </pre>
-     *
-     * @param self an Iterator for the values to average
-     * @return The average of all the items
-     * @since 3.0.0
-     */
-    public static Object average(Iterator<?> self) {
-        Object result = null;
-        long count = 0;
-        Object[] param = new Object[1];
-        while (self.hasNext()) {
-            param[0] = self.next();
-            if (count == 0) {
-                result = param[0];
-            } else {
-                MetaClass metaClass = InvokerHelper.getMetaClass(result);
-                result = metaClass.invokeMethod(result, "plus", param);
-            }
-            count++;
-        }
-        MetaClass metaClass = InvokerHelper.getMetaClass(result);
-        result = metaClass.invokeMethod(result, "div", count);
-        return result;
-    }
-
-    /**
-     * Averages the result of applying a closure to each item of an Iterable.
-     * <code>iter.average(closure)</code> is equivalent to:
-     * <code>iter.collect(closure).average()</code>.
-     * <pre class="groovyTestCase">
-     * assert 20 == [1, 3].average { it * 10 }
-     * assert 3 == ['to', 'from'].average { it.size() }
-     * </pre>
-     *
-     * @param self    an Iterable
-     * @param closure a single parameter closure that returns a (typically) numeric value.
-     * @return The average of the values returned by applying the closure to each
-     *         item of the Iterable.
-     * @since 3.0.0
-     */
-    public static <T> Object average(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        return average(self.iterator(), closure);
-    }
-
-    /**
-     * Averages the result of applying a closure to each item returned from an iterator.
-     * <code>iter.average(closure)</code> is equivalent to:
-     * <code>iter.collect(closure).average()</code>.
-     * The iterator will become exhausted of elements after determining the average value.
-     *
-     * @param self    An Iterator
-     * @param closure a single parameter closure that returns a (typically) numeric value.
-     * @return The average of the values returned by applying the closure to each
-     *         item from the Iterator.
-     * @since 3.0.0
-     */
-    public static <T> Object average(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        Object result = null;
-        long count = 0;
-        Object[] closureParam = new Object[1];
-        Object[] plusParam = new Object[1];
-        while (self.hasNext()) {
-            closureParam[0] = self.next();
-            plusParam[0] = closure.call(closureParam);
-            if (count == 0) {
-                result = plusParam[0];
-            } else {
-                MetaClass metaClass = InvokerHelper.getMetaClass(result);
-                result = metaClass.invokeMethod(result, "plus", plusParam);
-            }
-            count++;
-        }
-        MetaClass metaClass = InvokerHelper.getMetaClass(result);
-        result = metaClass.invokeMethod(result, "div", count);
         return result;
     }
 
@@ -7036,411 +8203,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return answer;
     }
-
-    //--------------------------------------------------------------------------
-    // asChecked
-
-    /**
-     * Creates a checked view of a List.
-     *
-     * @see Collections#checkedList
-     * @since 5.0.0
-     */
-    public static <T> List<T> asChecked(List<T> self, Class<T> type) {
-        return Collections.checkedList(self, type);
-    }
-
-    /**
-     * Creates a checked view of a Queue.
-     *
-     * @see Collections#checkedQueue
-     * @since 5.0.0
-     */
-    public static <T> Queue<T> asChecked(Queue<T> self, Class<T> type) {
-        return Collections.checkedQueue(self, type);
-    }
-
-    /**
-     * Creates a checked view of a Collection.
-     *
-     * @see Collections#checkedCollection
-     * @since 5.0.0
-     */
-    public static <T> Collection<T> asChecked(Collection<T> self, Class<T> type) {
-        return Collections.checkedCollection(self, type);
-    }
-
-    /**
-     * Creates a checked view of a Set.
-     *
-     * @see Collections#checkedSet
-     * @since 5.0.0
-     */
-    public static <T> Set<T> asChecked(Set<T> self, Class<T> type) {
-        return Collections.checkedSet(self, type);
-    }
-
-    /**
-     * Creates a checked view of a SortedSet.
-     *
-     * @see Collections#checkedSortedSet
-     * @since 5.0.0
-     */
-    public static <T> SortedSet<T> asChecked(SortedSet<T> self, Class<T> type) {
-        return Collections.checkedSortedSet(self, type);
-    }
-
-    /**
-     * Creates a checked view of a NavigableSet.
-     *
-     * @see Collections#checkedNavigableSet
-     * @since 5.0.0
-     */
-    public static <T> NavigableSet<T> asChecked(NavigableSet<T> self, Class<T> type) {
-        return Collections.checkedNavigableSet(self, type);
-    }
-
-    /**
-     * Creates a checked view of a Map.
-     *
-     * @see Collections#checkedMap
-     * @since 5.0.0
-     */
-    public static <K,V> Map<K,V> asChecked(Map<K,V> self, Class<K> keyType, Class<V> valueType) {
-        return Collections.checkedMap(self, keyType, valueType);
-    }
-
-    /**
-     * Creates a checked view of a SortedMap.
-     *
-     * @see Collections#checkedSortedMap
-     * @since 5.0.0
-     */
-    public static <K,V> SortedMap<K,V> asChecked(SortedMap<K,V> self, Class<K> keyType, Class<V> valueType) {
-        return Collections.checkedSortedMap(self, keyType, valueType);
-    }
-
-    /**
-     * Creates a checked view of a NavigableMap.
-     *
-     * @see Collections#checkedNavigableMap
-     * @since 5.0.0
-     */
-    public static <K,V> NavigableMap<K,V> asChecked(NavigableMap<K,V> self, Class<K> keyType, Class<V> valueType) {
-        return Collections.checkedNavigableMap(self, keyType, valueType);
-    }
-
-    //--------------------------------------------------------------------------
-    // asImmutable (really toImmutable)
-
-    /**
-     * A convenience method for creating an immutable Map.
-     *
-     * @param self a Map
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asImmutable(java.util.List)
-     * @see #asUnmodifiable(java.util.Map)
-     * @since 1.0
-     */
-    public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
-        return asUnmodifiable(new LinkedHashMap<>(self));
-    }
-
-    /**
-     * A convenience method for creating an immutable SortedMap.
-     *
-     * @param self a SortedMap
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asImmutable(java.util.List)
-     * @see #asUnmodifiable(java.util.SortedMap)
-     * @since 1.0
-     */
-    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
-        return asUnmodifiable(new TreeMap<>(self));
-    }
-
-    /**
-     * A convenience method for creating an immutable List.
-     * <pre class="groovyTestCase">
-     * def mutable = [1,2,3]
-     * def immutable = mutable.asImmutable()
-     * try {
-     *     immutable &lt;&lt; 4
-     *     assert false
-     * } catch (UnsupportedOperationException) {
-     *     assert true
-     * }
-     * mutable &lt;&lt; 4
-     * assert mutable.size() == 4
-     * assert immutable.size() == 3
-     * </pre>
-     *
-     * @param self a List
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asUnmodifiable(java.util.List)
-     * @since 1.0
-     */
-    public static <T> List<T> asImmutable(List<T> self) {
-        return asUnmodifiable(new ArrayList<>(self));
-    }
-
-    /**
-     * A convenience method for creating an immutable Set.
-     *
-     * @param self a Set
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asImmutable(java.util.List)
-     * @see #asUnmodifiable(java.util.Set)
-     * @since 1.0
-     */
-    public static <T> Set<T> asImmutable(Set<T> self) {
-        return asUnmodifiable(new LinkedHashSet<>(self));
-    }
-
-    /**
-     * A convenience method for creating an immutable SortedSet.
-     *
-     * @param self a SortedSet
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asImmutable(java.util.List)
-     * @see #asUnmodifiable(java.util.SortedSet)
-     * @since 1.0
-     */
-    public static <T> SortedSet<T> asImmutable(SortedSet<T> self) {
-        return asUnmodifiable(new TreeSet<>(self));
-    }
-
-    /**
-     * A convenience method for creating an immutable Collection.
-     *
-     * @param self a Collection
-     * @return an unmodifiable view of a copy of the original, i.e. an effectively immutable copy
-     * @see #asImmutable(java.util.List)
-     * @see #asUnmodifiable(java.util.Collection)
-     * @since 1.5.0
-     */
-    public static <T> Collection<T> asImmutable(Collection<T> self) {
-        return asUnmodifiable((Collection<T>) new ArrayList<>(self));
-    }
-
-    //--------------------------------------------------------------------------
-    // asUnmodifiable
-
-    /**
-     * Creates an unmodifiable view of a Map.
-     *
-     * @param self a Map
-     * @return an unmodifiable view of the Map
-     * @see java.util.Collections#unmodifiableMap(java.util.Map)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 2.5.0
-     */
-    public static <K,V> Map<K,V> asUnmodifiable(Map<K,V> self) {
-        return Collections.unmodifiableMap(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a SortedMap.
-     *
-     * @param self a SortedMap
-     * @return an unmodifiable view of the SortedMap
-     * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 2.5.0
-     */
-    public static <K,V> SortedMap<K,V> asUnmodifiable(SortedMap<K,V> self) {
-        return Collections.unmodifiableSortedMap(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a NavigableMap.
-     *
-     * @param self a NavigableMap
-     * @return an unmodifiable view of the NavigableMap
-     * @see java.util.Collections#unmodifiableNavigableMap(java.util.NavigableMap)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 5.0.0
-     */
-    public static <K,V> SortedMap<K,V> asUnmodifiable(NavigableMap<K,V> self) {
-        return Collections.unmodifiableNavigableMap(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a List.
-     * <pre class="groovyTestCase">
-     * def mutable = [1,2,3]
-     * def unmodifiable = mutable.asUnmodifiable()
-     * try {
-     *     unmodifiable &lt;&lt; 4
-     *     assert false
-     * } catch (UnsupportedOperationException) {
-     *     assert true
-     * }
-     * mutable &lt;&lt; 4
-     * assert unmodifiable.size() == 4
-     * </pre>
-     *
-     * @param self a List
-     * @return an unmodifiable view of the List
-     * @see java.util.Collections#unmodifiableList(java.util.List)
-     * @since 2.5.0
-     */
-    public static <T> List<T> asUnmodifiable(List<T> self) {
-        return Collections.unmodifiableList(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a Set.
-     *
-     * @param self a Set
-     * @return an unmodifiable view of the Set
-     * @see java.util.Collections#unmodifiableSet(java.util.Set)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 2.5.0
-     */
-    public static <T> Set<T> asUnmodifiable(Set<T> self) {
-        return Collections.unmodifiableSet(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a SortedSet.
-     *
-     * @param self a SortedSet
-     * @return an unmodifiable view of the SortedSet
-     * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 2.5.0
-     */
-    public static <T> SortedSet<T> asUnmodifiable(SortedSet<T> self) {
-        return Collections.unmodifiableSortedSet(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a NavigableSet.
-     *
-     * @param self a NavigableSet
-     * @return an unmodifiable view of the NavigableSet
-     * @see java.util.Collections#unmodifiableNavigableSet(java.util.NavigableSet)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 5.0.0
-     */
-    public static <T> NavigableSet<T> asUnmodifiable(NavigableSet<T> self) {
-        return Collections.unmodifiableNavigableSet(self);
-    }
-
-    /**
-     * Creates an unmodifiable view of a Collection.
-     *
-     * @param self a Collection
-     * @return an unmodifiable view of the Collection
-     * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
-     * @see #asUnmodifiable(java.util.List)
-     * @since 2.5.0
-     */
-    public static <T> Collection<T> asUnmodifiable(Collection<T> self) {
-        return Collections.unmodifiableCollection(self);
-    }
-
-    //--------------------------------------------------------------------------
-    // asSynchronized
-
-    /**
-     * Creates a synchronized view of a Map.
-     *
-     * @param self a Map
-     * @return a synchronized Map
-     * @see java.util.Collections#synchronizedMap(java.util.Map)
-     * @since 1.0
-     */
-    public static <K,V> Map<K,V> asSynchronized(Map<K,V> self) {
-        return Collections.synchronizedMap(self);
-    }
-
-    /**
-     * Creates a synchronized view of a SortedMap.
-     *
-     * @param self a SortedMap
-     * @return a synchronized SortedMap
-     * @see java.util.Collections#synchronizedSortedMap(java.util.SortedMap)
-     * @since 1.0
-     */
-    public static <K,V> SortedMap<K,V> asSynchronized(SortedMap<K,V> self) {
-        return Collections.synchronizedSortedMap(self);
-    }
-
-    /**
-     * Creates a synchronized view of a NavigableMap.
-     *
-     * @param self a NavigableMap
-     * @return a synchronized NavigableMap
-     * @see java.util.Collections#synchronizedNavigableMap(java.util.NavigableMap)
-     * @since 5.0.0
-     */
-    public static <K,V> NavigableMap<K,V> asSynchronized(NavigableMap<K,V> self) {
-        return Collections.synchronizedNavigableMap(self);
-    }
-
-    /**
-     * Creates a synchronized view of a Collection.
-     *
-     * @param self a Collection
-     * @return a synchronized Collection
-     * @see java.util.Collections#synchronizedCollection(java.util.Collection)
-     * @since 1.0
-     */
-    public static <T> Collection<T> asSynchronized(Collection<T> self) {
-        return Collections.synchronizedCollection(self);
-    }
-
-    /**
-     * Creates a synchronized view of a List.
-     *
-     * @param self a List
-     * @return a synchronized List
-     * @see java.util.Collections#synchronizedList(java.util.List)
-     * @since 1.0
-     */
-    public static <T> List<T> asSynchronized(List<T> self) {
-        return Collections.synchronizedList(self);
-    }
-
-    /**
-     * Creates a synchronized view of a Set.
-     *
-     * @param self a Set
-     * @return a synchronized Set
-     * @see java.util.Collections#synchronizedSet(java.util.Set)
-     * @since 1.0
-     */
-    public static <T> Set<T> asSynchronized(Set<T> self) {
-        return Collections.synchronizedSet(self);
-    }
-
-    /**
-     * Creates a synchronized view of a SortedSet.
-     *
-     * @param self a SortedSet
-     * @return a synchronized SortedSet
-     * @see java.util.Collections#synchronizedSortedSet(java.util.SortedSet)
-     * @since 1.0
-     */
-    public static <T> SortedSet<T> asSynchronized(SortedSet<T> self) {
-        return Collections.synchronizedSortedSet(self);
-    }
-
-    /**
-     * Creates a synchronized view of a NavigableSet.
-     *
-     * @param self a NavigableSet
-     * @return a synchronized NavigableSet
-     * @see java.util.Collections#synchronizedNavigableSet(java.util.NavigableSet)
-     * @since 5.0.0
-     */
-    public static <T> NavigableSet<T> asSynchronized(NavigableSet<T> self) {
-        return Collections.synchronizedNavigableSet(self);
-    }
-
-    //--------------------------------------------------------------------------
 
     /**
      * Synonym for {@link #toSpreadMap(java.util.Map)}.
@@ -8925,37 +9687,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds all items from the iterator to the Collection.
-     *
-     * @param self the collection
-     * @param items the items to add
-     * @return true if the collection changed
-     */
-    public static <T> boolean addAll(Collection<T> self, Iterator<? extends T> items) {
-        boolean changed = false;
-        while (items.hasNext()) {
-            T next =  items.next();
-            if (self.add(next)) changed = true;
-        }
-        return changed;
-    }
-
-    /**
-     * Adds all items from the iterable to the Collection.
-     *
-     * @param self the collection
-     * @param items the items to add
-     * @return true if the collection changed
-     */
-    public static <T> boolean addAll(Collection<T> self, Iterable<? extends T> items) {
-        boolean changed = false;
-        for (T next : items) {
-            if (self.add(next)) changed = true;
-        }
-        return changed;
-    }
-
-    /**
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
      * If the map instance does not have ordered keys, then this function could return a random <code>num</code>
      * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
@@ -9761,338 +10492,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this Iterable to a Collection. Returns the original argument
-     * if it is already a Collection.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert new HashSet().asCollection() instanceof Collection
-     * </pre>
-     *
-     * @param self an Iterable to be converted into a Collection
-     * @return a newly created List if this Iterable is not already a Collection
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> asCollection(Iterable<T> self) {
-        if (self instanceof Collection) {
-            return (Collection<T>) self;
-        } else {
-            return toList(self);
-        }
-    }
-
-    /**
-     * Converts this Iterable to a List. Returns the original Iterable
-     * if it is already a List.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert new HashSet().asList() instanceof List
-     * </pre>
-     *
-     * @param self an Iterable to be converted into a List
-     * @return a newly created List if this Iterable is not already a List
-     * @since 2.2.0
-     */
-    public static <T> List<T> asList(Iterable<T> self) {
-        if (self instanceof List) {
-            return (List<T>) self;
-        } else {
-            return toList(self);
-        }
-    }
-
-    /**
-     * Coerce an object instance to a boolean value.
-     * An object is coerced to true if it's not null, to false if it is null.
-     *
-     * @param object the object to coerce
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Object object) {
-        return object != null;
-    }
-
-    /**
-     * Coerce a Boolean instance to a boolean value.
-     * <pre class="groovyTestCase">
-     * // you can omit ".asBoolean()"
-     * assert Boolean.TRUE.asBoolean()
-     * assert !Boolean.FALSE.asBoolean()
-     * </pre>
-     *
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Boolean bool) {
-        return bool != null && bool.booleanValue();
-    }
-
-    /**
-     * Coerce an AtomicBoolean instance to a boolean value.
-     * <pre class="groovyTestCase">
-     * import java.util.concurrent.atomic.AtomicBoolean
-     *
-     * // you can omit ".asBoolean()"
-     * assert  new AtomicBoolean(true).asBoolean()
-     * assert !new AtomicBoolean(false).asBoolean()
-     * assert !new AtomicBoolean(true).tap{set(false)}
-     * </pre>
-     *
-     * @since 5.0.0
-     */
-    public static boolean asBoolean(AtomicBoolean bool) {
-        return bool != null && bool.get();
-    }
-
-    /**
-     * Coerce a collection instance to a boolean value.
-     * A collection is coerced to false if it's empty, and to true otherwise.
-     * <pre class="groovyTestCase">assert [1,2].asBoolean() == true</pre>
-     * <pre class="groovyTestCase">assert [].asBoolean() == false</pre>
-     *
-     * @param collection the collection
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Collection collection) {
-        return collection != null && !collection.isEmpty();
-    }
-
-    /**
-     * Coerce a map instance to a boolean value.
-     * A map is coerced to false if it's empty, and to true otherwise.
-     * <pre class="groovyTestCase">assert [:] as Boolean == false
-     * assert [a:2] as Boolean == true</pre>
-     *
-     * @param map the map
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Map map) {
-        return map != null && !map.isEmpty();
-    }
-
-    /**
-     * Coerce an iterator instance to a boolean value.
-     * An iterator is coerced to false if there are no more elements to iterate over,
-     * and to true otherwise.
-     *
-     * @param iterator the iterator
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Iterator iterator) {
-        return iterator != null && iterator.hasNext();
-    }
-
-    /**
-     * Coerce an enumeration instance to a boolean value.
-     * An enumeration is coerced to false if there are no more elements to enumerate,
-     * and to true otherwise.
-     *
-     * @param enumeration the enumeration
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Enumeration enumeration) {
-        return enumeration != null && enumeration.hasMoreElements();
-    }
-
-    /**
-     * Coerce a character to a boolean value.
-     * A character is coerced to false if it's character value is equal to 0,
-     * and to true otherwise.
-     *
-     * @param character the character
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Character character) {
-        return character != null && character != 0;
-    }
-
-    /**
-     * Coerce a Float instance to a boolean value.
-     *
-     * @param object the Float
-     * @return {@code true} for non-zero and non-NaN values, else {@code false}
-     * @since 2.6.0
-     */
-    public static boolean asBoolean(Float object) {
-        float f = object;
-        return f != 0.0f && !Float.isNaN(f);
-    }
-
-    /**
-     * Coerce a Double instance to a boolean value.
-     *
-     * @param object the Double
-     * @return {@code true} for non-zero and non-NaN values, else {@code false}
-     * @since 2.6.0
-     */
-    public static boolean asBoolean(Double object) {
-        double d = object;
-        return d != 0.0d && !Double.isNaN(d);
-    }
-
-    /**
-     * Coerce a number to a boolean value.
-     * A number is coerced to false if its double value is equal to 0, and to true otherwise.
-     *
-     * @param number the number
-     * @return the boolean value
-     * @since 1.7.0
-     */
-    public static boolean asBoolean(Number number) {
-        return number != null && number.doubleValue() != 0;
-    }
-
-    /**
-     * Converts the given iterable to another type.
-     *
-     * @param iterable an Iterable
-     * @param clazz    the desired class
-     * @return the object resulting from this type conversion
-     * @see #asType(Collection, Class)
-     * @since 2.4.12
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Iterable iterable, Class<T> clazz) {
-        if (Collection.class.isAssignableFrom(clazz)) {
-            return asType((Collection) toList(iterable), clazz);
-        }
-
-        return asType((Object) iterable, clazz);
-    }
-
-    /**
-     * Converts the given collection to another type. A default concrete
-     * type is used for List, Set, or SortedSet. If the given type has
-     * a constructor taking a collection, that is used. Otherwise, the
-     * call is deferred to {@link #asType(Object,Class)}.  If this
-     * collection is already of the given type, the same instance is
-     * returned.
-     *
-     * @param col   a collection
-     * @param clazz the desired class
-     * @return the object resulting from this type conversion
-     * @see #asType(java.lang.Object, java.lang.Class)
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Collection col, Class<T> clazz) {
-        if (col.getClass() == clazz) {
-            return (T) col;
-        }
-        if (clazz == List.class) {
-            return (T) asList(col);
-        }
-        if (clazz == Set.class) {
-            if (col instanceof Set) return (T) col;
-            return (T) new LinkedHashSet(col);
-        }
-        if (clazz == SortedSet.class) {
-            if (col instanceof SortedSet) return (T) col;
-            return (T) new TreeSet(col);
-        }
-        if (clazz == Queue.class) {
-            if (col instanceof Queue) return (T) col;
-            return (T) new LinkedList(col);
-        }
-        if (clazz == Stack.class) {
-            if (col instanceof Stack) return (T) col;
-            final Stack stack = new Stack();
-            stack.addAll(col);
-            return (T) stack;
-        }
-
-        if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
-            try {
-                return (T) asArrayType(col, clazz);
-            } catch (GroovyCastException e) {
-                /* ignore */
-            }
-        }
-
-        Object[] args = {col};
-        try {
-            return (T) InvokerHelper.invokeConstructorOf(clazz, args);
-        } catch (Exception e) {
-            // ignore, the constructor that takes a Collection as an argument may not exist
-        }
-        if (Collection.class.isAssignableFrom(clazz)) {
-            try {
-                Collection result = (Collection) InvokerHelper.invokeConstructorOf(clazz, null);
-                result.addAll(col);
-                return (T)result;
-            } catch (Exception e) {
-                // ignore, the no arg constructor might not exist.
-            }
-        }
-
-        return asType((Object) col, clazz);
-    }
-
-    /**
-     * Coerces the closure to an implementation of the given class. The class
-     * is assumed to be an interface or class with a single method definition.
-     * The closure is used as the implementation of that single method.
-     *
-     * @param impl the implementation of the single method
-     * @param type the target type
-     * @return A proxy of the given type which wraps this closure.
-     *
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(final Closure impl, final Class<T> type) {
-        if (type.isInterface() && !type.isInstance(impl)) {
-            return (T) CachedSAMClass.coerceToSAM(impl, CachedSAMClass.getSAMMethod(type), type, true);
-        }
-
-        try {
-            return asType((Object) impl, type);
-        } catch (GroovyCastException gce) {
-            try {
-                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(impl, type);
-            } catch (GroovyRuntimeException gre) {
-                throw new GroovyCastException("Error casting closure to " + type.getName() + ", Reason: " + gre.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Coerces this map to the given type, using the map's keys as the public
-     * method names, and values as the implementation.  Typically the value
-     * would be a closure which behaves like the method implementation.
-     *
-     * @param map   this map
-     * @param clazz the target type
-     * @return a Proxy of the given type, which defers calls to this map's elements.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Map map, Class<T> clazz) {
-        if (!(clazz.isInstance(map)) && clazz.isInterface() && !Traits.isTrait(clazz)) {
-            return (T) Proxy.newProxyInstance(
-                    clazz.getClassLoader(),
-                    new Class[]{clazz},
-                    new ConvertedMap(map));
-        }
-        try {
-            return asType((Object) map, clazz);
-        } catch (GroovyCastException ce) {
-            try {
-                return (T) ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(map, clazz);
-            } catch (GroovyRuntimeException cause) {
-                throw new GroovyCastException("Error casting map to " + clazz.getName() +
-                        ", Reason: " + cause.getMessage());
-            }
-        }
-    }
-
-    /**
      * Randomly reorders the elements of the specified list.
      * <pre class="groovyTestCase">
      * def list = ["a", 4, false]
@@ -10171,39 +10570,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<T> copy = new ArrayList<>(self);
         Collections.shuffle(copy, rnd);
         return copy;
-    }
-
-    /**
-     * Creates a view list with reversed order, and the order of original list will not change.
-     * <pre class="groovyTestCase">
-     * def list = ["a", 6, true]
-     * assert list.asReversed() == [true, 6, "a"]
-     * assert list == ["a", 6, true]
-     * </pre>
-     *
-     * @param self a list
-     * @param <T> the type of element
-     * @return the reversed list
-     * @since 4.0.0
-     */
-    public static <T> List<T> asReversed(List<T> self) {
-        return new ReversedList<>(self);
-    }
-
-    /**
-     * Creates a reverse order view of the set. The order of original list will not change.
-     * <pre class="groovyTestCase">
-     * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
-     * assert navSet.asReversed() == [4, 3, 2, 1] as Set
-     * </pre>
-     *
-     * @param self a NavigableSet
-     * @param <T> the type of element
-     * @return the reversed view NavigableSet
-     * @since 4.0.11
-     */
-    public static <T> NavigableSet<T> asReversed(NavigableSet<T> self) {
-        return self.descendingSet();
     }
 
     /**
@@ -12764,32 +13130,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Bitwise AND together two Numbers.
-     *
-     * @param left  a Number
-     * @param right another Number to bitwise AND
-     * @return the bitwise AND of both Numbers
-     * @since 1.0
-     */
-    public static Number and(Number left, Number right) {
-        return NumberMath.and(left, right);
-    }
-
-    /**
-     * Bitwise AND together two BitSets.
-     *
-     * @param left  a BitSet
-     * @param right another BitSet to bitwise AND
-     * @return the bitwise AND of both BitSets
-     * @since 1.5.0
-     */
-    public static BitSet and(BitSet left, BitSet right) {
-        BitSet result = (BitSet) left.clone();
-        result.and(right);
-        return result;
-    }
-
-    /**
      * Bitwise XOR together two BitSets.  Called when the '^' operator is used
      * between two bit sets.
      *
@@ -13460,52 +13800,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Get the absolute value
-     *
-     * @param number a Number
-     * @return the absolute value of that Number
-     * @since 1.0
-     */
-    //Note: This method is NOT called if number is a BigInteger or BigDecimal because
-    //those classes implement a method with a better exact match.
-    public static int abs(Number number) {
-        return Math.abs(number.intValue());
-    }
-
-    /**
-     * Get the absolute value
-     *
-     * @param number a Long
-     * @return the absolute value of that Long
-     * @since 1.0
-     */
-    public static long abs(Long number) {
-        return Math.abs(number);
-    }
-
-    /**
-     * Get the absolute value
-     *
-     * @param number a Float
-     * @return the absolute value of that Float
-     * @since 1.0
-     */
-    public static float abs(Float number) {
-        return Math.abs(number);
-    }
-
-    /**
-     * Get the absolute value
-     *
-     * @param number a Double
-     * @return the absolute value of that Double
-     * @since 1.0
-     */
-    public static double abs(Double number) {
-        return Math.abs(number);
-    }
-
-    /**
      * Compares this object against the specified object returning the same result
      * as {@link Float#equals(Object)} but returning true if this object
      * and the specified object are both zero and negative zero respectively or vice versa.
@@ -13880,35 +14174,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Transform this number to the given type, using the 'as' operator.  The
-     * following types are supported in addition to the default
-     * {@link #asType(java.lang.Object, java.lang.Class)}:
-     * <ul>
-     *  <li>BigDecimal</li>
-     *  <li>BigInteger</li>
-     *  <li>Double</li>
-     *  <li>Float</li>
-     * </ul>
-     * @param self this number
-     * @param c the desired type of the transformed result
-     * @return an instance of the given type
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Number self, Class<T> c) {
-        if (c == BigDecimal.class) {
-            return (T) toBigDecimal(self);
-        } else if (c == BigInteger.class) {
-            return (T) toBigInteger(self);
-        } else if (c == Double.class) {
-            return (T) toDouble(self);
-        } else if (c == Float.class) {
-            return (T) toFloat(self);
-        }
-        return asType((Object) self, c);
-    }
-
-    /**
      * Transform this Number into a BigInteger.
      *
      * @param self a Number
@@ -13921,18 +14186,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //--------------------------------------------------------------------------
     // Boolean based methods
-
-    /**
-     * Logical conjunction of two boolean operators.
-     *
-     * @param left left operator
-     * @param right right operator
-     * @return result of logical conjunction
-     * @since 1.0
-     */
-    public static Boolean and(Boolean left, Boolean right) {
-        return left && Boolean.TRUE.equals(right);
-    }
 
     /**
      * Logical disjunction of two boolean operators
@@ -14331,109 +14584,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return false;
-    }
-
-    /**
-     * Converts a given object to a type. This method is used through
-     * the "as" operator and is overloadable as any other operator.
-     *
-     * @param obj  the object to convert
-     * @param type the goal type
-     * @return the resulting object
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T asType(Object obj, Class<T> type) {
-        if (String.class == type) {
-            return (T) FormatHelper.toString(obj);
-        }
-
-        // fall back to cast
-        try {
-            return (T) DefaultTypeTransformation.castToType(obj, type);
-        }
-        catch (GroovyCastException e) {
-            MetaClass mc = InvokerHelper.getMetaClass(obj);
-            if (mc instanceof ExpandoMetaClass) {
-                ExpandoMetaClass emc = (ExpandoMetaClass) mc;
-                Object mixedIn = emc.castToMixedType(obj, type);
-                if (mixedIn != null)
-                    return (T) mixedIn;
-            }
-            if (type.isInterface()) {
-                try {
-                    List<Class> interfaces = new ArrayList<>();
-                    interfaces.add(type);
-                    return (T) ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, obj);
-                } catch (GroovyRuntimeException cause) {
-                    // ignore
-                }
-            }
-            throw e;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Object asArrayType(Object object, Class type) {
-        if (type.isAssignableFrom(object.getClass())) {
-            return object;
-        }
-        Collection list = DefaultTypeTransformation.asCollection(object);
-        int size = list.size();
-        Class elementType = type.getComponentType();
-        Object array = Array.newInstance(elementType, size);
-        int idx = 0;
-
-        if (boolean.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setBoolean(array, idx, (Boolean) invokeAsType(element, boolean.class));
-            }
-        } else if (byte.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setByte(array, idx, (Byte) invokeAsType(element, byte.class));
-            }
-        } else if (char.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setChar(array, idx, (Character) invokeAsType(element, char.class));
-            }
-        } else if (double.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setDouble(array, idx, (Double) invokeAsType(element, double.class));
-            }
-        } else if (float.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setFloat(array, idx, (Float) invokeAsType(element, float.class));
-            }
-        } else if (int.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setInt(array, idx, (Integer) invokeAsType(element, int.class));
-            }
-        } else if (long.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setLong(array, idx, (Long) invokeAsType(element, long.class));
-            }
-        } else if (short.class.equals(elementType)) {
-            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-                Object element = iter.next();
-                Array.setShort(array, idx, (Short) invokeAsType(element, short.class));
-            }
-        } else for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
-            Object element = iter.next();
-            Array.set(array, idx, invokeAsType(element, elementType));
-        }
-        return array;
-    }
-
-    private static Object invokeAsType(Object element, Class<?> elementType) {
-        Class<?> target = element instanceof CharSequence ? StringGroovyMethods.class : DefaultGroovyMethods.class;
-        return InvokerHelper.invokeStaticMethod(target, "asType", new Object[]{element, elementType});
     }
 
     /**
@@ -14936,23 +15086,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Get the detail information of {@link Throwable} instance's stack trace
-     *
-     * @param self a Throwable instance
-     * @return the detail information of stack trace
-     * @since 2.5.3
-     */
-    public static String asString(Throwable self) {
-        StringBuilderWriter sw = new StringBuilderWriter();
-
-        try (PrintWriter pw = new PrintWriter(sw)) {
-            self.printStackTrace(pw);
-        }
-
-        return sw.toString();
-    }
-
-    /**
      * Create a Set as a union of a Set and an Iterable.  Any
      * elements that exist in either are added to the resultant Set.
      * <p>
@@ -14996,102 +15129,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
         return plus(left, right);
-    }
-
-    /**
-     * Create a Set composed of the intersection of a Set and an Iterable.  Any
-     * elements that exist in both are added to the resultant Set.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * def a = [1,2,3,4] as Set
-     * def b = [3,4,5,6] as Set
-     * assert (a & b) == [3,4] as Set
-     * </pre>
-     *
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both sets.
-     *
-     * @param left  a Set
-     * @param right an Iterable
-     * @return a Set as an intersection of a Set and an Iterable
-     * @see #intersect(Set, Iterable)
-     * @since 5.0.0
-     */
-    public static <T> Set<T> and(Set<T> left, Iterable<T> right) {
-        return intersect(left, right);
-    }
-
-    /**
-     * Create a Set composed of the intersection of a Set and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * assert [3,4] as Set == ([1,2,3,4] as Set).and([3,4,5,6], Comparator.naturalOrder())
-     * </pre>
-     *
-     * @param left  a Set
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a Set as an intersection of a Set and an Iterable
-     * @see #intersect(Set, Iterable, Comparator)
-     * @since 5.0.0
-     */
-    public static <T> Set<T> and(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return intersect(left, right, comparator);
-    }
-
-    /**
-     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
-     * elements that exist in both are added to the resultant SortedSet.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * def a = [1,2,3,4] as SortedSet
-     * def b = [3,4,5,6] as Set
-     * assert (a & b) == [3,4] as SortedSet
-     * </pre>
-     *
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both sets.
-     *
-     * @param left  a SortedSet
-     * @param right an Iterable
-     * @return a SortedSet as an intersection of a SortedSet and an Iterable
-     * @see #intersect(Set, Iterable)
-     * @since 5.0.0
-     */
-    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right) {
-        return intersect(left, right);
-    }
-
-    /**
-     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <p>
-     * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
-     *
-     * <pre class="groovyTestCase">
-     * assert [3,4] as SortedSet == ([1,2,3,4] as SortedSet).and([3,4,5,6], Comparator.naturalOrder())
-     * </pre>
-     *
-     * @param left  a SortedSet
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a SortedSet as an intersection of a SortedSet and an Iterable
-     * @see #intersect(SortedSet, Iterable, Comparator)
-     * @since 5.0.0
-     */
-    public static <T> SortedSet<T> and(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return intersect(left, right, comparator);
     }
 
     /**
@@ -15189,6 +15226,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Collection<T> rightCollection = asCollection(right); // ensure the iterable can be iterated over more than once
         return (SortedSet<T>) minus(or(left, rightCollection), and(left, rightCollection, comparator), comparator);
     }
+
     //--------------------------------------------------------------------------
     // attic
 
@@ -16620,22 +16658,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated(since = "5.0.0")
-    public static Object[] union(final Object[] left, final Collection<?> right) {
+    public static Object[] union(Object[] left, Collection<?> right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
     @Deprecated(since = "5.0.0")
-    public static Object[] union(final Object[] left, final Iterable<?> right) {
+    public static Object[] union(Object[] left, Iterable<?> right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
     @Deprecated(since = "5.0.0")
-    public static Object[] union(final Object[] left, final Object[] right) {
+    public static Object[] union(Object[] left, Object[] right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
     @Deprecated(since = "5.0.0")
-    public static Object[] union(final Object[] left, final Object right) {
+    public static Object[] union(Object[] left, Object right) {
         return ArrayGroovyMethods.union(left, right);
     }
 
