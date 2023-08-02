@@ -28,7 +28,6 @@ import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
-import groovy.lang.Groovydoc;
 import groovy.lang.IntRange;
 import groovy.lang.ListWithDefault;
 import groovy.lang.MapWithDefault;
@@ -4522,6 +4521,2176 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // find
+
+    /**
+     * Finds the first value matching the closure condition.
+     *
+     * <pre class="groovyTestCase">
+     * def numbers = [1, 2, 3]
+     * def result = numbers.find { it {@code >} 1}
+     * assert result == 2
+     * </pre>
+     *
+     * @param self    an Object with an iterator returning its values
+     * @param closure a closure condition
+     * @return the first Object found or null if none was found
+     * @since 1.0
+     */
+    public static Object find(Object self, Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            Object value = iter.next();
+            if (bcw.call(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [null, 0, 0.0, false, '', [], 42, 43]
+     * assert items.find() == 42
+     * </pre>
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @return the first Object found or null if none was found
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static Object find(Object self) {
+        return find(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds the first value matching the closure condition.  Example:
+     * <pre class="groovyTestCase">def list = [1,2,3]
+     * assert 2 == list.find { it {@code >} 1 }
+     * </pre>
+     *
+     * @param self    a Collection
+     * @param closure a closure condition
+     * @return the first Object found, in the order of the collections iterator, or null if no element matches
+     * @since 1.0
+     */
+    public static <T> T find(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (T value : self) {
+            if (bcw.call(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [null, 0, 0.0, false, '', [], 42, 43]
+     * assert items.find() == 42
+     * </pre>
+     *
+     * @param self    a Collection
+     * @return the first Object found or null if none was found
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static <T> T find(Collection<T> self) {
+        return find(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds the first entry matching the closure condition.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">assert [a:1, b:3].find { it.value == 3 }.key == "b"</pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure condition
+     * @return the first Object found
+     * @since 1.0
+     */
+    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (bcw.callForMap(entry)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    //--------------------------------------------------------------------------
+    // findAll
+
+    /**
+     * Finds all entries matching the closure condition. If the
+     * closure takes one parameter then it will be passed the Map.Entry.
+     * Otherwise if the closure should take two parameters, which will be
+     * the key and the value.
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def result = [a:1, b:2, c:4, d:5].findAll { it.value % 2 == 0 }
+     * assert result.every { it instanceof Map.Entry }
+     * assert result*.key == ["b", "c"]
+     * assert result*.value == [2, 4]
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure condition applying on the entries
+     * @return a new subMap
+     * @since 1.0
+     */
+    public static <K, V> Map<K, V> findAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
+        Map<K, V> answer = createSimilarMap(self);
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (bcw.callForMap(entry)) {
+                answer.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Finds all values matching the closure condition.
+     * <pre class="groovyTestCase">assert ([2,4] as Set) == ([1,2,3,4] as Set).findAll { it % 2 == 0 }</pre>
+     *
+     * @param self    a Set
+     * @param closure a closure condition
+     * @return a Set of matching values
+     * @since 2.4.0
+     */
+    public static <T> Set<T> findAll(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return (Set<T>) findAll((Collection<T>) self, closure);
+    }
+
+    /**
+     * Finds all values matching the closure condition.
+     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
+     *
+     * @param self    a List
+     * @param closure a closure condition
+     * @return a List of matching values
+     * @since 2.4.0
+     */
+    public static <T> List<T> findAll(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return (List<T>) findAll((Collection<T>) self, closure);
+    }
+
+    /**
+     * Finds all values matching the closure condition.
+     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
+     *
+     * @param self    a Collection
+     * @param closure a closure condition
+     * @return a Collection of matching values
+     * @since 1.5.6
+     */
+    public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return findMany(createSimilarCollection(self), self.iterator(), closure);
+    }
+
+    /**
+     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]] as Set
+     * </pre>
+     *
+     * @param self a Set
+     * @return a Set of the truthy values
+     * @since 2.4.0
+     * @see Closure#IDENTITY
+     */
+    public static <T> Set<T> findAll(Set<T> self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a List
+     * @return a List of the truthy values
+     * @since 2.4.0
+     * @see Closure#IDENTITY
+     */
+    public static <T> List<T> findAll(List<T> self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a Collection
+     * @return a Collection of the truthy values
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static <T> Collection<T> findAll(Collection<T> self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Finds all items matching the closure condition.
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @param closure a closure condition
+     * @return a List of the values found
+     * @since 1.6.0
+     */
+    @SuppressWarnings("unchecked")
+    public static List findAll(Object self, Closure closure) {
+        return findMany(new ArrayList(), InvokerHelper.asIterator(self), closure);
+    }
+
+    /**
+     * Finds all items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self an Object with an Iterator returning its values
+     * @return a List of the truthy values
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static List findAll(Object self) {
+        return findAll(self, Closure.IDENTITY);
+    }
+
+    static <T, C extends Collection<T>> C findMany(C collector, Iterator<? extends T> iter, Closure<?> closure) {
+        BooleanClosureWrapper test = new BooleanClosureWrapper(closure);
+        while (iter.hasNext()) {
+            T value = iter.next();
+            if (test.call(value)) {
+                collector.add(value);
+            }
+        }
+        return collector;
+    }
+
+    //--------------------------------------------------------------------------
+    // findIndexOf
+
+    /**
+     * Iterates over the elements of an aggregate of items and returns
+     * the index of the first item that matches the condition specified in the closure.
+     *
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 1.0
+     */
+    public static int findIndexOf(Object self, Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items, starting from a
+     * specified startIndex, and returns the index of the first item that matches the
+     * condition specified in the closure.
+     * Example (aggregate is {@code ChronoUnit} enum values):
+     * <pre class="groovyTestCase">
+     * import java.time.temporal.ChronoUnit
+     * def nameStartsWithM = { it.name().startsWith('M') }
+     * def first  = ChronoUnit.findIndexOf(nameStartsWithM)
+     * def second = ChronoUnit.findIndexOf(first + 1, nameStartsWithM)
+     * def third  = ChronoUnit.findIndexOf(second + 1, nameStartsWithM)
+     * Set units  = [first, second, third]
+     * assert !units.contains(-1) // should have found 3 of MICROS, MILLIS, MINUTES, MONTHS, ...
+     * assert units.size() == 3 // just check size so as not to rely on order
+     * </pre>
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 1.5.0
+     */
+    public static int findIndexOf(Object self, int startIndex, Closure condition) {
+        return findIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting from a
+     * specified startIndex, and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        int result = -1;
+        int i = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (i++ < startIndex) {
+                continue;
+            }
+            if (bcw.call(value)) {
+                result = i - 1;
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an Iterable and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterable, starting from a
+     * specified startIndex, and returns the index of the first item that satisfies the
+     * condition specified by the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexOf(self.iterator(), startIndex, condition);
+    }
+
+    //--------------------------------------------------------------------------
+    // findIndexValues
+
+    /**
+     * Iterates over the elements of an aggregate of items and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 1.5.2
+     */
+    public static List<Number> findIndexValues(Object self, Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 1.5.2
+     */
+    public static List<Number> findIndexValues(Object self, Number startIndex, Closure condition) {
+        return findIndexValues(InvokerHelper.asIterator(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterator<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        List<Number> result = new ArrayList<>();
+        long count = 0;
+        long startCount = startIndex.longValue();
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (count++ < startCount) {
+                continue;
+            }
+            if (bcw.call(value)) {
+                result.add(count - 1);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an Iterable and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterable, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return a list of numbers corresponding to the index values of all matched objects
+     * @since 2.5.0
+     */
+    public static <T> List<Number> findIndexValues(Iterable<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findIndexValues(self.iterator(), startIndex, condition);
+    }
+
+    //--------------------------------------------------------------------------
+    // findLastIndexOf
+
+    /**
+     * Iterates over the elements of an aggregate of items and returns
+     * the index of the last item that matches the condition specified in the closure.
+     * Example (aggregate is {@code ChronoUnit} enum values):
+     * <pre class="groovyTestCase">
+     * import java.time.temporal.ChronoUnit
+     * def nameStartsWithM = { it.name().startsWith('M') }
+     * def first = ChronoUnit.findIndexOf(nameStartsWithM)
+     * def last  = ChronoUnit.findLastIndexOf(nameStartsWithM)
+     * // should have found 2 unique index values for MICROS, MILLIS, MINUTES, MONTHS, ...
+     * assert first != -1 &amp;&amp; last != -1 &amp;&amp; first != last
+     * </pre>
+     *
+     * @param self      the iteration object over which to iterate
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 1.5.2
+     */
+    public static int findLastIndexOf(Object self, Closure condition) {
+        return findLastIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an aggregate of items, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 1.5.2
+     */
+    public static int findLastIndexOf(Object self, int startIndex, Closure condition) {
+        return findLastIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self      an Iterator
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self, 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterator, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        int result = -1;
+        int i = 0;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        while (self.hasNext()) {
+            Object value = self.next();
+            if (i++ < startIndex) {
+                continue;
+            }
+            if (bcw.call(value)) {
+                result = i - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an Iterable and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self      an Iterable
+     * @param condition the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self.iterator(), 0, condition);
+    }
+
+    /**
+     * Iterates over the elements of an Iterable, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       an Iterable
+     * @param startIndex start matching from this index
+     * @param condition  the matching condition
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     * @since 2.5.0
+     */
+    public static <T> int findLastIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return findLastIndexOf(self.iterator(), startIndex, condition);
+    }
+
+    //--------------------------------------------------------------------------
+    // findResult
+
+    /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult { if(it {@code >} 1) return it } == 2
+     * assert numbers.findResult { if(it {@code >} 4) return it } == null
+     * </pre>
+     *
+     * @param self      an Object with an iterator returning its values
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result of the closure
+     * @since 1.7.5
+     */
+    public static Object findResult(Object self, Closure condition) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
+            Object value = iter.next();
+            Object result = condition.call(value);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null value, otherwise returns null.
+     * <p>
+     * <pre class="groovyTestCase">
+     * class Foo {
+     *     List items
+     *     Iterator iterator() {
+     *         items.iterator()
+     *     }
+     * }
+     * assert new Foo(items: [null, 2, 4]).findResult() == 2
+     * assert new Foo(items: [null, null]).findResult() == null
+     * </pre>
+     *
+     * @param self      an Object with an iterator returning its values
+     * @return the first non-null result of the closure
+     * @since 4.0.9
+     */
+    public static Object findResult(Object self) {
+        return findResult(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] numbers = [1, 2, 3]
+     * assert numbers.findResult(5) { if(it {@code >} 1) return it } == 2
+     * assert numbers.findResult(5) { if(it {@code >} 4) return it } == 5
+     * </pre>
+     *
+     * @param self          an Object with an iterator returning its values
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result of the closure, otherwise the default value
+     * @since 1.7.5
+     */
+    public static Object findResult(Object self, Object defaultResult, Closure condition) {
+        Object result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result, otherwise returns the defaultResult.
+     * <p>
+     * <pre class="groovyTestCase">
+     * class Foo {
+     *     List items
+     *     Iterator iterator() {
+     *         items.iterator()
+     *     }
+     * }
+     * assert new Foo(items: [null, 2, 4]).findResult(5) == 2
+     * assert new Foo(items: [null, null]).findResult(5) == 5
+     * </pre>
+     *
+     * @param self          an Object with an iterator returning its values
+     * @param defaultResult an Object that should be returned if all elements are null
+     * @return the first non-null element, otherwise the default value
+     * @since 4.0.9
+     */
+    public static Object findResult(Object self, Object defaultResult) {
+        Object result = findResult(self, Closure.IDENTITY);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     * <p>
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def iter = [1,2,3].iterator()
+     * assert "Found 2" == iter.findResult("default") { it {@code >} 1 ? "Found $it" : null }
+     * assert "default" == iter.findResult("default") { it {@code >} 3 ? "Found $it" : null }
+     * </pre>
+     *
+     * @param self          an Iterator
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 2.5.0
+     */
+    public static <S, T, U extends T, V extends T> T findResult(Iterator<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
+        T result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterator stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     * <p>
+     * Examples:
+     * <pre class="groovyTestCase">
+     * assert [null, 1, 2].iterator().findResult('default') == 1
+     * assert [null, null].findResult('default') == 'default'
+     * </pre>
+     *
+     * @param self          an Iterator
+     * @param defaultResult an Object that should be returned if all elements are null
+     * @return the first non-null result from the iterator, or the defaultValue
+     * @since 4.0.9
+     */
+    public static <T, U extends T, V extends T> T findResult(Iterator<U> self, V defaultResult) {
+        T result = (T) findResult(self, Closure.IDENTITY);
+        return result == null ? defaultResult : result;
+    }
+
+    /**
+     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Iterator
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 2.5.0
+     */
+    public static <T, U> T findResult(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+        while (self.hasNext()) {
+            U next = self.next();
+            T result = condition.call(next);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Iterates through the Iterator stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Iterator
+     * @return the first non-null result from the iterator, or null
+     * @since 4.0.9
+     */
+    public static <T> T findResult(Iterator<T> self) {
+        return (T) findResult(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     * <p>
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def list = [1,2,3]
+     * assert "Found 2" == list.findResult("default") { it {@code >} 1 ? "Found $it" : null }
+     * assert "default" == list.findResult("default") { it {@code >} 3 ? "Found $it" : null }
+     * </pre>
+     *
+     * @param self          an Iterable
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or the defaultValue
+     * @since 2.5.0
+     */
+    public static <S, T, U extends T, V extends T> T findResult(Iterable<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
+        T result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all are null, the defaultResult is returned.
+     * <p>
+     * Examples:
+     * <pre class="groovyTestCase">
+     * assert [null, 1, 2].findResult('default') == 1
+     * assert [null, null].findResult('default') == 'default'
+     * </pre>
+     *
+     * @param self          an Iterable
+     * @param defaultResult an Object that should be returned if all elements in the iterable are null
+     * @return the first non-null element from the iterable, or the defaultValue
+     * @since 4.0.9
+     */
+    public static <T, U extends T, V extends T> T findResult(Iterable<U> self, V defaultResult) {
+        T result = (T) findResult(self, Closure.IDENTITY);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Iterable
+     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
+     * @return the first non-null result from calling the closure, or null
+     * @since 2.5.0
+     */
+    public static <T, U> T findResult(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
+        return findResult(self.iterator(), condition);
+    }
+
+    /**
+     * Iterates through the Iterable stopping once the first non-null
+     * result is found and returning that result. If all results are null, null is returned.
+     *
+     * @param self      an Iterable
+     * @return the first non-null element from the iterable, or null
+     * @since 4.0.9
+     */
+    public static <T> T findResult(Iterable<T> self) {
+        return (T) findResult(self.iterator(), Closure.IDENTITY);
+    }
+
+    /**
+     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise null is returned.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">
+     * assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     * assert null == [a:1, b:3].findResult { if (it.value == 9) return "Found ${it.key}:${it.value}" }
+     * assert "Found a:1" == [a:1, b:3].findResult { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
+     * </pre>
+     *
+     * @param self      a Map
+     * @param condition a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result collected by calling the closure, or null if no such result was found
+     * @since 1.7.5
+     */
+    public static <T, K, V> T findResult(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> condition) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            T result = callClosureForMapEntry(condition, entry);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise the defaultResult is returned.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">
+     * assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
+     * assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
+     * assert "Found a:1" == [a:1, b:3].findResult("default") { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
+     * </pre>
+     *
+     * @param self          a Map
+     * @param defaultResult an Object that should be returned if all closure results are null
+     * @param condition     a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
+     * @return the first non-null result collected by calling the closure, or the defaultResult if no such result was found
+     * @since 1.7.5
+     */
+    public static <T, U extends T, V extends T, A, B> T findResult(Map<A, B> self, U defaultResult, @ClosureParams(MapEntryOrKeyValue.class) Closure<V> condition) {
+        T result = findResult(self, condition);
+        if (result == null) return defaultResult;
+        return result;
+    }
+
+    //--------------------------------------------------------------------------
+    // findResults
+
+    /**
+     * Iterates through the Iterable transforming items using the supplied closure
+     * and collecting any non-null results.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = [1,2,3]
+     * def result = list.findResults { it {@code >} 1 ? "Found $it" : null }
+     * assert result == ["Found 2", "Found 3"]
+     * </pre>
+     *
+     * @param self               an Iterable
+     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the list of non-null transformed values
+     * @since 2.2.0
+     */
+    public static <T, U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
+        return findResults(self.iterator(), filteringTransform);
+    }
+
+    /**
+     * Iterates through the Iterable collecting any non-null results.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert [1, null, 2, null, 3].findResults() == [1, 2, 3]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return the list of non-null values
+     * @since 4.0.9
+     */
+    public static <T> Collection<T> findResults(Iterable<T> self) {
+        return findResults(self.iterator(), Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through the Iterator transforming items using the supplied closure
+     * and collecting any non-null results.
+     *
+     * @param self               an Iterator
+     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the list of non-null transformed values
+     * @since 2.5.0
+     */
+    public static <T, U> Collection<T> findResults(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
+        List<T> result = new ArrayList<>();
+        while (self.hasNext()) {
+            U value = self.next();
+            T transformed = filteringTransform.call(value);
+            if (transformed != null) {
+                result.add(transformed);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the Iterator collecting any non-null results.
+     *
+     * @param self an Iterator
+     * @return the list of non-null values
+     * @since 4.0.9
+     */
+    public static <T> Collection<T> findResults(Iterator<T> self) {
+        return findResults(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates through the map transforming items using the supplied closure
+     * and collecting any non-null results.
+     * If the closure takes two parameters, the entry key and value are passed.
+     * If the closure takes one parameter, the Map.Entry object is passed.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2, hi:2, cat:3, dog:2]
+     * def result = map.findResults { k, v {@code ->} k.size() == v ? "Found $k:$v" : null }
+     * assert result == ["Found a:1", "Found hi:2", "Found cat:3"]
+     * </pre>
+     *
+     * @param self               a Map
+     * @param filteringTransform a 1 or 2 arg Closure that should return either a non-null transformed value or null for items which should be discarded
+     * @return the list of non-null transformed values
+     * @since 1.8.1
+     */
+    public static <T, K, V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
+        List<T> result = new ArrayList<>();
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            T transformed = callClosureForMapEntry(filteringTransform, entry);
+            if (transformed != null) {
+                result.add(transformed);
+            }
+        }
+        return result;
+    }
+
+    //--------------------------------------------------------------------------
+    // first
+
+    /**
+     * Returns the first item from the List.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.first() == 3
+     * // check original is unaltered
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self a List
+     * @return the first item from the List
+     * @throws NoSuchElementException if you try to access first() for an empty List
+     * @since 1.5.5
+     */
+    public static <T> T first(List<T> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access first() element from an empty List");
+        }
+        return self.get(0);
+    }
+
+    /**
+     * Returns the first item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.first() == 3
+     * // check original is unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The first element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
+     *
+     * @param self an Iterable
+     * @return the first item from the Iterable
+     * @throws NoSuchElementException if you try to access first() for an empty Iterable
+     * @since 1.8.7
+     */
+    public static <T> T first(Iterable<T> self) {
+        Iterator<T> iterator = self.iterator();
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException("Cannot access first() element from an empty Iterable");
+        }
+        return iterator.next();
+    }
+
+    //--------------------------------------------------------------------------
+    // flatten
+
+    /**
+     * Flatten a Collection. This Collection and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     *
+     * @param self a Collection to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection<?> flatten(Collection<?> self) {
+        return flatten(self, createSimilarCollection(self));
+    }
+
+    /**
+     * Flatten an Iterable. This Iterable and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     *
+     * @param self an Iterable to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection<?> flatten(Iterable<?> self) {
+        return flatten(self, createSimilarCollection(self));
+    }
+
+    /**
+     * Flatten a List. This List and any nested arrays or
+     * collections have their contents (recursively) added to the new List.
+     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     *
+     * @param self a List to flatten
+     * @return a flattened List
+     * @since 2.4.0
+     */
+    public static List<?> flatten(List<?> self) {
+        return (List<?>) flatten((Collection<?>) self);
+    }
+
+    /**
+     * Flatten a Set. This Set and any nested arrays or
+     * collections have their contents (recursively) added to the new Set.
+     * <pre class="groovyTestCase">assert [1,2,3,4,5] as Set == ([1,[2,3],[[4]],[],5] as Set).flatten()</pre>
+     *
+     * @param self a Set to flatten
+     * @return a flattened Set
+     * @since 2.4.0
+     */
+    public static Set<?> flatten(Set<?> self) {
+        return (Set<?>) flatten((Collection<?>) self);
+    }
+
+    /**
+     * Flatten a SortedSet. This SortedSet and any nested arrays or
+     * collections have their contents (recursively) added to the new SortedSet.
+     * <pre class="groovyTestCase">
+     * Set nested = [[0,1],[2],3,[4],5]
+     * SortedSet sorted = new TreeSet({ a, b {@code ->} (a instanceof List ? a[0] : a) {@code <=>} (b instanceof List ? b[0] : b) } as Comparator)
+     * sorted.addAll(nested)
+     * assert [0,1,2,3,4,5] as SortedSet == sorted.flatten()
+     * </pre>
+     *
+     * @param self a SortedSet to flatten
+     * @return a flattened SortedSet
+     * @since 2.4.0
+     */
+    public static SortedSet<?> flatten(SortedSet<?> self) {
+        return (SortedSet<?>) flatten((Collection<?>) self);
+    }
+
+    private static Collection flatten(Iterable elements, Collection addTo) {
+        for (Object element : elements) {
+            if (element instanceof Collection) {
+                flatten((Collection) element, addTo);
+            } else if (element != null && element.getClass().isArray()) {
+                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
+            } else {
+                // found a leaf
+                addTo.add(element);
+            }
+        }
+        return addTo;
+    }
+
+    /**
+     * Flatten an Iterable. This Iterable and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     * For any non-Array, non-Collection object which represents some sort
+     * of collective type, the supplied closure should yield the contained items;
+     * otherwise, the closure should just return any element which corresponds to a leaf.
+     *
+     * @param self an Iterable
+     * @param flattenUsing a closure to determine how to flatten non-Array, non-Collection elements
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static <T> Collection<T> flatten(Iterable<T> self, Closure<? extends T> flattenUsing) {
+        return flatten(self, createSimilarCollection(self), flattenUsing);
+    }
+
+    private static <T> Collection<T> flatten(Iterable elements, Collection<T> addTo, Closure<? extends T> flattenUsing) {
+        for (Object element : elements) {
+            if (element instanceof Collection) {
+                flatten((Collection) element, addTo, flattenUsing);
+            } else if (element != null && element.getClass().isArray()) {
+                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
+            } else {
+                T flattened = flattenUsing.call(new Object[]{element});
+                boolean returnedSelf = flattened == element;
+                if (!returnedSelf && flattened instanceof Collection) {
+                    List<?> list = toList((Iterable<?>) flattened);
+                    if (list.size() == 1 && list.get(0) == element) {
+                        returnedSelf = true;
+                    }
+                }
+                if (flattened instanceof Collection && !returnedSelf) {
+                    flatten((Collection) flattened, addTo, flattenUsing);
+                } else {
+                    addTo.add(flattened);
+                }
+            }
+        }
+        return addTo;
+    }
+
+    //--------------------------------------------------------------------------
+    // get
+
+    /**
+     * Looks up an item in a Map for the given key and returns the corresponding value.
+     * If there is no entry for the given key return instead the default value and
+     * also add the key and default value to the map.
+     * <pre class="groovyTestCase">
+     * def map=[:]
+     * map.get("a", []) &lt;&lt; 5
+     * assert map == [a:[5]]
+     * </pre>
+     * For a method which doesn't mutate the map, consider instead using {@link Map#getOrDefault(Object, Object)}
+     * or consider using Groovy's {@link MapWithDefault} often instantiated using {@link #withDefault(Map, Closure)}
+     * or with more options {@link #withDefault(Map, boolean, boolean, Closure)}.
+     *
+     * @param map          a Map
+     * @param key          the key to look up the value
+     * @param defaultValue the value to return and add to the map for this key if
+     *                     there is no entry for the given key
+     * @return the value of the given key or the default value, added to the map if the
+     *         key did not exist
+     * @since 1.0
+     */
+    public static <K, V> V get(Map<K, V> map, K key, V defaultValue) {
+        if (!map.containsKey(key)) {
+            map.put(key, defaultValue);
+        }
+        return map.get(key);
+    }
+
+    //--------------------------------------------------------------------------
+    // getAt
+
+    /**
+     * Allows the subscript operator to be used to lookup dynamic property values.
+     * <code>bean[somePropertyNameExpression]</code>. The normal property notation
+     * of groovy is neater and more concise but only works with compile-time known
+     * property names.
+     *
+     * @param self     the object to act upon
+     * @param property the property name of interest
+     * @return the property value
+     * @since 1.0
+     */
+    public static Object getAt(Object self, String property) {
+        return InvokerHelper.getProperty(self, property);
+    }
+
+    /**
+     * Support the range subscript operator for a List.
+     * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
+     * assert list[1..2] == ["a", 4.5]</pre>
+     *
+     * @param self  a List
+     * @param range a Range indicating the items to get
+     * @return a new list instance based on range borders
+     *
+     * @since 1.0
+     */
+    public static <T> List<T> getAt(List<T> self, Range range) {
+        RangeInfo info = subListBorders(self.size(), range);
+
+        List<T> subList = self.subList(info.from, info.to);
+        if (info.reverse) {
+            subList = reverse(subList);
+        }
+
+        // trying to guess the concrete list type and create a new instance from it
+        List<T> answer = createSimilarList(self, subList.size());
+        answer.addAll(subList);
+
+        return answer;
+    }
+
+    /**
+     * Select a List of items from an eager or lazy List using a Collection to
+     * identify the indices to be selected.
+     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * assert list[1,0,2] == [42, 42, 42]</pre>
+     *
+     * @param self    a ListWithDefault
+     * @param indices a Collection of indices
+     *
+     * @return a new eager or lazy list of the values at the given indices
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> getAt(ListWithDefault<T> self, Collection indices) {
+        List<T> answer = ListWithDefault.newInstance(new ArrayList<>(indices.size()), self.isLazyDefaultValues(), self.getInitClosure());
+        for (Object value : indices) {
+            if (value instanceof Collection) {
+                answer.addAll((List<T>) InvokerHelper.invokeMethod(self, "getAt", value));
+            } else {
+                int idx = normaliseIndex(DefaultTypeTransformation.intUnbox(value), self.size());
+                answer.add(self.getAt(idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Support the range subscript operator for an eager or lazy List.
+     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * assert list[1..2] == [null, 42]</pre>
+     *
+     * @param self  a ListWithDefault
+     * @param range a Range indicating the items to get
+     *
+     * @return a new eager or lazy list instance based on range borders
+     */
+    public static <T> List<T> getAt(ListWithDefault<T> self, Range range) {
+        RangeInfo info = subListBorders(self.size(), range);
+
+        // if a positive index is accessed not initialized so far
+        // initialization up to that index takes place
+        if (self.size() < info.to) {
+            self.get(info.to - 1);
+        }
+
+        List<T> answer = self.subList(info.from, info.to);
+        if (info.reverse) {
+            answer =  ListWithDefault.newInstance(reverse(answer), self.isLazyDefaultValues(), self.getInitClosure());
+        } else {
+            // instead of using the SubList backed by the parent list, a new ArrayList instance is used
+            answer =  ListWithDefault.newInstance(new ArrayList<>(answer), self.isLazyDefaultValues(), self.getInitClosure());
+        }
+
+        return answer;
+    }
+
+    /**
+     * Support the range subscript operator for an eager or lazy List.
+     * <pre class="groovyTestCase">
+     * def list = [true, 1, 3.4].withDefault{ 42 }
+     * {@code assert list[0..<0] == []}
+     * </pre>
+     *
+     * @param self  a ListWithDefault
+     * @param range a Range indicating the items to get
+     *
+     * @return a new list instance based on range borders
+     *
+     */
+    public static <T> List<T> getAt(ListWithDefault<T> self, EmptyRange range) {
+        return ListWithDefault.newInstance(new ArrayList<>(), self.isLazyDefaultValues(), self.getInitClosure());
+    }
+
+    /**
+     * Support the range subscript operator for a List.
+     * <pre class="groovyTestCase">
+     * def list = [true, 1, 3.4]
+     * {@code assert list[0..<0] == []}
+     * </pre>
+     *
+     * @param self  a List
+     * @param range a Range indicating the items to get
+     * @return a new list instance based on range borders
+     *
+     * @since 1.0
+     */
+    public static <T> List<T> getAt(List<T> self, EmptyRange range) {
+        return createSimilarList(self, 0);
+    }
+
+    /**
+     * Select a List of items from a List using a Collection to
+     * identify the indices to be selected.
+     * <pre class="groovyTestCase">def list = [true, 1, 3.4, false]
+     * assert list[1,0,2] == [1, true, 3.4]</pre>
+     *
+     * @param self    a List
+     * @param indices a Collection of indices
+     * @return a new list of the values at the given indices
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> getAt(List<T> self, Collection indices) {
+        List<T> answer = new ArrayList<>(indices.size());
+        for (Object value : indices) {
+            if (value instanceof Collection) {
+                answer.addAll(getAt(self, (Collection) value));
+            } else {
+                int idx = DefaultTypeTransformation.intUnbox(value);
+                answer.add(getAt(self, idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Support the subscript operator for a List.
+     * <pre class="groovyTestCase">def list = [2, "a", 5.3]
+     * assert list[1] == "a"</pre>
+     *
+     * @param self a List
+     * @param idx  an index
+     * @return the value at the given index
+     * @since 1.0
+     */
+    public static <T> T getAt(List<T> self, int idx) {
+        int size = self.size();
+        int i = normaliseIndex(idx, size);
+        if (i < size) {
+            return self.get(i);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Support subscript operator for list access.
+     */
+    public static <T> T getAt(List<T> self, Number idx) {
+        return getAt(self, idx.intValue());
+    }
+
+    /**
+     * Support the subscript operator for an Iterator. The iterator
+     * will be partially exhausted up until the idx entry after returning
+     * if a +ve or 0 idx is used, or fully exhausted if a -ve idx is used
+     * or no corresponding entry was found. Typical usage:
+     * <pre class="groovyTestCase">
+     * def iter = [2, "a", 5.3].iterator()
+     * assert iter[1] == "a"
+     * </pre>
+     * A more elaborate example:
+     * <pre class="groovyTestCase">
+     * def items = [2, "a", 5.3]
+     * def iter = items.iterator()
+     * assert iter[-1] == 5.3
+     * // iter exhausted, so reset
+     * iter = items.iterator()
+     * assert iter[1] == "a"
+     * // iter partially exhausted so now idx starts after "a"
+     * assert iter[0] == 5.3
+     * </pre>
+     *
+     * @param self an Iterator
+     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size())
+     * @return the value at the given index (after normalisation) or null if no corresponding value was found
+     * @since 1.7.2
+     */
+    public static <T> T getAt(Iterator<T> self, int idx) {
+        if (idx < 0) {
+            // calculate whole list in this case
+            // recommend avoiding -ve's as this is not as efficient
+            List<T> list = toList(self);
+            int adjustedIndex = idx + list.size();
+            if (adjustedIndex < 0 || adjustedIndex >= list.size()) return null;
+            return list.get(adjustedIndex);
+        }
+
+        int count = 0;
+        while (self.hasNext()) {
+            if (count == idx) {
+                return self.next();
+            } else {
+                count++;
+                self.next();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Support the subscript operator for an Iterable. Typical usage:
+     * <pre class="groovyTestCase">
+     * // custom Iterable example:
+     * class MyIterable implements Iterable {
+     *   Iterator iterator() { [1, 2, 3].iterator() }
+     * }
+     * def myIterable = new MyIterable()
+     * assert myIterable[1] == 2
+     *
+     * // Set example:
+     * def set = [1,2,3] as LinkedHashSet
+     * assert set[1] == 2
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size()) but using -ve index values will be inefficient
+     * @return the value at the given index (after normalisation) or null if no corresponding value was found
+     * @since 2.1.0
+     */
+    public static <T> T getAt(Iterable<T> self, int idx) {
+        return getAt(self.iterator(), idx);
+    }
+
+    /**
+     * Support the subscript operator for a Map.
+     * <pre class="groovyTestCase">def map = [1:10]
+     * assert map[1] == 10</pre>
+     *
+     * @param self a Map
+     * @param key  an Object as a key for the map
+     * @return the value corresponding to the given key
+     * @since 1.0
+     */
+    public static <K,V> V getAt(Map<K,V> self, Object key) {
+        return self.get(key);
+    }
+
+    /**
+     * Support the subscript operator for a Bitset
+     *
+     * @param self  a BitSet
+     * @param index index to retrieve
+     * @return value of the bit at the given index
+     * @see java.util.BitSet
+     * @since 1.5.0
+     */
+    public static boolean getAt(BitSet self, int index) {
+        int i = normaliseIndex(index, self.length());
+        return self.get(i);
+    }
+
+    /**
+     * Support retrieving a subset of a BitSet using a Range
+     *
+     * @param self  a BitSet
+     * @param range a Range defining the desired subset
+     * @return a new BitSet that represents the requested subset
+     * @see java.util.BitSet
+     * @see groovy.lang.IntRange
+     * @since 1.5.0
+     */
+    public static BitSet getAt(BitSet self, IntRange range) {
+        RangeInfo info = subListBorders(self.length(), range);
+        BitSet result = new BitSet();
+
+        int numberOfBits = info.to - info.from;
+        int adjuster = 1;
+        int offset = info.from;
+
+        if (info.reverse) {
+            adjuster = -1;
+            offset = info.to - 1;
+        }
+
+        for (int i = 0; i < numberOfBits; i++) {
+            result.set(i, self.get(offset + (adjuster * i)));
+        }
+
+        return result;
+    }
+
+    /**
+     * Support the subscript operator for Collection.
+     * <pre class="groovyTestCase">
+     * assert [String, Long, Integer] == ["a",5L,2]["class"]
+     * </pre>
+     *
+     * @param coll     a Collection
+     * @param property a String
+     * @return a List
+     * @since 1.0
+     */
+    public static List getAt(Collection coll, String property) {
+        List<Object> answer = new ArrayList<>(coll.size());
+        return getAtIterable(coll, property, answer);
+    }
+
+    private static List getAtIterable(Iterable coll, String property, List<Object> answer) {
+        for (Object item : coll) {
+            if (item == null) continue;
+            Object value;
+            try {
+                value = InvokerHelper.getProperty(item, property);
+            } catch (MissingPropertyExceptionNoStack mpe) {
+                String causeString = new MissingPropertyException(mpe.getProperty(), mpe.getType()).toString();
+                throw new MissingPropertyException("Exception evaluating property '" + property +
+                        "' for " + coll.getClass().getName() + ", Reason: " + causeString);
+            }
+            answer.add(value);
+        }
+        return answer;
+    }
+
+    //--------------------------------------------------------------------------
+    // getGroovydoc
+
+    /**
+     * Gets runtime groovydoc.
+     *
+     * @since 3.0.0
+     */
+    public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
+        var groovydocAnnotation = holder.getAnnotation(groovy.lang.Groovydoc.class);
+        return groovydocAnnotation == null ? EMPTY_GROOVYDOC :
+            new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
+    }
+
+    //--------------------------------------------------------------------------
+    // getIndices
+
+    /**
+     * Returns indices of the collection.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * assert 0..2 == [5, 6, 7].indices
+     * </pre>
+     *
+     * @param self a collection
+     * @return an index range
+     * @since 2.4.0
+     */
+    public static IntRange getIndices(Collection self) {
+        return new IntRange(false, 0, self.size());
+    }
+
+    //--------------------------------------------------------------------------
+    // getLocation
+
+    /**
+     * Gets the url of the jar file/source file containing the specified class.
+     *
+     * @param self the class
+     * @return the url of the jar, {@code null} if the specified class is from JDK
+     * @since 2.5.0
+     */
+    public static URL getLocation(Class self) {
+        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
+        return (codeSource != null ? codeSource.getLocation() : null);
+    }
+
+    //--------------------------------------------------------------------------
+    // getMetaClass
+
+    /**
+     * Adds a "metaClass" property to all class objects so you can use the syntax
+     * <code>String.metaClass.myMethod = { println "foo" }</code>
+     *
+     * @param c The java.lang.Class instance
+     * @return An MetaClass instance
+     * @since 1.5.0
+     */
+    public static MetaClass getMetaClass(Class c) {
+        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        MetaClass mc = metaClassRegistry.getMetaClass(c);
+        if (mc instanceof ExpandoMetaClass
+                || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass)
+            return mc;
+        else {
+            return new HandleMetaClass(mc);
+        }
+    }
+
+    /**
+     * Obtains a MetaClass for an object either from the registry or in the case of
+     * a GroovyObject from the object itself.
+     *
+     * @param obj The object in question
+     * @return The MetaClass
+     * @since 1.5.0
+     */
+    public static MetaClass getMetaClass(Object obj) {
+        MetaClass mc = InvokerHelper.getMetaClass(obj);
+        return new HandleMetaClass(mc, obj);
+    }
+
+    /**
+     * Obtains a MetaClass for an object either from the registry or in the case of
+     * a GroovyObject from the object itself.
+     *
+     * @param obj The object in question
+     * @return The MetaClass
+     * @since 1.6.0
+     */
+    public static MetaClass getMetaClass(GroovyObject obj) {
+        // we need this method as trick to guarantee correct method selection
+        return getMetaClass((Object)obj);
+    }
+
+    //--------------------------------------------------------------------------
+    // getMetaProperties
+
+    /**
+     * Retrieves the list of {@link groovy.lang.MetaProperty} objects for 'self' and wraps it
+     * in a list of {@link groovy.lang.PropertyValue} objects that additionally provide
+     * the value for each property of 'self'.
+     *
+     * @param self the receiver object
+     * @return list of {@link groovy.lang.PropertyValue} objects
+     * @see groovy.util.Expando#getMetaPropertyValues()
+     * @since 1.0
+     */
+    public static List<PropertyValue> getMetaPropertyValues(Object self) {
+        MetaClass metaClass = InvokerHelper.getMetaClass(self);
+        List<MetaProperty> mps = metaClass.getProperties();
+        List<PropertyValue> props = new ArrayList<>(mps.size());
+        for (MetaProperty mp : mps) {
+            props.add(new PropertyValue(self, mp));
+        }
+        return props;
+    }
+
+    //--------------------------------------------------------------------------
+    // getProperties
+
+    /**
+     * Convenience method that calls {@link #getMetaPropertyValues(java.lang.Object)}(self)
+     * and provides the data in form of simple key/value pairs, i.e. without
+     * type() information.
+     *
+     * @param self the receiver object
+     * @return meta properties as Map of key/value pairs
+     * @since 1.0
+     */
+    public static Map<String, Object> getProperties(Object self) {
+        List<PropertyValue> metaProps = getMetaPropertyValues(self);
+        Map<String, Object> props = new LinkedHashMap<>(metaProps.size());
+
+        for (PropertyValue mp : metaProps) {
+            try {
+                props.put(mp.getName(), mp.getValue());
+            } catch (Exception e) {
+                java.util.logging.Logger.getLogger(DefaultGroovyMethods.class.getName())
+                    .throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
+            }
+        }
+        return props;
+    }
+
+    //--------------------------------------------------------------------------
+    // getRootLoader
+
+    /**
+     * Iterates through the classloader parents until it finds a loader with a class
+     * named "org.codehaus.groovy.tools.RootLoader". If there is no such class
+     * <code>null</code> will be returned. The name is used for comparison because
+     * a direct comparison using == may fail as the class may be loaded through
+     * different classloaders.
+     *
+     * @param self a ClassLoader
+     * @return the rootLoader for the ClassLoader
+     * @see org.codehaus.groovy.tools.RootLoader
+     * @since 1.5.0
+     */
+    public static ClassLoader getRootLoader(ClassLoader self) {
+        while (true) {
+            if (self == null) return null;
+            if (isRootLoaderClassOrSubClass(self)) return self;
+            self = self.getParent();
+        }
+    }
+
+    private static boolean isRootLoaderClassOrSubClass(ClassLoader self) {
+        Class current = self.getClass();
+        while(!current.getName().equals(Object.class.getName())) {
+            if(current.getName().equals(RootLoader.class.getName())) return true;
+            current = current.getSuperclass();
+        }
+
+        return false;
+    }
+
+    //--------------------------------------------------------------------------
+    // grep
+
+    /**
+     * Iterates over the collection of items which this Object represents and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements. This method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * </pre>
+     *
+     * @param self   the object over which we iterate
+     * @param filter the filter to perform on the object (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a collection of objects which match the filter
+     * @since 1.5.6
+     */
+    @SuppressWarnings("unchecked")
+    public static Collection grep(Object self, Object filter) {
+        Collection answer = createSimilarOrDefaultCollection(self);
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            Object object = iter.next();
+            if (bmi.invoke(filter, object)) {
+                answer.add(object);
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Iterates over the collection of items and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements. method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * </pre>
+     *
+     * @param self   a collection
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a collection of objects which match the filter
+     * @since 2.0
+     */
+    public static <T> Collection<T> grep(Collection<T> self, Object filter) {
+        Collection<T> answer = createSimilarCollection(self);
+        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
+        for (T element : self) {
+            if (bmi.invoke(filter, element)) {
+                answer.add(element);
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Iterates over the collection of items and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements. This method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
+     * assert list.grep( ~/a+/ )  == ['a', 'aa']
+     * assert list.grep( ~/../ )  == ['aa', 'bc']
+     * assert list.grep( Number ) == [ 3, 4.5 ]
+     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
+     * </pre>
+     *
+     * @param self   a List
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a List of objects which match the filter
+     * @since 2.4.0
+     */
+    public static <T> List<T> grep(List<T> self, Object filter) {
+        return (List<T>) grep((Collection<T>) self, filter);
+    }
+
+    /**
+     * Iterates over the collection of items and returns each item that matches
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
+     * method used by switch statements. This method can be used with different
+     * kinds of filters like regular expressions, classes, ranges etc.
+     * Example:
+     * <pre class="groovyTestCase">
+     * def set = ['a', 'b', 'aa', 'bc', 3, 4.5] as Set
+     * assert set.grep( ~/a+/ )  == ['a', 'aa'] as Set
+     * assert set.grep( ~/../ )  == ['aa', 'bc'] as Set
+     * assert set.grep( Number ) == [ 3, 4.5 ] as Set
+     * assert set.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ] as Set
+     * </pre>
+     *
+     * @param self   a Set
+     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return a Set of objects which match the filter
+     * @since 2.4.0
+     */
+    public static <T> Set<T> grep(Set<T> self, Object filter) {
+        return (Set<T>) grep((Collection<T>) self, filter);
+    }
+
+    /**
+     * Iterates over the collection of items which this Object represents and returns each item that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self   the object over which we iterate
+     * @return a collection of objects which match the filter
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static Collection grep(Object self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates over the collection returning each element that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a Collection
+     * @return a collection of elements satisfy Groovy truth
+     * @see Closure#IDENTITY
+     * @since 2.0
+     */
+    public static <T> Collection<T> grep(Collection<T> self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates over the collection returning each element that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a List
+     * @return a List of elements satisfy Groovy truth
+     * @see Closure#IDENTITY
+     * @since 2.4.0
+     */
+    public static <T> List<T> grep(List<T> self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    /**
+     * Iterates over the collection returning each element that matches
+     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
+     * <p>
+     * Example:
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
+     * assert items.grep() == [1, 2, true, 'foo', [4, 5]] as Set
+     * </pre>
+     *
+     * @param self a Set
+     * @return a Set of elements satisfy Groovy truth
+     * @see Closure#IDENTITY
+     * @since 2.4.0
+     */
+    public static <T> Set<T> grep(Set<T> self) {
+        return grep(self, Closure.IDENTITY);
+    }
+
+    //--------------------------------------------------------------------------
+    // groupBy
+
+    /**
+     * Sorts all Iterable members into groups determined by the supplied mapping closure.
+     * The closure should return the key that this item should be grouped by. The returned
+     * LinkedHashMap will have an entry for each distinct key returned from the closure,
+     * with each value being a list of items for that group.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }
+     * </pre>
+     *
+     * @param self    a collection to group
+     * @param closure a closure mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 2.2.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<K> closure) {
+        Map<K, List<T>> answer = new LinkedHashMap<>();
+        for (T element : self) {
+            K value = closure.call(element);
+            groupAnswer(answer, element, value);
+        }
+        return answer;
+    }
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closures. Each closure should return the key that this item
+     * should be grouped by. The returned LinkedHashMap will have an entry for each
+     * distinct 'key path' returned from the closures, with each value being a list
+     * of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it {@code <} 4 })
+     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
+     *
+     * Another example:
+     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
+     * def data = sql.rows("SELECT * FROM a_table").groupBy({ it.column1 }, { it.column2 }, { it.column3 })
+     * if (data.val1.val2.val3) {
+     *     // there exists a record where:
+     *     //   a_table.column1 == val1
+     *     //   a_table.column2 == val2, and
+     *     //   a_table.column3 == val3
+     * } else {
+     *     // there is no such record
+     * }</pre>
+     * If an empty array of closures is supplied the IDENTITY Closure will be used.
+     *
+     * @param self     a collection to group
+     * @param closures an array of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @since 2.2.0
+     * @see Closure#IDENTITY
+     */
+    public static Map groupBy(Iterable self, Object... closures) {
+        final Closure head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
+
+        @SuppressWarnings("unchecked")
+        Map<Object, List> first = groupBy(self, head);
+        if (closures.length < 2)
+            return first;
+
+        final Object[] tail = new Object[closures.length - 1];
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+
+        // inject([:]) { a,e {@code ->} a {@code <<} [(e.key): e.value.groupBy(tail)] }
+        Map<Object, Map> acc = new LinkedHashMap<>();
+        for (Map.Entry<Object, List> item : first.entrySet()) {
+            acc.put(item.getKey(), groupBy(item.getValue(), tail));
+        }
+
+        return acc;
+    }
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closures. Each closure should return the key that this item
+     * should be grouped by. The returned LinkedHashMap will have an entry for each
+     * distinct 'key path' returned from the closures, with each value being a list
+     * of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it {@code <} 4 }])
+     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]
+     * </pre>
+     *
+     * Another example:
+     * <pre>
+     * def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
+     * def data = sql.rows("SELECT * FROM a_table").groupBy([{ it.column1 }, { it.column2 }, { it.column3 }])
+     * if (data.val1.val2.val3) {
+     *     // there exists a record where:
+     *     //   a_table.column1 == val1
+     *     //   a_table.column2 == val2, and
+     *     //   a_table.column3 == val3
+     * } else {
+     *     // there is no such record
+     * }
+     * </pre>
+     * If an empty list of closures is supplied the IDENTITY Closure will be used.
+     *
+     * @param self     a collection to group
+     * @param closures a list of closures, each mapping entries on keys
+     * @return a new Map grouped by keys on each criterion
+     * @since 2.2.0
+     * @see Closure#IDENTITY
+     */
+    public static Map groupBy(Iterable self, List<Closure> closures) {
+        return groupBy(self, closures.toArray());
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the
+     * supplied mapping closure. The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the map members from the original map that
+     * belong to each group. (If instead of a map, you want a list of map entries
+     * use {code}groupEntriesBy{code}.)
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, Hashtable or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
+     * be returned.
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
+     *
+     * @param self    a map to group
+     * @param closure a closure mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 1.0
+     */
+    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
+        final Map<G, List<Map.Entry<K, V>>> initial = groupEntriesBy(self, closure);
+        final Map<G, Map<K, V>> answer = new LinkedHashMap<>();
+        for (Map.Entry<G, List<Map.Entry<K, V>>> outer : initial.entrySet()) {
+            G key = outer.getKey();
+            List<Map.Entry<K, V>> entries = outer.getValue();
+            Map<K, V> target = createSimilarMap(self);
+            putAll(target, entries);
+            answer.put(key, target);
+        }
+        return answer;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the supplied
+     * mapping closures. Each closure will be passed a Map.Entry or key and
+     * value (depending on the number of parameters the closure accepts) and
+     * should return the key that each item should be grouped under. The
+     * resulting map will have an entry for each 'group path' returned by all
+     * closures, with values being the map members from the original map that
+     * belong to each such 'group path'.
+     *
+     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
+     * be returned.
+     *
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
+     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     * If an empty array of closures is supplied the IDENTITY Closure will be used.
+     *
+     * @param self     a map to group
+     * @param closures an array of closures that map entries on keys
+     * @return a new map grouped by keys on each criterion
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static Map<Object, Map> groupBy(Map self, Object... closures) {
+        @SuppressWarnings("unchecked")
+        final Closure<Object> head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
+
+        @SuppressWarnings("unchecked")
+        Map<Object, Map> first = groupBy(self, head);
+        if (closures.length < 2)
+            return first;
+
+        final Object[] tail = new Object[closures.length - 1];
+        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
+
+        Map<Object, Map> acc = new LinkedHashMap<>();
+        for (Map.Entry<Object, Map> item: first.entrySet()) {
+            acc.put(item.getKey(), groupBy(item.getValue(), tail));
+        }
+
+        return acc;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the supplied
+     * mapping closures. Each closure will be passed a Map.Entry or key and
+     * value (depending on the number of parameters the closure accepts) and
+     * should return the key that each item should be grouped under. The
+     * resulting map will have an entry for each 'group path' returned by all
+     * closures, with values being the map members from the original map that
+     * belong to each such 'group path'.
+     *
+     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
+     * the returned Map will preserve that type, otherwise a LinkedHashMap will
+     * be returned.
+     *
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
+     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
+     * If an empty list of closures is supplied the IDENTITY Closure will be used.
+     *
+     * @param self     a map to group
+     * @param closures a list of closures that map entries on keys
+     * @return a new map grouped by keys on each criterion
+     * @since 1.8.1
+     * @see Closure#IDENTITY
+     */
+    public static Map<Object, Map> groupBy(Map self, List<Closure> closures) {
+        return groupBy(self, closures.toArray());
+    }
+
+    /**
+     * Groups the current element according to the value
+     *
+     * @param answer  the map containing the results
+     * @param element the element to be placed
+     * @param value   the value according to which the element will be placed
+     * @since 1.5.0
+     */
+    protected static <K, T> void groupAnswer(final Map<K, List<T>> answer, T element, K value) {
+        List<T> groupedElements = answer.computeIfAbsent(value, k -> new ArrayList<>());
+
+        groupedElements.add(element);
+    }
+
+    //--------------------------------------------------------------------------
+    // groupEntriesBy
+
+    /**
+     * Groups all map entries into groups determined by the
+     * supplied mapping closure. The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the list of map entries that belong to each
+     * group. (If instead of a list of map entries, you want an actual map
+     * use {code}groupBy{code}.)
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
+     * assert result[0]*.key == ["b", "d", "f"]
+     * assert result[1]*.value == [1, 3, 5]</pre>
+     *
+     * @param self    a map to group
+     * @param closure a 1 or 2 arg Closure mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 1.5.2
+     */
+    public static <G, K, V> Map<G, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
+        final Map<G, List<Map.Entry<K, V>>> answer = new LinkedHashMap<>();
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            G value = callClosureForMapEntry(closure, entry);
+            groupAnswer(answer, entry, value);
+        }
+        return answer;
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -4698,21 +6867,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows the subscript operator to be used to lookup dynamic property values.
-     * <code>bean[somePropertyNameExpression]</code>. The normal property notation
-     * of groovy is neater and more concise but only works with compile-time known
-     * property names.
-     *
-     * @param self     the object to act upon
-     * @param property the property name of interest
-     * @return the property value
-     * @since 1.0
-     */
-    public static Object getAt(Object self, String property) {
-        return InvokerHelper.getProperty(self, property);
-    }
-
-    /**
      * Allows the subscript operator to be used to set dynamically named property values.
      * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation
      * of groovy is neater and more concise but only works with property names which
@@ -4725,50 +6879,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void putAt(Object self, String property, Object newValue) {
         InvokerHelper.setProperty(self, property, newValue);
-    }
-
-    /**
-     * Retrieves the list of {@link groovy.lang.MetaProperty} objects for 'self' and wraps it
-     * in a list of {@link groovy.lang.PropertyValue} objects that additionally provide
-     * the value for each property of 'self'.
-     *
-     * @param self the receiver object
-     * @return list of {@link groovy.lang.PropertyValue} objects
-     * @see groovy.util.Expando#getMetaPropertyValues()
-     * @since 1.0
-     */
-    public static List<PropertyValue> getMetaPropertyValues(Object self) {
-        MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        List<MetaProperty> mps = metaClass.getProperties();
-        List<PropertyValue> props = new ArrayList<>(mps.size());
-        for (MetaProperty mp : mps) {
-            props.add(new PropertyValue(self, mp));
-        }
-        return props;
-    }
-
-    /**
-     * Convenience method that calls {@link #getMetaPropertyValues(java.lang.Object)}(self)
-     * and provides the data in form of simple key/value pairs, i.e. without
-     * type() information.
-     *
-     * @param self the receiver object
-     * @return meta properties as Map of key/value pairs
-     * @since 1.0
-     */
-    public static Map<String, Object> getProperties(Object self) {
-        List<PropertyValue> metaProps = getMetaPropertyValues(self);
-        Map<String, Object> props = new LinkedHashMap<>(metaProps.size());
-
-        for (PropertyValue mp : metaProps) {
-            try {
-                props.put(mp.getName(), mp.getValue());
-            } catch (Exception e) {
-                java.util.logging.Logger.getLogger(DefaultGroovyMethods.class.getName())
-                    .throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
-            }
-        }
-        return props;
     }
 
     /**
@@ -4853,19 +6963,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Gets the url of the jar file/source file containing the specified class
-     *
-     * @param self the class
-     * @return the url of the jar, {@code null} if the specified class is from JDK
-     * @since 2.5.0
-     */
-    public static URL getLocation(Class self) {
-        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
-
-        return null == codeSource ? null : codeSource.getLocation();
-    }
-
-    /**
      * Scoped use method with list of categories.
      *
      * @param self              any Object
@@ -4911,14 +7008,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             list.add(categoryClass);
         }
         return GroovyCategorySupport.use(list, closure);
-    }
-
-    private static Object getClosureOwner(Closure<?> cls) {
-        Object owner =  cls.getOwner();
-        while (owner instanceof GeneratedClosure) {
-            owner = ((Closure<?>) owner).getOwner();
-        }
-        return owner;
     }
 
     /**
@@ -5319,6 +7408,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new RuntimeException("sprintf(String," + arg + ")");
         }
         return sprintf(self, format, ans);
+    }
+
+    private static Object getClosureOwner(Closure<?> cls) {
+        Object owner =  cls.getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure<?>) owner).getOwner();
+        }
+        return owner;
     }
 
     //-------------------------------------------------------------------------
@@ -6422,190 +8519,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the collection of items which this Object represents and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements. This method can be used with different
-     * kinds of filters like regular expressions, classes, ranges etc.
-     * Example:
-     * <pre class="groovyTestCase">
-     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
-     * assert list.grep( ~/a+/ )  == ['a', 'aa']
-     * assert list.grep( ~/../ )  == ['aa', 'bc']
-     * assert list.grep( Number ) == [ 3, 4.5 ]
-     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
-     * </pre>
-     *
-     * @param self   the object over which we iterate
-     * @param filter the filter to perform on the object (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @return a collection of objects which match the filter
-     * @since 1.5.6
-     */
-    @SuppressWarnings("unchecked")
-    public static Collection grep(Object self, Object filter) {
-        Collection answer = createSimilarOrDefaultCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            Object object = iter.next();
-            if (bmi.invoke(filter, object)) {
-                answer.add(object);
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements. method can be used with different
-     * kinds of filters like regular expressions, classes, ranges etc.
-     * Example:
-     * <pre class="groovyTestCase">
-     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
-     * assert list.grep( ~/a+/ )  == ['a', 'aa']
-     * assert list.grep( ~/../ )  == ['aa', 'bc']
-     * assert list.grep( Number ) == [ 3, 4.5 ]
-     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
-     * </pre>
-     *
-     * @param self   a collection
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @return a collection of objects which match the filter
-     * @since 2.0
-     */
-    public static <T> Collection<T> grep(Collection<T> self, Object filter) {
-        Collection<T> answer = createSimilarCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
-        for (T element : self) {
-            if (bmi.invoke(filter, element)) {
-                answer.add(element);
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements. This method can be used with different
-     * kinds of filters like regular expressions, classes, ranges etc.
-     * Example:
-     * <pre class="groovyTestCase">
-     * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
-     * assert list.grep( ~/a+/ )  == ['a', 'aa']
-     * assert list.grep( ~/../ )  == ['aa', 'bc']
-     * assert list.grep( Number ) == [ 3, 4.5 ]
-     * assert list.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ]
-     * </pre>
-     *
-     * @param self   a List
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @return a List of objects which match the filter
-     * @since 2.4.0
-     */
-    public static <T> List<T> grep(List<T> self, Object filter) {
-        return (List<T>) grep((Collection<T>) self, filter);
-    }
-
-    /**
-     * Iterates over the collection of items and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements. This method can be used with different
-     * kinds of filters like regular expressions, classes, ranges etc.
-     * Example:
-     * <pre class="groovyTestCase">
-     * def set = ['a', 'b', 'aa', 'bc', 3, 4.5] as Set
-     * assert set.grep( ~/a+/ )  == ['a', 'aa'] as Set
-     * assert set.grep( ~/../ )  == ['aa', 'bc'] as Set
-     * assert set.grep( Number ) == [ 3, 4.5 ] as Set
-     * assert set.grep{ it.toString().size() == 1 } == [ 'a', 'b', 3 ] as Set
-     * </pre>
-     *
-     * @param self   a Set
-     * @param filter the filter to perform on each element of the collection (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
-     * @return a Set of objects which match the filter
-     * @since 2.4.0
-     */
-    public static <T> Set<T> grep(Set<T> self, Object filter) {
-        return (Set<T>) grep((Collection<T>) self, filter);
-    }
-
-    /**
-     * Iterates over the collection of items which this Object represents and returns each item that matches
-     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self   the object over which we iterate
-     * @return a collection of objects which match the filter
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static Collection grep(Object self) {
-        return grep(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates over the collection returning each element that matches
-     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self a Collection
-     * @return a collection of elements satisfy Groovy truth
-     * @see Closure#IDENTITY
-     * @since 2.0
-     */
-    public static <T> Collection<T> grep(Collection<T> self) {
-        return grep(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates over the collection returning each element that matches
-     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self a List
-     * @return a List of elements satisfy Groovy truth
-     * @see Closure#IDENTITY
-     * @since 2.4.0
-     */
-    public static <T> List<T> grep(List<T> self) {
-        return grep(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates over the collection returning each element that matches
-     * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
-     * assert items.grep() == [1, 2, true, 'foo', [4, 5]] as Set
-     * </pre>
-     *
-     * @param self a Set
-     * @return a Set of elements satisfy Groovy truth
-     * @see Closure#IDENTITY
-     * @since 2.4.0
-     */
-    public static <T> Set<T> grep(Set<T> self) {
-        return grep(self, Closure.IDENTITY);
-    }
-
-    /**
      * Convert an iterator to a List. The iterator will become
      * exhausted of elements after making this conversion.
      *
@@ -6792,659 +8705,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> withCollectedKeys(Iterable<V> values, Function<? super V, K> keyTransform) {
         return withCollectedKeys(values.iterator(), new LinkedHashMap<>(), keyTransform);
-    }
-
-    /**
-     * Finds the first value matching the closure condition.
-     *
-     * <pre class="groovyTestCase">
-     * def numbers = [1, 2, 3]
-     * def result = numbers.find { it {@code >} 1}
-     * assert result == 2
-     * </pre>
-     *
-     * @param self    an Object with an iterator returning its values
-     * @param closure a closure condition
-     * @return the first Object found or null if none was found
-     * @since 1.0
-     */
-    public static Object find(Object self, Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            Object value = iter.next();
-            if (bcw.call(value)) {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [null, 0, 0.0, false, '', [], 42, 43]
-     * assert items.find() == 42
-     * </pre>
-     *
-     * @param self    an Object with an Iterator returning its values
-     * @return the first Object found or null if none was found
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static Object find(Object self) {
-        return find(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Finds the first value matching the closure condition.  Example:
-     * <pre class="groovyTestCase">def list = [1,2,3]
-     * assert 2 == list.find { it {@code >} 1 }
-     * </pre>
-     *
-     * @param self    a Collection
-     * @param closure a closure condition
-     * @return the first Object found, in the order of the collections iterator, or null if no element matches
-     * @since 1.0
-     */
-    public static <T> T find(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (T value : self) {
-            if (bcw.call(value)) {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [null, 0, 0.0, false, '', [], 42, 43]
-     * assert items.find() == 42
-     * </pre>
-     *
-     * @param self    a Collection
-     * @return the first Object found or null if none was found
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static <T> T find(Collection<T> self) {
-        return find(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
-     * <p>
-     * <pre class="groovyTestCase">
-     * int[] numbers = [1, 2, 3]
-     * assert numbers.findResult { if(it {@code >} 1) return it } == 2
-     * assert numbers.findResult { if(it {@code >} 4) return it } == null
-     * </pre>
-     *
-     * @param self      an Object with an iterator returning its values
-     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result of the closure
-     * @since 1.7.5
-     */
-    public static Object findResult(Object self, Closure condition) {
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            Object value = iter.next();
-            Object result = condition.call(value);
-            if (result != null) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null value, otherwise returns null.
-     * <p>
-     * <pre class="groovyTestCase">
-     * class Foo {
-     *     List items
-     *     Iterator iterator() {
-     *         items.iterator()
-     *     }
-     * }
-     * assert new Foo(items: [null, 2, 4]).findResult() == 2
-     * assert new Foo(items: [null, null]).findResult() == null
-     * </pre>
-     *
-     * @param self      an Object with an iterator returning its values
-     * @return the first non-null result of the closure
-     * @since 4.0.9
-     */
-    public static Object findResult(Object self) {
-        return findResult(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
-     * <p>
-     * <pre class="groovyTestCase">
-     * int[] numbers = [1, 2, 3]
-     * assert numbers.findResult(5) { if(it {@code >} 1) return it } == 2
-     * assert numbers.findResult(5) { if(it {@code >} 4) return it } == 5
-     * </pre>
-     *
-     * @param self          an Object with an iterator returning its values
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result of the closure, otherwise the default value
-     * @since 1.7.5
-     */
-    public static Object findResult(Object self, Object defaultResult, Closure condition) {
-        Object result = findResult(self, condition);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Treats the object as iterable, iterating through the values it represents and returns the first non-null result, otherwise returns the defaultResult.
-     * <p>
-     * <pre class="groovyTestCase">
-     * class Foo {
-     *     List items
-     *     Iterator iterator() {
-     *         items.iterator()
-     *     }
-     * }
-     * assert new Foo(items: [null, 2, 4]).findResult(5) == 2
-     * assert new Foo(items: [null, null]).findResult(5) == 5
-     * </pre>
-     *
-     * @param self          an Object with an iterator returning its values
-     * @param defaultResult an Object that should be returned if all elements are null
-     * @return the first non-null element, otherwise the default value
-     * @since 4.0.9
-     */
-    public static Object findResult(Object self, Object defaultResult) {
-        Object result = findResult(self, Closure.IDENTITY);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
-     * result is found and returning that result. If all are null, the defaultResult is returned.
-     * <p>
-     * Examples:
-     * <pre class="groovyTestCase">
-     * def iter = [1,2,3].iterator()
-     * assert "Found 2" == iter.findResult("default") { it {@code >} 1 ? "Found $it" : null }
-     * assert "default" == iter.findResult("default") { it {@code >} 3 ? "Found $it" : null }
-     * </pre>
-     *
-     * @param self          an Iterator
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result from calling the closure, or the defaultValue
-     * @since 2.5.0
-     */
-    public static <S, T, U extends T, V extends T> T findResult(Iterator<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
-        T result = findResult(self, condition);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterator stopping once the first non-null
-     * result is found and returning that result. If all are null, the defaultResult is returned.
-     * <p>
-     * Examples:
-     * <pre class="groovyTestCase">
-     * assert [null, 1, 2].iterator().findResult('default') == 1
-     * assert [null, null].findResult('default') == 'default'
-     * </pre>
-     *
-     * @param self          an Iterator
-     * @param defaultResult an Object that should be returned if all elements are null
-     * @return the first non-null result from the iterator, or the defaultValue
-     * @since 4.0.9
-     */
-    public static <T, U extends T, V extends T> T findResult(Iterator<U> self, V defaultResult) {
-        T result = (T) findResult(self, Closure.IDENTITY);
-        return result == null ? defaultResult : result;
-    }
-
-    /**
-     * Iterates through the Iterator calling the given closure condition for each item but stopping once the first non-null
-     * result is found and returning that result. If all results are null, null is returned.
-     *
-     * @param self      an Iterator
-     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result from calling the closure, or null
-     * @since 2.5.0
-     */
-    public static <T, U> T findResult(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
-        while (self.hasNext()) {
-            U next = self.next();
-            T result = condition.call(next);
-            if (result != null) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Iterates through the Iterator stopping once the first non-null
-     * result is found and returning that result. If all results are null, null is returned.
-     *
-     * @param self      an Iterator
-     * @return the first non-null result from the iterator, or null
-     * @since 4.0.9
-     */
-    public static <T> T findResult(Iterator<T> self) {
-        return (T) findResult(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
-     * result is found and returning that result. If all are null, the defaultResult is returned.
-     * <p>
-     * Examples:
-     * <pre class="groovyTestCase">
-     * def list = [1,2,3]
-     * assert "Found 2" == list.findResult("default") { it {@code >} 1 ? "Found $it" : null }
-     * assert "default" == list.findResult("default") { it {@code >} 3 ? "Found $it" : null }
-     * </pre>
-     *
-     * @param self          an Iterable
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param condition     a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result from calling the closure, or the defaultValue
-     * @since 2.5.0
-     */
-    public static <S, T, U extends T, V extends T> T findResult(Iterable<S> self, U defaultResult, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> condition) {
-        T result = findResult(self, condition);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
-     * result is found and returning that result. If all are null, the defaultResult is returned.
-     * <p>
-     * Examples:
-     * <pre class="groovyTestCase">
-     * assert [null, 1, 2].findResult('default') == 1
-     * assert [null, null].findResult('default') == 'default'
-     * </pre>
-     *
-     * @param self          an Iterable
-     * @param defaultResult an Object that should be returned if all elements in the iterable are null
-     * @return the first non-null element from the iterable, or the defaultValue
-     * @since 4.0.9
-     */
-    public static <T, U extends T, V extends T> T findResult(Iterable<U> self, V defaultResult) {
-        T result = (T) findResult(self, Closure.IDENTITY);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterable calling the given closure condition for each item but stopping once the first non-null
-     * result is found and returning that result. If all results are null, null is returned.
-     *
-     * @param self      an Iterable
-     * @param condition a closure that returns a non-null value to indicate that processing should stop and the value should be returned
-     * @return the first non-null result from calling the closure, or null
-     * @since 2.5.0
-     */
-    public static <T, U> T findResult(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> condition) {
-        return findResult(self.iterator(), condition);
-    }
-
-    /**
-     * Iterates through the Iterable stopping once the first non-null
-     * result is found and returning that result. If all results are null, null is returned.
-     *
-     * @param self      an Iterable
-     * @return the first non-null element from the iterable, or null
-     * @since 4.0.9
-     */
-    public static <T> T findResult(Iterable<T> self) {
-        return (T) findResult(self.iterator(), Closure.IDENTITY);
-    }
-
-    /**
-     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise null is returned.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
-     * assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
-     * assert null == [a:1, b:3].findResult { if (it.value == 9) return "Found ${it.key}:${it.value}" }
-     * assert "Found a:1" == [a:1, b:3].findResult { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
-     * </pre>
-     *
-     * @param self      a Map
-     * @param condition a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
-     * @return the first non-null result collected by calling the closure, or null if no such result was found
-     * @since 1.7.5
-     */
-    public static <T, K, V> T findResult(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> condition) {
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            T result = callClosureForMapEntry(condition, entry);
-            if (result != null) {
-                return result;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Returns the first non-null closure result found by passing each map entry to the closure, otherwise the defaultResult is returned.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
-     * assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
-     * assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
-     * assert "Found a:1" == [a:1, b:3].findResult("default") { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
-     * </pre>
-     *
-     * @param self          a Map
-     * @param defaultResult an Object that should be returned if all closure results are null
-     * @param condition     a 1 or 2 arg Closure that returns a non-null value when processing should stop and a value should be returned
-     * @return the first non-null result collected by calling the closure, or the defaultResult if no such result was found
-     * @since 1.7.5
-     */
-    public static <T, U extends T, V extends T, A, B> T findResult(Map<A, B> self, U defaultResult, @ClosureParams(MapEntryOrKeyValue.class) Closure<V> condition) {
-        T result = findResult(self, condition);
-        if (result == null) return defaultResult;
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterable transforming items using the supplied closure
-     * and collecting any non-null results.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def list = [1,2,3]
-     * def result = list.findResults { it {@code >} 1 ? "Found $it" : null }
-     * assert result == ["Found 2", "Found 3"]
-     * </pre>
-     *
-     * @param self               an Iterable
-     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
-     * @return the list of non-null transformed values
-     * @since 2.2.0
-     */
-    public static <T, U> Collection<T> findResults(Iterable<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
-        return findResults(self.iterator(), filteringTransform);
-    }
-
-    /**
-     * Iterates through the Iterable collecting any non-null results.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert [1, null, 2, null, 3].findResults() == [1, 2, 3]
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return the list of non-null values
-     * @since 4.0.9
-     */
-    public static <T> Collection<T> findResults(Iterable<T> self) {
-        return findResults(self.iterator(), Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates through the Iterator transforming items using the supplied closure
-     * and collecting any non-null results.
-     *
-     * @param self               an Iterator
-     * @param filteringTransform a Closure that should return either a non-null transformed value or null for items which should be discarded
-     * @return the list of non-null transformed values
-     * @since 2.5.0
-     */
-    public static <T, U> Collection<T> findResults(Iterator<U> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
-        List<T> result = new ArrayList<>();
-        while (self.hasNext()) {
-            U value = self.next();
-            T transformed = filteringTransform.call(value);
-            if (transformed != null) {
-                result.add(transformed);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Iterates through the Iterator collecting any non-null results.
-     *
-     * @param self an Iterator
-     * @return the list of non-null values
-     * @since 4.0.9
-     */
-    public static <T> Collection<T> findResults(Iterator<T> self) {
-        return findResults(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Iterates through the map transforming items using the supplied closure
-     * and collecting any non-null results.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def map = [a:1, b:2, hi:2, cat:3, dog:2]
-     * def result = map.findResults { k, v {@code ->} k.size() == v ? "Found $k:$v" : null }
-     * assert result == ["Found a:1", "Found hi:2", "Found cat:3"]
-     * </pre>
-     *
-     * @param self               a Map
-     * @param filteringTransform a 1 or 2 arg Closure that should return either a non-null transformed value or null for items which should be discarded
-     * @return the list of non-null transformed values
-     * @since 1.8.1
-     */
-    public static <T, K, V> Collection<T> findResults(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> filteringTransform) {
-        List<T> result = new ArrayList<>();
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            T transformed = callClosureForMapEntry(filteringTransform, entry);
-            if (transformed != null) {
-                result.add(transformed);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Finds the first entry matching the closure condition.
-     * If the closure takes two parameters, the entry key and value are passed.
-     * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">assert [a:1, b:3].find { it.value == 3 }.key == "b"</pre>
-     *
-     * @param self    a Map
-     * @param closure a 1 or 2 arg Closure condition
-     * @return the first Object found
-     * @since 1.0
-     */
-    public static <K, V> Map.Entry<K, V> find(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (bcw.callForMap(entry)) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Finds all entries matching the closure condition. If the
-     * closure takes one parameter then it will be passed the Map.Entry.
-     * Otherwise if the closure should take two parameters, which will be
-     * the key and the value.
-     * <p>
-     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
-     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
-     * be returned.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * def result = [a:1, b:2, c:4, d:5].findAll { it.value % 2 == 0 }
-     * assert result.every { it instanceof Map.Entry }
-     * assert result*.key == ["b", "c"]
-     * assert result*.value == [2, 4]
-     * </pre>
-     *
-     * @param self    a Map
-     * @param closure a 1 or 2 arg Closure condition applying on the entries
-     * @return a new subMap
-     * @since 1.0
-     */
-    public static <K, V> Map<K, V> findAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
-        Map<K, V> answer = createSimilarMap(self);
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (bcw.callForMap(entry)) {
-                answer.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert ([2,4] as Set) == ([1,2,3,4] as Set).findAll { it % 2 == 0 }</pre>
-     *
-     * @param self    a Set
-     * @param closure a closure condition
-     * @return a Set of matching values
-     * @since 2.4.0
-     */
-    public static <T> Set<T> findAll(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        return (Set<T>) findAll((Collection<T>) self, closure);
-    }
-
-    /**
-     * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
-     *
-     * @param self    a List
-     * @param closure a closure condition
-     * @return a List of matching values
-     * @since 2.4.0
-     */
-    public static <T> List<T> findAll(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        return (List<T>) findAll((Collection<T>) self, closure);
-    }
-
-    /**
-     * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
-     *
-     * @param self    a Collection
-     * @param closure a closure condition
-     * @return a Collection of matching values
-     * @since 1.5.6
-     */
-    public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        return findMany(createSimilarCollection(self), self.iterator(), closure);
-    }
-
-    /**
-     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
-     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]] as Set
-     * </pre>
-     *
-     * @param self a Set
-     * @return a Set of the truthy values
-     * @since 2.4.0
-     * @see Closure#IDENTITY
-     */
-    public static <T> Set<T> findAll(Set<T> self) {
-        return findAll(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self a List
-     * @return a List of the truthy values
-     * @since 2.4.0
-     * @see Closure#IDENTITY
-     */
-    public static <T> List<T> findAll(List<T> self) {
-        return findAll(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self a Collection
-     * @return a Collection of the truthy values
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static <T> Collection<T> findAll(Collection<T> self) {
-        return findAll(self, Closure.IDENTITY);
-    }
-
-    /**
-     * Finds all items matching the closure condition.
-     *
-     * @param self    an Object with an Iterator returning its values
-     * @param closure a closure condition
-     * @return a List of the values found
-     * @since 1.6.0
-     */
-    @SuppressWarnings("unchecked")
-    public static List findAll(Object self, Closure closure) {
-        return findMany(new ArrayList(), InvokerHelper.asIterator(self), closure);
-    }
-
-    /**
-     * Finds all items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
-     * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
-     * </pre>
-     *
-     * @param self an Object with an Iterator returning its values
-     * @return a List of the truthy values
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static List findAll(Object self) {
-        return findAll(self, Closure.IDENTITY);
-    }
-
-    static <T, C extends Collection<T>> C findMany(C collector, Iterator<? extends T> iter, Closure<?> closure) {
-        BooleanClosureWrapper test = new BooleanClosureWrapper(closure);
-        while (iter.hasNext()) {
-            T value = iter.next();
-            if (test.call(value)) {
-                collector.add(value);
-            }
-        }
-        return collector;
     }
 
     /**
@@ -7760,264 +9020,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List transpose(List self) {
         return GroovyCollections.transpose(self);
-    }
-
-    /**
-     * Sorts all Iterable members into groups determined by the supplied mapping closure.
-     * The closure should return the key that this item should be grouped by. The returned
-     * LinkedHashMap will have an entry for each distinct key returned from the closure,
-     * with each value being a list of items for that group.
-     * <p>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }
-     * </pre>
-     *
-     * @param self    a collection to group
-     * @param closure a closure mapping entries on keys
-     * @return a new Map grouped by keys
-     * @since 2.2.0
-     */
-    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<K> closure) {
-        Map<K, List<T>> answer = new LinkedHashMap<>();
-        for (T element : self) {
-            K value = closure.call(element);
-            groupAnswer(answer, element, value);
-        }
-        return answer;
-    }
-
-    /**
-     * Sorts all Iterable members into (sub)groups determined by the supplied
-     * mapping closures. Each closure should return the key that this item
-     * should be grouped by. The returned LinkedHashMap will have an entry for each
-     * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'.
-     *
-     * Example usage:
-     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it {@code <} 4 })
-     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
-     *
-     * Another example:
-     * <pre>def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
-     * def data = sql.rows("SELECT * FROM a_table").groupBy({ it.column1 }, { it.column2 }, { it.column3 })
-     * if (data.val1.val2.val3) {
-     *     // there exists a record where:
-     *     //   a_table.column1 == val1
-     *     //   a_table.column2 == val2, and
-     *     //   a_table.column3 == val3
-     * } else {
-     *     // there is no such record
-     * }</pre>
-     * If an empty array of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a collection to group
-     * @param closures an array of closures, each mapping entries on keys
-     * @return a new Map grouped by keys on each criterion
-     * @since 2.2.0
-     * @see Closure#IDENTITY
-     */
-    public static Map groupBy(Iterable self, Object... closures) {
-        final Closure head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
-
-        @SuppressWarnings("unchecked")
-        Map<Object, List> first = groupBy(self, head);
-        if (closures.length < 2)
-            return first;
-
-        final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
-
-        // inject([:]) { a,e {@code ->} a {@code <<} [(e.key): e.value.groupBy(tail)] }
-        Map<Object, Map> acc = new LinkedHashMap<>();
-        for (Map.Entry<Object, List> item : first.entrySet()) {
-            acc.put(item.getKey(), groupBy(item.getValue(), tail));
-        }
-
-        return acc;
-    }
-
-    /**
-     * Sorts all Iterable members into (sub)groups determined by the supplied
-     * mapping closures. Each closure should return the key that this item
-     * should be grouped by. The returned LinkedHashMap will have an entry for each
-     * distinct 'key path' returned from the closures, with each value being a list
-     * of items for that 'group path'.
-     *
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it {@code <} 4 }])
-     * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]
-     * </pre>
-     *
-     * Another example:
-     * <pre>
-     * def sql = groovy.sql.Sql.newInstance(/&ast; ... &ast;/)
-     * def data = sql.rows("SELECT * FROM a_table").groupBy([{ it.column1 }, { it.column2 }, { it.column3 }])
-     * if (data.val1.val2.val3) {
-     *     // there exists a record where:
-     *     //   a_table.column1 == val1
-     *     //   a_table.column2 == val2, and
-     *     //   a_table.column3 == val3
-     * } else {
-     *     // there is no such record
-     * }
-     * </pre>
-     * If an empty list of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a collection to group
-     * @param closures a list of closures, each mapping entries on keys
-     * @return a new Map grouped by keys on each criterion
-     * @since 2.2.0
-     * @see Closure#IDENTITY
-     */
-    public static Map groupBy(Iterable self, List<Closure> closures) {
-        return groupBy(self, closures.toArray());
-    }
-
-    /**
-     * Groups all map entries into groups determined by the
-     * supplied mapping closure. The closure will be passed a Map.Entry or
-     * key and value (depending on the number of parameters the closure accepts)
-     * and should return the key that each item should be grouped under.  The
-     * resulting map will have an entry for each 'group' key returned by the
-     * closure, with values being the list of map entries that belong to each
-     * group. (If instead of a list of map entries, you want an actual map
-     * use {code}groupBy{code}.)
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
-     * assert result[0]*.key == ["b", "d", "f"]
-     * assert result[1]*.value == [1, 3, 5]</pre>
-     *
-     * @param self    a map to group
-     * @param closure a 1 or 2 arg Closure mapping entries on keys
-     * @return a new Map grouped by keys
-     * @since 1.5.2
-     */
-    public static <G, K, V> Map<G, List<Map.Entry<K, V>>> groupEntriesBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
-        final Map<G, List<Map.Entry<K, V>>> answer = new LinkedHashMap<>();
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            G value = callClosureForMapEntry(closure, entry);
-            groupAnswer(answer, entry, value);
-        }
-        return answer;
-    }
-
-    /**
-     * Groups the members of a map into sub maps determined by the
-     * supplied mapping closure. The closure will be passed a Map.Entry or
-     * key and value (depending on the number of parameters the closure accepts)
-     * and should return the key that each item should be grouped under.  The
-     * resulting map will have an entry for each 'group' key returned by the
-     * closure, with values being the map members from the original map that
-     * belong to each group. (If instead of a map, you want a list of map entries
-     * use {code}groupEntriesBy{code}.)
-     * <p>
-     * If the <code>self</code> map is one of TreeMap, Hashtable or Properties,
-     * the returned Map will preserve that type, otherwise a LinkedHashMap will
-     * be returned.
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
-     * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
-     *
-     * @param self    a map to group
-     * @param closure a closure mapping entries on keys
-     * @return a new Map grouped by keys
-     * @since 1.0
-     */
-    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<G> closure) {
-        final Map<G, List<Map.Entry<K, V>>> initial = groupEntriesBy(self, closure);
-        final Map<G, Map<K, V>> answer = new LinkedHashMap<>();
-        for (Map.Entry<G, List<Map.Entry<K, V>>> outer : initial.entrySet()) {
-            G key = outer.getKey();
-            List<Map.Entry<K, V>> entries = outer.getValue();
-            Map<K, V> target = createSimilarMap(self);
-            putAll(target, entries);
-            answer.put(key, target);
-        }
-        return answer;
-    }
-
-    /**
-     * Groups the members of a map into sub maps determined by the supplied
-     * mapping closures. Each closure will be passed a Map.Entry or key and
-     * value (depending on the number of parameters the closure accepts) and
-     * should return the key that each item should be grouped under. The
-     * resulting map will have an entry for each 'group path' returned by all
-     * closures, with values being the map members from the original map that
-     * belong to each such 'group path'.
-     *
-     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
-     * the returned Map will preserve that type, otherwise a LinkedHashMap will
-     * be returned.
-     *
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
-     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
-     * If an empty array of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a map to group
-     * @param closures an array of closures that map entries on keys
-     * @return a new map grouped by keys on each criterion
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static Map<Object, Map> groupBy(Map self, Object... closures) {
-        @SuppressWarnings("unchecked")
-        final Closure<Object> head = closures.length == 0 ? Closure.IDENTITY : (Closure) closures[0];
-
-        @SuppressWarnings("unchecked")
-        Map<Object, Map> first = groupBy(self, head);
-        if (closures.length < 2)
-            return first;
-
-        final Object[] tail = new Object[closures.length - 1];
-        System.arraycopy(closures, 1, tail, 0, closures.length - 1); // Arrays.copyOfRange only since JDK 1.6
-
-        Map<Object, Map> acc = new LinkedHashMap<>();
-        for (Map.Entry<Object, Map> item: first.entrySet()) {
-            acc.put(item.getKey(), groupBy(item.getValue(), tail));
-        }
-
-        return acc;
-    }
-
-    /**
-     * Groups the members of a map into sub maps determined by the supplied
-     * mapping closures. Each closure will be passed a Map.Entry or key and
-     * value (depending on the number of parameters the closure accepts) and
-     * should return the key that each item should be grouped under. The
-     * resulting map will have an entry for each 'group path' returned by all
-     * closures, with values being the map members from the original map that
-     * belong to each such 'group path'.
-     *
-     * If the <code>self</code> map is one of TreeMap, Hashtable, or Properties,
-     * the returned Map will preserve that type, otherwise a LinkedHashMap will
-     * be returned.
-     *
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
-     * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
-     * If an empty list of closures is supplied the IDENTITY Closure will be used.
-     *
-     * @param self     a map to group
-     * @param closures a list of closures that map entries on keys
-     * @return a new map grouped by keys on each criterion
-     * @since 1.8.1
-     * @see Closure#IDENTITY
-     */
-    public static Map<Object, Map> groupBy(Map self, List<Closure> closures) {
-        return groupBy(self, closures.toArray());
-    }
-
-    /**
-     * Groups the current element according to the value
-     *
-     * @param answer  the map containing the results
-     * @param element the element to be placed
-     * @param value   the value according to which the element will be placed
-     * @since 1.5.0
-     */
-    protected static <K, T> void groupAnswer(final Map<K, List<T>> answer, T element, K value) {
-        List<T> groupedElements = answer.computeIfAbsent(value, k -> new ArrayList<>());
-
-        groupedElements.add(element);
     }
 
     // internal helper method
@@ -8794,22 +9796,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns indices of the collection.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * assert 0..2 == [5, 6, 7].indices
-     * </pre>
-     *
-     * @param self a collection
-     * @return an index range
-     * @since 2.4.0
-     */
-    public static IntRange getIndices(Collection self) {
-        return new IntRange(false, 0, self.size());
-    }
-
-    /**
      * Provide the standard Groovy <code>size()</code> method for <code>Iterator</code>.
      * The iterator will become exhausted of elements after determining the size value.
      *
@@ -8861,146 +9847,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for a List.
-     * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
-     * assert list[1..2] == ["a", 4.5]</pre>
-     *
-     * @param self  a List
-     * @param range a Range indicating the items to get
-     * @return a new list instance based on range borders
-     *
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(List<T> self, Range range) {
-        RangeInfo info = subListBorders(self.size(), range);
-
-        List<T> subList = self.subList(info.from, info.to);
-        if (info.reverse) {
-            subList = reverse(subList);
-        }
-
-        // trying to guess the concrete list type and create a new instance from it
-        List<T> answer = createSimilarList(self, subList.size());
-        answer.addAll(subList);
-
-        return answer;
-    }
-
-    /**
-     * Select a List of items from an eager or lazy List using a Collection to
-     * identify the indices to be selected.
-     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
-     * assert list[1,0,2] == [42, 42, 42]</pre>
-     *
-     * @param self    a ListWithDefault
-     * @param indices a Collection of indices
-     *
-     * @return a new eager or lazy list of the values at the given indices
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> getAt(ListWithDefault<T> self, Collection indices) {
-        List<T> answer = ListWithDefault.newInstance(new ArrayList<>(indices.size()), self.isLazyDefaultValues(), self.getInitClosure());
-        for (Object value : indices) {
-            if (value instanceof Collection) {
-                answer.addAll((List<T>) InvokerHelper.invokeMethod(self, "getAt", value));
-            } else {
-                int idx = normaliseIndex(DefaultTypeTransformation.intUnbox(value), self.size());
-                answer.add(self.getAt(idx));
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Support the range subscript operator for an eager or lazy List.
-     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
-     * assert list[1..2] == [null, 42]</pre>
-     *
-     * @param self  a ListWithDefault
-     * @param range a Range indicating the items to get
-     *
-     * @return a new eager or lazy list instance based on range borders
-     */
-    public static <T> List<T> getAt(ListWithDefault<T> self, Range range) {
-        RangeInfo info = subListBorders(self.size(), range);
-
-        // if a positive index is accessed not initialized so far
-        // initialization up to that index takes place
-        if (self.size() < info.to) {
-            self.get(info.to - 1);
-        }
-
-        List<T> answer = self.subList(info.from, info.to);
-        if (info.reverse) {
-            answer =  ListWithDefault.newInstance(reverse(answer), self.isLazyDefaultValues(), self.getInitClosure());
-        } else {
-            // instead of using the SubList backed by the parent list, a new ArrayList instance is used
-            answer =  ListWithDefault.newInstance(new ArrayList<>(answer), self.isLazyDefaultValues(), self.getInitClosure());
-        }
-
-        return answer;
-    }
-
-    /**
-     * Support the range subscript operator for an eager or lazy List.
-     * <pre class="groovyTestCase">
-     * def list = [true, 1, 3.4].withDefault{ 42 }
-     * {@code assert list[0..<0] == []}
-     * </pre>
-     *
-     * @param self  a ListWithDefault
-     * @param range a Range indicating the items to get
-     *
-     * @return a new list instance based on range borders
-     *
-     */
-    public static <T> List<T> getAt(ListWithDefault<T> self, EmptyRange range) {
-        return ListWithDefault.newInstance(new ArrayList<>(), self.isLazyDefaultValues(), self.getInitClosure());
-    }
-
-    /**
-     * Support the range subscript operator for a List.
-     * <pre class="groovyTestCase">
-     * def list = [true, 1, 3.4]
-     * {@code assert list[0..<0] == []}
-     * </pre>
-     *
-     * @param self  a List
-     * @param range a Range indicating the items to get
-     * @return a new list instance based on range borders
-     *
-     * @since 1.0
-     */
-    public static <T> List<T> getAt(List<T> self, EmptyRange range) {
-        return createSimilarList(self, 0);
-    }
-
-    /**
-     * Select a List of items from a List using a Collection to
-     * identify the indices to be selected.
-     * <pre class="groovyTestCase">def list = [true, 1, 3.4, false]
-     * assert list[1,0,2] == [1, true, 3.4]</pre>
-     *
-     * @param self    a List
-     * @param indices a Collection of indices
-     * @return a new list of the values at the given indices
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> getAt(List<T> self, Collection indices) {
-        List<T> answer = new ArrayList<>(indices.size());
-        for (Object value : indices) {
-            if (value instanceof Collection) {
-                answer.addAll(getAt(self, (Collection) value));
-            } else {
-                int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.add(getAt(self, idx));
-            }
-        }
-        return answer;
-    }
-
-    /**
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges.
      * <pre class="groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
@@ -9044,134 +9890,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
-    }
-
-    /**
-     * Looks up an item in a Map for the given key and returns the corresponding value.
-     * If there is no entry for the given key return instead the default value and
-     * also add the key and default value to the map.
-     * <pre class="groovyTestCase">
-     * def map=[:]
-     * map.get("a", []) &lt;&lt; 5
-     * assert map == [a:[5]]
-     * </pre>
-     * For a method which doesn't mutate the map, consider instead using {@link Map#getOrDefault(Object, Object)}
-     * or consider using Groovy's {@link MapWithDefault} often instantiated using {@link #withDefault(Map, Closure)}
-     * or with more options {@link #withDefault(Map, boolean, boolean, Closure)}.
-     *
-     * @param map          a Map
-     * @param key          the key to look up the value
-     * @param defaultValue the value to return and add to the map for this key if
-     *                     there is no entry for the given key
-     * @return the value of the given key or the default value, added to the map if the
-     *         key did not exist
-     * @since 1.0
-     */
-    public static <K, V> V get(Map<K, V> map, K key, V defaultValue) {
-        if (!map.containsKey(key)) {
-            map.put(key, defaultValue);
-        }
-        return map.get(key);
-    }
-
-    /**
-     * Support the subscript operator for a List.
-     * <pre class="groovyTestCase">def list = [2, "a", 5.3]
-     * assert list[1] == "a"</pre>
-     *
-     * @param self a List
-     * @param idx  an index
-     * @return the value at the given index
-     * @since 1.0
-     */
-    public static <T> T getAt(List<T> self, int idx) {
-        int size = self.size();
-        int i = normaliseIndex(idx, size);
-        if (i < size) {
-            return self.get(i);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Support subscript operator for list access.
-     */
-    public static <T> T getAt(List<T> self, Number idx) {
-        return getAt(self, idx.intValue());
-    }
-
-    /**
-     * Support the subscript operator for an Iterator. The iterator
-     * will be partially exhausted up until the idx entry after returning
-     * if a +ve or 0 idx is used, or fully exhausted if a -ve idx is used
-     * or no corresponding entry was found. Typical usage:
-     * <pre class="groovyTestCase">
-     * def iter = [2, "a", 5.3].iterator()
-     * assert iter[1] == "a"
-     * </pre>
-     * A more elaborate example:
-     * <pre class="groovyTestCase">
-     * def items = [2, "a", 5.3]
-     * def iter = items.iterator()
-     * assert iter[-1] == 5.3
-     * // iter exhausted, so reset
-     * iter = items.iterator()
-     * assert iter[1] == "a"
-     * // iter partially exhausted so now idx starts after "a"
-     * assert iter[0] == 5.3
-     * </pre>
-     *
-     * @param self an Iterator
-     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size())
-     * @return the value at the given index (after normalisation) or null if no corresponding value was found
-     * @since 1.7.2
-     */
-    public static <T> T getAt(Iterator<T> self, int idx) {
-        if (idx < 0) {
-            // calculate whole list in this case
-            // recommend avoiding -ve's as this is not as efficient
-            List<T> list = toList(self);
-            int adjustedIndex = idx + list.size();
-            if (adjustedIndex < 0 || adjustedIndex >= list.size()) return null;
-            return list.get(adjustedIndex);
-        }
-
-        int count = 0;
-        while (self.hasNext()) {
-            if (count == idx) {
-                return self.next();
-            } else {
-                count++;
-                self.next();
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Support the subscript operator for an Iterable. Typical usage:
-     * <pre class="groovyTestCase">
-     * // custom Iterable example:
-     * class MyIterable implements Iterable {
-     *   Iterator iterator() { [1, 2, 3].iterator() }
-     * }
-     * def myIterable = new MyIterable()
-     * assert myIterable[1] == 2
-     *
-     * // Set example:
-     * def set = [1,2,3] as LinkedHashSet
-     * assert set[1] == 2
-     * </pre>
-     *
-     * @param self an Iterable
-     * @param idx  an index value (-self.size() &lt;= idx &lt; self.size()) but using -ve index values will be inefficient
-     * @return the value at the given index (after normalisation) or null if no corresponding value was found
-     * @since 2.1.0
-     */
-    public static <T> T getAt(Iterable<T> self, int idx) {
-        return getAt(self.iterator(), idx);
     }
 
     /**
@@ -9373,20 +10091,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for a Map.
-     * <pre class="groovyTestCase">def map = [1:10]
-     * assert map[1] == 10</pre>
-     *
-     * @param self a Map
-     * @param key  an Object as a key for the map
-     * @return the value corresponding to the given key
-     * @since 1.0
-     */
-    public static <K,V> V getAt(Map<K,V> self, Object key) {
-        return self.get(key);
-    }
-
-    /**
      * Returns a new <code>Map</code> containing all entries from <code>left</code> and <code>right</code>,
      * giving precedence to <code>right</code>.  Any keys appearing in both Maps
      * will appear in the resultant map with values from the <code>right</code>
@@ -9424,38 +10128,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K,V> V putAt(Map<K,V> self, K key, V value) {
         self.put(key, value);
         return value;
-    }
-
-    /**
-     * Support the subscript operator for Collection.
-     * <pre class="groovyTestCase">
-     * assert [String, Long, Integer] == ["a",5L,2]["class"]
-     * </pre>
-     *
-     * @param coll     a Collection
-     * @param property a String
-     * @return a List
-     * @since 1.0
-     */
-    public static List getAt(Collection coll, String property) {
-        List<Object> answer = new ArrayList<>(coll.size());
-        return getAtIterable(coll, property, answer);
-    }
-
-    private static List getAtIterable(Iterable coll, String property, List<Object> answer) {
-        for (Object item : coll) {
-            if (item == null) continue;
-            Object value;
-            try {
-                value = InvokerHelper.getProperty(item, property);
-            } catch (MissingPropertyExceptionNoStack mpe) {
-                String causeString = new MissingPropertyException(mpe.getProperty(), mpe.getType()).toString();
-                throw new MissingPropertyException("Exception evaluating property '" + property +
-                        "' for " + coll.getClass().getName() + ", Reason: " + causeString);
-            }
-            answer.add(value);
-        }
-        return answer;
     }
 
     /**
@@ -10562,52 +11234,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result = iterator.next();
         }
         return result;
-    }
-
-    /**
-     * Returns the first item from the List.
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * assert list.first() == 3
-     * // check original is unaltered
-     * assert list == [3, 4, 2]
-     * </pre>
-     *
-     * @param self a List
-     * @return the first item from the List
-     * @throws NoSuchElementException if you try to access first() for an empty List
-     * @since 1.5.5
-     */
-    public static <T> T first(List<T> self) {
-        if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access first() element from an empty List");
-        }
-        return self.get(0);
-    }
-
-    /**
-     * Returns the first item from the Iterable.
-     * <pre class="groovyTestCase">
-     * def set = [3, 4, 2] as LinkedHashSet
-     * assert set.first() == 3
-     * // check original is unaltered
-     * assert set == [3, 4, 2] as Set
-     * </pre>
-     * The first element returned by the Iterable's iterator is returned.
-     * If the Iterable doesn't guarantee a defined order it may appear like
-     * a random element is returned.
-     *
-     * @param self an Iterable
-     * @return the first item from the Iterable
-     * @throws NoSuchElementException if you try to access first() for an empty Iterable
-     * @since 1.8.7
-     */
-    public static <T> T first(Iterable<T> self) {
-        Iterator<T> iterator = self.iterator();
-        if (!iterator.hasNext()) {
-            throw new NoSuchElementException("Cannot access first() element from an empty Iterable");
-        }
-        return iterator.next();
     }
 
     /**
@@ -12552,131 +13178,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a Collection. This Collection and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
-     *
-     * @param self a Collection to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
-    public static Collection<?> flatten(Collection<?> self) {
-        return flatten(self, createSimilarCollection(self));
-    }
-
-    /**
-     * Flatten an Iterable. This Iterable and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
-     *
-     * @param self an Iterable to flatten
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
-    public static Collection<?> flatten(Iterable<?> self) {
-        return flatten(self, createSimilarCollection(self));
-    }
-
-    /**
-     * Flatten a List. This List and any nested arrays or
-     * collections have their contents (recursively) added to the new List.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
-     *
-     * @param self a List to flatten
-     * @return a flattened List
-     * @since 2.4.0
-     */
-    public static List<?> flatten(List<?> self) {
-        return (List<?>) flatten((Collection<?>) self);
-    }
-
-    /**
-     * Flatten a Set. This Set and any nested arrays or
-     * collections have their contents (recursively) added to the new Set.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] as Set == ([1,[2,3],[[4]],[],5] as Set).flatten()</pre>
-     *
-     * @param self a Set to flatten
-     * @return a flattened Set
-     * @since 2.4.0
-     */
-    public static Set<?> flatten(Set<?> self) {
-        return (Set<?>) flatten((Collection<?>) self);
-    }
-
-    /**
-     * Flatten a SortedSet. This SortedSet and any nested arrays or
-     * collections have their contents (recursively) added to the new SortedSet.
-     * <pre class="groovyTestCase">
-     * Set nested = [[0,1],[2],3,[4],5]
-     * SortedSet sorted = new TreeSet({ a, b {@code ->} (a instanceof List ? a[0] : a) {@code <=>} (b instanceof List ? b[0] : b) } as Comparator)
-     * sorted.addAll(nested)
-     * assert [0,1,2,3,4,5] as SortedSet == sorted.flatten()
-     * </pre>
-     *
-     * @param self a SortedSet to flatten
-     * @return a flattened SortedSet
-     * @since 2.4.0
-     */
-    public static SortedSet<?> flatten(SortedSet<?> self) {
-        return (SortedSet<?>) flatten((Collection<?>) self);
-    }
-
-    private static Collection flatten(Iterable elements, Collection addTo) {
-        for (Object element : elements) {
-            if (element instanceof Collection) {
-                flatten((Collection) element, addTo);
-            } else if (element != null && element.getClass().isArray()) {
-                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
-            } else {
-                // found a leaf
-                addTo.add(element);
-            }
-        }
-        return addTo;
-    }
-
-    /**
-     * Flatten an Iterable. This Iterable and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * For any non-Array, non-Collection object which represents some sort
-     * of collective type, the supplied closure should yield the contained items;
-     * otherwise, the closure should just return any element which corresponds to a leaf.
-     *
-     * @param self an Iterable
-     * @param flattenUsing a closure to determine how to flatten non-Array, non-Collection elements
-     * @return a flattened Collection
-     * @since 1.6.0
-     */
-    public static <T> Collection<T> flatten(Iterable<T> self, Closure<? extends T> flattenUsing) {
-        return flatten(self, createSimilarCollection(self), flattenUsing);
-    }
-
-    private static <T> Collection<T> flatten(Iterable elements, Collection<T> addTo, Closure<? extends T> flattenUsing) {
-        for (Object element : elements) {
-            if (element instanceof Collection) {
-                flatten((Collection) element, addTo, flattenUsing);
-            } else if (element != null && element.getClass().isArray()) {
-                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
-            } else {
-                T flattened = flattenUsing.call(new Object[]{element});
-                boolean returnedSelf = flattened == element;
-                if (!returnedSelf && flattened instanceof Collection) {
-                    List<?> list = toList((Iterable<?>) flattened);
-                    if (list.size() == 1 && list.get(0) == element) {
-                        returnedSelf = true;
-                    }
-                }
-                if (flattened instanceof Collection && !returnedSelf) {
-                    flatten((Collection) flattened, addTo, flattenUsing);
-                } else {
-                    addTo.add(flattened);
-                }
-            }
-        }
-        return addTo;
-    }
-
-    /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a Collection.
      * <pre class="groovyTestCase">def list = [1,2]
@@ -12830,50 +13331,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number rightShiftUnsigned(Number self, Number operand) {
         return NumberMath.rightShiftUnsigned(self, operand);
-    }
-
-    /**
-     * Support the subscript operator for a Bitset
-     *
-     * @param self  a BitSet
-     * @param index index to retrieve
-     * @return value of the bit at the given index
-     * @see java.util.BitSet
-     * @since 1.5.0
-     */
-    public static boolean getAt(BitSet self, int index) {
-        int i = normaliseIndex(index, self.length());
-        return self.get(i);
-    }
-
-    /**
-     * Support retrieving a subset of a BitSet using a Range
-     *
-     * @param self  a BitSet
-     * @param range a Range defining the desired subset
-     * @return a new BitSet that represents the requested subset
-     * @see java.util.BitSet
-     * @see groovy.lang.IntRange
-     * @since 1.5.0
-     */
-    public static BitSet getAt(BitSet self, IntRange range) {
-        RangeInfo info = subListBorders(self.length(), range);
-        BitSet result = new BitSet();
-
-        int numberOfBits = info.to - info.from;
-        int adjuster = 1;
-        int offset = info.from;
-
-        if (info.reverse) {
-            adjuster = -1;
-            offset = info.to - 1;
-        }
-
-        for (int i = 0; i < numberOfBits; i++) {
-            result.set(i, self.get(offset + (adjuster * i)));
-        }
-
-        return result;
     }
 
     /**
@@ -14385,346 +14842,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates over the elements of an aggregate of items and returns
-     * the index of the first item that matches the condition specified in the closure.
-     *
-     * @param self      the iteration object over which to iterate
-     * @param condition the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 1.0
-     */
-    public static int findIndexOf(Object self, Closure condition) {
-        return findIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an aggregate of items, starting from a
-     * specified startIndex, and returns the index of the first item that matches the
-     * condition specified in the closure.
-     * Example (aggregate is {@code ChronoUnit} enum values):
-     * <pre class="groovyTestCase">
-     * import java.time.temporal.ChronoUnit
-     * def nameStartsWithM = { it.name().startsWith('M') }
-     * def first  = ChronoUnit.findIndexOf(nameStartsWithM)
-     * def second = ChronoUnit.findIndexOf(first + 1, nameStartsWithM)
-     * def third  = ChronoUnit.findIndexOf(second + 1, nameStartsWithM)
-     * Set units  = [first, second, third]
-     * assert !units.contains(-1) // should have found 3 of MICROS, MILLIS, MINUTES, MONTHS, ...
-     * assert units.size() == 3 // just check size so as not to rely on order
-     * </pre>
-     *
-     * @param self       the iteration object over which to iterate
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 1.5.0
-     */
-    public static int findIndexOf(Object self, int startIndex, Closure condition) {
-        return findIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self      an Iterator
-     * @param condition the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator, starting from a
-     * specified startIndex, and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self       an Iterator
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        int result = -1;
-        int i = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (self.hasNext()) {
-            Object value = self.next();
-            if (i++ < startIndex) {
-                continue;
-            }
-            if (bcw.call(value)) {
-                result = i - 1;
-                break;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Iterates over the elements of an Iterable and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self      an Iterable
-     * @param condition the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterable, starting from a
-     * specified startIndex, and returns the index of the first item that satisfies the
-     * condition specified by the closure.
-     *
-     * @param self       an Iterable
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the first matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexOf(self.iterator(), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an aggregate of items and returns
-     * the index of the last item that matches the condition specified in the closure.
-     * Example (aggregate is {@code ChronoUnit} enum values):
-     * <pre class="groovyTestCase">
-     * import java.time.temporal.ChronoUnit
-     * def nameStartsWithM = { it.name().startsWith('M') }
-     * def first = ChronoUnit.findIndexOf(nameStartsWithM)
-     * def last  = ChronoUnit.findLastIndexOf(nameStartsWithM)
-     * // should have found 2 unique index values for MICROS, MILLIS, MINUTES, MONTHS, ...
-     * assert first != -1 &amp;&amp; last != -1 &amp;&amp; first != last
-     * </pre>
-     *
-     * @param self      the iteration object over which to iterate
-     * @param condition the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 1.5.2
-     */
-    public static int findLastIndexOf(Object self, Closure condition) {
-        return findLastIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an aggregate of items, starting
-     * from a specified startIndex, and returns the index of the last item that
-     * matches the condition specified in the closure.
-     *
-     * @param self       the iteration object over which to iterate
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 1.5.2
-     */
-    public static int findLastIndexOf(Object self, int startIndex, Closure condition) {
-        return findLastIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator and returns
-     * the index of the last item that matches the condition specified in the closure.
-     *
-     * @param self      an Iterator
-     * @param condition the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findLastIndexOf(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator, starting
-     * from a specified startIndex, and returns the index of the last item that
-     * matches the condition specified in the closure.
-     *
-     * @param self       an Iterator
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(Iterator<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        int result = -1;
-        int i = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (self.hasNext()) {
-            Object value = self.next();
-            if (i++ < startIndex) {
-                continue;
-            }
-            if (bcw.call(value)) {
-                result = i - 1;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Iterates over the elements of an Iterable and returns
-     * the index of the last item that matches the condition specified in the closure.
-     *
-     * @param self      an Iterable
-     * @param condition the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findLastIndexOf(self.iterator(), 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterable, starting
-     * from a specified startIndex, and returns the index of the last item that
-     * matches the condition specified in the closure.
-     *
-     * @param self       an Iterable
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return an integer that is the index of the last matched object or -1 if no match was found
-     * @since 2.5.0
-     */
-    public static <T> int findLastIndexOf(Iterable<T> self, int startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findLastIndexOf(self.iterator(), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an aggregate of items and returns
-     * the index values of the items that match the condition specified in the closure.
-     *
-     * @param self      the iteration object over which to iterate
-     * @param condition the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 1.5.2
-     */
-    public static List<Number> findIndexValues(Object self, Closure condition) {
-        return findIndexValues(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an aggregate of items, starting from
-     * a specified startIndex, and returns the index values of the items that match
-     * the condition specified in the closure.
-     *
-     * @param self       the iteration object over which to iterate
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 1.5.2
-     */
-    public static List<Number> findIndexValues(Object self, Number startIndex, Closure condition) {
-        return findIndexValues(InvokerHelper.asIterator(self), startIndex, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator and returns
-     * the index values of the items that match the condition specified in the closure.
-     *
-     * @param self      an Iterator
-     * @param condition the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexValues(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterator, starting from
-     * a specified startIndex, and returns the index values of the items that match
-     * the condition specified in the closure.
-     *
-     * @param self       an Iterator
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(Iterator<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        List<Number> result = new ArrayList<>();
-        long count = 0;
-        long startCount = startIndex.longValue();
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (self.hasNext()) {
-            Object value = self.next();
-            if (count++ < startCount) {
-                continue;
-            }
-            if (bcw.call(value)) {
-                result.add(count - 1);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Iterates over the elements of an Iterable and returns
-     * the index values of the items that match the condition specified in the closure.
-     *
-     * @param self      an Iterable
-     * @param condition the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexValues(self, 0, condition);
-    }
-
-    /**
-     * Iterates over the elements of an Iterable, starting from
-     * a specified startIndex, and returns the index values of the items that match
-     * the condition specified in the closure.
-     *
-     * @param self       an Iterable
-     * @param startIndex start matching from this index
-     * @param condition  the matching condition
-     * @return a list of numbers corresponding to the index values of all matched objects
-     * @since 2.5.0
-     */
-    public static <T> List<Number> findIndexValues(Iterable<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexValues(self.iterator(), startIndex, condition);
-    }
-
-    /**
-     * Iterates through the classloader parents until it finds a loader with a class
-     * named "org.codehaus.groovy.tools.RootLoader". If there is no such class
-     * <code>null</code> will be returned. The name is used for comparison because
-     * a direct comparison using == may fail as the class may be loaded through
-     * different classloaders.
-     *
-     * @param self a ClassLoader
-     * @return the rootLoader for the ClassLoader
-     * @see org.codehaus.groovy.tools.RootLoader
-     * @since 1.5.0
-     */
-    public static ClassLoader getRootLoader(ClassLoader self) {
-        while (true) {
-            if (self == null) return null;
-            if (isRootLoaderClassOrSubClass(self)) return self;
-            self = self.getParent();
-        }
-    }
-
-    private static boolean isRootLoaderClassOrSubClass(ClassLoader self) {
-        Class current = self.getClass();
-        while(!current.getName().equals(Object.class.getName())) {
-            if(current.getName().equals(RootLoader.class.getName())) return true;
-            current = current.getSuperclass();
-        }
-
-        return false;
-    }
-
-    /**
      * Convenience method to dynamically create a new instance of this
      * class.  Calls the default constructor.
      *
@@ -14752,51 +14869,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> T newInstance(Class<T> c, Object[] args) {
         if (args == null) args = new Object[]{null};
         return (T) InvokerHelper.invokeConstructorOf(c, args);
-    }
-
-    /**
-     * Adds a "metaClass" property to all class objects so you can use the syntax
-     * <code>String.metaClass.myMethod = { println "foo" }</code>
-     *
-     * @param c The java.lang.Class instance
-     * @return An MetaClass instance
-     * @since 1.5.0
-     */
-    public static MetaClass getMetaClass(Class c) {
-        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        MetaClass mc = metaClassRegistry.getMetaClass(c);
-        if (mc instanceof ExpandoMetaClass
-                || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass)
-            return mc;
-        else {
-            return new HandleMetaClass(mc);
-        }
-    }
-
-    /**
-     * Obtains a MetaClass for an object either from the registry or in the case of
-     * a GroovyObject from the object itself.
-     *
-     * @param obj The object in question
-     * @return The MetaClass
-     * @since 1.5.0
-     */
-    public static MetaClass getMetaClass(Object obj) {
-        MetaClass mc = InvokerHelper.getMetaClass(obj);
-        return new HandleMetaClass(mc, obj);
-    }
-
-    /**
-     * Obtains a MetaClass for an object either from the registry or in the case of
-     * a GroovyObject from the object itself.
-     *
-     * @param obj The object in question
-     * @return The MetaClass
-     * @since 1.6.0
-     */
-    public static MetaClass getMetaClass(GroovyObject obj) {
-        // we need this method as trick to guarantee correct method selection
-        return getMetaClass((Object)obj);
     }
 
     /**
@@ -15158,20 +15230,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E> boolean removeElement(Collection<E> self, Object o) {
         return self.remove(o);
-    }
-
-    /**
-     * Get runtime groovydoc
-     * @param holder the groovydoc hold
-     * @return runtime groovydoc
-     * @since 2.6.0
-     */
-    public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
-        Groovydoc groovydocAnnotation = holder.getAnnotation(Groovydoc.class);
-
-        return null == groovydocAnnotation
-                    ? EMPTY_GROOVYDOC
-                    : new groovy.lang.groovydoc.Groovydoc(groovydocAnnotation.value(), holder);
     }
 
     /**
