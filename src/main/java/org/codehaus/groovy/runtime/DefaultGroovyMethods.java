@@ -144,6 +144,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.Stack;
+import java.util.StringJoiner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -7129,44 +7130,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each
-     * item from the iterator, with the given String as a separator between
-     * each item. The iterator will become exhausted of elements after
-     * determining the resulting conjoined value.
+     * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterator, with the given String as a separator between each item. The
+     * iterator will become exhausted of elements after producing the resulting
+     * conjoined value.
      *
-     * @param self      an Iterator of items
+     * @param self      an Iterator of objects
      * @param separator a String separator
      * @return the joined String
      * @since 1.5.5
      */
-    public static String join(Iterator<?> self, String separator) {
-        Objects.requireNonNull(self);
-        if (separator == null) separator = "";
-        StringBuilder buffer = new StringBuilder();
-        boolean first = true;
+    public static String join(final Iterator<?> self, final String separator) {
+        StringJoiner joiner = new StringJoiner(separator != null ? separator : "");
         while (self.hasNext()) {
-            Object value = self.next();
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(separator);
-            }
-            buffer.append(FormatHelper.toString(value));
+            Object obj = self.next();
+            String str = FormatHelper.toString(obj);
+            joiner.add(str);
         }
-        return buffer.toString();
+        return joiner.toString();
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each
-     * item in this Iterable, with the given String as a separator between each item.
-     * <pre class="groovyTestCase">assert "1, 2, 3" == [1,2,3].join(", ")</pre>
+     * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterable, with the given String as a separator between each item.
+     * <p>
+     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
+     * <pre class="groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
      *
      * @param self      an Iterable of objects
      * @param separator a String separator
      * @return the joined String
      * @since 1.0
      */
-    public static String join(Iterable<?> self, String separator) {
+    public static String join(final Iterable<?> self, final String separator) {
         return join(self.iterator(), separator);
     }
 
