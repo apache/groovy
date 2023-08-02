@@ -8237,6 +8237,1109 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // max
+
+    /**
+     * Adds max() method to Iterable objects.
+     * <pre class="groovyTestCase">
+     * assert 5 == [2,3,1,5,4].max()
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return the maximum value
+     * @see #max(Iterator)
+     * @since 2.2.0
+     */
+    public static <T> T max(Iterable<T> self) {
+        return max(self.iterator());
+    }
+
+    /**
+     * Adds max() method to Iterator objects. The iterator will become
+     * exhausted of elements after determining the maximum value.
+     *
+     * @param self an Iterator
+     * @return the maximum value
+     * @since 1.5.5
+     */
+    public static <T> T max(Iterator<T> self) {
+        T answer = null;
+        while (self.hasNext()) {
+            T value =  self.next();
+            if (value != null && (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer))) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the maximum value found in the Iterable using the given comparator.
+     * <pre class="groovyTestCase">
+     * assert "hello" == ["hello","hi","hey"].max( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param comparator a Comparator
+     * @return the maximum value or null for an empty Iterable
+     * @see #max(Iterator, Comparator)
+     * @since 2.2.0
+     */
+    public static <T> T max(Iterable<T> self, Comparator<? super T> comparator) {
+        return max(self.iterator(), comparator);
+    }
+
+    /**
+     * Selects the maximum value found from the Iterator using the given comparator.
+     *
+     * @param self       an Iterator
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @since 1.5.5
+     */
+    public static <T> T max(Iterator<T> self, Comparator<? super T> comparator) {
+        T answer = null;
+        while (self.hasNext()) {
+            T value = self.next();
+            if (value != null && (answer == null || comparator.compare(value, answer) > 0)) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
+     * maximum value. A null return value represents the least possible return value, so any item for which
+     * the supplied closure returns null, won't be selected (unless all items return null). If more than one item
+     * has the maximum value, an arbitrary choice is made between the items having the maximum value.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
+     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
+     * <pre class="groovyTestCase">
+     * def pets = ['dog', 'elephant', 'anaconda']
+     * def longestName = pets.max{ it.size() } // one of 'elephant' or 'anaconda'
+     * assert longestName.size() == 8
+     * </pre>
+     *
+     * @param self    an Iterable
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return an item from the Iterable having the maximum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
+     * @since 2.2.0
+     */
+    public static <T> T max(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return max(self.iterator(), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the Iterator
+     * using the closure to determine the correct ordering.
+     * The iterator will become exhausted of elements after this operation.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    an Iterator
+     * @param closure a Closure used to determine the correct ordering
+     * @return the maximum value
+     * @since 1.5.5
+     */
+    public static <T> T max(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        int params = closure.getMaximumNumberOfParameters();
+        if (params != 1) {
+            return max(self, new ClosureComparator<>(closure));
+        }
+        boolean first = true;
+        T answer = null;
+        Object answerValue = null;
+        while (self.hasNext()) {
+            T item = self.next();
+            Object value = closure.call(item);
+            if (first) {
+                first = false;
+                answer = item;
+                answerValue = value;
+            } else if (ScriptBytecodeAdapter.compareLessThan(answerValue, value)) {
+                answer = item;
+                answerValue = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects an entry in the map having the maximum
+     * calculated value as determined by the supplied closure.
+     * If more than one entry has the maximum value,
+     * an arbitrary choice is made between the entries having the maximum value.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison. An example:
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def mostCommonEntry = zoo.max{ it.value }
+     * assert mostCommonEntry.value == 7
+     * def leastCommonEntry = zoo.max{ a, b {@code ->} b.value {@code <=>} a.value } // double negative!
+     * assert leastCommonEntry.value == 5
+     * </pre>
+     * Edge case for multiple max values:
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def lengthOfNamePlusNumber = { e {@code ->} e.key.size() + e.value }
+     * def ans = zoo.max(lengthOfNamePlusNumber) // one of [monkeys:6, tigers:7]
+     * assert lengthOfNamePlusNumber(ans) == 13
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return the Map.Entry having the maximum value as determined by the closure
+     * @since 1.7.6
+     */
+    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
+        return max(self.entrySet(), closure);
+    }
+
+    //--------------------------------------------------------------------------
+    // metaClass
+
+    /**
+     * Sets/updates the metaclass for a given class to a closure.
+     *
+     * @param self the class whose metaclass we wish to update
+     * @param closure the closure representing the new metaclass
+     * @return the new metaclass value
+     * @throws GroovyRuntimeException if the metaclass can't be set for this class
+     * @since 1.6.0
+     */
+    public static MetaClass metaClass(Class self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
+            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
+        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        MetaClass mc = metaClassRegistry.getMetaClass(self);
+
+        if (mc instanceof ExpandoMetaClass) {
+            ((ExpandoMetaClass) mc).define(closure);
+            return mc;
+        }
+        else {
+            if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass) {
+                ((ExpandoMetaClass)((DelegatingMetaClass) mc).getAdaptee()).define(closure);
+                return mc;
+            }
+            else {
+                if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee().getClass() == MetaClassImpl.class) {
+                    ExpandoMetaClass emc =  new ExpandoMetaClass(self, false, true);
+                    emc.initialize();
+                    emc.define(closure);
+                    ((DelegatingMetaClass) mc).setAdaptee(emc);
+                    return mc;
+                }
+                else {
+                    if (mc.getClass() == MetaClassImpl.class) {
+                        // default case
+                        mc = new ExpandoMetaClass(self, false, true);
+                        mc.initialize();
+                        ((ExpandoMetaClass)mc).define(closure);
+                        metaClassRegistry.setMetaClass(self, mc);
+                        return mc;
+                    }
+                    else {
+                        throw new GroovyRuntimeException("Can't add methods to custom meta class " + mc);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets/updates the metaclass for a given object to a closure.
+     *
+     * @param self the object whose metaclass we wish to update
+     * @param closure the closure representing the new metaclass
+     * @return the new metaclass value
+     * @throws GroovyRuntimeException if the metaclass can't be set for this object
+     * @since 1.6.0
+     */
+    public static MetaClass metaClass(Object self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
+            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
+        MetaClass emc = hasPerInstanceMetaClass(self);
+        if (emc == null) {
+            final ExpandoMetaClass metaClass = new ExpandoMetaClass(self.getClass(), false, true);
+            metaClass.initialize();
+            metaClass.define(closure);
+            if (self instanceof GroovyObject) {
+                setMetaClass((GroovyObject)self, metaClass);
+            } else {
+                setMetaClass(self, metaClass);
+            }
+            return metaClass;
+        }
+        else {
+            if (emc instanceof ExpandoMetaClass) {
+                ((ExpandoMetaClass)emc).define(closure);
+                return emc;
+            }
+            else {
+                if (emc instanceof DelegatingMetaClass && ((DelegatingMetaClass)emc).getAdaptee() instanceof ExpandoMetaClass) {
+                    ((ExpandoMetaClass)((DelegatingMetaClass)emc).getAdaptee()).define(closure);
+                    return emc;
+                }
+                else {
+                    throw new RuntimeException("Can't add methods to non-ExpandoMetaClass " + emc);
+                }
+            }
+        }
+    }
+
+    private static MetaClass hasPerInstanceMetaClass(Object object) {
+        if (object instanceof GroovyObject) {
+            MetaClass mc = ((GroovyObject)object).getMetaClass();
+            if (mc == GroovySystem.getMetaClassRegistry().getMetaClass(object.getClass()) || mc.getClass() == MetaClassImpl.class)
+                return null;
+            else
+                return mc;
+        }
+        else {
+            ClassInfo info = ClassInfo.getClassInfo(object.getClass());
+            info.lock();
+            try {
+                return info.getPerInstanceMetaClass(object);
+            }
+            finally {
+                info.unlock();
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // min
+
+    /**
+     * Adds min() method to Collection objects.
+     * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
+     *
+     * @param self a Collection
+     * @return the minimum value
+     * @see #min(Iterator)
+     * @since 1.0
+     */
+    public static <T> T min(Iterable<T> self) {
+        return min(self.iterator());
+    }
+
+    /**
+     * Adds min() method to Iterator objects. The iterator will become
+     * exhausted of elements after determining the minimum value.
+     *
+     * @param self an Iterator
+     * @return the minimum value
+     * @see #min(Iterable)
+     * @since 1.5.5
+     */
+    public static <T> T min(Iterator<T> self) {
+        T answer = null;
+        while (self.hasNext()) {
+            T value =  self.next();
+            if (value != null && (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer))) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the minimum value found in the Iterable using the given comparator.
+     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )</pre>
+     *
+     * @param self       an Iterable
+     * @param comparator a Comparator
+     * @return the minimum value or null for an empty Iterable
+     * @see #min(Iterator, java.util.Comparator)
+     * @since 2.2.0
+     */
+    public static <T> T min(Iterable<T> self, Comparator<? super T> comparator) {
+        return min(self.iterator(), comparator);
+    }
+
+    /**
+     * Selects the minimum value found from the Iterator using the given comparator.
+     *
+     * @param self       an Iterator
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @since 1.5.5
+     */
+    public static <T> T min(Iterator<T> self, Comparator<? super T> comparator) {
+        Objects.requireNonNull(self);
+        T answer = null;
+        boolean first = true;
+        while (self.hasNext()) {
+            T value = self.next();
+            if (first) {
+                first = false;
+                answer = value;
+            } else if (comparator.compare(value, answer) < 0) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
+     * minimum value. A null return value represents the least possible return value. If more than one item
+     * has the minimum value, an arbitrary choice is made between the items having the minimum value.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">
+     * assert "hi" == ["hello","hi","hey"].min { it.length() }
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def lastDigit = { a, b {@code ->} a % 10 {@code <=>} b % 10 }
+     * assert [19, 55, 91].min(lastDigit) == 91
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def pets = ['dog', 'cat', 'anaconda']
+     * def shortestName = pets.min{ it.size() } // one of 'dog' or 'cat'
+     * assert shortestName.size() == 3
+     * </pre>
+     *
+     * @param self    an Iterable
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return an item from the Iterable having the minimum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
+     * @see #min(Iterator)
+     * @since 1.0
+     */
+    public static <T> T min(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return min(self.iterator(), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the Iterator
+     * using the closure to determine the correct ordering.
+     * The iterator will become
+     * exhausted of elements after this operation.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     *
+     * @param self    an Iterator
+     * @param closure a Closure used to determine the correct ordering
+     * @return the minimum value
+     * @since 1.5.5
+     */
+    public static <T> T min(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        int params = closure.getMaximumNumberOfParameters();
+        if (params != 1) {
+            return min(self, new ClosureComparator<>(closure));
+        }
+        Objects.requireNonNull(self);
+        boolean first = true;
+        T answer = null;
+        Object answerValue = null;
+        while (self.hasNext()) {
+            T item = self.next();
+            Object value = closure.call(item);
+            if (first) {
+                first = false;
+                answer = item;
+                answerValue = value;
+            } else if (ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
+                answer = item;
+                answerValue = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects an entry in the map having the minimum
+     * calculated value as determined by the supplied closure.
+     * If more than one entry has the minimum value,
+     * an arbitrary choice is made between the entries having the minimum value.
+     * <p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def leastCommonEntry = zoo.min{ it.value }
+     * assert leastCommonEntry.value == 5
+     * def mostCommonEntry = zoo.min{ a, b {@code ->} b.value {@code <=>} a.value } // double negative!
+     * assert mostCommonEntry.value == 7
+     * </pre>
+     * Edge case for multiple min values:
+     * <pre class="groovyTestCase">
+     * def zoo = [monkeys:6, lions:5, tigers:7]
+     * def lastCharOfName = { e {@code ->} e.key[-1] }
+     * def ans = zoo.min(lastCharOfName) // some random entry
+     * assert lastCharOfName(ans) == 's'
+     * </pre>
+     *
+     * @param self    a Map
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
+     * @return the Map.Entry having the minimum value as determined by the closure
+     * @since 1.7.6
+     */
+    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
+        return min(self.entrySet(), closure);
+    }
+
+    //--------------------------------------------------------------------------
+    // minus
+
+    /**
+     * Create a Set composed of the elements of the first Set minus the
+     * elements of the given Collection.
+     *
+     * @param self     a Set object
+     * @param removeMe the items to remove from the Set
+     * @return the resulting Set
+     * @since 1.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
+        final Set<T> ansSet = createSimilarSet(self);
+        ansSet.addAll(self);
+        if (removeMe != null) {
+            for (T o1 : self) {
+                for (Object o2 : removeMe) {
+                    boolean areEqual = (comparator != null) ? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
+                    if (areEqual) {
+                        ansSet.remove(o1);
+                    }
+                }
+            }
+        }
+        return ansSet;
+    }
+
+    /**
+     * Create a Set composed of the elements of the first Set minus the
+     * elements from the given Iterable.
+     *
+     * @param self     a Set object
+     * @param removeMe the items to remove from the Set
+     * @return the resulting Set
+     * @since 1.8.7
+     */
+    public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
+        return minus(self, asCollection(removeMe));
+    }
+
+    /**
+     * Create a Set composed of the elements of the first Set minus the given element.
+     *
+     * @param self     a Set object
+     * @param removeMe the element to remove from the Set
+     * @return the resulting Set
+     * @since 1.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Set<T> minus(Set<T> self, Object removeMe) {
+        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
+        final Set<T> ansSet = createSimilarSet(self);
+        for (T t : self) {
+            boolean areEqual = (comparator != null)? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
+            if (!areEqual) ansSet.add(t);
+        }
+        return ansSet;
+    }
+
+    /**
+     * Create a SortedSet composed of the elements of the first SortedSet minus the
+     * elements of the given Collection.
+     *
+     * @param self     a SortedSet object
+     * @param removeMe the items to remove from the SortedSet
+     * @return the resulting SortedSet
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> minus(SortedSet<T> self, Collection<?> removeMe) {
+        return (SortedSet<T>) minus((Set<T>) self, removeMe);
+    }
+
+    /**
+     * Create a SortedSet composed of the elements of the first SortedSet minus the
+     * elements of the given Iterable.
+     *
+     * @param self     a SortedSet object
+     * @param removeMe the items to remove from the SortedSet
+     * @return the resulting SortedSet
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> minus(SortedSet<T> self, Iterable<?> removeMe) {
+        return (SortedSet<T>) minus((Set<T>) self, removeMe);
+    }
+
+    /**
+     * Create a SortedSet composed of the elements of the first SortedSet minus the given element.
+     *
+     * @param self     a SortedSet object
+     * @param removeMe the element to remove from the SortedSet
+     * @return the resulting SortedSet
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> minus(SortedSet<T> self, Object removeMe) {
+        return (SortedSet<T>) minus((Set<T>) self, removeMe);
+    }
+
+    /**
+     * Create a List composed of the elements of the first list minus
+     * every occurrence of elements of the given Collection.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     a List
+     * @param removeMe a Collection of elements to remove
+     * @return a List with the given elements removed
+     * @since 1.0
+     */
+    public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
+        return (List<T>) minus((Collection<T>) self, removeMe);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Collection minus
+     * every occurrence of elements of the given Collection.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     a Collection
+     * @param removeMe a Collection of elements to remove
+     * @return a Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
+        return minus(self, removeMe, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Create a new List composed of the elements of the first List minus
+     * every occurrence of elements of the given Iterable.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     *
+     * @param self     a List
+     * @param removeMe an Iterable of elements to remove
+     * @return a new List with the given elements removed
+     * @since 1.8.7
+     */
+    public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
+        return (List<T>) minus((Iterable<T>) self, removeMe);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every occurrence of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]
+     * </pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @return a new Collection with the given elements removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
+        return minus(asCollection(self), asCollection(removeMe));
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every matching occurrence as determined by the condition closure of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D']) { it.toLowerCase() } == ['a', 'E']
+     * </pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @param condition a Closure used to determine unique items
+     * @return a new Collection with the given elements removed
+     * @since 4.0.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<>(condition, true)
+                : new ClosureComparator<>(condition);
+        return minus(self, removeMe, comparator);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every matching occurrence as determined by the condition comparator of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D'], {@code (i, j) -> i.toLowerCase() <=> j.toLowerCase()}) == ['a', 'E']
+     * </pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @param comparator a Comparator
+     * @return a new Collection with the given elements removed
+     * @since 4.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<? super T> comparator) {
+        Collection<T> ansCollection = createSimilarCollection(self);
+        if (!self.iterator().hasNext())
+            return ansCollection;
+        T head = self.iterator().next();
+
+        // We can't use the same tactic as for intersection
+        // since AbstractCollection only does a remove on the first
+        // element it encounters.
+        boolean nlgnSort = sameType(new Iterable[]{self, removeMe});
+
+        if (nlgnSort && (head instanceof Comparable)) {
+            //n*LOG(n) version
+            Set<T> removeMe2 = new TreeSet<>(comparator);
+            for(Object o: removeMe) {
+                removeMe2.add((T) o);
+            }
+            for (T o : self) {
+                if (!removeMe2.contains(o))
+                    ansCollection.add(o);
+            }
+        } else {
+            //n*n version
+            Collection<T> tmpAnswer = asCollection(self);
+            for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
+                T element = iter.next();
+                boolean elementRemoved = false;
+                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
+                    Object elt = iterator.next();
+                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
+                        iter.remove();
+                        elementRemoved = true;
+                    }
+                }
+            }
+
+            //remove duplicates
+            //can't use treeset since the base classes are different
+            ansCollection.addAll(tmpAnswer);
+        }
+        return ansCollection;
+    }
+
+    /**
+     * Create a new List composed of the elements of the first List minus every occurrence of the
+     * given element to remove.
+     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     *
+     * @param self     a List object
+     * @param removeMe an element to remove from the List
+     * @return the resulting List with the given element removed
+     * @since 1.0
+     */
+    public static <T> List<T> minus(List<T> self, Object removeMe) {
+        return (List<T>) minus((Iterable<T>) self, removeMe);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus every occurrence of the
+     * given element to remove.
+     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     *
+     * @param self     an Iterable object
+     * @param removeMe an element to remove from the Iterable
+     * @return the resulting Collection with the given element removed
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
+        Collection<T> ansList = createSimilarCollection(self);
+        for (T t : self) {
+            if (!coercedEquals(t, removeMe)) ansList.add(t);
+        }
+        return ansList;
+    }
+
+    /**
+     * Create a Map composed of the entries of the first map minus the
+     * entries of the given map.
+     *
+     * @param self     a map object
+     * @param removeMe the entries to remove from the map
+     * @return the resulting map
+     * @since 1.7.4
+     */
+    public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
+        final Map<K,V> ansMap = createSimilarMap(self);
+        ansMap.putAll(self);
+        if (removeMe != null && !removeMe.isEmpty()) {
+            for (Map.Entry<K, V> e1 : self.entrySet()) {
+                for (Object e2 : removeMe.entrySet()) {
+                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
+                        ansMap.remove(e1.getKey());
+                    }
+                }
+            }
+        }
+        return ansMap;
+    }
+
+    /**
+     * Subtract a Number from a Character. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right a Number
+     * @return the Number corresponding to the subtraction of right from left
+     * @since 1.0
+     */
+    public static Number minus(Character left, Number right) {
+        return NumberNumberMinus.minus(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Subtract a Character from a Number. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Number
+     * @param right a Character
+     * @return the Number corresponding to the subtraction of right from left
+     * @since 1.0
+     */
+    public static Number minus(Number left, Character right) {
+        return NumberNumberMinus.minus(left, Integer.valueOf(right));
+    }
+
+    /**
+     * Subtract one Character from another. The ordinal values of the Characters
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right a Character
+     * @return the Number corresponding to the subtraction of right from left
+     * @since 1.0
+     */
+    public static Number minus(Character left, Character right) {
+        return minus(Integer.valueOf(left), right);
+    }
+
+    //--------------------------------------------------------------------------
+    // mixin
+
+    /**
+     * Extend object with category methods.
+     * All methods for given class and all super classes will be added to the object.
+     *
+     * @param self          any Class
+     * @param categoryClasses a category classes to use
+     * @since 1.6.0
+     */
+    public static void mixin(MetaClass self, List<Class> categoryClasses) {
+        MixinInMetaClass.mixinClassesToMetaClass(self, categoryClasses);
+    }
+
+    /**
+     * Extend class globally with category methods.
+     * All methods for given class and all super classes will be added to the class.
+     *
+     * @param self          any Class
+     * @param categoryClasses a category classes to use
+     * @since 1.6.0
+     */
+    public static void mixin(Class self, List<Class> categoryClasses) {
+        mixin(getMetaClass(self), categoryClasses);
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     * @since 1.6.0
+     */
+    public static void mixin(Class self, Class categoryClass) {
+        mixin(getMetaClass(self), Collections.singletonList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     * @since 1.6.0
+     */
+    public static void mixin(Class self, Class[] categoryClass) {
+        mixin(getMetaClass(self), Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     * @since 1.6.0
+     */
+    public static void mixin(MetaClass self, Class categoryClass) {
+        mixin(self, Collections.singletonList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     * @since 1.6.0
+     */
+    public static void mixin(MetaClass self, Class[] categoryClass) {
+        mixin(self, Arrays.asList(categoryClass));
+    }
+
+    //--------------------------------------------------------------------------
+    // mod
+
+    /**
+     * Performs a division modulus operation.
+     *
+     * @param left  a Number
+     * @param right another Number to mod
+     * @return the modulus result
+     * @since 1.0
+     */
+    public static Number mod(Number left, Number right) {
+        return NumberMath.mod(left, right);
+    }
+
+    //--------------------------------------------------------------------------
+    // multiply
+
+    /**
+     * Create a Collection composed of the elements of this Iterable, repeated
+     * a certain number of times.  Note that for non-primitive
+     * elements, multiple references to the same instance will be added.
+     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
+     *
+     * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
+     * method will effectively return a Collection with a single copy of the Iterable's items.
+     *
+     * @param self   an Iterable
+     * @param factor the number of times to append
+     * @return the multiplied Collection
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> multiply(Iterable<T> self, Number factor) {
+        Collection<T> selfCol = asCollection(self);
+        int size = factor.intValue();
+        Collection<T> answer = createSimilarCollection(selfCol, selfCol.size() * size);
+        for (int i = 0; i < size; i++) {
+            answer.addAll(selfCol);
+        }
+        return answer;
+    }
+
+    /**
+     * Create a List composed of the elements of this Iterable, repeated
+     * a certain number of times.  Note that for non-primitive
+     * elements, multiple references to the same instance will be added.
+     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
+     *
+     * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
+     * method will effectively return a Collection with a single copy of the Iterable's items.
+     *
+     * @param self   a List
+     * @param factor the number of times to append
+     * @return the multiplied List
+     * @since 2.4.0
+     */
+    public static <T> List<T> multiply(List<T> self, Number factor) {
+        return (List<T>) multiply((Iterable<T>) self, factor);
+    }
+
+    /**
+     * Multiply a Character by a Number. The ordinal value of the Character
+     * is used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right a Number
+     * @return the Number corresponding to the multiplication of left by right
+     * @since 1.0
+     */
+    public static Number multiply(Character left, Number right) {
+        return NumberNumberMultiply.multiply(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Multiply a Number by a Character. The ordinal value of the Character
+     * is used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Number
+     * @param right a Character
+     * @return the multiplication of left by right
+     * @since 1.0
+     */
+    public static Number multiply(Number left, Character right) {
+        return NumberNumberMultiply.multiply(Integer.valueOf(right), left);
+    }
+
+    /**
+     * Multiply two Characters. The ordinal values of the Characters
+     * are used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right another Character
+     * @return the Number corresponding to the multiplication of left by right
+     * @since 1.0
+     */
+    public static Number multiply(Character left, Character right) {
+        return multiply(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Multiply a BigDecimal and a Double.
+     * Note: This method was added to enforce the Groovy rule of
+     * BigDecimal*Double == Double. Without this method, the
+     * multiply(BigDecimal) method in BigDecimal would respond
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
+     * versions of Groovy.
+     *
+     * @param left  a BigDecimal
+     * @param right a Double
+     * @return the multiplication of left by right
+     * @since 1.0
+     */
+    public static Number multiply(BigDecimal left, Double right) {
+        return NumberMath.multiply(left, right);
+    }
+
+    /**
+     * Multiply a BigDecimal and a BigInteger.
+     * Note: This method was added to enforce the Groovy rule of
+     * BigDecimal*long == long. Without this method, the
+     * multiply(BigDecimal) method in BigDecimal would respond
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
+     * versions of Groovy. BigInteger is the fallback for all integer
+     * types in Groovy
+     *
+     * @param left  a BigDecimal
+     * @param right a BigInteger
+     * @return the multiplication of left by right
+     * @since 1.0
+     */
+    public static Number multiply(BigDecimal left, BigInteger right) {
+        return NumberMath.multiply(left, right);
+    }
+
+    //--------------------------------------------------------------------------
+    // newInstance
+
+    /**
+     * Convenience method to dynamically create a new instance of this
+     * class.  Calls the default constructor.
+     *
+     * @param c a class
+     * @return a new instance of this class
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(Class<T> c) {
+        return (T) InvokerHelper.invokeConstructorOf(c, null);
+    }
+
+    /**
+     * Helper to construct a new instance from the given arguments.
+     * The constructor is called based on the number and types in the
+     * args array.  Use <code>newInstance(null)</code> or simply
+     * <code>newInstance()</code> for the default (no-arg) constructor.
+     *
+     * @param c    a class
+     * @param args the constructor arguments
+     * @return a new instance of this class.
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(Class<T> c, Object[] args) {
+        if (args == null) args = new Object[]{null};
+        return (T) InvokerHelper.invokeConstructorOf(c, args);
+    }
+
+    //--------------------------------------------------------------------------
+    // next
+
+    /**
+     * Increment a Character by one.
+     *
+     * @param self a Character
+     * @return an incremented Character
+     * @since 1.5.7
+     */
+    public static Character next(Character self) {
+        return (char) (self + 1);
+    }
+
+    /**
+     * Increment a Number by one.
+     *
+     * @param self a Number
+     * @return an incremented Number
+     * @since 1.0
+     */
+    public static Number next(Number self) {
+        return NumberNumberPlus.plus(self, Integer.valueOf(1));
+    }
+
+    //--------------------------------------------------------------------------
+    // numberAwareCompareTo
+
+    /**
+     * Provides a method that compares two comparables using Groovy's
+     * default number aware comparator.
+     *
+     * @param self a Comparable
+     * @param other another Comparable
+     * @return a -ve number, 0 or a +ve number according to Groovy's compareTo contract
+     * @since 1.6.0
+     */
+    public static int numberAwareCompareTo(Comparable self, Comparable other) {
+        return COMPARABLE_NUMBER_AWARE_COMPARATOR.compare(self, other);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Allows the closure to be called for the object reference self.
@@ -8403,74 +9506,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T use(Object self, Class categoryClass, Closure<T> closure) {
         return GroovyCategorySupport.use(categoryClass, closure);
-    }
-
-    /**
-     * Extend object with category methods.
-     * All methods for given class and all super classes will be added to the object.
-     *
-     * @param self          any Class
-     * @param categoryClasses a category classes to use
-     * @since 1.6.0
-     */
-    public static void mixin(MetaClass self, List<Class> categoryClasses) {
-        MixinInMetaClass.mixinClassesToMetaClass(self, categoryClasses);
-    }
-
-    /**
-     * Extend class globally with category methods.
-     * All methods for given class and all super classes will be added to the class.
-     *
-     * @param self          any Class
-     * @param categoryClasses a category classes to use
-     * @since 1.6.0
-     */
-    public static void mixin(Class self, List<Class> categoryClasses) {
-        mixin(getMetaClass(self), categoryClasses);
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     * @since 1.6.0
-     */
-    public static void mixin(Class self, Class categoryClass) {
-        mixin(getMetaClass(self), Collections.singletonList(categoryClass));
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     * @since 1.6.0
-     */
-    public static void mixin(Class self, Class[] categoryClass) {
-        mixin(getMetaClass(self), Arrays.asList(categoryClass));
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     * @since 1.6.0
-     */
-    public static void mixin(MetaClass self, Class categoryClass) {
-        mixin(self, Collections.singletonList(categoryClass));
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     * @since 1.6.0
-     */
-    public static void mixin(MetaClass self, Class[] categoryClass) {
-        mixin(self, Arrays.asList(categoryClass));
     }
 
     /**
@@ -9011,19 +10046,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> unique(List<T> self, boolean mutate) {
         return (List<T>) unique((Collection<T>) self, mutate);
-    }
-
-    /**
-     * Provides a method that compares two comparables using Groovy's
-     * default number aware comparator.
-     *
-     * @param self a Comparable
-     * @param other another Comparable
-     * @return a -ve number, 0 or a +ve number according to Groovy's compareTo contract
-     * @since 1.6.0
-     */
-    public static int numberAwareCompareTo(Comparable self, Comparable other) {
-        return COMPARABLE_NUMBER_AWARE_COMPARATOR.compare(self, other);
     }
 
     /**
@@ -10484,375 +11506,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result = metaClass.invokeMethod(result, "plus", plusParam);
         }
         return result;
-    }
-
-    /**
-     * Adds min() method to Collection objects.
-     * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
-     *
-     * @param self a Collection
-     * @return the minimum value
-     * @see #min(Iterator)
-     * @since 1.0
-     */
-    public static <T> T min(Iterable<T> self) {
-        return min(self.iterator());
-    }
-
-    /**
-     * Adds min() method to Iterator objects. The iterator will become
-     * exhausted of elements after determining the minimum value.
-     *
-     * @param self an Iterator
-     * @return the minimum value
-     * @see #min(Iterable)
-     * @since 1.5.5
-     */
-    public static <T> T min(Iterator<T> self) {
-        T answer = null;
-        while (self.hasNext()) {
-            T value =  self.next();
-            if (value != null && (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer))) {
-                answer = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Selects the minimum value found in the Iterable using the given comparator.
-     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )</pre>
-     *
-     * @param self       an Iterable
-     * @param comparator a Comparator
-     * @return the minimum value or null for an empty Iterable
-     * @see #min(Iterator, java.util.Comparator)
-     * @since 2.2.0
-     */
-    public static <T> T min(Iterable<T> self, Comparator<? super T> comparator) {
-        return min(self.iterator(), comparator);
-    }
-
-    /**
-     * Selects the minimum value found from the Iterator using the given comparator.
-     *
-     * @param self       an Iterator
-     * @param comparator a Comparator
-     * @return the minimum value
-     * @since 1.5.5
-     */
-    public static <T> T min(Iterator<T> self, Comparator<? super T> comparator) {
-        Objects.requireNonNull(self);
-        T answer = null;
-        boolean first = true;
-        while (self.hasNext()) {
-            T value = self.next();
-            if (first) {
-                first = false;
-                answer = value;
-            } else if (comparator.compare(value, answer) < 0) {
-                answer = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
-     * minimum value. A null return value represents the least possible return value. If more than one item
-     * has the minimum value, an arbitrary choice is made between the items having the minimum value.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">
-     * assert "hi" == ["hello","hi","hey"].min { it.length() }
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def lastDigit = { a, b {@code ->} a % 10 {@code <=>} b % 10 }
-     * assert [19, 55, 91].min(lastDigit) == 91
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def pets = ['dog', 'cat', 'anaconda']
-     * def shortestName = pets.min{ it.size() } // one of 'dog' or 'cat'
-     * assert shortestName.size() == 3
-     * </pre>
-     *
-     * @param self    an Iterable
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return an item from the Iterable having the minimum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
-     * @see #min(Iterator)
-     * @since 1.0
-     */
-    public static <T> T min(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return min(self.iterator(), closure);
-    }
-
-    /**
-     * Selects an entry in the map having the minimum
-     * calculated value as determined by the supplied closure.
-     * If more than one entry has the minimum value,
-     * an arbitrary choice is made between the entries having the minimum value.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">
-     * def zoo = [monkeys:6, lions:5, tigers:7]
-     * def leastCommonEntry = zoo.min{ it.value }
-     * assert leastCommonEntry.value == 5
-     * def mostCommonEntry = zoo.min{ a, b {@code ->} b.value {@code <=>} a.value } // double negative!
-     * assert mostCommonEntry.value == 7
-     * </pre>
-     * Edge case for multiple min values:
-     * <pre class="groovyTestCase">
-     * def zoo = [monkeys:6, lions:5, tigers:7]
-     * def lastCharOfName = { e {@code ->} e.key[-1] }
-     * def ans = zoo.min(lastCharOfName) // some random entry
-     * assert lastCharOfName(ans) == 's'
-     * </pre>
-     *
-     * @param self    a Map
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the Map.Entry having the minimum value as determined by the closure
-     * @since 1.7.6
-     */
-    public static <K, V> Map.Entry<K, V> min(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
-        return min(self.entrySet(), closure);
-    }
-
-    /**
-     * Selects an entry in the map having the maximum
-     * calculated value as determined by the supplied closure.
-     * If more than one entry has the maximum value,
-     * an arbitrary choice is made between the entries having the maximum value.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison. An example:
-     * <pre class="groovyTestCase">
-     * def zoo = [monkeys:6, lions:5, tigers:7]
-     * def mostCommonEntry = zoo.max{ it.value }
-     * assert mostCommonEntry.value == 7
-     * def leastCommonEntry = zoo.max{ a, b {@code ->} b.value {@code <=>} a.value } // double negative!
-     * assert leastCommonEntry.value == 5
-     * </pre>
-     * Edge case for multiple max values:
-     * <pre class="groovyTestCase">
-     * def zoo = [monkeys:6, lions:5, tigers:7]
-     * def lengthOfNamePlusNumber = { e {@code ->} e.key.size() + e.value }
-     * def ans = zoo.max(lengthOfNamePlusNumber) // one of [monkeys:6, tigers:7]
-     * assert lengthOfNamePlusNumber(ans) == 13
-     * </pre>
-     *
-     * @param self    a Map
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return the Map.Entry having the maximum value as determined by the closure
-     * @since 1.7.6
-     */
-    public static <K, V> Map.Entry<K, V> max(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>", "Map.Entry<K,V>,Map.Entry<K,V>"}) Closure closure) {
-        return max(self.entrySet(), closure);
-    }
-
-    /**
-     * Selects the minimum value found from the Iterator
-     * using the closure to determine the correct ordering.
-     * The iterator will become
-     * exhausted of elements after this operation.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    an Iterator
-     * @param closure a Closure used to determine the correct ordering
-     * @return the minimum value
-     * @since 1.5.5
-     */
-    public static <T> T min(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        int params = closure.getMaximumNumberOfParameters();
-        if (params != 1) {
-            return min(self, new ClosureComparator<>(closure));
-        }
-        Objects.requireNonNull(self);
-        boolean first = true;
-        T answer = null;
-        Object answerValue = null;
-        while (self.hasNext()) {
-            T item = self.next();
-            Object value = closure.call(item);
-            if (first) {
-                first = false;
-                answer = item;
-                answerValue = value;
-            } else if (ScriptBytecodeAdapter.compareLessThan(value, answerValue)) {
-                answer = item;
-                answerValue = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Adds max() method to Iterable objects.
-     * <pre class="groovyTestCase">
-     * assert 5 == [2,3,1,5,4].max()
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return the maximum value
-     * @see #max(Iterator)
-     * @since 2.2.0
-     */
-    public static <T> T max(Iterable<T> self) {
-        return max(self.iterator());
-    }
-
-    /**
-     * Adds max() method to Iterator objects. The iterator will become
-     * exhausted of elements after determining the maximum value.
-     *
-     * @param self an Iterator
-     * @return the maximum value
-     * @since 1.5.5
-     */
-    public static <T> T max(Iterator<T> self) {
-        T answer = null;
-        while (self.hasNext()) {
-            T value =  self.next();
-            if (value != null && (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer))) {
-                answer = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Selects the item in the iterable which when passed as a parameter to the supplied closure returns the
-     * maximum value. A null return value represents the least possible return value, so any item for which
-     * the supplied closure returns null, won't be selected (unless all items return null). If more than one item
-     * has the maximum value, an arbitrary choice is made between the items having the maximum value.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
-     * <pre class="groovyTestCase">
-     * def pets = ['dog', 'elephant', 'anaconda']
-     * def longestName = pets.max{ it.size() } // one of 'elephant' or 'anaconda'
-     * assert longestName.size() == 8
-     * </pre>
-     *
-     * @param self    an Iterable
-     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
-     * @return an item from the Iterable having the maximum value returned by calling the supplied closure with that item as parameter or null for an empty Iterable
-     * @since 2.2.0
-     */
-    public static <T> T max(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        return max(self.iterator(), closure);
-    }
-
-    /**
-     * Selects the maximum value found from the Iterator
-     * using the closure to determine the correct ordering.
-     * The iterator will become exhausted of elements after this operation.
-     * <p>
-     * If the closure has two parameters
-     * it is used like a traditional Comparator. I.e. it should compare
-     * its two parameters for order, returning a negative integer,
-     * zero, or a positive integer when the first parameter is less than,
-     * equal to, or greater than the second respectively. Otherwise,
-     * the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for
-     * further comparison.
-     *
-     * @param self    an Iterator
-     * @param closure a Closure used to determine the correct ordering
-     * @return the maximum value
-     * @since 1.5.5
-     */
-    public static <T> T max(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        int params = closure.getMaximumNumberOfParameters();
-        if (params != 1) {
-            return max(self, new ClosureComparator<>(closure));
-        }
-        boolean first = true;
-        T answer = null;
-        Object answerValue = null;
-        while (self.hasNext()) {
-            T item = self.next();
-            Object value = closure.call(item);
-            if (first) {
-                first = false;
-                answer = item;
-                answerValue = value;
-            } else if (ScriptBytecodeAdapter.compareLessThan(answerValue, value)) {
-                answer = item;
-                answerValue = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
-     * Selects the maximum value found in the Iterable using the given comparator.
-     * <pre class="groovyTestCase">
-     * assert "hello" == ["hello","hi","hey"].max( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )
-     * </pre>
-     *
-     * @param self       an Iterable
-     * @param comparator a Comparator
-     * @return the maximum value or null for an empty Iterable
-     * @see #max(Iterator, Comparator)
-     * @since 2.2.0
-     */
-    public static <T> T max(Iterable<T> self, Comparator<? super T> comparator) {
-        return max(self.iterator(), comparator);
-    }
-
-    /**
-     * Selects the maximum value found from the Iterator using the given comparator.
-     *
-     * @param self       an Iterator
-     * @param comparator a Comparator
-     * @return the maximum value
-     * @since 1.5.5
-     */
-    public static <T> T max(Iterator<T> self, Comparator<? super T> comparator) {
-        T answer = null;
-        while (self.hasNext()) {
-            T value = self.next();
-            if (value != null && (answer == null || comparator.compare(value, answer) > 0)) {
-                answer = value;
-            }
-        }
-        return answer;
     }
 
     /**
@@ -13043,48 +13696,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Collection composed of the elements of this Iterable, repeated
-     * a certain number of times.  Note that for non-primitive
-     * elements, multiple references to the same instance will be added.
-     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
-     *
-     * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
-     * method will effectively return a Collection with a single copy of the Iterable's items.
-     *
-     * @param self   an Iterable
-     * @param factor the number of times to append
-     * @return the multiplied Collection
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> multiply(Iterable<T> self, Number factor) {
-        Collection<T> selfCol = asCollection(self);
-        int size = factor.intValue();
-        Collection<T> answer = createSimilarCollection(selfCol, selfCol.size() * size);
-        for (int i = 0; i < size; i++) {
-            answer.addAll(selfCol);
-        }
-        return answer;
-    }
-
-    /**
-     * Create a List composed of the elements of this Iterable, repeated
-     * a certain number of times.  Note that for non-primitive
-     * elements, multiple references to the same instance will be added.
-     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
-     *
-     * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
-     * method will effectively return a Collection with a single copy of the Iterable's items.
-     *
-     * @param self   a List
-     * @param factor the number of times to append
-     * @return the multiplied List
-     * @since 2.4.0
-     */
-    public static <T> List<T> multiply(List<T> self, Number factor) {
-        return (List<T>) multiply((Iterable<T>) self, factor);
-    }
-
-    /**
      * Create a Collection composed of the union of both collections.  Any
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
@@ -13337,294 +13948,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a Set composed of the elements of the first Set minus the
-     * elements of the given Collection.
-     *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
-        ansSet.addAll(self);
-        if (removeMe != null) {
-            for (T o1 : self) {
-                for (Object o2 : removeMe) {
-                    boolean areEqual = (comparator != null) ? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
-                    if (areEqual) {
-                        ansSet.remove(o1);
-                    }
-                }
-            }
-        }
-        return ansSet;
-    }
-
-    /**
-     * Create a Set composed of the elements of the first Set minus the
-     * elements from the given Iterable.
-     *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
-     * @since 1.8.7
-     */
-    public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
-        return minus(self, asCollection(removeMe));
-    }
-
-    /**
-     * Create a Set composed of the elements of the first Set minus the given element.
-     *
-     * @param self     a Set object
-     * @param removeMe the element to remove from the Set
-     * @return the resulting Set
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Set<T> minus(Set<T> self, Object removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
-        for (T t : self) {
-            boolean areEqual = (comparator != null)? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
-            if (!areEqual) ansSet.add(t);
-        }
-        return ansSet;
-    }
-
-    /**
-     * Create a SortedSet composed of the elements of the first SortedSet minus the
-     * elements of the given Collection.
-     *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> minus(SortedSet<T> self, Collection<?> removeMe) {
-        return (SortedSet<T>) minus((Set<T>) self, removeMe);
-    }
-
-    /**
-     * Create a SortedSet composed of the elements of the first SortedSet minus the
-     * elements of the given Iterable.
-     *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> minus(SortedSet<T> self, Iterable<?> removeMe) {
-        return (SortedSet<T>) minus((Set<T>) self, removeMe);
-    }
-
-    /**
-     * Create a SortedSet composed of the elements of the first SortedSet minus the given element.
-     *
-     * @param self     a SortedSet object
-     * @param removeMe the element to remove from the SortedSet
-     * @return the resulting SortedSet
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> minus(SortedSet<T> self, Object removeMe) {
-        return (SortedSet<T>) minus((Set<T>) self, removeMe);
-    }
-
-    /**
-     * Create a List composed of the elements of the first list minus
-     * every occurrence of elements of the given Collection.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
-     *
-     * @param self     a List
-     * @param removeMe a Collection of elements to remove
-     * @return a List with the given elements removed
-     * @since 1.0
-     */
-    public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
-        return (List<T>) minus((Collection<T>) self, removeMe);
-    }
-
-    /**
-     * Create a new Collection composed of the elements of the first Collection minus
-     * every occurrence of elements of the given Collection.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
-     *
-     * @param self     a Collection
-     * @param removeMe a Collection of elements to remove
-     * @return a Collection with the given elements removed
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
-        return minus(self, removeMe, new NumberAwareComparator<>());
-    }
-
-    /**
-     * Create a new List composed of the elements of the first List minus
-     * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
-     *
-     * @param self     a List
-     * @param removeMe an Iterable of elements to remove
-     * @return a new List with the given elements removed
-     * @since 1.8.7
-     */
-    public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
-        return (List<T>) minus((Iterable<T>) self, removeMe);
-    }
-
-    /**
-     * Create a new Collection composed of the elements of the first Iterable minus
-     * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">
-     * assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]
-     * </pre>
-     *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @return a new Collection with the given elements removed
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
-        return minus(asCollection(self), asCollection(removeMe));
-    }
-
-    /**
-     * Create a new Collection composed of the elements of the first Iterable minus
-     * every matching occurrence as determined by the condition closure of elements of the given Iterable.
-     * <pre class="groovyTestCase">
-     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D']) { it.toLowerCase() } == ['a', 'E']
-     * </pre>
-     *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @param condition a Closure used to determine unique items
-     * @return a new Collection with the given elements removed
-     * @since 4.0.0
-     */
-    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
-                ? new OrderBy<>(condition, true)
-                : new ClosureComparator<>(condition);
-        return minus(self, removeMe, comparator);
-    }
-
-    /**
-     * Create a new Collection composed of the elements of the first Iterable minus
-     * every matching occurrence as determined by the condition comparator of elements of the given Iterable.
-     * <pre class="groovyTestCase">
-     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D'], {@code (i, j) -> i.toLowerCase() <=> j.toLowerCase()}) == ['a', 'E']
-     * </pre>
-     *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @param comparator a Comparator
-     * @return a new Collection with the given elements removed
-     * @since 4.0.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<? super T> comparator) {
-        Collection<T> ansCollection = createSimilarCollection(self);
-        if (!self.iterator().hasNext())
-            return ansCollection;
-        T head = self.iterator().next();
-
-        // We can't use the same tactic as for intersection
-        // since AbstractCollection only does a remove on the first
-        // element it encounters.
-        boolean nlgnSort = sameType(new Iterable[]{self, removeMe});
-
-        if (nlgnSort && (head instanceof Comparable)) {
-            //n*LOG(n) version
-            Set<T> removeMe2 = new TreeSet<>(comparator);
-            for(Object o: removeMe) {
-                removeMe2.add((T) o);
-            }
-            for (T o : self) {
-                if (!removeMe2.contains(o))
-                    ansCollection.add(o);
-            }
-        } else {
-            //n*n version
-            Collection<T> tmpAnswer = asCollection(self);
-            for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
-                T element = iter.next();
-                boolean elementRemoved = false;
-                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
-                    Object elt = iterator.next();
-                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
-                        iter.remove();
-                        elementRemoved = true;
-                    }
-                }
-            }
-
-            //remove duplicates
-            //can't use treeset since the base classes are different
-            ansCollection.addAll(tmpAnswer);
-        }
-        return ansCollection;
-    }
-
-    /**
-     * Create a new List composed of the elements of the first List minus every occurrence of the
-     * given element to remove.
-     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
-     *
-     * @param self     a List object
-     * @param removeMe an element to remove from the List
-     * @return the resulting List with the given element removed
-     * @since 1.0
-     */
-    public static <T> List<T> minus(List<T> self, Object removeMe) {
-        return (List<T>) minus((Iterable<T>) self, removeMe);
-    }
-
-    /**
-     * Create a new Collection composed of the elements of the first Iterable minus every occurrence of the
-     * given element to remove.
-     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
-     *
-     * @param self     an Iterable object
-     * @param removeMe an element to remove from the Iterable
-     * @return the resulting Collection with the given element removed
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
-        Collection<T> ansList = createSimilarCollection(self);
-        for (T t : self) {
-            if (!coercedEquals(t, removeMe)) ansList.add(t);
-        }
-        return ansList;
-    }
-
-    /**
-     * Create a Map composed of the entries of the first map minus the
-     * entries of the given map.
-     *
-     * @param self     a map object
-     * @param removeMe the entries to remove from the map
-     * @return the resulting map
-     * @since 1.7.4
-     */
-    public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
-        final Map<K,V> ansMap = createSimilarMap(self);
-        ansMap.putAll(self);
-        if (removeMe != null && !removeMe.isEmpty()) {
-            for (Map.Entry<K, V> e1 : self.entrySet()) {
-                for (Object e2 : removeMe.entrySet()) {
-                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
-                        ansMap.remove(e1.getKey());
-                    }
-                }
-            }
-        }
-        return ansMap;
-    }
-
-    /**
      * Implementation of the right shift operator for integral types.  Non-integral
      * Number types throw UnsupportedOperationException.
      *
@@ -13866,28 +14189,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // Number based methods
 
     /**
-     * Increment a Character by one.
-     *
-     * @param self a Character
-     * @return an incremented Character
-     * @since 1.5.7
-     */
-    public static Character next(Character self) {
-        return (char) (self + 1);
-    }
-
-    /**
-     * Increment a Number by one.
-     *
-     * @param self a Number
-     * @return an incremented Number
-     * @since 1.0
-     */
-    public static Number next(Number self) {
-        return NumberNumberPlus.plus(self, Integer.valueOf(1));
-    }
-
-    /**
      * Decrement a Character by one.
      *
      * @param self a Character
@@ -13988,127 +14289,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String plus(Map left, GString right) {
         return DefaultGroovyMethods.toString(left) + right;
-    }
-
-    /**
-     * Subtract a Number from a Character. The ordinal value of the Character
-     * is used in the subtraction (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right a Number
-     * @return the Number corresponding to the subtraction of right from left
-     * @since 1.0
-     */
-    public static Number minus(Character left, Number right) {
-        return NumberNumberMinus.minus(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Subtract a Character from a Number. The ordinal value of the Character
-     * is used in the subtraction (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Number
-     * @param right a Character
-     * @return the Number corresponding to the subtraction of right from left
-     * @since 1.0
-     */
-    public static Number minus(Number left, Character right) {
-        return NumberNumberMinus.minus(left, Integer.valueOf(right));
-    }
-
-    /**
-     * Subtract one Character from another. The ordinal values of the Characters
-     * is used in the comparison (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right a Character
-     * @return the Number corresponding to the subtraction of right from left
-     * @since 1.0
-     */
-    public static Number minus(Character left, Character right) {
-        return minus(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Multiply a Character by a Number. The ordinal value of the Character
-     * is used in the multiplication (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right a Number
-     * @return the Number corresponding to the multiplication of left by right
-     * @since 1.0
-     */
-    public static Number multiply(Character left, Number right) {
-        return NumberNumberMultiply.multiply(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Multiply a Number by a Character. The ordinal value of the Character
-     * is used in the multiplication (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Number
-     * @param right a Character
-     * @return the multiplication of left by right
-     * @since 1.0
-     */
-    public static Number multiply(Number left, Character right) {
-        return NumberNumberMultiply.multiply(Integer.valueOf(right), left);
-    }
-
-    /**
-     * Multiply two Characters. The ordinal values of the Characters
-     * are used in the multiplication (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right another Character
-     * @return the Number corresponding to the multiplication of left by right
-     * @since 1.0
-     */
-    public static Number multiply(Character left, Character right) {
-        return multiply(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Multiply a BigDecimal and a Double.
-     * Note: This method was added to enforce the Groovy rule of
-     * BigDecimal*Double == Double. Without this method, the
-     * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is preferred
-     * over Number, the Number*Number method is not chosen as in older
-     * versions of Groovy.
-     *
-     * @param left  a BigDecimal
-     * @param right a Double
-     * @return the multiplication of left by right
-     * @since 1.0
-     */
-    public static Number multiply(BigDecimal left, Double right) {
-        return NumberMath.multiply(left, right);
-    }
-
-    /**
-     * Multiply a BigDecimal and a BigInteger.
-     * Note: This method was added to enforce the Groovy rule of
-     * BigDecimal*long == long. Without this method, the
-     * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is preferred
-     * over Number, the Number*Number method is not chosen as in older
-     * versions of Groovy. BigInteger is the fallback for all integer
-     * types in Groovy
-     *
-     * @param left  a BigDecimal
-     * @param right a BigInteger
-     * @return the multiplication of left by right
-     * @since 1.0
-     */
-    public static Number multiply(BigDecimal left, BigInteger right) {
-        return NumberMath.multiply(left, right);
     }
 
     /**
@@ -14282,18 +14462,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number xor(Number left, Number right) {
         return NumberMath.xor(left, right);
-    }
-
-    /**
-     * Performs a division modulus operation.
-     *
-     * @param left  a Number
-     * @param right another Number to mod
-     * @return the modulus result
-     * @since 1.0
-     */
-    public static Number mod(Number left, Number right) {
-        return NumberMath.mod(left, right);
     }
 
     /**
@@ -14989,36 +15157,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convenience method to dynamically create a new instance of this
-     * class.  Calls the default constructor.
-     *
-     * @param c a class
-     * @return a new instance of this class
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T newInstance(Class<T> c) {
-        return (T) InvokerHelper.invokeConstructorOf(c, null);
-    }
-
-    /**
-     * Helper to construct a new instance from the given arguments.
-     * The constructor is called based on the number and types in the
-     * args array.  Use <code>newInstance(null)</code> or simply
-     * <code>newInstance()</code> for the default (no-arg) constructor.
-     *
-     * @param c    a class
-     * @param args the constructor arguments
-     * @return a new instance of this class.
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T newInstance(Class<T> c, Object[] args) {
-        if (args == null) args = new Object[]{null};
-        return (T) InvokerHelper.invokeConstructorOf(c, args);
-    }
-
-    /**
      * Sets the metaclass for a given class.
      *
      * @param self the class whose metaclass we wish to set
@@ -15082,114 +15220,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             sdyn.setBoolean(null, true);
         } catch (Throwable e) {
             //DO NOTHING
-        }
-    }
-
-    /**
-     * Sets/updates the metaclass for a given class to a closure.
-     *
-     * @param self the class whose metaclass we wish to update
-     * @param closure the closure representing the new metaclass
-     * @return the new metaclass value
-     * @throws GroovyRuntimeException if the metaclass can't be set for this class
-     * @since 1.6.0
-     */
-    public static MetaClass metaClass(Class self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
-            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
-        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        MetaClass mc = metaClassRegistry.getMetaClass(self);
-
-        if (mc instanceof ExpandoMetaClass) {
-            ((ExpandoMetaClass) mc).define(closure);
-            return mc;
-        }
-        else {
-            if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass) {
-                ((ExpandoMetaClass)((DelegatingMetaClass) mc).getAdaptee()).define(closure);
-                return mc;
-            }
-            else {
-                if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee().getClass() == MetaClassImpl.class) {
-                    ExpandoMetaClass emc =  new ExpandoMetaClass(self, false, true);
-                    emc.initialize();
-                    emc.define(closure);
-                    ((DelegatingMetaClass) mc).setAdaptee(emc);
-                    return mc;
-                }
-                else {
-                    if (mc.getClass() == MetaClassImpl.class) {
-                        // default case
-                        mc = new ExpandoMetaClass(self, false, true);
-                        mc.initialize();
-                        ((ExpandoMetaClass)mc).define(closure);
-                        metaClassRegistry.setMetaClass(self, mc);
-                        return mc;
-                    }
-                    else {
-                        throw new GroovyRuntimeException("Can't add methods to custom meta class " + mc);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Sets/updates the metaclass for a given object to a closure.
-     *
-     * @param self the object whose metaclass we wish to update
-     * @param closure the closure representing the new metaclass
-     * @return the new metaclass value
-     * @throws GroovyRuntimeException if the metaclass can't be set for this object
-     * @since 1.6.0
-     */
-    public static MetaClass metaClass(Object self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
-            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
-        MetaClass emc = hasPerInstanceMetaClass(self);
-        if (emc == null) {
-            final ExpandoMetaClass metaClass = new ExpandoMetaClass(self.getClass(), false, true);
-            metaClass.initialize();
-            metaClass.define(closure);
-            if (self instanceof GroovyObject) {
-                setMetaClass((GroovyObject)self, metaClass);
-            } else {
-                setMetaClass(self, metaClass);
-            }
-            return metaClass;
-        }
-        else {
-            if (emc instanceof ExpandoMetaClass) {
-                ((ExpandoMetaClass)emc).define(closure);
-                return emc;
-            }
-            else {
-                if (emc instanceof DelegatingMetaClass && ((DelegatingMetaClass)emc).getAdaptee() instanceof ExpandoMetaClass) {
-                    ((ExpandoMetaClass)((DelegatingMetaClass)emc).getAdaptee()).define(closure);
-                    return emc;
-                }
-                else {
-                    throw new RuntimeException("Can't add methods to non-ExpandoMetaClass " + emc);
-                }
-            }
-        }
-    }
-
-    private static MetaClass hasPerInstanceMetaClass(Object object) {
-        if (object instanceof GroovyObject) {
-            MetaClass mc = ((GroovyObject)object).getMetaClass();
-            if (mc == GroovySystem.getMetaClassRegistry().getMetaClass(object.getClass()) || mc.getClass() == MetaClassImpl.class)
-                return null;
-            else
-                return mc;
-        }
-        else {
-            ClassInfo info = ClassInfo.getClassInfo(object.getClass());
-            info.lock();
-            try {
-                return info.getPerInstanceMetaClass(object);
-            }
-            finally {
-                info.unlock();
-            }
         }
     }
 
