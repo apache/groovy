@@ -4651,11 +4651,117 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.4
      */
     public static <T> Iterator<T> iterator(final T[] self) {
-        return Arrays.asList(self).iterator();
+        return new ArrayIterator<>(self);
     }
 
     //--------------------------------------------------------------------------
     // join
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of boolean
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(boolean[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of byte
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(byte[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of char
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(char[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of short
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(short[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of int
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(int[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of long
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(long[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of float
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(float[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * @param self an array of double
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(double[] self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the string representation of each item in this array.
+     *
+     * <pre class="groovyTestCase">
+     * def array = new Number[]{1,2L,3G}
+     * assert array.join() == "123"
+     * </pre>
+     *
+     * @param self an array of Object
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(Object[] self) {
+        return join(self, null);
+    }
+
+    //
 
     /**
      * Concatenates the string representation of each item in this array,
@@ -4762,16 +4868,20 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Concatenates the <code>toString()</code> representation of each
-     * item in this array, with the given String as a separator between each
-     * item.
+     * Concatenates the string representation of each item in this array,
+     * with the given String as a separator between each item.
+     *
+     * <pre class="groovyTestCase">
+     * Serializable[] array = [1,2L,-3G]
+     * assert array.join("+") == "1+2+-3"
+     * </pre>
      *
      * @param self      an array of Object
      * @param separator a String separator
      * @return the joined String
      * @since 1.0
      */
-    public static <T> String join(T[] self, String separator) {
+    public static String join(Object[] self, String separator) {
         return DefaultGroovyMethods.join(new ArrayIterator<>(self), separator);
     }
 

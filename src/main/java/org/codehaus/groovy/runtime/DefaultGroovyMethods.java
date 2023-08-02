@@ -8028,6 +8028,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterator. The iterator will be exhausted of elements.
+     *
+     * @param self an Iterator of objects
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(final Iterator<?> self) {
+        return join(self, null);
+    }
+
+    /**
+     * Concatenates the <code>toString()</code> representation of each item from
+     * the Iterable.
+     *
+     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
+     *
+     * @param self an Iterable of objects
+     * @return the joined String
+     * @since 5.0.0
+     */
+    public static String join(final Iterable<?> self) {
+        return join(self.iterator(), null);
+    }
+
+    /**
+     * Concatenates the <code>toString()</code> representation of each item from
      * the Iterator, with the given String as a separator between each item. The
      * iterator will become exhausted of elements after producing the resulting
      * conjoined value.
@@ -8050,8 +8076,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Concatenates the <code>toString()</code> representation of each item from
      * the Iterable, with the given String as a separator between each item.
-     * <p>
-     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
+     *
      * <pre class="groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
      *
      * @param self      an Iterable of objects

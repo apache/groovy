@@ -21,14 +21,14 @@ package org.codehaus.groovy.util;
 import java.util.Iterator;
 
 /**
- * Allow a long array to be used where an Iterable is expected.
+ * Allows a long array to be used where an Iterable is expected.
  *
  * @since 3.0.8
  */
 public class LongArrayIterable implements Iterable<Long> {
     private final long[] array;
 
-    public LongArrayIterable(long[] array) {
+    public LongArrayIterable(final long[] array) {
         this.array = array;
     }
 

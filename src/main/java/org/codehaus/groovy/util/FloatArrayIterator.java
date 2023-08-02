@@ -18,36 +18,34 @@
  */
 package org.codehaus.groovy.util;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow a float array to be used where an Iterator is expected.
+ * Allows a float array to be used where an Iterator is expected.
  *
  * @since 3.0.8
  */
 public class FloatArrayIterator implements Iterator<Float> {
     private final float[] array;
-    private final int length;
     private int index;
 
-    public FloatArrayIterator(float[] array) {
+    public FloatArrayIterator(final float[] array) {
         this.array = array;
-        length = Array.getLength(array);
     }
 
     @Override
     public boolean hasNext() {
-        return index < length;
+        return array.length > index;
     }
 
     @Override
     public Float next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        try {
+            return array[index++];
+        } catch (IndexOutOfBoundsException e) {
+            throw new NoSuchElementException(e.getMessage());
         }
-        return array[index++];
     }
 
     @Override

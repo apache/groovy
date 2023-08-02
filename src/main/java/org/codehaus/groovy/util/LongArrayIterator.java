@@ -18,36 +18,34 @@
  */
 package org.codehaus.groovy.util;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow a long array to be used where an Iterator is expected.
+ * Allows a long array to be used where an Iterator is expected.
  *
  * @since 3.0.8
  */
 public class LongArrayIterator implements Iterator<Long> {
     private final long[] array;
-    private final int length;
     private int index;
 
-    public LongArrayIterator(long[] array) {
+    public LongArrayIterator(final long[] array) {
         this.array = array;
-        length = Array.getLength(array);
     }
 
     @Override
     public boolean hasNext() {
-        return index < length;
+        return array.length > index;
     }
 
     @Override
     public Long next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        try {
+            return array[index++];
+        } catch (IndexOutOfBoundsException e) {
+            throw new NoSuchElementException(e.getMessage());
         }
-        return array[index++];
     }
 
     @Override

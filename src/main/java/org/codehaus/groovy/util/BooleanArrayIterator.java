@@ -18,36 +18,34 @@
  */
 package org.codehaus.groovy.util;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow a boolean array to be used where an Iterator is expected.
+ * Allows a boolean array to be used where an Iterator is expected.
  *
  * @since 3.0.8
  */
 public class BooleanArrayIterator implements Iterator<Boolean> {
     private final boolean[] array;
-    private final int length;
     private int index;
 
-    public BooleanArrayIterator(boolean[] array) {
+    public BooleanArrayIterator(final boolean[] array) {
         this.array = array;
-        length = Array.getLength(array);
     }
 
     @Override
     public boolean hasNext() {
-        return index < length;
+        return array.length > index;
     }
 
     @Override
     public Boolean next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        try {
+            return array[index++];
+        } catch (IndexOutOfBoundsException e) {
+            throw new NoSuchElementException(e.getMessage());
         }
-        return array[index++];
     }
 
     @Override

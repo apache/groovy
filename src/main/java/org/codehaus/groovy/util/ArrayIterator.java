@@ -18,35 +18,32 @@
  */
 package org.codehaus.groovy.util;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow an array to be used where an Iterator is expected.
+ * Allows an array to be used where an Iterator is expected.
  */
 public class ArrayIterator<T> implements Iterator<T> {
     private final T[] array;
-    private final int length;
     private int index;
 
-    public ArrayIterator(T[] array) {
+    public ArrayIterator(final T[] array) {
         this.array = array;
-        length = Array.getLength(array);
     }
 
     @Override
     public boolean hasNext() {
-        return index < length;
+        return array.length > index;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        try {
+            return array[index++];
+        } catch (IndexOutOfBoundsException e) {
+            throw new NoSuchElementException(e.getMessage());
         }
-        return (T) Array.get(array, index++);
     }
 
     @Override

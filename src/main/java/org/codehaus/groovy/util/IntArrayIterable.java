@@ -21,14 +21,14 @@ package org.codehaus.groovy.util;
 import java.util.Iterator;
 
 /**
- * Allow an int array to be used where an Iterable is expected.
+ * Allows an int array to be used where an Iterable is expected.
  *
  * @since 3.0.8
  */
 public class IntArrayIterable implements Iterable<Integer> {
     private final int[] array;
 
-    public IntArrayIterable(int[] array) {
+    public IntArrayIterable(final int[] array) {
         this.array = array;
     }
 
