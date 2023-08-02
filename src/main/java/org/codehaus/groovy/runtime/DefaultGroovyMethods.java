@@ -6691,25 +6691,68 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // hasProperty
 
     /**
-     * Identity check. Since == is overridden in Groovy with the meaning of equality
-     * we need some fallback to check for object identity.  Invoke using the
-     * 'is' method, like so: <code>def same = this.is(that)</code>
+     * <p>Returns true of the implementing MetaClass has a property of the given name
      *
-     * @param self  an object
-     * @param other an object to compare identity with
-     * @return true if self and other are both references to the same
-     *         instance, false otherwise
-     * @since 1.0
+     * <p>Note that this method will only return true for realised properties and does not take into
+     * account implementation of getProperty or propertyMissing
+     *
+     * @param self The object to inspect
+     * @param name The name of the property of interest
+     * @return The found MetaProperty or null if it doesn't exist
+     * @see groovy.lang.MetaObjectProtocol#hasProperty(java.lang.Object, java.lang.String)
+     * @since 1.6.1
      */
-    public static boolean is(Object self, Object other) {
-        return self == other;
+    public static MetaProperty hasProperty(Object self, String name) {
+        return InvokerHelper.getMetaClass(self).hasProperty(self, name);
+    }
+
+    //--------------------------------------------------------------------------
+    // head
+
+    /**
+     * Returns the first item from the Iterable.
+     * <pre class="groovyTestCase">
+     * def set = [3, 4, 2] as LinkedHashSet
+     * assert set.head() == 3
+     * // check original is unaltered
+     * assert set == [3, 4, 2] as Set
+     * </pre>
+     * The first element returned by the Iterable's iterator is returned.
+     * If the Iterable doesn't guarantee a defined order it may appear like
+     * a random element is returned.
+     *
+     * @param self an Iterable
+     * @return the first item from the Iterable
+     * @throws NoSuchElementException if you try to access head() for an empty iterable
+     * @since 2.4.0
+     */
+    public static <T> T head(Iterable<T> self) {
+        return first(self);
     }
 
     /**
+     * Returns the first item from the List.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.head() == 3
+     * assert list == [3, 4, 2]</pre>
+     *
+     * @param self a List
+     * @return the first item from the List
+     * @throws NoSuchElementException if you try to access head() for an empty List
+     * @since 1.5.5
+     */
+    public static <T> T head(List<T> self) {
+        return first(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // identity (aka `with`)
+
+    /**
      * Allows the closure to be called for the object reference self.
-     * Synonym for 'with()'.
      *
      * @param self    the object to have a closure act upon
      * @param closure the closure to call on the object
@@ -6726,6 +6769,1236 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     Closure<T> closure) {
         return DefaultGroovyMethods.with(self, closure);
     }
+
+    //--------------------------------------------------------------------------
+    // implies
+
+    /**
+     * Logical implication of two boolean operators.
+     *
+     * @param left left operator
+     * @param right right operator
+     * @return result of logical implication
+     * @since 1.8.3
+     */
+    public static Boolean implies(Boolean left, Boolean right) {
+        return !left || Boolean.TRUE.equals(right);
+    }
+
+    //--------------------------------------------------------------------------
+    // indexed
+
+    /**
+     * Zips an Iterable with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [0: "a", 1: "b"] == ["a", "b"].indexed()
+     * assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str {@code ->} "$idx: $str" }
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a zipped map with indices
+     * @see #withIndex(Iterable)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an Iterable with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [5: "a", 6: "b"] == ["a", "b"].indexed(5)
+     * assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str {@code ->} "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Iterable
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see #withIndex(Iterable, int)
+     * @since 2.4.0
+     */
+    public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
+        Objects.requireNonNull(self);
+        Map<Integer, E> result = new LinkedHashMap<>();
+        Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
+        while (indexed.hasNext()) {
+            Tuple2<Integer, E> next = indexed.next();
+            result.put(next.getV1(), next.getV2());
+        }
+        return result;
+    }
+
+    /**
+     * Zips an iterator with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ tuple {@code ->} [tuple.first, tuple.second] }
+     * assert ["0: a", "1: b"] == ["a", "b"].iterator().indexed().collect { idx, str {@code ->} "$idx: $str" }.toList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an iterator with indices in (index, value) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [[5, "a"], [6, "b"]] == ["a", "b"].iterator().indexed(5).toList()
+     * assert ["a: 1", "b: 2"] == ["a", "b"].iterator().indexed(1).collect { idx, str {@code ->} "$str: $idx" }.toList()
+     * </pre>
+     *
+     * @param self   an iterator
+     * @param offset an index to start from
+     * @return a zipped iterator with indices
+     * @see #withIndex(Iterator, int)
+     * @since 2.4.0
+     */
+    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self, int offset) {
+        return new ZipPreIterator<>(self, offset);
+    }
+
+    private static final class ZipPreIterator<E> implements Iterator<Tuple2<Integer, E>> {
+        private final Iterator<E> delegate;
+        private int index;
+
+        private ZipPreIterator(Iterator<E> delegate, int offset) {
+            this.delegate = delegate;
+            this.index = offset;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public Tuple2<Integer, E> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new Tuple2<>(index++, delegate.next());
+        }
+
+        @Override
+        public void remove() {
+            delegate.remove();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // init
+
+    /**
+     * Returns the items from the Iterable excluding the last item. Leaves the original Iterable unchanged.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.init() == [3, 4]
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a Collection without its last element
+     * @throws NoSuchElementException if you try to access init() for an empty Iterable
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> init(Iterable<T> self) {
+        if (!self.iterator().hasNext()) {
+            throw new NoSuchElementException("Cannot access init() for an empty Iterable");
+        }
+        Collection<T> result;
+        if (self instanceof Collection) {
+            Collection<T> selfCol = (Collection<T>) self;
+            result = createSimilarCollection(selfCol, selfCol.size() - 1);
+        } else {
+            result = new ArrayList<>();
+        }
+        addAll(result, init(self.iterator()));
+        return result;
+    }
+
+    /**
+     * Returns the items from the List excluding the last item. Leaves the original List unchanged.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.init() == [3, 4]
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self a List
+     * @return a List without its last element
+     * @throws NoSuchElementException if you try to access init() for an empty List
+     * @since 2.4.0
+     */
+    public static <T> List<T> init(List<T> self) {
+        return (List<T>) init((Iterable<T>) self);
+    }
+
+    /**
+     * Returns the items from the SortedSet excluding the last item. Leaves the original SortedSet unchanged.
+     * <pre class="groovyTestCase">
+     * def sortedSet = [3, 4, 2] as SortedSet
+     * assert sortedSet.init() == [2, 3] as SortedSet
+     * assert sortedSet == [3, 4, 2] as SortedSet
+     * </pre>
+     *
+     * @param self a SortedSet
+     * @return a SortedSet without its last element
+     * @throws NoSuchElementException if you try to access init() for an empty SortedSet
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> init(SortedSet<T> self) {
+        return (SortedSet<T>) init((Iterable<T>) self);
+    }
+
+    /**
+     * Returns an Iterator containing all the items from this iterator except the last one.
+     * <pre class="groovyTestCase">
+     * def iter = [3, 4, 2].listIterator()
+     * def result = iter.init()
+     * assert result.toList() == [3, 4]
+     * </pre>
+     *
+     * @param self an Iterator
+     * @return an Iterator without the last element from the original Iterator
+     * @throws NoSuchElementException if you try to access init() for an exhausted/empty Iterator
+     * @since 2.4.0
+     */
+    public static <T> Iterator<T> init(Iterator<T> self) {
+        if (!self.hasNext()) {
+            throw new NoSuchElementException("Cannot access init() for an empty Iterator");
+        }
+        return new InitIterator<>(self);
+    }
+
+    private static final class InitIterator<E> implements Iterator<E> {
+        private final Iterator<E> delegate;
+        private boolean exhausted;
+        private E next;
+
+        private InitIterator(Iterator<E> delegate) {
+            this.delegate = delegate;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        @Override
+        public E next() {
+            if (exhausted) throw new NoSuchElementException();
+            E result = next;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            if (exhausted) throw new NoSuchElementException();
+            advance();
+        }
+
+        private void advance() {
+            next = delegate.next();
+            exhausted = !delegate.hasNext();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // inits
+
+    /**
+     * Calculates the init values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of init on the items.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3, 4].inits() == [[1, 2, 3, 4], [1, 2, 3], [1, 2], [1], []]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a List of the init values from the given Iterable
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> inits(Iterable<T> self) {
+        return GroovyCollections.inits(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // inject
+
+    /**
+     * Performs the same function as the version of inject that takes an initial value, but
+     * uses the head of the Collection as the initial value, and iterates over the tail.
+     * <pre class="groovyTestCase">
+     * assert 1 * 2 * 3 * 4 == [ 1, 2, 3, 4 ].inject { acc, val {@code ->} acc * val }
+     * assert ['b'] == [['a','b'], ['b','c'], ['d','b']].inject { acc, val {@code ->} acc.intersect( val ) }
+     * LinkedHashSet set = [ 't', 'i', 'm' ]
+     * assert 'tim' == set.inject { a, b {@code ->} a + b }
+     * </pre>
+     *
+     * @param self         a Collection
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, V extends T> T inject(Collection<T> self, @ClosureParams(value=FromString.class,options="V,T") Closure<V> closure ) {
+        if( self.isEmpty() ) {
+            throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
+        }
+        Iterator<T> iter = self.iterator();
+        T head = iter.next();
+        Collection<T> tail = tail(self);
+        if (!tail.iterator().hasNext()) {
+            return head;
+        }
+        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
+        return (T) inject((Collection) tail, head, closure);
+    }
+
+    /**
+     * Iterates through the given Collection, passing in the initial value to
+     * the 2-arg closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the entire collection
+     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     *
+     * Examples:
+     * <pre class="groovyTestCase">
+     * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val {@code ->} acc * val }
+     *
+     * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val {@code ->} acc + val }
+     *
+     * assert 'The quick brown fox' ==
+     *     ['quick', 'brown', 'fox'].inject('The') { acc, val {@code ->} acc + ' ' + val }
+     *
+     * assert 'bat' ==
+     *     ['rat', 'bat', 'cat'].inject('zzz') { min, next {@code ->} next {@code <} min ? next : min }
+     *
+     * def max = { a, b {@code ->} [a, b].max() }
+     * def animals = ['bat', 'rat', 'cat']
+     * assert 'rat' == animals.inject('aaa', max)
+     * </pre>
+     * Visual representation of the last example above:
+     * <pre>
+     *    initVal  animals[0]
+     *       v        v
+     * max('aaa',   'bat')  {@code =>}  'bat'  animals[1]
+     *                            v       v
+     *                      max('bat',  'rat')  {@code =>}  'rat'  animals[2]
+     *                                                v       v
+     *                                          max('rat',  'cat')  {@code =>}  'rat'
+     * </pre>
+     *
+     * @param self         a Collection
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
+        return (T) inject((Iterator) self.iterator(), initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given Map, passing in the initial value to
+     * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value).
+     * The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the entire collection
+     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     *
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2, c:3]
+     * assert map.inject([]) { list, k, v {@code ->}
+     *   list + [k] * v
+     * } == ['a', 'b', 'b', 'c', 'c', 'c']
+     * </pre>
+     *
+     * @param self         a Map
+     * @param initialValue some initial value
+     * @param closure      a 2 or 3 arg Closure
+     * @return the result of the last closure call
+     * @since 1.8.1
+     */
+    public static <K, V, T, U extends T, W extends T> T inject(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"U,Map.Entry<K,V>","U,K,V"})  Closure<W> closure) {
+        T value = initialValue;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (closure.getMaximumNumberOfParameters() == 3) {
+                value = closure.call(value, entry.getKey(), entry.getValue());
+            } else {
+                value = closure.call(value, entry);
+            }
+        }
+        return value;
+    }
+
+    /**
+     * Iterates through the given Iterator, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until the Iterator has been
+     * expired of values. Also known as foldLeft in functional parlance.
+     *
+     * @param self         an Iterator
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.5.0
+     */
+    public static <E,T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        T value = initialValue;
+        Object[] params = new Object[2];
+        while (self.hasNext()) {
+            Object item = self.next();
+            params[0] = value;
+            params[1] = item;
+            value = closure.call(params);
+        }
+        return value;
+    }
+
+    /**
+     * Iterates through the given Object, passing in the first value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration of
+     * the object is not possible. Also known as foldLeft in functional parlance.
+     *
+     * @param self         an Object
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the collection is empty.
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.8.7
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, V extends T> T inject(Object self, Closure<V> closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        if( !iter.hasNext() ) {
+            throw new NoSuchElementException( "Cannot call inject() over an empty iterable without passing an initial value." ) ;
+        }
+        Object initialValue = iter.next() ;
+        return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given Object, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration of
+     * the object is not possible. Also known as foldLeft in functional parlance.
+     *
+     * @param self         an Object
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @see #inject(Collection, Object, Closure)
+     * @since 1.5.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        return (T) inject(iter, initialValue, closure);
+    }
+
+    //--------------------------------------------------------------------------
+    // inspect
+
+    /**
+     * Inspects returns the String that matches what would be typed into a
+     * terminal to create this object.
+     *
+     * @param self any Object
+     * @return a String that matches what would be typed into a terminal to
+     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, 'hello']
+     * @since 1.0
+     */
+    public static String inspect(Object self) {
+        return FormatHelper.inspect(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // intdiv
+
+    /**
+     * Integer Divide a Character by a Number. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right a Number
+     * @return a Number (an Integer) resulting from the integer division operation
+     * @since 1.0
+     */
+    public static Number intdiv(Character left, Number right) {
+        return intdiv(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Integer Divide a Number by a Character. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Number
+     * @param right a Character
+     * @return a Number (an Integer) resulting from the integer division operation
+     * @since 1.0
+     */
+    public static Number intdiv(Number left, Character right) {
+        return intdiv(left, Integer.valueOf(right));
+    }
+
+    /**
+     * Integer Divide two Characters. The ordinal values of the Characters
+     * are used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
+     *
+     * @param left  a Character
+     * @param right another Character
+     * @return a Number (an Integer) resulting from the integer division operation
+     * @since 1.0
+     */
+    public static Number intdiv(Character left, Character right) {
+        return intdiv(Integer.valueOf(left), right);
+    }
+
+    /**
+     * Integer Divide two Numbers.
+     *
+     * @param left  a Number
+     * @param right another Number
+     * @return a Number (an Integer) resulting from the integer division operation
+     * @since 1.0
+     */
+    public static Number intdiv(Number left, Number right) {
+        return NumberMath.intdiv(left, right);
+    }
+
+    //--------------------------------------------------------------------------
+    // intersect
+
+    /**
+     * Create a Collection composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant collection.
+     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  a Collection
+     * @param right a Collection
+     * @return a Collection as an intersection of both collections
+     * @see #intersect(Collection, Collection, Comparator)
+     * @since 1.5.6
+     */
+    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
+        return intersect(left, right, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant collection.
+     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
+     * assert [2,4] == [1,2,3,4].intersect([4,8,12,16,20], (x, y) {@code -> x * x <=> y})
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
+     * assert one.intersect(two) == ['d']
+     * assert two.intersect(one) == ['d']
+     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
+     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
+     * </pre>
+     *
+     * @param left  a Collection
+     * @param right a Collection
+     * @param comparator a Comparator
+     * @return a Collection as an intersection of both collections
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right, Comparator<? super T> comparator) {
+        if (left.isEmpty() || right.isEmpty())
+            return createSimilarCollection(left, 0);
+
+        Collection<T> result = createSimilarCollection(left, Math.min(left.size(), right.size()));
+        //creates the collection to look for values.
+        Collection<T> compareWith = new TreeSet<>(comparator);
+        compareWith.addAll(right);
+
+        for (final T t : left) {
+            if (compareWith.contains(t))
+                result.add(t);
+        }
+        return result;
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both iterables.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @return a Collection as an intersection of both iterables
+     * @see #intersect(Iterable, Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right) {
+        return intersect(asCollection(left), asCollection(right));
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both iterables.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Collection as an intersection of both iterables
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return intersect(asCollection(left), asCollection(right), comparator);
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both iterables.
+     * Elements from teh first iterable which also occur (according to the comparator closure) in the second iterable are added to the result.
+     * If the closure takes a single parameter, the argument passed will be each element,
+     * and the closure should return a value used for comparison (either using
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * If the closure takes two parameters, two items from the Iterator
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are deemed equal).
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { it.toLowerCase() }
+     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
+     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
+     * </pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param condition a Closure used to determine unique items
+     * @return a Collection as an intersection of both iterables
+     * @since 4.0.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<>(condition, true)
+                : new ClosureComparator<>(condition);
+        return intersect(left, right, comparator);
+    }
+
+    /**
+     * Create a List composed of the intersection of a List and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  a List
+     * @param right an Iterable
+     * @return a List as an intersection of a List and an Iterable
+     * @see #intersect(List, Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> List<T> intersect(List<T> left, Iterable<T> right) {
+        return (List<T>) intersect((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a List composed of the intersection of a List and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6])
+     * </pre>
+     *
+     * @param left  a List
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a List as an intersection of a List and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> List<T> intersect(List<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (List<T>) intersect((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right) {
+        return (Set<T>) intersect((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a Set and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (Set<T>) intersect((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
+     * </pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a Set as an intersection of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right) {
+        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">
+     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
+     * </pre>
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a SortedSet and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
+        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a Map composed of the intersection of both maps.
+     * Any entries that exist in both maps are added to the resultant map.
+     * <pre class="groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
+     * <pre class="groovyTestCase">assert [1: 1, 2: 2, 3: 3, 4: 4].intersect( [1: 1.0, 2: 2, 5: 5] ) == [1:1, 2:2]</pre>
+     *
+     * @param left     a map
+     * @param right    a map
+     * @return a Map as an intersection of both maps
+     * @since 1.7.4
+     */
+    public static <K,V> Map<K,V> intersect(Map<K,V> left, Map<K,V> right) {
+        final Map<K,V> ansMap = createSimilarMap(left);
+        if (right != null && !right.isEmpty()) {
+            for (Map.Entry<K, V> e1 : left.entrySet()) {
+                for (Map.Entry<K, V> e2 : right.entrySet()) {
+                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
+                        ansMap.put(e1.getKey(), e1.getValue());
+                    }
+                }
+            }
+        }
+        return ansMap;
+    }
+
+    //--------------------------------------------------------------------------
+    // invokeMethod
+
+    /**
+     * Provide a dynamic method invocation method which can be overloaded in
+     * classes to implement dynamic proxies easily.
+     *
+     * @param object    any Object
+     * @param method    the name of the method to call
+     * @param arguments the arguments to use
+     * @return the result of the method call
+     * @since 1.0
+     */
+    public static Object invokeMethod(Object object, String method, Object arguments) {
+        return InvokerHelper.invokeMethod(object, method, arguments);
+    }
+
+    //--------------------------------------------------------------------------
+    // is
+
+    /**
+     * Identity check. Since == is overridden in Groovy with the meaning of equality
+     * we need some fallback to check for object identity.  Invoke using the
+     * 'is' method, like so: <code>def same = this.is(that)</code>
+     *
+     * @param self  an object
+     * @param other an object to compare identity with
+     * @return true if self and other are both references to the same
+     *         instance, false otherwise
+     * @since 1.0
+     */
+    public static boolean is(Object self, Object other) {
+        return self == other;
+    }
+
+    //-------------------------------------------------------------------------
+    // isAtLeast
+
+    /**
+     * Compare a BigDecimal to another.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a BigDecimal
+     * @return true if left is equal to or bigger than right
+     * @since 3.0.1
+     */
+    public static Boolean isAtLeast(BigDecimal left, BigDecimal right) {
+        return left.compareTo(right) >= 0;
+    }
+
+    /**
+     * Compare a BigDecimal to a String representing a number.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a String representing a number
+     * @return true if left is equal to or bigger than the value represented by right
+     * @since 3.0.1
+     */
+    public static Boolean isAtLeast(BigDecimal left, String right) {
+        return isAtLeast(left, new BigDecimal(right));
+    }
+
+    //-------------------------------------------------------------------------
+    // isCase
+
+    /**
+     * Method for overloading the behavior of the 'case' method in switch statements.
+     * The default implementation handles arrays types but otherwise simply delegates
+     * to Object#equals, but this may be overridden for other types. In this example:
+     * <pre> switch( a ) {
+     *   case b: //some code
+     * }</pre>
+     * "some code" is called when <code>b.isCase( a )</code> returns
+     * <code>true</code>.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue is deemed to be equal to the caseValue
+     * @since 1.0
+     */
+    public static boolean isCase(Object caseValue, Object switchValue) {
+        if (caseValue.getClass().isArray()) {
+            return isCase(DefaultTypeTransformation.asCollection(caseValue), switchValue);
+        }
+        return caseValue.equals(switchValue);
+    }
+
+    /**
+     * Special 'Case' implementation for Class, which allows testing
+     * whether some switch value is assignable from the given case class.
+     *
+     * If the switch value is an object, {@code isCase} will return true if the
+     * switch value is assignment compatible with the class (case value),
+     * i.e.&nbsp;is an {@code instanceof} the class, for example:
+     * <pre class="groovyTestCase">
+     * def someList = []
+     * switch (someList) {
+     *   case List:
+     *     assert true : 'is a list'
+     *     break
+     *   case Map:
+     *     assert false : 'is not a Map'
+     *     break
+     *   default:
+     *     assert false : 'should never get here'
+     *     break
+     * }
+     * </pre>
+     *
+     * If the switch value is a class, {@code isCase} will return true if the
+     * switch value is assignable from the given class (case value), i.e.&nbsp;the case class
+     * is the same as, or a superclass, or a super-interface of the switch class, for example:
+     * <pre class="groovyTestCase">
+     * switch (ArrayList) {
+     *   case List:
+     *     assert true : 'is a list'
+     *     break
+     *   case Map:
+     *     assert false : 'is not a Map'
+     *     break
+     *   default:
+     *     assert false : 'should never get here'
+     *     break
+     * }
+     * </pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue is deemed to be assignable from the given class
+     * @since 1.0
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean isCase(Class caseValue, Object switchValue) {
+        if (switchValue instanceof Class) {
+            Class val = (Class) switchValue;
+            return caseValue.isAssignableFrom(val);
+        }
+        return caseValue.isInstance(switchValue);
+    }
+
+    /**
+     * 'Case' implementation for collections which tests if the 'switch'
+     * operand is contained in any of the 'case' values.
+     * For example:
+     * <pre class="groovyTestCase">switch( 3 ) {
+     *   case [1,3,5]:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }</pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the caseValue is deemed to contain the switchValue
+     * @see java.util.Collection#contains(java.lang.Object)
+     * @since 1.0
+     */
+    public static boolean isCase(Collection caseValue, Object switchValue) {
+        return caseValue.contains(switchValue);
+    }
+
+    /**
+     * 'Case' implementation for iterable types which tests if the 'switch'
+     * operand is contained in any of the 'case' values.
+     * For example:
+     * <pre class="groovyTestCase">Iterable it = {[1,3,5].iterator()}
+     * switch( 3 ) {
+     *   case it:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }
+     *
+     * //GROOVY-7919
+     * assert 1 in it
+     * assert 2 !in it
+     * </pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the caseValue is deemed to contain the switchValue
+     * @see #contains(Iterable,Object)
+     * @since 5.0.0
+     */
+    public static boolean isCase(Iterable caseValue, Object switchValue) {
+        return contains(caseValue, switchValue);
+    }
+
+    /**
+     * 'Case' implementation for maps which tests the groovy truth
+     * value obtained using the 'switch' operand as key.
+     * For example:
+     * <pre class="groovyTestCase">switch( 'foo' ) {
+     *   case [foo:true, bar:false]:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
+     * }</pre>
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return the groovy truth value from caseValue corresponding to the switchValue key
+     * @since 1.7.6
+     */
+    public static boolean isCase(Map caseValue, Object switchValue) {
+        return DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
+    }
+
+    /**
+     * Special 'case' implementation for all numbers, which delegates to the
+     * <code>compareTo()</code> method for comparing numbers of different
+     * types.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the numbers are deemed equal
+     * @since 1.5.0
+     */
+    public static boolean isCase(Number caseValue, Number switchValue) {
+        return NumberMath.compareTo(caseValue, switchValue) == 0;
+    }
+
+    //--------------------------------------------------------------------------
+    // isDigit
+
+    /**
+     * Determines if a character is a digit.
+     * Synonym for 'Character.isDigit(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a digit
+     * @see java.lang.Character#isDigit(char)
+     * @since 1.5.7
+     */
+    public static boolean isDigit(Character self) {
+        return Character.isDigit(self);
+    }
+
+    //-------------------------------------------------------------------------
+    // isEmpty
+
+    /**
+     * Check whether an <code>Iterable</code> has elements
+     * <pre class="groovyTestCase">
+     * def items = [1]
+     * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
+     * assert !iterable.isEmpty()
+     * iterable.iterator().next()
+     * assert iterable.isEmpty()
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return true if the iterable has no elements, false otherwise
+     * @since 2.5.0
+     */
+    public static boolean isEmpty(Iterable self) {
+        return !self.iterator().hasNext();
+    }
+
+    //--------------------------------------------------------------------------
+    // isLetter
+
+    /**
+     * Determines if a character is a letter.
+     * Synonym for 'Character.isLetter(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a letter
+     * @see java.lang.Character#isLetter(char)
+     * @since 1.5.7
+     */
+    public static boolean isLetter(Character self) {
+        return Character.isLetter(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // isLetterOrDigit
+
+    /**
+     * Determines if a character is a letter or digit.
+     * Synonym for 'Character.isLetterOrDigit(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a letter or digit
+     * @see java.lang.Character#isLetterOrDigit(char)
+     * @since 1.5.7
+     */
+    public static boolean isLetterOrDigit(Character self) {
+        return Character.isLetterOrDigit(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // isLowerCase
+
+    /**
+     * Determines if a Character is lowercase.
+     * Synonym for 'Character.isLowerCase(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is lowercase
+     * @see java.lang.Character#isLowerCase(char)
+     * @since 1.5.7
+     */
+    public static boolean isLowerCase(Character self) {
+        return Character.isLowerCase(self);
+    }
+
+    //-------------------------------------------------------------------------
+    // isNotCase
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Number caseValue, Number switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Object caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Class<?> caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Closure<?> caseValue, Object switchValue) {
+        return !caseValue.isCase(switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Collection<?> caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Map<?, ?>     caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    //--------------------------------------------------------------------------
+    // isUpperCase
+
+    /**
+     * Determines if a Character is uppercase.
+     * Synonym for 'Character.isUpperCase(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is uppercase
+     * @see java.lang.Character#isUpperCase(char)
+     * @since 1.5.7
+     */
+    public static boolean isUpperCase(Character self) {
+        return Character.isUpperCase(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // isWhitespace
+
+    /**
+     * Determines if a character is a whitespace character.
+     * Synonym for 'Character.isWhitespace(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a whitespace character
+     * @see java.lang.Character#isWhitespace(char)
+     * @since 1.5.7
+     */
+    public static boolean isWhitespace(Character self) {
+        return Character.isWhitespace(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // iterator
+
+    /**
+     * Attempts to create an Iterator for the given object by first
+     * converting it to a Collection.
+     *
+     * @param o an object
+     * @return an Iterator for the given Object.
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
+     * @since 1.0
+     */
+    public static Iterator iterator(final Object o) {
+        if (o instanceof Iterator) return (Iterator)o;
+        return DefaultTypeTransformation.asCollection(o).iterator();
+    }
+
+    /**
+     * Allows an Enumeration to behave like an Iterator.  Note that the
+     * {@link java.util.Iterator#remove() remove()} method is unsupported since the
+     * underlying Enumeration does not provide a mechanism for removing items.
+     *
+     * @param enumeration an Enumeration object
+     * @return an Iterator for the given Enumeration
+     * @since 1.0
+     */
+    public static <T> Iterator<T> iterator(final Enumeration<T> enumeration) {
+        return new Iterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return enumeration.hasMoreElements();
+            }
+
+            @Override
+            public T next() {
+                return enumeration.nextElement();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+            }
+        };
+    }
+
+    /**
+     * An identity function for iterators, supporting 'duck-typing' when trying to get an
+     * iterator for each object within a collection, some of which may already be iterators.
+     *
+     * @param self an iterator object
+     * @return itself
+     * @since 1.5.0
+     */
+    public static <T> Iterator<T> iterator(Iterator<T> self) {
+        return self;
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Allows the closure to be called for the object reference self.
@@ -7008,33 +8281,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             list.add(categoryClass);
         }
         return GroovyCategorySupport.use(list, closure);
-    }
-
-    /**
-     * Inspects returns the String that matches what would be typed into a
-     * terminal to create this object.
-     *
-     * @param self any Object
-     * @return a String that matches what would be typed into a terminal to
-     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, 'hello']
-     * @since 1.0
-     */
-    public static String inspect(Object self) {
-        return FormatHelper.inspect(self);
-    }
-
-    /**
-     * Provide a dynamic method invocation method which can be overloaded in
-     * classes to implement dynamic proxies easily.
-     *
-     * @param object    any Object
-     * @param method    the name of the method to call
-     * @param arguments the arguments to use
-     * @return the result of the method call
-     * @since 1.0
-     */
-    public static Object invokeMethod(Object object, String method, Object arguments) {
-        return InvokerHelper.invokeMethod(object, method, arguments);
     }
 
     //--------------------------------------------------------------------------
@@ -7416,211 +8662,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             owner = ((Closure<?>) owner).getOwner();
         }
         return owner;
-    }
-
-    //-------------------------------------------------------------------------
-    // isCase/isNotCase
-
-    /**
-     * Method for overloading the behavior of the 'case' method in switch statements.
-     * The default implementation handles arrays types but otherwise simply delegates
-     * to Object#equals, but this may be overridden for other types. In this example:
-     * <pre> switch( a ) {
-     *   case b: //some code
-     * }</pre>
-     * "some code" is called when <code>b.isCase( a )</code> returns
-     * <code>true</code>.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue is deemed to be equal to the caseValue
-     * @since 1.0
-     */
-    public static boolean isCase(Object caseValue, Object switchValue) {
-        if (caseValue.getClass().isArray()) {
-            return isCase(DefaultTypeTransformation.asCollection(caseValue), switchValue);
-        }
-        return caseValue.equals(switchValue);
-    }
-
-    /**
-     * Special 'Case' implementation for Class, which allows testing
-     * whether some switch value is assignable from the given case class.
-     *
-     * If the switch value is an object, {@code isCase} will return true if the
-     * switch value is assignment compatible with the class (case value),
-     * i.e.&nbsp;is an {@code instanceof} the class, for example:
-     * <pre class="groovyTestCase">
-     * def someList = []
-     * switch (someList) {
-     *   case List:
-     *     assert true : 'is a list'
-     *     break
-     *   case Map:
-     *     assert false : 'is not a Map'
-     *     break
-     *   default:
-     *     assert false : 'should never get here'
-     *     break
-     * }
-     * </pre>
-     *
-     * If the switch value is a class, {@code isCase} will return true if the
-     * switch value is assignable from the given class (case value), i.e.&nbsp;the case class
-     * is the same as, or a superclass, or a super-interface of the switch class, for example:
-     * <pre class="groovyTestCase">
-     * switch (ArrayList) {
-     *   case List:
-     *     assert true : 'is a list'
-     *     break
-     *   case Map:
-     *     assert false : 'is not a Map'
-     *     break
-     *   default:
-     *     assert false : 'should never get here'
-     *     break
-     * }
-     * </pre>
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the switchValue is deemed to be assignable from the given class
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static boolean isCase(Class caseValue, Object switchValue) {
-        if (switchValue instanceof Class) {
-            Class val = (Class) switchValue;
-            return caseValue.isAssignableFrom(val);
-        }
-        return caseValue.isInstance(switchValue);
-    }
-
-    /**
-     * 'Case' implementation for collections which tests if the 'switch'
-     * operand is contained in any of the 'case' values.
-     * For example:
-     * <pre class="groovyTestCase">switch( 3 ) {
-     *   case [1,3,5]:
-     *     assert true
-     *     break
-     *   default:
-     *     assert false
-     * }</pre>
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the caseValue is deemed to contain the switchValue
-     * @see java.util.Collection#contains(java.lang.Object)
-     * @since 1.0
-     */
-    public static boolean isCase(Collection caseValue, Object switchValue) {
-        return caseValue.contains(switchValue);
-    }
-
-    /**
-     * 'Case' implementation for iterable types which tests if the 'switch'
-     * operand is contained in any of the 'case' values.
-     * For example:
-     * <pre class="groovyTestCase">Iterable it = {[1,3,5].iterator()}
-     * switch( 3 ) {
-     *   case it:
-     *     assert true
-     *     break
-     *   default:
-     *     assert false
-     * }
-     *
-     * //GROOVY-7919
-     * assert 1 in it
-     * assert 2 !in it
-     * </pre>
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the caseValue is deemed to contain the switchValue
-     * @see #contains(Iterable,Object)
-     * @since 5.0.0
-     */
-    public static boolean isCase(Iterable caseValue, Object switchValue) {
-        return contains(caseValue, switchValue);
-    }
-
-    /**
-     * 'Case' implementation for maps which tests the groovy truth
-     * value obtained using the 'switch' operand as key.
-     * For example:
-     * <pre class="groovyTestCase">switch( 'foo' ) {
-     *   case [foo:true, bar:false]:
-     *     assert true
-     *     break
-     *   default:
-     *     assert false
-     * }</pre>
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return the groovy truth value from caseValue corresponding to the switchValue key
-     * @since 1.7.6
-     */
-    public static boolean isCase(Map caseValue, Object switchValue) {
-        return DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
-    }
-
-    /**
-     * Special 'case' implementation for all numbers, which delegates to the
-     * <code>compareTo()</code> method for comparing numbers of different
-     * types.
-     *
-     * @param caseValue   the case value
-     * @param switchValue the switch value
-     * @return true if the numbers are deemed equal
-     * @since 1.5.0
-     */
-    public static boolean isCase(Number caseValue, Number switchValue) {
-        return NumberMath.compareTo(caseValue, switchValue) == 0;
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Number caseValue, Number switchValue) {
-        return !isCase(caseValue, switchValue);
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Object caseValue, Object switchValue) {
-        return !isCase(caseValue, switchValue);
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Class<?> caseValue, Object switchValue) {
-        return !isCase(caseValue, switchValue);
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Closure<?> caseValue, Object switchValue) {
-        return !caseValue.isCase(switchValue);
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Collection<?> caseValue, Object switchValue) {
-        return !isCase(caseValue, switchValue);
-    }
-
-    /**
-     * @since 4.0.0
-     */
-    public static boolean isNotCase(Map<?, ?>     caseValue, Object switchValue) {
-        return !isCase(caseValue, switchValue);
     }
 
     //--------------------------------------------------------------------------
@@ -9050,188 +10091,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Performs the same function as the version of inject that takes an initial value, but
-     * uses the head of the Collection as the initial value, and iterates over the tail.
-     * <pre class="groovyTestCase">
-     * assert 1 * 2 * 3 * 4 == [ 1, 2, 3, 4 ].inject { acc, val {@code ->} acc * val }
-     * assert ['b'] == [['a','b'], ['b','c'], ['d','b']].inject { acc, val {@code ->} acc.intersect( val ) }
-     * LinkedHashSet set = [ 't', 'i', 'm' ]
-     * assert 'tim' == set.inject { a, b {@code ->} a + b }
-     * </pre>
-     *
-     * @param self         a Collection
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @throws NoSuchElementException if the collection is empty.
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.8.7
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, V extends T> T inject(Collection<T> self, @ClosureParams(value=FromString.class,options="V,T") Closure<V> closure ) {
-        if( self.isEmpty() ) {
-            throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
-        }
-        Iterator<T> iter = self.iterator();
-        T head = iter.next();
-        Collection<T> tail = tail(self);
-        if (!tail.iterator().hasNext()) {
-            return head;
-        }
-        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
-        return (T) inject((Collection) tail, head, closure);
-    }
-
-    /**
-     * Iterates through the given Collection, passing in the initial value to
-     * the 2-arg closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
-     *
-     * Examples:
-     * <pre class="groovyTestCase">
-     * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val {@code ->} acc * val }
-     *
-     * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val {@code ->} acc + val }
-     *
-     * assert 'The quick brown fox' ==
-     *     ['quick', 'brown', 'fox'].inject('The') { acc, val {@code ->} acc + ' ' + val }
-     *
-     * assert 'bat' ==
-     *     ['rat', 'bat', 'cat'].inject('zzz') { min, next {@code ->} next {@code <} min ? next : min }
-     *
-     * def max = { a, b {@code ->} [a, b].max() }
-     * def animals = ['bat', 'rat', 'cat']
-     * assert 'rat' == animals.inject('aaa', max)
-     * </pre>
-     * Visual representation of the last example above:
-     * <pre>
-     *    initVal  animals[0]
-     *       v        v
-     * max('aaa',   'bat')  {@code =>}  'bat'  animals[1]
-     *                            v       v
-     *                      max('bat',  'rat')  {@code =>}  'rat'  animals[2]
-     *                                                v       v
-     *                                          max('rat',  'cat')  {@code =>}  'rat'
-     * </pre>
-     *
-     * @param self         a Collection
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @since 1.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
-        return (T) inject((Iterator) self.iterator(), initialValue, closure);
-    }
-
-    /**
-     * Iterates through the given Map, passing in the initial value to
-     * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value).
-     * The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
-     *
-     * Examples:
-     * <pre class="groovyTestCase">
-     * def map = [a:1, b:2, c:3]
-     * assert map.inject([]) { list, k, v {@code ->}
-     *   list + [k] * v
-     * } == ['a', 'b', 'b', 'c', 'c', 'c']
-     * </pre>
-     *
-     * @param self         a Map
-     * @param initialValue some initial value
-     * @param closure      a 2 or 3 arg Closure
-     * @return the result of the last closure call
-     * @since 1.8.1
-     */
-    public static <K, V, T, U extends T, W extends T> T inject(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"U,Map.Entry<K,V>","U,K,V"})  Closure<W> closure) {
-        T value = initialValue;
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (closure.getMaximumNumberOfParameters() == 3) {
-                value = closure.call(value, entry.getKey(), entry.getValue());
-            } else {
-                value = closure.call(value, entry);
-            }
-        }
-        return value;
-    }
-
-    /**
-     * Iterates through the given Iterator, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the Iterator has been
-     * expired of values. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Iterator
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.5.0
-     */
-    public static <E,T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        T value = initialValue;
-        Object[] params = new Object[2];
-        while (self.hasNext()) {
-            Object item = self.next();
-            params[0] = value;
-            params[1] = item;
-            value = closure.call(params);
-        }
-        return value;
-    }
-
-    /**
-     * Iterates through the given Object, passing in the first value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until further iteration of
-     * the object is not possible. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Object
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @throws NoSuchElementException if the collection is empty.
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.8.7
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, V extends T> T inject(Object self, Closure<V> closure) {
-        Iterator iter = InvokerHelper.asIterator(self);
-        if( !iter.hasNext() ) {
-            throw new NoSuchElementException( "Cannot call inject() over an empty iterable without passing an initial value." ) ;
-        }
-        Object initialValue = iter.next() ;
-        return (T) inject(iter, initialValue, closure);
-    }
-
-    /**
-     * Iterates through the given Object, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until further iteration of
-     * the object is not possible. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Object
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
-        Iterator iter = InvokerHelper.asIterator(self);
-        return (T) inject(iter, initialValue, closure);
-    }
-
-    /**
      * Sums the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable.
      * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
@@ -9829,24 +10688,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Check whether an <code>Iterable</code> has elements
-     * <pre class="groovyTestCase">
-     * def items = [1]
-     * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
-     * assert !iterable.isEmpty()
-     * iterable.iterator().next()
-     * assert iterable.isEmpty()
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return true if the iterable has no elements, false otherwise
-     * @since 2.5.0
-     */
-    public static boolean isEmpty(Iterable self) {
-        return !self.iterator().hasNext();
-    }
-
-    /**
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges.
      * <pre class="groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
@@ -10402,24 +11243,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an Iterable with indices in (index, value) order.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert [0: "a", 1: "b"] == ["a", "b"].indexed()
-     * assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str {@code ->} "$idx: $str" }
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return a zipped map with indices
-     * @see #withIndex(Iterable)
-     * @since 2.4.0
-     */
-    public static <E> Map<Integer, E> indexed(Iterable<E> self) {
-        return indexed(self, 0);
-    }
-
-    /**
      * Zips an Iterable with indices in (value, index) order.
      * <p/>
      * Example usage:
@@ -10436,32 +11259,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E> List<Tuple2<E, Integer>> withIndex(Iterable<E> self, int offset) {
         return toList(withIndex(self.iterator(), offset));
-    }
-
-    /**
-     * Zips an Iterable with indices in (index, value) order.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert [5: "a", 6: "b"] == ["a", "b"].indexed(5)
-     * assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str {@code ->} "$idx: $str" }
-     * </pre>
-     *
-     * @param self   an Iterable
-     * @param offset an index to start from
-     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
-     * @see #withIndex(Iterable, int)
-     * @since 2.4.0
-     */
-    public static <E> Map<Integer, E> indexed(Iterable<E> self, int offset) {
-        Objects.requireNonNull(self);
-        Map<Integer, E> result = new LinkedHashMap<>();
-        Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
-        while (indexed.hasNext()) {
-            Tuple2<Integer, E> next = indexed.next();
-            result.put(next.getV1(), next.getV2());
-        }
-        return result;
     }
 
     /**
@@ -10483,24 +11280,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips an iterator with indices in (index, value) order.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ tuple {@code ->} [tuple.first, tuple.second] }
-     * assert ["0: a", "1: b"] == ["a", "b"].iterator().indexed().collect { idx, str {@code ->} "$idx: $str" }.toList()
-     * </pre>
-     *
-     * @param self an iterator
-     * @return a zipped iterator with indices
-     * @see #withIndex(Iterator)
-     * @since 2.4.0
-     */
-    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self) {
-        return indexed(self, 0);
-    }
-
-    /**
      * Zips an iterator with indices in (value, index) order.
      * <p/>
      * Example usage:
@@ -10517,25 +11296,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E> Iterator<Tuple2<E, Integer>> withIndex(Iterator<E> self, int offset) {
         return new ZipPostIterator<>(self, offset);
-    }
-
-    /**
-     * Zips an iterator with indices in (index, value) order.
-     * <p/>
-     * Example usage:
-     * <pre class="groovyTestCase">
-     * assert [[5, "a"], [6, "b"]] == ["a", "b"].iterator().indexed(5).toList()
-     * assert ["a: 1", "b: 2"] == ["a", "b"].iterator().indexed(1).collect { idx, str {@code ->} "$str: $idx" }.toList()
-     * </pre>
-     *
-     * @param self   an iterator
-     * @param offset an index to start from
-     * @return a zipped iterator with indices
-     * @see #withIndex(Iterator, int)
-     * @since 2.4.0
-     */
-    public static <E> Iterator<Tuple2<Integer, E>> indexed(Iterator<E> self, int offset) {
-        return new ZipPreIterator<>(self, offset);
     }
 
     private static final class ZipPostIterator<E> implements Iterator<Tuple2<E, Integer>> {
@@ -10556,32 +11316,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public Tuple2<E, Integer> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(delegate.next(), index++);
-        }
-
-        @Override
-        public void remove() {
-            delegate.remove();
-        }
-    }
-
-    private static final class ZipPreIterator<E> implements Iterator<Tuple2<Integer, E>> {
-        private final Iterator<E> delegate;
-        private int index;
-
-        private ZipPreIterator(Iterator<E> delegate, int offset) {
-            this.delegate = delegate;
-            this.index = offset;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return delegate.hasNext();
-        }
-
-        @Override
-        public Tuple2<Integer, E> next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            return new Tuple2<>(index++, delegate.next());
         }
 
         @Override
@@ -11237,42 +11971,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the first item from the Iterable.
-     * <pre class="groovyTestCase">
-     * def set = [3, 4, 2] as LinkedHashSet
-     * assert set.head() == 3
-     * // check original is unaltered
-     * assert set == [3, 4, 2] as Set
-     * </pre>
-     * The first element returned by the Iterable's iterator is returned.
-     * If the Iterable doesn't guarantee a defined order it may appear like
-     * a random element is returned.
-     *
-     * @param self an Iterable
-     * @return the first item from the Iterable
-     * @throws NoSuchElementException if you try to access head() for an empty iterable
-     * @since 2.4.0
-     */
-    public static <T> T head(Iterable<T> self) {
-        return first(self);
-    }
-
-    /**
-     * Returns the first item from the List.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
-     * assert list.head() == 3
-     * assert list == [3, 4, 2]</pre>
-     *
-     * @param self a List
-     * @return the first item from the List
-     * @throws NoSuchElementException if you try to access head() for an empty List
-     * @since 1.5.5
-     */
-    public static <T> T head(List<T> self) {
-        return first(self);
-    }
-
-    /**
      * Returns the items from the List excluding the first item.
      * <pre class="groovyTestCase">
      * def list = [3, 4, 2]
@@ -11356,137 +12054,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         self.next();
         return self;
-    }
-
-    /**
-     * Calculates the init values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of init on the items.
-     * <pre class="groovyTestCase">
-     * assert [1, 2, 3, 4].inits() == [[1, 2, 3, 4], [1, 2, 3], [1, 2], [1], []]
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return a List of the init values from the given Iterable
-     * @since 2.5.0
-     */
-    public static <T> List<List<T>> inits(Iterable<T> self) {
-        return GroovyCollections.inits(self);
-    }
-
-    /**
-     * Returns the items from the Iterable excluding the last item. Leaves the original Iterable unchanged.
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * assert list.init() == [3, 4]
-     * assert list == [3, 4, 2]
-     * </pre>
-     *
-     * @param self an Iterable
-     * @return a Collection without its last element
-     * @throws NoSuchElementException if you try to access init() for an empty Iterable
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> init(Iterable<T> self) {
-        if (!self.iterator().hasNext()) {
-            throw new NoSuchElementException("Cannot access init() for an empty Iterable");
-        }
-        Collection<T> result;
-        if (self instanceof Collection) {
-            Collection<T> selfCol = (Collection<T>) self;
-            result = createSimilarCollection(selfCol, selfCol.size() - 1);
-        } else {
-            result = new ArrayList<>();
-        }
-        addAll(result, init(self.iterator()));
-        return result;
-    }
-
-    /**
-     * Returns the items from the List excluding the last item. Leaves the original List unchanged.
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * assert list.init() == [3, 4]
-     * assert list == [3, 4, 2]
-     * </pre>
-     *
-     * @param self a List
-     * @return a List without its last element
-     * @throws NoSuchElementException if you try to access init() for an empty List
-     * @since 2.4.0
-     */
-    public static <T> List<T> init(List<T> self) {
-        return (List<T>) init((Iterable<T>) self);
-    }
-
-    /**
-     * Returns the items from the SortedSet excluding the last item. Leaves the original SortedSet unchanged.
-     * <pre class="groovyTestCase">
-     * def sortedSet = [3, 4, 2] as SortedSet
-     * assert sortedSet.init() == [2, 3] as SortedSet
-     * assert sortedSet == [3, 4, 2] as SortedSet
-     * </pre>
-     *
-     * @param self a SortedSet
-     * @return a SortedSet without its last element
-     * @throws NoSuchElementException if you try to access init() for an empty SortedSet
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> init(SortedSet<T> self) {
-        return (SortedSet<T>) init((Iterable<T>) self);
-    }
-
-    /**
-     * Returns an Iterator containing all the items from this iterator except the last one.
-     * <pre class="groovyTestCase">
-     * def iter = [3, 4, 2].listIterator()
-     * def result = iter.init()
-     * assert result.toList() == [3, 4]
-     * </pre>
-     *
-     * @param self an Iterator
-     * @return an Iterator without the last element from the original Iterator
-     * @throws NoSuchElementException if you try to access init() for an exhausted/empty Iterator
-     * @since 2.4.0
-     */
-    public static <T> Iterator<T> init(Iterator<T> self) {
-        if (!self.hasNext()) {
-            throw new NoSuchElementException("Cannot access init() for an empty Iterator");
-        }
-        return new InitIterator<>(self);
-    }
-
-    private static final class InitIterator<E> implements Iterator<E> {
-        private final Iterator<E> delegate;
-        private boolean exhausted;
-        private E next;
-
-        private InitIterator(Iterator<E> delegate) {
-            this.delegate = delegate;
-            advance();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !exhausted;
-        }
-
-        @Override
-        public E next() {
-            if (exhausted) throw new NoSuchElementException();
-            E result = next;
-            advance();
-            return result;
-        }
-
-        @Override
-        public void remove() {
-            if (exhausted) throw new NoSuchElementException();
-            advance();
-        }
-
-        private void advance() {
-            next = delegate.next();
-            exhausted = !delegate.hasNext();
-        }
     }
 
     /**
@@ -12376,265 +12943,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> multiply(List<T> self, Number factor) {
         return (List<T>) multiply((Iterable<T>) self, factor);
-    }
-
-    /**
-     * Create a Collection composed of the intersection of both collections.  Any
-     * elements that exist in both collections are added to the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both collections.
-     *
-     * @param left  a Collection
-     * @param right a Collection
-     * @return a Collection as an intersection of both collections
-     * @see #intersect(Collection, Collection, Comparator)
-     * @since 1.5.6
-     */
-    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
-        return intersect(left, right, new NumberAwareComparator<>());
-    }
-
-    /**
-     * Create a Collection composed of the intersection of both collections.  Any
-     * elements that exist in both collections are added to the resultant collection.
-     * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
-     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
-     * assert [2,4] == [1,2,3,4].intersect([4,8,12,16,20], (x, y) {@code -> x * x <=> y})
-     * </pre>
-     * <pre class="groovyTestCase">
-     * def one = ['a', 'B', 'c', 'd']
-     * def two = ['b', 'C', 'd', 'e']
-     * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
-     * assert one.intersect(two) == ['d']
-     * assert two.intersect(one) == ['d']
-     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
-     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
-     * </pre>
-     *
-     * @param left  a Collection
-     * @param right a Collection
-     * @param comparator a Comparator
-     * @return a Collection as an intersection of both collections
-     * @since 2.5.0
-     */
-    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right, Comparator<? super T> comparator) {
-        if (left.isEmpty() || right.isEmpty())
-            return createSimilarCollection(left, 0);
-
-        Collection<T> result = createSimilarCollection(left, Math.min(left.size(), right.size()));
-        //creates the collection to look for values.
-        Collection<T> compareWith = new TreeSet<>(comparator);
-        compareWith.addAll(right);
-
-        for (final T t : left) {
-            if (compareWith.contains(t))
-                result.add(t);
-        }
-        return result;
-    }
-
-    /**
-     * Create a Collection composed of the intersection of both iterables.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
-     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
-     * </pre>
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both collections.
-     *
-     * @param left  an Iterable
-     * @param right an Iterable
-     * @return a Collection as an intersection of both iterables
-     * @see #intersect(Iterable, Iterable, Comparator)
-     * @since 2.4.0
-     */
-    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right) {
-        return intersect(asCollection(left), asCollection(right));
-    }
-
-    /**
-     * Create a Collection composed of the intersection of both iterables.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
-     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
-     * </pre>
-     *
-     * @param left  an Iterable
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a Collection as an intersection of both iterables
-     * @since 2.5.0
-     */
-    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return intersect(asCollection(left), asCollection(right), comparator);
-    }
-
-    /**
-     * Create a Collection composed of the intersection of both iterables.
-     * Elements from teh first iterable which also occur (according to the comparator closure) in the second iterable are added to the result.
-     * If the closure takes a single parameter, the argument passed will be each element,
-     * and the closure should return a value used for comparison (either using
-     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
-     * If the closure takes two parameters, two items from the Iterator
-     * will be passed as arguments, and the closure should return an
-     * int value (with 0 indicating the items are deemed equal).
-     * <pre class="groovyTestCase">
-     * def one = ['a', 'B', 'c', 'd']
-     * def two = ['b', 'C', 'd', 'e']
-     * def compareIgnoreCase = { it.toLowerCase() }
-     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
-     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
-     * </pre>
-     *
-     * @param left  an Iterable
-     * @param right an Iterable
-     * @param condition a Closure used to determine unique items
-     * @return a Collection as an intersection of both iterables
-     * @since 4.0.0
-     */
-    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
-                ? new OrderBy<>(condition, true)
-                : new ClosureComparator<>(condition);
-        return intersect(left, right, comparator);
-    }
-
-    /**
-     * Create a List composed of the intersection of a List and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
-     * </pre>
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both collections.
-     *
-     * @param left  a List
-     * @param right an Iterable
-     * @return a List as an intersection of a List and an Iterable
-     * @see #intersect(List, Iterable, Comparator)
-     * @since 2.4.0
-     */
-    public static <T> List<T> intersect(List<T> left, Iterable<T> right) {
-        return (List<T>) intersect((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a List composed of the intersection of a List and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6])
-     * </pre>
-     *
-     * @param left  a List
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a List as an intersection of a List and an Iterable
-     * @since 2.5.0
-     */
-    public static <T> List<T> intersect(List<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return (List<T>) intersect((Collection<T>) left, asCollection(right), comparator);
-    }
-
-    /**
-     * Create a Set composed of the intersection of a Set and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])
-     * </pre>
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both collections.
-     *
-     * @param left  a Set
-     * @param right an Iterable
-     * @return a Set as an intersection of a Set and an Iterable
-     * @see #intersect(Set, Iterable, Comparator)
-     * @since 2.4.0
-     */
-    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right) {
-        return (Set<T>) intersect((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a Set composed of the intersection of a Set and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())
-     * </pre>
-     *
-     * @param left  a Set
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a Set as an intersection of a Set and an Iterable
-     * @since 2.5.0
-     */
-    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return (Set<T>) intersect((Collection<T>) left, asCollection(right), comparator);
-    }
-
-    /**
-     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
-     * </pre>
-     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
-     * element exists in both collections.
-     *
-     * @param left  a SortedSet
-     * @param right an Iterable
-     * @return a Set as an intersection of a SortedSet and an Iterable
-     * @see #intersect(SortedSet, Iterable, Comparator)
-     * @since 2.4.0
-     */
-    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right) {
-        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right));
-    }
-
-    /**
-     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
-     * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
-     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
-     * </pre>
-     *
-     * @param left  a SortedSet
-     * @param right an Iterable
-     * @param comparator a Comparator
-     * @return a Set as an intersection of a SortedSet and an Iterable
-     * @since 2.5.0
-     */
-    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right, Comparator<? super T> comparator) {
-        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right), comparator);
-    }
-
-    /**
-     * Create a Map composed of the intersection of both maps.
-     * Any entries that exist in both maps are added to the resultant map.
-     * <pre class="groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
-     * <pre class="groovyTestCase">assert [1: 1, 2: 2, 3: 3, 4: 4].intersect( [1: 1.0, 2: 2, 5: 5] ) == [1:1, 2:2]</pre>
-     *
-     * @param left     a map
-     * @param right    a map
-     * @return a Map as an intersection of both maps
-     * @since 1.7.4
-     */
-    public static <K,V> Map<K,V> intersect(Map<K,V> left, Map<K,V> right) {
-        final Map<K,V> ansMap = createSimilarMap(left);
-        if (right != null && !right.isEmpty()) {
-            for (Map.Entry<K, V> e1 : left.entrySet()) {
-                for (Map.Entry<K, V> e2 : right.entrySet()) {
-                    if (DefaultTypeTransformation.compareEqual(e1, e2)) {
-                        ansMap.put(e1.getKey(), e1.getValue());
-                    }
-                }
-            }
-        }
-        return ansMap;
     }
 
     /**
@@ -13795,32 +14103,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a BigDecimal to another.
-     * A fluent api style alias for {@code compareTo}.
-     *
-     * @param left  a BigDecimal
-     * @param right a BigDecimal
-     * @return true if left is equal to or bigger than right
-     * @since 3.0.1
-     */
-    public static Boolean isAtLeast(BigDecimal left, BigDecimal right) {
-        return left.compareTo(right) >= 0;
-    }
-
-    /**
-     * Compare a BigDecimal to a String representing a number.
-     * A fluent api style alias for {@code compareTo}.
-     *
-     * @param left  a BigDecimal
-     * @param right a String representing a number
-     * @return true if left is equal to or bigger than the value represented by right
-     * @since 3.0.1
-     */
-    public static Boolean isAtLeast(BigDecimal left, String right) {
-        return isAtLeast(left, new BigDecimal(right));
-    }
-
-    /**
      * Power of a Number to a certain exponent. Called by the '**' operator.
      *
      * @param self     a Number
@@ -13937,60 +14219,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             return BigDecimal.valueOf(Math.pow(self.doubleValue(), exponent.doubleValue())).toBigInteger();
         }
-    }
-
-    /**
-     * Integer Divide a Character by a Number. The ordinal value of the Character
-     * is used in the division (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right a Number
-     * @return a Number (an Integer) resulting from the integer division operation
-     * @since 1.0
-     */
-    public static Number intdiv(Character left, Number right) {
-        return intdiv(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Integer Divide a Number by a Character. The ordinal value of the Character
-     * is used in the division (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Number
-     * @param right a Character
-     * @return a Number (an Integer) resulting from the integer division operation
-     * @since 1.0
-     */
-    public static Number intdiv(Number left, Character right) {
-        return intdiv(left, Integer.valueOf(right));
-    }
-
-    /**
-     * Integer Divide two Characters. The ordinal values of the Characters
-     * are used in the division (the ordinal value is the unicode
-     * value which for simple character sets is the ASCII value).
-     *
-     * @param left  a Character
-     * @param right another Character
-     * @return a Number (an Integer) resulting from the integer division operation
-     * @since 1.0
-     */
-    public static Number intdiv(Character left, Character right) {
-        return intdiv(Integer.valueOf(left), right);
-    }
-
-    /**
-     * Integer Divide two Numbers.
-     *
-     * @param left  a Number
-     * @param right another Number
-     * @return a Number (an Integer) resulting from the integer division operation
-     * @since 1.0
-     */
-    public static Number intdiv(Number left, Number right) {
-        return NumberMath.intdiv(left, right);
     }
 
     /**
@@ -14589,84 +14817,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determine if a Character is uppercase.
-     * Synonym for 'Character.isUpperCase(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is uppercase
-     * @see java.lang.Character#isUpperCase(char)
-     * @since 1.5.7
-     */
-    public static boolean isUpperCase(Character self) {
-        return Character.isUpperCase(self);
-    }
-
-    /**
-     * Determine if a Character is lowercase.
-     * Synonym for 'Character.isLowerCase(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is lowercase
-     * @see java.lang.Character#isLowerCase(char)
-     * @since 1.5.7
-     */
-    public static boolean isLowerCase(Character self) {
-        return Character.isLowerCase(self);
-    }
-
-    /**
-     * Determines if a character is a letter.
-     * Synonym for 'Character.isLetter(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is a letter
-     * @see java.lang.Character#isLetter(char)
-     * @since 1.5.7
-     */
-    public static boolean isLetter(Character self) {
-        return Character.isLetter(self);
-    }
-
-    /**
-     * Determines if a character is a digit.
-     * Synonym for 'Character.isDigit(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is a digit
-     * @see java.lang.Character#isDigit(char)
-     * @since 1.5.7
-     */
-    public static boolean isDigit(Character self) {
-        return Character.isDigit(self);
-    }
-
-    /**
-     * Determines if a character is a letter or digit.
-     * Synonym for 'Character.isLetterOrDigit(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is a letter or digit
-     * @see java.lang.Character#isLetterOrDigit(char)
-     * @since 1.5.7
-     */
-    public static boolean isLetterOrDigit(Character self) {
-        return Character.isLetterOrDigit(self);
-    }
-
-    /**
-     * Determines if a character is a whitespace character.
-     * Synonym for 'Character.isWhitespace(this)'.
-     *
-     * @param self a Character
-     * @return true if the character is a whitespace character
-     * @see java.lang.Character#isWhitespace(char)
-     * @since 1.5.7
-     */
-    public static boolean isWhitespace(Character self) {
-        return Character.isWhitespace(self);
-    }
-
-    /**
      * Converts the character to uppercase.
      * Synonym for 'Character.toUpperCase(this)'.
      *
@@ -14792,18 +14942,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Boolean or(Boolean left, Boolean right) {
         return left || Boolean.TRUE.equals(right);
-    }
-
-    /**
-     * Logical implication of two boolean operators
-     *
-     * @param left left operator
-     * @param right right operator
-     * @return result of logical implication
-     * @since 1.8.3
-     */
-    public static Boolean implies(Boolean left, Boolean right) {
-        return !left || Boolean.TRUE.equals(right);
     }
 
     /**
@@ -15047,60 +15185,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Attempts to create an Iterator for the given object by first
-     * converting it to a Collection.
-     *
-     * @param o an object
-     * @return an Iterator for the given Object.
-     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
-     * @since 1.0
-     */
-    public static Iterator iterator(final Object o) {
-        if (o instanceof Iterator) return (Iterator)o;
-        return DefaultTypeTransformation.asCollection(o).iterator();
-    }
-
-    /**
-     * Allows an Enumeration to behave like an Iterator.  Note that the
-     * {@link java.util.Iterator#remove() remove()} method is unsupported since the
-     * underlying Enumeration does not provide a mechanism for removing items.
-     *
-     * @param enumeration an Enumeration object
-     * @return an Iterator for the given Enumeration
-     * @since 1.0
-     */
-    public static <T> Iterator<T> iterator(final Enumeration<T> enumeration) {
-        return new Iterator<T>() {
-            @Override
-            public boolean hasNext() {
-                return enumeration.hasMoreElements();
-            }
-
-            @Override
-            public T next() {
-                return enumeration.nextElement();
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
-            }
-        };
-    }
-
-    /**
-     * An identity function for iterators, supporting 'duck-typing' when trying to get an
-     * iterator for each object within a collection, some of which may already be iterators.
-     *
-     * @param self an iterator object
-     * @return itself
-     * @since 1.5.0
-     */
-    public static <T> Iterator<T> iterator(Iterator<T> self) {
-        return self;
-    }
-
-    /**
      * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
      * a method with the given name and arguments types.
      *
@@ -15137,22 +15221,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<MetaMethod> respondsTo(Object self, String name) {
         return InvokerHelper.getMetaClass(self).respondsTo(self, name);
-    }
-
-    /**
-     * <p>Returns true of the implementing MetaClass has a property of the given name
-     *
-     * <p>Note that this method will only return true for realised properties and does not take into
-     * account implementation of getProperty or propertyMissing
-     *
-     * @param self The object to inspect
-     * @param name The name of the property of interest
-     * @return The found MetaProperty or null if it doesn't exist
-     * @see groovy.lang.MetaObjectProtocol#hasProperty(java.lang.Object, java.lang.String)
-     * @since 1.6.1
-     */
-    public static MetaProperty hasProperty(Object self, String name) {
-        return InvokerHelper.getMetaClass(self).hasProperty(self, name);
     }
 
     /**
