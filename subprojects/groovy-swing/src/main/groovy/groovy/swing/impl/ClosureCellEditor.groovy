@@ -25,6 +25,8 @@ import java.awt.*
 import java.util.List
 
 class ClosureCellEditor extends AbstractCellEditor implements TableCellEditor, TreeCellEditor {
+    private static final long serialVersionUID = -5924126854559540546L
+
     Map<String, Closure> callbacks = [:]
     Closure prepareEditor
     Closure editorValue
