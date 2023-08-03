@@ -155,6 +155,10 @@ public class Java8 implements VMPlugin {
         return 8;
     }
 
+    /**
+     * @deprecated use elementTypeToTarget EnumMap in Groovy 5
+     */
+    @Deprecated
     protected int getElementCode(final ElementType value) {
         switch (value) {
             case TYPE:
@@ -660,6 +664,7 @@ public class Java8 implements VMPlugin {
         IndyInterface.invalidateSwitchPoints();
     }
 
+    @Deprecated
     protected MethodHandles.Lookup getLookup(final Object receiver) {
         Optional<MethodHandles.Lookup> lookup = Optional.empty();
         if (receiver instanceof GroovyObject) {

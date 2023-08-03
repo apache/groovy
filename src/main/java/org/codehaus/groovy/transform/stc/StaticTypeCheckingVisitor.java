@@ -3943,6 +3943,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @Deprecated
     protected void visitInstanceofNot(final BinaryExpression be) {
         BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
         assert currentBlock != null;
@@ -3958,6 +3959,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    @Deprecated
     public void visitBlockStatement(final BlockStatement block) {
         if (block != null) {
             typeCheckingContext.enclosingBlocks.addFirst(block);
@@ -3968,6 +3970,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @Deprecated
     public void visitClosingBlock(final BlockStatement block) {
         BlockStatement peekBlock = typeCheckingContext.enclosingBlocks.removeFirst();
         boolean found = typeCheckingContext.blockStatements2Types.containsKey(peekBlock);
@@ -3989,6 +3992,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Return expression , which contains instanceOf (without not)
      * Return null, if not found
      */
+    @Deprecated
     protected BinaryExpression findInstanceOfNotReturnExpression(final IfStatement ifElse) {
         Statement elseBlock = ifElse.getElseBlock();
         if (!(elseBlock instanceof EmptyStatement)) {
@@ -4025,6 +4029,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Return expression , which contains instanceOf (without not)
      * Return null, if not found
      */
+    @Deprecated
     protected BinaryExpression findNotInstanceOfReturnExpression(final IfStatement ifElse) {
         Statement elseBlock = ifElse.getElseBlock();
         if (!(elseBlock instanceof EmptyStatement)) {

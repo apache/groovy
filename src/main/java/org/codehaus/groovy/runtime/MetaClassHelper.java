@@ -51,6 +51,7 @@ public class MetaClassHelper {
     public static final Object[] EMPTY_ARRAY = {};
     public static final Class[] EMPTY_TYPE_ARRAY = {};
     public static final Object[] ARRAY_WITH_NULL = {null};
+    @Deprecated
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
     private static final int

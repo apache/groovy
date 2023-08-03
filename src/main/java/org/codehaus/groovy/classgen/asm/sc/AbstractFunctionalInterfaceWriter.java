@@ -41,6 +41,7 @@ public interface AbstractFunctionalInterfaceWriter {
     @Deprecated
     String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
+    @Deprecated
     default ClassNode getFunctionalInterfaceType(final Expression expression) {
         ClassNode type = expression.getNodeMetaData(StaticTypesMarker.PARAMETER_TYPE);
         if (type == null) {

@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
  * Util for object's operations with checks
  * @since 4.0.5
  */
+@Deprecated
 public class ObjectUtil {
     /**
      * Clone the specified object

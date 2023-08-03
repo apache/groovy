@@ -24,6 +24,7 @@ import java.lang.reflect.Modifier;
 /**
  * Some reflection helper methods
  */
+@Deprecated
 public class MethodHelper {
 
     public static boolean isStatic(Method method) {

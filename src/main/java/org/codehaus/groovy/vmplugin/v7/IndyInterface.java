@@ -103,6 +103,7 @@ public class IndyInterface {
     /**
      * Callback for constant meta class update change (legacy API)
      */
+    @Deprecated
     protected static void invalidateSwitchPoints() {
         VMPluginFactory.getPlugin().invalidateCallSites();
     }

@@ -93,6 +93,7 @@ public class Java16 extends Java10 {
     }
 
     @Override
+    @Deprecated
     protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
         try {
             final Method privateLookup = getPrivateLookup();

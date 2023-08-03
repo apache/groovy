@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @since 4.0.0
  */
+@Deprecated
 public class GroovyObjectHelper {
     /**
      * Get the {@link Lookup} instance of the {@link GroovyObject} instance
