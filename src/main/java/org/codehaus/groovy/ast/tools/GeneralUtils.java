@@ -172,6 +172,7 @@ public class GeneralUtils {
         return new AttributeExpression(owner, attribute);
     }
 
+    @Deprecated
     public static Expression attrX(final Expression oe, final String propName) {
         return new AttributeExpression(oe, constX(propName));
     }
