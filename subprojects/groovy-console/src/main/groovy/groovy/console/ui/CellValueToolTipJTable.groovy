@@ -22,7 +22,9 @@ import javax.swing.JTable
 import java.awt.event.MouseEvent
 
 class CellValueToolTipJTable extends JTable {
-    public String getToolTipText(MouseEvent me) {
+    private static final long serialVersionUID = 7112943034646629299L
+
+    String getToolTipText(MouseEvent me) {
         int viewRowIndex = rowAtPoint(me.point)
         int viewColumnIndex = columnAtPoint(me.point)
 

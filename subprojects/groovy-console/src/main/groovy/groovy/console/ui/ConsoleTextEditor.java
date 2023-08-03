@@ -59,6 +59,7 @@ import java.util.prefs.Preferences;
  * Component which provides a styled editor for the console.
  */
 public class ConsoleTextEditor extends JScrollPane {
+    private static final long serialVersionUID = -3582625263676326887L;
     private static final Preferences PREFERENCES = Preferences.userNodeForPackage(Console.class);
     private static final String PREFERENCE_FONT_SIZE = "fontSize";
     private static final int DEFAULT_FONT_SIZE = 12;

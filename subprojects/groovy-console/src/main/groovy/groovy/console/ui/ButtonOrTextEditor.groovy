@@ -37,6 +37,8 @@ import java.awt.event.FocusListener
  */
 @CompileStatic
 class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
+    private static final long serialVersionUID = -531835454424576665L
+
     /** The Swing component being edited. */
     protected JComponent editorComponent
 

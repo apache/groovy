@@ -645,6 +645,7 @@ enum CompilePhaseAdapter {
  */
 @CompileStatic
 class TreeNodeWithProperties extends DefaultMutableTreeNode {
+    private static final long serialVersionUID = -1428101618435607457L
 
     List<List<?>> properties
 

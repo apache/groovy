@@ -28,6 +28,8 @@ import java.awt.event.ActionEvent
 
 @CompileStatic
 class AutoIndentAction extends AbstractAction {
+    private static final long serialVersionUID = -2680684287296849370L
+
     AttributeSet simpleAttributeSet = new SimpleAttributeSet()
 
     void actionPerformed(ActionEvent evt) {

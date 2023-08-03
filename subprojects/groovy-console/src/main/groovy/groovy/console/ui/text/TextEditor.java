@@ -65,6 +65,7 @@ import java.util.regex.Pattern;
  * A simple text pane that is printable and wrapping is optional.
  */
 public class TextEditor extends JTextPane implements Pageable, Printable {
+    private static final long serialVersionUID = 8478062945229999402L;
 
     public static final String FIND = "Find...";
     public static final String FIND_NEXT = "Find Next";

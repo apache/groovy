@@ -1110,6 +1110,11 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         statement?.messageExpression?.visit this
     }
 
+    @Deprecated
+    void visitArgumentlistExpression(ArgumentListExpression expression, boolean showTypesIgnored) {
+        visitArgumentlistExpression(expression)
+    }
+
     @Override
     void visitArgumentlistExpression(ArgumentListExpression expression) {
         visitTupleExpression expression
