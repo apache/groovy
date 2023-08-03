@@ -96,6 +96,7 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
 
@@ -137,6 +138,7 @@ import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -5593,8 +5595,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static Collection<?> flatten(Collection<?> self) {
-        return flatten(self, createSimilarCollection(self));
+    public static <T> Collection<T> flatten(Collection<T> self) {
+        return flatten(self, createSimilarCollection(self), true);
     }
 
     /**
@@ -5606,8 +5608,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static Collection<?> flatten(Iterable<?> self) {
-        return flatten(self, createSimilarCollection(self));
+    public static <T> Collection<T> flatten(Iterable<T> self) {
+        return flatten(self, createSimilarCollection(self), true);
+    }
+
+    /**
+     * Flatten an Iterable. This Iterable and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     * If flattenOptionals is true, the non-empty optionals are also flattened.
+     * <pre class="groovyTestCase">
+     * var items = [1..2, [3, [4]], Optional.of(5), Optional.empty()]
+     * assert items.flatten() == [1, 2, 3, 4, 5]
+     * // boolean param determines whether to flatten optionals (false for legacy behavior)
+     * assert items.flatten(true) == [1, 2, 3, 4, 5]
+     * assert items.flatten(false) == [1, 2, 3, 4, Optional.of(5), Optional.empty()]
+     * </pre>
+     *
+     * @param self an Iterable to flatten
+     * @param flattenOptionals whether to treat an Optional as a container to flatten
+     * @return a flattened Collection
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> flatten(Iterable<T> self, boolean flattenOptionals) {
+        return flatten(self, createSimilarCollection(self), flattenOptionals);
     }
 
     /**
@@ -5619,8 +5642,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened List
      * @since 2.4.0
      */
-    public static List<?> flatten(List<?> self) {
-        return (List<?>) flatten((Collection<?>) self);
+    public static <T> List<T> flatten(List<T> self) {
+        return (List<T>) flatten(self, true);
     }
 
     /**
@@ -5632,8 +5655,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Set
      * @since 2.4.0
      */
-    public static Set<?> flatten(Set<?> self) {
-        return (Set<?>) flatten((Collection<?>) self);
+    public static <T> Set<T> flatten(Set<T> self) {
+        return (Set<T>) flatten(self, true);
     }
 
     /**
@@ -5650,63 +5673,205 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened SortedSet
      * @since 2.4.0
      */
-    public static SortedSet<?> flatten(SortedSet<?> self) {
-        return (SortedSet<?>) flatten((Collection<?>) self);
+    public static <T> SortedSet<T> flatten(SortedSet<T> self) {
+        return (SortedSet<T>) flatten(self, true);
     }
 
-    private static Collection flatten(Iterable elements, Collection addTo) {
-        for (Object element : elements) {
-            if (element instanceof Collection) {
-                flatten((Collection) element, addTo);
-            } else if (element != null && element.getClass().isArray()) {
-                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
-            } else {
-                // found a leaf
-                addTo.add(element);
-            }
+    private static <T> Collection<T> flatten(Iterable<T> elements, Collection<T> addTo, boolean flattenOptionals) {
+        for (T element : elements) {
+            flattenSingle(element, addTo, flattenOptionals);
         }
         return addTo;
     }
 
+    private static <T> void flattenSingle(Object element, Collection<T> addTo, boolean flattenOptionals) {
+        if (element instanceof Collection) {
+            flatten((Collection<T>) element, addTo, flattenOptionals);
+        } else if (element != null && element.getClass().isArray()) {
+            flatten(new ArrayIterable<>((T[]) element), addTo, flattenOptionals);
+        } else {
+            Object flattened = element;
+            if (flattened instanceof Optional && flattenOptionals) {
+                Optional<?> opt = (Optional<?>) flattened;
+                if (opt.isPresent()) {
+                    flattened = opt.get();
+                } else {
+                    return;
+                }
+            }
+            // add a leaf
+            addTo.add((T) flattened);
+        }
+    }
+
     /**
-     * Flatten an Iterable. This Iterable and any nested arrays or
-     * collections have their contents (recursively) added to the new collection.
-     * For any non-Array, non-Collection object which represents some sort
-     * of collective type, the supplied closure should yield the contained items;
-     * otherwise, the closure should just return any element which corresponds to a leaf.
+     * Flatten an Iterable. This Iterable and any nested arrays, collections, or
+     * optionals have their contents (recursively) added to a new collection.
+     * Non-Array, non-Collection, non-Optional objects are leaf nodes.
+     * The flattenUsing transform can be used to modify leaf nodes.
+     * If a leaf node represents some other kind of collective type,
+     * the supplied closure should yield the contained items;
+     * otherwise, the closure should just return the (optionally modified) leaf.
+     * <pre class="groovyTestCase">
+     * // some examples just transforming the leaf
+     * var items = [1..2, [3, [4]]]
+     * assert items.flatten(n -> n + 5) == 6..9
+     * assert items.flatten{ 'x' * it } == ['x', 'xx', 'xxx', 'xxxx']
+     *
+     * // Here our String is a "container" of day, month, year parts
+     * var dates = ['01/02/99', '12/12/23']
+     * assert dates.flatten{ it.split('/') } == [['01', '02', '99'], ['12', '12', '23']]
+     * assert dates.flatten{ it.split('/').toList() } == ['01', '02', '99', '12', '12', '23']
+     *
+     * // some examples with Maps
+     * assert [a:1, b:2].entrySet().flatten{ "$it.key$it.value" } == ['a1', 'b2'] as Set
+     * assert [[a:1], [b:2]].flatten{ it.keySet() + it.values() } == ['a', 1, 'b', 2]
+     * </pre>
      *
      * @param self an Iterable
      * @param flattenUsing a closure to determine how to flatten non-Array, non-Collection elements
      * @return a flattened Collection
+     * @see #flattenMany(Iterable, Closure)
+     * @see #collectNested(Iterable, Closure)
      * @since 1.6.0
      */
-    public static <T> Collection<T> flatten(Iterable<T> self, Closure<? extends T> flattenUsing) {
-        return flatten(self, createSimilarCollection(self), flattenUsing);
+    public static <T, E> Collection<T> flatten(Iterable<E> self, Closure<?> flattenUsing) {
+        return flatten(self, true, flattenUsing);
     }
 
-    private static <T> Collection<T> flatten(Iterable elements, Collection<T> addTo, Closure<? extends T> flattenUsing) {
+    /**
+     * Flatten an Iterable. This Iterable and any nested arrays, collections, and potentially
+     * Optional elements have their contents (recursively) added to a new collection.
+     * Non-container elements are leaf elements.
+     * If flattenOptionals is false, Optionals are treated as leaf elements, otherwise they
+     * are considered as containers to flatten.
+     * The flattenUsing transform can be used to modify leaf nodes.
+     * If a leaf node represents some other kind of collective type,
+     * the supplied closure should yield the contained item or items;
+     * otherwise, the closure should just return the (optionally modified) leaf.
+     * <pre class="groovyTestCase">
+     * var items = ['a'..'b', ['c'], Optional.of('d'), Optional.empty()]
+     * var unknown = { it instanceof Optional ? it.orElse('Unknown') : it.toUpperCase() }
+     *
+     * // by default Optionals are flattened so the ternary in the
+     * // 'unknown' closure will never see the optional
+     * assert items.flatten(unknown) == ['A', 'B', 'C', 'D']
+     * assert items.flatten(true, unknown) == ['A', 'B', 'C', 'D']
+     *
+     * // disable optional flattening and you can provide custom flattening
+     * assert items.flatten(false, unknown) == ['A', 'B', 'C', 'd', 'Unknown']
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param flattenOptionals whether to treat an Optional as a container to flatten or a leaf
+     * @param flattenUsing a closure to determine how to flatten leaf elements
+     * @return a flattened Collection
+     * @since 5.0.0
+     */
+    public static <T, E> Collection<T> flatten(Iterable<E> self, boolean flattenOptionals, Closure<?> flattenUsing) {
+        return flatten(self, flattenOptionals, (Collection<T>) createSimilarCollection(self), flattenUsing);
+    }
+
+    /**
+     * Flatten an Optional. This yields a collection containing the Optional value
+     * if the Optional is present, or an empty collect otherwise.
+     * <pre class="groovyTestCase">
+     * assert Optional.of(1).flatten() == [1]
+     * assert Optional.empty().flatten() == []
+     * </pre>
+     *
+     * @param self an Optional
+     * @return a flattened Optional
+     * @since 5.0.0
+     */
+    public static <T> Collection<T> flatten(Optional<T> self) {
+        List<T> result = new ArrayList<>();
+        self.ifPresent(result::add);
+        return result;
+    }
+
+    private static <T, E> Collection<T> flatten(Iterable<E> elements, boolean flattenOptionals, Collection<T> addTo, Closure<?> flattenUsing) {
         for (Object element : elements) {
             if (element instanceof Collection) {
-                flatten((Collection) element, addTo, flattenUsing);
+                flatten((Collection<T>) element, flattenOptionals, addTo, flattenUsing);
             } else if (element != null && element.getClass().isArray()) {
-                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
+                flatten(new ArrayIterable<>((Object[]) element), flattenOptionals, addTo, flattenUsing);
+            } else if (element instanceof Optional && flattenOptionals) {
+                flatten(flatten((Optional<T>) element), flattenOptionals, addTo, flattenUsing);
             } else {
-                T flattened = flattenUsing.call(new Object[]{element});
-                boolean returnedSelf = flattened == element;
-                if (!returnedSelf && flattened instanceof Collection) {
-                    List<?> list = toList((Iterable<?>) flattened);
-                    if (list.size() == 1 && list.get(0) == element) {
-                        returnedSelf = true;
-                    }
-                }
-                if (flattened instanceof Collection && !returnedSelf) {
-                    flatten((Collection) flattened, addTo, flattenUsing);
-                } else {
-                    addTo.add(flattened);
-                }
+                flattenSingle(element, flattenOptionals, addTo, flattenUsing);
             }
         }
         return addTo;
+    }
+
+    private static <T> void flattenSingle(Object element, boolean flattenOptionals, Collection<T> addTo, Closure<?> flattenUsing) {
+        Object flattened = flattenUsing.call(new Object[]{element});
+        boolean returnedSelf = flattened == element;
+        if (!returnedSelf && flattened instanceof Collection) {
+            List list = toList((Iterable) flattened);
+            if (list.size() == 1 && list.get(0) == element) {
+                returnedSelf = true;
+            }
+        }
+        if (flattened instanceof Collection && !returnedSelf) {
+            addTo.addAll(flatten((Collection) flattened, flattenOptionals));
+        } else {
+            addTo.add((T) flattened);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // flattenMany
+
+    /**
+     * Flatten an Iterable. This Iterable and any nested arrays, collections or
+     * optionals have their contents (recursively) added to a new collection.
+     * A transform is applied to any leaf nodes before further flattening.
+     * <pre class="groovyTestCase">
+     * var items = ["1", "2", "foo", "3", "bar"]
+     * var toInt = s -> s.number ? Optional.of(s.toInteger()) : Optional.empty()
+     * assert items.flattenMany(toInt) == [1, 2, 3]
+     * assert items.flattenMany(String::toList) == ['1', '2', 'f', 'o', 'o', '3', 'b', 'a', 'r']
+     * assert items.flattenMany{ it.split(/[aeiou]/) } == ['1', '2', 'f', '3', 'b', 'r']
+     *
+     * assert ['01/02/99', '12/12/23'].flattenMany{ it.split('/') } == ['01', '02', '99', '12', '12', '23']
+     * </pre>
+     * The {@code flattenMany} method is somewhat similar to the {@code collectMany} method.
+     * While {@code collectMany} works on the basis that the transform closure returns a
+     * collection, {@code flattenMany} can return a collection, array, optional or modified element.
+     * You should use {@code flattenMany} if you need the extra functionality it offers.
+     * Consider using {@code collectMany} if you return only collections in the transform, since
+     * you will have better type inference in static typing scenarios.
+     *
+     * @param self an Iterable
+     * @param transform a transform applied to any leaf elements
+     * @return a flattened Collection
+     * @see #collectMany(Iterable, Closure)
+     * @since 5.0.0
+     */
+    public static Collection<Object> flattenMany(Iterable<?> self, Closure<?> transform) {
+        return flattenMany(self, (Collection<Object>) createSimilarCollection(self), transform);
+    }
+
+    private static Collection<Object> flattenMany(Iterable<?> self, Collection<Object> addTo, Closure<?> flattenUsing) {
+        for (Object element : self) {
+            flattenSingle(element, addTo, flattenUsing);
+        }
+        return addTo;
+    }
+
+    private static void flattenSingle(Object element, Collection<Object> addTo, Closure<?> transform) {
+        if (element instanceof Collection) {
+            addTo.addAll(flattenMany((Collection) element, addTo, transform));
+        } else if (element != null && element.getClass().isArray()) {
+            addTo.addAll(flattenMany(new ArrayIterable((Object[]) element), addTo, transform));
+        } else if (element instanceof Optional) {
+            addTo.addAll(flattenMany(flatten((Optional) element), addTo, transform));
+        } else {
+            Object flattened = transform.call(new Object[]{element});
+            flattenSingle(flattened, addTo, true);
+        }
     }
 
     //--------------------------------------------------------------------------
