@@ -3187,6 +3187,23 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // flattenMany
+
+    /**
+     * Flatten an array. This array and any nested arrays, collections or
+     * optionals have their contents (recursively) added to a new collection.
+     * A transform is applied to any leaf nodes before further flattening.
+     *
+     * @param self an array
+     * @param transform a transform applied to any leaf elements
+     * @return a flattened Collection
+     * @since 5.0.0
+     */
+    public static Collection flattenMany(Object[] self, Closure<?> transform) {
+        return DefaultGroovyMethods.flattenMany(new ArrayIterable(self), transform);
+    }
+
+    //--------------------------------------------------------------------------
     // getAt
 
     /**
