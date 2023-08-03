@@ -4644,10 +4644,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // iterator
 
     /**
-     * Returns an Iterator for the given array.
+     * Returns an Iterator which traverses the given array in index order.
      *
      * @param self an array
-     * @return an Iterator for the given Array.
+     * @return an Iterator backed by the given Array.
+     * @see ArrayIterator
      * @since 1.6.4
      */
     public static <T> Iterator<T> iterator(final T[] self) {

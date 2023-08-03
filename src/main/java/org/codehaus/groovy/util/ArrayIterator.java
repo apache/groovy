@@ -23,6 +23,7 @@ import java.util.NoSuchElementException;
 
 /**
  * Allows an array to be used where an Iterator is expected.
+ * The iterator is backed by the original array and iterated in index order.
  */
 public class ArrayIterator<T> implements Iterator<T> {
     private final T[] array;
