@@ -130,6 +130,7 @@ dependencies {
 
     checkstyle "com.puppycrawl.tools:checkstyle:${versions.checkstyle}"
     spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
+    spotbugsSlf4j "org.slf4j:slf4j-simple:${versions.slf4j}"
 }
 
 def excludedFromManifest = [
