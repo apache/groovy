@@ -113,22 +113,21 @@ class PerformanceTestsExtension {
             ].each {conf.dependencies.add(dependencies.create(it)) }
         }
         def outputFile = layout.buildDirectory.file("compilation-stats-${version}.csv")
-        def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) {
-            it.group = "Performance tests"
-            it.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
-            it.classpath(groovyConf, sourceSets.getByName('test').output)
-            it.jvmArgs = ['-Xms512m', '-Xmx512m']
-            it.outputs.file(outputFile)
-            def je = it
-            it.doFirst {
+        def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) { je ->
+            je.group = "Performance tests"
+            je.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
+            je.classpath(groovyConf, sourceSets.getByName('test').output)
+            je.jvmArgs = ['-Xms512m', '-Xmx512m']
+            je.outputs.file(outputFile)
+            je.doFirst {
                 def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
                 args.addAll(testFiles.collect { it.toString() })
                 je.setArgs(args)
                 println je.args.asList()
             }
         }
-        tasks.named("performanceTests", PerformanceTestSummary) {
-            it.csvFiles.from(perfTest)
+        tasks.named("performanceTests", PerformanceTestSummary) { pts ->
+            pts.csvFiles.from(perfTest)
         }
     }
 }

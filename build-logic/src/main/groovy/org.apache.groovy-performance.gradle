@@ -53,7 +53,11 @@ jmh {
         includes = ['.*' + project.benchInclude + '.*']
     }
     includeTests = true
-    duplicateClassesStrategy = DuplicatesStrategy.WARN
+}
+
+jmhJar {
+    exclude 'LICENSE'
+    exclude 'THIRD-PARTY'
 }
 
 tasks.named('jmhClasses') {
