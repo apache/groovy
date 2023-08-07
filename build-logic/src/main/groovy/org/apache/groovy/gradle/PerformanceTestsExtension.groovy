@@ -73,41 +73,40 @@ class PerformanceTestsExtension {
 
     void version(String v) {
         def version = v.replace('.', '_')
-        def groovyConf = configurations.create("perfGroovy$version") { Configuration it ->
-            it.canBeResolved = true
-            it.canBeConsumed = false
-            it.resolutionStrategy {
+        def groovyConf = configurations.create("perfGroovy$version") { Configuration conf ->
+            conf.canBeResolved = true
+            conf.canBeConsumed = false
+            conf.resolutionStrategy {
                 disableDependencyVerification()
             }
-            it.extendsFrom(configurations.getByName("stats"))
-            it.attributes {
+            conf.extendsFrom(configurations.getByName("stats"))
+            conf.attributes {
                 it.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
                 it.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
                 it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
                 it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
             }
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : (v.startsWith('4') ? "org.apache.groovy:groovy:$v" : "org.codehaus.groovy:groovy:$v")))
+            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : (v.startsWith('4') ? "org.apache.groovy:groovy:$v" : "org.codehaus.groovy:groovy:$v")))
             if (!v.startsWith('2.4')) {
-                it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-dateutil']) : (v.startsWith('4') ? "org.apache.groovy:groovy-dateutil:$v" : "org.codehaus.groovy:groovy-dateutil:$v")))
-                it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-datetime']) : (v.startsWith('4') ? "org.apache.groovy:groovy-datetime:$v" : "org.codehaus.groovy:groovy-datetime:$v")))
+                conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-dateutil']) : (v.startsWith('4') ? "org.apache.groovy:groovy-dateutil:$v" : "org.codehaus.groovy:groovy-dateutil:$v")))
+                conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-datetime']) : (v.startsWith('4') ? "org.apache.groovy:groovy-datetime:$v" : "org.codehaus.groovy:groovy-datetime:$v")))
             }
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-swing']) : (v.startsWith('4') ? "org.apache.groovy:groovy-swing:$v" : "org.codehaus.groovy:groovy-swing:$v")))
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-sql']) : (v.startsWith('4') ? "org.apache.groovy:groovy-sql:$v" : "org.codehaus.groovy:groovy-sql:$v")))
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-xml']) : (v.startsWith('4') ? "org.apache.groovy:groovy-xml:$v" : "org.codehaus.groovy:groovy-xml:$v")))
-            it.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-templates']) : (v.startsWith('4') ? "org.apache.groovy:groovy-templates:$v" : "org.codehaus.groovy:groovy-templates:$v")))
-            it.dependencies.add(dependencies.create('org.cyberneko:html:1.9.8'))
-            it.dependencies.add(dependencies.create('commons-net:commons-net:3.9.0'))
-            it.dependencies.add(dependencies.create('net.sourceforge.htmlunit:htmlunit:2.70.0'))
-            it.dependencies.add(dependencies.create('com.sleepycat:je:18.3.12'))
-            it.dependencies.add(dependencies.create('commons-httpclient:commons-httpclient:3.1'))
-            it.dependencies.add(dependencies.create('net.sf.jopt-simple:jopt-simple:5.0.4'))
-            it.dependencies.add(dependencies.create('com.baulsupp.kolja:jcurses:0.9.5.3'))
-            it.dependencies.add(dependencies.create('org.mnode.mstor:mstor:1.0.3'))
-            it.dependencies.add(dependencies.create('commons-lang:commons-lang:2.6'))
-            it.dependencies.add(dependencies.create('dnsjava:dnsjava:3.5.2'))
-            it.dependencies.add(dependencies.create('net.sourceforge.expectj:expectj:2.0.7'))
-            it.dependencies.add(dependencies.create('jline:jline:2.14.6'))
-            it.dependencies.add(dependencies.create('prevayler:prevayler:2.02.005'))
+            [
+                'org.cyberneko:html:1.9.8',
+                'commons-net:commons-net:3.9.0',
+                'net.sourceforge.htmlunit:htmlunit:2.70.0',
+                'com.sleepycat:je:18.3.12',
+                'commons-httpclient:commons-httpclient:3.1',
+                'net.sf.jopt-simple:jopt-simple:5.0.4',
+                'com.baulsupp.kolja:jcurses:0.9.5.3',
+                'org.mnode.mstor:mstor:1.0.3',
+                'commons-lang:commons-lang:2.6',
+                'dnsjava:dnsjava:3.5.2',
+                'net.sourceforge.expectj:expectj:2.0.7',
+                'jline:jline:2.14.6',
+                'prevayler:prevayler:2.02.005',
+                'xerces:xercesImpl:2.12.2'
+            ].each {conf.dependencies.add(dependencies.create(it)) }
         }
         def outputFile = layout.buildDirectory.file("compilation-stats-${version}.csv")
         def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) {
