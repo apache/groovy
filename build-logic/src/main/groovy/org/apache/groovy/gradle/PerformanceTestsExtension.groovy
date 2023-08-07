@@ -91,6 +91,10 @@ class PerformanceTestsExtension {
                 conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-dateutil']) : (v.startsWith('4') ? "org.apache.groovy:groovy-dateutil:$v" : "org.codehaus.groovy:groovy-dateutil:$v")))
                 conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-datetime']) : (v.startsWith('4') ? "org.apache.groovy:groovy-datetime:$v" : "org.codehaus.groovy:groovy-datetime:$v")))
             }
+            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-swing']) : (v.startsWith('4') ? "org.apache.groovy:groovy-swing:$v" : "org.codehaus.groovy:groovy-swing:$v")))
+            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-sql']) : (v.startsWith('4') ? "org.apache.groovy:groovy-sql:$v" : "org.codehaus.groovy:groovy-sql:$v")))
+            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-xml']) : (v.startsWith('4') ? "org.apache.groovy:groovy-xml:$v" : "org.codehaus.groovy:groovy-xml:$v")))
+            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-templates']) : (v.startsWith('4') ? "org.apache.groovy:groovy-templates:$v" : "org.codehaus.groovy:groovy-templates:$v")))
             [
                 'org.cyberneko:html:1.9.8',
                 'commons-net:commons-net:3.9.0',
