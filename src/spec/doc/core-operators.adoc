@@ -824,7 +824,7 @@ being compatible for assignment. Let's take an example:
 ----
 include::../test/OperatorsTest.groovy[tags=coerce_op_cast,indent=0]
 ----
-<1> `Integer` is not assignable to a `String`, so it will produce a `ClassCastException` at runtime
+<1> `String` is not assignable to an `Integer`, so it will produce a `ClassCastException` at runtime
 
 This can be fixed by using _coercion_ instead:
 
@@ -832,7 +832,7 @@ This can be fixed by using _coercion_ instead:
 ----
 include::../test/OperatorsTest.groovy[tags=coerce_op,indent=0]
 ----
-<1> `Integer` is not assignable to a `String`, but use of `as` will _coerce_ it to a `String`
+<1> `String` is not assignable to an `Integer`, but use of `as` will _coerce_ it to an `Integer`
 
 When an object is coerced into another, unless the target type is the same as the source type, coercion will return a
 *new* object. The rules of coercion differ depending on the source and target types, and coercion may fail if no conversion
