@@ -581,12 +581,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    // for binary compatibility only, don't use or override this
+    @Deprecated // for binary compatibility only; do not use or override
     protected void addMethod$$bridge(final ClassNode node, final boolean shouldBeSynthetic, final String name, final int modifiers, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         addMethod(node, shouldBeSynthetic, name, modifiers, returnType, parameters, exceptions, code);
     }
 
-    @Deprecated
+    @Deprecated(since = "2.4.0")
     protected void addTimeStamp(final ClassNode node) {
     }
 
@@ -881,16 +881,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
                 @Override
                 public void visitClosureExpression(final ClosureExpression e) {
-                    boolean prev = inClosure; inClosure = true;
+                    boolean saved = inClosure; inClosure = true;
                     super.visitClosureExpression(e);
-                    inClosure = prev;
+                    inClosure = saved;
                 }
 
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) e.getAccessedVariable();
-                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
+                        if (!Arrays.asList(params).contains(p) && Arrays.asList(method.getParameters()).contains(p)) { // GROOVY-10602
                             VariableScope blockScope = block.getVariableScope();
                             VariableExpression localVariable = (VariableExpression) blockScope.getDeclaredVariable(p.getName());
                             if (localVariable == null) {
@@ -1039,9 +1039,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addDefaultParameters(final DefaultArgsAction action, final MethodNode method) {
         Parameter[] parameters = method.getParameters();
-        long n = Arrays.stream(parameters).filter(Parameter::hasInitialExpression).count();
 
-        for (int i = 1; i <= n; i += 1) {
+        var n = Arrays.stream(parameters).filter(Parameter::hasInitialExpression).count();
+        for (int i = 1; i <= n; i += 1) { // drop parameters with value from right to left
             Parameter[] newParams = new Parameter[parameters.length - i];
             ArgumentListExpression arguments = new ArgumentListExpression();
             int index = 0;
@@ -1057,7 +1057,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         newParams[index++] = parameter;
                         e = varX(parameter);
                     }
-
                     arguments.addExpression(castX(parameter.getType(), e));
 
                     if (parameter.hasInitialExpression()) j += 1;

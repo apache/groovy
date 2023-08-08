@@ -141,7 +141,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     @Override
-    public void visitCatchStatement(CatchStatement statement) {
+    public void visitCatchStatement(final CatchStatement statement) {
         statement.getCode().visit(this);
     }
 
@@ -257,6 +257,12 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     @Override
     public void visitClosureExpression(ClosureExpression expression) {
+        if (expression.isParameterSpecified()) {
+            for (Parameter parameter : expression.getParameters()) {
+                if (parameter.hasInitialExpression())
+                    parameter.getInitialExpression().visit(this);
+            }
+        }
         expression.getCode().visit(this);
     }
 

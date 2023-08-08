@@ -107,8 +107,8 @@ public class ClosureWriter {
         mv.visitTypeInsn(NEW, closureClassinternalName);
         mv.visitInsn(DUP);
         if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall()) {
-            (new ClassExpression(classNode)).visit(acg);
-            (new ClassExpression(controller.getOutermostClass())).visit(acg);
+            new ClassExpression(classNode).visit(acg);
+            new ClassExpression(controller.getOutermostClass()).visit(acg);
         } else {
             mv.visitVarInsn(ALOAD, 0);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);

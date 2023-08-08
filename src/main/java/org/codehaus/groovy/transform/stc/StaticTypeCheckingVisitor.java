@@ -239,8 +239,8 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.init;
+import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
+import static org.codehaus.groovy.runtime.ArrayGroovyMethods.init;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
@@ -2438,7 +2438,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         } else {
             typeCheckingContext.delegationMetadata = newDelegationMetadata(typeCheckingContext.getEnclosingClassNode(), Closure.OWNER_FIRST);
         }
-        super.visitClosureExpression(expression);
+        expression.getCode().visit(this);
         typeCheckingContext.delegationMetadata = typeCheckingContext.delegationMetadata.getParent();
 
         returnAdder.visitMethod(new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode()));
@@ -2932,6 +2932,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             LambdaExpression lambda = constructLambdaExpressionForMethodReference(
                                                         targetType, (MethodReferenceExpression) expression);
                             inferClosureParameterTypes(receiver, arguments, lambda, target, selectedMethod);
+                            expression.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                             expression.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
                         } else {
                             addError("The argument is a method reference, but the parameter type is not a functional interface", expression);
@@ -3084,8 +3085,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     Expression emc = typeCheckingContext.getEnclosingMethodCall();
                     if (emc instanceof MethodCallExpression) {
                         MethodCallExpression mce = (MethodCallExpression) emc;
-                        if (mce.getArguments() == arguments // GROOVY-10807 ::
-                            || expression.getCode() == GENERATED_EMPTY_STATEMENT){
+                        if (mce.getArguments() == arguments) {
                             GenericsType[] typeArguments = mce.getGenericsTypes();
                             if (typeArguments != null) {
                                 int n = typeParameters.length;
@@ -4395,7 +4395,7 @@ out:                if (mn.size() != 1) {
                 assignedTypes.add(cn);
             }
             List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
-            if (asBoolean(temporaryTypesForExpression)) {
+            if (temporaryTypesForExpression != null) {
                 // a type inference has been made on a variable whose type was defined in an instanceof block
                 // erase available information with the new type
                 temporaryTypesForExpression.clear();
