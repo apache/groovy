@@ -130,15 +130,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void declare(final Variable variable, final ASTNode context) {
-        String scopeType = "scope";
+        String scopeType    = "scope";
         String variableType = "variable";
-
         if (context.getClass() == FieldNode.class) {
-            scopeType = "class";
+            scopeType    = "class";
             variableType = "field";
         } else if (context.getClass() == PropertyNode.class) {
-            scopeType = "class";
+            scopeType    = "class";
             variableType = "property";
+        } else if (context.getClass() == ClosureExpression.class) {
+            scopeType    = "parameter list";
+            variableType = "parameter";
         }
 
         StringBuilder msg = new StringBuilder();
@@ -339,15 +341,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     addError("Cannot refer to the static enum field '" + variable.getName() + "' within an initializer", expression);
                 }
             }
-            return;
+        } else if (currentScope.isInStaticContext()) {
+            // declare a static variable to be able to continue the check
+            currentScope.putDeclaredVariable(new DynamicVariable(variable.getName(), currentScope.isInStaticContext()));
+            addError(variable.getName() + " is declared in a dynamic context, but you tried to access it from a static context.", expression);
         }
-
-        if (!currentScope.isInStaticContext()) return;
-
-        addError(variable.getName() + " is declared in a dynamic context, but you tried to access it from a static context.", expression);
-
-        // declare a static variable to be able to continue the check
-        currentScope.putDeclaredVariable(new DynamicVariable(variable.getName(), currentScope.isInStaticContext()));
     }
 
     //--------------------------------------------------------------------------
@@ -478,20 +476,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (expression.isParameterSpecified()) {
             for (Parameter parameter : expression.getParameters()) {
                 parameter.setInStaticContext(currentScope.isInStaticContext());
-                if (parameter.hasInitialExpression()) {
-                    parameter.getInitialExpression().visit(this);
-                }
                 declare(parameter, expression);
+                if (parameter.hasInitialExpression())
+                    parameter.getInitialExpression().visit(this);
             }
         } else if (expression.getParameters() != null) {
-            Parameter var = new Parameter(ClassHelper.dynamicType(), "it");
-            var.setInStaticContext(currentScope.isInStaticContext());
-            currentScope.putDeclaredVariable(var);
+            Parameter implicit = new Parameter(ClassHelper.dynamicType(), "it");
+            implicit.setInStaticContext(currentScope.isInStaticContext());
+            currentScope.putDeclaredVariable(implicit);
         }
 
         super.visitClosureExpression(expression);
         markClosureSharedVariables();
-
         popState();
     }
 

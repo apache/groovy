@@ -230,15 +230,16 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7789
     void testFromStringWithTypeParameter4() {
         assertScript '''
-            class Monad<T> {  private final Closure c
-                Monad(@ClosureParams(value=FromString, options='T') Closure c) {
+            class Monad<T> {
+                private final Closure c
+                Monad(@ClosureParams(value=FromString, options="T") Closure c) {
                     this.c = c
                 }
                 def call(T t) {
                     c.call(t)
                 }
             }
-            def <U> Monad<U> wrap(@ClosureParams(value=FromString, options='U') Closure c) {
+            def <U> Monad<U> wrap(@ClosureParams(value=FromString, options="U") Closure c) {
                 new Monad<>(c)
             }
             def list_size = this.<List>wrap({ list -> list.size() })
@@ -249,7 +250,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testFromStringWithTypeParameterFromClass() {
         assertScript '''
             class Foo<T> {
-                void foo(@ClosureParams(value=FromString,options="java.util.List<T>") Closure cl) { cl.call(['hey','ya']) }
+                void foo(@ClosureParams(value=FromString, options="java.util.List<T>") Closure cl) { cl.call(['hey','ya']) }
             }
             def foo = new Foo<String>()
             foo.foo { List<String> str -> str.each { println it.toUpperCase() } }
@@ -259,7 +260,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testFromStringWithTypeParameterFromClassWithTwoGenerics() {
         assertScript '''
             class Foo<T,U> {
-                void foo(@ClosureParams(value=FromString,options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
+                void foo(@ClosureParams(value=FromString, options="java.util.List<U>") Closure cl) { cl.call(['hey','ya']) }
             }
             def foo = new Foo<Integer,String>()
             foo.foo { List<String> str -> str.each { println it.toUpperCase() } }
@@ -324,7 +325,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class Tor<D,U> {
-                void foo(@ClosureParams(value=FromString, options=["D,List<U>", "D"]) Closure c) {
+                void foo(@ClosureParams(value=FromString, options=["D,List<U>","D"]) Closure c) {
                     if (c.maximumNumberOfParameters==2) {
                         c.call(3, [new Foo(), new Foo()])
                     } else {
@@ -335,6 +336,25 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def tor = new Tor<Integer,Foo>()
             tor.foo { r, e -> r.times { e.each { it.bar() } } }
             tor.foo { it.times { println 'polymorphic' } }
+        '''
+    }
+
+    void testFromStringWithConflictResolutionStrategy() {
+        assertScript '''
+            def transform(value, @ClosureParams(value=FromString, options=["Integer","String"], conflictResolutionStrategy=PickFirstResolver) Closure condition) {
+                if (condition.parameterTypes[0].simpleName == 'String') {
+                    condition(value.toString())
+                } else {
+                    condition(value instanceof Integer ? value : value.toString().size())
+                }
+            }
+
+            assert transform('dog') { String s -> s * 2 } == 'dogdog'
+            assert transform('dog') { Integer i -> i * 2 } == 6
+            assert transform('dog') { it.class.simpleName[0..it] } == 'Inte'
+            assert transform(35) { String s -> s * 2 } == '3535'
+            assert transform(35) { Integer i -> i * 2 } == 70
+            assert transform(35) { it * 2 } == 70
         '''
     }
 

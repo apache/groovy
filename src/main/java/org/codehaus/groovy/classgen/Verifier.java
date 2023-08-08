@@ -908,16 +908,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
                 @Override
                 public void visitClosureExpression(final ClosureExpression e) {
-                    boolean prev = inClosure; inClosure = true;
+                    boolean saved = inClosure; inClosure = true;
                     super.visitClosureExpression(e);
-                    inClosure = prev;
+                    inClosure = saved;
                 }
 
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter) {
                         Parameter p = (Parameter) e.getAccessedVariable();
-                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
+                        if (!Arrays.asList(params).contains(p) && Arrays.asList(method.getParameters()).contains(p)) { // GROOVY-10602
                             VariableScope blockScope = block.getVariableScope();
                             VariableExpression localVariable = (VariableExpression) blockScope.getDeclaredVariable(p.getName());
                             if (localVariable == null) {
