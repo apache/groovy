@@ -42,7 +42,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     void testCallClosure3() {
         shouldFail MissingMethodException, '''
             def c = { -> }
-            c('')
+            c("")
         '''
     }
 
@@ -424,14 +424,14 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testRecurseClosureCallAsAMethod() {
+    void testRecurseClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> cl
             cl = { int x -> x == 0 ? x : 1+cl(x-1) }
         '''
     }
 
-    void testFibClosureCallAsAMethod() {
+    void testFibClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> fib
             fib = { int x-> x<1?x:fib(x-1)+fib(x-2) }
@@ -439,7 +439,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFibClosureCallAsAMethodFromWithinClass() {
+    void testFibClosureCallAsMethodFromWithinClass() {
         assertScript '''
             class FibUtil {
                 private Closure<Integer> fibo
@@ -830,5 +830,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot assign value of type java.lang.Class <java.lang.Integer> to variable of type int',
         "named param 'bar' has type 'java.lang.Class <java.lang.Number>' but expected 'java.lang.Number'"
+    }
+
+    // GROOVY-10602
+    void testMethodAndClosureParametersDefaultArguments() {
+        assertScript '''import java.util.function.*
+            String test(Closure one = { p ->
+                Closure two = { Supplier s = { -> p } ->
+                    s.get()
+                }
+                two()
+            }) {
+                one('foo')
+            }
+
+            String result = test()
+            assert result == 'foo'
+        '''
     }
 }
