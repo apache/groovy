@@ -22,12 +22,10 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
- * This annotation can be used by API or DSL writers to document parameters which accept a closure.
- * In that case, using this annotation, you can specify what the delegate type of the closure will
- * be. This is important for IDE support.
+ * This annotation can be used by API or DSL writers to specify what the delegate
+ * type of a closure will be. This is important for IDE support.
  * <p>
  * This annotation can also be used to help the type checker ({@link groovy.transform.TypeChecked})
  * which would not report errors then if the delegate is of the documented type. Of course, it is
@@ -35,7 +33,7 @@ import java.lang.annotation.Target;
  * <p>
  * Example:
  * <pre>
- * // Document the fact that the delegate of the closure will be an ExecSpec
+ * // Declare that the delegate of the closure will be an ExecSpec
  * ExecResult exec(@DelegatesTo(ExecSpec) Closure closure) { ... }
  * </pre>
  *
@@ -43,12 +41,22 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.METHOD})
+@java.lang.annotation.Target(ElementType.PARAMETER)
 public @interface DelegatesTo {
-    Class value() default Target.class;
 
     /**
-     * The {@link Closure#resolveStrategy} used by the closure.
+     * The closure's delegate type, if not using {@code DelegatesTo.Target} or {@link #type()}.
+     */
+    Class value() default DelegatesTo.Target.class;
+
+    /**
+     * The closure's resolve strategy.
+     *
+     * @see Closure#DELEGATE_FIRST
+     * @see Closure#DELEGATE_ONLY
+     * @see Closure#OWNER_FIRST
+     * @see Closure#OWNER_ONLY
+     * @see Closure#TO_SELF
      */
     int strategy() default Closure.OWNER_FIRST;
 
@@ -66,28 +74,32 @@ public @interface DelegatesTo {
     String target() default "";
 
     /**
-     * The type member should be used when the type of the delegate cannot
-     * be represented with {@link #value()}, {@link #genericTypeIndex()} or
-     * {@link #target()}. In this case, it is possible to use a String to represent
-     * the type, at the cost of potential uncaught errors at compile time if the
-     * type is invalid and increased compile time.
+     * The type member should be used when the type of the delegate cannot be
+     * represented by {@link #value()} or {@link #target()}. In this case, it
+     * is possible to use a string to represent the type, at the cost of more
+     * compile time and potential uncaught load errors if the type is invalid.
      *
-     * @return a String representation of a type
      * @since 2.4.0
      */
     String type() default "";
 
     /**
-     * Parameter annotation used to specify the delegate for a {@code @DelegatesTo} annotated
-     * parameter of the same method.
+     * Specifies the delegate for a {@code @DelegatesTo} annotated parameter of the same method.
+     * <p>
+     * Example:
+     * <pre>
+     * // Declare that the delegate of the closure will be the "spec" argument
+     * ExecResult exec(@DelegatesTo.Target ExecSpec spec, @DelegatesTo Closure closure) { ... }
+     * </pre>
      */
+    @Documented
     @Retention(RetentionPolicy.RUNTIME)
-    @java.lang.annotation.Target({ElementType.PARAMETER})
+    @java.lang.annotation.Target(ElementType.PARAMETER)
     @interface Target {
 
         /**
-         * An identifier that should be used to disambiguate targets when there are
-         * multiple {@code @DelegatesTo.Target} annotated parameters.
+         * An identifier used to disambiguate targets when there are multiple
+         * {@code @DelegatesTo.Target} annotated parameters.
          */
         String value() default "";
     }

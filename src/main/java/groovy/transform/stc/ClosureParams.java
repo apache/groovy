@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -55,6 +56,7 @@ import java.lang.annotation.Target;
  * <p>Which uses the {@link FirstParam.FirstGenericType} first generic type of the first argument</p> hint to tell that the only expected
  * argument type corresponds to the type of the first generic argument type of the first method parameter.
  */
+@Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ClosureParams {
