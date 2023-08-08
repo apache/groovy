@@ -627,15 +627,17 @@ assert function(*args,5,6) == 26
     void testCoercionOperator() {
         try {
             // tag::coerce_op_cast[]
-            Integer x = 123
-            String s = (String) x                                   // <1>
+            String input = '42'
+            Integer num = (Integer) input                      // <1>
             // end::coerce_op_cast[]
+            assert false, 'Should not reach here but instead should have thrown a ClassCastException'
         } catch (ClassCastException e) {
+            assert e.message == "Cannot cast object '42' with class 'java.lang.String' to class 'java.lang.Integer'"
             // tag::coerce_op[]
-            Integer x = 123
-            String s = x as String                                  // <1>
+            String input = '42'
+            Integer num = input as Integer                      // <1>
             // end::coerce_op[]
-            assert s == '123'
+            assert num == 42
         }
         assertScript '''
         // tag::coerce_op_custom[]
