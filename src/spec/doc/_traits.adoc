@@ -388,7 +388,7 @@ include::../test/TraitsSpecificationTest.groovy[tags=withtraits_success,indent=0
 ----
 <1> call to `methodFromA` will fail because `C` doesn't implement `A`
 <2> call to `methodFromB` will fail because `C` doesn't implement `B`
-<3> `withTrait` will wrap `c` into something which implements `A` and `B`
+<3> `withTraits` will wrap `c` into something which implements `A` and `B`
 <4> `methodFromA` will now pass because `d` implements `A`
 <5> `methodFromB` will now pass because `d` also implements `B`
 
