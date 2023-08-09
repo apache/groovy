@@ -69,6 +69,7 @@ tasks.named('compileJmhGroovy') {
 }
 
 tasks.register('displayJmhResults') {
+    dependsOn('jmh')
     doLast {
         println file("$buildDir/results/jmh/results.txt").text
     }
