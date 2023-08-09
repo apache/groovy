@@ -54,6 +54,7 @@ jmh {
     }
     includeTests = true
 }
+
 jmhJar {
     exclude 'LICENSE'
     exclude 'THIRD-PARTY'
@@ -65,6 +66,10 @@ tasks.named('jmhClasses') {
 
 tasks.named('compileJmhGroovy') {
     classpath += compileJmhJava.classpath
+}
+
+tasks.register('displayJmhResults') {
+    println file("$buildDir/results/jmh/results.txt").text
 }
 
 tasks.register("performanceTests", PerformanceTestSummary)
