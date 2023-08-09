@@ -69,7 +69,9 @@ tasks.named('compileJmhGroovy') {
 }
 
 tasks.register('displayJmhResults') {
-    println file("$buildDir/results/jmh/results.txt").text
+    doLast {
+        println file("$buildDir/results/jmh/results.txt").text
+    }
 }
 
 tasks.register("performanceTests", PerformanceTestSummary)
