@@ -66,7 +66,6 @@ public class FieldExpression extends Expression {
 
     @Override
     public void setType(final ClassNode type) {
-        super.setType(type);
         field.setType(type);
     }
 
