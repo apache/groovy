@@ -29,9 +29,6 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -41,15 +38,11 @@ import org.objectweb.asm.Opcodes;
 import java.lang.annotation.Annotation;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.AND;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * <p>
@@ -84,25 +77,10 @@ public class ClassInvariantGenerator extends BaseGenerator {
     }
 
     private BooleanExpression addCallsToSuperAnnotationClosure(final ClassNode type, final Class<? extends Annotation> annotationType, BooleanExpression booleanExpression) {
-
-        final List<AnnotationNode> nextContractElementAnnotations = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), ClassHelper.makeWithoutCaching(annotationType));
-        if (nextContractElementAnnotations.isEmpty()) return booleanExpression;
-
-        for (AnnotationNode nextContractElementAnnotation : nextContractElementAnnotations) {
-            ClassExpression classExpression = (ClassExpression) nextContractElementAnnotation.getMember(BaseVisitor.CLOSURE_ATTRIBUTE_NAME);
-            if (classExpression == null) continue;
-
-            MethodCallExpression doCall = callX(
-                    ctorX(classExpression.getType(), args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION)),
-                    "doCall"
-            );
-            doCall.setMethodTarget(classExpression.getType().getMethods("doCall").get(0));
-
-            final BooleanExpression rightExpression = boolX(doCall);
-            booleanExpression.setSourcePosition(nextContractElementAnnotation);
-            booleanExpression = boolX(binX(booleanExpression, AND, rightExpression));
+        List<AnnotationNode> contractElementAnnotations = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), ClassHelper.makeWithoutCaching(annotationType));
+        for (AnnotationNode contractElementAnnotation : contractElementAnnotations) {
+            booleanExpression = boolX(andX(booleanExpression, BaseVisitor.asConditionExecution(contractElementAnnotation)));
         }
-
         return booleanExpression;
     }
 

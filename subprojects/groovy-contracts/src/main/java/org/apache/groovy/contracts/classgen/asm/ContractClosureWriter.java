@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.contracts.classgen.asm;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -30,7 +29,6 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 
@@ -39,14 +37,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -78,26 +75,23 @@ public class ContractClosureWriter {
         }
 
         // contains all params of the original method
-        ArrayList<Parameter> closureParameters = new ArrayList<Parameter>();
+        List<Parameter> closureParameters = new ArrayList<>();
         for (Parameter param : parametersTemp) {
-            Parameter closureParameter = new Parameter(param.getType().getPlainNodeReference(), param.getName());
-            closureParameters.add(closureParameter);
+            closureParameters.add(new Parameter(param.getType().getPlainNodeReference(), param.getName()));
         }
 
         ClassNode answer = new ClassNode(name, mods | ACC_FINAL, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
-        answer.setSynthetic(true);
         answer.setSourcePosition(expression);
+        answer.setSynthetic(true);
 
-        MethodNode method =
-                answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.Boolean_TYPE, closureParameters.toArray(new Parameter[closureParameters.size()]), ClassNode.EMPTY_ARRAY, expression.getCode());
-        method.setSourcePosition(expression);
+        MethodNode doCall = answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.Boolean_TYPE, closureParameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, expression.getCode());
+        doCall.setSourcePosition(expression);
 
         VariableScope varScope = expression.getVariableScope();
         if (varScope == null) {
-            throw new RuntimeException(
-                    "Must have a VariableScope by now! for expression: " + expression + " class: " + name);
+            throw new RuntimeException("Must have a VariableScope by now! for expression: " + expression + " class: " + name);
         } else {
-            method.setVariableScope(varScope.copy());
+            doCall.setVariableScope(varScope.copy());
         }
 
         // let's add a typesafe call method
@@ -110,10 +104,10 @@ public class ContractClosureWriter {
                 "call",
                 ACC_PUBLIC,
                 ClassHelper.Boolean_TYPE,
-                closureParameters.toArray(new Parameter[closureParameters.size()]),
+                closureParameters.toArray(Parameter.EMPTY_ARRAY),
                 ClassNode.EMPTY_ARRAY,
-                returnS(callThisX("doCall", arguments)));
-
+                returnS(callThisX("doCall", arguments))
+        );
         call.setSourcePosition(expression);
         call.setSynthetic(true);
 
@@ -127,16 +121,15 @@ public class ContractClosureWriter {
         VariableExpression thisObject = varX("_thisObject");
         thisObject.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(thisObject);
-        TupleExpression conArgs = new TupleExpression(outer, thisObject);
-        block.addStatement(stmt(ctorSuperX(conArgs)));
+        block.addStatement(stmt(ctorSuperX(args(outer, thisObject))));
 
-        Parameter[] consParams = params(
-                param(ClassHelper.OBJECT_TYPE, "_outerInstance"),
-                param(ClassHelper.OBJECT_TYPE, "_thisObject"));
-
-        ASTNode sn = answer.addConstructor(ACC_PUBLIC, consParams, ClassNode.EMPTY_ARRAY, block);
-        sn.setSourcePosition(expression);
-        correctAccessedVariable(method, expression);
+        Parameter[] ctorParams = {
+                new Parameter(ClassHelper.OBJECT_TYPE, "_outerInstance"),
+                new Parameter(ClassHelper.OBJECT_TYPE, "_thisObject")
+        };
+        var ctor = answer.addConstructor(ACC_PUBLIC, ctorParams, ClassNode.EMPTY_ARRAY, block);
+        ctor.setSourcePosition(expression);
+        correctAccessedVariable(doCall, expression);
         return answer;
     }
 
@@ -151,7 +144,7 @@ public class ContractClosureWriter {
         return outermostClass;
     }
 
-    private void correctAccessedVariable(final MethodNode methodNode, ClosureExpression ce) {
+    private void correctAccessedVariable(MethodNode methodNode, ClosureExpression ce) {
         CodeVisitorSupport visitor = new CodeVisitorSupport() {
             @Override
             public void visitVariableExpression(VariableExpression expression) {

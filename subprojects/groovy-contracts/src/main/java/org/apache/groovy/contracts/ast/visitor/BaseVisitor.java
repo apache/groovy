@@ -18,9 +18,22 @@
  */
 package org.apache.groovy.contracts.ast.visitor;
 
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
+
+import java.util.Objects;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 
 /**
  * <p>
@@ -34,18 +47,44 @@ public abstract class BaseVisitor extends ClassCodeVisitorSupport {
 
     public static final String GCONTRACTS_ENABLED_VAR = "$GCONTRACTS_ENABLED";
 
-    public static final String CLOSURE_ATTRIBUTE_NAME = "value";
-
-    protected SourceUnit sourceUnit;
-    protected ReaderSource source;
-
-    public BaseVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
-        this.sourceUnit = sourceUnit;
-        this.source = source;
-    }
+    protected final SourceUnit sourceUnit;
 
     @Override
     protected SourceUnit getSourceUnit() {
+        return sourceUnit;
+    }
+
+    public BaseVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
+        this.sourceUnit = sourceUnit;
+    }
+
+    public    static BooleanExpression asConditionExecution(final AnnotationNode annotation) {
+        var conditionClass = annotation.getMember("value").getType();
+        var createInstance = ctorX(conditionClass, args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION));
+        final MethodCallExpression doCall = callX(createInstance, "doCall");
+        doCall.setMethodTarget(conditionClass.getMethods("doCall").get(0));
+        BooleanExpression asBoolean = boolX(doCall);
+        asBoolean.setSourcePosition(annotation);
+        return asBoolean;
+    }
+
+    protected static ClosureExpression getOriginalCondition(final AnnotationNode annotation) {
+        Expression value = annotation.getMember("value");
+        if (value instanceof ClosureExpression) {
+            return (ClosureExpression) value;
+        }
         return null;
+    }
+
+    protected static /*???*/Expression getReplacedCondition(final AnnotationNode annotation) {
+        Expression value = annotation.getMember("value");
+        if (!(value instanceof ClosureExpression)) {
+            return value;
+        }
+        return null;
+    }
+
+    protected static void replaceCondition(final AnnotationNode node, final Expression expr) {
+        node.setMember("value", Objects.requireNonNull(expr));
     }
 }

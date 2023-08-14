@@ -73,7 +73,9 @@ contribute(bind(closure: inClosure()) & isThisType() & bind(methods: enclosingMe
       for (Parameter parameter : methods[0].parameters) {
         property name: parameter.name, type: parameter.type, readOnly: true
       }
-      property name: 'old', type: Map, readOnly: true, doc: 'Property values before the method call.'
+      if (!methods[0].isConstructor()) {
+        property name: 'old', type: Map, readOnly: true, doc: 'Property values before the method call.'
+      }
       if (!methods[0].isVoidMethod()) {
         property name: 'result', type: methods[0].returnType, readOnly: true, doc: 'Return value of the method call.'
       }
