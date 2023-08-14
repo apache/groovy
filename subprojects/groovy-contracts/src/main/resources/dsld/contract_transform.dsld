@@ -1,0 +1,86 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package dsld
+
+import org.codehaus.groovy.ast.*
+
+contribute(bind(closure: inClosure()) & isThisType() & bind(classes: enclosingClass(annotations: annotatedBy('groovy.contracts.Invariant')))) {
+  for (AnnotationNode annotation : annotations) {
+    def condition = annotation.getMember('value')
+    if (condition in closure) {
+      def thisType = classes[0]
+
+      delegateType = thisType
+      method name:'getOwner', type: thisType, params: [:]
+      property name: 'owner', type: thisType, readOnly: true
+      method name:'getThisObject', type: thisType, params: [:]
+      property name: 'thisObject', type: thisType, readOnly: true
+
+      return
+    }
+  }
+}
+
+contribute(bind(closure: inClosure()) & isThisType() & bind(methods: enclosingMethod(annotations: annotatedBy('groovy.contracts.Requires')))) {
+  for (AnnotationNode annotation : annotations) {
+    def condition = annotation.getMember('value')
+    if (condition in closure) {
+      def thisType = methods[0].declaringClass
+
+      delegateType = thisType
+      method name:'getOwner', type: thisType, params: [:]
+      property name: 'owner', type: thisType, readOnly: true
+      method name:'getThisObject', type: thisType, params: [:]
+      property name: 'thisObject', type: thisType, readOnly: true
+
+      for (Parameter parameter : methods[0].parameters) {
+        property name: parameter.name, type: parameter.type, readOnly: true
+      }
+
+      return
+    }
+  }
+}
+
+contribute(bind(closure: inClosure()) & isThisType() & bind(methods: enclosingMethod(annotations: annotatedBy('groovy.contracts.Ensures')))) {
+  for (AnnotationNode annotation : annotations) {
+    def condition = annotation.getMember('value')
+    if (condition in closure) {
+      def thisType = methods[0].declaringClass
+
+      delegateType = thisType
+      method name:'getOwner', type: thisType, params: [:]
+      property name: 'owner', type: thisType, readOnly: true
+      method name:'getThisObject', type: thisType, params: [:]
+      property name: 'thisObject', type: thisType, readOnly: true
+
+      for (Parameter parameter : methods[0].parameters) {
+        property name: parameter.name, type: parameter.type, readOnly: true
+      }
+      if (!methods[0].isConstructor()) {
+        property name: 'old', type: Map, readOnly: true, doc: 'Property values before the method call.'
+      }
+      if (!methods[0].isVoidMethod()) {
+        property name: 'result', type: methods[0].returnType, readOnly: true, doc: 'Return value of the method call.'
+      }
+
+      return
+    }
+  }
+}
