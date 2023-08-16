@@ -21,7 +21,6 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.GroovySunClassLoader;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
@@ -49,12 +48,6 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         Class cls = findLoadedClass(name);
         if (cls != null)
             return cls;
-
-        if (GroovySunClassLoader.sunVM != null) {
-            cls = GroovySunClassLoader.sunVM.doesKnow(name);
-            if (cls != null)
-                return cls;
-        }
 
         return super.loadClass(name);
     }
