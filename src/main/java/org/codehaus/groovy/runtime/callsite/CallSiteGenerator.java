@@ -249,7 +249,7 @@ public class CallSiteGenerator {
     }
 
     public static boolean isCompilable (CachedMethod method) {
-        return (GroovySunClassLoader.sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method))
+        return (Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method))
                 && !AndroidSupport.isRunningAndroid() && containsOnlyValidChars(method.getName());
     }
 
