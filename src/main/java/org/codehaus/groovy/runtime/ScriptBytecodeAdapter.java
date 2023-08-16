@@ -530,11 +530,9 @@ public class ScriptBytecodeAdapter {
         try {
             return receiver.getProperty(messageName);
         } catch (GroovyRuntimeException gre) {
-            /* TODO
             if (gre instanceof MissingPropertyException && senderClass!=receiver.getClass() && senderClass.isInstance(receiver)) {
                 return receiver.getMetaClass().getProperty(senderClass, receiver, messageName, false, false);
             }
-            */
             throw unwrap(gre);
         }
     }

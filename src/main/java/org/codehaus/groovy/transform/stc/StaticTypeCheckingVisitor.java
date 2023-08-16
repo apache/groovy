@@ -680,10 +680,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode accessedField = (FieldNode) accessedVariable;
             ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
-            if (enclosingClosure != null) {
-                tryVariableExpressionAsProperty(vexp, name);
-            } else if (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
-                    || !tryVariableExpressionAsProperty(vexp, name)) { // GROOVY-10981: check for property before super class field
+            boolean hasProperty = tryVariableExpressionAsProperty(vexp, name);
+            if (enclosingClosure == null && !hasProperty) { // GROOVY-10981: property selected before super class field
                 checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
                 if (temporaryType == null) storeType(vexp, getType(vexp));
             }
@@ -1682,22 +1680,26 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
             }
 
-            // GROOVY-7996: check if receiver implements get(String)/set(String,Object) or propertyMissing(String) or $static_propertyMissing(String)?
-            if (!receiverType.isArray() && !isPrimitiveType(getUnwrapper(receiverType))
-                    && pexp.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+            // GROOVY-7996: check if receiver declares get(String), getProperty(String), propertyMissing(String) or $static_propertyMissing(String)
+            if (pexp.isImplicitThis() && !receiverType.isArray() && !receiverType.isScriptBody() && !isPrimitiveType(getUnwrapper(receiverType))) {
                 MethodNode mopMethod;
                 if (readMode) {
-                    mopMethod = receiverType.getMethod("get", new Parameter[]{new Parameter(STRING_TYPE, "name")});
+                    Parameter[] name = {new Parameter(STRING_TYPE, "name")};
+                    mopMethod = receiverType.getMethod("get", name);
+                    if (mopMethod == null) mopMethod = receiverType.getMethod("getProperty", name);
+                    if (mopMethod == null || mopMethod.isStatic() || mopMethod.isSynthetic()) mopMethod = receiverType.getMethod("propertyMissing", name);
                 } else {
-                    mopMethod = receiverType.getMethod("set", new Parameter[]{new Parameter(STRING_TYPE, "name"), new Parameter(OBJECT_TYPE, "value")});
+                    Parameter[] nameAndValue = {new Parameter(STRING_TYPE, "name"), new Parameter(OBJECT_TYPE, "value")};
+                    mopMethod = receiverType.getMethod("set", nameAndValue);
+                    if (mopMethod == null) mopMethod = receiverType.getMethod("setProperty", nameAndValue);
+                    if (mopMethod == null || mopMethod.isStatic() || mopMethod.isSynthetic()) mopMethod = receiverType.getMethod("propertyMissing", nameAndValue);
                 }
-                if (mopMethod == null) mopMethod = receiverType.getMethod("propertyMissing", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
-
                 if (mopMethod != null && !mopMethod.isStatic() && !mopMethod.isSynthetic()) {
                     pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
-                    visitor.visitMethod(mopMethod);
+                    if (visitor != null)
+                        visitor.visitMethod(mopMethod);
                     return true;
                 }
             }

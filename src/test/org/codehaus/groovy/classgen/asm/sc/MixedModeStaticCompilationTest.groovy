@@ -31,7 +31,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicMethodCall() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             int bar() {
                 foo() + baz()
@@ -45,7 +45,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicMethodCallInsideClosure() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             int bar() {
                 def cl = { foo() + baz() }
@@ -59,8 +59,8 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testDynamicMethodCallWithStaticCallArgument() {
-        assertScript '''import groovy.transform.CompileStatic
+    void testDynamicMethodCallWithCheckedArgument() {
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             int bar() {
                 twice(baz())
@@ -74,7 +74,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicMethodCallOnField() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             class Holder {
                 def delegate
@@ -91,7 +91,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicProperty() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             int value(String str) {
                 str.val
@@ -106,8 +106,8 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testDynamicPropertyMixedWithStatic() {
-        assertScript '''import groovy.transform.CompileStatic
+    void testDynamicPropertyMixedWithCheckedMethodCall() {
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             class Holder {
                 int offset() { 2 }
@@ -126,8 +126,8 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testDynamicPropertyAsStaticArgument() {
-        assertScript '''import groovy.transform.CompileStatic
+    void testDynamicPropertyAsArgumentToCheckedMethodCall() {
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             class Holder {
                 int twice(int v) { 2*v }
@@ -148,7 +148,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
 
     void testDynamicVariable() {
         shell.setVariable('myVariable', 123)
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             int value() {
                 myVariable
@@ -157,26 +157,21 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testDynamicVariableMixedWithStaticCall() {
+    void testDynamicVariableMixedWithCheckedMethodCall() {
         shell.setVariable('myVariable', 123)
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
+            int offset() { 321 }
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-            class Holder {
-                def binding
-                def propertyMissing(String name) { binding.getVariable(name) }
-                int value() {
-                    myVariable + offset()
-                }
-                int offset() { 123 }
+            int value() {
+                myVariable + offset()
             }
-            def h = new Holder(binding:binding)
-            assert h.value() == 246
+            assert value() == 444
         '''
     }
 
-    void testDynamicVariableAsStaticCallParameter() {
+    void testDynamicVariableAsArgumentToCheckedMethodCall() {
         shell.setVariable('myVariable', 123)
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             class Holder {
                 def binding
@@ -192,7 +187,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testAllowMetaClass() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             void test() {
                 assert String.metaClass !== Class.metaClass
@@ -210,7 +205,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testRecognizeStaticMethodCall() {
-        assertScript '''import groovy.transform.CompileStatic
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
             Map<String, Integer> foo() {
                 String.map()
@@ -231,9 +226,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     void testDynamicBuilder() {
-        assertScript '''import groovy.transform.CompileStatic
-            import groovy.xml.MarkupBuilder
-
+        assertScript '''import groovy.xml.MarkupBuilder
             @CompileStatic(extensions='groovy/transform/sc/MixedModeDynamicBuilder.groovy')
             String render(List<String> items) {
                 def sw = new StringWriter()
@@ -247,7 +240,6 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
                         }
                     }
                 }
-
                 sw
             }
             def list = ['Chocolate','Milk','Butter']
@@ -262,7 +254,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
             }
             class B {
                 A a = new A() // may require dynamic support...
-                @groovy.transform.CompileStatic
+                @CompileStatic
                 B() {
                 }
             }
@@ -273,9 +265,8 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     void testSCClosureCanAccessPrivateFieldsOfNonSCEnclosingClass() {
         assertScript '''
             class Test {
-                private String str = "hi"
-
-                @groovy.transform.CompileStatic
+                private String str = 'hi'
+                @CompileStatic
                 String strInSCClosure() {
                     Closure c = { str }
                     c()
@@ -289,8 +280,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str() { 'hi' }
-
-                @groovy.transform.CompileStatic
+                @CompileStatic
                 String strInSCClosure() {
                     Closure c = { str() }
                     c()
@@ -303,13 +293,11 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     void testSCInnerClassCanAccessPrivateFieldsOfNonSCOuterClass() {
         assertScript '''
             class Test {
-                private String str = "hi"
-
-                @groovy.transform.CompileStatic
+                private String str = 'hi'
+                @CompileStatic
                 class Inner {
                     String outerStr() { str }
                 }
-
                 String strInSCInner() { new Inner().outerStr() }
             }
             assert new Test().strInSCInner() == 'hi'
@@ -320,12 +308,10 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str() { 'hi' }
-
-                @groovy.transform.CompileStatic
+                @CompileStatic
                 class Inner {
                     String outerStr() { str() }
                 }
-
                 String strInSCInner() { new Inner().outerStr() }
             }
             assert new Test().strInSCInner() == 'hi'
@@ -335,12 +321,10 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str() { 'hi' }
-
                 class Inner {
-                    @groovy.transform.CompileStatic
+                    @CompileStatic
                     String outerStr() { str() }
                 }
-
                 String strInSCInner() { new Inner().outerStr() }
             }
             assert new Test().strInSCInner() == 'hi'
@@ -351,8 +335,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str = "hi"
-
-                @groovy.transform.CompileStatic
+                @CompileStatic
                 String strInSCAIC() {
                     new Object() {
                         String outerStr() { str }
@@ -367,8 +350,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str() { 'hi' }
-
-                @groovy.transform.CompileStatic
+                @CompileStatic
                 String strInSCAIC() {
                     def callable = new java.util.concurrent.Callable<String>() {
                         @Override String call() { str() }
@@ -383,11 +365,9 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         assertScript '''
             class Test {
                 private String str() { 'hi' }
-
                 def strInSCAIC() {
                     def callable = new java.util.concurrent.Callable<String>() {
-                        @groovy.transform.CompileStatic
-                        @Override String call() { str() }
+                        @CompileStatic @Override String call() { str() }
                     }
                     callable.call()
                 }

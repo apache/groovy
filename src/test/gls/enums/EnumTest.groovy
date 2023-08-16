@@ -113,10 +113,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     void testEnumWithSingleListInConstructor() {
-        def sh = new GroovyShell();
-        def enumStr;
-
-        enumStr = """
+        assertScript '''
             enum ListEnum1 {
                 ONE([111, 222])
                 ListEnum1(Object listArg){
@@ -125,10 +122,9 @@ class EnumTest extends CompilableTestSupport {
                 }
             }
             println ListEnum1.ONE
-        """
-        sh.evaluate(enumStr);
+        '''
 
-        enumStr = """
+        assertScript '''
             enum ListEnum2 {
                 TWO([234, [567,12]])
                 ListEnum2(Object listArg){
@@ -137,14 +133,13 @@ class EnumTest extends CompilableTestSupport {
                 }
             }
             println ListEnum2.TWO
-        """
-        sh.evaluate(enumStr)
+        '''
     }
 
     // GROOVY-3214
     void testSingleListDoesNoInfluenceMaps() {
         // the fix for GROOVY-2933 caused map["taku"] to become map[(["take])] instead
-        assertScript """
+        assertScript '''
             enum FontFamily {
                 ARIAL
 
@@ -155,13 +150,13 @@ class EnumTest extends CompilableTestSupport {
                 }
             }
             FontFamily.obtainMyMap()
-        """
+        '''
     }
 
     // GROOVY-3276
     void testMutipleValuesDontGetWronglyWrappedInList() {
         // the fix for GROOVY-3214 caused multiple values passed in an enum const to get wrapped in an extra ListExpression
-        assertScript """
+        assertScript '''
             enum GROOVY3276 {
                A(1,2), B(3,4)
 
@@ -175,7 +170,7 @@ class EnumTest extends CompilableTestSupport {
 
            assert GROOVY3276.A.x == 1
            assert GROOVY3276.B.y == 4
-        """
+        '''
     }
 
     // GROOVY-3161
@@ -234,7 +229,7 @@ class EnumTest extends CompilableTestSupport {
 
     // GROOVY-3283
     void testImportStaticMoreThanOneEnum() {
-        assertScript """
+        assertScript '''
             enum Foo3283 { A,B }
             enum Bar3283 { X,Y }
 
@@ -243,7 +238,7 @@ class EnumTest extends CompilableTestSupport {
 
             a = A
             x = X
-        """
+        '''
     }
 
     // GROOVY-3284
@@ -258,7 +253,7 @@ class EnumTest extends CompilableTestSupport {
         assert a() == "A"
 
         // now test the usage in a script but this time type Closure not specified explicitly
-        assertScript """
+        assertScript '''
             enum Foo32842 {
                 B({ "B" })
                 Foo32842(c) {
@@ -275,12 +270,12 @@ class EnumTest extends CompilableTestSupport {
             assert Foo32842.B() == "B"
             b = Foo32842.B
             assert b() == "B"
-        """
+        '''
     }
 
     // GROOVY-3483
     void testClassResolutionForInnerEnumsWithPackageName() {
-        assertScript """
+        assertScript '''
             package familie
 
             class Mother3483 {
@@ -296,12 +291,12 @@ class EnumTest extends CompilableTestSupport {
             def mother = new Mother3483(child: Mother3483.Child.Franz)
 
             assert mother.child as String == 'Franz'
-        """
+        '''
     }
 
     // GROOVY-3110
     void testInnerEnumUsedInDefiningClassWithUnqualifiedEnumNameUsed() {
-        assertScript """
+        assertScript '''
             class Class3110 {
                 enum Enum3110{FOO, BAR}
                 Enum3110 var
@@ -316,7 +311,7 @@ class EnumTest extends CompilableTestSupport {
             def obj = new Class3110()
             obj.setEnumVar()
             assert obj.getEnumVar() == Class3110.Enum3110.FOO
-        """
+        '''
     }
 
     // GROOVY-3693
@@ -351,7 +346,7 @@ class EnumTest extends CompilableTestSupport {
 
     // GROOVY-3996
     void testEnumStaticInitWithAFieldUsingEnumValues() {
-        assertScript """
+        assertScript '''
             enum Color3996 {
                 R, G, B
                 public static Color3996[] ALL_COLORS = [R, G, B]
@@ -361,24 +356,24 @@ class EnumTest extends CompilableTestSupport {
             assert Color3996.ALL_COLORS[0] == Color3996.R
             assert Color3996.ALL_COLORS[1] == Color3996.G
             assert Color3996.ALL_COLORS[2] == Color3996.B
-        """
+        '''
     }
 
     // GROOVY-3986
     void testEnumWithTopLevelNoBracketsMethodCall() {
-        assertScript """
+        assertScript '''
             enum Color3986 {
                 RED {
                   String toString() { sprintf '%s', 'foo' }
                 },GREEN,BLUE
             }
             assert Color3986.RED.toString() == 'foo'
-        """
+        '''
     }
 
     // GROOVY-3047
     void testEnumConstantSeparators() {
-        shouldCompile """
+        shouldCompile '''
             enum Foo0 { X }
             enum Foo1 {
 
@@ -410,22 +405,22 @@ class EnumTest extends CompilableTestSupport {
               Y
               ,
             }
-        """
+        '''
     }
 
     // GROOVY-4268
     void testEnumWithSingleValueAndClassField() {
-        shouldCompile """
+        shouldCompile '''
             enum EnumWithSingleValueAndClassField {
                 VALUE
                 String toString() { "I'm a value" }
             }
-        """
+        '''
     }
 
     // GROOVY-4444
     void testConstructorChainingInEnum() {
-        assertScript """
+        assertScript '''
             enum Foo4444 {
                 ONE(1), TWO(1, 2)
 
@@ -451,7 +446,7 @@ class EnumTest extends CompilableTestSupport {
 
             assert foos[1].i == 1
             assert foos[1].j == 2
-        """
+        '''
     }
 
     // GROOVY-6065
@@ -496,7 +491,7 @@ class EnumTest extends CompilableTestSupport {
 
     // GROOVY-4641
     void testAbstractMethodOverriding() {
-        assertScript """
+        assertScript '''
             enum Day {
                SUNDAY {
                   String getAction() { 'Relax' }
@@ -507,8 +502,8 @@ class EnumTest extends CompilableTestSupport {
                abstract String getAction()
             }
             assert 'Relax' ==  Day.SUNDAY.action
-        """
-        shouldNotCompile """
+        '''
+        shouldNotCompile '''
             enum Day {
                SUNDAY {
                   String getAction() { 'Relax' }
@@ -517,8 +512,8 @@ class EnumTest extends CompilableTestSupport {
                abstract String getAction()
             }
             assert 'Relax' ==  Day.SUNDAY.action
-        """
-        shouldNotCompile """
+        '''
+        shouldNotCompile '''
             enum Day {
                SUNDAY {
                   String getAction() { 'Relax' }
@@ -527,12 +522,12 @@ class EnumTest extends CompilableTestSupport {
                abstract String getAction()
             }
             assert 'Relax' ==  Day.SUNDAY.action
-        """
+        '''
     }
 
     // GROOVY-5756
     void testInnerClosureDefinitions() {
-        assertScript """
+        assertScript '''
             enum MyEnum {
                 INSTANCE {
                     String foo() {
@@ -545,12 +540,12 @@ class EnumTest extends CompilableTestSupport {
             }
             assert "foo2" == MyEnum.CONTROL.foo()
             assert "foo1" == MyEnum.INSTANCE.foo()
-        """
+        '''
     }
 
     // GROOVY-4794
     void testLenientTypeDefinitions() {
-        assertScript """
+        assertScript '''
             enum E {
               enConst {
                 @Lazy pi = 3.14
@@ -561,12 +556,12 @@ class EnumTest extends CompilableTestSupport {
             }
             assert E.enConst.foo() == '3.14 6.28'
             assert E.enConst.bar() == '6.28 3.14'
-        """
+        '''
     }
 
     // GROOVY-4485
     void testNamedArgs() {
-        assertScript """
+        assertScript '''
             enum ExportFormat {
                 EXCEL_OOXML(mime: "application/vnd.ms-excel", extension: "xlsx"),
                 EXCEL_BINARY(mime: "application/vnd.ms-excel", extension: "xls"),
@@ -581,12 +576,12 @@ class EnumTest extends CompilableTestSupport {
             }
             assert ExportFormat.EXCEL_HTML.ordinal() == 2
             assert ExportFormat.FOO.extension == 'default'
-        """
+        '''
     }
 
     // GROOVY-6250
     void testGenericMethodOverriding() {
-        assertScript """
+        assertScript '''
             interface IVisitor<InputType, OutputType> {
                 OutputType visitMe(InputType input)
             }
@@ -606,7 +601,7 @@ class EnumTest extends CompilableTestSupport {
             }
 
             assert MyEnum.ENUM1.accept(new ConcreteVisitor(), null) == 'I have been visited!'
-        """
+        '''
     }
 
     void testVargsConstructor() {
@@ -669,7 +664,7 @@ class EnumTest extends CompilableTestSupport {
             }
             assert 'annotations' == Foo.annotations.toString()
             assert Foo.getAnnotations().size() == 1
-          '''
+        '''
     }
 
     // GROOVY-6747
@@ -700,7 +695,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
-    void testEnumWithinInnerClassHasStaticModifier() {
+    void testDeeplyNestedEnumHasStaticModifier() {
         assertScript '''
             class Foo {
                 class Baz {
@@ -739,7 +734,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
-    void testEnumWithinInnerClassHasStaticModifierSC() {
+    void testDeeplyNestedEnumHasStaticModifierSC() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
@@ -781,6 +776,26 @@ class EnumTest extends CompilableTestSupport {
             def foo = new Foo(x:'123456')
             Foo.Bar.SOMETHING.accept(foo)
             assert foo.getX().size() == 2
+        '''
+    }
+
+    // GROOVY-7024
+    void testEnumConstructorCallsOuterClassStaticMethod() {
+        assertScript '''
+            class Outer {
+                static final Map props = [bar: 10, baz: 20]
+                static save(name, value) {
+                    props[name] = value
+                }
+                enum Inner {
+                    FOO('foo');
+                    Inner(String name) {
+                        save(name, 30)
+                    }
+                }
+            }
+            def in = Outer.Inner.FOO
+            assert Outer.props == [bar: 10, baz: 20, foo: 30]
         '''
     }
 }

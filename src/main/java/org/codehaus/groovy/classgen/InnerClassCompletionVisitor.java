@@ -327,7 +327,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         );
     }
 
-    private void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
+            void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
         MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
         if (method == null) {

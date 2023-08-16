@@ -840,13 +840,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class Outer {
                 static Map props = [bar: 10, baz: 20]
                 enum Inner {
-                    FOO('foo'),
+                    FOO('foo');
                     Inner(String name) {
                         props[name] = 30
                     }
                 }
             }
-            Outer.Inner.FOO
+            def in = Outer.Inner.FOO
             assert Outer.props == [bar: 10, baz: 20, foo: 30]
         '''
     }
@@ -862,7 +862,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     static private int VALUE = 1
                     static class Inner {
                         $propertySource
-                        int test(int i) {
+                        def test(int i) {
                             if (i > VALUE) {
                                 // ...
                             }
@@ -870,8 +870,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
-                Number value = new Outer.Inner().test(0)
-                assert value == 1 // this is legacy result
+                Object value = new Outer.Inner().test(0)
+                assert value == 2
             """
         }
     }

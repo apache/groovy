@@ -148,17 +148,14 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -1137,40 +1134,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private boolean checkStaticOuterField(final PropertyExpression pexp, final String propertyName) {
-        for (final ClassNode outer : controller.getClassNode().getOuterClasses()) {
-            FieldNode field = outer.getDeclaredField(propertyName);
-            if (field != null) {
-                if (!field.isStatic()) break;
-
-                Expression outerClass = classX(outer);
-                outerClass.setNodeMetaData(PROPERTY_OWNER, outer);
-                outerClass.setSourcePosition(pexp.getObjectExpression());
-
-                Expression outerField = attrX(outerClass, pexp.getProperty());
-                outerField.setSourcePosition(pexp);
-                outerField.visit(this);
-                return true;
-            } else {
-                field = outer.getField(propertyName); // checks supers
-                if (field != null && !field.isPrivate() && (field.isPublic() || field.isProtected()
-                        || Objects.equals(field.getDeclaringClass().getPackageName(), outer.getPackageName()))) {
-                    if (!field.isStatic()) break;
-
-                    Expression upperClass = classX(field.getDeclaringClass());
-                    upperClass.setNodeMetaData(PROPERTY_OWNER, field.getDeclaringClass());
-                    upperClass.setSourcePosition(pexp.getObjectExpression());
-
-                    Expression upperField = propX(upperClass, pexp.getProperty());
-                    upperField.setSourcePosition(pexp);
-                    upperField.visit(this);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private boolean isGroovyObject(final Expression objectExpression) {
         if (objectExpression instanceof ClassExpression) return false;
         if (isThisOrSuper(objectExpression)) return true;//GROOVY-8693
@@ -1221,10 +1184,6 @@ public class AsmClassGenerator extends ClassGenerator {
                         // GROOVY-10695: "this.name" or "Type.name" where "name" is non-static
                         if (fieldNode != null && !fieldNode.isStatic() && isStatic(objectExpression)) {
                             fieldNode = null;
-                        }
-                        // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
-                        if (fieldNode == null && !isFieldDirectlyAccessible(getField(classNode, name), classNode)) {
-                            if (checkStaticOuterField(expression, name)) return;
                         }
                     }
                 } else {
