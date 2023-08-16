@@ -32,7 +32,7 @@ public class BeanUtils {
      * @return the decapitalized string
      *
      * @since 3.0.0
-     * @see https://stackoverflow.com/questions/4052840/most-efficient-way-to-make-the-first-character-of-a-string-lower-case/4052914
+     * @see <a href="https://stackoverflow.com/questions/4052840/most-efficient-way-to-make-the-first-character-of-a-string-lower-case/4052914">A relevant stack overflow question</a>
      */
     public static String decapitalize(final String property) {
         int propertyLength = (property == null ? 0 : property.length());
