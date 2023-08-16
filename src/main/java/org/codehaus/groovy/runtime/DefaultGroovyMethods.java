@@ -3063,7 +3063,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the count value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count{ it % 2 == 0 } == 2</pre>
+     * <pre class="groovyTestCase">
+     * assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count{ it % 2 == 0 } == 2
+     * </pre>
      *
      * @param self  the Iterator from which we count the number of matching occurrences
      * @param closure a closure condition
@@ -3071,16 +3073,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static <T> Number count(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        long answer = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        while (self.hasNext()) {
-            if (bcw.call(self.next())) {
-                ++answer;
-            }
-        }
+        long answer = count(self, 0L, closure);
         // for b/c with Java return an int if we can
         if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given closure from the
+     * items within this Iterator, adding the count to the initial count.
+     * The iterator will become exhausted of elements after determining the count value.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count(100){ it % 2 == 0 } == 102
+     * </pre>
+     *
+     * @param self  the Iterator from which we count the number of matching occurrences
+     * @param initialCount start counting from this value
+     * @param closure a closure condition
+     * @return the number of occurrences
+     * @since 4.0.14
+     */
+    public static <T, E extends Number> E count(Iterator<T> self, E initialCount, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        E count = initialCount;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        while (self.hasNext()) {
+            if (bcw.call(self.next())) {
+                count = (E) NumberNumberPlus.plus(count, 1);
+            }
+        }
+        return count;
     }
 
     /**
@@ -3089,7 +3112,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].count(4) == 2</pre>
+     * <pre class="groovyTestCase">
+     * assert [2,4,2,1,3,5,2,4,3].count(4) == 2
+     * </pre>
      *
      * @param self  the Iterable within which we count the number of occurrences
      * @param value the value being searched for
@@ -3104,7 +3129,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences which satisfy the given closure from inside this Iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].count{ it % 2 == 0 } == 5</pre>
+     * <pre class="groovyTestCase">
+     * assert [2,4,2,1,3,5,2,4,3].count{ it % 2 == 0 } == 5
+     * </pre>
      *
      * @param self  the Iterable within which we count the number of occurrences
      * @param closure a closure condition
@@ -3116,12 +3143,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences which satisfy the given closure from inside this Iterable.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [2,4,2,1,3,5,2,4,3].count(100L){ it % 2 == 0 } == 105L
+     * </pre>
+     *
+     * @param self  the Iterable within which we count the number of occurrences
+     * @param initialCount start counting from this value
+     * @param closure a closure condition
+     * @return the number of occurrences
+     * @since 4.0.14
+     */
+    public static <T, E extends Number> E count(Iterable<T> self, E initialCount, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return count(self.iterator(), initialCount, closure);
+    }
+
+    /**
      * Counts the number of occurrences which satisfy the given closure from inside this map.
      * If the closure takes one parameter then it will be passed the Map.Entry.
      * Otherwise, the closure should take two parameters and will be passed the key and value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [a:1, b:1, c:2, d:2].count{ k,v {@code ->} k == 'a' {@code ||} v == 2 } == 3</pre>
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:1, c:2, d:2].count{ k,v {@code ->} k == 'a' {@code ||} v == 2 } == 3
+     * </pre>
      *
      * @param self  the map within which we count the number of occurrences
      * @param closure a 1 or 2 arg Closure condition applying on the entries
@@ -3129,16 +3176,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static <K,V> Number count(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
-        long answer = 0;
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (bcw.callForMap(entry)) {
-                ++answer;
-            }
-        }
+        long answer = count(self, 0L, closure);
         // for b/c with Java return an int if we can
         if (answer <= Integer.MAX_VALUE) return (int) answer;
         return answer;
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given closure from inside this map.
+     * If the closure takes one parameter then it will be passed the Map.Entry.
+     * Otherwise, the closure should take two parameters and will be passed the key and value.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:1, c:2, d:2].count(100G){ k,v {@code ->} k == 'a' {@code ||} v == 2 } == 103G
+     * </pre>
+     *
+     * @param self  the map within which we count the number of occurrences
+     * @param initialCount start counting from this value
+     * @param closure a 1 or 2 arg Closure condition applying on the entries
+     * @return the number of occurrences
+     * @since 4.0.14
+     */
+    public static <K,V, E extends Number> E count(Map<K,V> self, E initialCount, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
+        E count = initialCount;
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (bcw.callForMap(entry)) {
+                count = (E) NumberNumberPlus.plus(count, 1);
+            }
+        }
+        return count;
     }
 
     /**
