@@ -1573,13 +1573,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_MAX = 'max'
     private static final String FUNCTION_SUM = 'sum'
     private static final String FUNCTION_AVG = 'avg'
+    private static final String FUNCTION_LIST = 'list'
     private static final String FUNCTION_MEDIAN = 'median'
     private static final String FUNCTION_STDEV = 'stdev'
     private static final String FUNCTION_STDEVP = 'stdevp'
     private static final String FUNCTION_VAR = 'var'
     private static final String FUNCTION_VARP = 'varp'
     private static final String FUNCTION_AGG = 'agg'
-    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_AGG]
+    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_LIST, FUNCTION_AGG]
 
     private static final String FUNCTION_ROW_NUMBER = 'rowNumber'
     private static final String FUNCTION_LEAD = 'lead'

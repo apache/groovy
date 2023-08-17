@@ -410,6 +410,17 @@ public interface Queryable<T> {
     <U extends Comparable<? super U>> U max(Function<? super T, ? extends U> mapper);
 
     /**
+     * Aggregate function {@code list}. There is no equivalent in standard SQL
+     * but various databases support a similar concept named: {@code list}, {@code listagg}, or {@code array_agg}.
+     *
+     * @param mapper choose the field to include in the list
+     * @param <U> the field type
+     * @return aggregate list result
+     * @since 4.0.14
+     */
+    <U> List<U> list(Function<? super T, ? extends U> mapper);
+
+    /**
      * Aggregate function {@code median}, similar to SQL's {@code median}
      *
      * @param mapper choose the field to median
