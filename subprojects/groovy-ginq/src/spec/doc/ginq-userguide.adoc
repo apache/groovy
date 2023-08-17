@@ -362,6 +362,11 @@ GINQ provides some built-in aggregate functions:
 |java.math.BigDecimal
 |the average (arithmetic mean) of all non-null values
 
+|list(_expression_)
+|any
+|java.util.List
+|the aggregated list of all non-null values
+
 |median(_expression_)
 |java.lang.Number
 |java.math.BigDecimal
@@ -422,6 +427,16 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_11,in
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_12,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_14,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_15,indent=0]
 ----
 
 [source, sql]

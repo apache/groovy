@@ -440,6 +440,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
+    public <U> List<U> list(Function<? super T, ? extends U> mapper) {
+        return agg(q -> q.stream()
+            .map(mapper)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()));
+    }
+
+    @Override
     public BigDecimal median(Function<? super T, ? extends Number> mapper) {
         List<BigDecimal> sortedNumList = agg(q -> q.stream()
                 .map(mapper)

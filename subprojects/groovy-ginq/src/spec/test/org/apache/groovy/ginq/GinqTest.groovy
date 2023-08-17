@@ -3019,6 +3019,49 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 32"() {
+        assertGinqScript '''
+// tag::ginq_grouping_14[]
+            assert [['A', ['APPLE', 'APRICOT']],
+                    ['B', ['BANANA']],
+                    ['C', ['CANTALOUPE']]] == GQL {
+                from fruit in ['Apple', 'Apricot', 'Banana', 'Cantaloupe']
+                groupby fruit[0] as firstChar
+                select firstChar, list(fruit.toUpperCase()) as fruit_list
+            }
+// end::ginq_grouping_14[]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby select - 33"() {
+        assertGinqScript '''
+            @groovy.transform.EqualsAndHashCode
+            class Person {
+                String name
+                int weight
+                String gender
+
+                Person(String name, int weight, String gender) {
+                    this.name = name
+                    this.weight = weight
+                    this.gender = gender
+                }
+            }
+// tag::ginq_grouping_15[]
+            def persons = [new Person('Linda', 100, 'Female'),
+                           new Person('Daniel', 135, 'Male'),
+                           new Person('David', 122, 'Male')]
+            assert [['Male', ['Daniel', 'David']], ['Female', ['Linda']]] == GQL {
+                from p in persons
+                groupby p.gender
+                select p.gender, list(p.name)
+            }
+// end::ginq_grouping_15[]
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertGinqScript '''
             assert [[1, 2], [6, 3]] == GQ {
@@ -4462,9 +4505,9 @@ class GinqTest {
         assert '3' == filterExpr.rightExpression.text
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
-        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
-        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
-        assert '1' == contructedFilterExpr1.rightExpression.text
+        BinaryExpression constructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == constructedFilterExpr1.operation.type
+        assert '1' == constructedFilterExpr1.rightExpression.text
 
         assert ginqExpression.joinExpressionList[0].dataSourceExpr !instanceof GinqExpression
     }
@@ -4611,8 +4654,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
