@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+@Deprecated
 public abstract class ArrayPutAtMetaMethod extends ArrayMetaMethod {
     @Override
     public String getName() {

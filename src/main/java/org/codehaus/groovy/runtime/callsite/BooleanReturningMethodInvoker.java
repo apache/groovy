@@ -23,15 +23,16 @@ import org.apache.groovy.internal.util.UncheckedThrow;
 /**
  * Helper class for internal use only. This allows to call a given method and
  * convert the result to a boolean. It will do this by caching the method call
- * as well as the "asBoolean" in {@link CallSiteArray} fashion. "asBoolean" will not be 
+ * as well as the "asBoolean" in {@link CallSiteArray} fashion. "asBoolean" will not be
  * called if the result is null or a Boolean. In case of null we return false and
- * in case of a Boolean we simply unbox. This logic is designed after the one present 
+ * in case of a Boolean we simply unbox. This logic is designed after the one present
  * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
- * this class is to avoid the slow "asBoolean" call in that method. 
- * 
+ * this class is to avoid the slow "asBoolean" call in that method.
+ *
  * The nature of this class allows a per instance caching instead of a per class
  * caching like the normal {@link CallSiteArray} logic.
  */
+@Deprecated
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;
 

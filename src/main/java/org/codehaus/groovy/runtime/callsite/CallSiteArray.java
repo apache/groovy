@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.security.PrivilegedAction;
 import java.util.stream.IntStream;
 
+@Deprecated
 public final class CallSiteArray {
     public static final Object[] NOPARAM = new Object[0];
     public final CallSite[] array;

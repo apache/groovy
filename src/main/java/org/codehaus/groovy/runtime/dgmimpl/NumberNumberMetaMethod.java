@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.lang.reflect.Modifier;
 
+@Deprecated
 public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
     private static final CachedClass    NUMBER_CLASS = ReflectionCache.getCachedClass(Number.class);
     private static final CachedClass [] NUMBER_CLASS_ARR = new CachedClass[] { NUMBER_CLASS };

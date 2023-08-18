@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public final class NullCallSite extends AbstractCallSite {
     public NullCallSite(CallSite callSite) {
         super(callSite);

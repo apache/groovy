@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  *   metaclass  - cached
  *   method - not cached
  */
+@Deprecated
 public class StaticMetaClassSite extends MetaClassSite {
 
     private final ClassInfo classInfo;

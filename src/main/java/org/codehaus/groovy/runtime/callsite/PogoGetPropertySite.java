@@ -22,6 +22,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public class PogoGetPropertySite extends AbstractCallSite {
     private final Class aClass;
 

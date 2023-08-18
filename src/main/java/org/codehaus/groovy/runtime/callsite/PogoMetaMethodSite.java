@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
  *   metaclass - cached
  *   method - cached
 */
+@Deprecated
 public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
     private final int version;

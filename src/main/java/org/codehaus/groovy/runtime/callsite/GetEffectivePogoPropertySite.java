@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 * Date: May 21, 2008
 * Time: 10:37:37 AM
 */
+@Deprecated
 class GetEffectivePogoPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;
     private final MetaProperty effective;

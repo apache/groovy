@@ -22,6 +22,7 @@ import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public class PojoMetaClassGetPropertySite extends AbstractCallSite {
     public PojoMetaClassGetPropertySite(CallSite parent) {
         super(parent);

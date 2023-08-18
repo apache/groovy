@@ -24,6 +24,7 @@ import groovy.lang.MetaProperty;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public class GetEffectivePojoPropertySite extends AbstractCallSite {
     private final MetaClassImpl metaClass;
     private final MetaProperty effective;

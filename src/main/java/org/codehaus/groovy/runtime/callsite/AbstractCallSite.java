@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 /**
  * Base class for all call sites.
  */
+@Deprecated
 public class AbstractCallSite implements CallSite {
 
     protected final int index;

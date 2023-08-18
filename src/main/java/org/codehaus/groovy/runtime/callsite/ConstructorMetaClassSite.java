@@ -22,6 +22,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public class ConstructorMetaClassSite extends MetaClassSite {
     public ConstructorMetaClassSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);

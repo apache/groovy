@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_CLASS;
 
+@Deprecated
 public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
     public ObjectArrayPutAtMetaMethod() {

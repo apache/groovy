@@ -20,7 +20,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyObject;
 
-
+@Deprecated
 public interface CallSite {
     CallSiteArray getArray();
     int getIndex();

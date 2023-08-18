@@ -1316,6 +1316,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     @Override
+    @Deprecated
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (invokeMethodMethod != null)
             return new PojoMetaClassSite(site, this);
@@ -1324,6 +1325,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     @Override
+    @Deprecated
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (invokeStaticMethodMethod != null)
             return new StaticMetaClassSite(site, this);
@@ -1335,12 +1337,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     public boolean hasCustomStaticInvokeMethod() {return invokeStaticMethodMethod!=null; }
 
     @Override
+    @Deprecated
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
         return super.createPogoCallSite(site, args);
     }
 
+    @Deprecated
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, String name, Object[] args) {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
@@ -1356,6 +1360,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     @Override
+    @Deprecated
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);
         MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+@Deprecated
 public abstract class ArrayGetAtMetaMethod extends ArrayMetaMethod {
     protected ArrayGetAtMetaMethod() {
         parameterTypes = INTEGER_CLASS_ARR;

@@ -24,6 +24,7 @@ import groovy.lang.MetaMethod;
 /**
  * Call site which caches meta method
  */
+@Deprecated
 public abstract class MetaMethodSite extends MetaClassSite {
     final MetaMethod metaMethod;
     protected final Class[] params;
