@@ -19,7 +19,6 @@
 
 import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
 
 /**
  * Specification tests for the traits feature
@@ -189,8 +188,8 @@ p.Named__name = 'Bob'                       // <4>
     }
 
     void testRemappedName() {
-        def clazz = new ClassNode("my.package.Foo", 0, ClassHelper.OBJECT_TYPE)
-        assert org.codehaus.groovy.transform.trait.Traits.remappedFieldName(clazz, "bar") == 'my_package_Foo__bar'
+        def foo = ClassHelper.make("my.package.Foo")
+        assert org.codehaus.groovy.transform.trait.Traits.remappedFieldName(foo, "bar") == 'my_package_Foo__bar'
     }
 
     void testDuckTyping() {

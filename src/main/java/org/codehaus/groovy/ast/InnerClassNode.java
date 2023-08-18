@@ -18,12 +18,8 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.stmt.Statement;
-
-import java.util.LinkedList;
-
 /**
- * Represents an inner class declaration
+ * Represents an inner class definition.
  */
 public class InnerClassNode extends ClassNode {
 
@@ -37,7 +33,7 @@ public class InnerClassNode extends ClassNode {
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
-        this(outerClass, name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
+        this(outerClass, name, modifiers, superClass, ClassNode.EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
@@ -47,11 +43,8 @@ public class InnerClassNode extends ClassNode {
      */
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
         super(name, modifiers, superClass, interfaces, mixins);
+        if (outerClass != null) outerClass.addInnerClass(this);
         this.outerClass = outerClass;
-
-        if (outerClass.innerClasses == null)
-            outerClass.innerClasses = new LinkedList<InnerClassNode> ();
-        outerClass.innerClasses.add(this);
     }
 
     @Override
@@ -59,7 +52,7 @@ public class InnerClassNode extends ClassNode {
         return outerClass;
     }
 
-    public ClassNode getOuterMostClass()  {
+    public ClassNode getOuterMostClass() {
         ClassNode outerClass = getOuterClass();
         while (outerClass instanceof InnerClassNode)  {
             outerClass = outerClass.getOuterClass();
@@ -67,9 +60,6 @@ public class InnerClassNode extends ClassNode {
         return outerClass;
     }
 
-    /**
-     * @return the field node on the outer class or null if this is not an inner class
-     */
     @Override
     public FieldNode getOuterField(String name) {
         return outerClass.getDeclaredField(name);
@@ -89,15 +79,5 @@ public class InnerClassNode extends ClassNode {
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
-    }
-
-    @Override
-    public void addConstructor(final ConstructorNode node) {
-        super.addConstructor(node);
-    }
-
-    @Override
-    public ConstructorNode addConstructor(final int modifiers, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
-        return super.addConstructor(modifiers, parameters, exceptions, code);
     }
 }

@@ -186,7 +186,7 @@ public class ClassHelper {
 
     private static final String DYNAMIC_TYPE_METADATA = "_DYNAMIC_TYPE_METADATA_";
 
-    protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
+    protected static final ClassNode[] EMPTY_TYPE_ARRAY = ClassNode.EMPTY_ARRAY;
 
     public static final String OBJECT = "java.lang.Object";
 

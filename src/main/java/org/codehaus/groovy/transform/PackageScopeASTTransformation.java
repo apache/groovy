@@ -159,9 +159,8 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
                 }
             }
             if (foundProp != null) {
-                FieldNode oldField = foundProp.getField();
-                cNode.getFields().remove(oldField);
-                cNode.getFieldIndex().put(fName, fNode);
+                cNode.removeField(fName);
+                cNode.addField(fNode);
                 if (foundProp.hasInitialExpression()) {
                     if (fNode.hasInitialExpression()) {
                         addError("The split property definition named '" + fName + "' must not have an initial value for both the field and the property", fNode);

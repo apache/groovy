@@ -326,7 +326,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );
             classVisitor.visitSource(sourceFile, null);
-            if (classNode instanceof InnerClassNode) {
+            if (classNode instanceof InnerClassNode && !(classNode instanceof InterfaceHelperClassNode)) {
                 makeInnerClassEntry(classNode); // GROOVY-4649, et al.
 
                 MethodNode enclosingMethod = classNode.getEnclosingMethod();
@@ -433,9 +433,10 @@ public class AsmClassGenerator extends ClassGenerator {
             int index = innerClassName.lastIndexOf('$');
             if (index >= 0) innerClassName = innerClassName.substring(index + 1);
         }
-        String outerClassInternalName = BytecodeHelper.getClassInternalName(outerClass.getName());
-
-        if (innerClass.getEnclosingMethod() != null) {
+        String outerClassInternalName;
+        if (innerClass.getEnclosingMethod() == null) {
+            outerClassInternalName = BytecodeHelper.getClassInternalName(outerClass.getName());
+        } else {
             outerClassInternalName = null; // local inner classes don't specify the outer class name
             if (innerClass instanceof InnerClassNode && ((InnerClassNode) innerClass).isAnonymous()) innerClassName = null;
         }
@@ -1418,20 +1419,8 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createInterfaceSyntheticStaticFields() {
-        ClassNode icl =  controller.getInterfaceClassLoadingClass();
-
-        if (referencedClasses.isEmpty()) {
-            Iterator<InnerClassNode> it = icl.getOuterClass().getInnerClasses();
-            while(it.hasNext()) {
-                InnerClassNode inner = it.next();
-                if (inner==icl) {
-                    it.remove();
-                    return;
-                }
-            }
-            return;
-        }
-
+        if (referencedClasses.isEmpty()) return;
+        var icl = controller.getInterfaceClassLoadingClass();
         addInnerClass(icl);
         for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {
             // generate a field node
@@ -1511,7 +1500,7 @@ public class AsmClassGenerator extends ClassGenerator {
         OperandStack operandStack = controller.getOperandStack();
         if (BytecodeHelper.isClassLiteralPossible(type) || BytecodeHelper.isSameCompilationUnit(controller.getClassNode(), type)) {
             if (controller.getClassNode().isInterface()) {
-                InterfaceHelperClassNode interfaceClassLoadingClass = controller.getInterfaceClassLoadingClass();
+                var interfaceClassLoadingClass = controller.getInterfaceClassLoadingClass();
                 if (BytecodeHelper.isClassLiteralPossible(interfaceClassLoadingClass)) {
                     BytecodeHelper.visitClassLiteral(mv, interfaceClassLoadingClass);
                     operandStack.push(ClassHelper.CLASS_Type);

@@ -41,7 +41,6 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -51,10 +50,6 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
-import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.transform.RecordTypeASTTransformation.recordNative;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
@@ -146,7 +141,6 @@ public class ClassNode extends AnnotatedNode {
 
     private String name;
     private int modifiers;
-    private boolean syntheticPublic;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
@@ -157,46 +151,38 @@ public class ClassNode extends AnnotatedNode {
     private List<FieldNode> fields;
     private List<PropertyNode> properties;
     private Map<String, FieldNode> fieldIndex;
-    private ModuleNode module;
-    private CompileUnit compileUnit;
-    private boolean staticClass;
-    private boolean scriptBody;
-    private boolean script;
     private ClassNode superClass;
     protected boolean isPrimaryNode;
-    protected List<InnerClassNode> innerClasses;
     // TODO: initialize for primary nodes only!!
     private List<ClassNode> permittedSubclasses = new ArrayList<>();
-    private List<AnnotationNode> typeAnnotations = Collections.emptyList();
     private List<RecordComponentNode> recordComponents = Collections.emptyList();
 
-    /**
-     * The AST Transformations to be applied during compilation.
-     */
-    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> transformInstances;
-
     // use this to synchronize access for the lazy init
-    protected final Object lazyInitLock = new Object();
-    // only false when this classNode is constructed from a class
+    protected  final  Object lazyInitLock = new Object();
+    // only false when this instance is constructed from a Class
     private volatile boolean lazyInitDone = true;
+    /**
+     * Initializes the complete class structure.
+     */
+    private void lazyClassInit() {
+        if (lazyInitDone) return;
+        synchronized (lazyInitLock) {
+            if (redirect != null) {
+                throw new GroovyBugError("lazyClassInit called on a proxy ClassNode. " +
+                                         "A redirect() call is missing somewhere!");
+            }
+            if (lazyInitDone) return;
+            VMPluginFactory.getPlugin().configureClassNode(getCompileUnit(), this);
+            lazyInitDone = true;
+        }
+    }
 
-    // clazz!=null when resolved
+    // if not null then this instance is resolved
     protected Class<?> clazz;
-    // not null if the ClassNode is an array
+    // if not null then this instance is an array
     private ClassNode componentType;
-    // if not null this instance is handled as proxy
-    // for the redirect
+    // if not null then this instance is handled as proxy for the redirect
     private ClassNode redirect;
-    // flag if the classes or its members are annotated
-    private boolean annotated;
-
-    // type spec for generics
-    private GenericsType[] genericsTypes;
-    private boolean usesGenerics;
-
-    // if set to true the name getGenericsTypes consists
-    // of 1 element describing the name of the placeholder
-    private boolean placeholder;
 
     //--------------------------------------------------------------------------
 
@@ -279,75 +265,141 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Returns a {@code ClassNode} representing an array of the type represented
-     * by this.
-     */
-    public ClassNode makeArray() {
-        ClassNode node;
-        if (redirect != null) {
-            node = redirect.makeArray();
-            node.componentType = this;
-        } else if (clazz != null) {
-            Class<?> type = Array.newInstance(clazz, 0).getClass();
-            // don't use the ClassHelper here!
-            node = new ClassNode(type, this);
-        } else {
-            node = new ClassNode(this);
-        }
-        return node;
-    }
-
-    /**
      * @return {@code true} if this instance is a primary {@code ClassNode}
      */
     public boolean isPrimaryClassNode() {
         return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
     }
 
-    /**
-     * The complete class structure will be initialized only when really needed
-     * to avoid having too many objects during compilation.
-     */
-    private void lazyClassInit() {
-        if (lazyInitDone) return;
-        synchronized (lazyInitLock) {
-            if (redirect != null) {
-                throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen. " +
-                                         "A redirect() call is missing somewhere!");
-            }
-            if (lazyInitDone) return;
-            VMPluginFactory.getPlugin().configureClassNode(compileUnit, this);
-            lazyInitDone = true;
+    public ClassNode getPlainNodeReference() {
+        return getPlainNodeReference(true);
+    }
+
+    public ClassNode getPlainNodeReference(boolean skipPrimitives) {
+        if (skipPrimitives && ClassHelper.isPrimitiveType(this)) return this;
+        ClassNode n = new ClassNode(name, modifiers, superClass, null, null);
+        n.isPrimaryNode = false;
+        n.setRedirect(redirect());
+        if (isArray()) {
+            n.componentType = redirect().getComponentType();
         }
+        return n;
+    }
+
+    //
+
+    public ModuleNode getModule() {
+        return redirect().getNodeMetaData(ModuleNode.class);
+    }
+
+    public void setModule(ModuleNode module) {
+        if (isPrimaryNode) putNodeMetaData(ModuleNode.class, module);
+    }
+
+    public CompileUnit getCompileUnit() {
+        if (redirect != null) return redirect.getCompileUnit();
+        return Optional.ofNullable(getModule()).map(ModuleNode::getUnit).orElse(null);
+    }
+
+    @Deprecated(forRemoval = true, since = "5.0.0")
+    protected void setCompileUnit(CompileUnit cu) {
+        if (redirect != null)
+            redirect.setCompileUnit(cu);
+    }
+
+    public PackageNode getPackage() {
+        return Optional.ofNullable(getModule()).map(ModuleNode::getPackage).orElse(null);
+    }
+
+    public String  getPackageName() {
+        int idx = getName().lastIndexOf('.');
+        if (idx > 0) {
+            return getName().substring(0, idx);
+        }
+        return null;
+    }
+
+    public boolean hasPackageName() {
+        return (getName().indexOf('.') > 0);
+    }
+
+    public String getNameWithoutPackage() {
+        int idx = getName().lastIndexOf('.');
+        if (idx > 0) {
+            return getName().substring(idx + 1);
+        }
+        return getName();
+    }
+
+    //
+
+    public String getUnresolvedName() {
+        return name;
+    }
+
+    public ClassNode getUnresolvedSuperClass() {
+        return getUnresolvedSuperClass(true);
+    }
+
+    public ClassNode getUnresolvedSuperClass(final boolean deref) {
+        if (deref) {
+            if (redirect != null)
+                return redirect.getUnresolvedSuperClass(true);
+            lazyClassInit();
+        }
+        return superClass;
+    }
+
+    public void setUnresolvedSuperClass(final ClassNode superClass) {
+        this.superClass = superClass;
+    }
+
+    public ClassNode[] getUnresolvedInterfaces() {
+        return getUnresolvedInterfaces(true);
+    }
+
+    public ClassNode[] getUnresolvedInterfaces(final boolean deref) {
+        if (deref) {
+            if (redirect != null)
+                return redirect.getUnresolvedInterfaces(true);
+            lazyClassInit();
+        }
+        return interfaces;
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Override
+    public String getText() {
+        return getName();
+    }
+
+    public String getName() {
+        return redirect().name;
+    }
+
+    public String setName(final String name) {
+        return redirect != null ? redirect.setName(name) : (this.name = name);
+    }
+
+    public int getModifiers() {
+        return redirect().modifiers;
+    }
+
+    public void setModifiers(final int modifiers) {
+        this.modifiers = modifiers;
     }
 
     /**
-     * Tracks the enclosing method for local inner classes.
+     * @return the {@code ClassNode} of the super class of this type
      */
-    private MethodNode enclosingMethod;
-
-    public MethodNode getEnclosingMethod() {
-        return redirect().enclosingMethod;
-    }
-
-    public void setEnclosingMethod(MethodNode enclosingMethod) {
-        redirect().enclosingMethod = enclosingMethod;
-    }
-
-    /**
-     * Indicates that this class has been "promoted" to public by Groovy when in
-     * fact there was no public modifier explicitly in the source code. That is,
-     * it remembers that it has applied Groovy's "public classes by default" rule.
-     * This property is typically only of interest to AST transform writers.
-     *
-     * @return {@code true} if node is public but had no explicit public modifier
-     */
-    public boolean isSyntheticPublic() {
-        return syntheticPublic;
-    }
-
-    public void setSyntheticPublic(boolean syntheticPublic) {
-        this.syntheticPublic = syntheticPublic;
+    public ClassNode getSuperClass() {
+        if (!lazyInitDone && !isResolved()) {
+            throw new GroovyBugError("ClassNode#getSuperClass for " + getName() + " called before class resolving");
+        }
+        ClassNode sn = redirect().getUnresolvedSuperClass();
+        if (sn != null) sn = sn.redirect();
+        return sn;
     }
 
     public void setSuperClass(final ClassNode superClass) {
@@ -363,18 +415,6 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return the fields associated with this {@code ClassNode}
-     */
-    public List<FieldNode> getFields() {
-        if (redirect != null)
-            return redirect.getFields();
-        lazyClassInit();
-        if (fields == null)
-            fields = new ArrayList<>();
-        return fields;
-    }
-
-    /**
      * @return the interfaces implemented by this {@code ClassNode}
      */
     public ClassNode[] getInterfaces() {
@@ -382,6 +422,20 @@ public class ClassNode extends AnnotatedNode {
             return redirect.getInterfaces();
         lazyClassInit();
         return interfaces;
+    }
+
+    public Set<ClassNode> getAllInterfaces() {
+        Set<ClassNode> result = new LinkedHashSet<>();
+        if (isInterface()) result.add(this);
+        getAllInterfaces(result);
+        return result;
+    }
+
+    private void getAllInterfaces(final Set<ClassNode> set) {
+        for (ClassNode face : getInterfaces()) {
+            if (set.add(face)) // GROOVY-11036
+                face.getAllInterfaces(set);
+        }
     }
 
     public void setInterfaces(final ClassNode[] interfaces) {
@@ -399,26 +453,6 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return permitted subclasses of sealed type, may initially be empty in early compiler phases
-     */
-    @Incubating
-    public List<ClassNode> getPermittedSubclasses() {
-        if (redirect != null)
-            return redirect.getPermittedSubclasses();
-        lazyClassInit();
-        return permittedSubclasses;
-    }
-
-    @Incubating
-    public void setPermittedSubclasses(List<ClassNode> permittedSubclasses) {
-        if (redirect != null) {
-            redirect.setPermittedSubclasses(permittedSubclasses);
-        } else {
-            this.permittedSubclasses = permittedSubclasses;
-        }
-    }
-
-    /**
      * @return the mixins associated with this {@code ClassNode}
      */
     public MixinNode[] getMixins() {
@@ -431,6 +465,301 @@ public class ClassNode extends AnnotatedNode {
         } else {
             this.mixins = mixins;
         }
+    }
+
+    /**
+     * @return permitted subclasses of sealed type, may initially be empty in early compiler phases
+     */
+    @Incubating
+    public List<ClassNode> getPermittedSubclasses() {
+        if (redirect != null)
+            return redirect.getPermittedSubclasses();
+        lazyClassInit();
+        return permittedSubclasses;
+    }
+
+    @Incubating
+    public void setPermittedSubclasses(final List<ClassNode> permittedSubclasses) {
+        if (redirect != null) {
+            redirect.setPermittedSubclasses(permittedSubclasses);
+        } else {
+            this.permittedSubclasses = permittedSubclasses;
+        }
+    }
+
+    /**
+     * Gets the record components of record type.
+     *
+     * @return {@code RecordComponentNode} instances
+     * @since 4.0.0
+     */
+    @Incubating
+    public List<RecordComponentNode> getRecordComponents() {
+        if (redirect != null)
+            return redirect.getRecordComponents();
+        lazyClassInit();
+        return recordComponents;
+    }
+
+    /**
+     * Sets the record components for record type.
+     *
+     * @since 4.0.0
+     */
+    @Incubating
+    public void setRecordComponents(final List<RecordComponentNode> recordComponents) {
+        if (redirect != null) {
+            redirect.setRecordComponents(recordComponents);
+        } else {
+            this.recordComponents = recordComponents;
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    public void addInterface(ClassNode node) {
+        ClassNode[] interfaces = getInterfaces();
+        for (ClassNode face : interfaces) {
+            if (face.equals(node)) return;
+        }
+        final int n = interfaces.length;
+
+        System.arraycopy(interfaces, 0, interfaces = new ClassNode[n + 1], 0, n);
+        interfaces[n] = node; // append interface
+        setInterfaces(interfaces);
+    }
+
+    public void addMixin(MixinNode node) {
+        // let's check if it already uses a mixin
+        MixinNode[] mixins = getMixins();
+        boolean skip = false;
+        for (MixinNode existing : mixins) {
+            if (node.equals(existing)) {
+                skip = true;
+                break;
+            }
+        }
+        if (!skip) {
+            MixinNode[] newMixins = new MixinNode[mixins.length + 1];
+            System.arraycopy(mixins, 0, newMixins, 0, mixins.length);
+            newMixins[mixins.length] = node;
+            setMixins(newMixins);
+        }
+    }
+
+    public void addField(FieldNode node) {
+        addField(node, true);
+    }
+
+    private void addField(FieldNode node, boolean append) {
+        ClassNode r = redirect();
+        node.setDeclaringClass(r);
+        node.setOwner(r);
+        if (r.fields == null)
+            r.fields = new ArrayList<>(4);
+        if (r.fieldIndex == null)
+            r.fieldIndex = new LinkedHashMap<>();
+
+        if (append) {
+            r.fields.add(node);
+        } else {
+            r.fields.add(0, node);
+        }
+        r.fieldIndex.put(node.getName(), node);
+    }
+
+    public FieldNode addField(String name, int modifiers, ClassNode type, Expression initialValue) {
+        FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
+        addField(node);
+        return node;
+    }
+
+    public void addFieldFirst(FieldNode node) {
+        addField(node, false);
+    }
+
+    public FieldNode addFieldFirst(String name, int modifiers, ClassNode type, Expression initialValue) {
+        FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
+        addFieldFirst(node);
+        return node;
+    }
+
+    public void addProperty(PropertyNode node) {
+        node.setDeclaringClass(redirect());
+        addField(node.getField());
+        getProperties().add(node);
+    }
+
+    public PropertyNode addProperty(String name, int modifiers, ClassNode type, Expression initialValue, Statement getterBlock, Statement setterBlock) {
+        for (PropertyNode pn : getProperties()) {
+            if (pn.getName().equals(name)) {
+                if (pn.getInitialExpression() == null && initialValue != null)
+                    pn.getField().setInitialValueExpression(initialValue);
+
+                if (pn.getGetterBlock() == null && getterBlock != null)
+                    pn.setGetterBlock(getterBlock);
+
+                if (pn.getSetterBlock() == null && setterBlock != null)
+                    pn.setSetterBlock(setterBlock);
+
+                return pn;
+            }
+        }
+        PropertyNode node = new PropertyNode(name, modifiers, type, redirect(), initialValue, getterBlock, setterBlock);
+        addProperty(node);
+        return node;
+    }
+
+    public void addMethod(MethodNode node) {
+        ClassNode r = redirect();
+        node.setDeclaringClass(r);
+        if (r.methodsList.isEmpty()) {
+            r.methodsList = new ArrayList<>(4);
+        }
+        r.methodsList.add(node);
+        r.methods.put(node.getName(), node);
+    }
+
+    /**
+     * If a method with the given name and parameters is already defined then it is returned
+     * otherwise the given method is added to this node. This method is useful for
+     * default method adding like getProperty() or invokeMethod() where there may already
+     * be a method defined in a class and so the default implementations should not be added
+     * if already present.
+     */
+    public MethodNode addMethod(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        MethodNode other = getDeclaredMethod(name, parameters);
+        // don't add duplicate methods
+        if (other != null) {
+            return other;
+        }
+        MethodNode node = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
+        addMethod(node);
+        return node;
+    }
+
+    /**
+     * Adds a synthetic method as part of the compilation process.
+     */
+    public MethodNode addSyntheticMethod(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        MethodNode node = addMethod(name, modifiers | ACC_SYNTHETIC, returnType, parameters, exceptions, code);
+        node.setSynthetic(true);
+        return node;
+    }
+
+    public void addConstructor(ConstructorNode node) {
+        ClassNode r = redirect();
+        node.setDeclaringClass(r);
+        if (r.constructors == null)
+            r.constructors = new ArrayList<>(4);
+        r.constructors.add(node);
+    }
+
+    public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        ConstructorNode node = new ConstructorNode(modifiers, parameters, exceptions, code);
+        addConstructor(node);
+        return node;
+    }
+
+    /**
+     * Adds a statement to the object initializer.
+     *
+     * @param statement the statement to be added
+     */
+    public void addObjectInitializerStatements(Statement statement) {
+        getObjectInitializerStatements().add(statement);
+    }
+
+    public void addStaticInitializerStatements(List<Statement> statements, boolean fieldInit) {
+        MethodNode method = getOrAddStaticInitializer();
+        BlockStatement block = getCodeAsBlock(method);
+
+        // while anything inside a static initializer block is appended
+        // we don't want to append in the case we have an initialization
+        // expression of a static field. In that case we want to add
+        // before the other statements
+        if (!fieldInit) {
+            block.addStatements(statements);
+        } else {
+            List<Statement> blockStatements = block.getStatements();
+            statements.addAll(blockStatements);
+            blockStatements.clear();
+            blockStatements.addAll(statements);
+        }
+    }
+
+    public void positionStmtsAfterEnumInitStmts(List<Statement> staticFieldInitializerStatements) {
+        MethodNode constructor = getOrAddStaticInitializer();
+        Statement statement = constructor.getCode();
+        if (statement instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) statement;
+            // add given statements for explicitly declared static fields just after enum-special fields
+            // are found - the $VALUES binary expression marks the end of such fields.
+            List<Statement> blockStatements = block.getStatements();
+            for (ListIterator<Statement> it = blockStatements.listIterator(); it.hasNext(); ) {
+                Statement stmt = it.next();
+                if (stmt instanceof ExpressionStatement &&
+                        ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
+                    BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+                    if (bExp.getLeftExpression() instanceof FieldExpression) {
+                        FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
+                        if (fExp.getFieldName().equals("$VALUES")) {
+                            for (Statement initStmt : staticFieldInitializerStatements) {
+                                it.add(initStmt);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private MethodNode getOrAddStaticInitializer() {
+        MethodNode method;
+        final String classInitializer = "<clinit>";
+        List<MethodNode> declaredMethods = getDeclaredMethods(classInitializer);
+        if (declaredMethods.isEmpty()) {
+            method = addMethod(classInitializer, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+            method.setSynthetic(true);
+        } else {
+            method = declaredMethods.get(0);
+        }
+        return method;
+    }
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * @return the fields associated with this {@code ClassNode}
+     */
+    public List<FieldNode> getFields() {
+        if (redirect != null)
+            return redirect.getFields();
+        lazyClassInit();
+        if (fields == null)
+            fields = new ArrayList<>();
+        return fields;
+    }
+
+    public List<PropertyNode> getProperties() {
+        if (redirect != null)
+            return redirect.getProperties();
+        if (properties == null)
+            properties = new ArrayList<>();
+        return properties;
+    }
+
+    @Deprecated(forRemoval = true, since = "5.0.0")
+    public Map<String, FieldNode> getFieldIndex() {
+        return fieldIndex;
+    }
+
+    public boolean hasProperty(String name) {
+        return getProperties().stream().map(PropertyNode::getName).anyMatch(name::equals);
+    }
+
+    public PropertyNode getProperty(String name) {
+        return getProperties().stream().filter(pn -> pn.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
@@ -455,20 +784,6 @@ public class ClassNode extends AnnotatedNode {
         return new ArrayList<>(getDeclaredMethodsMap().values());
     }
 
-    public Set<ClassNode> getAllInterfaces() {
-        Set<ClassNode> result = new LinkedHashSet<>();
-        if (isInterface()) result.add(this);
-        getAllInterfaces(result);
-        return result;
-    }
-
-    private void getAllInterfaces(Set<ClassNode> set) {
-        for (ClassNode face : getInterfaces()) {
-            if (set.add(face)) // GROOVY-11036
-                face.getAllInterfaces(set);
-        }
-    }
-
     public Map<String, MethodNode> getDeclaredMethodsMap() {
         Map<String, MethodNode> result = ClassNodeUtils.getDeclaredMethodsFromSuper(this);
         ClassNodeUtils.addDeclaredMethodsFromInterfaces(this, result);
@@ -477,34 +792,6 @@ public class ClassNode extends AnnotatedNode {
             result.put(method.getTypeDescriptor(), method);
         }
         return result;
-    }
-
-    public String getName() {
-        return redirect().name;
-    }
-
-    public String getUnresolvedName() {
-        return name;
-    }
-
-    public String setName(String name) {
-        return redirect().name = name;
-    }
-
-    public int getModifiers() {
-        return redirect().modifiers;
-    }
-
-    public void setModifiers(int modifiers) {
-        redirect().modifiers = modifiers;
-    }
-
-    public List<PropertyNode> getProperties() {
-        if (redirect != null)
-            return redirect.getProperties();
-        if (properties == null)
-            properties = new ArrayList<>();
-        return properties;
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
@@ -528,156 +815,6 @@ public class ClassNode extends AnnotatedNode {
         return null;
     }
 
-    public void removeConstructor(ConstructorNode node) {
-        getDeclaredConstructors().remove(node);
-    }
-
-    public ModuleNode getModule() {
-        return redirect().module;
-    }
-
-    public PackageNode getPackage() {
-        return Optional.ofNullable(getModule()).map(ModuleNode::getPackage).orElse(null);
-    }
-
-    public void setModule(ModuleNode module) {
-        redirect().module = module;
-        if (module != null) {
-            redirect().compileUnit = module.getUnit();
-        }
-    }
-
-    public void addField(FieldNode node) {
-        addField(node, false);
-    }
-
-    public void addFieldFirst(FieldNode node) {
-        addField(node, true);
-    }
-
-    private void addField(FieldNode node, boolean isFirst) {
-        ClassNode r = redirect();
-        node.setDeclaringClass(r);
-        node.setOwner(r);
-        if (r.fields == null)
-            r.fields = new ArrayList<>();
-        if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<>();
-
-        if (isFirst) {
-            r.fields.add(0, node);
-        } else {
-            r.fields.add(node);
-        }
-        r.fieldIndex.put(node.getName(), node);
-    }
-
-    public Map<String, FieldNode> getFieldIndex() {
-        return fieldIndex;
-    }
-
-    public void addProperty(PropertyNode node) {
-        node.setDeclaringClass(redirect());
-        addField(node.getField());
-        getProperties().add(node);
-    }
-
-    public PropertyNode addProperty(String name,
-                                    int modifiers,
-                                    ClassNode type,
-                                    Expression initialValueExpression,
-                                    Statement getterBlock,
-                                    Statement setterBlock) {
-        for (PropertyNode pn : getProperties()) {
-            if (pn.getName().equals(name)) {
-                if (pn.getInitialExpression() == null && initialValueExpression != null)
-                    pn.getField().setInitialValueExpression(initialValueExpression);
-
-                if (pn.getGetterBlock() == null && getterBlock != null)
-                    pn.setGetterBlock(getterBlock);
-
-                if (pn.getSetterBlock() == null && setterBlock != null)
-                    pn.setSetterBlock(setterBlock);
-
-                return pn;
-            }
-        }
-        PropertyNode node =
-                new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);
-        addProperty(node);
-        return node;
-    }
-
-    public boolean hasProperty(String name) {
-        return getProperties().stream().map(PropertyNode::getName).anyMatch(name::equals);
-    }
-
-    public PropertyNode getProperty(String name) {
-        return getProperties().stream().filter(pn -> pn.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    public void addConstructor(ConstructorNode node) {
-        ClassNode r = redirect();
-        node.setDeclaringClass(r);
-        if (r.constructors == null)
-            r.constructors = new ArrayList<>();
-        r.constructors.add(node);
-    }
-
-    public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-        ConstructorNode node = new ConstructorNode(modifiers, parameters, exceptions, code);
-        addConstructor(node);
-        return node;
-    }
-
-    public void addMethod(MethodNode node) {
-        ClassNode r = redirect();
-        node.setDeclaringClass(r);
-        if (r.methodsList.isEmpty()) {
-            r.methodsList = new ArrayList<>();
-        }
-        r.methodsList.add(node);
-        r.methods.put(node.getName(), node);
-    }
-
-    public void removeMethod(MethodNode node) {
-        ClassNode r = redirect();
-        if (!r.methodsList.isEmpty()) {
-            r.methodsList.remove(node);
-        }
-        r.methods.remove(node.getName(), node);
-    }
-
-    /**
-     * If a method with the given name and parameters is already defined then it is returned
-     * otherwise the given method is added to this node. This method is useful for
-     * default method adding like getProperty() or invokeMethod() where there may already
-     * be a method defined in a class and so the default implementations should not be added
-     * if already present.
-     */
-    public MethodNode addMethod(String name,
-                                int modifiers,
-                                ClassNode returnType,
-                                Parameter[] parameters,
-                                ClassNode[] exceptions,
-                                Statement code) {
-        MethodNode other = getDeclaredMethod(name, parameters);
-        // don't add duplicate methods
-        if (other != null) {
-            return other;
-        }
-        MethodNode node = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
-        addMethod(node);
-        return node;
-    }
-
-    /**
-     * @see #getDeclaredMethod(String, Parameter[])
-     */
-    public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
-        return (getDeclaredMethod(name, parameters) != null);
-    }
-
     /**
      * @see #getMethod(String, Parameter[])
      */
@@ -686,68 +823,10 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Adds a synthetic method as part of the compilation process.
+     * @see #getDeclaredMethod(String, Parameter[])
      */
-    public MethodNode addSyntheticMethod(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-        MethodNode node = addMethod(name, modifiers | ACC_SYNTHETIC, returnType, parameters, exceptions, code);
-        node.setSynthetic(true);
-        return node;
-    }
-
-    public FieldNode addField(String name, int modifiers, ClassNode type, Expression initialValue) {
-        FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
-        addField(node);
-        return node;
-    }
-
-    public FieldNode addFieldFirst(String name, int modifiers, ClassNode type, Expression initialValue) {
-        FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
-        addFieldFirst(node);
-        return node;
-    }
-
-    public void addInterface(final ClassNode type) {
-        ClassNode[] interfaces = getInterfaces();
-        for (ClassNode face : interfaces) {
-            if (face.equals(type)) return;
-        }
-        final int n = interfaces.length;
-
-        System.arraycopy(interfaces, 0, interfaces = new ClassNode[n + 1], 0, n);
-        interfaces[n] = type; // append interface
-        setInterfaces(interfaces);
-    }
-
-    @Override
-    public boolean equals(Object that) {
-        if (that == this) return true;
-        if (!(that instanceof ClassNode)) return false;
-        if (redirect != null) return redirect.equals(that);
-        if (componentType != null) return componentType.equals(((ClassNode) that).componentType);
-        return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
-    }
-
-    @Override
-    public int hashCode() {
-        return (redirect != null ? redirect.hashCode() : getText().hashCode());
-    }
-
-    public void addMixin(MixinNode mixin) {
-        // let's check if it already uses a mixin
-        MixinNode[] mixins = getMixins();
-        boolean skip = false;
-        for (MixinNode existing : mixins) {
-            if (mixin.equals(existing)) {
-                skip = true;
-                break;
-            }
-        }
-        if (!skip) {
-            MixinNode[] newMixins = new MixinNode[mixins.length + 1];
-            System.arraycopy(mixins, 0, newMixins, 0, mixins.length);
-            newMixins[mixins.length] = mixin;
-            redirect().mixins = newMixins;
-        }
+    public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
+        return (getDeclaredMethod(name, parameters) != null);
     }
 
     /**
@@ -779,107 +858,10 @@ public class ClassNode extends AnnotatedNode {
         return null;
     }
 
-    /**
-     * @return the field on the outer class or {@code null} if this is not an inner class
-     */
-    public FieldNode getOuterField(String name) {
-        if (redirect != null) {
-            return redirect.getOuterField(name);
-        }
-        return null;
-    }
-
-    public ClassNode getOuterClass() {
-        if (redirect != null) {
-            return redirect.getOuterClass();
-        }
-        return null;
-    }
-
-    public List<ClassNode> getOuterClasses() {
-        ClassNode outer = getOuterClass();
-        if (outer == null) {
-            return Collections.emptyList();
-        }
-        List<ClassNode> result = new LinkedList<>();
-        do {
-            result.add(outer);
-        } while ((outer = outer.getOuterClass()) != null);
-
-        return result;
-    }
-
-    /**
-     * Adds a statement to the object initializer.
-     *
-     * @param statements the statement to be added
-     */
-    public void addObjectInitializerStatements(Statement statements) {
-        getObjectInitializerStatements().add(statements);
-    }
-
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
-            objectInitializers = new LinkedList<>();
+            objectInitializers = new ArrayList<>();
         return objectInitializers;
-    }
-
-    private MethodNode getOrAddStaticConstructorNode() {
-        MethodNode method;
-        final String classInitializer = "<clinit>";
-        List<MethodNode> declaredMethods = getDeclaredMethods(classInitializer);
-        if (declaredMethods.isEmpty()) {
-            method = addMethod(classInitializer, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
-            method.setSynthetic(true);
-        } else {
-            method = declaredMethods.get(0);
-        }
-        return method;
-    }
-
-    public void addStaticInitializerStatements(List<Statement> staticStatements, boolean fieldInit) {
-        MethodNode method = getOrAddStaticConstructorNode();
-        BlockStatement block = getCodeAsBlock(method);
-
-        // while anything inside a static initializer block is appended
-        // we don't want to append in the case we have an initialization
-        // expression of a static field. In that case we want to add
-        // before the other statements
-        if (!fieldInit) {
-            block.addStatements(staticStatements);
-        } else {
-            List<Statement> blockStatements = block.getStatements();
-            staticStatements.addAll(blockStatements);
-            blockStatements.clear();
-            blockStatements.addAll(staticStatements);
-        }
-    }
-
-    public void positionStmtsAfterEnumInitStmts(List<Statement> staticFieldStatements) {
-        MethodNode constructor = getOrAddStaticConstructorNode();
-        Statement statement = constructor.getCode();
-        if (statement instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) statement;
-            // add given statements for explicitly declared static fields just after enum-special fields
-            // are found - the $VALUES binary expression marks the end of such fields.
-            List<Statement> blockStatements = block.getStatements();
-            ListIterator<Statement> litr = blockStatements.listIterator();
-            while (litr.hasNext()) {
-                Statement stmt = litr.next();
-                if (stmt instanceof ExpressionStatement &&
-                        ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
-                    BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
-                    if (bExp.getLeftExpression() instanceof FieldExpression) {
-                        FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
-                        if (fExp.getFieldName().equals("$VALUES")) {
-                            for (Statement tmpStmt : staticFieldStatements) {
-                                litr.add(tmpStmt);
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -945,18 +927,16 @@ public class ClassNode extends AnnotatedNode {
      * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
-        if (isPrimitiveVoid(this)) {
-            return isPrimitiveVoid(type);
+        if (ClassHelper.isPrimitiveVoid(this)) {
+            return ClassHelper.isPrimitiveVoid(type);
         }
-        if (isObjectType(type)) {
+        if (ClassHelper.isObjectType(type)) {
             return true;
         }
-        ClassNode node = this;
-        while (node != null) {
+        for (ClassNode node = this; node != null; node = node.getSuperClass()) {
             if (type.equals(node)) {
                 return true;
             }
-            node = node.getSuperClass();
         }
         return false;
     }
@@ -1040,120 +1020,9 @@ public class ClassNode extends AnnotatedNode {
         return false;
     }
 
-    /**
-     * @return the {@code ClassNode} of the super class of this type
-     */
-    public ClassNode getSuperClass() {
-        if (!lazyInitDone && !isResolved()) {
-            throw new GroovyBugError("ClassNode#getSuperClass for " + getName() + " called before class resolving");
-        }
-        ClassNode sn = redirect().getUnresolvedSuperClass();
-        if (sn != null) sn = sn.redirect();
-        return sn;
-    }
-
-    public ClassNode getUnresolvedSuperClass() {
-        return getUnresolvedSuperClass(true);
-    }
-
-    public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
-        if (!useRedirect)
-            return superClass;
-        if (redirect != null)
-            return redirect.getUnresolvedSuperClass(true);
-        lazyClassInit();
-        return superClass;
-    }
-
-    public void setUnresolvedSuperClass(ClassNode superClass) {
-        this.superClass = superClass;
-    }
-
-    public ClassNode[] getUnresolvedInterfaces() {
-        return getUnresolvedInterfaces(true);
-    }
-
-    public ClassNode[] getUnresolvedInterfaces(boolean useRedirect) {
-        if (!useRedirect)
-            return interfaces;
-        if (redirect != null)
-            return redirect.getUnresolvedInterfaces(true);
-        lazyClassInit();
-        return interfaces;
-    }
-
-    public CompileUnit getCompileUnit() {
-        if (redirect != null)
-            return redirect.getCompileUnit();
-        if (compileUnit == null && module != null) {
-            compileUnit = module.getUnit();
-        }
-        return compileUnit;
-    }
-
-    protected void setCompileUnit(CompileUnit cu) {
-        if (redirect != null)
-            redirect.setCompileUnit(cu);
-        if (compileUnit != null) compileUnit = cu;
-    }
-
     @Deprecated(forRemoval = true, since = "4.0.0")
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return ParameterUtils.parametersEqual(a, b);
-    }
-
-    public String getPackageName() {
-        int idx = getName().lastIndexOf('.');
-        if (idx > 0) {
-            return getName().substring(0, idx);
-        }
-        return null;
-    }
-
-    public String getNameWithoutPackage() {
-        int idx = getName().lastIndexOf('.');
-        if (idx > 0) {
-            return getName().substring(idx + 1);
-        }
-        return getName();
-    }
-
-    public void visitContents(GroovyClassVisitor visitor) {
-        // now let's visit the contents of the class
-        for (PropertyNode pn : getProperties()) {
-            visitor.visitProperty(pn);
-        }
-
-        for (FieldNode fn : getFields()) {
-            visitor.visitField(fn);
-        }
-
-        for (ConstructorNode cn : getDeclaredConstructors()) {
-            visitor.visitConstructor(cn);
-        }
-
-        visitMethods(visitor);
-    }
-
-    private void visitMethods(GroovyClassVisitor visitor) {
-        // create snapshot of the method list to avoid ConcurrentModificationException
-        List<MethodNode> methodList = new ArrayList<>(getMethods());
-        for (MethodNode mn : methodList) {
-            visitor.visitMethod(mn);
-        }
-
-        // visit the method nodes added while iterating,
-        // e.g. synthetic method for constructor reference
-        final List<MethodNode> newMethodList = getMethods();
-        if (newMethodList.size() > methodList.size()) { // if the newly added method nodes found, visit them
-            List<MethodNode> changedMethodList = new ArrayList<>(newMethodList);
-            boolean changed = changedMethodList.removeAll(methodList);
-            if (changed) {
-                for (MethodNode mn : changedMethodList) {
-                    visitor.visitMethod(mn);
-                }
-            }
-        }
     }
 
     public MethodNode getGetterMethod(String getterName) {
@@ -1165,7 +1034,7 @@ public class ClassNode extends AnnotatedNode {
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (method.getName().equals(getterName) && method.getParameters().length == 0
-                    && (booleanReturnOnly ? isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod())) {
+                    && (booleanReturnOnly ? ClassHelper.isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod())) {
                 // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
                 // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
                 // has the most specific and exact return type of the two. Picking the bridge method results in loss of
@@ -1204,62 +1073,6 @@ public class ClassNode extends AnnotatedNode {
             return parent.getSetterMethod(setterName, voidOnly);
         }
         return null;
-    }
-
-    /**
-     * Is this class declared in a static method (such as a closure / inner class declared in a static method)
-     */
-    public boolean isStaticClass() {
-        return redirect().staticClass;
-    }
-
-    public void setStaticClass(boolean staticClass) {
-        redirect().staticClass = staticClass;
-    }
-
-    /**
-     * @return {@code true} if this inner class or closure was declared inside a script body
-     */
-    public boolean isScriptBody() {
-        return redirect().scriptBody;
-    }
-
-    public void setScriptBody(boolean scriptBody) {
-        redirect().scriptBody = scriptBody;
-    }
-
-    public boolean isScript() {
-        return redirect().script || isDerivedFrom(ClassHelper.SCRIPT_TYPE);
-    }
-
-    public void setScript(boolean script) {
-        redirect().script = script;
-    }
-
-    @Override
-    public String toString() {
-        return toString(true);
-    }
-
-    public String toString(final boolean showRedirect) {
-        if (isArray()) {
-            return getComponentType().toString(showRedirect) + "[]";
-        }
-        boolean placeholder = isGenericsPlaceHolder();
-        StringBuilder ret = new StringBuilder(!placeholder ? getName() : getUnresolvedName());
-        GenericsType[] genericsTypes = getGenericsTypes();
-        if (!placeholder && genericsTypes != null) {
-            ret.append('<');
-            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
-                if (i != 0) ret.append(", ");
-                ret.append(genericsTypes[i]);
-            }
-            ret.append('>');
-        }
-        if (showRedirect && redirect != null) {
-            ret.append(" -> ").append(redirect);
-        }
-        return ret.toString();
     }
 
     /**
@@ -1371,6 +1184,116 @@ public class ClassNode extends AnnotatedNode {
         return ClassNodeUtils.hasPossibleStaticMethod(this, name, arguments, false);
     }
 
+    //--------------------------------------------------------------------------
+
+    public void renameField(String oldName, String newName) {
+        ClassNode r = redirect();
+        var index = r.fieldIndex;
+        if (index != null)
+            index.put(newName, index.remove(oldName));
+    }
+
+    public void removeField(String oldName) {
+        ClassNode r = redirect();
+        var index = r.fieldIndex;
+        if (index != null)
+            r.fields.remove(index.remove(oldName));
+    }
+
+    public void removeMethod(MethodNode node) {
+        ClassNode r = redirect();
+        if (!r.methodsList.isEmpty()) {
+            r.methodsList.remove(node);
+        }
+        r.methods.remove(node.getName(), node);
+    }
+
+    public void removeConstructor(ConstructorNode node) {
+        getDeclaredConstructors().remove(node);
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Override
+    public boolean equals(Object that) {
+        if (that == this) return true;
+        if (!(that instanceof ClassNode)) return false;
+        if (redirect != null) return redirect.equals(that);
+        if (componentType != null) return componentType.equals(((ClassNode) that).componentType);
+        return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
+    }
+
+    @Override
+    public     int hashCode() {
+        return (redirect != null ? redirect.hashCode() : getText().hashCode());
+    }
+
+    @Override
+    public  String toString() {
+        return toString(true);
+    }
+
+    public  String toString(boolean showRedirect) {
+        if (isArray()) {
+            return getComponentType().toString(showRedirect) + "[]";
+        }
+        boolean placeholder = isGenericsPlaceHolder();
+        StringBuilder ret = new StringBuilder(!placeholder ? getName() : getUnresolvedName());
+        GenericsType[] genericsTypes = getGenericsTypes();
+        if (!placeholder && genericsTypes != null) {
+            ret.append('<');
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                if (i != 0) ret.append(", ");
+                ret.append(genericsTypes[i]);
+            }
+            ret.append('>');
+        }
+        if (showRedirect && redirect != null) {
+            ret.append(" -> ").append(redirect);
+        }
+        return ret.toString();
+    }
+
+    public void visitContents(GroovyClassVisitor visitor) {
+        // now let's visit the contents of the class
+        for (PropertyNode pn : getProperties()) {
+            visitor.visitProperty(pn);
+        }
+
+        for (FieldNode fn : getFields()) {
+            visitor.visitField(fn);
+        }
+
+        for (ConstructorNode cn : getDeclaredConstructors()) {
+            visitor.visitConstructor(cn);
+        }
+
+        visitMethods(visitor);
+    }
+
+    private void visitMethods(GroovyClassVisitor visitor) {
+        // create snapshot of the method list to avoid ConcurrentModificationException
+        List<MethodNode> methodList = new ArrayList<>(getMethods());
+        for (MethodNode mn : methodList) {
+            visitor.visitMethod(mn);
+        }
+
+        // visit the method nodes added while iterating,
+        // e.g. synthetic method for constructor reference
+        final List<MethodNode> newMethodList = getMethods();
+        if (newMethodList.size() > methodList.size()) { // if the newly added method nodes found, visit them
+            List<MethodNode> changedMethodList = new ArrayList<>(newMethodList);
+            boolean changed = changedMethodList.removeAll(methodList);
+            if (changed) {
+                for (MethodNode mn : changedMethodList) {
+                    visitor.visitMethod(mn);
+                }
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
     public boolean isAbstract() {
         return (getModifiers() & ACC_ABSTRACT) != 0;
     }
@@ -1387,14 +1310,6 @@ public class ClassNode extends AnnotatedNode {
         return (getModifiers() & ACC_ENUM) != 0;
     }
 
-    public boolean isArray() {
-        return (componentType != null);
-    }
-
-    public ClassNode getComponentType() {
-        return componentType;
-    }
-
     /**
      * Checks if the {@link ClassNode} instance represents a native {@code record}.
      * Check instead for the {@code RecordBase} annotation if looking for records and
@@ -1409,41 +1324,13 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Gets the record components of record type.
-     *
-     * @return {@code RecordComponentNode} instances
-     * @since 4.0.0
-     */
-    @Incubating
-    public List<RecordComponentNode> getRecordComponents() {
-        if (redirect != null)
-            return redirect.getRecordComponents();
-        lazyClassInit();
-        return recordComponents;
-    }
-
-    /**
-     * Sets the record components for record type.
-     *
-     * @since 4.0.0
-     */
-    @Incubating
-    public void setRecordComponents(List<RecordComponentNode> recordComponents) {
-        if (redirect != null) {
-            redirect.setRecordComponents(recordComponents);
-        } else {
-            this.recordComponents = recordComponents;
-        }
-    }
-
-    /**
      * @return {@code true} for native and emulated (annotation based) sealed classes
      * @since 4.0.0
      */
     @Incubating
     public boolean isSealed() {
         if (redirect != null) return redirect.isSealed();
-        return !getAnnotations(SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
+        return !getAnnotations(ClassHelper.SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
     }
 
     public boolean isResolved() {
@@ -1470,20 +1357,107 @@ public class ClassNode extends AnnotatedNode {
         throw new GroovyBugError("ClassNode#getTypeClass for " + getName() + " called before the type class is set");
     }
 
-    public boolean hasPackageName() {
-        return (redirect().name.indexOf('.') > 0);
-    }
+    //
 
-    public boolean isAnnotated() {
-        return this.annotated;
+    public boolean isArray() {
+        return (componentType != null);
     }
 
     /**
-     * Marks if the current class uses annotations or not.
+     * Returns a {@code ClassNode} representing an array of the type represented
+     * by this.
      */
-    public void setAnnotated(boolean annotated) {
-        this.annotated = annotated;
+    public ClassNode makeArray() {
+        ClassNode node;
+        if (redirect != null) {
+            node = redirect.makeArray();
+            node.componentType = this;
+        } else if (clazz != null) {
+            Class<?> type = Array.newInstance(clazz, 0).getClass();
+            // don't use the ClassHelper here!
+            node = new ClassNode(type, this);
+        } else {
+            node = new ClassNode(this);
+        }
+        return node;
     }
+
+    public ClassNode getComponentType() {
+        return componentType;
+    }
+
+    //
+
+    public ClassNode getOuterClass() {
+        if (redirect != null) {
+            return redirect.getOuterClass();
+        }
+        return null;
+    }
+
+    public List<ClassNode> getOuterClasses() {
+        ClassNode outer = getOuterClass();
+        if (outer == null) {
+            return Collections.emptyList();
+        }
+        List<ClassNode> result = new ArrayList<>(4);
+        do {
+            result.add(outer);
+        } while ((outer = outer.getOuterClass()) != null);
+
+        return result;
+    }
+
+    /**
+     * @return the field on the outer class or {@code null} if this is not an inner class
+     */
+    public FieldNode getOuterField(String name) {
+        if (redirect != null) {
+            return redirect.getOuterField(name);
+        }
+        return null;
+    }
+
+    //
+
+    private List<InnerClassNode> innerClasses;
+
+    void addInnerClass(InnerClassNode innerClass) {
+        if (redirect != null) {
+            redirect.addInnerClass(innerClass);
+        } else {
+            if (innerClasses == null)
+                innerClasses = new ArrayList<>(4);
+            innerClasses.add(innerClass);
+        }
+    }
+
+    /**
+     * @return iterator of inner classes defined inside this one
+     */
+    public Iterator<InnerClassNode> getInnerClasses() {
+        if (innerClasses == null) return Collections.emptyIterator();
+        return Collections.unmodifiableList(innerClasses).iterator();
+    }
+
+    //
+
+    private MethodNode enclosingMethod;
+
+    /**
+     * The enclosing method of local inner class.
+     */
+    public MethodNode getEnclosingMethod() {
+        return redirect().enclosingMethod;
+    }
+
+    public void setEnclosingMethod(MethodNode enclosingMethod) {
+        this.enclosingMethod = enclosingMethod;
+    }
+
+    //
+
+    private GenericsType[] genericsTypes;
 
     public GenericsType asGenericsType() {
         if (!isGenericsPlaceHolder()) {
@@ -1506,14 +1480,22 @@ public class ClassNode extends AnnotatedNode {
         this.genericsTypes = genericsTypes;
     }
 
+    //
+
+    private boolean placeholder;
+
+    public boolean isGenericsPlaceHolder() {
+        return placeholder;
+    }
+
     public void setGenericsPlaceHolder(boolean placeholder) {
         usesGenerics = usesGenerics || placeholder;
         this.placeholder = placeholder;
     }
 
-    public boolean isGenericsPlaceHolder() {
-        return placeholder;
-    }
+    //
+
+    private boolean usesGenerics;
 
     public boolean isUsingGenerics() {
         return usesGenerics;
@@ -1523,20 +1505,81 @@ public class ClassNode extends AnnotatedNode {
         this.usesGenerics = usesGenerics;
     }
 
-    public ClassNode getPlainNodeReference(boolean skipPrimitives) {
-        if (skipPrimitives && ClassHelper.isPrimitiveType(this)) return this;
-        ClassNode n = new ClassNode(name, modifiers, superClass, null, null);
-        n.isPrimaryNode = false;
-        n.setRedirect(redirect());
-        if (isArray()) {
-            n.componentType = redirect().getComponentType();
-        }
-        return n;
+    //
+
+    private boolean script;
+
+    public boolean isScript() {
+        return redirect().script || isDerivedFrom(ClassHelper.SCRIPT_TYPE);
     }
 
-    public ClassNode getPlainNodeReference() {
-        return getPlainNodeReference(true);
+    public void setScript(boolean script) {
+        this.script = script;
     }
+
+    //
+
+    private boolean scriptBody;
+
+    /**
+     * @return {@code true} if this inner class or closure was declared inside a script body
+     */
+    public boolean isScriptBody() {
+        return redirect().scriptBody;
+    }
+
+    public void setScriptBody(boolean scriptBody) {
+        this.scriptBody = scriptBody;
+    }
+
+    //
+
+    private boolean staticClass;
+
+    /**
+     * Is this class declared in a static method (such as a closure / inner class declared in a static method)
+     */
+    public boolean isStaticClass() {
+        return redirect().staticClass;
+    }
+
+    public void setStaticClass(boolean staticClass) {
+        this.staticClass = staticClass;
+    }
+
+    //
+
+    private boolean syntheticPublic;
+
+    /**
+     * Indicates that this class has been "promoted" to public by Groovy when in
+     * fact there was no public modifier explicitly in the source code. That is,
+     * it remembers that it has applied Groovy's "public classes by default" rule.
+     * This property is typically only of interest to AST transform writers.
+     *
+     * @return {@code true} if node is public but had no explicit public modifier
+     */
+    public boolean isSyntheticPublic() {
+        return syntheticPublic;
+    }
+
+    public void setSyntheticPublic(boolean syntheticPublic) {
+        this.syntheticPublic = syntheticPublic;
+    }
+
+    //
+
+    private boolean annotated;
+
+    public boolean isAnnotated() {
+        return this.annotated;
+    }
+
+    public void setAnnotated(boolean annotated) {
+        this.annotated = annotated;
+    }
+
+    //
 
     @Override
     public List<AnnotationNode> getAnnotations() {
@@ -1554,63 +1597,15 @@ public class ClassNode extends AnnotatedNode {
         return super.getAnnotations(type);
     }
 
-    public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
-        GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
-        if (annotation != null) {
-            Map<Class<? extends ASTTransformation>, Set<ASTNode>> transforms = getTransforms(annotation.phase());
-            Set<ASTNode> nodes = transforms.computeIfAbsent(transform, k -> new LinkedHashSet<>());
-            nodes.add(node);
-        }
-    }
+    //
 
-    public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
-        return getTransformInstances().get(phase);
-    }
-
-    public void renameField(String oldName, String newName) {
-        ClassNode r = redirect();
-        if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<>();
-        Map<String, FieldNode> index = r.fieldIndex;
-        index.put(newName, index.remove(oldName));
-    }
-
-    public void removeField(String oldName) {
-        ClassNode r = redirect();
-        if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<>();
-        Map<String, FieldNode> index = r.fieldIndex;
-        r.fields.remove(index.get(oldName));
-        index.remove(oldName);
-    }
-
-    /**
-     * @return iterator of inner classes defined inside this one
-     */
-    public Iterator<InnerClassNode> getInnerClasses() {
-        return (innerClasses == null ? Collections.<InnerClassNode>emptyList() : innerClasses).iterator();
-    }
-
-    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> getTransformInstances() {
-        if (transformInstances == null) {
-            transformInstances = new EnumMap<>(CompilePhase.class);
-            for (CompilePhase phase : CompilePhase.values()) {
-                transformInstances.put(phase, new LinkedHashMap<>());
-            }
-        }
-        return transformInstances;
-    }
-
-    @Override
-    public String getText() {
-        return getName();
-    }
+    private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     public List<AnnotationNode> getTypeAnnotations() {
         return new ArrayList<>(typeAnnotations);
     }
 
-    public List<AnnotationNode> getTypeAnnotations(final ClassNode type) {
+    public List<AnnotationNode> getTypeAnnotations(ClassNode type) {
         List<AnnotationNode> annotations = new ArrayList<>();
         for (AnnotationNode node : typeAnnotations) {
             if (type.equals(node.getClassNode())) {
@@ -1635,5 +1630,35 @@ public class ClassNode extends AnnotatedNode {
         for (AnnotationNode annotation : annotations) {
             addTypeAnnotation(annotation);
         }
+    }
+
+    //
+
+    public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
+        GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
+        if (annotation != null) {
+            Map<Class<? extends ASTTransformation>, Set<ASTNode>> transforms = getTransforms(annotation.phase());
+            Set<ASTNode> nodes = transforms.computeIfAbsent(transform, k -> new LinkedHashSet<>());
+            nodes.add(node);
+        }
+    }
+
+    public Map<Class<? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
+        return getTransformInstances().get(phase);
+    }
+
+    /**
+     * The AST Transformations to be applied during compilation.
+     */
+    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> transformInstances;
+
+    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> getTransformInstances() {
+        if (transformInstances == null) {
+            transformInstances = new EnumMap<>(CompilePhase.class);
+            for (CompilePhase phase : CompilePhase.values()) {
+                transformInstances.put(phase, new LinkedHashMap<>());
+            }
+        }
+        return transformInstances;
     }
 }

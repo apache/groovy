@@ -32,7 +32,7 @@ public class EnumConstantClassNode extends InnerClassNode {
         super(outerClass, name, Opcodes.ACC_ENUM | Opcodes.ACC_FINAL, superClass);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "4.0.0")
     public EnumConstantClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
         super(outerClass, name, modifiers, superClass);
     }
