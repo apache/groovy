@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04]
-        java: [11, 17, 18]
+        java: [11, 17]
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
