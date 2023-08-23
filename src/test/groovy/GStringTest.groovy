@@ -21,6 +21,8 @@ package groovy
 import groovy.test.GroovyTestCase
 import groovy.transform.Pure
 
+import static org.junit.Assert.assertNotEquals;
+
 class GStringTest extends GroovyTestCase {
 
     void check(template, teststr) {
@@ -265,8 +267,8 @@ class GStringTest extends GroovyTestCase {
         assertTrue("literal == template false", literal == template)
 
         // these fail
-        assertFalse("literal not equal to template", literal.equals(template))
-        assertFalse("template not equal to literal", template.equals(literal))
+        assertNotEquals("literal not equal to template", literal, template)
+        assertNotEquals("template not equal to literal", template, literal)
         assertTrue("hash codes not equal", literal.hashCode() != template.hashCode())
     }
 
