@@ -320,16 +320,20 @@ public class ModuleNode extends ASTNode {
 
     private void setScriptBaseClassFromConfig(final ClassNode cn) {
         String baseClassName = null;
+        ClassLoader bcLoader = null;
         if (unit != null) {
+            bcLoader = unit.getClassLoader();
             baseClassName = unit.getConfig().getScriptBaseClass();
         } else if (context != null) {
+            bcLoader = context.getClassLoader();
             baseClassName = context.getConfiguration().getScriptBaseClass();
         }
-        if (baseClassName != null) {
-            if (!cn.getSuperClass().getName().equals(baseClassName)) {
+        if (baseClassName != null && !cn.getSuperClass().getName().equals(baseClassName)) {
+            cn.addAnnotation(new AnnotationNode(BaseScriptASTTransformation.MY_TYPE));
+            try { // GROOVY-8096
+                cn.setSuperClass(ClassHelper.make(bcLoader.loadClass(baseClassName)));
+            } catch (ReflectiveOperationException | RuntimeException e) {
                 cn.setSuperClass(ClassHelper.make(baseClassName));
-                AnnotationNode annotationNode = new AnnotationNode(BaseScriptASTTransformation.MY_TYPE);
-                cn.addAnnotation(annotationNode);
             }
         }
     }

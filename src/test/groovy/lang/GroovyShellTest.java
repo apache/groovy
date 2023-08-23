@@ -18,12 +18,9 @@
  */
 package groovy.lang;
 
-import groovy.test.GroovyTestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -32,106 +29,96 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GroovyShellTest extends GroovyTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-    private String script1 = "test = 1";
+public final class GroovyShellTest {
 
-    public static void main(String[] args) {
-        TestRunner.run(suite());
-    }
-
-    public static Test suite() {
-        return new TestSuite(GroovyShellTest.class);
-    }
-
+    @Test
     public void testExecuteScript() {
-        GroovyShell shell = new GroovyShell();
-        try {
-            Object result = shell.evaluate(script1, "Test.groovy");
-            assertEquals(Integer.valueOf(1), result);
-        }
-        catch (Exception e) {
-            fail(e.toString());
-        }
+        Object result = new GroovyShell().evaluate("test = 1", "Test.groovy");
+        assertEquals(1, result);
     }
 
-    private static class PropertyHolder {
-        private Map map = new HashMap();
-
-        public void set(String key, Object value) {
-            map.put(key, value);
-        }
-
-        public Object get(String key) {
-            return map.get(key);
-        }
-    }
-
-    private String script2 = "test.prop = 2\nreturn test.prop";
-
+    @Test
     public void testExecuteScriptWithContext() {
+        class PropertyHolder {
+            private Map<String, Object> map = new HashMap<>();
+
+            @SuppressWarnings("unused")
+            public void set(String key, Object value) {
+                map.put(key, value);
+            }
+
+            @SuppressWarnings("unused")
+            public Object get(String key) {
+                return map.get(key);
+            }
+        }
+
         Binding context = new Binding();
         context.setVariable("test", new PropertyHolder());
-        GroovyShell shell = new GroovyShell(context);
-        try {
-            Object result = shell.evaluate(script2, "Test.groovy");
-            assertEquals(Integer.valueOf(2), result);
-        }
-        catch (Exception e) {
-            fail(e.toString());
-        }
+        String script = "test.prop = 2\nreturn test.prop";
+        Object result = new GroovyShell(context).evaluate(script);
+        assertEquals(2, result);
     }
 
-    public void testScriptWithDerivedBaseClass() throws Exception {
+    // GROOVY-228
+    @Test
+    public void testScriptWithDerivedBaseClass() {
         Binding context = new Binding();
-        CompilerConfiguration config = new CompilerConfiguration();
-        config.setScriptBaseClass(DerivedScript.class.getName());
-        GroovyShell shell = new GroovyShell(context, config);
-        Object result = shell.evaluate("x = 'abc'; doSomething(cheese)");
+        String script = "x = 'abc'; doSomething(cheese)";
+        Object result = new GroovyShell(context, baseScript(BaseScript228.class)).evaluate(script);
         assertEquals("I like Cheddar", result);
         assertEquals("abc", context.getVariable("x"));
     }
 
-    /**
-     * Test for GROOVY-6615
-     * @throws Exception
-     */
-    public void testScriptWithCustomBodyMethod() throws Exception {
-        Binding context = new Binding();
-        CompilerConfiguration config = new CompilerConfiguration();
-        config.setScriptBaseClass(BaseScriptCustomBodyMethod.class.getName());
-        GroovyShell shell = new GroovyShell(context, config);
-        Object result = shell.evaluate("'I like ' + cheese");
+    // GROOVY-6615
+    @Test
+    public void testScriptWithCustomBodyMethod() {
+        String script = "'I like ' + cheese";
+        Object result = new GroovyShell(baseScript(BaseScript6615.class)).evaluate(script);
         assertEquals("I like Cheddar", result);
     }
 
-    public void testClassLoader() {
-        Binding context = new Binding();
-        CompilerConfiguration config = new CompilerConfiguration();
-        config.setScriptBaseClass(DerivedScript.class.getName());
-        GroovyShell shell = new GroovyShell(context, config);
-        String script = "evaluate '''\n"+
-                        "class XXXX{}\n"+
-                        "assert evaluate('XXXX') == XXXX\n"+
-                        "'''";
-        shell.evaluate(script);
-
+    // GROOVY-8096
+    @Test
+    public void testScriptWithBindingInitField() {
+        String arg = "Hello Groovy";
+        String script =
+                "@groovy.transform.Field def script_args = getProperty('args')\n" +
+                "assert script_args[0] == '" + arg + "'\n" +
+                "script_args[0]\n";
+        Object result = new GroovyShell(baseScript(BaseScript8096.class)).run(script, "Script8096.groovy", new String[]{arg});
+        assertEquals(arg, result);
     }
 
+    @Test
+    public void testClassLoader() {
+        String script =
+                "evaluate '''\n"+
+                "class XXXX{}\n"+
+                "assert evaluate('XXXX') == XXXX\n"+
+                "'''";
+        new GroovyShell().evaluate(script);
+    }
+
+    // GROOVY-3934
+    @Test
     public void testWithGCSWithURL() throws Exception {
         String scriptFileName = "src/test/groovy/bugs/scriptForGroovy3934.groovy";
         File helperScript = new File(scriptFileName);
-        if(!helperScript.exists()) {
+        if (!helperScript.exists()) {
             fail("File " + scriptFileName + " does not exist");
         } else {
             URL url = helperScript.toURI().toURL();
             GroovyCodeSource gcs = new GroovyCodeSource(url);
-            GroovyShell shell = new GroovyShell();
-            Object result = shell.evaluate(gcs);
+            Object result = new GroovyShell().evaluate(gcs);
             assertEquals("GROOVY3934Helper script called", result);
         }
     }
 
+    @Test
     public void testLaunchesJUnitTestSuite() throws Exception {
         // create a valid (empty) test suite on disk
         String testName = "GroovyShellTestJUnit3Test"+System.currentTimeMillis();
@@ -145,12 +132,48 @@ public class GroovyShellTest extends GroovyTestCase {
         testSuite.deleteOnExit();
 
         PrintStream out = System.out;
-        System.setOut( new PrintStream(new ByteArrayOutputStream()) );
+        System.setOut(new PrintStream(new ByteArrayOutputStream()));
         try {
             // makes this more of an integration test than a unit test...
-            GroovyShell.main( new String[] { testSuite.getCanonicalPath() });
+            GroovyShell.main(new String[]{testSuite.getCanonicalPath()});
         } finally {
-            System.setOut( out );
+            System.setOut(out);
         }
-    } 
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static CompilerConfiguration baseScript(Class<? extends Script> c) {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setScriptBaseClass(c.getName());
+        return config;
+    }
+
+    public static abstract class BaseScript228  extends Script {
+        public String doSomething(String food) {
+            return "I like " + food;
+        }
+        public String getCheese() {
+            return "Cheddar";
+        }
+    }
+
+    public static abstract class BaseScript6615 extends Script {
+        abstract protected Object runScriptBody();
+        public String cheese = "Swiss";
+        @Override
+        public Object run() {
+            cheese = "Cheddar";
+            return runScriptBody();
+        }
+    }
+
+    public static abstract class BaseScript8096 extends Script {
+        protected BaseScript8096(Binding binding) {
+            super(binding);
+        }
+        protected BaseScript8096() {
+            super();
+        }
+    }
 }

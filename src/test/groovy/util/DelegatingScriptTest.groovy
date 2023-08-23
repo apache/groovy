@@ -18,17 +18,18 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.CompilerConfiguration
 import groovy.xml.MarkupBuilder
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
-class DelegatingScriptTest extends GroovyTestCase {
-    void testDelegatingScript() throws Exception {
-        def cc = new CompilerConfiguration()
-        cc.scriptBaseClass = DelegatingScript.name
-        def sh = new GroovyShell(new Binding(), cc)
+final class DelegatingScriptTest {
+
+    @Test
+    void testDelegatingScript() {
+        def sh = new GroovyShell(new Binding(), new CompilerConfiguration().tap{
+            scriptBaseClass = DelegatingScript.name
+        })
         def script = (DelegatingScript) sh.parse('''
-            // println DelegatingScript.class
             foo(3, 2) { a, b -> a * b }
             bar = 'test'
             assert 'testsetget' == bar
@@ -40,10 +41,11 @@ class DelegatingScriptTest extends GroovyTestCase {
         assert dsl.innerBar() == 'testset'
     }
 
-    void testUseMarkupBuilderAsDelegate() throws Exception {
-        def cc = new CompilerConfiguration()
-        cc.scriptBaseClass = DelegatingScript.class.name
-        def sh = new GroovyShell(new Binding(), cc)
+    @Test
+    void testUseMarkupBuilderAsDelegate() {
+        def sh = new GroovyShell(new Binding(), new CompilerConfiguration().tap{
+            scriptBaseClass = DelegatingScript.name
+        })
         def script = sh.parse('''
             foo{ bar() }
         ''')
@@ -52,27 +54,30 @@ class DelegatingScriptTest extends GroovyTestCase {
         script.setDelegate(markupBuilder)
         script.run()
 
-        assert sw.toString() == '''<foo>
+        assert sw.toString() == '''\
+<foo>
   <bar />
 </foo>'''
     }
-}
 
-class MyDSL {
-    protected int foo
-    protected String bar
+    static class MyDSL {
+        protected int foo
+        protected String bar
 
-    void foo(int x, int y, Closure z) { foo = z(x, y) }
+        void foo(int x, int y, Closure z) {
+            foo = z.call(x, y)
+        }
 
-    void setBar(String a) {
-        this.bar = a + "set"
-    }
+        void setBar(String a) {
+            this.bar = a + 'set'
+        }
 
-    String getBar() {
-        this.bar + "get"
-    }
+        String getBar() {
+            this.bar + 'get'
+        }
 
-    String innerBar() {
-        this.bar
+        String innerBar() {
+            this.bar
+        }
     }
 }

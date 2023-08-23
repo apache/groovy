@@ -18,33 +18,38 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.*
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
-class Groovy4243Bug extends GroovyTestCase {
+final class Groovy4243 {
+
+    @Test
     void testScriptBaseClassWithAnonymousInnerClass() {
         def configuration = new CompilerConfiguration()
         configuration.scriptBaseClass = TestScript4243.name
-        def classLoader = new GroovyClassLoader(getClass().classLoader, configuration)
+        def classLoader = new GroovyClassLoader(this.class.classLoader, configuration)
 
-        // This works
+        // works
         def scriptClass = classLoader.parseClass('''
             def r = new TestRunnable()
             class TestRunnable implements Runnable {
-                public void run() {}
+                void run() {
+                }
             }
         ''')
         assert TestScript4243.isAssignableFrom(scriptClass)
 
-        // This does not work
+        // fails
         scriptClass = classLoader.parseClass('''
             def r = new Runnable() {
-                public void run() { }
+                void run() {
+                }
             }
         ''')
         assert Script.isAssignableFrom(scriptClass)
-        assert TestScript4243.isAssignableFrom(scriptClass) // <-- fails here
+        assert TestScript4243.isAssignableFrom(scriptClass)
+    }
+
+    abstract static class TestScript4243 extends Script {
     }
 }
-
-abstract class TestScript4243 extends Script { }
