@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import static org.junit.Assert.assertNotEquals;
+
 /**
  * Provides unit tests for the <code>ObjectRange</code> class.
  */
@@ -306,7 +308,7 @@ public class ObjectRangeTest extends TestCase {
         assertTrue("hashcode", a.hashCode() != c.hashCode());
 
         assertEquals("a and b", a, b);
-        assertFalse("a != c", a.equals(c));
+        assertNotEquals("a != c", a, c);
     }
 
     public void testIteratorException() {

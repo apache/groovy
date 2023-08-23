@@ -21,6 +21,8 @@ package groovy.lang;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.FormatHelper;
 
+import static org.junit.Assert.assertNotEquals;
+
 /**
  * Tests the use of the structured Attribute type
  */
@@ -70,7 +72,7 @@ public class GStringTest extends GroovyTestCase {
 
         assertTrue("a == b", a.equals(b));
         assertEquals("hashcode a == b", a.hashCode(), b.hashCode());
-        assertFalse("a != c", a.equals(c));
+        assertNotEquals("a != c", a, c);
         assertTrue("hashcode a != c", a.hashCode() != c.hashCode());
         assertEquals("a <=> b", 0, a.compareTo(b));
         assertEquals("a <=> b", -1, a.compareTo(c));
