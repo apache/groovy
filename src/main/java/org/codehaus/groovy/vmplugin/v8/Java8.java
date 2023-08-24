@@ -70,6 +70,8 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.List;
 
+import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_CLASS_ARRAY;
+
 /**
  * Java 8 based functions.
  *
@@ -77,24 +79,36 @@ import java.util.List;
  */
 public class Java8 implements VMPlugin {
 
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 
-    public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] cBounds) {
+    public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] bounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
         GenericsType gt;
-        if (cBounds == null || cBounds.length == 0) {
+        if (bounds == null || bounds.length == 0) {
             gt = new GenericsType(base);
         } else {
-            gt = new GenericsType(base, cBounds, null);
+            // GROOVY-10756: fix erasure -- ResolveVisitor#resolveGenericsHeader
+            if (!ClassHelper.OBJECT_TYPE.equals(bounds[0])) redirect = bounds[0];
+            gt = new GenericsType(base, bounds, null);
             gt.setName(base.getName());
             gt.setPlaceholder(true);
         }
         base.setRedirect(redirect);
         return gt;
+    }
+
+    public static ClassNode configureTypeVariableReference(final String name) {
+        ClassNode cn = ClassHelper.makeWithoutCaching(name);
+        cn.setGenericsPlaceHolder(true);
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
+        cn2.setGenericsPlaceHolder(true);
+
+        cn.setGenericsTypes(new GenericsType[]{new GenericsType(cn2)});
+        cn.setRedirect(ClassHelper.OBJECT_TYPE);
+        return cn;
     }
 
     private static ClassNode configureClass(final Class<?> c) {
@@ -103,17 +117,6 @@ public class Java8 implements VMPlugin {
         } else {
             return ClassHelper.makeWithoutCaching(c, false);
         }
-    }
-
-    public static ClassNode configureTypeVariableReference(final String name) {
-        ClassNode cn = ClassHelper.makeWithoutCaching(name);
-        cn.setGenericsPlaceHolder(true);
-        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
-        cn2.setGenericsPlaceHolder(true);
-        GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
-        cn.setGenericsTypes(gts);
-        cn.setRedirect(ClassHelper.OBJECT_TYPE);
-        return cn;
     }
 
     private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
@@ -132,11 +135,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private static void setMethodDefaultValue(final MethodNode mn, final Method m) {
-        ConstantExpression cExp = new ConstantExpression(m.getDefaultValue());
-        mn.setCode(new ReturnStatement(cExp));
-        mn.setAnnotationDefault(true);
-    }
+    //--------------------------------------------------------------------------
 
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
@@ -187,27 +186,7 @@ public class Java8 implements VMPlugin {
 
     @Override
     public void setAdditionalClassInformation(final ClassNode cn) {
-        setGenericsTypes(cn);
-    }
-
-    private void setGenericsTypes(final ClassNode cn) {
-        TypeVariable[] tvs = cn.getTypeClass().getTypeParameters();
-        GenericsType[] gts = configureTypeVariable(tvs);
-        cn.setGenericsTypes(gts);
-    }
-
-    private GenericsType[] configureTypeVariable(final TypeVariable[] tvs) {
-        final int n = tvs.length;
-        if (n == 0) return null;
-        GenericsType[] gts = new GenericsType[n];
-        for (int i = 0; i < n; i += 1) {
-            gts[i] = configureTypeVariableDefinition(tvs[i]);
-        }
-        return gts;
-    }
-
-    private GenericsType configureTypeVariableDefinition(final TypeVariable tv) {
-        return configureTypeVariableDefinition(configureTypeVariableReference(tv.getName()), configureTypes(tv.getBounds()));
+        cn.setGenericsTypes(configureTypeParameters(cn.getTypeClass().getTypeParameters()));
     }
 
     private ClassNode[] configureTypes(final Type[] types) {
@@ -228,7 +207,7 @@ public class Java8 implements VMPlugin {
         } else if (type instanceof GenericArrayType) {
             return configureGenericArray((GenericArrayType) type);
         } else if (type instanceof TypeVariable) {
-            return configureTypeVariableReference(((TypeVariable) type).getName());
+            return configureTypeVariableReference(((TypeVariable<?>) type).getName());
         } else if (type instanceof Class) {
             return configureClass((Class<?>) type);
         } else if (type == null) {
@@ -284,6 +263,18 @@ public class Java8 implements VMPlugin {
             }
         }
         return gts;
+    }
+
+    private GenericsType[] configureTypeParameters(final TypeVariable<?>[] tp) {
+        final int n = tp.length;
+        if (n == 0) return null;
+        GenericsType[] gt = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
+            ClassNode t = configureTypeVariableReference(tp[i].getName());
+            ClassNode[] bounds = configureTypes(tp[i].getBounds());
+            gt[i] = configureTypeVariableDefinition(t, bounds);
+        }
+        return gt;
     }
 
     //
@@ -378,8 +369,7 @@ public class Java8 implements VMPlugin {
 
     @Override
     public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
-        ClassNode type = definition.getClassNode();
-        final String typeName = type.getName();
+        String typeName = definition.getClassNode().getName();
         if ("java.lang.annotation.Retention".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
@@ -390,16 +380,16 @@ public class Java8 implements VMPlugin {
         } else if ("java.lang.annotation.Target".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
-            ListExpression le = (ListExpression) exp;
-            int bitmap = 0;
-            for (Expression e : le.getExpressions()) {
+            ListExpression list = (ListExpression) exp;
+            int targets = 0;
+            for (Expression e : list.getExpressions()) {
                 if (!(e instanceof PropertyExpression)) return;
                 PropertyExpression element = (PropertyExpression) e;
                 String name = element.getPropertyAsString();
-                ElementType value = ElementType.valueOf(name);
-                bitmap |= getElementCode(value);
+                ElementType type = ElementType.valueOf(name);
+                targets |= getElementCode(type);
             }
-            root.setAllowedTargets(bitmap);
+            root.setAllowedTargets(targets);
         }
     }
 
@@ -409,29 +399,32 @@ public class Java8 implements VMPlugin {
             Class<?> clazz = classNode.getTypeClass();
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
-                ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), ret, classNode, null);
+                ClassNode rt = makeClassNode(compileUnit, f.getGenericType(), f.getType());
+                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, null);
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
             }
             Method[] methods = clazz.getDeclaredMethods();
             for (Method m : methods) {
-                ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
+                ClassNode rt = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
                 Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
-                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
-                mn.setSynthetic(m.isSynthetic());
-                setMethodDefaultValue(mn, m);
+                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), rt, params, exceptions, null);
                 setAnnotationMetaData(m.getAnnotations(), mn);
-                mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
+                if (true) { // TODO: GROOVY-10862
+                    mn.setAnnotationDefault(true);
+                    mn.setCode(new ReturnStatement(new ConstantExpression(m.getDefaultValue())));
+                }
+                mn.setGenericsTypes(configureTypeParameters(m.getTypeParameters()));
+                mn.setSynthetic(m.isSynthetic());
                 classNode.addMethod(mn);
             }
             Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-            for (Constructor<?> ctor : constructors) {
-                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), getConstructorParameterAnnotations(ctor), ctor);
-                ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
-                ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
-                setAnnotationMetaData(ctor.getAnnotations(), cn);
+            for (Constructor<?> c : constructors) {
+                Parameter[] params = makeParameters(compileUnit, c.getGenericParameterTypes(), c.getParameterTypes(), getConstructorParameterAnnotations(c), c);
+                ClassNode[] exceptions = makeClassNodes(compileUnit, c.getGenericExceptionTypes(), c.getExceptionTypes());
+                ConstructorNode cn = classNode.addConstructor(c.getModifiers(), params, exceptions, null);
+                setAnnotationMetaData(c.getAnnotations(), cn);
             }
 
             Class<?> sc = clazz.getSuperclass();
@@ -572,7 +565,7 @@ public class Java8 implements VMPlugin {
             fillParameterNames(names, member);
             for (int i = 0; i < n; i += 1) {
                 setAnnotationMetaData(parameterAnnotations[i],
-                    params[i] = new Parameter(makeClassNode(cu, types[i], cls[i]), names[i]));
+                        params[i] = new Parameter(makeClassNode(cu, types[i], cls[i]), names[i]));
             }
         }
         return params;
@@ -588,6 +581,8 @@ public class Java8 implements VMPlugin {
             throw new GroovyBugError(e);
         }
     }
+
+    //--------------------------------------------------------------------------
 
     /**
      * The following scenarios can not set accessible, i.e. the return value is false

@@ -739,6 +739,11 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def file = Pogo10756.files[0]
             file?.name
         """
+
+        assertScript """import ${Pogo10756.name.replace('$','.')}
+            def files = Pogo10756.files
+            files*.name
+        """
     }
 
     static class Pogo10756 {
