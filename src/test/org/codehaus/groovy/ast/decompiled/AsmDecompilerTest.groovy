@@ -34,18 +34,18 @@ final class AsmDecompilerTest {
     @Test
     void "basic class"() {
         ClassNode node = decompile()
-        assert AsmDecompilerTestData.name == node.name
-        assert isPublic(node.modifiers)
 
+        assert node.name == AsmDecompilerTestData.name
         assert !node.genericsPlaceHolder
+        assert isPublic(node.modifiers)
         assert node.usingGenerics
 
         def t = node.genericsTypes[0]
         assert t.name == 'T'
         assert t.placeholder
-        assert t.type.name == Object.name
         assert t.type.genericsPlaceHolder
-        assert !t.lowerBound
+        assert t.type.name == List.name // erasure of "T extends List<? super T>"
+        assert t.lowerBound == null
 
         def list = t.upperBounds[0]
         assert list.name == List.name
@@ -54,19 +54,22 @@ final class AsmDecompilerTest {
 
         def wildcard = list.genericsTypes[0]
         assert wildcard.wildcard
-        assert !wildcard.type.genericsPlaceHolder //todo?
+        assert !wildcard.type.genericsPlaceHolder
+        assert wildcard.type.name == Object.name // erasure of "? super T"
         assert !wildcard.upperBounds
 
         def tRef = wildcard.lowerBound
         assert tRef.genericsPlaceHolder
         assert tRef.usingGenerics
         assert tRef.name == Object.name
+        assert tRef.unresolvedName == 'T'
         assert tRef.genericsTypes[0].name == 'T'
 
         def v = node.genericsTypes[1]
         assert v.name == 'V'
         assert v.placeholder
-        assert v.upperBounds[0].toString() == Object.name
+        assert v.type.name == Object.name
+        assert v.upperBounds[0].name == Object.name
     }
 
     @Test

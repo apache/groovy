@@ -59,6 +59,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.ReflectPermission;
@@ -83,19 +84,32 @@ public class Java8 implements VMPlugin {
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 
-    public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] cBounds) {
+    public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] bounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
         GenericsType gt;
-        if (cBounds == null || cBounds.length == 0) {
+        if (bounds == null || bounds.length == 0) {
             gt = new GenericsType(base);
         } else {
-            gt = new GenericsType(base, cBounds, null);
+            // GROOVY-10756: fix erasure -- ResolveVisitor#resolveGenericsHeader
+            if (!ClassHelper.isObjectType(bounds[0])) redirect = bounds[0];
+            gt = new GenericsType(base, bounds, null);
             gt.setName(base.getName());
             gt.setPlaceholder(true);
         }
         base.setRedirect(redirect);
         return gt;
+    }
+
+    public static ClassNode configureTypeVariableReference(final String name) {
+        ClassNode cn = ClassHelper.makeWithoutCaching(name);
+        cn.setGenericsPlaceHolder(true);
+        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
+        cn2.setGenericsPlaceHolder(true);
+
+        cn.setGenericsTypes(new GenericsType[]{new GenericsType(cn2)});
+        cn.setRedirect(ClassHelper.OBJECT_TYPE);
+        return cn;
     }
 
     private static ClassNode configureClass(final Class<?> c) {
@@ -104,17 +118,6 @@ public class Java8 implements VMPlugin {
         } else {
             return ClassHelper.makeWithoutCaching(c, false);
         }
-    }
-
-    public static ClassNode configureTypeVariableReference(final String name) {
-        ClassNode cn = ClassHelper.makeWithoutCaching(name);
-        cn.setGenericsPlaceHolder(true);
-        ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
-        cn2.setGenericsPlaceHolder(true);
-        GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
-        cn.setGenericsTypes(gts);
-        cn.setRedirect(ClassHelper.OBJECT_TYPE);
-        return cn;
     }
 
     private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
@@ -152,27 +155,7 @@ public class Java8 implements VMPlugin {
 
     @Override
     public void setAdditionalClassInformation(final ClassNode cn) {
-        setGenericsTypes(cn);
-    }
-
-    private void setGenericsTypes(final ClassNode cn) {
-        TypeVariable[] tvs = cn.getTypeClass().getTypeParameters();
-        GenericsType[] gts = configureTypeVariable(tvs);
-        cn.setGenericsTypes(gts);
-    }
-
-    private GenericsType[] configureTypeVariable(final TypeVariable[] tvs) {
-        final int n = tvs.length;
-        if (n == 0) return null;
-        GenericsType[] gts = new GenericsType[n];
-        for (int i = 0; i < n; i += 1) {
-            gts[i] = configureTypeVariableDefinition(tvs[i]);
-        }
-        return gts;
-    }
-
-    private GenericsType configureTypeVariableDefinition(final TypeVariable tv) {
-        return configureTypeVariableDefinition(configureTypeVariableReference(tv.getName()), configureTypes(tv.getBounds()));
+        cn.setGenericsTypes(configureTypeParameters(cn.getTypeClass().getTypeParameters()));
     }
 
     private ClassNode[] configureTypes(final Type[] types) {
@@ -193,7 +176,7 @@ public class Java8 implements VMPlugin {
         } else if (type instanceof GenericArrayType) {
             return configureGenericArray((GenericArrayType) type);
         } else if (type instanceof TypeVariable) {
-            return configureTypeVariableReference(((TypeVariable) type).getName());
+            return configureTypeVariableReference(((TypeVariable<?>) type).getName());
         } else if (type instanceof Class) {
             return configureClass((Class<?>) type);
         } else if (type == null) {
@@ -249,6 +232,18 @@ public class Java8 implements VMPlugin {
             }
         }
         return gts;
+    }
+
+    private GenericsType[] configureTypeParameters(final TypeVariable<?>[] tp) {
+        final int n = tp.length;
+        if (n == 0) return null;
+        GenericsType[] gt = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
+            ClassNode t = configureTypeVariableReference(tp[i].getName());
+            ClassNode[] bounds = configureTypes(tp[i].getBounds());
+            gt[i] = configureTypeVariableDefinition(t, bounds);
+        }
+        return gt;
     }
 
     //
@@ -404,7 +399,7 @@ public class Java8 implements VMPlugin {
                     mn.setAnnotationDefault(true); // GROOVY-10862
                     mn.setCode(new ReturnStatement(new ConstantExpression(m.getDefaultValue(), true)));
                 }
-                mn.setGenericsTypes(configureTypeVariable(m.getTypeParameters()));
+                mn.setGenericsTypes(configureTypeParameters(m.getTypeParameters()));
                 mn.setSynthetic(m.isSynthetic());
                 classNode.addMethod(mn);
             }
@@ -534,7 +529,7 @@ public class Java8 implements VMPlugin {
         return back.getPlainNodeReference();
     }
 
-    private Parameter[] makeParameters(final CompileUnit cu, final Type[] types, final Class<?>[] cls, final Annotation[][] parameterAnnotations, final java.lang.reflect.Member member) {
+    private Parameter[] makeParameters(final CompileUnit cu, final Type[] types, final Class<?>[] cls, final Annotation[][] parameterAnnotations, final Member member) {
         Parameter[] params = Parameter.EMPTY_ARRAY;
         final int n = types.length;
         if (n > 0) {
@@ -549,7 +544,7 @@ public class Java8 implements VMPlugin {
         return params;
     }
 
-    protected void fillParameterNames(final String[] names, final java.lang.reflect.Member member) {
+    protected void fillParameterNames(final String[] names, final Member member) {
         try {
             java.lang.reflect.Parameter[] parameters = ((java.lang.reflect.Executable) member).getParameters();
             for (int i = 0, n = names.length; i < n; i += 1) {
@@ -559,6 +554,8 @@ public class Java8 implements VMPlugin {
             throw new GroovyBugError(e);
         }
     }
+
+    //--------------------------------------------------------------------------
 
     /**
      * The following scenarios can not set accessible, i.e. the return value is false
