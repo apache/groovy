@@ -121,11 +121,11 @@ abstract class TypeSignatureParser extends SignatureVisitor {
                 try {
                     // GROOVY-10153, GROOVY-10651, GROOVY-10671: "?" or "? super T" (see ResolveVisitor#resolveWildcardBounding)
                     for (int i = 0, n = arguments.size(); i < n; i += 1) { GenericsType argument = arguments.get(i);
-                    if (!argument.isWildcard() || argument.getUpperBounds() != null) continue; //
-                    ClassNode[] implicitBounds = baseType.getGenericsTypes()[i].getUpperBounds();
-                    if (implicitBounds != null && !ClassHelper.isObjectType(implicitBounds[0])) {
-                        argument.getType().setRedirect(implicitBounds[0]); // bound is not Object
-                    }
+                        if (!argument.isWildcard() || argument.getUpperBounds() != null) continue; //
+                        ClassNode[] implicitBounds = baseType.getGenericsTypes()[i].getUpperBounds();
+                        if (implicitBounds != null && !ClassHelper.isObjectType(implicitBounds[0])) {
+                            argument.getType().setRedirect(implicitBounds[0]); // bound is not Object
+                        }
                     }
                 } catch (StackOverflowError ignore) {
                     // TODO: self-referential type parameter
