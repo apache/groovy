@@ -538,6 +538,20 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10975
+    void testComparatorII() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Collection<Integer> c = [1]
+                Map<Integer,Integer> m = [1:1]
+                new Hashtable(Collections.min(c, m::put))
+            }
+
+            test()
+        '''
+    }
+
     @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-11026
     void testBiFunctionII() {
