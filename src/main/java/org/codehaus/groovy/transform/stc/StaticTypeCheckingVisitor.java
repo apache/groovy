@@ -5391,9 +5391,10 @@ out:                if (mn.size() != 1) {
                             } else { // argument instanceof MethodPointerExpression
                                 List<MethodNode> candidates = argument.getNodeMetaData(MethodNode.class);
                                 if (candidates != null && !candidates.isEmpty()) {
-                                    MethodPointerExpression methodPointer = (MethodPointerExpression) argument;
-                                    p = collateMethodReferenceParameterTypes(methodPointer, candidates.get(0));
-                                    if (p.length > 0) {
+                                    var methodPointer = (MethodPointerExpression) argument;
+                                    p = methodPointer.getNodeMetaData(CLOSURE_ARGUMENTS); // GROOVY-10975
+                                    if (p == null) p = collateMethodReferenceParameterTypes(methodPointer, candidates.get(0));
+                                    if (p.length > 0 && GenericsUtils.hasUnresolvedGenerics(returnType)) {
                                         for (int j = 0; j < q.length; j += 1) {
                                             // SAM parameters are like arguments in this case
                                             extractGenericsConnections(connections, q[j], p[j]);
