@@ -20,24 +20,22 @@ package org.codehaus.groovy.vmplugin.v16;
 
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
+import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static java.lang.annotation.ElementType.RECORD_COMPONENT;
-
 public class Java16 extends Java10 {
 
     {
-        elementTypeToTarget.put(RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
+        elementTypeToTarget.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
     }
 
     @Override
@@ -74,22 +72,11 @@ public class Java16 extends Java10 {
     }
 
     @Override
-    protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
-        if (!clazz.isRecord()) return;
-        classNode.setRecordComponents(Arrays.stream(clazz.getRecordComponents())
-                .map(rc -> {
-                    ClassNode type = makeClassNode(cu, rc.getGenericType(), rc.getType());
-                    type.addTypeAnnotations(Arrays.stream(rc.getAnnotatedType().getAnnotations()).map(annotation -> {
-                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-                        configureAnnotation(node, annotation);
-                        return node;
-                    }).collect(Collectors.toList()));
-                    return new RecordComponentNode(classNode, rc.getName(), type, Arrays.stream(rc.getAnnotations()).map(annotation -> {
-                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-                        configureAnnotation(node, annotation);
-                        return node;
-                    }).collect(Collectors.toList()));
-                })
-                .collect(Collectors.toList()));
+    protected void makeRecordComponents(final CompileUnit cu, final ClassNode cn, final Class<?> c) {
+        if (c.isRecord()) cn.setRecordComponents(Arrays.stream(c.getRecordComponents()).map(rc -> {
+            ClassNode type = makeClassNode(cu, rc.getGenericType(), rc.getType());
+            type.addTypeAnnotations(Arrays.stream(rc.getAnnotatedType().getAnnotations()).map(this::toAnnotationNode).collect(Collectors.toList()));
+            return new RecordComponentNode(cn, rc.getName(), type, Arrays.stream(rc.getAnnotations()).map(this::toAnnotationNode).collect(Collectors.toList()));
+        }).collect(Collectors.toList()));
     }
 }

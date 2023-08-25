@@ -261,7 +261,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    protected void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
+    private void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
         Class<?> type = annotation.annotationType();
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
@@ -304,7 +304,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private AnnotationNode toAnnotationNode(final Annotation annotation) {
+    protected AnnotationNode toAnnotationNode(final Annotation annotation) {
         ClassNode type = ClassHelper.make(annotation.annotationType());
         AnnotationNode node = new AnnotationNode(type);
         configureAnnotation(node, annotation);
