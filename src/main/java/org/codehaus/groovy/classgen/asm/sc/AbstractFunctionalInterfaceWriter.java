@@ -84,10 +84,39 @@ public interface AbstractFunctionalInterfaceWriter {
     }
 
     default Object[] createBootstrapMethodArguments(final String abstractMethodDesc, final int insn, final ClassNode methodOwner, final MethodNode methodNode, final Parameter[] parameters, final boolean serializable) {
-        ClassNode returnType = !abstractMethodDesc.endsWith(")V") ? methodNode.getReturnType() : ClassHelper.VOID_TYPE; // GROOVY-10933
+        ClassNode returnType = methodNode.getReturnType();
+        switch (Type.getReturnType(abstractMethodDesc).getSort()) {
+          case Type.BOOLEAN:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Boolean_TYPE; // GROOVY-10975
+            break;
+          case Type.BYTE:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Byte_TYPE;
+            break;
+          case Type.CHAR:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Character_TYPE;
+            break;
+          case Type.DOUBLE:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Double_TYPE;
+            break;
+          case Type.FLOAT:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Float_TYPE;
+            break;
+          case Type.INT:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Integer_TYPE;
+            break;
+          case Type.LONG:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Long_TYPE;
+            break;
+          case Type.SHORT:
+            if (returnType.isGenericsPlaceHolder()) returnType = ClassHelper.Short_TYPE;
+            break;
+          case Type.VOID:
+            returnType = ClassHelper.VOID_TYPE; // GROOVY-10933
+        }
+
         Object[] arguments = !serializable ? new Object[3] : new Object[]{null, null, null, 5, 0};
 
-        arguments[0] = Type.getType(abstractMethodDesc);
+        arguments[0] = Type.getMethodType(abstractMethodDesc);
 
         arguments[1] = new Handle(
                 insn, // H_INVOKESTATIC or H_INVOKEVIRTUAL or H_INVOKEINTERFACE (GROOVY-9853)
@@ -96,7 +125,7 @@ public interface AbstractFunctionalInterfaceWriter {
                 BytecodeHelper.getMethodDescriptor(methodNode),
                 methodOwner.isInterface());
 
-        arguments[2] = Type.getType(BytecodeHelper.getMethodDescriptor(returnType, parameters));
+        arguments[2] = Type.getMethodType(BytecodeHelper.getMethodDescriptor(returnType, parameters));
 
         return arguments;
     }
