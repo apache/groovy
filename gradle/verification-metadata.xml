@@ -539,6 +539,11 @@
             <pgp value="6a814b1f869c2bbeab7cb7271a2a1c94bde89688"/>
          </artifact>
       </component>
+      <component group="org.apache.ivy" name="ivy" version="2.5.2">
+         <artifact name="ivy-2.5.2.jar">
+            <pgp value="ce8075a251547bee249bc151a2115ae15f6b8b72"/>
+         </artifact>
+      </component>
       <component group="org.apache.logging" name="logging-parent" version="5">
          <artifact name="logging-parent-5.pom">
             <pgp value="9d0a56aaa0d60e0c0c7dccc0b4c70893b62babe8"/>
