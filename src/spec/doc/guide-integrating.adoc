@@ -217,7 +217,7 @@ creating multiple classes at runtime for the same source.
 === GroovyScriptEngine
 
 The `groovy.util.GroovyScriptEngine` class provides a flexible foundation for applications which rely on script
-reloading and script dependencies. While `GroovyShell` focuses on standalone `Script`s and `GroovyClassLoader` handles
+reloading and script dependencies. While `GroovyShell` focuses on standalone ``Script``s and `GroovyClassLoader` handles
 dynamic compilation and loading of any Groovy class, the `GroovyScriptEngine` will add a layer on top of `GroovyClassLoader`
 to handle both script dependencies and reloading.
 
