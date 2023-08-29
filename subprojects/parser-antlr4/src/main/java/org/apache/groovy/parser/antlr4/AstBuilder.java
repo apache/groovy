@@ -544,7 +544,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
         modifierManager.processParameter(parameter);
         */
-        return tuple(configureAST(parameter, ctx.variableDeclaratorId()), (Expression) this.visit(ctx.expression()));
+        configureAST(parameter, ctx.variableDeclaratorId());
+        return tuple(parameter, (Expression) this.visit(ctx.expression()));
     }
 
     @Override
@@ -686,16 +687,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      */
     @Override
     public List<CatchStatement> visitCatchClause(final CatchClauseContext ctx) {
-        // FIXME Groovy will ignore variableModifier of parameter in the catch clause
-        // In order to make the new parser behave same with the old one, we do not process variableModifier*
-
         return this.visitCatchType(ctx.catchType()).stream()
                 .map(e -> configureAST(
                         new CatchStatement(
-                                // FIXME The old parser does not set location info for the parameter of the catch clause.
-                                // we could make it better
-                                //this.configureAST(new Parameter(e, this.visitIdentifier(ctx.identifier())), ctx.Identifier()),
-
                                 new Parameter(e, this.visitIdentifier(ctx.identifier())),
                                 this.visitBlock(ctx.block())),
                         ctx))
@@ -1548,12 +1542,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private DeclarationListStatement createMultiAssignmentDeclarationListStatement(final VariableDeclarationContext ctx, final ModifierManager modifierManager) {
-        /*
-        if (!modifierManager.contains(DEF)) {
-            throw createParsingFailedException("keyword def is required to declare tuple, e.g. def (int a, int b) = [1, 2]", ctx);
-        }
-        */
-
         return configureAST(
                 new DeclarationListStatement(
                         configureAST(
@@ -2051,13 +2039,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             GenericsType[] genericsTypes = this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments());
 
             if (asBoolean(ctx.DOT())) {
-                boolean isSafeChain = this.isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
+                boolean isSafeChain = isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
                 return this.createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, isSafeChain);
             } else if (asBoolean(ctx.SAFE_DOT())) {
                 return this.createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, true);
             } else if (asBoolean(ctx.SAFE_CHAIN_DOT())) { // e.g. obj??.a  OR obj??.@a
                 Expression expression = createDotExpression(ctx, baseExpr, namePartExpr, genericsTypes, true);
-                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, true);
+                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, Boolean.TRUE);
                 return expression;
             } else if (asBoolean(ctx.METHOD_POINTER())) { // e.g. obj.&m
                 return configureAST(new MethodPointerExpression(baseExpr, namePartExpr), ctx);
@@ -2070,7 +2058,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     return configureAST(attributeExpression, ctx);
                 } else { // e.g. obj*.p
                     PropertyExpression propertyExpression = new PropertyExpression(baseExpr, namePartExpr, true);
-                    propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
+                    if (genericsTypes != null) propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
                     propertyExpression.setSpreadSafe(true);
                     return configureAST(propertyExpression, ctx);
                 }
@@ -2081,7 +2069,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(this.visitCreator(creatorContext), ctx);
         } else if (asBoolean(ctx.indexPropertyArgs())) { // e.g. list[1, 3, 5]
             Tuple2<Token, Expression> tuple = this.visitIndexPropertyArgs(ctx.indexPropertyArgs());
-            boolean isSafeChain = this.isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
+            boolean isSafeChain = isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
             return configureAST(
                     new BinaryExpression(baseExpr, createGroovyToken(tuple.getV1()), tuple.getV2(), isSafeChain || asBoolean(ctx.indexPropertyArgs().QUESTION())),
                     ctx);
@@ -2149,7 +2137,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             if (baseExpr instanceof VariableExpression // e.g. m()
                     || baseExpr instanceof GStringExpression // e.g. "$m"()
-                    || (baseExpr instanceof ConstantExpression && this.isTrue(baseExpr, IS_STRING))) { // e.g. "m"()
+                    || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING))) { // e.g. "m"()
                 String baseExprText = baseExpr.getText();
                 if (THIS_STR.equals(baseExprText) || SUPER_STR.equals(baseExprText)) { // e.g. this(...), super(...)
                     // class declaration is not allowed in the closure,
@@ -2242,7 +2230,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             if (baseExpr instanceof VariableExpression // e.g. m { }
                     || baseExpr instanceof GStringExpression // e.g. "$m" { }
-                    || (baseExpr instanceof ConstantExpression && this.isTrue(baseExpr, IS_STRING))) { // e.g. "m" { }
+                    || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING))) { // e.g. "m" { }
                 MethodCallExpression methodCallExpression =
                         this.createMethodCallExpression(
                                 baseExpr,
@@ -2275,7 +2263,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(new AttributeExpression(baseExpr, namePartExpr, safe), ctx);
         } else { // e.g. obj.p  OR  obj?.p
             PropertyExpression propertyExpression = new PropertyExpression(baseExpr, namePartExpr, safe);
-            propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
+            if (genericsTypes != null) propertyExpression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES, genericsTypes);
             return configureAST(propertyExpression, ctx);
         }
     }
@@ -2721,7 +2709,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitConditionalExprAlt(final ConditionalExprAltContext ctx) {
-        ctx.fb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, true);
+        ctx.fb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, Boolean.TRUE);
 
         if (asBoolean(ctx.ELVIS())) { // e.g. a == 6 ?: 0
             return configureAST(
@@ -2729,7 +2717,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     ctx);
         }
 
-        ctx.tb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, true);
+        ctx.tb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, Boolean.TRUE);
 
         return configureAST(
                 new TernaryExpression(
@@ -3604,7 +3592,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ClassNode classNode = null;
 
         if (asBoolean(ctx.classOrInterfaceType())) {
-            ctx.classOrInterfaceType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, ctx.getNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR));
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
+                ctx.classOrInterfaceType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             classNode = this.visitClassOrInterfaceType(ctx.classOrInterfaceType());
         } else if (asBoolean(ctx.primitiveType())) {
             classNode = this.visitPrimitiveType(ctx.primitiveType());
@@ -3631,10 +3620,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ClassNode visitClassOrInterfaceType(final ClassOrInterfaceTypeContext ctx) {
         ClassNode classNode;
         if (asBoolean(ctx.qualifiedClassName())) {
-            ctx.qualifiedClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, ctx.getNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR));
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
+                ctx.qualifiedClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
         } else {
-            ctx.qualifiedStandardClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, ctx.getNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR));
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
+                ctx.qualifiedStandardClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             classNode = this.visitQualifiedStandardClassName(ctx.qualifiedStandardClassName());
         }
 
@@ -3933,11 +3924,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private ClassNode createClassNode(final GroovyParserRuleContext ctx) {
         ClassNode result = ClassHelper.make(ctx.getText());
-
-        if (!isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) { // type in the "instanceof" expression should not have proxy to redirect to it
+        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+            // type in the "instanceof" expression shouldn't have redirect
+        } else {
             result = this.proxyClassNode(result);
         }
-
         return configureAST(result, ctx);
     }
 
@@ -3948,7 +3939,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         ClassNode cn = ClassHelper.makeWithoutCaching(classNode.getName());
         cn.setRedirect(classNode);
-
         return cn;
     }
 
@@ -4054,7 +4044,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                             boolean isSafeChain = isTrue((Expression) r, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
                             if (isSafeChain) {
-                                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, true);
+                                expression.putNodeMetaData(PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN, Boolean.TRUE);
                             }
 
                             return expression;
@@ -4239,18 +4229,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return lexer.getInputStream().getText(Interval.of(context.getStart().getStartIndex(), context.getStop().getStopIndex()));
     }
 
-    private boolean isTrue(final NodeMetaDataHandler nodeMetaDataHandler, final String key) {
-        Object nmd = nodeMetaDataHandler.getNodeMetaData(key);
-
-        if (null == nmd) {
-            return false;
-        }
-
-        if (!(nmd instanceof Boolean)) {
-            throw new GroovyBugError(nodeMetaDataHandler + " node meta data[" + key + "] is not an instance of Boolean");
-        }
-
-        return (Boolean) nmd;
+    private static boolean isTrue(final NodeMetaDataHandler obj, final String key) {
+        return Boolean.TRUE.equals(obj.getNodeMetaData(key));
     }
 
     private CompilationFailedException createParsingFailedException(final String msg, final GroovyParserRuleContext ctx) {
