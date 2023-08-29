@@ -921,7 +921,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {
             if (method.getDeclaringClass() == owner && !method.isSynthetic()) {
-                if ("main".equals(method.getName()) || "run".equals(method.getName()) && owner.isScriptBody()) continue;
+                if (("main".equals(method.getName()) || "run".equals(method.getName())) && owner.isScriptBody()) continue;
                 result.add(method);
             }
         }
