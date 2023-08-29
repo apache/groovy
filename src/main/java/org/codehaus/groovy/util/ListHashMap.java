@@ -127,7 +127,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
             }
             if (innerMap != null) {
                 V old = innerMap.put(key, value);
-                size = innerMap.size();
+                if (old == null) size += 1;
                 return old;
             }
             for (int i = 0; i < size; i += 1) {
@@ -138,15 +138,16 @@ public class ListHashMap<K,V> implements Map<K,V> {
                 }
             }
             if (size < keys.length) {
-                values[size] = value;
-                keys[size] = key;
+                int i = (size ++);
+                values[i] = value;
+                keys[i] = key;
             } else { // evolve
                 Map<K,V> map = toMap();
                 map.put(key, value);
                 innerMap = map;
                 clearArrays();
+                size += 1;
             }
-            size += 1;
         }
         return null;
     }
@@ -168,9 +169,9 @@ public class ListHashMap<K,V> implements Map<K,V> {
                     if (size <= keys.length) { // devolve
                         size = 0; Set<Entry<K,V>> entries = innerMap.entrySet(); innerMap = null;
                         for (Entry<? extends K, ? extends V> entry : entries) {
-                            values[size] = entry.getValue();
-                            keys[size] = entry.getKey();
-                            size += 1;
+                            int i = size++; // not atomic
+                            values[i] = entry.getValue();
+                            keys[i] = entry.getKey();
                         }
                     }
                 }
@@ -179,14 +180,14 @@ public class ListHashMap<K,V> implements Map<K,V> {
             for (int i = 0; i < size; i += 1) {
                 if (key.equals(keys[i])) {
                     V value = values[i];
-                    size -= 1;
+                    int j = (size -= 1);
                     // if last element is not being removed, shift the last element into this slot
-                    if (i < size) {
-                        values[i] = values[size];
-                        keys[i] = keys[size];
+                    if (i < j) {
+                        values[i] = values[j];
+                        keys[i] = keys[j];
                     }
-                    values[size] = null;
-                    keys[size] = null;
+                    values[j] = null;
+                    keys[j] = null;
                     return value;
                 }
             }

@@ -27,9 +27,12 @@ import java.util.function.Function;
 
 /**
  * An interface to mark a node being able to handle metadata.
+ *
+ * @since 3.0.0
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public interface NodeMetaDataHandler {
+
     /**
      * Gets the node metadata.
      *
@@ -56,7 +59,7 @@ public interface NodeMetaDataHandler {
 
         Map metaDataMap = this.getMetaDataMap();
         if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
+            metaDataMap = this.newMetaDataMap();
             this.setMetaDataMap(metaDataMap);
         }
         return (T) metaDataMap.computeIfAbsent(key, valFn);
@@ -74,7 +77,7 @@ public interface NodeMetaDataHandler {
         }
         Map metaDataMap = this.getMetaDataMap();
         if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
+            metaDataMap = this.newMetaDataMap();
             this.setMetaDataMap(metaDataMap);
         }
 
@@ -86,8 +89,7 @@ public interface NodeMetaDataHandler {
      *
      * @param key   the metadata key
      * @param value the metadata value
-     * @throws GroovyBugError if key is null or there is already meta
-     *                        data under that key
+     * @throws GroovyBugError if key is null or there is already metadata for key
      */
     default void setNodeMetaData(Object key, Object value) {
         Object old = putNodeMetaData(key, value);
@@ -107,8 +109,11 @@ public interface NodeMetaDataHandler {
 
         Map metaDataMap = this.getMetaDataMap();
         if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
+            if (value == null) return null;
+            metaDataMap = newMetaDataMap();
             this.setMetaDataMap(metaDataMap);
+        } else if (value == null) {
+            return metaDataMap.remove(key);
         }
         return metaDataMap.put(key, value);
     }
@@ -142,7 +147,16 @@ public interface NodeMetaDataHandler {
         return Collections.unmodifiableMap(metaDataMap);
     }
 
+    //--------------------------------------------------------------------------
+
     Map<?, ?> getMetaDataMap();
+
+    /**
+     * @since 5.0.0
+     */
+    default Map<?, ?> newMetaDataMap() {
+        return new ListHashMap();
+    }
 
     void setMetaDataMap(Map<?, ?> metaDataMap);
 }
