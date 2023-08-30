@@ -407,6 +407,7 @@ public class ModuleNode extends ASTNode {
                 )
             )
         );
+        main.setIsScriptBody();
         ClassNodeUtils.addGeneratedMethod(classNode, main, true);
 
         // we add the run method unless we find a no-arg instance run method
@@ -422,6 +423,7 @@ public class ModuleNode extends ASTNode {
         } else {
             fields.forEach(classNode::addField);
             classNode.addAnnotations(existingRun.getAnnotations());
+            classNode.setScriptBody(false);
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
