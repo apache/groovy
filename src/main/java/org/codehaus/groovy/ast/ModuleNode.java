@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -392,7 +393,7 @@ public class ModuleNode extends ASTNode {
             return result;
         }
 
-        classNode.addMethod(
+        ClassNodeUtils.addGeneratedMethod(classNode,
             new MethodNode(
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
@@ -406,7 +407,8 @@ public class ModuleNode extends ASTNode {
                         args(classX(classNode), varX("args"))
                     )
                 )
-            )
+            ),
+            true
         );
 
         // we add the run method unless we find a no-arg instance run method
@@ -418,7 +420,7 @@ public class ModuleNode extends ASTNode {
             if (existingMain != null) {
                 methodNode.addAnnotations(existingMain.getAnnotations());
             }
-            classNode.addMethod(methodNode);
+            ClassNodeUtils.addGeneratedMethod(classNode, methodNode, true);
         } else {
             fields.forEach(classNode::addField);
             classNode.addAnnotations(existingRun.getAnnotations());
