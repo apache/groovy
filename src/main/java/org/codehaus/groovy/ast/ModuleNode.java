@@ -393,23 +393,21 @@ public class ModuleNode extends ASTNode {
             return result;
         }
 
-        ClassNodeUtils.addGeneratedMethod(classNode,
-            new MethodNode(
-                "main",
-                ACC_PUBLIC | ACC_STATIC,
-                ClassHelper.VOID_TYPE,
-                finalParam(ClassHelper.STRING_TYPE.makeArray(), "args"),
-                ClassNode.EMPTY_ARRAY,
-                stmt(
-                    callX(
-                        ClassHelper.make(InvokerHelper.class),
-                        "runScript",
-                        args(classX(classNode), varX("args"))
-                    )
+        MethodNode main = new MethodNode(
+            "main",
+            ACC_PUBLIC | ACC_STATIC,
+            ClassHelper.VOID_TYPE,
+            finalParam(ClassHelper.STRING_TYPE.makeArray(), "args"),
+            ClassNode.EMPTY_ARRAY,
+            stmt(
+                callX(
+                    ClassHelper.make(InvokerHelper.class),
+                    "runScript",
+                    args(classX(classNode), varX("args"))
                 )
-            ),
-            true
+            )
         );
+        ClassNodeUtils.addGeneratedMethod(classNode, main, true);
 
         // we add the run method unless we find a no-arg instance run method
         // and there are no uncontained statements
