@@ -5409,10 +5409,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             if (isVargs ? nArguments >= nParams - 1 : nArguments == nParams) {
                 for (int i = 0; i < nArguments; i += 1) {
-                    if (isNullConstant(expressions.get(i)))
-                        continue; // GROOVY-9984: skip null
+                    Expression argument = expressions.get(i);
+                    if (isNullConstant(argument)) continue; // GROOVY-9984: skip
+                    ClassNode argumentType = getDeclaredOrInferredType(argument);
                     ClassNode paramType = parameters[Math.min(i, nParams - 1)].getType();
-                    ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
 
                     if (GenericsUtils.hasUnresolvedGenerics(paramType)) {
                         // if supplying array param with multiple arguments or single non-array argument, infer using element type
@@ -5420,15 +5420,53 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             paramType = paramType.getComponentType();
                         }
 
-                        if (isClosureWithType(argumentType)) {
-                            MethodNode sam = findSAM(paramType);
-                            if (sam != null) { // adapt closure to functional interface or other single-abstract-method class
-                                argumentType = convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType);
+                        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+
+                        if ((argument instanceof ClosureExpression || argument instanceof MethodPointerExpression) && isSAMType(paramType)) {
+                            // target type information
+                            Tuple2<ClassNode[], ClassNode> samParamsAndReturnType = GenericsUtils.parameterizeSAM(paramType);
+                            ClassNode[] q = samParamsAndReturnType.getV1();
+
+                            // source type information
+                            ClassNode returnType = isClosureWithType(argumentType)
+                                    ? getCombinedBoundType(argumentType.getGenericsTypes()[0])
+                                        : wrapTypeIfNecessary(getInferredReturnType(argument));
+                            ClassNode[] p;
+                            if (argument instanceof ClosureExpression) {
+                                ClosureExpression closure = (ClosureExpression) argument;
+                                p = extractTypesFromParameters(getParametersSafe(closure));
+                            } else { // argument instanceof MethodPointerExpression
+                                List<MethodNode> candidates = argument.getNodeMetaData(MethodNode.class);
+                                if (candidates != null && !candidates.isEmpty()) {
+                                    MethodPointerExpression methodPointer = (MethodPointerExpression) argument;
+                                    p = methodPointer.getNodeMetaData(CLOSURE_ARGUMENTS); // GROOVY-10974, GROOVY-10975
+                                    if (p == null) p = collateMethodReferenceParameterTypes(methodPointer, candidates.get(0));
+                                    if (p.length > 0 && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                                        for (int j = 0; j < q.length; j += 1) {
+                                            // SAM parameters are like arguments in this case
+                                            extractGenericsConnections(connections, q[j], p[j]);
+                                        }
+                                        // convert the method's generics into the SAM's generics
+                                        returnType = applyGenericsContext(connections, returnType);
+
+                                        connections.clear();
+                                    }
+                                } else {
+                                    p = ClassNode.EMPTY_ARRAY;
+                                }
                             }
+
+                            // parameters and return type correspond to the SAM's
+                            for (int j = 0; j < p.length && j < q.length; j += 1) {
+                                if (!isDynamicTyped(p[j]))
+                                    // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
+                                    extractGenericsConnections(connections, wrapTypeIfNecessary(p[j]), q[j]);
+                            }
+                            extractGenericsConnections(connections, returnType, samParamsAndReturnType.getV2());
+                        } else {
+                            extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
                         }
 
-                        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                        extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
                         connections.forEach((gtn, gt) -> resolvedPlaceholders.merge(gtn, gt, (gt1, gt2) -> {
                             // GROOVY-10339: incorporate another witness
                             return getCombinedGenericsType(gt1, gt2);
@@ -5544,64 +5582,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    /**
-     * Converts a Closure type to the appropriate SAM type, which can be used to
-     * infer return type generics.
-     *
-     * @param expression  the argument expression
-     * @param closureType the inferred type of {@code expression}
-     * @param samType     the target type for the argument expression
-     * @return SAM type augmented using information from the argument expression
-     */
-    private static ClassNode convertClosureTypeToSAMType(Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType) {
-        Map<GenericsTypeName, GenericsType> samTypeConnections = GenericsUtils.extractPlaceholders(samType);
-        samTypeConnections.replaceAll((xx, gt) -> // GROOVY-9762, GROOVY-9803: reduce "? super T" to "T"
-            Optional.ofNullable(gt.getLowerBound()).map(GenericsType::new).orElse(gt)
-        );
-        ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
-
-        Parameter[] parameters = sam.getParameters();
-        if (parameters.length > 0 && expression instanceof MethodPointerExpression) {
-            // try to resolve referenced method type parameters in return type
-            MethodPointerExpression mp = (MethodPointerExpression) expression;
-            List<MethodNode> candidates = mp.getNodeMetaData(MethodNode.class);
-            if (candidates != null && !candidates.isEmpty()) {
-                ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
-                ClassNode[] matchTypes = candidates.stream()
-                        .map(candidate -> collateMethodReferenceParameterTypes(mp, candidate))
-                        .filter(signature -> checkSignatureSuitability(signature, paramTypes))
-                        .findFirst().orElse(null); // TODO: order signatures by param distance
-                if (matchTypes != null) {
-                    Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                    for (int i = 0, n = parameters.length; i < n; i += 1) {
-                        // SAM parameters should align with the referenced method's parameters
-                        extractGenericsConnections(connections, paramTypes[i], matchTypes[i]);
-                    }
-                    // convert the method reference's generics into the SAM's generics domain
-                    closureReturnType = applyGenericsContext(connections, closureReturnType);
-                    // apply known generics connections to the SAM's placeholders in the return type
-                    closureReturnType = applyGenericsContext(samTypeConnections, closureReturnType);
-
-                    expression = new ClosureExpression(Arrays.stream(matchTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new), null);
-                }
-            }
-        }
-
-        // the SAM's return type exactly corresponds to the inferred closure return type
-        extractGenericsConnections(samTypeConnections, closureReturnType, sam.getReturnType());
-
-        // repeat the same for each parameter given in the ClosureExpression
-        if (parameters.length > 0 && expression instanceof ClosureExpression) {
-            ClassNode[] paramTypes = applyGenericsContext(samTypeConnections, extractTypesFromParameters(parameters));
-            int i = 0;
-            // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
-            for (Parameter p : getParametersSafe((ClosureExpression) expression))
-                if (!p.isDynamicTyped()) extractGenericsConnections(samTypeConnections, p.getType(), paramTypes[i++]);
-        }
-
-        return applyGenericsContext(samTypeConnections, samType.redirect());
-    }
-
     private static ClassNode[] collateMethodReferenceParameterTypes(final MethodPointerExpression source, final MethodNode target) {
         Parameter[] params;
 
@@ -5619,21 +5599,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return extractTypesFromParameters(params);
-    }
-
-    private static boolean checkSignatureSuitability(final ClassNode[] receiverTypes, final ClassNode[] providerTypes) {
-        int n = receiverTypes.length;
-        if (n != providerTypes.length) {
-            return false;
-        }
-        for (int i = 0; i < n; i += 1) {
-            // for method closure SAM parameters act like arguments
-            if (!isAssignableTo(providerTypes[i], receiverTypes[i])
-                    && !providerTypes[i].isGenericsPlaceHolder()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private ClassNode getDeclaredOrInferredType(final Expression expression) {

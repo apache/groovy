@@ -276,6 +276,21 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10974
+    void testBiConsumerII() {
+        assertScript shell, '''import java.util.stream.*
+            @CompileStatic
+            def test(DoubleStream x, ObjDoubleConsumer<Boolean> y, BiConsumer<Boolean, Boolean> z) {
+                def b = x.collect(() -> true, y::accept, z::accept) // b should infer as Boolean
+                // <R>  R collect(Supplier<R>,ObjDoubleConsumer<R>,BiConsumer<R,R>)
+                Spliterator.OfDouble s_of_d = Arrays.spliterator(new double[0])
+                StreamSupport.doubleStream(s_of_d, b)
+            }
+
+            test(DoubleStream.of(0d), (Boolean b, double d) -> {}, (Boolean e, Boolean f) -> {})
+        '''
+    }
+
     @Test // class::instanceMethod
     void testBinaryOperatorCI() {
         assertScript shell, '''
