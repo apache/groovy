@@ -22,13 +22,15 @@
 = Groovy Contracts – design by contract support for Groovy
 
 This module provides contract annotations that support the specification of class-invariants,
-pre- and post-conditions on Groovy classes and interfaces.
+as well as pre- and post-conditions on Groovy classes and interfaces.
 Special support is provided so that post-conditions may refer to the old value of variables
 or to the result value associated with calling a method.
 
 == Applying @Invariant, @Requires and @Ensures
 
-With GContracts in your class-path, contracts can be applied on a Groovy class or interface by using one of the assertions found in package org.gcontracts.annotations.
+With Groovy contracts in your classpath, contracts can be applied on a Groovy
+class or interface by using one of the annotations found in the `groovy.contracts`
+package.
 
 [source,groovy]
 ----
@@ -37,7 +39,7 @@ include::../test/ContractsTest.groovy[tags=basic_example,indent=0]
 
 == More Features
 
-GContracts supports the following feature set:
+Groovy contracts supports the following feature set:
 
 * definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
 * inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
@@ -57,7 +59,6 @@ as annotations with closures, where closures allow you to specify arbitrary code
 
 [source,groovy]
 ----
-include::../test/ContractsTest.groovy[tags=stack_prelim,indent=0]
 include::../test/ContractsTest.groovy[tags=stack_example,indent=0]
 ----
 
@@ -68,3 +69,29 @@ to the method’s result with the result variable and old instance variables val
 Indeed, Groovy AST transformations change these assertion annotations into Java assertion
 statements (can be turned on and off with a JVM param) and inject them at appropriate places,
 e.g. class-invariants are used to check an object's state before and after each method call.
+
+== Annotation closure rules
+
+* Invariants should reference class fields only.
+* Preconditions may reference class fields and arguments.
+* Postconditions may reference class fields, arguments, the `result` and
+the old value of class fields using the syntax `old.fieldname`.
+
+Old values of class fields will only be stored where Groovy
+contracts knows how to make a copy. Currently, this means
+fields with a `Cloneable` class type, primitives, the primitive
+wrapper types, `BigInteger`, `BigDecimal`, and G/Strings.
+
+== Use within scripts
+
+Currently, Groovy contracts intentionally doesn't support scripts,
+but you can use them with JEP-445 compatible scripts from Groovy 5
+as shown in this example:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=jep445_example,indent=0]
+----
+
+You could even place an `@Invariant` annotation on the `main` method
+and it will be moved to the generated script class.

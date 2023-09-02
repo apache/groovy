@@ -36,8 +36,6 @@ class ContractsTest extends GroovyTestCase {
             @Ensures({ old.speed < speed })
             def accelerate(inc) { speed += inc }
 
-            def isStarted() { started }
-
             def speed() { speed }
         }
 
@@ -49,11 +47,6 @@ class ContractsTest extends GroovyTestCase {
 
     void testStackExample() {
         assertScript '''
-        /*
-        // tag::stack_prelim[]
-        @Grab(group='org.apache.groovy', module='groovy-contracts', version='4.0.0')
-        // end::stack_prelim[]
-        */
         // tag::stack_example[]
         import groovy.contracts.*
 
@@ -115,5 +108,28 @@ class ContractsTest extends GroovyTestCase {
         def stack = new Stack<Integer>()
         // end::stack_example[]
         '''
+    }
+
+    void testJep445Script() {
+        runScript '''
+        // tag::jep445_example[]
+        import groovy.contracts.*
+        import org.apache.groovy.contracts.*
+        import static groovy.test.GroovyAssert.shouldFail
+
+        @Requires({ arg > 0 })
+        @Ensures({ result < arg })
+        def sqrt(arg) { Math.sqrt(arg) }
+
+        def main() {
+            assert sqrt(4) == 2
+            shouldFail(PreconditionViolation) { sqrt(-1) }
+        }
+        // end::jep445_example[]
+        '''
+    }
+
+    private static void runScript(String scriptText) {
+        new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
 }

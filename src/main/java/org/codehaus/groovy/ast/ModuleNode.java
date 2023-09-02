@@ -384,8 +384,10 @@ public class ModuleNode extends ASTNode {
         }
 
         if (existingMain != null && !hasUncontainedStatements) {
+            // this is a JEP-445 compatible class
             ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
             result.addAnnotations(existingMain.getAnnotations());
+            result.setScriptBody(false);
             result.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingMain.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             methods.forEach(result::addMethod);
@@ -461,7 +463,9 @@ public class ModuleNode extends ASTNode {
     }
 
     /*
-     * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.
+     * We retain the 'main' method if a compatible one is found.
+     * A compatible one has no parameters or 1 (Object or String[]) parameter.
+     * The return type must be void or Object.
      */
     private MethodNode handleMainMethodIfPresent(final List<MethodNode> methods) {
         boolean foundInstance = false;
