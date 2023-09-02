@@ -103,7 +103,6 @@ assert (this instanceof Script)
         '''
     }
 
-
     void testBaseClassCustomRunMethod() {
         assertScript '''import org.codehaus.groovy.control.CompilerConfiguration
 
@@ -136,6 +135,21 @@ assert (this instanceof Script)
             assert script.run() == 1
             assert script.run() == 2
             // end::custom_run_parse[]
+        '''
+    }
+
+    void testBaseClassJep445Example() {
+        assertScript '''import groovy.transform.BaseScript
+            // tag::jep445_example[]
+            abstract class CustomScript extends Script {
+                int getTheMeaningOfLife() { 42 }
+            }
+
+            @BaseScript(CustomScript)
+            def run() {
+              assert theMeaningOfLife == 42
+            }
+            // end::jep445_example[]
         '''
     }
 

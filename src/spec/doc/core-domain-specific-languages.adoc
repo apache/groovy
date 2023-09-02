@@ -226,6 +226,14 @@ the base script class as a member of the `@BaseScript` annotation itself:
 include::../test/BaseScriptSpecTest.groovy[tags=use_basescript_alt,indent=0]
 ----
 
+When using the special no-args `run` method, you can even annotate
+that method as shown here:
+
+[source,groovy]
+----
+include::../test/BaseScriptSpecTest.groovy[tags=jep445_example,indent=0]
+----
+
 === Alternate abstract method
 
 We have seen that the base script class is a single abstract method type that needs to implement the `run` method. The
