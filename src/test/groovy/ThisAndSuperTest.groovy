@@ -390,9 +390,41 @@ final class ThisAndSuperTest {
         '''
     }
 
-    // GROOVY-10302
+    // GROOVY-6663
     @Test
     void testSuperDotMethod4() {
+        assertScript '''
+            class A<T> {
+                protected String getText(T t) {
+                    'A with ' + t
+                }
+            }
+
+            class B extends A<String> {
+                @Override
+                protected String getText(String s) {
+                    'B then ' + super.getText(s) // invoke super$2$getText
+                }
+                // bridge String getText(Object o) { this.getText((String) o); }
+                //        String super$2$getText(Object o) { super.getText(o); }
+            }
+
+            class C extends B {
+                @Override
+                protected String getText(String s) {
+                    'C then ' + super.getText(s) // invoke super$3$getText
+                }
+                //        String super$3$getText(String s) { super.getText(s); }
+            }
+
+            String result = new C().getText(null) // invoke bridge method
+            assert result == 'C then B then A with null'
+        '''
+    }
+
+    // GROOVY-10302
+    @Test
+    void testSuperDotMethod5() {
         shouldFail ClassNotFoundException, '''
             void test() {
                 def list = []

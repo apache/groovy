@@ -690,7 +690,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     @Override
     public void visitMethod(final MethodNode node) {
-        // GROOVY-3712: if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
+        // GROOVY-3712: if it's a MOP method, it's an error as they aren't supposed to exist before ACG is invoked
         if (MopWriter.isMopMethod(node.getName())) {
             throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() + "(" + node.getName() + ")", classNode);
         }
@@ -1359,97 +1359,103 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addCovariantMethods(final ClassNode classNode) {
-        Map<String, MethodNode> methodsToAdd = new HashMap<>();
-        Map<String, ClassNode> genericsSpec = new HashMap<>();
-
         // unimplemented abstract methods from interfaces
-        Map<String, MethodNode> abstractMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(classNode);
-        Map<String, MethodNode> allInterfaceMethods = new HashMap<>(abstractMethods);
+        Map<String, MethodNode> absInterfaceMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(classNode);
+        Map<String, MethodNode> allInterfaceMethods = new HashMap<>(absInterfaceMethods);
         ClassNodeUtils.addDeclaredMethodsFromAllInterfaces(classNode, allInterfaceMethods);
+
         List<MethodNode> declaredMethods = new ArrayList<>(classNode.getMethods());
-        // remove all static, private and package private methods
         for (Iterator<MethodNode> methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext(); ) {
             MethodNode m = methodsIterator.next();
-            abstractMethods.remove(m.getTypeDescriptor());
+            // remove all static, private and package-private methods
             if (m.isStatic() || !(m.isPublic() || m.isProtected())) {
                 methodsIterator.remove();
             }
-            MethodNode intfMethod = allInterfaceMethods.get(m.getTypeDescriptor());
-            if (intfMethod != null && ((m.getModifiers() & ACC_SYNTHETIC) == 0)
-                    && !m.isPublic() && !m.isStaticConstructor()) {
-                throw new RuntimeParserException("The method " + m.getName() +
-                        " should be public as it implements the corresponding method from interface " +
-                        intfMethod.getDeclaringClass(), sourceOf(m));
-
+            absInterfaceMethods.remove(m.getTypeDescriptor());
+            MethodNode interfaceMethod = allInterfaceMethods.get(m.getTypeDescriptor());
+            if (interfaceMethod != null && !m.isPublic() && !m.isStaticConstructor() && ((m.getModifiers() & ACC_SYNTHETIC) == 0)) {
+                throw new RuntimeParserException("The method " + m.getName() + " should be public as it implements the corresponding method from interface " + interfaceMethod.getDeclaringClass(), sourceOf(m));
             }
         }
+        // interfaces may have private/static methods in JDK9
+        absInterfaceMethods.values().removeIf(interfaceMethod -> interfaceMethod.isPrivate() || interfaceMethod.isStatic());
 
-        addCovariantMethods(classNode, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
+        Map<String, MethodNode> methodsToAdd = new HashMap<>();
+        Map<String, ClassNode > genericsSpec = Collections.emptyMap();
+        addCovariantMethods(classNode, declaredMethods, absInterfaceMethods, methodsToAdd, genericsSpec);
 
-        Map<String, MethodNode> declaredMethodsMap = new HashMap<>();
         if (!methodsToAdd.isEmpty()) {
+            Map<String, MethodNode> declaredMethodsMap = new HashMap<>();
             for (MethodNode mn : declaredMethods) {
                 declaredMethodsMap.put(mn.getTypeDescriptor(), mn);
             }
-        }
 
-        for (Map.Entry<String, MethodNode> entry : methodsToAdd.entrySet()) {
-            // we skip bridge methods implemented in current class already
-            MethodNode mn = declaredMethodsMap.get(entry.getKey());
-            if (mn == null || !mn.getDeclaringClass().equals(classNode)) {
-                addPropertyMethod(entry.getValue());
+            for (Map.Entry<String, MethodNode> entry : methodsToAdd.entrySet()) {
+                // we skip bridge methods implemented in current class already
+                MethodNode mn = declaredMethodsMap.get(entry.getKey());
+                if (mn == null || !mn.getDeclaringClass().equals(classNode)) {
+                    addPropertyMethod(entry.getValue());
+                }
             }
         }
     }
 
-    private void addCovariantMethods(final ClassNode classNode, final List<MethodNode> declaredMethods, final Map<String, MethodNode> abstractMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> oldGenericsSpec) {
-        ClassNode sn = classNode.getUnresolvedSuperClass(false);
-        if (sn != null) {
-            Map<String, ClassNode> genericsSpec = createGenericsSpec(sn, oldGenericsSpec);
-            List<MethodNode> classMethods = sn.getMethods();
-            // original class causing bridge methods for methods in super class
-            storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, classMethods);
-            // super class causing bridge methods for abstract methods in original class
-            if (!abstractMethods.isEmpty()) {
-                for (MethodNode method : classMethods) {
-                    if (method.isStatic()) continue;
-                    storeMissingCovariantMethods(abstractMethods.values(), method, methodsToAdd, Collections.emptyMap(), true);
+    private void addCovariantMethods(final ClassNode classNode, final List<MethodNode> declaredMethods, final Map<String, MethodNode> interfaceMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> oldGenericsSpec) {
+        ClassNode sc = classNode.getUnresolvedSuperClass(false);
+        if (sc != null) {
+            Map<String, ClassNode> genericsSpec = createGenericsSpec(sc, oldGenericsSpec);
+            List<MethodNode> scMethods = sc.getMethods();
+            // add bridge methods in original class for overridden methods with changed signature
+            storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, scMethods);
+            // add bridge methods in original class for any interface methods overridden by super
+            if (!interfaceMethods.isEmpty()) {
+                for (MethodNode method : scMethods) {
+                    if (!method.isStatic())
+                        storeMissingCovariantMethods(interfaceMethods.values(), method, methodsToAdd, Collections.emptyMap(), true);
                 }
             }
 
-            addCovariantMethods(sn.redirect(), declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
+            addCovariantMethods(sc.redirect(), declaredMethods, interfaceMethods, methodsToAdd, genericsSpec);
         }
 
         for (ClassNode anInterface : classNode.getInterfaces()) {
-            List<MethodNode> interfacesMethods = anInterface.getMethods();
+            List<MethodNode> ifaceMethods = anInterface.getMethods();
             Map<String, ClassNode> genericsSpec = createGenericsSpec(anInterface, oldGenericsSpec);
-            storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, interfacesMethods);
-            addCovariantMethods(anInterface, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
+            storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, ifaceMethods);
+            addCovariantMethods(anInterface, declaredMethods, interfaceMethods, methodsToAdd, genericsSpec);
         }
     }
 
-    private void storeMissingCovariantMethods(final List<MethodNode> declaredMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final List<MethodNode> methodNodeList) {
-        for (MethodNode method : declaredMethods) {
-            if (method.isStatic()) continue;
-            storeMissingCovariantMethods(methodNodeList, method, methodsToAdd, genericsSpec, false);
+    private void storeMissingCovariantMethods(final List<MethodNode> declaredMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final List<MethodNode> superClassMethods) {
+        for (MethodNode declaredMethod : declaredMethods) {
+            if (!declaredMethod.isStatic())
+                storeMissingCovariantMethods(superClassMethods, declaredMethod, methodsToAdd, genericsSpec, false);
         }
     }
 
-    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map<String, ClassNode> genericsSpec, final boolean ignoreError) {
-        if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
-        if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
-        if ((oldMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
-        if (oldMethod.isPrivate()) return null;
+    private void storeMissingCovariantMethods(final Iterable<MethodNode> superClassMethods, final MethodNode overrideCandidate, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final boolean ignoreError) {
+        for (MethodNode method : superClassMethods) {
+            if (!method.isPrivate()
+                    && (method.getModifiers() & ACC_BRIDGE) == 0
+                    && (overrideCandidate.getModifiers() & ACC_BRIDGE) == 0
+                    && method.getName().equals(overrideCandidate.getName())) {
+                MethodNode bridgeMethod = getCovariantImplementation(method, overrideCandidate, genericsSpec, ignoreError);
+                if (bridgeMethod != null) {
+                    methodsToAdd.put(bridgeMethod.getTypeDescriptor(), bridgeMethod);
+                    return;
+                }
+            }
+        }
+    }
 
+    private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overrideCandidate, Map<String, ClassNode> genericsSpec, final boolean ignoreError) {
         if (oldMethod.getGenericsTypes() != null)
             genericsSpec = addMethodGenerics(oldMethod, genericsSpec);
 
-        // parameters
-        boolean equalParameters = equalParametersNormal(overridingMethod, oldMethod);
-        if (!equalParameters && !equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec)) return null;
+        boolean equalParameters = equalParametersNormal(overrideCandidate, oldMethod);
+        if (!equalParameters && !equalParametersWithGenerics(overrideCandidate, oldMethod, genericsSpec)) return null;
 
-        // return type
-        ClassNode nmr = overridingMethod.getReturnType();
+        ClassNode nmr = overrideCandidate.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
         boolean equalReturnType = nmr.equals(omr);
 
@@ -1459,11 +1465,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (ignoreError) return null;
             throw new RuntimeParserException(
                     "The return type of " +
-                            overridingMethod.getTypeDescriptor() +
-                            " in " + overridingMethod.getDeclaringClass().getName() +
+                            overrideCandidate.getTypeDescriptor() +
+                            " in " + overrideCandidate.getDeclaringClass().getName() +
                             " is incompatible with " + omrCorrected.getName() +
                             " in " + oldMethod.getDeclaringClass().getName(),
-                    sourceOf(overridingMethod));
+                    sourceOf(overrideCandidate));
         }
 
         if (equalReturnType && equalParameters) return null;
@@ -1473,15 +1479,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     "Cannot override final method " +
                             oldMethod.getTypeDescriptor() +
                             " in " + oldMethod.getDeclaringClass().getName(),
-                    sourceOf(overridingMethod));
+                    sourceOf(overrideCandidate));
         }
-        if (oldMethod.isStatic() != overridingMethod.isStatic()) {
+        if (oldMethod.isStatic() != overrideCandidate.isStatic()) {
             throw new RuntimeParserException(
                     "Cannot override method " +
                             oldMethod.getTypeDescriptor() +
                             " in " + oldMethod.getDeclaringClass().getName() +
                             " with disparate static modifier",
-                    sourceOf(overridingMethod));
+                    sourceOf(overrideCandidate));
         }
         if (!equalReturnType) {
             boolean oldM = ClassHelper.isPrimitiveType(omr);
@@ -1500,8 +1506,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 oldMethod.getTypeDescriptor() +
                                 " in " + oldMethod.getDeclaringClass().getName() +
                                 message,
-                        sourceOf(overridingMethod));
+                        sourceOf(overrideCandidate));
             }
+        }
+
+        /*
+         * abstract class A {
+         *   def m(Object o)
+         * }
+         * class B extends A {
+         *   def m(String s) { ... }
+         * //def m(Object o) { this.m((String)o) } -- bridge method
+         * class C extends B {
+         *   def m(String s) { ... }
+         *   // no bridge necessary; B#m(Object) uses INVOKEVIRTUAL
+         * }
+         */
+        MethodNode newMethod = ClassNodeUtils.getMethod(overrideCandidate.getDeclaringClass(), overrideCandidate.getName(),
+                (MethodNode m) -> !m.isAbstract() && m.getReturnType().equals(omr) && equalParametersNormal(m, oldMethod));
+        if (newMethod != null && newMethod != oldMethod && newMethod != overrideCandidate) {
+            return null; // bridge method would be redundant
         }
 
         // if we reach this point there is least one parameter or return type
@@ -1509,7 +1533,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         String owner = BytecodeHelper.getClassInternalName(classNode);
         return new MethodNode(
                 oldMethod.getName(),
-                overridingMethod.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
+                overrideCandidate.getModifiers() | ACC_SYNTHETIC | ACC_BRIDGE,
                 cleanType(omr),
                 cleanParameters(oldMethod.getParameters()),
                 oldMethod.getExceptions(),
@@ -1518,7 +1542,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         Parameter[] para = oldMethod.getParameters();
-                        Parameter[] goal = overridingMethod.getParameters();
+                        Parameter[] goal = overrideCandidate.getParameters();
                         int doubleSlotOffset = 0;
                         for (int i = 0, n = para.length; i < n; i += 1) {
                             ClassNode type = para[i].getType();
@@ -1531,7 +1555,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 BytecodeHelper.doCast(mv, goal[i].getType());
                             }
                         }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, owner, overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(nmr, overridingMethod.getParameters()), false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, owner, overrideCandidate.getName(), BytecodeHelper.getMethodDescriptor(nmr, overrideCandidate.getParameters()), false);
 
                         BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
                     }
@@ -1564,16 +1588,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // TODO: Should this be directly handled by getPlainNodeReference?
         if (type.isArray()) return cleanType(type.getComponentType()).makeArray();
         return type.getPlainNodeReference();
-    }
-
-    private void storeMissingCovariantMethods(final Iterable<MethodNode> methods, final MethodNode method, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final boolean ignoreError) {
-        for (MethodNode toOverride : methods) {
-            MethodNode bridgeMethod = getCovariantImplementation(toOverride, method, genericsSpec, ignoreError);
-            if (bridgeMethod != null) {
-                methodsToAdd.put(bridgeMethod.getTypeDescriptor(), bridgeMethod);
-                return;
-            }
-        }
     }
 
     private static boolean equalParametersNormal(final MethodNode m1, final MethodNode m2) {

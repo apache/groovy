@@ -211,16 +211,13 @@ public class ClassNodeUtils {
      * @param methodsMap A map of existing methods to alter
      */
     public static void addDeclaredMethodsFromAllInterfaces(final ClassNode cNode, final Map<String, MethodNode> methodsMap) {
-        List<?> cnInterfaces = Arrays.asList(cNode.getInterfaces());
-        ClassNode parent = cNode.getSuperClass();
-        while (parent != null && !isObjectType(parent)) {
-            ClassNode[] interfaces = parent.getInterfaces();
-            for (ClassNode iface : interfaces) {
-                if (!cnInterfaces.contains(iface)) {
-                    methodsMap.putAll(iface.getDeclaredMethodsMap());
+        List<ClassNode> cnInterfaces = Arrays.asList(cNode.getInterfaces());
+        for (ClassNode sc = cNode.getSuperClass(); sc != null && !isObjectType(sc); sc = sc.getSuperClass()) {
+            for (ClassNode i : sc.getInterfaces()) {
+                if (!cnInterfaces.contains(i)) {
+                    methodsMap.putAll(i.getDeclaredMethodsMap());
                 }
             }
-            parent = parent.getSuperClass();
         }
     }
 

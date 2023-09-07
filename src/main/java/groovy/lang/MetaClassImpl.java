@@ -508,7 +508,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         int matchedMethod = mopArrayIndex(method, c);
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
-                        } else if (!useThis && !isDGM(method) && c == method.getDeclaringClass().getTheClass()) {
+                        } else if (!useThis && !isDGM(method) && (isBridge(method)
+                                || c == method.getDeclaringClass().getTheClass())) {
                             methods.remove(i--); // not fit for super usage
                         }
                     }
@@ -523,7 +524,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     if (matchedMethod >= 0) {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
-                    } else if (!useThis && !isDGM(method) && c == method.getDeclaringClass().getTheClass()) {
+                    } else if (!useThis && !isDGM(method) && (isBridge(method)
+                            || c == method.getDeclaringClass().getTheClass())) {
                         e.methodsForSuper = null; // not fit for super usage
                     }
                 }
@@ -536,6 +538,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // GROOVY-4922: Due to a numbering scheme change, find the super$number$methodName with
                 // the highest value. If we don't, no method may be found, leading to a stack overflow!
                 int distance = ReflectionCache.getCachedClass(c).getSuperClassDistance() - 1;
+                if (isBridge(method)) // GROOVY-6663
+                    return mopArrayIndex(method, "super$" + distance + "$" + method.getName());
                 while (distance > 0) {
                     int index = mopArrayIndex(method, "super$" + distance + "$" + method.getName());
                     if (index >= 0) return index;
@@ -560,6 +564,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            private boolean isBridge(final MetaMethod method) {
+                return (method.getModifiers() & Opcodes.ACC_BRIDGE) != 0;
             }
 
             private boolean isDGM(final MetaMethod method) {

@@ -140,8 +140,58 @@ final class OverrideTest {
         assert err.message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
-    @Test // GROOVY-6654
+    @Test
     void testCovariantParameterType1() {
+        assertScript '''
+            class C implements Comparable<C> {
+                int index
+                int compareTo(C c) {
+                    index <=> c.index
+                }
+            }
+
+            one = new C(index:1)
+            two = new C(index:2)
+            assert one < two
+        '''
+    }
+
+    @Test
+    void testCovariantParameterType2() {
+        assertScript '''
+            interface I<T> {
+               int handle(long n, T t)
+            }
+
+            class C implements I<String> {
+                int handle(long n, String something) {
+                    1
+                }
+            }
+
+            c = new C()
+            assert c.handle(5,"hi") == 1
+        '''
+    }
+
+    @Test
+    void testCovariantParameterType3() {
+        assertScript '''
+            interface I<T> {
+                int testMethod(T t)
+            }
+            class C implements I<Date> {
+                int testMethod(Date date) {}
+                int testMethod(Object obj) {}
+            }
+
+            assert C.declaredMethods.count{ it.name=="testMethod" } == 2
+        '''
+    }
+
+    // GROOVY-6654
+    @Test
+    void testCovariantParameterType4() {
         assertScript '''
             class C<T> {
                 void proc(T t) {}
@@ -156,8 +206,9 @@ final class OverrideTest {
         '''
     }
 
-    @Test // GROOVY-10675
-    void testCovariantParameterType2() {
+    // GROOVY-10675
+    @Test
+    void testCovariantParameterType5() {
         assertScript '''
             @FunctionalInterface
             interface A<I, O> {
@@ -171,48 +222,6 @@ final class OverrideTest {
 
             def result = new C().apply(42)
             assert result == 'x'
-        '''
-    }
-
-    @Test // GROOVY-7849
-    void testCovariantArrayReturnType1() {
-        assertScript '''
-            interface Base {}
-
-            interface Derived extends Base {}
-
-            interface I {
-                Base[] foo()
-            }
-
-            class C implements I {
-                Derived[] foo() { null }
-            }
-            new C().foo()
-        '''
-    }
-
-    @Test // GROOVY-7185
-    void testCovariantArrayReturnType2() {
-        assertScript '''
-            interface A<T> {
-                T[] process();
-            }
-
-            class B implements A<String> {
-                @Override
-                public String[] process() {
-                    ['foo']
-                }
-            }
-
-            class C extends B {
-                @Override
-                String[] process() {
-                    super.process()
-                }
-            }
-            assert new C().process()[0] == 'foo'
         '''
     }
 
