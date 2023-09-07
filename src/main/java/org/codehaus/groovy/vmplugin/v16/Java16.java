@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v16;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -29,7 +30,9 @@ import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Java16 extends Java10 {
@@ -78,5 +81,14 @@ public class Java16 extends Java10 {
             type.addTypeAnnotations(Arrays.stream(rc.getAnnotatedType().getAnnotations()).map(this::toAnnotationNode).collect(Collectors.toList()));
             return new RecordComponentNode(cn, rc.getName(), type, Arrays.stream(rc.getAnnotations()).map(this::toAnnotationNode).collect(Collectors.toList()));
         }).collect(Collectors.toList()));
+    }
+
+    @Override
+    @Incubating
+    public List<String> getRecordComponentNames(Class<?> maybeRecord) {
+        if (maybeRecord.isRecord()) {
+            return Arrays.stream(maybeRecord.getRecordComponents()).map(RecordComponent::getName).toList();
+        }
+        return super.getRecordComponentNames(maybeRecord);
     }
 }
