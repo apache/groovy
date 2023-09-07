@@ -38,10 +38,13 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
@@ -54,8 +57,15 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.awt.Image;
+import java.beans.BeanDescriptor;
+import java.beans.EventSetDescriptor;
+import java.beans.MethodDescriptor;
+import java.beans.PropertyDescriptor;
+import java.beans.SimpleBeanInfo;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,6 +85,7 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -82,11 +93,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.caseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
@@ -97,6 +111,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.switchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -120,6 +135,15 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode NAMED_PARAM_TYPE = make(NamedParam.class);
     private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
+    private static final ClassNode SIMPLE_BEAN_INFO_TYPE = make(SimpleBeanInfo.class);
+    private static final ClassNode BEAN_DESCRIPTOR_TYPE = make(BeanDescriptor.class);
+    private static final ClassNode PROPERTY_DESCRIPTOR_TYPE = make(PropertyDescriptor.class);
+    private static final ClassNode PROPERTY_DESCRIPTOR_ARRAY_TYPE = make(PropertyDescriptor[].class);
+    private static final ClassNode EVENT_SET_DESCRIPTOR_TYPE = make(EventSetDescriptor.class);
+    private static final ClassNode EVENT_SET_DESCRIPTOR_ARRAY_TYPE = make(EventSetDescriptor[].class);
+    private static final ClassNode METHOD_DESCRIPTOR_TYPE = make(MethodDescriptor.class);
+    private static final ClassNode METHOD_DESCRIPTOR_ARRAY_TYPE = make(MethodDescriptor[].class);
+    private static final ClassNode IMAGE_TYPE = make(Image.class);
 
     private static final String COMPONENTS = "components";
     private static final String COPY_WITH = "copyWith";
@@ -215,6 +239,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             }
         } else if (mode == RecordTypeMode.NATIVE) {
             addError(message + " when attempting to create a native record", cNode);
+        } else {
+            createBeanInfoClass(cNode);
         }
 
         String cName = cNode.getName();
@@ -288,6 +314,43 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if ((options == null || !memberHasValue(options, SIZE, Boolean.FALSE)) && !hasDeclaredMethod(cNode, SIZE, 0)) {
             addGeneratedMethod(cNode, SIZE, ACC_PUBLIC | ACC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
         }
+    }
+
+    private void createBeanInfoClass(ClassNode cNode) {
+        ClassNode beanInfoClass = new ClassNode(cNode.getName() + "BeanInfo", ACC_PUBLIC, SIMPLE_BEAN_INFO_TYPE);
+        beanInfoClass.addMethod("getBeanDescriptor", ACC_PUBLIC, BEAN_DESCRIPTOR_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
+            ctorX(BEAN_DESCRIPTOR_TYPE, args(classX(cNode)))
+        ));
+        final List<PropertyNode> pList = getInstanceProperties(cNode);
+        BlockStatement block = new BlockStatement();
+        VariableExpression p = varX("p", PROPERTY_DESCRIPTOR_ARRAY_TYPE);
+        block.addStatement(
+            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(pList.size()))))
+        );
+        for (int i = 0; i < pList.size(); i++) {
+            String name = pList.get(i).getName();
+            block.addStatement(tryCatchS(
+                assignS(indexX(p, constX(i)), ctorX(PROPERTY_DESCRIPTOR_TYPE, args(constX(name), classX(cNode), constX(name), nullX())))
+            ));
+        }
+        block.addStatement(returnS(p));
+        beanInfoClass.addMethod("getPropertyDescriptors", ACC_PUBLIC, PROPERTY_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block);
+        beanInfoClass.addMethod("getEventSetDescriptors", ACC_PUBLIC, EVENT_SET_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
+            new ArrayExpression(EVENT_SET_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+        ));
+        beanInfoClass.addMethod("getMethodDescriptors", ACC_PUBLIC, METHOD_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
+            new ArrayExpression(METHOD_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+        ));
+        beanInfoClass.addMethod("getDefaultPropertyIndex", ACC_PUBLIC, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
+            constX(-1)
+        ));
+        beanInfoClass.addMethod("getDefaultEventIndex", ACC_PUBLIC, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
+            constX(-1)
+        ));
+        beanInfoClass.addMethod("getIcon", ACC_PUBLIC, IMAGE_TYPE, params(param(int_TYPE, "iconKind")), ClassNode.EMPTY_ARRAY, returnS(
+            nullX()
+        ));
+        cNode.getModule().addClass(beanInfoClass);
     }
 
     private void createComponents(ClassNode cNode, List<PropertyNode> pList) {

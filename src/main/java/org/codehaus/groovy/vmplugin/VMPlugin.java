@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,6 +31,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -178,5 +180,18 @@ public interface VMPlugin {
      */
     default Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
         return Collections.emptyMap();
+    }
+
+    /**
+     * Returns the list of record component names or the empty list if
+     * the class is not a record or running on a pre16 JDK.
+     *
+     * @param maybeRecord the class in question
+     * @return the default list of names
+     * @since 4.0.15
+     */
+    @Incubating
+    default List<String> getRecordComponentNames(Class<?> maybeRecord) {
+        return Collections.emptyList();
     }
 }

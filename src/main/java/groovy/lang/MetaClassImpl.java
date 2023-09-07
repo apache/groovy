@@ -85,6 +85,7 @@ import org.objectweb.asm.Opcodes;
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
+import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -98,6 +99,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -3351,6 +3353,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // build up the metaproperties based on the public fields, property descriptors,
         // and the getters and setters
         setupProperties(descriptors);
+        addRecordProperties(info);
 
         EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
         for (EventSetDescriptor descriptor : eventDescriptors) {
@@ -3367,6 +3370,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     listeners.put(name, AMBIGUOUS_LISTENER_METHOD);
                 } else {
                     listeners.put(name, metaMethod);
+                }
+            }
+        }
+    }
+
+    private void addRecordProperties(BeanInfo info) {
+        VMPlugin plugin = VMPluginFactory.getPlugin();
+        Set<String> componentNames = new HashSet<>(plugin.getRecordComponentNames(theClass));
+        if (!componentNames.isEmpty()) {
+            MethodDescriptor[] methodDescriptors = info.getMethodDescriptors();
+            Map<String, MetaProperty> propIndex = classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>());
+            for (MethodDescriptor md : methodDescriptors) {
+                if (md.getMethod().getParameterCount() != 0) continue;
+                String name = md.getName();
+                if (componentNames.contains(name)) {
+                    CachedMethod cachedMethod = CachedMethod.find(md.getMethod());
+                    if (cachedMethod != null) {
+                        MetaMethod accessor = findMethod(cachedMethod);
+                        createMetaBeanProperty(propIndex, name, true, accessor);
+                    }
                 }
             }
         }

@@ -19,6 +19,7 @@
 package groovy.json
 
 import groovy.transform.Canonical
+import groovy.transform.TupleConstructor
 import org.junit.Test
 
 import static groovy.json.JsonOutput.toJson
@@ -543,6 +544,14 @@ final class JsonOutputTest {
             }""", json)
         '''
     }
+
+    @Test // GROOVY-11167
+    void testRecordsVsClass() {
+        def a = new PersonA('Guillaume')
+        def b = new PersonB('Jochen')
+        def c = new PersonC('Eric')
+        assert toJson([a,b,c]) == '[{"name":"Guillaume"},{"name":"Jochen"},{"name":"Eric"}]'
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -567,4 +576,18 @@ class JsonStreet {
 
 enum JsonStreetKind {
     street, boulevard, avenue
+}
+
+import groovy.transform.RecordOptions
+import static groovy.transform.RecordTypeMode.*
+
+@RecordOptions(mode=EMULATE)
+record PersonA(String name) {}
+
+// different JDK versions will cover the NATIVE case
+record PersonB(String name) {}
+
+@TupleConstructor
+class PersonC {
+    String name
 }
