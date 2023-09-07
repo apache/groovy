@@ -91,4 +91,13 @@ public class Java16 extends Java10 {
         }
         return super.getRecordComponentNames(maybeRecord);
     }
+
+    @Override
+    @Incubating
+    public List<String> getRecordComponentNames(Class<?> maybeRecord) {
+        if (maybeRecord.isRecord()) {
+            return Arrays.stream(maybeRecord.getRecordComponents()).map(RecordComponent::getName).toList();
+        }
+        return super.getRecordComponentNames(maybeRecord);
+    }
 }
