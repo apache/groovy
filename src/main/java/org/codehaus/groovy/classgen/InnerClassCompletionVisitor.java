@@ -68,6 +68,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -101,24 +102,29 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
     public void visitClass(final ClassNode node) {
         classNode = node;
         thisField = null;
-        InnerClassNode innerClass = null;
-        if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
-            innerClass = (InnerClassNode) node;
-            thisField = innerClass.getField("this$0");
-            if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
+
+        if (node.isEnum() || node.isInterface() || isTrait(node.getOuterClass())) return;
+
+        // if the class has an inner class, add methods to support private member access
+        if (node.getInnerClasses().hasNext()) {
+            addDispatcherMethods(node);
+        }
+
+        if (node instanceof InnerClassNode) {
+            thisField = node.getField("this$0");
+            InnerClassNode innerClass = (InnerClassNode) node;
+            if (innerClass.getVariableScope() == null && node.getDeclaredConstructors().isEmpty()) {
                 // add empty default constructor
                 addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
-        }
-        if (node.isEnum() || node.isInterface()) return;
-        // use Iterator.hasNext() to check for available inner classes
-        if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
-        if (innerClass == null) return;
-        super.visitClass(node);
-        boolean innerPojo = hasAnnotation(innerClass, ClassHelper.make(POJO.class))
-                && hasAnnotation(innerClass, ClassHelper.make(CompileStatic.class));
-        if (!innerPojo) {
-            addMopMethods(innerClass);
+
+            super.visitClass(node);
+
+            boolean innerPojo = hasAnnotation(node, ClassHelper.make(POJO.class))
+                    && hasAnnotation(node, ClassHelper.make(CompileStatic.class));
+            if (!innerPojo) {
+                addMopMethods(innerClass);
+            }
         }
     }
 

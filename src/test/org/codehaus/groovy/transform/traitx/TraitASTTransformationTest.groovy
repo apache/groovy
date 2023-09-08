@@ -22,6 +22,7 @@ import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.junit.Ignore
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -419,100 +420,6 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testClassImplementingTraitWithSameMethod() {
-        assertScript shell, '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-            }
-            def x = new AB()
-            assert x.foo() == 2 // default order, B is first
-        '''
-
-        assertScript shell, '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements B,A {
-            }
-            def x = new AB()
-            assert x.foo() == 1 // default order, A is first
-        '''
-
-        assertScript shell, '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-                int foo() {
-                    A.super.foo() // explicit use of A
-                }
-            }
-            def x = new AB()
-            assert x.foo() == 1
-        '''
-
-        assertScript shell, '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-                int foo() {
-                    A.super.foo()  // explicit take of A
-                }
-            }
-            def x = new AB()
-            assert x.foo() == 1
-        '''
-
-        // make sure it is compatible with @CompileStatic
-        assertScript shell, '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            @CompileStatic
-            class AB implements A,B {
-                int foo() {
-                    B.super.foo()
-                }
-            }
-            def x = new AB()
-            assert x.foo() == 2
-        '''
-
-        // GROOVY-10144
-        assertScript shell, '''
-            trait T {
-                def m() { 'T' }
-            }
-            class C implements T {
-                @Override
-                def m() {
-                    'C' + T.super.m()
-                }
-            }
-            String result = new C().m()
-            assert result == 'CT'
-        '''
-    }
-
-    @Test
     void testTraitWithGenerics1() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
             assertScript shell, """
@@ -554,7 +461,8 @@ final class TraitASTTransformationTest {
         }
     }
 
-    @Test // GROOVY-9760
+    // GROOVY-9760
+    @Test
     void testTraitWithGenerics3() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
             assertScript shell, """
@@ -574,7 +482,8 @@ final class TraitASTTransformationTest {
         }
     }
 
-    @Test // GROOVY-11012
+    // GROOVY-11012
+    @Test
     void testTraitWithGenerics4() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
             assertScript shell, """
@@ -1030,7 +939,126 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9255
+    @Test
+    void testTraitMethodOverloadAndOverride() {
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+            }
+
+            def x = new AB()
+            assert x.foo() == 2 // default order, B is first
+        '''
+
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class BA implements B,A {
+            }
+
+            def x = new BA()
+            assert x.foo() == 1 // default order, A is first
+        '''
+
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    A.super.foo() // explicit delegation to A
+                }
+            }
+
+            def x = new AB()
+            assert x.foo() == 1
+        '''
+
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    A.super.foo()  // explicit delegation to A
+                }
+            }
+
+            def x = new AB()
+            assert x.foo() == 1
+        '''
+
+        // make sure it is compatible with @CompileStatic
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            @CompileStatic
+            class AB implements A,B {
+                int foo() {
+                    B.super.foo()
+                }
+            }
+
+            def x = new AB()
+            assert x.foo() == 2
+        '''
+
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B extends A {
+                int foo() {
+                    A.super.foo() * 2
+                }
+            }
+            class C implements B {
+            }
+
+            def c = new C()
+            assert c.foo() == 2
+        '''
+
+        assertScript shell, '''
+            @CompileStatic
+            trait A {
+                int foo() { 1 }
+            }
+            @CompileStatic
+            trait B extends A {
+                int foo() {
+                    A.super.foo() * 2
+                }
+            }
+            class C implements B {
+            }
+
+            def c = new C()
+            assert c.foo() == 2
+        '''
+    }
+
+    // GROOVY-9255
+    @Test
     void testTraitSuperPropertyGet() {
         assertScript shell, '''
             trait T {
@@ -1081,7 +1109,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9672
+    // GROOVY-9672
+    @Test
     void testTraitSuperPropertyGetStatic() {
         assertScript shell, '''
             trait T {
@@ -1204,7 +1233,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9672
+    // GROOVY-9672
+    @Test
     void testTraitSuperPropertySetStatic() {
         assertScript shell, '''
             trait T {
@@ -1261,7 +1291,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9673
+    // GROOVY-9673
+    @Test
     void testTraitSuperPropertySetWithOverloads() {
         assertScript shell, '''
             trait T {
@@ -1298,7 +1329,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9672
+    // GROOVY-9672
+    @Test
     void testTraitSuperCallStatic() {
         assertScript shell, '''
             trait A {
@@ -1316,40 +1348,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-9256
     @Test
-    void testTraitSuperCallWhenExtendingAnotherTrait() {
-        assertScript shell, '''
-            trait Foo {
-                int foo() { 1 }
-            }
-            trait Bar extends Foo {
-                int foo() {
-                    2*Foo.super.foo()
-                }
-            }
-            class Baz implements Bar {}
-            def b = new Baz()
-            assert b.foo() == 2
-        '''
-
-        assertScript shell, '''
-            @CompileStatic
-            trait Foo {
-                int foo() { 1 }
-            }
-            @CompileStatic
-            trait Bar extends Foo {
-                int foo() {
-                    2*Foo.super.foo()
-                }
-            }
-            class Baz implements Bar {}
-            def b = new Baz()
-            assert b.foo() == 2
-        '''
-    }
-
-    @Test // GROOVY-9256
     void testTraitSuperCallWithinClosure() {
         assertScript shell, '''
             trait T {
@@ -1550,7 +1550,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8243
+    // GROOVY-8243
+    @Test
     void testSAMCoercion5() {
         assertScript shell, '''
             trait T {
@@ -1568,7 +1569,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8244
+    // GROOVY-8244
+    @Test
     void testSAMCoercion6() {
         assertScript shell, '''
             trait T {
@@ -1781,7 +1783,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-7288
+    // GROOVY-7288
+    @Test
     void testClassWithTraitDelegate() {
         assertScript shell, '''
             trait T {
@@ -1801,7 +1804,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9739
+    // GROOVY-9739
+    @Test
     void testTraitExtendsTraitWithDelegate() {
         assertScript shell, '''
             class Main implements ClientSupport {
@@ -1832,7 +1836,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9901
+    // GROOVY-9901
+    @Test
     void testTraitWithMemozied() {
         assertScript shell, '''
             trait Foo {
@@ -1875,7 +1880,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-10553
+    // GROOVY-10553
+    @Test
     void testAnnotationShouldBeCarriedOver2() {
         assertScript shell, '''
             import java.lang.annotation.*
@@ -2099,9 +2105,9 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-6672
     @Test
     void testTraitShouldNotBeAllowedToExtendInterface() {
-        // GROOVY-6672
         def err = shouldFail shell, '''
             trait Foo extends Serializable {}
             Foo x = null
@@ -2254,7 +2260,8 @@ final class TraitASTTransformationTest {
         assert err =~ 'Prefix expressions on trait fields/properties are not supported in traits'
     }
 
-    @Test // GROOVY-6691
+    // GROOVY-6691
+    @Test
     void testTraitImplementingGenericSuperTrait() {
         assertScript shell, '''
             class App {}
@@ -2656,7 +2663,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-6708
+    // GROOVY-6708
+    @Test
     void testCovariantReturnTypeWithGenericsInheritance() {
         assertScript shell, '''
             trait Top<X> {
@@ -2742,7 +2750,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-7058
+    // GROOVY-7058
+    @Test
     void testShouldNotThrowNPEBecauseOfIncompleteGenericsTypeInformation() {
         assertScript shell, '''
             class Project { Task task(String name, Map args) {} }
@@ -2761,7 +2770,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-7123
+    // GROOVY-7123
+    @Test
     void testHelperSetterShouldNotReturnVoid() {
         assertScript shell, '''
             trait A {
@@ -2817,7 +2827,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-10767
+    // GROOVY-10767
+    @Test
     void testSimpleSelfTypeInSubTrait2() {
         assertScript shell, '''
             trait A {
@@ -3009,7 +3020,8 @@ final class TraitASTTransformationTest {
         }
     }
 
-    @Test // GROOVY-10521
+    // GROOVY-10521
+    @Test
     void testVariadicMethodOfPrecompiledTrait() {
         assertScript shell, """import org.codehaus.groovy.ast.*
             class CT implements ${T10521.name} {
@@ -3043,7 +3055,8 @@ final class TraitASTTransformationTest {
         """
     }
 
-    @Test // GROOVY-7287
+    // GROOVY-7287
+    @Test
     void testTraitWithMethodLevelGenericsShadowing1() {
         assertScript shell, '''
             trait Configurable<ConfigObject> {
@@ -3090,7 +3103,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-7287
+    // GROOVY-7287
+    @Test
     void testTraitWithMethodLevelGenericsShadowing2() {
         assertScript shell, '''
             trait SomeTrait {
@@ -3114,7 +3128,8 @@ final class TraitASTTransformationTest {
         }
     }
 
-    @Test // GROOVY-7297
+    // GROOVY-7297
+    @Test
     void testMethodLevelGenericsFromPrecompiledClass() {
         assertScript shell, """
             class C implements ${T7297.name} {
@@ -3125,7 +3140,8 @@ final class TraitASTTransformationTest {
         """
     }
 
-    @Test // GROOVY-9763
+    // GROOVY-9763
+    @Test
     void testTraitWithStaticMethodGenericsSC() {
         assertScript shell, '''
             trait T {
@@ -3143,7 +3159,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8281
+    // GROOVY-8281
+    @Test
     void testFinalFieldsDependency() {
         assertScript shell, '''
             trait MyTrait {
@@ -3158,7 +3175,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8282
+    // GROOVY-8282
+    @Test
     void testBareNamedArgumentPrivateMethodCall() {
         assertScript shell, '''
             trait BugReproduction {
@@ -3176,7 +3194,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8730
+    // GROOVY-8730
+    @Test
     void testAbstractMethodsNotNeededInHelperClass() {
         assertScript shell, '''
             import static groovy.test.GroovyAssert.shouldFail
@@ -3195,7 +3214,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8731
+    // GROOVY-8731
+    @Test
     void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound() {
         assertScript shell, '''
             trait StaticFooBarBaz {
@@ -3220,7 +3240,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-6716
+    // GROOVY-6716
+    @Test
     void testAnonymousInnerClassStyleTraitUsage() {
         assertScript shell, '''
             interface Foo { def foo() }
@@ -3237,7 +3258,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8722
+    // GROOVY-8722
+    @Test
     void testFinalModifierSupport() {
         assertScript shell, '''
             import static java.lang.reflect.Modifier.isFinal
@@ -3292,7 +3314,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8880
+    // GROOVY-8880
+    @Test
     void testTraitWithInitBlock() {
         assertScript shell, '''
             trait MyTrait {
@@ -3312,7 +3335,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8880
+    // GROOVY-8880
+    @Test
     void testTraitWithStaticInitBlock() {
         assertScript shell, '''
             trait MyTrait {
@@ -3330,7 +3354,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8892
+    // GROOVY-8892
+    @Test
     void testTraitWithStaticInitBlockWithAndWithoutProps() {
         assertScript shell, '''
             class Counter {
@@ -3354,7 +3379,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8954
+    // GROOVY-8954
+    @Test
     void testTraitWithPropertyAlsoFromInterfaceSC() {
         assertScript shell, '''
             interface DomainProp {
@@ -3374,7 +3400,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8272
+    // GROOVY-8272
+    @Test
     void testTraitAccessToInheritedStaticMethods() {
         assertScript shell, '''
             @CompileStatic
@@ -3397,7 +3424,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-10312
+    // GROOVY-10312
+    @Test
     void testTraitAccessToInheritedStaticMethods2() {
         assertScript shell, '''
             trait Foo {
@@ -3427,7 +3455,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-10312
+    // GROOVY-10312
+    @Test
     void testTraitAccessToInheritedStaticMethods3() {
         assertScript shell, '''
             interface Foo {
@@ -3455,7 +3484,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9386
+    // GROOVY-9386
+    @Test
     void testTraitPropertyInitializedByTap() {
         assertScript shell, '''
             class P {
@@ -3474,7 +3504,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9386
+    // GROOVY-9386
+    @Test
     void testTraitPropertyInitializedByWith() {
         assertScript shell, '''
             class P {
@@ -3493,7 +3524,8 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-8000
+    // GROOVY-8000
+    @Test
     void testTraitMultiLevelGenerics() {
         assertScript shell, '''
             trait TopTrait<X> { X getSomeThing() {}
@@ -3522,17 +3554,20 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test // GROOVY-9660
+    // GROOVY-9660
+    @Test
     void testAsGenericsParam() {
         assertScript shell, '''
             trait Data {}
             class TestData implements Data {}
             class AbstractData<D extends Data>{ D data }
+
             new AbstractData<TestData>()
         '''
     }
 
     // GROOVY-10598
+    @Ignore @Test
     void testAssignOperators() {
         assertScript shell, '''
             trait T {
@@ -3546,6 +3581,7 @@ final class TraitASTTransformationTest {
                     def var = null
                 }
             }
+
             new C().test()
         '''
     }

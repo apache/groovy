@@ -179,9 +179,8 @@ public abstract class Traits {
      * @return true if the classnode represents a trait
      */
     public static boolean isTrait(final Class<?> clazz) {
-        return clazz!=null && clazz.getAnnotation(Trait.class)!=null;
+        return clazz != null && clazz.getAnnotation(Trait.class) != null;
     }
-
 
     /**
      * Returns true if the specified class node is annotated with the {@link Trait} interface.
