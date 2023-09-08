@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.trait;
 
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingMethodException;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.Sealed;
 import groovy.transform.Trait;
@@ -36,6 +38,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -69,6 +72,7 @@ import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OVERRIDE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
@@ -76,11 +80,19 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classList2args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.forS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -284,6 +296,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             cNode.removeField(field.getName());
         }
 
+        addMopMethods(helper);
         copyClassAnnotations(helper);
         registerASTTransformations(helper);
 
@@ -320,6 +333,42 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private void resolveScope(final ClassNode cNode) {
         new VariableScopeVisitor(sourceUnit).visitClass(cNode);
+    }
+
+    private static void addMopMethods(final ClassNode helper) {
+        var interfaces = helper.getOuterClass().getInterfaces();
+        var delegates = new ArrayList<String>(interfaces.length);
+        for (int i = interfaces.length; i > 0; ) { var maybeTrait = interfaces[--i];
+            if (Traits.isTrait(maybeTrait)) delegates.add(Traits.helperClassName(maybeTrait));
+        }
+        if (!delegates.isEmpty()) {
+            var bs = new BlockStatement();
+            var e1 = localVarX("e1", classX(MissingMethodException.class).getType());
+            var e2 = new Parameter(  classX(GroovyRuntimeException.class).getType(), "e2");
+            Parameter[] params = {new Parameter(STRING_TYPE, "name"), new Parameter(OBJECT_TYPE, "args")};
+            helper.addSyntheticMethod("$static_methodMissing", ACC_PUBLIC | ACC_STATIC, OBJECT_TYPE, params, new ClassNode[]{e1.getType()}, bs);
+
+            /* public static Object $static_methodMissing(String name, Object args) throws MissingMethodException {
+             *   MissingMethodException e1 = new MissingMethodException(name, TheTrait.class, args.tail())
+             *   for (Class delegate in [...]) {
+             *     try {
+             *       delegate.(name)(*args)
+             *     } catch (GroovyRuntimeException e2) {
+             *       e1.addSuppressed(e2)
+             *     }
+             *   }
+             *   throw e1
+             * }
+             */
+
+            bs.addStatement(declS(e1, ctorX(e1.getType(), args(varX(params[0]), classX(helper.getOuterClass()), callX(varX(params[1]), "tail")))));
+
+            Parameter delegate = new Parameter(CLASS_Type, "delegate");
+            Statement callName = returnS(callX(varX(delegate), varX(params[0]), new SpreadExpression(varX(params[1]))));
+            bs.addStatement(forS(delegate, classList2args(delegates), tryCatchS(callName).addCatch(catchS(e2, stmt(callX(varX(e1), "addSuppressed", varX(e2)))))));
+
+            bs.addStatement(throwS(varX(e1)));
+        }
     }
 
     /**

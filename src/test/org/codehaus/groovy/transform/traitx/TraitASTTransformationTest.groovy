@@ -1055,6 +1055,24 @@ final class TraitASTTransformationTest {
             def c = new C()
             assert c.foo() == 2
         '''
+
+        // GROOVY-8587
+        assertScript shell, '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B extends A {
+            }
+            class C implements B {
+                @Override
+                int foo() {
+                    B.super.foo() * 2
+                }
+            }
+
+            def c = new C()
+            assert c.foo() == 2
+        '''
     }
 
     // GROOVY-9255

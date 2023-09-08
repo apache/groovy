@@ -72,6 +72,7 @@ groovyCore {
     bridgedClasses *supportClasses,
             'org.codehaus.groovy.classgen.Verifier',
             'org.codehaus.groovy.ast.tools.GeneralUtils',
+            'org.codehaus.groovy.ast.stmt.TryCatchStatement',
             'org.codehaus.groovy.runtime.StringGroovyMethods',
             'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.transform.stc.DefaultTypeCheckingExtension'

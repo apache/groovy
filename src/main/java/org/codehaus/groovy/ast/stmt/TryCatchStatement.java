@@ -31,12 +31,11 @@ import java.util.List;
  * Represents a try { ... } catch () finally {} statement in Groovy
  */
 public class TryCatchStatement extends Statement {
-    private static final String IS_RESOURCE = "_IS_RESOURCE";
-    private Statement tryStatement;
-    private final List<ExpressionStatement> resourceStatements = new ArrayList<>(4);
-    private final List<CatchStatement> catchStatements = new ArrayList<>(4);
-    private Statement finallyStatement;
 
+    private Statement tryStatement;
+    private Statement finallyStatement;
+    private final List<CatchStatement> catchStatements = new ArrayList<>();
+    private final List<ExpressionStatement> resourceStatements = new ArrayList<>();
 
     public TryCatchStatement(Statement tryStatement, Statement finallyStatement) {
         this.tryStatement = tryStatement;
@@ -48,44 +47,18 @@ public class TryCatchStatement extends Statement {
         visitor.visitTryCatchFinally(this);
     }
 
-    public List<ExpressionStatement> getResourceStatements() {
-        return resourceStatements;
-    }
+    //
 
-    public List<CatchStatement> getCatchStatements() {
-        return catchStatements;
+    public Statement getTryStatement() {
+        return tryStatement;
     }
 
     public Statement getFinallyStatement() {
         return finallyStatement;
     }
 
-    public Statement getTryStatement() {
-        return tryStatement;
-    }
-
-    public void addResource(ExpressionStatement resourceStatement) {
-        Expression resourceExpression = resourceStatement.getExpression();
-        if (!(resourceExpression instanceof DeclarationExpression || resourceExpression instanceof VariableExpression)) {
-            throw new GroovyBugError("resourceStatement should be a variable declaration statement or a variable");
-        }
-
-        resourceExpression.putNodeMetaData(IS_RESOURCE, Boolean.TRUE);
-
-        resourceStatements.add(resourceStatement);
-    }
-
-    public static boolean isResource(Expression expression) {
-        Boolean r = expression.getNodeMetaData(IS_RESOURCE);
-        return null != r && r;
-    }
-
-    public void addCatch(CatchStatement catchStatement) {
-        catchStatements.add(catchStatement);
-    }
-
     /**
-     * @return the catch statement of the given index or null
+     * @return The catch statement of the given index or null.
      */
     public CatchStatement getCatchStatement(int idx) {
         if (idx >= 0 && idx < catchStatements.size()) {
@@ -94,8 +67,12 @@ public class TryCatchStatement extends Statement {
         return null;
     }
 
+    public List<CatchStatement> getCatchStatements() {
+        return catchStatements;
+    }
+
     /**
-     * @return the resource statement of the given index or null
+     * @return The resource statement of the given index or null.
      */
     public ExpressionStatement getResourceStatement(int idx) {
         if (idx >= 0 && idx < resourceStatements.size()) {
@@ -104,15 +81,52 @@ public class TryCatchStatement extends Statement {
         return null;
     }
 
+    public List<ExpressionStatement> getResourceStatements() {
+        return resourceStatements;
+    }
+
+    public static boolean isResource(final Expression expression) {
+        return Boolean.TRUE.equals(expression.getNodeMetaData("_IS_RESOURCE"));
+    }
+
+    //--------------------------------------------------------------------------
+
     public void setTryStatement(Statement tryStatement) {
         this.tryStatement = tryStatement;
+    }
+
+    public void setFinallyStatement(Statement finallyStatement) {
+        this.finallyStatement = finallyStatement;
     }
 
     public void setCatchStatement(int idx, CatchStatement catchStatement) {
         catchStatements.set(idx, catchStatement);
     }
 
-    public void setFinallyStatement(Statement finallyStatement) {
-        this.finallyStatement = finallyStatement;
+    //
+
+    @Deprecated
+    public void addCatch$$bridge(CatchStatement catchStatement) {
+        addCatch(catchStatement);
+    }
+
+    public TryCatchStatement addCatch(CatchStatement catchStatement) {
+        catchStatements.add(catchStatement);
+        return this;
+    }
+
+    @Deprecated
+    public void addResource$$bridge(ExpressionStatement resourceStatement) {
+        addResource(resourceStatement);
+    }
+
+    public TryCatchStatement addResource(ExpressionStatement resourceStatement) {
+        Expression resourceExpression = resourceStatement.getExpression();
+        if (!(resourceExpression instanceof DeclarationExpression || resourceExpression instanceof VariableExpression)) {
+            throw new GroovyBugError("resourceStatement should be a variable declaration statement or a variable");
+        }
+        resourceExpression.putNodeMetaData("_IS_RESOURCE", Boolean.TRUE);
+        resourceStatements.add(resourceStatement);
+        return this;
     }
 }
