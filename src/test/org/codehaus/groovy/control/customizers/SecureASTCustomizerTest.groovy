@@ -526,6 +526,62 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
+    void testAllowedReceiversMethod() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            static main(args) {
+                1.plus(1)
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    "string".toUpperCase()
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    2.0.multiply(4)
+                }
+            ''')
+        }
+    }
+
+    @Test
+    void testAllowedReceiversClass() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            class Dummy {
+                static main(args) {
+                    1.plus(1)
+                }
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        "string".toUpperCase()
+                    }
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        2.0.multiply(4)
+                    }
+                }
+            ''')
+        }
+    }
+
+    @Test
     void testDisallowedReceivers() {
         customizer.disallowedReceiversClasses = [String]
         def shell = new GroovyShell(configuration)
