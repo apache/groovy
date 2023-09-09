@@ -374,7 +374,62 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         assert hasSecurityException {shell.evaluate('2.0.multiply(4)')}
     }
 
-    void testReceiverBlackList() {
+    void testAllowedReceiversMethod() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            static main(args) {
+                1.plus(1)
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    "string".toUpperCase()
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    2.0.multiply(4)
+                }
+            ''')
+        }
+    }
+
+    void testAllowedReceiversClass() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            class Dummy {
+                static main(args) {
+                    1.plus(1)
+                }
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        "string".toUpperCase()
+                    }
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        2.0.multiply(4)
+                    }
+                }
+            ''')
+        }
+    }
+
+    void testDisallowedReceivers() {
+        customizer.disallowedReceiversClasses = [String]
         def shell = new GroovyShell(configuration)
         customizer.receiversClassesBlackList = [String]
         shell.evaluate('1.plus(1)')
