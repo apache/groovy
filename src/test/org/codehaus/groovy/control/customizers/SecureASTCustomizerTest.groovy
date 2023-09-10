@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.syntax.Types
 import org.junit.Before
 import org.junit.Test
@@ -526,6 +527,111 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
+    void testAllowedReceiversMethod() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            static main(args) {
+                1.plus(1)
+            }
+        ''')
+        shell.run('''
+            def main(args) {
+                1.plus(1)
+            }
+        ''', 'dummyName')
+        shell.evaluate('''
+            def run() {
+                1.plus(1)
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    "string".toUpperCase()
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                def main(args) {
+                    "string".toUpperCase()
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                def run() {
+                    "string".toUpperCase()
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                static main(args) {
+                    2.0.multiply(4)
+                }
+            ''')
+        }
+    }
+
+    @Test
+    void testAllowedReceiversClass() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            class Dummy {
+                static main(args) {
+                    assert 2 == 1.plus(1)
+                }
+            }
+        ''')
+        shell.run('''
+            class Dummy {
+                def main(args) {
+                    assert 2 == 1.plus(1)
+                }
+            }
+        ''', 'dummyName')
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        "string".toUpperCase()
+                    }
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    def main(args) {
+                        "string".toUpperCase()
+                    }
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    def run() {
+                        "string".toUpperCase()
+                    }
+                }
+            ''')
+        }
+        assert hasSecurityException {
+            shell.evaluate('''
+                class Dummy {
+                    static main(args) {
+                        2.0.multiply(4)
+                    }
+                }
+            ''')
+        }
+    }
+
+    @Test
     void testDisallowedReceivers() {
         customizer.disallowedReceiversClasses = [String]
         def shell = new GroovyShell(configuration)
@@ -533,6 +639,34 @@ final class SecureASTCustomizerTest {
         shell.evaluate('2.0.multiply(4)')
         assert hasSecurityException {
             shell.evaluate('"string".toUpperCase()')
+        }
+    }
+
+    @Test
+    void testDisallowedReceiversInvokerHelperEdgeCase() {
+        assert 'a,b' == InvokerHelper.invokeStaticMethod(String, 'join', [',', ['a', 'b']] as Object[])
+        customizer.disallowedReceiversClasses = [InvokerHelper]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            def run() {
+                assert 'a,b' == String.join(',', ['a', 'b'])
+            }
+        ''')
+        shell.run('''
+            def main() {
+                assert 'a,b' == String.join(',', ['a', 'b'])
+            }
+        ''', 'dummyName')
+        shell.evaluate('''
+            static main(args) {
+                assert 'a,b' == String.join(',', ['a', 'b'])
+            }
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                import org.codehaus.groovy.runtime.InvokerHelper
+                InvokerHelper.invokeStaticMethod(String, 'join', [',', ['a', 'b']] as Object[])
+            ''')
         }
     }
 
@@ -560,9 +694,9 @@ final class SecureASTCustomizerTest {
     @Test // GROOVY-4978
     void testVisitMethodBody() {
         customizer.disallowedImports = [
-                "java.lang.System",
-                "groovy.lang.GroovyShell",
-                "groovy.lang.GroovyClassLoader"]
+            "java.lang.System",
+            "groovy.lang.GroovyShell",
+            "groovy.lang.GroovyClassLoader"]
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
         assert hasSecurityException {
