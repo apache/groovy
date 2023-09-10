@@ -620,36 +620,36 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
-        Parameter[] initialParams = methodNode.getParameters();
-        Parameter[] newParams = new Parameter[initialParams.length + 1];
-        newParams[0] = createSelfParameter(traitClass, methodNode.isStatic());
-        System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
-        final int mod = methodNode.isPrivate() ? ACC_PRIVATE : ACC_PUBLIC | (methodNode.isFinal() ? ACC_FINAL : 0);
+        Parameter[] methodParams = methodNode.getParameters();
+        Parameter[] helperParams = new Parameter[methodParams.length + 1];
+        helperParams[0] = createSelfParameter(traitClass,methodNode.isStatic());
+        System.arraycopy(methodParams, 0, helperParams, 1, methodParams.length);
+
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
-                mod | ACC_STATIC,
+                (methodNode.isPrivate() ? ACC_PRIVATE : ACC_PUBLIC) | (methodNode.isFinal() ? ACC_FINAL : 0) | ACC_STATIC,
                 methodNode.getReturnType(),
-                newParams,
+                helperParams,
                 methodNode.getExceptions(),
-                processBody(varX(newParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
+                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
         );
         for (AnnotationNode annotation : methodNode.getAnnotations()) {
             if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
                 mNode.addAnnotation(annotation);
             }
         }
+        mNode.setGenericsTypes(methodNode.getGenericsTypes());
+        mNode.setSourcePosition(methodNode);
         if (methodNode.isAbstract()) {
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         } else {
             methodNode.addAnnotation(new AnnotationNode(Traits.IMPLEMENTED_CLASSNODE));
         }
-        mNode.setGenericsTypes(methodNode.getGenericsTypes());
-        mNode.setSourcePosition(methodNode);
-        methodNode.setCode(null);
-
         if (!methodNode.isPrivate() && !methodNode.isStatic()) {
             methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
+        methodNode.setCode(null);
+
         return mNode;
     }
 
