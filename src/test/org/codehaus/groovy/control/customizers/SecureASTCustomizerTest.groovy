@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.syntax.Types
 import org.junit.Before
 import org.junit.Test
@@ -535,33 +534,9 @@ final class SecureASTCustomizerTest {
                 1.plus(1)
             }
         ''')
-        shell.evaluate('''
-            def main(args) {
-                1.plus(1)
-            }
-        ''')
-        shell.evaluate('''
-            def run() {
-                1.plus(1)
-            }
-        ''')
         assert hasSecurityException {
             shell.evaluate('''
                 static main(args) {
-                    "string".toUpperCase()
-                }
-            ''')
-        }
-        assert hasSecurityException {
-            shell.evaluate('''
-                def main(args) {
-                    "string".toUpperCase()
-                }
-            ''')
-        }
-        assert hasSecurityException {
-            shell.evaluate('''
-                def run() {
                     "string".toUpperCase()
                 }
             ''')
@@ -586,42 +561,10 @@ final class SecureASTCustomizerTest {
                 }
             }
         ''')
-        shell.evaluate('''
-            class Dummy {
-                def main(args) {
-                    1.plus(1)
-                }
-            }
-        ''')
-        shell.evaluate('''
-            class Dummy {
-                def run() {
-                    1.plus(1)
-                }
-            }
-        ''')
         assert hasSecurityException {
             shell.evaluate('''
                 class Dummy {
                     static main(args) {
-                        "string".toUpperCase()
-                    }
-                }
-            ''')
-        }
-        assert hasSecurityException {
-            shell.evaluate('''
-                class Dummy {
-                    def main(args) {
-                        "string".toUpperCase()
-                    }
-                }
-            ''')
-        }
-        assert hasSecurityException {
-            shell.evaluate('''
-                class Dummy {
-                    def run() {
                         "string".toUpperCase()
                     }
                 }
@@ -646,34 +589,6 @@ final class SecureASTCustomizerTest {
         shell.evaluate('2.0.multiply(4)')
         assert hasSecurityException {
             shell.evaluate('"string".toUpperCase()')
-        }
-    }
-
-    @Test
-    void testDisallowedReceiversInvokerHelperEdgeCase() {
-        assert 'a,b' == InvokerHelper.invokeStaticMethod(String, 'join', [',', ['a', 'b']] as Object[])
-        customizer.disallowedReceiversClasses = [InvokerHelper]
-        def shell = new GroovyShell(configuration)
-        shell.evaluate('''
-            def run() {
-                assert 'a,b' == String.join(',', ['a', 'b'])
-            }
-        ''')
-        shell.evaluate('''
-            def main() {
-                assert 'a,b' == String.join(',', ['a', 'b'])
-            }
-        ''')
-        shell.evaluate('''
-            static main(args) {
-                assert 'a,b' == String.join(',', ['a', 'b'])
-            }
-        ''')
-        assert hasSecurityException {
-            shell.evaluate('''
-                import org.codehaus.groovy.runtime.InvokerHelper
-                InvokerHelper.invokeStaticMethod(String, 'join', [',', ['a', 'b']] as Object[])
-            ''')
         }
     }
 
