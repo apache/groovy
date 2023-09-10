@@ -138,7 +138,7 @@ assert (this instanceof Script)
         '''
     }
 
-    void testBaseClassJep445Example() {
+    void testBaseScriptJep445Example() {
         assertScript '''import groovy.transform.BaseScript
             // tag::jep445_example[]
             abstract class CustomScript extends Script {
@@ -147,7 +147,7 @@ assert (this instanceof Script)
 
             @BaseScript(CustomScript)
             def run() {
-              assert theMeaningOfLife == 42
+                assert theMeaningOfLife == 42
             }
             // end::jep445_example[]
         '''

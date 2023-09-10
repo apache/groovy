@@ -425,7 +425,6 @@ public class ModuleNode extends ASTNode {
         } else {
             fields.forEach(classNode::addField);
             classNode.addAnnotations(existingRun.getAnnotations());
-            classNode.setScriptBody(false);
             classNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             existingRun.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
