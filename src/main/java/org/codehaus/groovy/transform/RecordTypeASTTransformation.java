@@ -324,10 +324,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         BlockStatement block = new BlockStatement();
         VariableExpression p = varX("p", PROPERTY_DESCRIPTOR_ARRAY_TYPE);
-        List<Expression> expressions = new ArrayList<>();
-        expressions.add(constX(pList.size()));
+        List<Expression> listNumProps = new ArrayList<>();
+        listNumProps.add(constX(pList.size()));
         block.addStatement(
-            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), expressions))
+            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), listNumProps))
         );
         for (int i = 0; i < pList.size(); i++) {
             String name = pList.get(i).getName();
