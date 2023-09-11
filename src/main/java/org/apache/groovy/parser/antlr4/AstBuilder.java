@@ -1313,6 +1313,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (isNonSealed) {
             classNode.addAnnotation(makeAnnotationNode(NonSealed.class));
         }
+        if (asBoolean(ctx.TRAIT())) {
+            classNode.addAnnotation(makeAnnotationNode(Trait.class));
+        }
+
 
         classNode.addAnnotations(modifierManager.getAnnotations());
         if (isRecord && classNode.getAnnotations().stream().noneMatch(a ->
