@@ -310,7 +310,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkAbstractDeclaration(final MethodNode methodNode) {
-        if (!methodNode.isAbstract() || currentClass.isAbstract()) return;
+        if (!methodNode.isAbstract() || currentClass.isAbstract() || methodNode.isDefault()) return;
 
         addError("Can't have an abstract method in a non-abstract class." +
                 " The " + getDescription(currentClass) + " must be declared abstract or the method '" +
