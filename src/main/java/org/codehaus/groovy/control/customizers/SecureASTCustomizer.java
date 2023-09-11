@@ -119,8 +119,8 @@ import java.util.Map;
  * <p>
  * Eventually, if the features provided here are not sufficient, you may implement custom AST filtering handlers, either
  * implementing the {@link StatementChecker} interface or {@link ExpressionChecker} interface then register your
- * handlers thanks to the {@link #addExpressionCheckers(org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker...)}
- * and {@link #addStatementCheckers(org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker...)}
+ * handlers thanks to the {@link #addExpressionCheckers(ExpressionChecker...)}
+ * and {@link #addStatementCheckers(StatementChecker...)}
  * methods.
  * <p>
  * Here is an example of usage. We will create a groovy classloader which only supports arithmetic operations and imports
@@ -128,57 +128,69 @@ import java.util.Map;
  *
  * <pre>
  * final ImportCustomizer imports = new ImportCustomizer().addStaticStars('java.lang.Math') // add static import of java.lang.Math
- *     final SecureASTCustomizer secure = new SecureASTCustomizer()
- *     secure.with {
- *         closuresAllowed = false
- *         methodDefinitionAllowed = false
+ * final SecureASTCustomizer secure = new SecureASTCustomizer()
+ * secure.with {
+ *     closuresAllowed = false
+ *     methodDefinitionAllowed = false
  *
- *         allowedImports = []
- *         allowedStaticImports = []
- *         allowedStaticStarImports = ['java.lang.Math'] // only java.lang.Math is allowed
+ *     allowedImports = []
+ *     allowedStaticImports = []
+ *     allowedStaticStarImports = ['java.lang.Math'] // only java.lang.Math is allowed
  *
- *         allowedTokens = [
- *                 PLUS,
- *                 MINUS,
- *                 MULTIPLY,
- *                 DIVIDE,
- *                 REMAINDER,
- *                 POWER,
- *                 PLUS_PLUS,
- *                 MINUS_MINUS,
- *                 COMPARE_EQUAL,
- *                 COMPARE_NOT_EQUAL,
- *                 COMPARE_LESS_THAN,
- *                 COMPARE_LESS_THAN_EQUAL,
- *                 COMPARE_GREATER_THAN,
- *                 COMPARE_GREATER_THAN_EQUAL,
- *         ].asImmutable()
+ *     allowedTokens = [
+ *             PLUS,
+ *             MINUS,
+ *             MULTIPLY,
+ *             DIVIDE,
+ *             REMAINDER,
+ *             POWER,
+ *             PLUS_PLUS,
+ *             MINUS_MINUS,
+ *             COMPARE_EQUAL,
+ *             COMPARE_NOT_EQUAL,
+ *             COMPARE_LESS_THAN,
+ *             COMPARE_LESS_THAN_EQUAL,
+ *             COMPARE_GREATER_THAN,
+ *             COMPARE_GREATER_THAN_EQUAL,
+ *     ].asImmutable()
  *
- *         allowedConstantTypesClasses = [
- *                 Integer,
- *                 Float,
- *                 Long,
- *                 Double,
- *                 BigDecimal,
- *                 Integer.TYPE,
- *                 Long.TYPE,
- *                 Float.TYPE,
- *                 Double.TYPE
- *         ].asImmutable()
+ *     allowedConstantTypesClasses = [
+ *             Integer,
+ *             Float,
+ *             Long,
+ *             Double,
+ *             BigDecimal,
+ *             Integer.TYPE,
+ *             Long.TYPE,
+ *             Float.TYPE,
+ *             Double.TYPE
+ *     ].asImmutable()
  *
- *         allowedReceiversClasses = [
- *                 Math,
- *                 Integer,
- *                 Float,
- *                 Double,
- *                 Long,
- *                 BigDecimal
- *         ].asImmutable()
- *     }
- *     CompilerConfiguration config = new CompilerConfiguration()
- *     config.addCompilationCustomizers(imports, secure)
- *     GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
+ *     allowedReceiversClasses = [
+ *             Math,
+ *             Integer,
+ *             Float,
+ *             Double,
+ *             Long,
+ *             BigDecimal
+ *     ].asImmutable()
+ * }
+ * CompilerConfiguration config = new CompilerConfiguration()
+ * config.addCompilationCustomizers(imports, secure)
+ * GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
+ * <p>
+ *  Note: {@code SecureASTCustomizer} allows you to lock down the grammar of scripts but by itself isn't intended
+ *  to be the complete solution of all security issues when running scripts on the JVM. You might also want to
+ *  consider setting the {@code groovy.grape.enable} System property to false, augmenting use of the customizer
+ *  with additional techniques, and following standard security principles for JVM applications.
+ *  <p>
+ *  For more information, please read:
+ *  <li><a href="https://melix.github.io/blog/2015/03/sandboxing.html">Improved sandboxing of Groovy scripts</a></li>
+ *  <li><a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">Oracle's Secure Coding Guidelines</a></li>
+ *  <li><a href="https://snyk.io/blog/10-java-security-best-practices/">10 Java security best practices</a></li>
+ *  <li><a href="https://www.infoworld.com/article/2076837/twelve-rules-for-developing-more-secure-java-code.html">Thirteen rules for developing secure Java applications</a></li>
+ *  <li><a href="https://www.guardrails.io/blog/12-java-security-best-practices/">12 Java Security Best Practices</a></li>
  *
  * @since 1.8.0
  */
