@@ -324,8 +324,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         BlockStatement block = new BlockStatement();
         VariableExpression p = varX("p", PROPERTY_DESCRIPTOR_ARRAY_TYPE);
+        List<Expression> expressions = new ArrayList<>();
+        expressions.add(constX(pList.size()));
         block.addStatement(
-            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(pList.size()))))
+            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), expressions))
         );
         for (int i = 0; i < pList.size(); i++) {
             String name = pList.get(i).getName();
@@ -335,11 +337,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
         block.addStatement(returnS(p));
         beanInfoClass.addMethod("getPropertyDescriptors", ACC_PUBLIC, PROPERTY_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block);
+        List<Expression> listOf0 = new ArrayList<>();
+        listOf0.add(constX(0));
         beanInfoClass.addMethod("getEventSetDescriptors", ACC_PUBLIC, EVENT_SET_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
-            new ArrayExpression(EVENT_SET_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+            new ArrayExpression(EVENT_SET_DESCRIPTOR_TYPE, Collections.emptyList(), listOf0)
         ));
         beanInfoClass.addMethod("getMethodDescriptors", ACC_PUBLIC, METHOD_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
-            new ArrayExpression(METHOD_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+            new ArrayExpression(METHOD_DESCRIPTOR_TYPE, Collections.emptyList(), listOf0)
         ));
         beanInfoClass.addMethod("getDefaultPropertyIndex", ACC_PUBLIC, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
             constX(-1)
