@@ -1313,9 +1313,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (isNonSealed) {
             classNode.addAnnotation(makeAnnotationNode(NonSealed.class));
         }
-        if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
-            classNode.addAnnotation(makeAnnotationNode(Trait.class));
-        }
+
         classNode.addAnnotations(modifierManager.getAnnotations());
         if (isRecord && classNode.getAnnotations().stream().noneMatch(a ->
                         a.getClassNode().getName().equals(RECORD_TYPE_NAME))) {
@@ -1336,10 +1334,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 classNode.setSuperClass(scs[0]);
             }
             classNode.setInterfaces(this.visitTypeList(ctx.is));
-            this.initUsingGenerics(classNode);
-
-        } else if (isInterfaceWithDefaultMethods) { // GROOVY-9259
-            classNode.setInterfaces(this.visitTypeList(ctx.scs));
             this.initUsingGenerics(classNode);
 
         } else if (isInterface) {
@@ -1877,7 +1871,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         }
 
-        modifiers |= !modifierManager.containsAny(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.containsAny(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
+        modifiers |= !modifierManager.containsAny(STATIC) && classNode.isInterface() && !(isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && modifierManager.containsAny(DEFAULT)) ? Opcodes.ACC_ABSTRACT : 0;
         MethodNode methodNode = new MethodNode(methodName, modifiers, returnType, parameters, exceptions, code);
         classNode.addMethod(methodNode);
 
