@@ -222,8 +222,9 @@ final class TraitASTTransformationTest {
                 void setLabel3(String val) { this.@name = val }
                 String getName() { name }
             }
+            class Person implements Named {
+            }
 
-            class Person implements Named {}
             def p = new Person()
             assert p.name == null
             p.setLabel('label')
@@ -298,6 +299,7 @@ final class TraitASTTransformationTest {
             })
             class Bob implements Foo {
             }
+
             def b = new Bob()
             assert b.sum(1) == 1
             b.index = 5
@@ -315,9 +317,10 @@ final class TraitASTTransformationTest {
                public String foo() { bar()+msg }
 
             }
-
             @CompileStatic
-            class A implements Foo { String bar() {'bar'}}
+            class A implements Foo {
+                String bar() {'bar'}
+            }
 
             assert new A().foo() == 'barfoo'
         '''
@@ -909,7 +912,9 @@ final class TraitASTTransformationTest {
                 String blah() { message }
                 void update(String msg ) { message = msg}
             }
-            class Foo implements TestTrait{}
+            class Foo implements TestTrait {
+            }
+
             def foo = new Foo()
             assert foo.message == 'Hello'
             assert foo.blah() == 'Hello'
@@ -926,7 +931,9 @@ final class TraitASTTransformationTest {
                 void update(String msg ) { message = msg}
             }
             @CompileStatic
-            class Foo implements TestTrait{}
+            class Foo implements TestTrait{
+            }
+
             @CompileStatic
             void test() {
                 def foo = new Foo()
@@ -1649,12 +1656,14 @@ final class TraitASTTransformationTest {
             trait Trait1 { private int v = 111; int getValueFromTrait1() { v } }
             trait Trait2 { private int v = 222; int getValueFromTrait2() { v } }
             class Impl implements Trait1,Trait2 {}
+
             def t = new Impl()
             assert t.valueFromTrait1 == 111
             assert t.valueFromTrait2 == 222
         '''
     }
 
+    // GROOVY-7213, GROOVY-8859
     @Test
     void testPrivateMethodInTrait() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
@@ -1668,8 +1677,27 @@ final class TraitASTTransformationTest {
                 class C implements T {
                 }
 
-                def c = new C()
-                assert c.foo() == 'secret'
+                assert new C().foo() == 'secret'
+            """
+
+            shouldFail shell, """
+                $mode
+                trait T {
+                    public String bar() {
+                        'public'
+                    }
+                    private String baz() {
+                        'private'
+                    }
+                }
+                $mode
+                class C implements T {
+                    def foo() {
+                        bar() + baz()
+                    }
+                }
+
+                assert new C().foo() == 'publicprivate'
             """
         }
     }
