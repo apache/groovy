@@ -1313,7 +1313,7 @@ assert "$p1.first $p1.last" == 'Johnny Depp'
 // end::builder_simple_usage[]
 // tag::builder_simple_alternatives[]
 def p2 = new Person(first: 'Keira', last: 'Knightley', born: 1985)
-def p3 = new Person().with {
+def p3 = new Person().tap {
     first = 'Geoffrey'
     last = 'Rush'
     born = 1951
