@@ -3424,27 +3424,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClassNode visitCreatedName(final CreatedNameContext ctx) {
         ClassNode classNode = null;
-
         if (asBoolean(ctx.qualifiedClassName())) {
             classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
-
             if (asBoolean(ctx.typeArgumentsOrDiamond())) {
                 classNode.setGenericsTypes(
                         this.visitTypeArgumentsOrDiamond(ctx.typeArgumentsOrDiamond()));
+                configureAST(classNode, ctx);
             }
-
-            classNode = configureAST(classNode, ctx);
         } else if (asBoolean(ctx.primitiveType())) {
-            classNode = configureAST(
-                    this.visitPrimitiveType(ctx.primitiveType()),
-                    ctx);
+            classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
         }
-
-        if (!asBoolean(classNode)) {
+        if (classNode == null) {
             throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
         }
-
-        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt())); // GROOVY-11178
 
         return classNode;
     }

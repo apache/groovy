@@ -264,13 +264,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
-    public void visitMethod(final MethodNode node) {
-        super.visitMethod(node);
-        visitGenericsTypeAnnotations(node);
-        visitTypeAnnotations(node.getReturnType());
-    }
-
-    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
@@ -334,7 +327,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node, final boolean preferImports) {
-        visitTypeAnnotations(type);
+        if (type.isRedirectNode() || !type.isPrimaryClassNode()) {
+            visitTypeAnnotations(type); // JSR 308 support
+        }
         if (preferImports) {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
@@ -1189,27 +1184,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private void visitTypeAnnotations(final ClassNode node) {
         visitAnnotations(node.getTypeAnnotations());
-        visitGenericsTypeAnnotations(node);
-    }
-
-    private void visitGenericsTypeAnnotations(final ClassNode node) {
-        GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (node.isUsingGenerics() && genericsTypes != null) {
-            visitGenericsTypeAnnotations(genericsTypes);
-        }
-    }
-
-    private void visitGenericsTypeAnnotations(final MethodNode node) {
-        GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (genericsTypes != null) {
-            visitGenericsTypeAnnotations(genericsTypes);
-        }
-    }
-
-    private void visitGenericsTypeAnnotations(final GenericsType[] genericsTypes) {
-        for (GenericsType gt : genericsTypes) {
-            visitTypeAnnotations(gt.getType());
-        }
     }
 
     @Override
@@ -1423,6 +1397,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             String name = type.getName();
             ClassNode typeType = type.getType();
+            visitTypeAnnotations(typeType); // JSR 308 support
             GenericsTypeName gtn = new GenericsTypeName(name);
             boolean isWildcardGT = QUESTION_MARK.equals(name);
             boolean dealWithGenerics = (level == 0 || (level > 0 && genericParameterNames.get(gtn) != null));
@@ -1473,7 +1448,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (genericsType.isResolved()) return true;
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
-        visitTypeAnnotations(type); // JSR-308 support
+        visitTypeAnnotations(type); // JSR 308 support
         GenericsType tp = genericParameterNames.get(new GenericsTypeName(type.getName()));
         if (tp != null) {
             ClassNode[] bounds = tp.getUpperBounds();

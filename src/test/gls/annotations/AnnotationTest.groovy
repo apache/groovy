@@ -963,8 +963,8 @@ final class AnnotationTest {
             public @interface NonNull { }
 
             class Foo {
-              @NonNull public Integer foo
-              @NonNull Integer bar(@NonNull String baz) {}
+                @NonNull public Integer foo
+                @NonNull Integer bar(@NonNull String baz) {}
             }
 
             def expected = '@NonNull()'
@@ -975,6 +975,30 @@ final class AnnotationTest {
             def baz = bar.parameters[0]
             assert baz.annotations[0].toString() == expected
         '''
+    }
+
+    // GROOVY-11178
+    @Test
+    void testAnnotationOnConstructorType() {
+        assertScript shell, '''package p
+            @Target(TYPE_USE)
+            @interface Tag {}
+
+            @groovy.transform.ASTTest(phase=CLASS_GENERATION, value={
+                def cce = node.rightExpression
+                assert cce.type.typeAnnotations.size() == 1
+                assert cce.type.typeAnnotations[0].classNode.name == 'p.Tag'
+            })
+            Object o = new @Tag Object()
+        '''
+
+        def err = shouldFail shell, '''\
+            @Target(PARAMETER)
+            @interface Tag {}
+
+            Object o = new @Tag Object()
+        '''
+        assert err =~ /Annotation @Tag is not allowed on element TYPE/
     }
 
     // GROOVY-8234
