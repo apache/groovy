@@ -1001,6 +1001,19 @@ final class AnnotationTest {
         assert err =~ /Annotation @Tag is not allowed on element TYPE/
     }
 
+    // GROOVY-9155
+    @Test
+    void testAnnotationOnTypeArgumentType() {
+        def err = shouldFail shell, '''package p
+            @Target(TYPE_USE)
+            @interface Tag {}
+
+            def m(List<@Tag(foo="") String> strings) {
+            }
+        '''
+        assert err =~ /'foo' is not part of the annotation Tag in @p.Tag/
+    }
+
     // GROOVY-8234
     @Test
     void testAnnotationWithRepeatableSupported() {
