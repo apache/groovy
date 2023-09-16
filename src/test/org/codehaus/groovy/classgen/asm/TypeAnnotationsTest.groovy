@@ -20,12 +20,14 @@ package org.codehaus.groovy.classgen.asm
 
 final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
-    void testTypeAnnotationsForConstructor() {
-        assert compile(method: '<init>', classNamePattern: 'HasConstructor', '''
-            import java.lang.annotation.*
-            import static java.lang.annotation.RetentionPolicy.RUNTIME
-            import static java.lang.annotation.ElementType.*
+    private final String imports = '''\
+        |import java.lang.annotation.*
+        |import static java.lang.annotation.ElementType.*
+        |import static java.lang.annotation.RetentionPolicy.*
+        |'''.stripMargin()
 
+    void testTypeAnnotationsForConstructor() {
+        def bytecode = compile(classNamePattern: 'HasConstructor', method: '<init>', imports + '''
             @Retention(RUNTIME) @Target(CONSTRUCTOR) @interface CtorAnno  { }
             @Retention(RUNTIME) @Target(TYPE_USE)    @interface TypeAnno0 { }
             @Retention(RUNTIME) @Target(TYPE_USE)    @interface TypeAnno1 { }
@@ -33,7 +35,8 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
             class HasConstructor {
                 @CtorAnno @TypeAnno0 @TypeAnno1 HasConstructor() { }
             }
-        ''').hasSequence([
+        ''')
+        assert bytecode.hasSequence([
                 'public <init>()V',
                 '@LCtorAnno;()',
                 '@LTypeAnno0;() : METHOD_RETURN',
@@ -42,26 +45,24 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForMethod1() {
-        assert compile(method: 'foo','''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(method: 'foo', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno4 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno5 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno6 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno7 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno8 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno9 { }
 
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno3 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno4 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno5 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno6 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno7 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno8 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno9 { }
-
-        <@TypeAnno0 X extends @TypeAnno1 Number> @TypeAnno2 List<@TypeAnno3 X> foo(
-            @TypeAnno4 List<@TypeAnno5 ? super @TypeAnno6 Map<@TypeAnno7 X, @TypeAnno8 ?>> arg
-        ) throws @TypeAnno9 Exception {}
-        ''').hasSequence([
+            <@TypeAnno0 X extends @TypeAnno1 Number> @TypeAnno2 List<@TypeAnno3 X> foo(
+                @TypeAnno4 List<@TypeAnno5 ? super @TypeAnno6 Map<@TypeAnno7 X, @TypeAnno8 ?>> arg
+            ) throws @TypeAnno9 Exception {
+            }
+        ''')
+        assert bytecode.hasSequence([
                 'public foo(Ljava/util/List;)Ljava/util/List;',
                 '@LTypeAnno0;() : METHOD_TYPE_PARAMETER 0, null',
                 '@LTypeAnno1;() : METHOD_TYPE_PARAMETER_BOUND 0, 0, null',
@@ -77,30 +78,27 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForMethod2() {
-        assert compile(method: 'foo','''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(method: 'foo', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeParameterAnno { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno4 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno5 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno6 { }
 
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeParameterAnno { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno3 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno4 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno5 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno6 { }
-
-        <@TypeAnno0 @TypeParameterAnno E extends @TypeAnno1 Number & @TypeAnno2 List<@TypeAnno3 E>> void foo(
-            @TypeAnno4 E arg1, @TypeAnno5 int arg2, @TypeAnno6 int arg3
-        ) {
-            // TODO support in code examples below
-            try {
-                numbers.addAll(new @TypeAnno5 ArrayList<@TypeAnno6 Integer>());
-            } catch (@TypeAnno7 Throwable ignore) {
+            <@TypeAnno0 @TypeParameterAnno E extends @TypeAnno1 Number & @TypeAnno2 List<@TypeAnno3 E>> void foo(
+                @TypeAnno4 E arg1, @TypeAnno5 int arg2, @TypeAnno6 int arg3
+            ) {
+                // TODO support in code examples below
+                try {
+                    numbers.addAll(new @TypeAnno5 ArrayList<@TypeAnno6 Integer>());
+                } catch (@TypeAnno7 Throwable ignore) {
+                }
             }
-        }
-        ''').hasSequence([
+        ''')
+        assert bytecode.hasSequence([
                 'public foo(Ljava/lang/Number;II)V',
                 '@LTypeAnno0;() : METHOD_TYPE_PARAMETER 0, null',
                 '@LTypeParameterAnno;() : METHOD_TYPE_PARAMETER 0, null',
@@ -114,39 +112,36 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForMethod3() {
-        assert compile(method: 'get', classNamePattern: 'Foo','''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(classNamePattern: 'Foo', method: 'get', imports + '''
+            @Retention(RUNTIME) @Target(PARAMETER) @interface ParameterAnno { }
+            @Retention(RUNTIME) @Target([TYPE_PARAMETER, TYPE_USE]) @interface TypeUseAndParameterAnno { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno4 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno5 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno6 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno7 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno8 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno9 { }
 
-        @Retention(RUNTIME) @Target([PARAMETER]) @interface ParameterAnno { }
-        @Retention(RUNTIME) @Target([TYPE_PARAMETER, TYPE_USE]) @interface TypeUseAndParameterAnno { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno3 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno4 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno5 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno6 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno7 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno8 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno9 { }
-
-        class Foo<X, Y> {
-            @TypeAnno0 Map<@TypeAnno1 ? extends X, ? super @TypeAnno2 Y>
-            get(@TypeAnno3 @ParameterAnno @TypeUseAndParameterAnno List<@TypeAnno4 List<@TypeAnno5 X>> arg1,
-                Map<@TypeAnno6 ? extends @TypeAnno7 X, @TypeAnno8 ? super @TypeAnno9 Y> arg2
-            ) throws @TypeAnno0 RuntimeException, @TypeAnno1 IOException {
-                // TODO support in code example below
-                @TypeAnno0 List<@TypeAnno1 Integer> numbers = Arrays.<@TypeAnno3 Integer>asList(5, 3, 50, 24, 40, 2, 9, 18);
-                if (arg2 instanceof @TypeAnno2 Number) {
-                    return (@TypeAnno3 Map<@TypeAnno4 ? extends X, ? super @TypeAnno5 Y>) null;
+            class Foo<X, Y> {
+                @TypeAnno0 Map<@TypeAnno1 ? extends X, ? super @TypeAnno2 Y>
+                get(@TypeAnno3 @ParameterAnno @TypeUseAndParameterAnno List<@TypeAnno4 List<@TypeAnno5 X>> arg1,
+                    Map<@TypeAnno6 ? extends @TypeAnno7 X, @TypeAnno8 ? super @TypeAnno9 Y> arg2
+                ) throws @TypeAnno0 RuntimeException, @TypeAnno1 IOException {
+                    // TODO support in code example below
+                    @TypeAnno0 List<@TypeAnno1 Integer> numbers = Arrays.<@TypeAnno3 Integer>asList(5, 3, 50, 24, 40, 2, 9, 18);
+                    if (arg2 instanceof @TypeAnno2 Number) {
+                        return (@TypeAnno3 Map<@TypeAnno4 ? extends X, ? super @TypeAnno5 Y>) null;
+                    }
+                    //if (numbers.stream().sorted(@TypeAnno6 Integer::compareTo).count() > 0) return null; // needs grammar tweak
+                    return arg2;
                 }
-                //if (numbers.stream().sorted(@TypeAnno6 Integer::compareTo).count() > 0) return null; // needs grammar tweak
-                return arg2;
             }
-        }
-        ''').hasSequence([
+        ''')
+        assert bytecode.hasSequence([
                 'public get(Ljava/util/List;Ljava/util/Map;)Ljava/util/Map; throws java/lang/RuntimeException',
                 '@LTypeAnno0;() : METHOD_RETURN, null',
                 '@LTypeAnno1;() : METHOD_RETURN, 0;',
@@ -164,22 +159,44 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    // GROOVY-9154
+    void testTypeAnnotationsForMethod4() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'sizeZeroOrPositive', '''\
+            @Grab("net.jqwik:jqwik:1.1.4")
+            import net.jqwik.api.ForAll
+            import net.jqwik.api.Property
+            import net.jqwik.api.constraints.IntRange
+
+            @groovy.transform.CompileStatic
+            class Foo {
+                @Property
+                boolean sizeZeroOrPositive(@ForAll List<@IntRange(min=0, max=10) Integer> items) {
+                    items.size() >= 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'public sizeZeroOrPositive(Ljava/util/List;)Z',
+            '@Lnet/jqwik/api/Property;()',
+            '@Lnet/jqwik/api/constraints/IntRange;(min=0, max=10) : METHOD_FORMAL_PARAMETER 0, 0;',
+            '// annotable parameter count: 1 (visible)',
+            '@Lnet/jqwik/api/ForAll;() // parameter 0'
+        ])
+    }
+
     void testTypeAnnotationsForField1() {
-        assert compile(field: 'documents', classNamePattern: 'Foo', '''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(classNamePattern: 'Foo', field: 'documents', imports + '''
+            @Retention(RUNTIME) @Target(FIELD) @interface FieldAnno { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { }
 
-        @Retention(RUNTIME) @Target([FIELD]) @interface FieldAnno { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno3 { }
-
-        class Foo {
-            public @FieldAnno Map<@TypeAnno0 ? extends @TypeAnno1 CharSequence, @TypeAnno2 List<@TypeAnno3 ?>> documents = null
-        }
-        ''').hasSequence([
+            class Foo {
+                public @FieldAnno Map<@TypeAnno0 ? extends @TypeAnno1 CharSequence, @TypeAnno2 List<@TypeAnno3 ?>> documents
+            }
+        ''')
+        assert bytecode.hasSequence([
                 'public Ljava/util/Map; documents',
                 '@LFieldAnno;()',
                 '@LTypeAnno0;() : FIELD, 0;',
@@ -190,21 +207,18 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForField2() {
-        assert compile(field: 'numbers', classNamePattern: 'Bar','''
-        import java.lang.annotation.*
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(classNamePattern: 'Bar', field: 'numbers', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno4 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno5 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno6 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno7 { }
 
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno4 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno5 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno6 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeAnno7 { }
-
-        class Bar {
-            // TODO support type annotations for code (TypeAnno7 below)
-            public @TypeAnno4 List<@TypeAnno5 ? super @TypeAnno6 Integer> numbers = Arrays.<@TypeAnno7 Integer>asList(5, 3, 50, 24, 40, 2, 9, 18)
-        }
-        ''').hasSequence([
+            class Bar {
+                // TODO support type annotations for code (TypeAnno7 below)
+                public @TypeAnno4 List<@TypeAnno5 ? super @TypeAnno6 Integer> numbers = Arrays.<@TypeAnno7 Integer>asList(5, 3, 50, 24, 40, 2, 9, 18)
+            }
+        ''')
+        assert bytecode.hasSequence([
                 'public Ljava/util/List; numbers',
                 '@LTypeAnno4;() : FIELD, null',
                 '@LTypeAnno5;() : FIELD, 0;',
@@ -213,29 +227,25 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForClass() {
-        assert compile(classNamePattern: 'MyClass','''
-        import java.lang.annotation.*
-        import java.rmi.Remote
-        import static java.lang.annotation.RetentionPolicy.RUNTIME
-        import static java.lang.annotation.ElementType.*
+        def bytecode = compile(classNamePattern: 'MyClass', imports + '''import java.rmi.Remote
+            @Retention(RUNTIME) @Target(TYPE) @interface TypeAnno { }
+            @Retention(RUNTIME) @Target(TYPE_PARAMETER) @interface TypeParameterAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_PARAMETER) @interface TypeParameterAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno2 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno3 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno4 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno5 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno6 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno7 { }
 
-        @Retention(RUNTIME) @Target([TYPE]) @interface TypeAnno { }
-        @Retention(RUNTIME) @Target([TYPE_PARAMETER]) @interface TypeParameterAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_PARAMETER]) @interface TypeParameterAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno0 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno1 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno2 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno3 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno4 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno5 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno6 { }
-        @Retention(RUNTIME) @Target([TYPE_USE]) @interface TypeUseAnno7 { }
-
-        @TypeAnno @TypeUseAnno0 @TypeUseAnno1
-        class MyClass<@TypeParameterAnno1 @TypeParameterAnno2 X, @TypeParameterAnno2 Y extends @TypeUseAnno2 File>
-                extends @TypeUseAnno3 ArrayList<@TypeUseAnno4 X>
-                implements @TypeUseAnno5 Remote, @TypeUseAnno6 List<@TypeUseAnno7 X> { }
-        ''').hasSequence([
+            @TypeAnno @TypeUseAnno0 @TypeUseAnno1
+            class MyClass<@TypeParameterAnno1 @TypeParameterAnno2 X, @TypeParameterAnno2 Y extends @TypeUseAnno2 File>
+                    extends @TypeUseAnno3 ArrayList<@TypeUseAnno4 X>
+                    implements @TypeUseAnno5 Remote, @TypeUseAnno6 List<@TypeUseAnno7 X> { }
+        ''')
+        assert bytecode.hasSequence([
                 'public class MyClass extends java/util/ArrayList implements java/rmi/Remote java/util/List groovy/lang/GroovyObject {',
                 '@LTypeAnno;()',
                 '@LTypeUseAnno0;()',
