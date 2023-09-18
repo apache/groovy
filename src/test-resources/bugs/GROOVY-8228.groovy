@@ -68,13 +68,13 @@ sealed class JSR308Class extends @JSR308 JSR308Super<@JSR308 List> implements @J
 }
 
 def jsr308 = new JSR308Class()
-/*
+
 def result = jsr308.test(new ArrayList<@JSR308 String>(['1', '2']))
 assert result == ['1', '2', 'a', 'b']
 
 
 assert JSR308Class.annotatedSuperclass.type.typeName == 'JSR308Super<java.util.List>'
-assert JSR308Class.permittedSubclasses*.typeName == ['JSR308Permitted1', 'JSR308Permitted2']
+//assert JSR308Class.permittedSubclasses*.typeName == ['JSR308Permitted1', 'JSR308Permitted2']
 assert JSR308Class.annotatedInterfaces*.type*.typeName == ['JSR308Interface1<java.lang.String>', 'JSR308Interface2<java.lang.String>']
 
 Method testMethod = JSR308Class.declaredMethods.find(m -> m.name == 'test')
@@ -99,4 +99,3 @@ assert nameField.annotatedType.type == String
 // 3)
 def bounds = JSR308Interface2.typeParameters[0].annotatedBounds
 assert bounds.collect(bt -> bt.type)[0] in [CharSequence, null]
-*/
