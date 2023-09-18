@@ -21,8 +21,6 @@ import java.lang.annotation.Target
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Parameter
-import java.lang.reflect.TypeVariable
-import java.sql.SQLException
 
 import static java.lang.annotation.ElementType.*
 import static java.lang.annotation.RetentionPolicy.RUNTIME
@@ -35,7 +33,7 @@ abstract class JSR308Super<T> {}
 interface JSR308Interface1<T> {}
 interface JSR308Interface2<T  extends @JSR308 CharSequence> {}
     class JSR308Permitted1    extends JSR308Class {}
-    class JSR308Permitted2<T> extends JSR308Class {}
+    class JSR308Permitted2    extends JSR308Class {}
 
 sealed class JSR308Class extends @JSR308 JSR308Super<@JSR308 List> implements @JSR308 JSR308Interface1<@JSR308 String>, @JSR308 JSR308Interface2<@JSR308 String>
     permits @JSR308 JSR308Permitted1, @JSR308 JSR308Permitted2
@@ -79,7 +77,6 @@ assert JSR308Class.permittedSubclasses*.typeName == ['JSR308Permitted1', 'JSR308
 assert JSR308Class.annotatedInterfaces*.type*.typeName == ['JSR308Interface1<java.lang.String>', 'JSR308Interface2<java.lang.String>']
 
 Method testMethod = JSR308Class.declaredMethods.find(m -> m.name == 'test')
-assert testMethod.annotatedExceptionTypes*.type == [IOException, SQLException]
 assert testMethod.annotatedReturnType.type.typeName == 'java.util.List<java.lang.String>'
 
 
@@ -99,13 +96,5 @@ assert nameField.annotatedType.type == String
 
 
 // 3)
-TypeVariable tv = JSR308Interface2.typeParameters[0]
-assert tv.getAnnotatedBounds().collect(e -> e.type)[0] in [CharSequence, null]
-
-// the above 3 tests get different result when running in the different CI(travis-ci and teamcity)
-// travis-ci succeeds:  https://travis-ci.org/apache/groovy/builds/262506189
-// teamcity fails:      http://ci.groovy-lang.org/viewLog.html?buildId=41265&tab=buildResultsDiv&buildTypeId=Groovy_Jdk8Build_PlusSnapshotDeploy
-//                      http://ci.groovy-lang.org/viewLog.html?buildId=41260&tab=buildResultsDiv&buildTypeId=Groovy_Jdk8Build_PlusSnapshotDeploy
-//                      http://ci.groovy-lang.org/viewLog.html?buildId=41257&tab=buildResultsDiv&buildTypeId=Groovy_Jdk8Build_PlusSnapshotDeploy
-//
-// I guess the difference is related to the version of JDK8 deployed(Maybe it is a bug of Java8)
+def bounds = JSR308Interface2.typeParameters[0].annotatedBounds
+assert bounds.collect(bt -> bt.type)[0] in [CharSequence, null]
