@@ -1616,8 +1616,8 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public void addTypeAnnotation(final AnnotationNode annotation) {
-        if (!isPrimaryClassNode() && !isRedirectNode() && isResolved()) {
-            throw new GroovyBugError("Adding type annotation @" + annotation.getClassNode().getNameWithoutPackage() + " to non-primary, non-redirect node: " + getName());
+        if (!isRedirectNode() && (isResolved() || isPrimaryClassNode())) {
+            throw new GroovyBugError("Adding type annotation @" + annotation.getClassNode().getNameWithoutPackage() + " to non-redirect node: " + getName());
         }
         if (typeAnnotations == Collections.EMPTY_LIST) {
             typeAnnotations = new ArrayList<>(3);

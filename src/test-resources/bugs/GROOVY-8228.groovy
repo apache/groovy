@@ -31,12 +31,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
 @Retention(RUNTIME)
 @interface JSR308 { }
 
-class JSR308BaseClass<T> {}
+abstract class JSR308Super<T> {}
 interface JSR308Interface1<T> {}
-interface JSR308Interface2<T extends @JSR308 CharSequence> {}
+interface JSR308Interface2<T  extends @JSR308 CharSequence> {}
+    class JSR308Permitted1    extends JSR308Class {}
+    class JSR308Permitted2<T> extends JSR308Class {}
 
-class JSR308Class extends @JSR308 JSR308BaseClass<@JSR308 List> implements @JSR308 JSR308Interface1<@JSR308 String>, @JSR308 JSR308Interface2<@JSR308 String> {
-    @JSR308 private  String name;
+sealed class JSR308Class extends @JSR308 JSR308Super<@JSR308 List> implements @JSR308 JSR308Interface1<@JSR308 String>, @JSR308 JSR308Interface2<@JSR308 String>
+    permits @JSR308 JSR308Permitted1, @JSR308 JSR308Permitted2
+{
+    @JSR308 private String name;
 
     @JSR308 List<@JSR308 String> test(@JSR308 List<@JSR308 ? extends @JSR308 Object> list) throws @JSR308 IOException, @JSR308 java.sql.SQLException {
         @JSR308 List<@JSR308 String> localVar = new @JSR308 ArrayList<@JSR308 String>();
@@ -65,37 +69,38 @@ class JSR308Class extends @JSR308 JSR308BaseClass<@JSR308 List> implements @JSR3
     void test2(@JSR308 JSR308Class this) {}
 }
 
-def jsr308Class = new JSR308Class();
-def list = new ArrayList<@JSR308 String>();
-list.addAll(["1", "2"]);
-def result = jsr308Class.test(list)
-assert ['1', '2', 'a', 'b'] == result
+def jsr308 = new JSR308Class()
+def result = jsr308.test(new ArrayList<@JSR308 String>(['1', '2']))
+assert result == ['1', '2', 'a', 'b']
 
-assert 'JSR308BaseClass<java.util.List>' == JSR308Class.class.getAnnotatedSuperclass().type.typeName
-assert ['JSR308Interface1<java.lang.String>', 'JSR308Interface2<java.lang.String>'] == JSR308Class.class.getAnnotatedInterfaces().collect(e -> e.type.typeName)
 
-Method testMethod = JSR308Class.class.getDeclaredMethods().find(e -> e.name == 'test')
-assert [IOException, SQLException] == testMethod.getAnnotatedExceptionTypes().collect(e -> e.type)
-assert 'java.util.List<java.lang.String>' == testMethod.getAnnotatedReturnType().type.typeName
+assert JSR308Class.annotatedSuperclass.type.typeName == 'JSR308Super<java.util.List>'
+assert JSR308Class.permittedSubclasses*.typeName == ['JSR308Permitted1', 'JSR308Permitted2']
+assert JSR308Class.annotatedInterfaces*.type*.typeName == ['JSR308Interface1<java.lang.String>', 'JSR308Interface2<java.lang.String>']
+
+Method testMethod = JSR308Class.declaredMethods.find(m -> m.name == 'test')
+assert testMethod.annotatedExceptionTypes*.type == [IOException, SQLException]
+assert testMethod.annotatedReturnType.type.typeName == 'java.util.List<java.lang.String>'
+
 
 // 1)
-assert ['java.util.List<?>', 'java.util.List'].contains(testMethod.getAnnotatedParameterTypes().collect(e -> e.type.typeName).get(0))
+assert testMethod.annotatedParameterTypes.collect(t -> t.type.typeName)[0] in ['java.util.List', 'java.util.List<?>']
 
-Method test2Method = JSR308Class.class.getDeclaredMethods().find(e -> e.name == 'test2')
-assert JSR308Class.class == test2Method.getAnnotatedReceiverType().type
+Method test2Method = JSR308Class.declaredMethods.find(m -> m.name == 'test2')
+assert test2Method.annotatedReceiverType.type == JSR308Class
 
 
 // 2)
-Parameter listParameter = testMethod.getParameters()[0]
-assert ['java.util.List<?>', 'java.util.List'].contains(listParameter.getAnnotatedType().type.typeName)
+Parameter listParameter = testMethod.parameters[0]
+assert listParameter.annotatedType.type.typeName in ['java.util.List', 'java.util.List<?>']
 
-Field nameField = JSR308Class.class.getDeclaredField('name');
-assert String.class == nameField.getAnnotatedType().type
+Field nameField = JSR308Class.getDeclaredField('name')
+assert nameField.annotatedType.type == String
 
 
 // 3)
-TypeVariable tv = JSR308Interface2.class.getTypeParameters()[0]
-assert [CharSequence.class, null].contains(tv.getAnnotatedBounds().collect(e -> e.type).get(0))
+TypeVariable tv = JSR308Interface2.typeParameters[0]
+assert tv.getAnnotatedBounds().collect(e -> e.type)[0] in [CharSequence, null]
 
 // the above 3 tests get different result when running in the different CI(travis-ci and teamcity)
 // travis-ci succeeds:  https://travis-ci.org/apache/groovy/builds/262506189

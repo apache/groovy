@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -80,6 +82,18 @@ public final class ClassNodeTest {
 
         ClassNode packageNode = new ClassNode("com.acme.Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         assertEquals("Package", "com.acme", packageNode.getPackageName());
+    }
+
+    @Test
+    public void testTypeAnnotations() {
+        var annotation = new AnnotationNode(ClassHelper.make(Deprecated.class));
+        // TYPE_USE annotations are recoreded as class annotations, not type annotations
+        assertThrows(GroovyBugError.class, () -> classNode.addTypeAnnotation(annotation));
+
+        ClassNode reference = classNode.getPlainNodeReference();
+        reference.addTypeAnnotation(annotation);
+        assertEquals(1, reference.getTypeAnnotations().size());
+        assertEquals(0, classNode.getTypeAnnotations().size());
     }
 
     @Test

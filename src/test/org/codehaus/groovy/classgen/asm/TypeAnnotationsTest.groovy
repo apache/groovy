@@ -185,24 +185,28 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     void testTypeAnnotationsForField1() {
-        def bytecode = compile(classNamePattern: 'Foo', field: 'documents', imports + '''
-            @Retention(RUNTIME) @Target(FIELD) @interface FieldAnno { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { }
+        def bytecode = compile(classNamePattern: 'Foo', field: 'foo', imports + '''
+            @Retention(RUNTIME) @Target(FIELD) @interface FieldAnno { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno3 { String value() }
 
             class Foo {
-                public @FieldAnno Map<@TypeAnno0 ? extends @TypeAnno1 CharSequence, @TypeAnno2 List<@TypeAnno3 ?>> documents
+                public static final String FOO = "foo"
+                public @FieldAnno(value=Foo.FOO) Map<
+                    @TypeAnno0(value=Foo.FOO) ? extends @TypeAnno1(value=Foo.FOO) CharSequence,
+                    @TypeAnno2(value=Foo.FOO) List<@TypeAnno3(value=Foo.FOO) ?>
+                > foo
             }
         ''')
         assert bytecode.hasSequence([
-                'public Ljava/util/Map; documents',
-                '@LFieldAnno;()',
-                '@LTypeAnno0;() : FIELD, 0;',
-                '@LTypeAnno1;() : FIELD, 0;*',
-                '@LTypeAnno2;() : FIELD, 1;',
-                '@LTypeAnno3;() : FIELD, 1;0;'
+                'public Ljava/util/Map; foo',
+                '@LFieldAnno;(value="foo")',
+                '@LTypeAnno0;(value="foo") : FIELD, 0;',
+                '@LTypeAnno1;(value="foo") : FIELD, 0;*',
+                '@LTypeAnno2;(value="foo") : FIELD, 1;',
+                '@LTypeAnno3;(value="foo") : FIELD, 1;0;'
         ])
     }
 
@@ -226,39 +230,43 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    // GROOVY-11179
     void testTypeAnnotationsForClass() {
-        def bytecode = compile(classNamePattern: 'MyClass', imports + '''import java.rmi.Remote
-            @Retention(RUNTIME) @Target(TYPE) @interface TypeAnno { }
+        def bytecode = compile(classNamePattern: 'Baz', imports + '''
+            @Retention(RUNTIME) @Target(TYPE) @interface TypeAnno { String value() }
             @Retention(RUNTIME) @Target(TYPE_PARAMETER) @interface TypeParameterAnno1 { }
             @Retention(RUNTIME) @Target(TYPE_PARAMETER) @interface TypeParameterAnno2 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno0 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno1 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno2 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno3 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno4 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno5 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno6 { }
-            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno7 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno0 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno1 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno2 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno3 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno4 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno5 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno6 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno7 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeUseAnno8 { String value() }
 
-            @TypeAnno @TypeUseAnno0 @TypeUseAnno1
-            class MyClass<@TypeParameterAnno1 @TypeParameterAnno2 X, @TypeParameterAnno2 Y extends @TypeUseAnno2 File>
-                    extends @TypeUseAnno3 ArrayList<@TypeUseAnno4 X>
-                    implements @TypeUseAnno5 Remote, @TypeUseAnno6 List<@TypeUseAnno7 X> { }
+            @TypeAnno(value=Baz.VALUE) @TypeUseAnno0(value=Baz.VALUE) @TypeUseAnno1(value=Baz.VALUE)
+            class Baz<@TypeParameterAnno1 @TypeParameterAnno2 X, @TypeParameterAnno2 Y extends @TypeUseAnno2(value=Baz.VALUE) File>
+                    extends @TypeUseAnno3(value=Baz.VALUE) ArrayList<@TypeUseAnno4(value=Baz.VALUE) X>
+                    implements @TypeUseAnno5(value=Baz.VALUE) Serializable, @TypeUseAnno6(value=Baz.VALUE) List<@TypeUseAnno7(value=Baz.VALUE) X> {
+                public static final String VALUE = "foo"
+            }
         ''')
         assert bytecode.hasSequence([
-                'public class MyClass extends java/util/ArrayList implements java/rmi/Remote java/util/List groovy/lang/GroovyObject {',
-                '@LTypeAnno;()',
-                '@LTypeUseAnno0;()',
-                '@LTypeUseAnno1;()',
+                'public class Baz extends java/util/ArrayList implements java/io/Serializable java/util/List groovy/lang/GroovyObject {',
+                '@LTypeAnno;(value="foo")',
+                '@LTypeUseAnno0;(value="foo")',
+                '@LTypeUseAnno1;(value="foo")',
                 '@LTypeParameterAnno1;() : CLASS_TYPE_PARAMETER 0, null',
                 '@LTypeParameterAnno2;() : CLASS_TYPE_PARAMETER 0, null',
                 '@LTypeParameterAnno2;() : CLASS_TYPE_PARAMETER 1, null',
-                '@LTypeUseAnno2;() : CLASS_TYPE_PARAMETER_BOUND 1, 0, null',
-                '@LTypeUseAnno3;() : CLASS_EXTENDS -1, null',
-                '@LTypeUseAnno4;() : CLASS_EXTENDS -1, 0;',
-                '@LTypeUseAnno5;() : CLASS_EXTENDS 0, null',
-                '@LTypeUseAnno6;() : CLASS_EXTENDS 1, null',
-                '@LTypeUseAnno7;() : CLASS_EXTENDS 1, 0;'
+                '@LTypeUseAnno2;(value="foo") : CLASS_TYPE_PARAMETER_BOUND 1, 0, null',
+                '@LTypeUseAnno3;(value="foo") : CLASS_EXTENDS -1, null',
+                '@LTypeUseAnno4;(value="foo") : CLASS_EXTENDS -1, 0;',
+                '@LTypeUseAnno5;(value="foo") : CLASS_EXTENDS 0, null',
+                '@LTypeUseAnno6;(value="foo") : CLASS_EXTENDS 1, null',
+                '@LTypeUseAnno7;(value="foo") : CLASS_EXTENDS 1, 0;'
         ])
     }
 }

@@ -66,10 +66,12 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -1188,15 +1190,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     protected void visitAnnotation(final AnnotationNode node) {
-        resolveOrFail(node.getClassNode(), " for annotation", node, true);
-        // duplicates part of AnnotationVisitor because we cannot wait until later
-        for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
-            // resolve constant-looking expressions statically
-            // do it now since they get transformed away later
-            Expression value = transform(entry.getValue());
-            value = transformInlineConstants(value);
-            checkAnnotationMemberValue(value);
-            entry.setValue(value);
+        Collection<AnnotationNode> collector = currentClass.getNodeMetaData(AnnotationNode[].class);
+        if (collector != null) {
+            collector.add(node); // GROOVY-11179: defer resolve and inlining
+        } else {
+            resolveOrFail(node.getClassNode(), " for annotation", node, true);
+            // duplicates part of AnnotationVisitor because we cannot wait until later
+            for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
+                // resolve constant-looking expressions statically
+                // do it now since they get transformed away later
+                Expression value = transform(entry.getValue());
+                value = transformInlineConstants(value);
+                checkAnnotationMemberValue(value);
+                entry.setValue(value);
+            }
         }
     }
 
@@ -1259,6 +1266,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         //
 
+        if (phase < 2) node.putNodeMetaData(AnnotationNode[].class, new LinkedHashSet<>());
+
         if (!(node instanceof InnerClassNode) || Modifier.isStatic(node.getModifiers())) {
             genericParameterNames = new HashMap<>();
         }
@@ -1306,13 +1315,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             visitPackage(node.getPackage());
             visitImports(node.getModule());
+            visitAnnotations(node);
+
+            @SuppressWarnings("unchecked") // grab the collected annotations and stop collecting
+            var headerAnnotations = (Set<AnnotationNode>) node.putNodeMetaData(AnnotationNode[].class, null);
 
             node.visitContents(this);
             visitObjectInitializerStatements(node);
-
-            // GROOVY-10750: do last for inlining
-            visitTypeAnnotations(node);
-            visitAnnotations(node);
+            // GROOVY-10750, GROOVY-11179: resolve and inline
+            headerAnnotations.forEach(this::visitAnnotation);
         }
         currentClass = oldNode;
     }

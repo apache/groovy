@@ -103,19 +103,18 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
         acv.visitClass(node, this.source);
         this.currentClass = node;
-        if (node.isAnnotationDefinition()) {
-            visitAnnotations(node, ANNOTATION_TARGET);
-        } else {
-            visitAnnotations(node, TYPE_TARGET);
-            visitTypeAnnotations(node);
-        }
         PackageNode packageNode = node.getPackage();
         if (packageNode != null) {
             visitAnnotations(packageNode, PACKAGE_TARGET);
         }
+        if (node.isAnnotationDefinition()) {
+            visitAnnotations(node, ANNOTATION_TARGET);
+        } else {
+            visitAnnotations(node, TYPE_TARGET);
+            visitGenericsTypeAnnotations(node);
+        }
         visitTypeAnnotations(node.getUnresolvedSuperClass());
-        ClassNode[] interfaces = node.getInterfaces();
-        for (ClassNode anInterface : interfaces) {
+        for (ClassNode anInterface : node.getInterfaces()) {
             visitTypeAnnotations(anInterface);
         }
         if (node.isRecord()) {

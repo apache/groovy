@@ -20,18 +20,24 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -134,6 +140,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (PlaceholderVisitor.isPlaceholder((ASTNode) variable)) {
             return;
         }
+        visitTypeReference(variable.getOriginType());
 
         String scopeType    = "scope";
         String variableType = "variable";
@@ -283,7 +290,33 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return variable;
     }
 
-    private static boolean isAnonymous(final ClassNode node) {
+    private void visitTypeVariables(final GenericsType[] types) {
+        for (GenericsType type : types) {
+            visitTypeReference(type.getType());
+            if (type.getLowerBound() != null) {
+                visitTypeReference(type.getLowerBound());
+            }
+            if (type.getUpperBounds() != null) {
+                for (ClassNode bound : type.getUpperBounds()) {
+                    if (bound.getLineNumber() > 0) {
+                        visitTypeReference(bound);
+                    }
+                }
+            }
+        }
+    }
+
+    private void visitTypeReference(final ClassNode node) {
+        visitAnnotations(node.getTypeAnnotations());
+        if (node.isArray()) {
+            visitTypeReference(node.getComponentType());
+        } else if (node.getGenericsTypes() != null && !node.isGenericsPlaceHolder()
+                && (node.isRedirectNode() || (!node.isResolved() && !node.isPrimaryClassNode()))) {
+            visitTypeVariables(node.getGenericsTypes()); // "String" from "List<String> -> List<E>"
+        }
+    }
+
+    private boolean isAnonymous(final ClassNode node) {
         return (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous() && !node.isEnum());
     }
 
@@ -373,6 +406,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentClass = node;
         currentScope.setClassScope(node);
 
+        if (node.getGenericsTypes() != null) {
+            visitTypeVariables(node.getGenericsTypes());
+        }
+        ClassNode sc = node.getUnresolvedSuperClass();
+        if (sc != null && sc != ClassHelper.OBJECT_TYPE) {
+            visitTypeReference(sc);
+        }
+        for (ClassNode i : node.getUnresolvedInterfaces()) {
+            visitTypeReference(i);
+        }
+        // permitted subclasses exist in @Sealed annotations
+
         super.visitClass(node);
         if (recurseInnerClasses) {
             for (Iterator<InnerClassNode> innerClasses = node.getInnerClasses(); innerClasses.hasNext(); ) {
@@ -385,6 +430,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitField(final FieldNode node) {
         pushState(node.isStatic());
+        visitTypeReference(node.getOriginType());
         super.visitField(node);
         popState();
     }
@@ -397,12 +443,22 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    protected void visitAnnotation(final AnnotationNode node) {
+        visitTypeReference(node.getClassNode());
+        super.visitAnnotation(node);
+    }
+
+    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         pushState(node.isStatic());
         inConstructor = isConstructor;
         node.setVariableScope(currentScope);
 
         visitAnnotations(node);
+        if (node.getGenericsTypes() != null) {
+            visitTypeVariables(node.getGenericsTypes());
+        }
+        visitTypeReference(node.getReturnType());
         for (Parameter parameter : node.getParameters()) {
             visitAnnotations(parameter);
         }
@@ -413,6 +469,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 parameter.getInitialExpression().visit(this);
             }
             declare(parameter, node);
+        }
+        for (ClassNode e : node.getExceptions()) {
+            visitTypeReference(e);
         }
         visitClassCodeContainer(node.getCode());
 
@@ -464,12 +523,30 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // expressions:
 
     @Override
+    public void visitArrayExpression(final ArrayExpression expression) {
+        visitTypeReference(expression.getType());
+        super.visitArrayExpression(expression);
+    }
+
+    @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         super.visitBinaryExpression(expression);
 
         if (Types.isAssignment(expression.getOperation().getType())) {
             checkFinalFieldAccess(expression.getLeftExpression());
         }
+    }
+
+    @Override
+    public void visitCastExpression(final CastExpression expression) {
+        visitTypeReference(expression.getType());
+        super.visitCastExpression(expression);
+    }
+
+    @Override
+    public void visitClassExpression(final ClassExpression expression) {
+        visitTypeReference(expression.getType());
+        super.visitClassExpression(expression);
     }
 
     @Override
@@ -495,7 +572,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitConstantExpression(final ConstantExpression expression) {
+        if (expression instanceof AnnotationConstantExpression) {
+            visitTypeReference(expression.getType());
+        }
+        super.visitConstantExpression(expression);
+    }
+
+    @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
+        if (!expression.isSpecialCall()) visitTypeReference(expression.getType());
         boolean oldInSpecialCtorFlag = inSpecialConstructorCall;
         inSpecialConstructorCall |= expression.isSpecialCall();
         super.visitConstructorCallExpression(expression);
@@ -587,6 +673,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 expression.setImplicitThis(false);
                 expression.setMethod(method);
             }
+        } else if (expression.getGenericsTypes() != null) {
+            visitTypeVariables(expression.getGenericsTypes());
         }
         super.visitMethodCallExpression(expression);
     }
