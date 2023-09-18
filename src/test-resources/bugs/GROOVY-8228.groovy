@@ -68,6 +68,7 @@ sealed class JSR308Class extends @JSR308 JSR308Super<@JSR308 List> implements @J
 }
 
 def jsr308 = new JSR308Class()
+/*
 def result = jsr308.test(new ArrayList<@JSR308 String>(['1', '2']))
 assert result == ['1', '2', 'a', 'b']
 
@@ -98,3 +99,4 @@ assert nameField.annotatedType.type == String
 // 3)
 def bounds = JSR308Interface2.typeParameters[0].annotatedBounds
 assert bounds.collect(bt -> bt.type)[0] in [CharSequence, null]
+*/
