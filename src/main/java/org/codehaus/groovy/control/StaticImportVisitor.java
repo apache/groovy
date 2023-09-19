@@ -511,14 +511,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private static String prefix(String name) {
-        return name.startsWith("is") ? "is" : name.substring(0, 3);
-    }
-
-    private String getAccessorName(String name) {
-        return inLeftExpression ? getSetterName(name) : getGetterName(name);
-    }
-
     private Expression findStaticPropertyAccessorByFullName(ClassNode staticImportType, String accessorName) {
         Expression argumentList = inLeftExpression ? new ArgumentListExpression(EmptyExpression.INSTANCE) : ArgumentListExpression.EMPTY_ARGUMENTS;
         Expression accessorExpr = findStaticMethod(staticImportType, accessorName, argumentList);
@@ -557,9 +549,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression expression = findStaticPropertyAccessor(staticImportType, variableName);
         if (expression == null) {
             if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
-                FieldNode field = getField(staticImportType, variableName);
-                if (field != null && field.isStatic())
+                FieldNode field = getField(staticImportType, variableName, FieldNode::isStatic);
+                if (field != null) {
                     expression = newStaticPropertyX(staticImportType, variableName);
+                }
             }
         }
         return expression;
@@ -600,6 +593,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private static PropertyExpression newStaticPropertyX(ClassNode type, String name) {
         return new PropertyExpression(new ClassExpression(type.getPlainNodeReference()), name);
+    }
+
+    private String getAccessorName(String name) {
+        return inLeftExpression ? getSetterName(name) : getGetterName(name);
+    }
+
+    private static String prefix(String name) {
+        return name.startsWith("is") ? "is" : name.substring(0, 3);
     }
 
     @Override

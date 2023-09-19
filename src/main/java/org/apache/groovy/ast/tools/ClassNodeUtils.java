@@ -19,6 +19,7 @@
 package org.apache.groovy.ast.tools;
 
 import org.apache.groovy.util.BeanUtils;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -41,12 +42,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
@@ -59,8 +59,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * Utility class for working with ClassNodes
  */
 public class ClassNodeUtils {
-
-    private ClassNodeUtils() { }
 
     /**
      * Formats a type name into a human-readable version. For arrays, appends "[]" to the formatted
@@ -92,16 +90,13 @@ public class ClassNodeUtils {
      *
      * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
      */
-    public static MethodNode addGeneratedMethod(final ClassNode cNode, final String name,
-                                final int modifiers,
-                                final ClassNode returnType,
-                                final Parameter[] parameters,
-                                final ClassNode[] exceptions,
-                                final Statement code) {
-        MethodNode existing = cNode.getDeclaredMethod(name, parameters);
-        if (existing != null) return existing;
-        MethodNode result = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
-        addGeneratedMethod(cNode, result);
+    public static MethodNode addGeneratedMethod(final ClassNode cNode, final String name, final int modifiers,
+            final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
+        MethodNode result = cNode.getDeclaredMethod(name, parameters);
+        if (result == null) {
+            result = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
+            addGeneratedMethod(cNode, result);
+        }
         return result;
     }
 
@@ -112,7 +107,7 @@ public class ClassNodeUtils {
      */
     public static void addGeneratedMethod(final ClassNode cNode, final MethodNode mNode) {
         cNode.addMethod(mNode);
-        markAsGenerated(cNode, mNode);
+        AnnotatedNodeUtils.markAsGenerated(cNode, mNode);
     }
 
     /**
@@ -122,7 +117,7 @@ public class ClassNodeUtils {
      */
     public static void addGeneratedMethod(final ClassNode cNode, final MethodNode mNode, final boolean skipChecks) {
         cNode.addMethod(mNode);
-        markAsGenerated(cNode, mNode, skipChecks);
+        AnnotatedNodeUtils.markAsGenerated(cNode, mNode, skipChecks);
     }
 
     /**
@@ -132,7 +127,7 @@ public class ClassNodeUtils {
      */
     public static void addGeneratedInnerClass(final ClassNode cNode, final ClassNode inner) {
         cNode.getModule().addClass(inner);
-        markAsGenerated(cNode, inner);
+        AnnotatedNodeUtils.markAsGenerated(cNode, inner);
     }
 
     /**
@@ -141,9 +136,9 @@ public class ClassNodeUtils {
      * @see ClassNode#addConstructor(int, Parameter[], ClassNode[], Statement)
      */
     public static ConstructorNode addGeneratedConstructor(final ClassNode classNode, final int modifiers, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
-        ConstructorNode consNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
-        markAsGenerated(classNode, consNode);
-        return consNode;
+        ConstructorNode ctorNode = new ConstructorNode(modifiers, parameters, exceptions, code);
+        addGeneratedConstructor(classNode, ctorNode);
+        return ctorNode;
     }
 
     /**
@@ -151,9 +146,9 @@ public class ClassNodeUtils {
      *
      * @see ClassNode#addConstructor(ConstructorNode)
      */
-    public static void addGeneratedConstructor(final ClassNode classNode, final ConstructorNode consNode) {
-        classNode.addConstructor(consNode);
-        markAsGenerated(classNode, consNode);
+    public static void addGeneratedConstructor(final ClassNode classNode, final ConstructorNode ctorNode) {
+        classNode.addConstructor(ctorNode);
+        AnnotatedNodeUtils.markAsGenerated(classNode, ctorNode);
     }
 
     /**
@@ -281,10 +276,10 @@ public class ClassNodeUtils {
         if (cNode.isPrimaryClassNode()) {
             for (PropertyNode pNode : cNode.getProperties()) {
                 if (pNode.getGetterNameOrDefault().equals(name)) {
-                    return pNode.isStatic();
+                    return pNode.isStatic() && !isPackagePrivate(pNode); // GROOVY-11180
                 }
                 if (pNode.getSetterNameOrDefault().equals(name)) {
-                    return pNode.isStatic() && !Modifier.isFinal(pNode.getModifiers());
+                    return pNode.isStatic() && !Modifier.isFinal(pNode.getModifiers()) && !isPackagePrivate(pNode);
                 }
             }
         }
@@ -335,9 +330,11 @@ public class ClassNodeUtils {
     public static boolean hasStaticProperty(final ClassNode cNode, final String propName) {
         PropertyNode found = getStaticProperty(cNode, propName);
         if (found == null) {
-            found = getStaticProperty(cNode, BeanUtils.decapitalize(propName));
+            String otherName = BeanUtils.decapitalize(propName);
+            if (!otherName.equals(propName))
+                found = getStaticProperty(cNode, otherName);
         }
-        return found != null;
+        return (found != null);
     }
 
     /**
@@ -352,7 +349,9 @@ public class ClassNodeUtils {
         ClassNode classNode = cNode;
         while (classNode != null) {
             for (PropertyNode pn : classNode.getProperties()) {
-                if (pn.getName().equals(propName) && pn.isStatic()) return pn;
+                if (pn.getName().equals(propName) && pn.isStatic() && !isPackagePrivate(pn)) {
+                    return pn;
+                }
             }
             classNode = classNode.getSuperClass();
         }
@@ -405,7 +404,7 @@ public class ClassNodeUtils {
         List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
         for (ConstructorNode constructorNode : declaredConstructors) {
             // allow constructors added by other transforms if flagged as Generated
-            if (isGenerated(constructorNode)) {
+            if (AnnotatedNodeUtils.isGenerated(constructorNode)) {
                 continue;
             }
             if (xform != null) {
@@ -460,9 +459,19 @@ public class ClassNodeUtils {
         return null;
     }
 
-    public static boolean isSubtype(ClassNode maybeSuperclassOrInterface, ClassNode candidateChild) {
+    public static boolean isSubtype(final ClassNode maybeSuperclassOrInterface, final ClassNode candidateChild) {
         return maybeSuperclassOrInterface.isInterface() || candidateChild.isInterface()
                 ? isOrImplements(candidateChild, maybeSuperclassOrInterface)
                 : candidateChild.isDerivedFrom(maybeSuperclassOrInterface);
     }
+
+    //--------------------------------------------------------------------------
+
+    private static boolean isPackagePrivate(final AnnotatedNode aNode) {
+        return aNode.getAnnotations().stream().anyMatch(anno -> anno.getClassNode().getName().equals("groovy.transform.PackageScope"))
+            || aNode.getDeclaringClass().getAnnotations().stream().anyMatch(anno -> anno.getClassNode().getName().equals("groovy.transform.PackageScope")
+                                                                            && Optional.ofNullable(anno.getMember("value")).filter(expr -> expr.getText().contains("FIELDS")).isPresent());
+    }
+
+    private ClassNodeUtils() {}
 }

@@ -139,6 +139,30 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         '''
     }
 
+    // GROOVY-11180
+    void testStaticImportAndPackageScope() {
+        assertScript '''import groovy.transform.*
+            import static Foo.CONST
+
+            class Foo {
+                @PackageScope static final String CONST = "value"
+            }
+
+            assert CONST == "value"
+        '''
+
+        assertScript '''import groovy.transform.*
+            import static Foo.CONST
+
+            @PackageScope(PackageScopeTarget.FIELDS)
+            class Foo {
+                static final String CONST = "value"
+            }
+
+            assert CONST == "value"
+        '''
+    }
+
     void testStaticImportProperty() {
         for (imports in ['import static Foo.getX; import static Foo.setX', 'import static Foo.*']) {
             assertScript """$imports
