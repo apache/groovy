@@ -241,7 +241,6 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.init;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -3292,7 +3291,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * of failure.
      */
     private void resolveGenericsFromTypeHint(final ClassNode receiver, final Expression arguments, final MethodNode selectedMethod, final ClassNode[] signature) {
-        ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
+        ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, null).getPlainNodeReference();
         returnType.setGenericsTypes(Arrays.stream(signature).map(ClassNode::asGenericsType).toArray(GenericsType[]::new));
 
         MethodNode methodNode = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
@@ -3314,11 +3313,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             methodNode.setGenericsTypes(selectedMethod.getGenericsTypes());
         }
 
-        GenericsType[] typeArguments = null; // GROOVY-7789
-        Expression emc = typeCheckingContext.getEnclosingMethodCall();
-        if (emc instanceof MethodCallExpression) {
-            MethodCallExpression call = (MethodCallExpression) emc;
-            if (arguments == call.getArguments()) typeArguments = call.getGenericsTypes();
+        GenericsType[] typeArguments = null;
+        Expression emc = typeCheckingContext.getEnclosingMethodCall(); // GROOVY-7789, GROOVY-11168
+        if (emc instanceof MethodCallExpression) { MethodCallExpression call = (MethodCallExpression) emc;
+            if (arguments == call.getArguments() || InvocationWriter.makeArgumentList(arguments).getExpressions().stream().anyMatch(arg ->
+                    arg instanceof ClosureExpression && DefaultGroovyMethods.contains(InvocationWriter.makeArgumentList(call.getArguments()), arg)))
+                typeArguments = call.getGenericsTypes();
         }
 
         returnType = inferReturnTypeGenerics(receiver, methodNode, arguments, typeArguments);
@@ -4061,7 +4061,7 @@ out:                if (mn.size() != 1) {
     private static boolean maybeFallsThrough(Statement statement) {
         if (statement.isEmpty()) return true;
         if (statement instanceof BlockStatement)
-            statement = last(((BlockStatement) statement).getStatements());
+            statement = DefaultGroovyMethods.last(((BlockStatement) statement).getStatements());
         // end break, continue, return or throw
         if (statement instanceof BreakStatement
                 || statement instanceof ContinueStatement
