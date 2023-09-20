@@ -209,6 +209,7 @@ class GroovyLibraryExtension {
                     'Implementation-Vendor': 'The Apache Software Foundation',
                     'Bundle-ManifestVersion': '2',
                     'Bundle-Description': 'Groovy Runtime',
+                    'Bundle-License': 'Apache-2.0',
                     'Bundle-Version': groovyBundleVersion,
                     'Bundle-Vendor': 'The Apache Software Foundation',
                     'Bundle-ClassPath': '.',
