@@ -18,13 +18,20 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
  * with static type checking.
  */
 class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
+
+    @Override
+    void configure() {
+        config.addCompilationCustomizers(
+            new ImportCustomizer().addStaticStars('groovy.lang.Closure')
+        )
+    }
 
     void testShouldChooseMethodFromOwner() {
         assertScript '''
@@ -62,9 +69,9 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             }
             class Owner {
                 int foo() { 1 }
-                int doIt(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=Delegate) Closure cl) {
+                int doIt(@DelegatesTo(value=Delegate, strategy=DELEGATE_FIRST) Closure cl) {
                     cl.delegate = new Delegate()
-                    cl.resolveStrategy = Closure.DELEGATE_FIRST
+                    cl.resolveStrategy = DELEGATE_FIRST
                     cl() as int
                 }
                 int test() {
@@ -96,9 +103,9 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
             ExecSpec spec = new ExecSpec()
 
-            void exec(ExecSpec spec, @DelegatesTo(value=ExecSpec, strategy=Closure.DELEGATE_FIRST) Closure param) {
-                param.delegate = spec
-                param()
+            void exec(ExecSpec spec, @DelegatesTo(value=ExecSpec, strategy=DELEGATE_FIRST) Closure cl) {
+                cl.delegate = spec
+                cl()
             }
 
             exec(spec) {
@@ -113,7 +120,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             class Xml {
                 boolean called = false
                 void bar() { called = true }
-                void foo(@DelegatesTo(Xml)Closure cl) { cl.delegate=this;cl() }
+                void foo(@DelegatesTo(Xml) Closure cl) { cl.delegate=this;cl() }
             }
             def mylist = [1]
             def xml = new Xml()
@@ -218,65 +225,57 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldDelegateToParameter() {
         assertScript '''
-        class Foo {
-            boolean called = false
-            def foo() { called = true }
-        }
+            class Foo {
+                boolean called = false
+                def foo() { called = true }
+            }
 
-        def with(@DelegatesTo.Target Object target, @DelegatesTo Closure arg) {
-            arg.delegate = target
-            arg()
-        }
+            def with(@DelegatesTo.Target Object target, @DelegatesTo Closure cl) {
+                cl.delegate = target
+                cl()
+            }
 
-        def test() {
             def obj = new Foo()
             with(obj) { foo() }
             assert obj.called
-        }
-        test()
         '''
     }
 
     void testShouldDelegateToParameterUsingExplicitId() {
         assertScript '''
-        class Foo {
-            boolean called = false
-            def foo() { called = true }
-        }
+            class Foo {
+                boolean called = false
+                def foo() { called = true }
+            }
 
-        def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='target') Closure arg) {
-            arg.delegate = target
-            arg()
-        }
+            def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='target') Closure cl) {
+                cl.delegate = target
+                cl()
+            }
 
-        def test() {
             def obj = new Foo()
             with(obj) { foo() }
             assert obj.called
-        }
-        test()
         '''
     }
 
     void testShouldFailDelegateToParameterUsingWrongId() {
         shouldFailWithMessages '''
-        class Foo {
-            boolean called = false
-            def foo() { called = true }
-        }
+            class Foo {
+                boolean called = false
+                def foo() { called = true }
+            }
 
-        def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='wrongTarget') Closure arg) {
-            arg.delegate = target
-            arg()
-        }
+            def with(@DelegatesTo.Target('target') Object target, @DelegatesTo(target='wrongTarget') Closure cl) {
+                cl.delegate = target
+                cl()
+            }
 
-        def test() {
             def obj = new Foo()
             with(obj) { foo() }
-            assert obj.called
-        }
-        test()
-        ''', 'Not enough arguments found for a @DelegatesTo method call', 'Cannot find matching method'
+        ''',
+        'Not enough arguments found for a @DelegatesTo method call',
+        'Cannot find matching method'
     }
 
     void testShouldFailDelegateToParameterIfNoTargetSpecified() {
@@ -286,15 +285,16 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
                 def bar() { called = true }
             }
 
-            def m(Object o, @DelegatesTo Closure c) {
-                c.delegate = o
-                c.call()
+            def m(Object o, @DelegatesTo Closure cl) {
+                cl.delegate = o
+                cl()
             }
 
             def foo = new Foo()
             m(foo) { -> bar() }
-            assert foo.called
-        ''', 'Not enough arguments found for a @DelegatesTo method call', '@ line 6, column 29', 'Cannot find matching method'
+        ''',
+        'Not enough arguments found for a @DelegatesTo method call', '@ line 6, column 29',
+        'Cannot find matching method'
     }
 
     void testDelegatesToWithSetter() {
@@ -363,7 +363,8 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
                 y = 5
             }
             assert b.value() == 5
-        ''', '[Static type checking] - The variable [y] is undeclared.'
+        ''',
+        '[Static type checking] - The variable [y] is undeclared.'
     }
 
     void testDelegatesToWithSetterUsedAsPropertyAndWith() {
@@ -419,155 +420,125 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6021
     void testShouldEnsureLastIsRecognizedAndCompiledProperly() {
         assertScript '''
-            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
-                arg.delegate = target
-                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
-                arg()
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = DELEGATE_FIRST) Closure cl) {
+                cl.resolveStrategy = DELEGATE_FIRST
+                cl.delegate = target
+                cl()
             }
 
-            def test() {
-                def obj = [1, 2]
-                with(obj) {
-                    print(last()) //error is here
-                }
+            def obj = [1, 2]
+            with(obj) {
+                print(last()) //error is here
             }
-
-            test()
         '''
     }
 
     // GROOVY-6091
     void testExplicitUseOfDelegateProperty() {
         assertScript '''
-            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure block) {
-                block.resolveStrategy = Closure.DELEGATE_FIRST
-                block.delegate = target
-                block.call()
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = DELEGATE_FIRST) Closure cl) {
+                cl.resolveStrategy = DELEGATE_FIRST
+                cl.delegate = target
+                cl.call()
             }
 
-            def test() {
-                def list = [1, 2]
-                with(list) {
-                    delegate.last() // error is here
-                }
+            def list = [1, 2]
+            assert 2 == with(list) {
+                delegate.last() // error is here
             }
-
-            assert test() == 2
         '''
     }
 
     // GROOVY-6091
     void testExplicitUseOfDelegateMethod() {
         assertScript '''
-            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure block) {
-                block.resolveStrategy = Closure.DELEGATE_FIRST
-                block.delegate = target
-                block.call()
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy=DELEGATE_FIRST) Closure cl) {
+                cl.resolveStrategy = DELEGATE_FIRST
+                cl.delegate = target
+                cl.call()
             }
 
-            def test() {
-                def list = [1, 2]
-                with(list) { ->
-                    getDelegate().last() // error is here
-                }
+            def list = [1, 2]
+            assert 2 == with(list) { ->
+                getDelegate().last() // error is here
             }
-
-            assert test() == 2
         '''
     }
 
     void testDelegatesToGenericTypeArgument() {
         assertScript '''
-            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
-                arg.delegate = target.join('')
-                arg()
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
+                cl.delegate = target.join('')
+                cl()
             }
-            def test() {
-                def result
-                map(['f','o','o']) {
-                    result = toUpperCase()
-                }
 
-                result
+            def result
+            map(['f','o','o']) {
+                result = toUpperCase()
             }
-            assert 'FOO'==test()
+            assert result == 'FOO'
         '''
     }
 
     void testDelegatesToGenericTypeArgumentAndActualArgumentNotUsingGenerics() {
-        assertScript '''import groovy.transform.InheritConstructors
-            @InheritConstructors
+        assertScript '''
+            @groovy.transform.InheritConstructors
             class MyList extends LinkedList<String> {}
 
-            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
-                arg.delegate = target.join('')
-                arg()
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
+                cl.delegate = target.join('')
+                cl()
             }
-            def test() {
-                def result
-                def mylist = new MyList(['f','o','o'])
-                map(mylist) {
-                    result = toUpperCase()
-                }
 
-                result
+            def result
+            def mylist = new MyList(['f','o','o'])
+            map(mylist) {
+                result = toUpperCase()
             }
-            assert 'FOO'==test()
+            assert result == 'FOO'
         '''
     }
 
     void testDelegatesToGenericTypeArgumentWithMissingGenerics() {
         shouldFailWithMessages '''
-            public Object map(@DelegatesTo.Target List target, @DelegatesTo(genericTypeIndex=0) Closure arg) {
-                arg.delegate = target.join('')
-                arg()
+            public Object map(@DelegatesTo.Target List target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
+                cl.delegate = target.join('')
+                cl()
             }
-            def test() {
-                def result
-                map(['f','o','o']) {
-                    result = toUpperCase()
-                }
 
-                result
+            map(['f','o','o']) {
+                toUpperCase()
             }
-            assert 'FOO'==test()
-        ''', 'Cannot use @DelegatesTo(genericTypeIndex=0) with a type that doesn\'t use generics', 'Cannot find matching method'
+        ''',
+        'Cannot use @DelegatesTo(genericTypeIndex=0) with a type that doesn\'t use generics', 'Cannot find matching method'
     }
 
     void testDelegatesToGenericTypeArgumentOutOfBounds() {
         shouldFailWithMessages '''
-            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=1) Closure arg) {
-                arg.delegate = target.join('')
-                arg()
+            def <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=1) Closure cl) {
+                cl.delegate = target.join('')
+                cl()
             }
-            def test() {
-                def result
-                map(['f','o','o']) {
-                    result = toUpperCase()
-                }
 
-                result
+            map(['f','o','o']) {
+                toUpperCase()
             }
-            assert 'FOO'==test()
-        ''', 'Index of generic type @DelegatesTo(genericTypeIndex=1) greater than those of the selected type', 'Cannot find matching method'
+        ''',
+        'Index of generic type @DelegatesTo(genericTypeIndex=1) greater than those of the selected type', 'Cannot find matching method'
     }
 
     void testDelegatesToGenericTypeArgumentWithNegativeIndex() {
         shouldFailWithMessages '''
-            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=-1) Closure arg) {
-                arg.delegate = target.join('')
-                arg()
+            public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=-1) Closure cl) {
+                cl.delegate = target.join('')
+                cl()
             }
-            def test() {
-                def result
-                map(['f','o','o']) {
-                    result = toUpperCase()
-                }
 
-                result
+            map(['f','o','o']) {
+                toUpperCase()
             }
-            assert 'FOO'==test()
-        ''', 'Index of generic type @DelegatesTo(genericTypeIndex=-1) lower than those of the selected type', 'Cannot find matching method'
+        ''',
+        'Index of generic type @DelegatesTo(genericTypeIndex=-1) lower than those of the selected type', 'Cannot find matching method'
     }
 
     void testDelegatesToGenericTypeArgumentUsingMap() {
@@ -588,51 +559,48 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
     void testDelegatesToGenericTypeArgumentUsingMapAndWrongIndex() {
         shouldFailWithMessages '''
-            public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 0) Closure<?> closure) {
+            public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 0) Closure<?> cl) {
                 map.keySet().each {
-                    closure.delegate = map[it]
-                    map[it] = closure()
+                    cl.delegate = map[it]
+                    map[it] = cl()
                 }
             }
+
             def map = [1: 'a', 2: 'b', 3: 'c']
             transform(map) {
                 toUpperCase()
             }
-            assert map == [1: 'A', 2: 'B', 3: 'C']
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     // GROOVY-6165
     void testDelegatesToGenericArgumentTypeAndTypo() {
+        String code = '''
+            @groovy.transform.TupleConstructor
+            class Person { String name }
 
-        String code = '''import groovy.transform.*
-
-        @TupleConstructor
-        class Person { String name }
-
-        public <T> List<T> names(
-            @DelegatesTo.Target List<T> list,
-            @DelegatesTo(genericTypeIndex = 0) Closure modify) {
-                list.collect {
-                    modify.delegate = it
-                    modify()
-                }
-        }
-
-        def test(List<Person> persons) {
-            def names = names(persons) {
-                getname().toUpperCase()
+            def <T> List<T> names(
+                @DelegatesTo.Target List<T> list,
+                @DelegatesTo(genericTypeIndex = 0) Closure cl) {
+                    list.collect {
+                        cl.delegate = it
+                        cl()
+                    }
             }
-            assert names == ['GUILLAUME', 'CEDRIC']
-        }
 
-        test([new Person('Guillaume'), new Person('Cedric')])
+            def test(List<Person> persons) {
+                def names = names(persons) {
+                    getname().toUpperCase()
+                }
+                assert names == ['GUILLAUME', 'CEDRIC']
+            }
+
+            test([new Person('Guillaume'), new Person('Cedric')])
         '''
 
-        String msg = 'Cannot find matching method'
-
-        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailWithMessages code, msg
+        if (config.pluginFactory instanceof org.codehaus.groovy.antlr.AntlrParserPluginFactory) {
+            shouldFailWithMessages(code, 'Cannot find matching method')
         } else {
             /*
              * Because the Parrot parser provides more accurate node position information,
@@ -640,9 +608,8 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
              *
              * 1) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method TestScripttestDelegatesToGenericArgumentTypeAndTypo0#getname(). Please check if the declared type is correct and if the method exists.
              * 2) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
-             *
              */
-            shouldFailWithMessages code, msg, msg
+            shouldFailWithMessages(code, 'Cannot find matching method', 'Cannot find matching method')
         }
     }
 
@@ -654,154 +621,116 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
                 String model
             }
 
-            class MyCarMain {
-                MyCar configureCar(@DelegatesTo(MyCar) Closure closure) {
-                    def car = new MyCar()
-                    closure.delegate = car
-                    closure.resolveStrategy = Closure.DELEGATE_FIRST
-                    closure()
-                    car
-                }
-                static void main(String[] args) {
-                    def main = new MyCarMain()
-                    def car = main.configureCar {
-                        brand = "BMW"
-                        model = brand + " X5"
-                    }
-                    assert car.model == "BMW X5"
-                }
+            MyCar configureCar(@DelegatesTo(value=MyCar, strategy=DELEGATE_FIRST) Closure cl) {
+                new MyCar().tap(cl)
             }
-            MyCarMain.main()
+
+            def car = configureCar {
+                brand = 'BMW'
+                model = "$brand X5"
+            }
+            assert car.model == 'BMW X5'
         '''
 
         assertScript '''
             class MyCar {
                 private String _brand
                 private String _model
-
                 String getBrand() {
                     return _brand
                 }
-
-                void setBrand(String brand) {
-                    _brand = brand
-                }
-
                 String getModel() {
                     return _model
                 }
-
+                void setBrand(String brand) {
+                    _brand = brand
+                }
                 void setModel(String model) {
                     _model = model
                 }
             }
 
-            class MyCarMain {
-                MyCar configureCar(@DelegatesTo(value = MyCar, strategy = Closure.DELEGATE_FIRST) Closure closure) {
-                    def car = new MyCar()
-                    closure.delegate = car
-                    closure.resolveStrategy = Closure.DELEGATE_FIRST
-                    closure()
-                    car
-                }
-
-                static void main(String[] args) {
-                    def main = new MyCarMain()
-                    def car = main.configureCar {
-                        brand = "BMW"
-                        model = brand
-                    }
-                    assert car.model == "BMW"
-                }
+            MyCar configureCar(@DelegatesTo(value=MyCar, strategy=DELEGATE_FIRST) Closure cl) {
+                new MyCar().tap(cl)
             }
-            MyCarMain.main()
+
+            def car = configureCar {
+                brand = 'BMW'
+                model = brand
+            }
+            assert car.model == 'BMW'
         '''
 
         assertScript '''
             class Car {
-              private String _brand
-              String getBrand() { _brand }
-              void setBrand(String brand) { _brand = brand }
+                private String _brand
+                String getBrand() { _brand }
+                void setBrand(String brand) { _brand = brand }
             }
 
             class Builder {
-              def <T> T configure(@DelegatesTo.Target Class<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
-                def obj = target.newInstance()
-                cl.delegate = obj
-                cl.resolveStrategy = Closure.DELEGATE_FIRST
-                cl.call()
-                obj
-              }
-            }
-
-            class Main {
-              void run() {
-                def builder = new Builder()
-                def car = builder.configure(Car) {
-                  brand = brand
+                def <T> T configure(@DelegatesTo.Target Class<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
+                    def obj = target.newInstance()
+                    cl.delegate = obj
+                    cl.resolveStrategy = DELEGATE_FIRST
+                    cl.call()
+                    obj
                 }
-              }
             }
 
-            new Main().run()
+            def builder = new Builder()
+            def car = builder.configure(Car) {
+                brand = brand
+            }
         '''
     }
 
     // GROOVY-5998
     void testSubscriptOperatorOnPropertiesWithBuilder() {
         assertScript '''
-            import static groovy.lang.Closure.*
-
             class DatasourceBuilder {
                 Map<String,String> attrs = [:]
             }
 
-            void datasource(@DelegatesTo(strategy = DELEGATE_FIRST, value = DatasourceBuilder) Closure c) {}
-
-            void foo() {
-               datasource {
-                   attrs['some'] = 'foo'
-               }
+            void datasource(@DelegatesTo(value=DatasourceBuilder, strategy=DELEGATE_FIRST) Closure cl) {
             }
 
-            foo()
+            datasource {
+                attrs['some'] = 'foo'
+            }
         '''
     }
 
     // GROOVY-6956
-    void testDelegatesToNestedGenericType() {
+    void testDelegatesToWithType1() {
         assertScript '''
-            trait Configurable<ConfigObject> {
-                ConfigObject configObject
-
-                void configure(Closure<Void> configSpec) {
-                    configSpec.resolveStrategy = Closure.DELEGATE_FIRST
-                    configSpec.delegate = configObject
-                    configSpec()
+            trait Configurable<Type> {
+                Type configObject
+                void configure(@DelegatesTo(type='Type') Closure<Void> spec) {
+                    spec.resolveStrategy = DELEGATE_FIRST
+                    spec.delegate = configObject
+                    spec.call()
                 }
             }
-            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
-                Configurable<T> obj = (Configurable<T>) clazz.newInstance()
-                obj.configure(configSpec)
-                obj
-            }
+            class ModuleConfig { String name, version }
             class Module implements Configurable<ModuleConfig> {
                 String value
-
-                 Module(){
+                Module() {
                     configObject = new ModuleConfig()
-                 }
-
-                 @Override
-                 void configure(Closure<Void> configSpec) {
+                }
+                @Override
+                void configure(Closure<Void> configSpec) {
                     Configurable.super.configure(configSpec)
                     value = "${configObject.name}-${configObject.version}"
-                 }
+                }
             }
-            class ModuleConfig {
-                String name
-                String version
+
+            def <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type='T') Closure spec) {
+                Configurable<T> obj = (Configurable<T>) clazz.newInstance()
+                obj.configure(spec)
+                obj
             }
+
             def module = configure(Module) {
                 name = 'test'
                 version = '1.0'
@@ -810,12 +739,28 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11168
     void testDelegatesToWithType2() {
         assertScript '''
-            public <T> boolean evalAsSet(List<T> list, @DelegatesTo(type="Set<T>") Closure<Boolean> cl) {
-                cl.delegate = list as Set
+            def <T> T m(@DelegatesTo(type='T', strategy=DELEGATE_FIRST) Closure cl) {
+                'WORKS'.with(cl)
+            }
+
+            String result
+            this.<String>m {
+                result = toLowerCase()
+            }
+            assert result == 'works'
+        '''
+    }
+
+    void testDelegatesToWithType3() {
+        assertScript '''
+            def <T> boolean evalAsSet(List<T> list, @DelegatesTo(type='Set<T>') Closure<Boolean> cl) {
+                cl.delegate = list.toSet()
                 cl()
             }
+
             assert evalAsSet([1,1,2,3]) {
                 size() == 3
             }
@@ -826,8 +771,8 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     void testErrorForMismatchedClosureResolveStrategy() {
         shouldFailWithMessages '''
             class Foo {
-                def build(Closure x) { // resolve strategy OWNER_FIRST
-                    this.with(x) // resolve strategy DELEGATE_FIRST
+                def build(Closure cl) { // resolve strategy OWNER_FIRST
+                    this.with(cl) // resolve strategy DELEGATE_FIRST
                 }
                 def propertyMissing(String name) {
                     'something'
@@ -844,6 +789,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             }
 
             new Bar().baz()
-        ''', 'Closure parameter with resolve strategy OWNER_FIRST passed to method with resolve strategy DELEGATE_FIRST'
+        ''',
+        'Closure parameter with resolve strategy OWNER_FIRST passed to method with resolve strategy DELEGATE_FIRST'
     }
 }

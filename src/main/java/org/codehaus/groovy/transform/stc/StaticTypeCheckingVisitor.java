@@ -336,7 +336,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private   static final ClassNode SET_TYPE = ClassHelper.make(Set.class);
 
-    private static List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
+    private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
@@ -3248,7 +3248,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * of failure.
      */
     private void resolveGenericsFromTypeHint(final ClassNode receiver, final Expression arguments, final MethodNode selectedMethod, final ClassNode[] signature) {
-        ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, OBJECT_TYPE).getPlainNodeReference();
+        ClassNode returnType = new ClassNode("ClForInference$" + UNIQUE_LONG.incrementAndGet(), 0, null).getPlainNodeReference();
         returnType.setGenericsTypes(Arrays.stream(signature).map(ClassNode::asGenericsType).toArray(GenericsType[]::new));
 
         MethodNode methodNode = selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod;
@@ -3270,11 +3270,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             methodNode.setGenericsTypes(selectedMethod.getGenericsTypes());
         }
 
-        GenericsType[] typeArguments = null; // GROOVY-7789
-        Expression emc = typeCheckingContext.getEnclosingMethodCall();
-        if (emc instanceof MethodCallExpression) {
-            MethodCallExpression call = (MethodCallExpression) emc;
-            if (arguments == call.getArguments()) typeArguments = call.getGenericsTypes();
+        GenericsType[] typeArguments = null;
+        Expression emc = typeCheckingContext.getEnclosingMethodCall(); // GROOVY-7789, GROOVY-11168
+        if (emc instanceof MethodCallExpression) { MethodCallExpression call = (MethodCallExpression) emc;
+            if (arguments == call.getArguments() || InvocationWriter.makeArgumentList(arguments).getExpressions().stream().anyMatch(arg ->
+                    arg instanceof ClosureExpression && DefaultGroovyMethods.contains(InvocationWriter.makeArgumentList(call.getArguments()), arg)))
+                typeArguments = call.getGenericsTypes();
         }
 
         returnType = inferReturnTypeGenerics(receiver, methodNode, arguments, typeArguments);
