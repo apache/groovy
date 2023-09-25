@@ -157,7 +157,10 @@ public class InvocationWriter {
         if (!target.isStatic()) {
             if (receiver != null) {
                 Expression objectExpression = receiver;
-                if (implicitThis
+                if (!implicitThis && callSuperDefault(enclosingClass, target, receiver)) {
+                    compileStack.pushImplicitThis(true);
+                    objectExpression = new VariableExpression("this", declaringClass);
+                } else if (implicitThis
                         && enclosingClass.getOuterClass() != null
                         && !enclosingClass.isDerivedFrom(declaringClass)
                         && !enclosingClass.implementsInterface(declaringClass)) {
@@ -181,7 +184,7 @@ public class InvocationWriter {
         int opcode;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
-        } else if (isSuperExpression(receiver)) {
+        } else if (isSuperExpression(receiver) || isClassWithSuper(receiver)) {
             opcode = INVOKESPECIAL;
         } else if (declaringClass.isInterface()) {
             opcode = INVOKEINTERFACE;
@@ -225,6 +228,22 @@ public class InvocationWriter {
         // replace the method call's receiver and argument types with the return type
         operandStack.replace(returnType, operandStack.getStackLength() - startDepth);
         return true;
+    }
+
+    private boolean callSuperDefault(ClassNode enclosingClass, MethodNode target, Expression receiver) {
+        ClassNode declaringClass = target.getDeclaringClass();
+        if (declaringClass.isInterface() && enclosingClass.implementsInterface(declaringClass)) {
+            return isClassWithSuper(receiver);
+        }
+        return false;
+    }
+
+    private boolean isClassWithSuper(Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) exp;
+            return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
+        }
+        return false;
     }
 
     /**
