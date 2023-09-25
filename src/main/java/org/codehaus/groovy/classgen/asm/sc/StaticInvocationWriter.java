@@ -381,12 +381,20 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
             }
         }
-        if (receiver != null && !isSuperExpression(receiver)) {
+        if (receiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)) {
             // in order to avoid calls to castToType, which is the dynamic behaviour, make sure that we call CHECKCAST instead then replace the top operand type
             if (currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) fixedReceiver = new CheckcastReceiverExpression(fixedReceiver, target);
             return super.writeDirectMethodCall(target, fixedImplicitThis, fixedReceiver, args);
         }
         return super.writeDirectMethodCall(target, implicitThis, receiver, args);
+    }
+
+    private boolean isClassWithSuper(Expression receiver) {
+        if (receiver instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) receiver;
+            return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
+        }
+        return false;
     }
 
     private boolean tryPrivateMethod(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args, final ClassNode classNode) {

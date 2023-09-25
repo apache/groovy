@@ -1533,6 +1533,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
+        if (staticOnlyAccess && "super".equals(propertyName)) {
+            // handle "I.super" for default interface logic
+            ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+            ClassNode accessor = objectExpressionType.getGenericsTypes()[0].getType();
+            if (accessor.isInterface() && enclosingType.implementsInterface(accessor)) {
+                storeType(pexp, accessor);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         boolean foundGetterOrSetter = false;
         String capName = capitalize(propertyName);
         Set<ClassNode> handledNodes = new HashSet<>();
