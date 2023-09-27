@@ -29,7 +29,7 @@ jobs:
         java: [17]
         # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
         jdk: ["https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz",
-              "https://download.java.net/java/early_access/jdk21/33/GPL/openjdk-21-ea+33_linux-x64_bin.tar.gz"]
+              "https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz"]
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
