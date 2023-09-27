@@ -35,4 +35,8 @@ class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
     void testDumpAll() {
         assert Thread.dumpAll().contains("dumpAll")
     }
+
+    void testAllThreads() {
+        assert Thread.allThreads().stream().anyMatch(t -> 'Finalizer' == t.name)
+    }
 }
