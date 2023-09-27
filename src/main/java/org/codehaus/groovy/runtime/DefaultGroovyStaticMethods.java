@@ -30,7 +30,9 @@ import java.lang.management.ThreadMXBean;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -113,6 +115,29 @@ public class DefaultGroovyStaticMethods {
         return Arrays.stream(threadMxBean.dumpAllThreads(true, true))
                 .map(ThreadInfo::toString)
                 .collect(Collectors.joining(""));
+    }
+
+    /**
+     * Get all threads
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
+     * @return all threads
+     * @since 4.0.16
+     */
+    public static List<Thread> allThreads(Thread self) {
+        ThreadGroup rootGroup = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup parentGroup; (parentGroup = rootGroup.getParent()) != null; ) {
+            rootGroup = parentGroup;
+        }
+
+        Thread[] threads = new Thread[rootGroup.activeCount()];
+        while (rootGroup.enumerate(threads, true) == threads.length) {
+            threads = new Thread[threads.length * 2];
+        }
+
+        return Arrays.stream(threads)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toUnmodifiableList());
     }
 
     /**
