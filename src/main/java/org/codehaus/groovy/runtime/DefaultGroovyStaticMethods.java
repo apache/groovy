@@ -30,6 +30,7 @@ import java.lang.management.ThreadMXBean;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -135,9 +136,10 @@ public class DefaultGroovyStaticMethods {
             threads = new Thread[threads.length * 2];
         }
 
-        return Arrays.stream(threads)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toUnmodifiableList());
+        return Collections.unmodifiableList(
+                                Arrays.stream(threads)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList()));
     }
 
     /**
