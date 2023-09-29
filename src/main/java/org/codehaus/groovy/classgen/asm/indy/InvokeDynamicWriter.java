@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.CompileStack;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v8.IndyInterface;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -47,6 +49,7 @@ import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.doCast;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.GROOVY_OBJECT;
@@ -57,6 +60,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyInterface.THIS_CALL;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.CAST;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INTERFACE;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.METHOD;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
@@ -122,9 +126,10 @@ public class InvokeDynamicWriter extends InvocationWriter {
         compileStack.popLHS();
     }
 
-    private void makeIndyCall(final MethodCallerMultiAdapter adapter, final Expression receiver, final boolean implicitThis, final boolean safe, final String methodName, final Expression arguments) {
+    private void makeIndyCall(final MethodCallerMultiAdapter adapter, final Expression origReceiver, final boolean implicitThis, final boolean safe, final String methodName, final Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
 
+        Expression receiver = correctReceiverForInterfaceCall(origReceiver, operandStack);
         StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
 
         // load arguments
@@ -150,10 +155,25 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
 
         sig.append(")Ljava/lang/Object;");
+
         String callSiteName = METHOD.getCallSiteName();
         if (adapter == null) callSiteName = INIT.getCallSiteName();
+        // receiver != origReceiver interface default method call
+        if (receiver != origReceiver) callSiteName = INTERFACE.getCallSiteName();
+
         int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
+
         finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
+    }
+
+    private Expression correctReceiverForInterfaceCall(Expression exp, OperandStack operandStack) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) exp;
+            if (pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString())) {
+                return bytecodeX(pexp.getObjectExpression().getType(), mv -> mv.visitIntInsn(Opcodes.ALOAD, 0));
+            }
+        }
+        return exp;
     }
 
     private static int getMethodCallFlags(final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spread) {
