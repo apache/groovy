@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
-import groovy.lang.AdaptingMetaClass;
 import groovy.lang.Closure;
 import groovy.lang.ExpandoMetaClass;
 import groovy.lang.GroovyInterceptable;
@@ -57,7 +56,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.MutableCallSite;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -108,7 +106,7 @@ public abstract class Selector {
     public String name;
     public MethodHandle handle;
     public boolean useMetaClass = false, cache = true;
-    public MutableCallSite callSite;
+    public CacheableCallSite callSite;
     public Class<?> sender;
     public boolean isVargs;
     public boolean safeNavigation, safeNavigationOrig, spread;
@@ -126,7 +124,7 @@ public abstract class Selector {
     /**
      * Returns the Selector
      */
-    public static Selector getSelector(MutableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+    public static Selector getSelector(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CallType callType = CALL_TYPE_VALUES[callID];
         switch (callType) {
             case INIT:
@@ -139,6 +137,8 @@ public abstract class Selector {
                 throw new GroovyBugError("your call tried to do a property set, which is not supported.");
             case CAST:
                 return new CastSelector(callSite, arguments);
+            case INTERFACE:
+                return new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             default:
                 throw new GroovyBugError("unexpected call type");
         }
@@ -165,7 +165,7 @@ public abstract class Selector {
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
 
-        public CastSelector(MutableCallSite callSite, Object[] arguments) {
+        public CastSelector(CacheableCallSite callSite, Object[] arguments) {
             super(callSite, Selector.class, "", CallType.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, arguments);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
@@ -284,7 +284,7 @@ public abstract class Selector {
     private static class PropertySelector extends MethodSelector {
         private boolean insertName;
 
-        public PropertySelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public PropertySelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -384,7 +384,7 @@ public abstract class Selector {
         private static final MethodType MT_OBJECT = MethodType.methodType(Object.class);
         private boolean beanConstructor;
 
-        public InitSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public InitSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -434,7 +434,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
                 MetaConstructor mc = (MetaConstructor) method;
                 isVargs = mc.isVargsMethod();
-                Constructor con = mc.getCachedConstrcutor().getCachedConstructor();
+                Constructor<?> con = mc.getCachedConstrcutor().getCachedConstructor();
                 try {
                     handle = LOOKUP.unreflectConstructor(con);
                     if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
@@ -466,7 +466,7 @@ public abstract class Selector {
 
         /**
          * In case of a bean constructor we don't do any varags or implicit null argument
-         * transformations. Otherwise we do the same as for {@link MethodSelector#correctParameterLength()}
+         * transformations. Otherwise, we do the same as for {@link MethodSelector#correctParameterLength()}
          */
         @Override
         public void correctParameterLength() {
@@ -499,6 +499,31 @@ public abstract class Selector {
         }
     }
 
+    private static class InterfaceSelector extends MethodSelector {
+        public InterfaceSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+            super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+        }
+
+        @Override
+        public MetaClass getMetaClass() {
+            mc = GroovySystem.getMetaClassRegistry().getMetaClass(targetType.parameterType(0));
+            mc.initialize();
+            if (LOG_ENABLED) LOG.info("meta class is " + mc);
+            return mc;
+        }
+
+        @Override
+        public void setSelectionBase() {
+            selectionBase = mc.getTheClass();
+            if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
+        }
+
+        @Override
+        public MethodHandle unreflect(Method cachedMethod) throws IllegalAccessException {
+            return this.callSite.getLookup().unreflectSpecial(cachedMethod, this.sender); // throws if sender cannot invoke method
+        }
+    }
+
     /**
      * Method invocation based {@link Selector}.
      * This Selector is called for method invocations and is base for constructor
@@ -509,7 +534,7 @@ public abstract class Selector {
         private boolean isCategoryMethod;
         protected MetaClass mc;
 
-        public MethodSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
+        public MethodSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
             this.name = methodName;
@@ -654,8 +679,7 @@ public abstract class Selector {
                     } else if (parameterCount == 1 && name.equals("forName") && declaringClass == Class.class) {
                         handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
                     } else {
-                        MethodHandles.Lookup lookup = cm.isPublic() ? LOOKUP : ((Java8)vmplugin).newLookup(sender); // GROOVY-10070, et al.
-                        handle = lookup.unreflect(cm.getCachedMethod()); // throws if sender cannot invoke method
+                        handle = unreflect(cm.getCachedMethod());
                     }
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
@@ -684,6 +708,10 @@ public abstract class Selector {
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
             }
+        }
+
+        protected MethodHandle unreflect(Method cachedMethod) throws IllegalAccessException {
+            return this.callSite.getLookup().unreflect(cachedMethod); // throws if sender cannot invoke method
         }
 
         /**
@@ -834,10 +862,10 @@ public abstract class Selector {
 
                 // equal in terms of an assignment in Java. That means according to Java widening rules, or
                 // a subclass, interface, superclass relation, this case then handles also
-                // primitive to primitive conversion. Those case are also solved by explicitCastArguments.
+                // primitive to primitive conversion. Those cases are also solved by explicitCastArguments.
                 if (parameterType.isAssignableFrom(got)) continue;
 
-                // to aid explicitCastArguments we convert to the wrapper type to let is only unbox
+                // to aid explicitCastArguments we convert to the wrapper type to let it only unbox
                 handle = TypeTransformers.addTransformer(handle, i, arg, wrappedPara);
                 if (LOG_ENABLED)
                     LOG.info("added transformer at pos " + i + " for type " + got + " to type " + wrappedPara);
@@ -885,12 +913,7 @@ public abstract class Selector {
             if (handle == null) return;
             if (!cache) return;
 
-            MethodHandle fallback;
-            if (callSite instanceof CacheableCallSite) {
-                fallback = ((CacheableCallSite) callSite).getFallbackTarget();
-            } else {
-                throw new GroovyBugError("CacheableCallSite is expected, but the actual callsite is: " + callSite);
-            }
+            MethodHandle fallback = callSite.getFallbackTarget();
 
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -970,14 +993,6 @@ public abstract class Selector {
          */
         public void doCallSiteTargetSet() {
             if (LOG_ENABLED) LOG.info("call site stays uncached");
-            /*
-            if (!cache) {
-                if (LOG_ENABLED) LOG.info("call site stays uncached");
-            } else {
-                callSite.setTarget(handle);
-                if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
-            }
-            */
         }
 
         /**
@@ -1049,11 +1064,10 @@ public abstract class Selector {
     private static MetaClassImpl getMetaClassImpl(final MetaClass mc, final boolean includeEMC) {
         Class<?> mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class
-                || mcc == AdaptingMetaClass.class
                 || mcc == ClosureMetaClass.class
                 || (includeEMC && mcc == ExpandoMetaClass.class);
         if (!valid) {
-            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
+            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor ClosureMetaClass, normal method selection path disabled.");
             return null;
         }
         if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");

@@ -22,6 +22,7 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.ref.SoftReference;
@@ -38,6 +39,7 @@ public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 4);
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
+    private final MethodHandles.Lookup lookup;
     private volatile SoftReference<MethodHandleWrapper> latestHitMethodHandleWrapperSoftReference = null;
     private final AtomicLong fallbackCount = new AtomicLong();
     private MethodHandle defaultTarget;
@@ -52,8 +54,9 @@ public class CacheableCallSite extends MutableCallSite {
                 }
             };
 
-    public CacheableCallSite(MethodType type) {
+    public CacheableCallSite(MethodType type, MethodHandles.Lookup lookup) {
         super(type);
+        this.lookup = lookup;
     }
 
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
@@ -123,5 +126,9 @@ public class CacheableCallSite extends MutableCallSite {
 
     public void setFallbackTarget(MethodHandle fallbackTarget) {
         this.fallbackTarget = fallbackTarget;
+    }
+
+    public MethodHandles.Lookup getLookup() {
+        return lookup;
     }
 }

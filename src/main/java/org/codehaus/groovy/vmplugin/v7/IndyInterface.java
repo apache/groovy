@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.codehaus.groovy.vmplugin.v8.CacheableCallSite;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -121,14 +123,14 @@ public class IndyInterface {
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
      */
     public static Object fromCache(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
-        return org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        return org.codehaus.groovy.vmplugin.v8.IndyInterface.fromCache((CacheableCallSite)callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
     }
 
     /**
      * Core method for indy method selection using runtime types.
      */
     public static Object selectMethod(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
-        return org.codehaus.groovy.vmplugin.v8.IndyInterface.selectMethod(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        return org.codehaus.groovy.vmplugin.v8.IndyInterface.selectMethod((CacheableCallSite)callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
     }
 
     /**

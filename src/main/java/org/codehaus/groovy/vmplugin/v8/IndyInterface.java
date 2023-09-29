@@ -67,23 +67,28 @@ public class IndyInterface {
         /**
          * Method invocation type
          */
-        METHOD("invoke"),
+        METHOD("invoke", 0),
         /**
          * Constructor invocation type
          */
-        INIT("init"),
+        INIT("init", 1),
         /**
          * Get property invocation type
          */
-        GET("getProperty"),
+        GET("getProperty", 2),
         /**
          * Set property invocation type
          */
-        SET("setProperty"),
+        SET("setProperty", 3),
         /**
          * Cast invocation type
          */
-        CAST("cast");
+        CAST("cast", 4),
+
+        /**
+         * call to interface method
+         */
+        INTERFACE("interface", 5);
 
         private static final Map<String, CallType> NAME_CALLTYPE_MAP =
                 Stream.of(CallType.values()).collect(Collectors.toMap(CallType::getCallSiteName, Function.identity()));
@@ -92,8 +97,10 @@ public class IndyInterface {
          * The name of the call site type
          */
         private final String name;
+        private final int orderNumber;
 
-        CallType(String callSiteName) {
+        CallType(String callSiteName, int orderNumber) {
+            this.orderNumber = orderNumber;
             this.name = callSiteName;
         }
 
@@ -106,6 +113,10 @@ public class IndyInterface {
 
         public static CallType fromCallSiteName(String callSiteName) {
             return NAME_CALLTYPE_MAP.get(callSiteName);
+        }
+
+        public int getOrderNumber() {
+            return this.orderNumber;
         }
     }
 
@@ -153,14 +164,14 @@ public class IndyInterface {
     static {
 
         try {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             FROM_CACHE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCache", mt);
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
 
         try {
-            MethodType mt = MethodType.methodType(Object.class, MutableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            MethodType mt = MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
         } catch (Exception e) {
             throw new GroovyBugError(e);
@@ -208,7 +219,7 @@ public class IndyInterface {
         CallType ct = CallType.fromCallSiteName(callType);
         if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
 
-        int callID = ct.ordinal();
+        int callID = ct.getOrderNumber();
         boolean safe = (flags & SAFE_NAVIGATION) != 0;
         boolean thisCall = (flags & THIS_CALL) != 0;
         boolean spreadCall = (flags & SPREAD_CALL) != 0;
@@ -223,7 +234,7 @@ public class IndyInterface {
         // first produce a dummy call site, since indy doesn't give the runtime types;
         // the site then changes to the target when INDY_OPTIMIZE_THRESHOLD is reached
         // that does the method selection including the direct call to the real method
-        CacheableCallSite mc = new CacheableCallSite(type);
+        CacheableCallSite mc = new CacheableCallSite(type, caller);
         Class<?> sender = caller.lookupClass();
         if (thisCall) {
             while (GeneratedClosure.class.isAssignableFrom(sender)) {
@@ -258,7 +269,7 @@ public class IndyInterface {
     }
 
     private static class FallbackSupplier {
-        private final MutableCallSite callSite;
+        private final CacheableCallSite callSite;
         private final Class<?> sender;
         private final String methodName;
         private final int callID;
@@ -269,7 +280,7 @@ public class IndyInterface {
         private final Object[] arguments;
         private MethodHandleWrapper result;
 
-        FallbackSupplier(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
+        FallbackSupplier(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
             this.callSite = callSite;
             this.sender = sender;
             this.methodName = methodName;
@@ -293,7 +304,7 @@ public class IndyInterface {
     /**
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
      */
-    public static Object fromCache(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+    public static Object fromCache(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandleWrapper mhw =
@@ -334,7 +345,7 @@ public class IndyInterface {
     /**
      * Core method for indy method selection using runtime types.
      */
-    public static Object selectMethod(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+    public static Object selectMethod(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         final MethodHandleWrapper mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         if (callSite instanceof CacheableCallSite) {
@@ -359,7 +370,7 @@ public class IndyInterface {
         return mhw.getCachedMethodHandle().invokeExact(arguments);
     }
 
-    private static MethodHandleWrapper fallback(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
+    private static MethodHandleWrapper fallback(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
         Selector selector = Selector.getSelector(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
         selector.setCallSiteTarget();
 
