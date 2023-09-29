@@ -20,6 +20,8 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
+import static org.objectweb.asm.Opcodes.ACC_MANDATED;
+
 /**
  * Represents a parameter on a constructor or method call. The type name is
  * optional - it defaults to java.lang.Object if unknown.
@@ -42,13 +44,11 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.name = name;
         this.setType(type);
         this.originType = type;
-        this.hasDefaultValue = false;
     }
 
     public Parameter(ClassNode type, String name, Expression defaultValue) {
-        this(type,name);
-        this.defaultValue = defaultValue;
-        this.hasDefaultValue = defaultValue != null;
+        this(type, name);
+        this.setInitialExpression(defaultValue);
     }
 
     @Override
@@ -71,15 +71,15 @@ public class Parameter extends AnnotatedNode implements Variable {
         dynamicTyped = dynamicTyped || ClassHelper.isDynamicTyped(type);
     }
 
-    @Override
-    public boolean hasInitialExpression() {
-        return this.hasDefaultValue;
+    public Expression getDefaultValue() {
+        return defaultValue;
     }
 
-    /**
-     * @return the default value expression for this parameter or null if
-     * no default value is specified
-     */
+    @Override
+    public boolean hasInitialExpression() {
+        return hasDefaultValue;
+    }
+
     @Override
     public Expression getInitialExpression() {
         return defaultValue;
@@ -119,6 +119,10 @@ public class Parameter extends AnnotatedNode implements Variable {
         return modifiers;
     }
 
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
+    }
+
     @Override
     public ClassNode getOriginType() {
         return originType;
@@ -128,11 +132,18 @@ public class Parameter extends AnnotatedNode implements Variable {
         originType = cn;
     }
 
-    public void setModifiers(int modifiers) {
-        this.modifiers = modifiers;
+    /**
+     * @see {@link java.lang.reflect.Parameter#isImplicit()}
+     * @since 5.0.0
+     */
+    public boolean isImplicit() {
+        return (getModifiers() & ACC_MANDATED) != 0;
     }
 
-    public Expression getDefaultValue() {
-        return defaultValue;
+    /**
+     * @since 5.0.0
+     */
+    public boolean isReceiver() {
+        return "this".equals(getName()); // JSR 308
     }
 }

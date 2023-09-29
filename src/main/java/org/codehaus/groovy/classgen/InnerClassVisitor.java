@@ -51,6 +51,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_MANDATED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -195,6 +196,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
             ClassNode enclosingType = (inClosure ? ClassHelper.CLOSURE_TYPE : outerClass).getPlainNodeReference();
             expressions.add(pCount, new VariableExpression("this", enclosingType));
             Parameter thisParameter = new Parameter(enclosingType, "p" + pCount);
+            thisParameter.setModifiers(ACC_FINAL | ACC_MANDATED);
             parameters.add(pCount++, thisParameter);
 
             // "this" reference is saved in a field named "this$0"

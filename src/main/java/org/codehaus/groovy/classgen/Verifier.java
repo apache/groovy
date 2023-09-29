@@ -1049,6 +1049,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             for (Parameter parameter : parameters) {
                 if (parameter == null) {
                     throw new GroovyBugError("Parameter should not be null for method " + methodNode.getName());
+                } else if (parameter.isReceiver()) { // JSR 308
+                    newParams[index++] = parameter;
                 } else {
                     Expression e;
                     if (j > n - i && parameter.hasInitialExpression()) {

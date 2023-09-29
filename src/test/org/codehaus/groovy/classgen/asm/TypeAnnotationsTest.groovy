@@ -26,7 +26,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         |import static java.lang.annotation.RetentionPolicy.*
         |'''.stripMargin()
 
-    void testTypeAnnotationsForConstructor() {
+    void testTypeAnnotationsForConstructor1() {
         def bytecode = compile(classNamePattern: 'HasConstructor', method: '<init>', imports + '''
             @Retention(RUNTIME) @Target(CONSTRUCTOR) @interface CtorAnno  { }
             @Retention(RUNTIME) @Target(TYPE_USE)    @interface TypeAnno0 { }
@@ -41,6 +41,54 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 '@LCtorAnno;()',
                 '@LTypeAnno0;() : METHOD_RETURN',
                 '@LTypeAnno1;() : METHOD_RETURN'
+        ])
+    }
+
+    void testTypeAnnotationsForConstructor2() {
+        def bytecode = compile(classNamePattern: 'Foo.Bar', method: '<init>', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { String value() }
+
+            class Foo {
+                class Bar {
+                    @TypeAnno0(value="this")
+                    Bar(@TypeAnno1(value="that") that) {
+                    }
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'public <init>(LFoo;Ljava/lang/Object;)V',
+                '@LTypeAnno0;(value="this") : METHOD_RETURN',
+                '@LTypeAnno1;(value="that") : METHOD_FORMAL_PARAMETER 0, null',
+                'L0'
+        ])
+    }
+
+    // GROOVY-11184
+    void testTypeAnnotationsForConstructor3() {
+        def bytecode = compile(classNamePattern: 'Foo.Bar', method: '<init>', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { String value() }
+
+            class Foo {
+                class Bar {
+                    Bar(@TypeAnno0(value="this") Foo this, @TypeAnno1(value="that") that = null) {
+                    }
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'public <init>(LFoo;Ljava/lang/Object;)V',
+                '@LTypeAnno0;(value="this") : METHOD_RECEIVER, null',
+                '@LTypeAnno1;(value="that") : METHOD_FORMAL_PARAMETER 0, null',
+                'L0'
+        ])
+        assert bytecode.hasStrictSequence([
+                'public <init>(LFoo;)V',
+                '@Lgroovy/transform/Generated;()',
+                '@LTypeAnno0;(value="this") : METHOD_RECEIVER, null',
+                'L0'
         ])
     }
 
@@ -181,6 +229,31 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
             '@Lnet/jqwik/api/constraints/IntRange;(min=0, max=10) : METHOD_FORMAL_PARAMETER 0, 0;',
             '// annotable parameter count: 1 (visible)',
             '@Lnet/jqwik/api/ForAll;() // parameter 0'
+        ])
+    }
+
+    // GROOVY-11184
+    void testTypeAnnotationsForMethod5() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { String value() }
+
+            class Foo {
+                def bar(@TypeAnno0(value="this") Foo this, @TypeAnno1(value="that") that = null) {
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'public bar(Ljava/lang/Object;)Ljava/lang/Object;',
+                '@LTypeAnno0;(value="this") : METHOD_RECEIVER, null',
+                '@LTypeAnno1;(value="that") : METHOD_FORMAL_PARAMETER 0, null',
+                'L0'
+        ])
+        assert bytecode.hasStrictSequence([
+                'public bar()Ljava/lang/Object;',
+                '@Lgroovy/transform/Generated;()',
+                '@LTypeAnno0;(value="this") : METHOD_RECEIVER, null',
+                'L0'
         ])
     }
 

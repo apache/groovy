@@ -69,6 +69,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_MANDATED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -372,30 +374,34 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
         // add "this$0" field init
 
-        //add this parameter to node
+        // add this parameter to node
         Parameter[] params = node.getParameters();
         Parameter[] newParams = new Parameter[params.length + 1];
         System.arraycopy(params, 0, newParams, 1, params.length);
-        String name = getUniqueName(params, node);
 
-        Parameter thisPara = new Parameter(classNode.getOuterClass().getPlainNodeReference(), name);
-        newParams[0] = thisPara;
+        Parameter thisZero = new Parameter(classNode.getOuterClass().getPlainNodeReference(), getUniqueName(params, node));
+        thisZero.setModifiers(ACC_FINAL | ACC_MANDATED);
+        if (params.length > 0 && params[0].isReceiver()) {
+            newParams[0] = newParams[1];
+            newParams[1] = thisZero;
+        } else {
+            newParams[0] = thisZero;
+        }
         node.setParameters(newParams);
 
         BlockStatement block = getCodeAsBlock(node);
         BlockStatement newCode = block();
-        addFieldInit(thisPara, thisField, newCode);
+        addFieldInit(thisZero, thisField, newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
             cce = ctorSuperX(new TupleExpression());
             block.getStatements().add(0, stmt(cce));
         }
-        if (shouldImplicitlyPassThisPara(cce)) {
-            // add thisPara to this(...)
+        if (shouldImplicitlyPassThisZero(cce)) {
             TupleExpression args = (TupleExpression) cce.getArguments();
             List<Expression> expressions = args.getExpressions();
-            VariableExpression ve = varX(thisPara.getName());
-            ve.setAccessedVariable(thisPara);
+            VariableExpression ve = varX(thisZero.getName());
+            ve.setAccessedVariable(thisZero);
             expressions.add(0, ve);
         }
         if (cce.isSuperCall()) {
@@ -406,7 +412,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         node.setCode(block);
     }
 
-    private boolean shouldImplicitlyPassThisPara(ConstructorCallExpression cce) {
+    private boolean shouldImplicitlyPassThisZero(ConstructorCallExpression cce) {
         boolean pass = false;
         ClassNode superCN = classNode.getSuperClass();
         if (cce.isThisCall()) {

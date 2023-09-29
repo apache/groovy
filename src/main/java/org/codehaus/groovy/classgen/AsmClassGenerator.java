@@ -214,6 +214,7 @@ import static org.objectweb.asm.Opcodes.V_PREVIEW;
 import static org.objectweb.asm.TypeReference.CLASS_TYPE_PARAMETER;
 import static org.objectweb.asm.TypeReference.CLASS_TYPE_PARAMETER_BOUND;
 import static org.objectweb.asm.TypeReference.FIELD;
+import static org.objectweb.asm.TypeReference.METHOD_RECEIVER;
 import static org.objectweb.asm.TypeReference.METHOD_RETURN;
 import static org.objectweb.asm.TypeReference.METHOD_TYPE_PARAMETER;
 import static org.objectweb.asm.TypeReference.METHOD_TYPE_PARAMETER_BOUND;
@@ -498,6 +499,11 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         Parameter[] parameters = node.getParameters();
+        Parameter   receiver = null; // JSR 308 "this" parameter
+        if (parameters.length > 0 && parameters[0].isReceiver()) {
+            receiver = parameters[0]; // non-static method or inner class ctor
+            parameters = Arrays.copyOfRange(parameters, 1, parameters.length);
+        }
         MethodVisitor mv = classVisitor.visitMethod(
                 node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0), node.getName(),
                 BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
@@ -511,7 +517,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!node.isConstructor() || node.getReturnType().isAnnotated()) {
             visitType(node.getReturnType(), mv, newTypeReference(METHOD_RETURN), "", true);
         }
-
+        if (receiver != null) {
+            visitTypeAnnotations(receiver.getType(), mv, newTypeReference(METHOD_RECEIVER), "", true);
+        }
         // add parameter names to the MethodVisitor (JDK8+)
         if (Optional.ofNullable(controller.getClassNode().getCompileUnit())
                 .orElseGet(context::getCompileUnit).getConfig().getParameters()) {
@@ -519,13 +527,14 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitParameter(parameter.getName(), parameter.getModifiers());
             }
         }
-        for (int i = 0, n = parameters.length; i < n; i += 1) {
+        for (int i = 0, j = 0, n = parameters.length; i < n; i += 1) {
+            if (parameters[i].isImplicit()) continue;
             visitParameterAnnotations(parameters[i], i, mv);
             ClassNode paramType = parameters[i].getType();
             if (paramType.isGenericsPlaceHolder()) {
-                visitTypeAnnotations(paramType, mv, newFormalParameterReference(i), "", true);
+                visitTypeAnnotations(paramType, mv, newFormalParameterReference(j++), "", true);
             } else {
-                visitType(parameters[i].getType(), mv, newFormalParameterReference(i), "", true);
+                visitType(paramType, mv, newFormalParameterReference(j++), "", true);
             }
         }
         if (node.getExceptions() != null) {
