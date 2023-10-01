@@ -3670,9 +3670,9 @@ out:                if (mn.size() != 1) {
                         if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
                                 && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
-                        } else if (targetMethod.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
+                        } else if ((chosenReceiver.getType().isInterface() || targetMethod.isAbstract()) && isSuperExpression(objectExpression)) { // GROOVY-10341, GROOVY-8299
                             String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
-                            if (Traits.hasDefaultImplementation(targetMethod)) { // GROOVY-10494
+                            if (Traits.hasDefaultImplementation(targetMethod) || targetMethod.isDefault()) { // GROOVY-10494
                                 addStaticTypeError("Default method " + target + " requires qualified super", call);
                             } else {
                                 addStaticTypeError("Abstract method " + target + " cannot be called directly", call);

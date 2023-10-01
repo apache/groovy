@@ -1154,9 +1154,9 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9909
+    // GROOVY-9909 tests changed for GROOVY-8299
     void testInvokeDefaultMethodFromDirectInterface() {
-        assertScript '''
+        shouldFailWithMessages('''
             class C implements groovy.transform.stc.Groovy9909 {
                 @Override String m() {
                     'it ' + super.m() // default method
@@ -1164,7 +1164,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             }
             String result = new C().m()
             assert result == 'it works'
-        '''
+        ''',  "Default method m() requires qualified super")
     }
 
     // GROOVY-8339, GROOVY-10109, GROOVY-10594
