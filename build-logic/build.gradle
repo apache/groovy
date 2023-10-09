@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:3.3.2'
     implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:5.1.10'
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
-    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.1.3'
+    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.1.4'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.1'
 }
 
