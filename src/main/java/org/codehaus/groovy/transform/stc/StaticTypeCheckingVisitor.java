@@ -3555,25 +3555,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (!mn.isEmpty() && currentReceiver.getData() == null
                             && (isThisExpression(objectExpression) || call.isImplicitThis())
                             && (typeCheckingContext.isInStaticContext || Modifier.isStatic(receiverType.getModifiers()))) {
-                        // we create separate method lists just to be able to print out
-                        // a nice error message to the user
-                        // a method is accessible if it is static, or if we are not in a static context and it is
-                        // declared by the current receiver or a superclass
-                        List<MethodNode> accessibleMethods = new LinkedList<>();
-                        List<MethodNode> inaccessibleMethods = new LinkedList<>();
-                        for (final MethodNode node : mn) {
-                            if (node.isStatic()
-                                    || (!typeCheckingContext.isInStaticContext && implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))) {
-                                accessibleMethods.add(node);
-                            } else {
-                                inaccessibleMethods.add(node);
-                            }
-                        }
-                        mn = accessibleMethods;
-                        if (accessibleMethods.isEmpty()) {
-                            // choose an arbitrary method to display an error message
-                            MethodNode inaccessibleMethod = inaccessibleMethods.get(0);
-                            addStaticTypeError("Non-static method " + prettyPrintTypeName(inaccessibleMethod.getDeclaringClass()) + "#" + inaccessibleMethod.getName() + " cannot be called from static context", call);
+                        MethodNode first = mn.get(0);
+                        // a method is accessible if it is static, we are in static context and it is declared by Class
+                        // or we are in a non-static context and it is declared by the current receiver or a superclass
+                        mn.removeIf(node -> !(node.isStatic() || (typeCheckingContext.isInStaticContext
+                            ? node.getDeclaringClass().equals(CLASS_Type) // GROOVY-11195: Class method
+                            : implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))));
+                        if (mn.isEmpty()) {
+                            addStaticTypeError("Non-static method " + prettyPrintTypeName(first.getDeclaringClass()) + "#" + first.getName() + " cannot be called from static context", call);
                         }
                     }
 

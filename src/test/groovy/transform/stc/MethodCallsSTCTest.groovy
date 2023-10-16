@@ -945,7 +945,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testBoxingShouldCostMore() {
-        if (config.indyEnabled) return;
         assertScript '''
             int foo(int x) { 1 }
             int foo(Integer x) { 2 }
@@ -1235,6 +1234,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert a( 'tim' ) { 0 } == 0
         '''
     }
+
     // GROOVY-5743
     void testClosureAsParameterWithDefaultValue() {
         assertScript '''
@@ -1283,25 +1283,35 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldFindSetProperty() {
         assertScript '''
-            class A {
-                int x
-                void foo() {
-                    this.setProperty('x', 1)
+            class C {
+                int p
+                void m() {
+                    this.setProperty('p', 1)
                 }
             }
-            def a = new A()
-            a.foo()
-            assert a.x == 1
+            def c = new C()
+            c.m()
+            assert c.p == 1
         '''
     }
 
     // GROOVY-5888
-    void testStaticContextScoping() {
+    void testStaticContext1() {
         assertScript '''
-            class A {
-                static List foo = 'a,b,c'.split(/,/)*.trim()
+            class C {
+                static List p = 'a,b,c'.split(/,/)*.trim()
             }
-            assert A.foo == ['a','b','c']
+            assert C.p == ['a','b','c']
+        '''
+    }
+
+    // GROOVY-11195
+    void testStaticContext2() {
+        assertScript '''
+            class C {
+                static String p = this.getName() // instance method of Class
+            }
+            assert C.p == 'C'
         '''
     }
 
