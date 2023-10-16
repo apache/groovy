@@ -348,7 +348,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     object = string
                 }
             }
-;
+
             def obj = new Baz()
             obj.setString('xx')
             assert obj.object == 'xx'
@@ -561,7 +561,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             class Main {
                 def bar(Date date1, Date date2) {
                 }
-                def bar(String o, Date date2) {
+                def bar(String str, Date date) {
                 }
                 def foo() {
                     bar(null, new Date())
@@ -574,10 +574,10 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5175
     void testDisambiguateCallMethodWithNullAndAnotherParameter() {
         assertClass '''
-            class Test {
+            class Main {
                 def bar(Date date1, Date date2) {
                 }
-                def bar(String o, Date date2) {
+                def bar(String str, Date date) {
                 }
                 def foo() {
                     bar((Date)null, new Date())
@@ -811,11 +811,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7061
     void testSAMWithExplicitParameter3() {
         assertScript '''
-            void test() {
-                List<Integer> nums = [1, 2, 3, -2, -5, 6]
-                Collections.sort(nums, { a, b -> a.abs() <=> b.abs() })
-            }
-            test()
+            List<Integer> nums = [1, 2, 3, -2, -5, 6]
+            Collections.sort(nums, { a, b -> a.abs() <=> b.abs() })
         '''
     }
 
@@ -1091,15 +1088,14 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5540
     void testChoosePublicMethodInHierarchy() {
-        assertScript '''
-            import groovy.transform.stc.MethodCallsSTCTest.Child2 as C2
+        assertScript '''import groovy.transform.stc.MethodCallsSTCTest.Child2
             class A {
                 int delegate() {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
                         def md = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                         assert md.declaringClass.nameWithoutPackage == 'MethodCallsSTCTest$ChildWithPublic'
                     })
-                    int res = new C2().m()
+                    int res = new Child2().m()
                     res
                 }
             }
@@ -1198,7 +1194,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             interface Lower extends Upper {}
             class Foo implements Lower { String getName() { 'bar' } }
             String foo(Foo impl) {
-                 impl.getName()
+                impl.getName()
             }
             assert foo(new Foo()) == 'bar'
         '''
@@ -1211,7 +1207,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             class Foo implements Lower { String getName() { 'bar' } }
             class Bar extends Foo {}
             String foo(Bar impl) {
-                 impl.getName()
+                impl.getName()
             }
             assert foo(new Bar()) == 'bar'
         '''
@@ -1560,7 +1556,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testClosureAsParameter() {
         assertScript '''
             Integer a( String s, Closure<Integer> b ) {
-              b( s )
+                b( s )
             }
 
             assert a( 'tim' ) { 0 } == 0
@@ -1571,7 +1567,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testClosureAsParameterWithDefaultValue() {
         assertScript '''
             Integer a( String s, Closure<Integer> b = {String it -> it.length()}) {
-              b( s )
+                b( s )
             }
 
             assert a( 'tim' ) == 3
@@ -1580,8 +1576,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5712
     void testClassForNameVsCharsetForName() {
-        assertScript '''
-            import java.nio.charset.Charset
+        assertScript '''import java.nio.charset.Charset
             Charset charset = Charset.forName('UTF-8')
             assert charset instanceof Charset
         '''
@@ -1624,7 +1619,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 public static foo() {
                     super.foo()
                 }
-
             }
             Bottom.foo()
             assert Top.called
@@ -1633,25 +1627,35 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldFindSetProperty() {
         assertScript '''
-            class A {
-                int x
-                void foo() {
-                    this.setProperty('x', 1)
+            class C {
+                int p
+                void m() {
+                    this.setProperty('p', 1)
                 }
             }
-            def a = new A()
-            a.foo()
-            assert a.x == 1
+            def c = new C()
+            c.m()
+            assert c.p == 1
         '''
     }
 
     // GROOVY-5888
-    void testStaticContextScoping() {
+    void testStaticContext1() {
         assertScript '''
-            class A {
-                static List foo = 'a,b,c'.split(/,/)*.trim()
+            class C {
+                static List p = 'a,b,c'.split(/,/)*.trim()
             }
-            assert A.foo == ['a','b','c']
+            assert C.p == ['a','b','c']
+        '''
+    }
+
+    // GROOVY-11195
+    void testStaticContext2() {
+        assertScript '''
+            class C {
+                static String p = this.getName() // instance method of Class
+            }
+            assert C.p == 'C'
         '''
     }
 
@@ -1789,8 +1793,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8445
     void testClosureToFunctionalInterface() {
         assertScript '''
-            public class Main {
-                public static void main(String[] args) {
+            class Main {
+                static main(args) {
                     assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e})
                 }
             }
