@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -41,19 +42,19 @@ import java.util.List;
  */
 public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
+    private final String name;
     private final Closure callable;
     private final CachedMethod doCall;
-    private final String name;
-    private final CachedClass declaringClass;
+    private final CachedClass  declaringClass;
 
     public ClosureMetaMethod(String name, Closure c, CachedMethod doCall) {
         this(name, c.getOwner().getClass(), c, doCall);
     }
 
     public ClosureMetaMethod(String name, Class declaringClass, Closure c, CachedMethod doCall) {
-        super (doCall.getNativeParameterTypes());
+        super(doCall.getNativeParameterTypes());
         this.name = name;
-        callable = c;
+        this.callable = c;
         this.doCall = doCall;
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
     }
@@ -79,12 +80,14 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     }
 
     @Override
-    public Object invoke(final Object object, Object[] arguments) {
-        Closure cloned = (Closure) callable.clone();
-        cloned.setDelegate(object);
-
-        arguments = coerceArgumentsToClasses(arguments);
-        return doCall.invoke(cloned, arguments);
+    public Object invoke(final Object object, final Object[] arguments) {
+        Closure clone = (Closure) callable.clone();
+        if (object == NullObject.getNullObject()) {
+            clone.setDelegate(null); // GROOVY-6567
+        } else {
+            clone.setDelegate(object);
+        }
+        return doCall.invoke(clone, coerceArgumentsToClasses(arguments));
     }
 
     /**
