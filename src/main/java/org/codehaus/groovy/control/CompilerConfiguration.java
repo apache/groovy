@@ -102,6 +102,8 @@ public class CompilerConfiguration {
     public static final String JDK20 = "20";
     /** This (<code>"21"</code>) is the value for targetBytecode to compile for a JDK 21. */
     public static final String JDK21 = "21";
+    /** This (<code>"22"</code>) is the value for targetBytecode to compile for a JDK 22. */
+    public static final String JDK22 = "22";
 
     /**
      * JDK version to bytecode version mapping.
@@ -117,7 +119,8 @@ public class CompilerConfiguration {
             JDK18, Opcodes.V18,
             JDK19, Opcodes.V19,
             JDK20, Opcodes.V20,
-            JDK21, Opcodes.V21
+            JDK21, Opcodes.V21,
+            JDK22, Opcodes.V22
     );
 
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
