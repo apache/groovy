@@ -25,16 +25,8 @@ import java.util.Collections;
 import java.util.Iterator;
 
 public class NullObject extends GroovyObjectSupport {
-    private static final NullObject INSTANCE = new NullObject();
 
-    /**
-     * private constructor
-     */
-    private NullObject() {
-        if (INSTANCE != null) {
-            throw new RuntimeException("Can't instantiate NullObject. Use NullObject.getNullObject()");
-        }
-    }
+    private static final NullObject INSTANCE = new NullObject();
 
     /**
      * get the NullObject reference
@@ -46,8 +38,21 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
-     * Since this is implemented as a singleton, we should avoid the
-     * use of the clone method
+     * private constructor
+     */
+    private NullObject() {
+        if (INSTANCE != null) {
+            throw new RuntimeException("Can't instantiate NullObject. Use NullObject.getNullObject()");
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * Since this is implemented as a singleton, avoid the use of the clone method.
+     *
+     * @return never
+     * @throws NullPointerException
      */
     @Override
     public Object clone() {
@@ -55,123 +60,23 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
-     * Tries to get a property on null, which will always fail
+     * null is only equal to null.
      *
-     * @param property - the property to get
-     * @return a NPE
+     * @param o the reference object with which to compare
+     * @return true if this object is the same as the to argument
      */
     @Override
-    public Object getProperty(String property) {
-        throw new NullPointerException("Cannot get property '" + property + "' on null object");
+    public boolean equals(final Object o) {
+        return o == null || o == INSTANCE;
     }
 
     /**
-     * Allows the closure to be called for NullObject
-     *
-     * @param closure the closure to call on the object
-     * @return result of calling the closure
-     */
-    public <T> T with( Closure<T> closure ) {
-        return DefaultGroovyMethods.with( null, closure ) ;
-    }
-
-    /**
-     * Tries to set a property on null, which will always fail
-     *
-     * @param property - the property to set
-     * @param newValue - the new value of the property
+     * @return never
+     * @throws NullPointerException
      */
     @Override
-    public void setProperty(String property, Object newValue) {
-        throw new NullPointerException("Cannot set property '" + property + "' on null object");
-    }
-
-    /**
-     * Tries to invoke a method on null, which will always fail
-     *
-     * @param name the name of the method to invoke
-     * @param args - arguments to the method
-     * @return a NPE
-     */
-    @Override
-    public Object invokeMethod(String name, Object args) {
-        throw new NullPointerException("Cannot invoke method " + name + "() on null object");
-    }
-
-    /**
-     * null is only equal to null
-     *
-     * @param to - the reference object with which to compare
-     * @return - true if this object is the same as the to argument
-     */
-    @Override
-    public boolean equals(Object to) {
-        return to == null;
-    }
-
-    /**
-     * iterator() method to be able to iterate on null.
-     * Note: this part is from Invoker
-     *
-     * @return an iterator for an empty list
-     */
-    public Iterator iterator() {
-        return Collections.EMPTY_LIST.iterator();
-    }
-
-    /**
-     * Allows to add a String to null.
-     * The result is concatenated String of the result of calling
-     * toString() on this object and the String in the parameter.
-     *
-     * @param s - the String to concatenate
-     * @return the concatenated string
-     */
-    public Object plus(String s) {
-        return getMetaClass().invokeMethod(this, "toString", new Object[]{}) + s;
-    }
-
-    /**
-     * Fallback for null+null.
-     * The result is always a NPE. The plus(String) version will catch
-     * the case of adding a non-null String to null.
-     *
-     * @param o - the Object
-     * @return nothing
-     */
-    public Object plus(Object o) {
-        throw new NullPointerException("Cannot execute null+" + o);
-    }
-
-    /**
-     * The method "is" is used to test for equal references.
-     * This method will return true only if the given parameter
-     * is null
-     *
-     * @param other - the object to test
-     * @return true if other is null
-     */
-    public boolean is(Object other) {
-        return other == null;
-    }
-
-    /**
-     * Type conversion method for null.
-     *
-     * @param c - the class to convert to
-     * @return always null
-     */
-    public Object asType(Class c) {
-        return null;
-    }
-
-    /**
-     * A null object always coerces to false.
-     *
-     * @return false
-     */
-    public boolean asBoolean() {
-        return false;
+    public int hashCode() {
+        throw new NullPointerException("Cannot invoke method hashCode() on null object");
     }
 
     @Override
@@ -179,8 +84,109 @@ public class NullObject extends GroovyObjectSupport {
         return "null";
     }
 
+    /**
+     * Tries to get a property on null, which will always fail.
+     *
+     * @return never
+     * @throws NullPointerException
+     */
     @Override
-    public int hashCode() {
-        throw new NullPointerException("Cannot invoke method hashCode() on null object");
+    public Object getProperty(final String name) {
+        throw new NullPointerException("Cannot get property '" + name + "' on null object");
+    }
+
+    /**
+     * Tries to set a property on null, which will always fail
+     *
+     * @throws NullPointerException
+     */
+    @Override
+    public  void  setProperty(final String name, final Object value) {
+        throw new NullPointerException("Cannot set property '" + name + "' on null object");
+    }
+
+    /**
+     * Tries to invoke a method on null, which will always fail.
+     *
+     * @return never
+     * @throws NullPointerException
+     */
+    @Override
+    public Object invokeMethod(final String name, final Object arguments) {
+        throw new NullPointerException("Cannot invoke method " + name + "() on null object");
+    }
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * A null object coerces to false.
+     *
+     * @return false
+     */
+    public boolean asBoolean() {
+        return false;
+    }
+
+    /**
+     * Type conversion method for null.
+     *
+     * @return null
+     */
+    public Object asType(final Class c) {
+        if (c.isPrimitive()) throw new IllegalArgumentException("null to " + c);
+        return null;
+    }
+
+    /**
+     * Tests for equal references.
+     *
+     * @return true if object is null
+     */
+    public boolean is(final Object o) {
+        return equals(o);
+    }
+
+    /**
+     * iterator() method to be able to iterate on null.
+     * Note: this part is from Invoker
+     *
+     * @return an empty iterator
+     */
+    public Iterator iterator() {
+        return Collections.emptyIterator();
+    }
+
+    /**
+     * Fallback for {@code null+null}. The {@link plus(String)} variant catches
+     * the case of adding a non-null String to null.
+     *
+     * @return never
+     * @throws NullPointerException
+     */
+    public Object plus(final Object o) {
+        throw new NullPointerException("Cannot execute null+" + o);
+    }
+
+    /**
+     * Allows to add a String to null.
+     * The result is concatenated String of the result of calling
+     * toString() on this object and the String in the parameter.
+     *
+     * @return the concatenated string
+     */
+    public Object plus(final String s) {
+        return getMetaClass().invokeMethod(this, "toString", new Object[0]) + s;
+    }
+
+    /**
+     * Allows the closure to be called for NullObject.
+     *
+     * @param closure the closure to call on the object
+     * @return result of calling the closure
+     */
+
+    @Deprecated(since = "5.0.0") // GROOVY-4526
+    public <T> T with(final Closure<T> closure) {
+        return DefaultGroovyMethods.with(null, closure);
     }
 }

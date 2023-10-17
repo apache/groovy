@@ -261,6 +261,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return closure.call(entry);
     }
 
+    // internal helper method
+    private static <T, U> Tuple2<T, U> callWithDelegateAndParameter(Closure<T> closure, U object) {
+        if (object == NullObject.getNullObject()) {
+            object = null; // GROOVY-4526, et al.
+        }
+        @SuppressWarnings("unchecked")
+        final Closure<T> clone = (Closure<T>) closure.clone();
+        clone.setResolveStrategy(Closure.DELEGATE_FIRST);
+        clone.setDelegate(object);
+        T result = clone.call(object);
+        return new Tuple2<>(result, object);
+    }
+
     //--------------------------------------------------------------------------
     // abs
 
@@ -2258,7 +2271,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, Map<K, V> collector, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
         while (self.hasNext()) {
             E element = self.next();
-            addEntry(collector, Tuple2.tuple(keyTransform.apply(element), valueTransform.apply(element)));
+            addEntry(collector, new Tuple2<>(keyTransform.apply(element), valueTransform.apply(element)));
         }
         return collector;
     }
@@ -2327,7 +2340,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, Map<K, V> collector, Function<? super X, K> keyTransform, Function<? super Y, V> valueTransform) {
         for (Map.Entry<X, Y> entry : self.entrySet()) {
-            addEntry(collector, Tuple2.tuple(keyTransform.apply(entry.getKey()), valueTransform.apply(entry.getValue())));
+            addEntry(collector, new Tuple2<>(keyTransform.apply(entry.getKey()), valueTransform.apply(entry.getValue())));
         }
         return collector;
     }
@@ -2445,7 +2458,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> collectKeys(Map<K, V> keys, Map<K, V> collector, Function<? super K, K> keyTransform) {
         for (Map.Entry<K, V> entry : keys.entrySet()) {
-            addEntry(collector, Tuple2.tuple(keyTransform.apply(entry.getKey()), entry.getValue()));
+            addEntry(collector, new Tuple2<>(keyTransform.apply(entry.getKey()), entry.getValue()));
         }
         return collector;
     }
@@ -2716,7 +2729,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> collectValues(Map<K, V> keys, Map<K, V> collector, Function<? super V, V> valueTransform) {
         for (Map.Entry<K, V> entry : keys.entrySet()) {
-            addEntry(collector, Tuple2.tuple(entry.getKey(), valueTransform.apply(entry.getValue())));
+            addEntry(collector, new Tuple2<>(entry.getKey(), valueTransform.apply(entry.getValue())));
         }
         return collector;
     }
@@ -7021,14 +7034,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #with(Object, Closure)
      * @since 1.0
      */
-    public static <T,U> T identity(
-            @DelegatesTo.Target("self") U self,
-            @DelegatesTo(value=DelegatesTo.Target.class,
-                    target="self",
-                    strategy=Closure.DELEGATE_FIRST)
-            @ClosureParams(FirstParam.class)
-                    Closure<T> closure) {
-        return DefaultGroovyMethods.with(self, closure);
+    public static <T, U> T identity(
+            @DelegatesTo.Target U self,
+            @DelegatesTo(strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class) Closure<T> closure) {
+        return callWithDelegateAndParameter(closure,self).getV1();
     }
 
     //--------------------------------------------------------------------------
@@ -11501,7 +11511,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 metaClassRegistry.setMetaClass(self, metaClass);
             }
-            if (self==NullObject.class) {
+            if (NullObject.class.equals(self)) {
                 NullObject.getNullObject().setMetaClass(metaClass);
             }
         }
@@ -13006,15 +13016,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #with(Object, Closure)
      * @since 2.5.0
      */
-    @SuppressWarnings("unchecked")
-    public static <T,U> U tap(
-            @DelegatesTo.Target("self") U self,
-            @DelegatesTo(value=DelegatesTo.Target.class,
-                    target="self",
-                    strategy=Closure.DELEGATE_FIRST)
-            @ClosureParams(FirstParam.class)
-            Closure<T> closure) {
-        return (U) with(self, true, (Closure<Object>)closure);
+    public static <T, U> U tap(
+            @DelegatesTo.Target U self,
+            @DelegatesTo(strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class) Closure<T> closure) {
+        return callWithDelegateAndParameter(closure,self).getV2();
     }
 
     //--------------------------------------------------------------------------
@@ -15271,15 +15277,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #tap(Object, Closure)
      * @since 1.5.0
      */
-    @SuppressWarnings("unchecked")
-    public static <T,U> T with(
-            @DelegatesTo.Target("self") U self,
-            @DelegatesTo(value=DelegatesTo.Target.class,
-                    target="self",
-                    strategy=Closure.DELEGATE_FIRST)
-            @ClosureParams(FirstParam.class)
-            Closure<T> closure) {
-        return (T) with(self, false, (Closure<Object>)closure);
+    public static <T, U> T with(
+            @DelegatesTo.Target U self,
+            @DelegatesTo(strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class) Closure<T> closure) {
+        return callWithDelegateAndParameter(closure,self).getV1();
     }
 
     /**
@@ -15312,28 +15314,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      * Alternatively, 'with' is an alias for 'with(false)', so the boolean parameter can be omitted instead.
      *
-     * @param self      the object to have a closure act upon
-     * @param returning if true, return the self object; otherwise, the result of calling the closure
-     * @param closure   the closure to call on the object
-     * @return the self object or the result of calling the closure depending on 'returning'
+     * @param self     the object to have a closure act upon
+     * @param returnIt if true, return the self object; otherwise, the result of calling the closure
+     * @param closure  the closure to call on the object
+     * @return the self object or the result of calling the closure depending on {@code returnIt}
      * @see #with(Object, Closure)
      * @see #tap(Object, Closure)
      * @since 2.5.0
      */
-    public static <T,U extends T, V extends T> T with(
-            @DelegatesTo.Target("self") U self,
-            boolean returning,
-            @DelegatesTo(value=DelegatesTo.Target.class,
-                    target="self",
-                    strategy=Closure.DELEGATE_FIRST)
-            @ClosureParams(FirstParam.class)
-            Closure<T> closure) {
-        @SuppressWarnings("unchecked")
-        final Closure<V> clonedClosure = (Closure<V>) closure.clone();
-        clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        clonedClosure.setDelegate(self);
-        V result = clonedClosure.call(self);
-        return returning ? self : result;
+    public static <T, U extends T, V extends T> T with(
+            @DelegatesTo.Target U self, boolean returnIt,
+            @DelegatesTo(strategy=Closure.DELEGATE_FIRST)
+            @ClosureParams(FirstParam.class) Closure<V> closure) {
+        var response = callWithDelegateAndParameter(closure,self);
+        if (returnIt) return response.getV2(); // self or null
+        return response.getV1();
     }
 
     //--------------------------------------------------------------------------
