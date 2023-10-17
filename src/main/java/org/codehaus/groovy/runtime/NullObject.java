@@ -184,7 +184,6 @@ public class NullObject extends GroovyObjectSupport {
      * @param closure the closure to call on the object
      * @return result of calling the closure
      */
-
     @Deprecated(since = "5.0.0") // GROOVY-4526
     public <T> T with(final Closure<T> closure) {
         return DefaultGroovyMethods.with(null, closure);

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -116,16 +117,24 @@ final class NullObjectTest {
     @Test
     void testAsType1() {
         def nil = null
-        assert (nil as Number) == null
-        assert (nil as String) == null
+        assert (nil as Number) === null
+        assert (nil as String) === null
     }
 
     @Test
     void testAsType2() {
         def nil = null
+        assert nil.asType(String) === null
         shouldFail(IllegalArgumentException) {
-            NullObject.getNullObject().asType(int.class)
+            NullObject.getNullObject().asType(int)
         }
+    }
+
+    // GROOVY-7861
+    @Test @CompileStatic
+    void testAsType3() {
+        def nil = null
+        assert nil.asType(String) === null
     }
 
     @Test

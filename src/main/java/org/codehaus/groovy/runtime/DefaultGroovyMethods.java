@@ -1384,7 +1384,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T asType(Object obj, Class<T> type) {
-        if (String.class == type) {
+        if (obj != null && type == String.class) {
             return (T) FormatHelper.toString(obj);
         }
 
