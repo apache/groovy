@@ -29,7 +29,7 @@ public class NullObject extends GroovyObjectSupport {
     private static final NullObject INSTANCE = new NullObject();
 
     /**
-     * get the NullObject reference
+     * Returns the NullObject reference.
      *
      * @return the null object
      */
@@ -37,9 +37,6 @@ public class NullObject extends GroovyObjectSupport {
         return INSTANCE;
     }
 
-    /**
-     * private constructor
-     */
     private NullObject() {
         if (INSTANCE != null) {
             throw new RuntimeException("Can't instantiate NullObject. Use NullObject.getNullObject()");
@@ -85,18 +82,20 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
-     * Tries to get a property on null, which will always fail.
+     * Tries to get a property on null, which fails except for "class" and "metaClass".
      *
      * @return never
      * @throws NullPointerException
      */
     @Override
     public Object getProperty(final String name) {
+        if ("class".equals(name)) return getClass(); // GROOVY-4487
+        if ("metaClass".equals(name)) return DefaultGroovyMethods.getMetaClass(this);
         throw new NullPointerException("Cannot get property '" + name + "' on null object");
     }
 
     /**
-     * Tries to set a property on null, which will always fail
+     * Tries to set a property on null, which fails.
      *
      * @throws NullPointerException
      */

@@ -11502,16 +11502,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static void setMetaClass(Class self, MetaClass metaClass) {
-        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        if (metaClass == null)
-            metaClassRegistry.removeMetaClass(self);
-        else {
-            if (metaClass instanceof HandleMetaClass) {
-                metaClassRegistry.setMetaClass(self, ((HandleMetaClass)metaClass).getAdaptee());
-            } else {
-                metaClassRegistry.setMetaClass(self, metaClass);
-            }
-            if (NullObject.class.equals(self)) {
+        if (metaClass == null) {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(self);
+        } else {
+            MetaClass mc = metaClass instanceof HandleMetaClass
+              ? ((HandleMetaClass)metaClass).getAdaptee() : metaClass;
+            GroovySystem.getMetaClassRegistry().setMetaClass(self,mc);
+            if (NullObject.class.equals(self)) { // GROOVY-3803
                 NullObject.getNullObject().setMetaClass(metaClass);
             }
         }

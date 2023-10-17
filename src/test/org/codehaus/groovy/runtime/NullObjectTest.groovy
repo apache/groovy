@@ -81,6 +81,15 @@ final class NullObjectTest {
         assert nil.toString() == 'null'
     }
 
+    // GROOVY-4487
+    @Test
+    void testGetClass() {
+        def nil = null
+        assert nil.class === nil.getClass()
+        assert nil.class.simpleName == 'NullObject'
+        assert nil.getClass().getSimpleName() == 'NullObject'
+    }
+
     @Test
     void testGetProperty() {
         def nil = null
@@ -245,8 +254,9 @@ final class NullObjectTest {
         }
     }
 
+    // GROOVY-3803
     @Test
-    void testMetaClass() {
+    void testMetaClass1() {
         def oldMC = NullObject.getMetaClass()
         try {
             NullObject.metaClass.hello = { -> 'Greeting from null' }
@@ -254,5 +264,23 @@ final class NullObjectTest {
         } finally {
             NullObject.setMetaClass(oldMC)
         }
+    }
+
+    // GROOVY-8875
+    @Test
+    void testMetaClass2() {
+        def oldMC = NullObject.getMetaClass()
+        try {
+            NullObject.metaClass.toString = { -> 'bar' }
+            assert ('foo' + null) == 'foobar'
+        } finally {
+            NullObject.setMetaClass(oldMC)
+        }
+    }
+
+    @Test
+    void testMetaClass3() {
+        assert null.metaClass == null.getMetaClass()
+        assert null.metaClass.adaptee === null.getMetaClass().getAdaptee()
     }
 }
