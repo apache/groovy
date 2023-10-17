@@ -316,11 +316,13 @@ public class MetaClassHelper {
          */
 
         Class<?> parameterClass = parameter.getTheClass();
-        if (parameterClass == argument) return 0;
+        if (parameterClass == argument) {
+            return 0; // exact match
+        }
 
         if (parameter.isInterface()) {
             long dist = getMaximumInterfaceDistance(argument, parameterClass);
-            if (dist >= 0 || argument == null || !Closure.class.isAssignableFrom(argument)) {
+            if (dist >= 0 || (argument != null && !Closure.class.isAssignableFrom(argument))) {
                 return dist << INTERFACE_SHIFT;
             }
         }
@@ -360,15 +362,16 @@ public class MetaClassHelper {
                 }
                 objectDistance += 3;
             }
+        } else if (parameterClass == NullObject.class) {
+            return 0; // exact match -- GROOVY-9367
+        } else if (parameterClass == Object.class) {
+            return 1; // tight match
+        } else if (parameterClass.isInterface()) {
+            return 2L << INTERFACE_SHIFT;
         } else {
-            // choose the distance to Object if an argument is null, which means
-            // that Object is preferred over a more specific type
-            if (parameterClass.isPrimitive()) {
+            // compute the distance to Object
+            for (Class<?> c = parameterClass; c != null && c != Object.class; c = c.getSuperclass()) {
                 objectDistance += 2;
-            } else {
-                for (Class<?> c = parameterClass; c != null && c != Object.class; c = c.getSuperclass()) {
-                    objectDistance += 2;
-                }
             }
         }
         return objectDistance << OBJECT_SHIFT;
