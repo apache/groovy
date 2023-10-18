@@ -25,16 +25,11 @@ import java.util.Collections;
 import java.util.Iterator;
 
 public class NullObject extends GroovyObjectSupport {
+
     private static final NullObject INSTANCE = new NullObject();
 
     /**
-     * private constructor
-     */
-    private NullObject() {
-    }
-
-    /**
-     * get the NullObject reference
+     * Returns the NullObject reference.
      *
      * @return the null object
      */
@@ -42,73 +37,126 @@ public class NullObject extends GroovyObjectSupport {
         return INSTANCE;
     }
 
+    private NullObject() {
+    }
+
+    //--------------------------------------------------------------------------
+
     /**
-     * Since this is implemented as a singleton, we should avoid the
-     * use of the clone method
+     * Since this is implemented as a singleton, avoid the use of the clone method.
+     *
+     * @return never
+     * @throws NullPointerException
      */
+    @Override
     public Object clone() {
         throw new NullPointerException("Cannot invoke method clone() on null object");
     }
 
     /**
-     * Tries to get a property on null, which will always fail
+     * null is only equal to null.
      *
-     * @param property - the property to get
-     * @return a NPE
+     * @param o the reference object with which to compare
+     * @return true if this object is the same as the to argument
      */
-    public Object getProperty(String property) {
-        throw new NullPointerException("Cannot get property '" + property + "' on null object");
+    @Override
+    public boolean equals(final Object o) {
+        return o == null;
     }
 
     /**
-     * Allows the closure to be called for NullObject
-     *
-     * @param closure the closure to call on the object
-     * @return result of calling the closure
+     * @return never
+     * @throws NullPointerException
      */
-    public <T> T with( Closure<T> closure ) {
-        return DefaultGroovyMethods.with( null, closure ) ;
+    @Override
+    public int hashCode() {
+        throw new NullPointerException("Cannot invoke method hashCode() on null object");
+    }
+
+    @Override
+    public String toString() {
+        return "null";
     }
 
     /**
-     * Tries to set a property on null, which will always fail
+     * Tries to get a property on null, which fails.
      *
-     * @param property - the proprty to set
-     * @param newValue - the new value of the property
+     * @return never
+     * @throws NullPointerException
      */
-    public void setProperty(String property, Object newValue) {
-        throw new NullPointerException("Cannot set property '" + property + "' on null object");
+    @Override
+    public Object getProperty(final String name) {
+        throw new NullPointerException("Cannot get property '" + name + "' on null object");
     }
 
     /**
-     * Tries to invoke a method on null, which will always fail
+     * Tries to set a property on null, which fails.
      *
-     * @param name the name of the method to invoke
-     * @param args - arguments to the method
-     * @return a NPE
+     * @throws NullPointerException
      */
-    public Object invokeMethod(String name, Object args) {
+    @Override
+    public  void  setProperty(final String name, final Object value) {
+        throw new NullPointerException("Cannot set property '" + name + "' on null object");
+    }
+
+    /**
+     * Tries to invoke a method on null, which falis.
+     *
+     * @return never
+     * @throws NullPointerException
+     */
+    @Override
+    public Object invokeMethod(final String name, final Object arguments) {
         throw new NullPointerException("Cannot invoke method " + name + "() on null object");
     }
 
+    //--------------------------------------------------------------------------
+
     /**
-     * null is only equal to null
+     * A null object coerces to false.
      *
-     * @param to - the reference object with which to compare
-     * @return - true if this object is the same as the to argument
+     * @return false
      */
-    public boolean equals(Object to) {
-        return to == null;
+    public boolean asBoolean() {
+        return false;
     }
 
     /**
-     * iterator() method to be able to iterate on null.
-     * Note: this part is from Invoker
+     * Type conversion method for null.
      *
-     * @return an iterator for an empty list
+     * @return null
+     */
+    public Object asType(final Class c) {
+        return null;
+    }
+
+    /**
+     * Tests for equal references.
+     *
+     * @return true if object is null
+     */
+    public boolean is(final Object o) {
+        return equals(o);
+    }
+
+    /**
+     * Provides ability to iterate on null.
+     *
+     * @return an empty iterator
      */
     public Iterator iterator() {
-        return Collections.EMPTY_LIST.iterator();
+        return Collections.emptyIterator();
+    }
+
+    /**
+     * Fallback for {@code null+null}. The {@link plus(String)} variant catches
+     * the case of adding a non-null String to null.
+     *
+     * @return never
+     * @throws NullPointerException
+     */
+    public Object plus(final Object o) {
+        throw new NullPointerException("Cannot execute null+" + o);
     }
 
     /**
@@ -116,61 +164,19 @@ public class NullObject extends GroovyObjectSupport {
      * The result is concatenated String of the result of calling
      * toString() on this object and the String in the parameter.
      *
-     * @param s - the String to concatenate
      * @return the concatenated string
      */
-    public Object plus(String s) {
-        return getMetaClass().invokeMethod(this, "toString", new Object[]{}) + s;
+    public Object plus(final String s) {
+        return getMetaClass().invokeMethod(this, "toString", new Object[0]) + s;
     }
 
     /**
-     * Fallback for null+null.
-     * The result is always a NPE. The plus(String) version will catch 
-     * the case of adding a non null String to null.
+     * Allows the closure to be called for NullObject.
      *
-     * @param o - the Object
-     * @return nothing
+     * @param closure the closure to call on the object
+     * @return result of calling the closure
      */
-    public Object plus(Object o) {
-        throw new NullPointerException("Cannot execute null+" + o);
-    }
-
-    /**
-     * The method "is" is used to test for equal references.
-     * This method will return true only if the given parameter
-     * is null
-     *
-     * @param other - the object to test
-     * @return true if other is null
-     */
-    public boolean is(Object other) {
-        return other == null;
-    }
-
-    /**
-     * Type conversion method for null.
-     *
-     * @param c - the class to convert to
-     * @return always null
-     */
-    public Object asType(Class c) {
-        return null;
-    }
-
-    /**
-     * A null object always coerces to false.
-     * 
-     * @return false
-     */
-    public boolean asBoolean() {
-        return false;
-    }
-
-    public String toString() {
-        return "null";
-    }
-
-    public int hashCode() {
-        throw new NullPointerException("Cannot invoke method hashCode() on null object");
+    public <T> T with(final Closure<T> closure) {
+        return DefaultGroovyMethods.with(null, closure); // GROOVY-4526, GROOVY-4985
     }
 }

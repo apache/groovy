@@ -255,14 +255,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #with(Object, Closure)
      * @since 1.0
      */
-    public static <T,U> T identity(
+    public static <T, U> T identity(
             @DelegatesTo.Target("self") U self,
             @DelegatesTo(value=DelegatesTo.Target.class,
                     target="self",
                     strategy=Closure.DELEGATE_FIRST)
             @ClosureParams(FirstParam.class)
-                    Closure<T> closure) {
-        return DefaultGroovyMethods.with(self, closure);
+            Closure<T> closure) {
+        return with(self, closure);
     }
 
     /**
@@ -300,7 +300,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
-    public static <T,U> T with(
+    public static <T, U> T with(
             @DelegatesTo.Target("self") U self,
             @DelegatesTo(value=DelegatesTo.Target.class,
                     target="self",
@@ -348,20 +348,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #tap(Object, Closure)
      * @since 2.5.0
      */
-    public static <T,U extends T, V extends T> T with(
+    public static <T, U extends T, V extends T> T with(
             @DelegatesTo.Target("self") U self,
             boolean returning,
             @DelegatesTo(value=DelegatesTo.Target.class,
                     target="self",
                     strategy=Closure.DELEGATE_FIRST)
             @ClosureParams(FirstParam.class)
-            Closure<T> closure) {
-        @SuppressWarnings("unchecked")
-        final Closure<V> clonedClosure = (Closure<V>) closure.clone();
-        clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        clonedClosure.setDelegate(self);
-        V result = clonedClosure.call(self);
-        return returning ? self : result;
+            Closure<T> closure) { // TODO: T -> V
+        if (self == NullObject.getNullObject()) {
+            self = null; // GROOVY-4526, et al.
+        }
+        @SuppressWarnings("unchecked") Closure<V> mutableClosure = (Closure<V>) closure.clone();
+        mutableClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
+        mutableClosure.setDelegate(self);
+        V rv = mutableClosure.call(self);
+        return returning ? self : rv;
     }
 
     /**
@@ -394,7 +396,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     @SuppressWarnings("unchecked")
-    public static <T,U> U tap(
+    public static <T, U> U tap(
             @DelegatesTo.Target("self") U self,
             @DelegatesTo(value=DelegatesTo.Target.class,
                     target="self",
@@ -18085,16 +18087,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static void setMetaClass(Class self, MetaClass metaClass) {
-        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        if (metaClass == null)
-            metaClassRegistry.removeMetaClass(self);
-        else {
-            if (metaClass instanceof HandleMetaClass) {
-                metaClassRegistry.setMetaClass(self, ((HandleMetaClass)metaClass).getAdaptee());
-            } else {
-                metaClassRegistry.setMetaClass(self, metaClass);
-            }
-            if (self==NullObject.class) {
+        if (metaClass == null) {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(self);
+        } else {
+            MetaClass mc = metaClass instanceof HandleMetaClass
+              ? ((HandleMetaClass)metaClass).getAdaptee() : metaClass;
+            GroovySystem.getMetaClassRegistry().setMetaClass(self,mc);
+            if (NullObject.class.equals(self)) { // GROOVY-3803
                 NullObject.getNullObject().setMetaClass(metaClass);
             }
         }
