@@ -371,7 +371,7 @@ public class Java8 implements VMPlugin {
                 ElementType type = ElementType.valueOf(name);
                 Integer target = elementTypeToTarget.get(type);
                 if (target == null) throw new GroovyBugError("unsupported Target " + type);
-                targets |= target.intValue();
+                targets |= target;
             }
             root.setAllowedTargets(targets);
         }
