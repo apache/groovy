@@ -53,6 +53,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
@@ -216,6 +217,19 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
         visitor.addMissingHandler(
                 innerClass,
+                "$static_methodMissing",
+                ACC_PUBLIC | ACC_STATIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
+                (methodBody, parameters) -> {
+                    InnerClassVisitorHelper.setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
+                }
+        );
+
+        //
+
+        visitor.addMissingHandler(
+                innerClass,
                 "propertyMissing",
                 ACC_PUBLIC,
                 OBJECT_TYPE,
@@ -227,8 +241,32 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
         visitor.addMissingHandler(
                 innerClass,
+                "$static_propertyMissing",
+                ACC_PUBLIC | ACC_STATIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name")),
+                (methodBody, parameters) -> {
+                    InnerClassVisitorHelper.setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
+                }
+        );
+
+        //
+
+        visitor.addMissingHandler(
+                innerClass,
                 "propertyMissing",
                 ACC_PUBLIC,
+                VOID_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
+                (methodBody, parameters) -> {
+                    InnerClassVisitorHelper.setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
+                }
+        );
+
+        visitor.addMissingHandler(
+                innerClass,
+                "$static_propertyMissing",
+                ACC_PUBLIC | ACC_STATIC,
                 VOID_TYPE,
                 params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
                 (methodBody, parameters) -> {

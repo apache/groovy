@@ -812,12 +812,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     // GROOVY-8369
     void testPropertyAccessOnEnumClass() {
         assertScript '''
-            enum Foo {}
-
-            def test() {
-                assert Foo.getModifiers() == Foo.modifiers
-            }
-            test()
+            enum Foo { }
+            assert Foo.modifiers === Foo.getModifiers()
         '''
     }
 

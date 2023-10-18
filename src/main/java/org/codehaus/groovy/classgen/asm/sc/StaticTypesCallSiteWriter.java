@@ -51,9 +51,9 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -63,6 +63,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.COLLECTION_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
@@ -124,8 +125,7 @@ import static org.objectweb.asm.Opcodes.PUTSTATIC;
  */
 public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
-    private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection.class);
-    private static final ClassNode INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
+    private static final ClassNode  INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
     private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY);
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[]{new Parameter(OBJECT_TYPE, "key")});
@@ -184,48 +184,18 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
         // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
         if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)
-                && !java.util.Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isPresent()) {
+                && Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isEmpty()) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (receiver instanceof ClassExpression) {
-            if (makeGetField(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
-            if (makeGetPropertyWithGetter(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
-            if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
+        if (isThisExpression(receiver) && receiverType.getOuterClass() != null) { // GROOVY-11198: outer field
+            if (makeGetField(receiver, receiverType.getOuterClass(), propertyName, safe, implicitThis)) return;
         }
         if (isClassReceiver[0]) {
-            // we are probably looking for a property of the class
             if (makeGetPropertyWithGetter(receiver, CLASS_Type, propertyName, safe, implicitThis)) return;
-            if (makeGetField(receiver, CLASS_Type, propertyName, safe, false)) return;
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
-
-        // GROOVY-5580: it is still possible that we're calling a superinterface property
-        String isserName = "is" + capitalize(propertyName);
-        String getterName = "get" + capitalize(propertyName);
-        if (receiverType.isInterface()) {
-            MethodNode getterMethod = null;
-            for (ClassNode anInterface : receiverType.getAllInterfaces()) {
-                getterMethod = anInterface.getGetterMethod(isserName);
-                if (getterMethod == null)
-                    getterMethod = anInterface.getGetterMethod(getterName);
-                if (getterMethod != null) break;
-            }
-            // GROOVY-5585
-            if (getterMethod == null) {
-                getterMethod = OBJECT_TYPE.getGetterMethod(getterName);
-            }
-            if (getterMethod != null) {
-                MethodCallExpression call = callX(receiver, getterName);
-                call.setImplicitThis(false);
-                call.setMethodTarget(getterMethod);
-                call.setSafe(safe);
-                call.setSourcePosition(receiver);
-                call.visit(controller.getAcg());
-                return;
-            }
-        }
 
         if (!isStaticProperty && isOrImplements(receiverType, LIST_TYPE)) {
             writeListDotProperty(receiver, propertyName, safe);

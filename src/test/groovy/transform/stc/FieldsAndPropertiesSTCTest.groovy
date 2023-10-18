@@ -419,7 +419,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class Person {
                 String name
-
                 static Person create() {
                     def p = new Person()
                     p.setName("Guillaume")
@@ -515,6 +514,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5585
     void testClassPropertyOnInterface() {
         assertScript '''
             Class test(Serializable arg) {
@@ -715,11 +715,10 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testAccessFieldDefinedInInterface() {
         assertScript '''
             class Foo implements groovy.transform.stc.FieldsAndPropertiesSTCTest.InterfaceWithField {
-                void test() {
+                static main(args) {
                     assert boo == "I don't fancy fields in interfaces"
                 }
             }
-            new Foo().test()
         '''
     }
 
@@ -733,6 +732,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 1
@@ -749,6 +749,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 1
@@ -767,6 +768,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 2
@@ -812,8 +814,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-            def i = new Outer.Inner()
-            def x = i.m()
         ''',
         'The variable [p] is undeclared.'
     }
@@ -828,8 +828,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-            def i = new Outer.Inner()
-            def x = i.m()
         ''',
         'No such property: p for class: Outer$Inner'
     }
@@ -846,6 +844,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
+
             def in = Outer.Inner.FOO
             assert Outer.props == [bar: 10, baz: 20, foo: 30]
         '''
@@ -870,10 +869,42 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
+
                 Object value = new Outer.Inner().test(0)
                 assert value == 2
             """
         }
+    }
+
+    void testOuterPropertyAccess10() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() { p }
+                }
+                String p = 'field'
+                String getP() { 'property' }
+            }
+
+            String which = new Outer.Inner(new Outer()).m()
+            assert which == 'property'
+        '''
+    }
+
+    // GROOVY-11199
+    void testOuterPropertyAccess11() {
+        assertScript '''
+            class C {
+                class D {
+                    def m() { p = 'method' }
+                }
+                String p = 'field'
+                String getP() { 'property' }
+            }
+
+            String which = new C.D(new C()).m()
+            assert which == 'method'
+        '''
     }
 
     // GROOVY-11029
@@ -929,40 +960,40 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testPrivateFieldAccessInAIC() {
         assertScript '''
-            class A {
+            class C {
                 private int x
-                void foo() {
-                    def aic = new Runnable() { void run() { x = 666 } }
+                void test() {
+                    def aic = new Runnable() {
+                        void run() { x = 666 }
+                    }
                     aic.run()
-                }
-                void ensure() {
                     assert x == 666
                 }
             }
-            def a = new A()
-            a.foo()
-            a.ensure()
+
+            new C().test()
         '''
     }
 
     void testPrivateFieldAccessInClosure1() {
         assertScript '''
-            class A {
+            class C {
                 private int x
                 void test() {
-                    def c = { -> x = 666 }
-                    c()
+                    def fun = { -> x = 666 }
+                    fun.call()
                     assert x == 666
                 }
             }
-            new A().test()
+
+            new C().test()
         '''
     }
 
     // GROOVY-9683
     void testPrivateFieldAccessInClosure2() {
         assertScript '''
-            class A {
+            class C {
                 private static X = 'xxx'
                 void test() {
                     [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
@@ -970,24 +1001,41 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-            new A().test()
+
+            new C().test()
         '''
+    }
+
+    // GROOVY-11198
+    void testPrivateFieldAccessInEnumInit() {
+        for (mode in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
+            assertScript """
+                class C {
+                    $mode static int ONE = 1
+                    enum E {
+                        FOO(1 + ONE)
+                        final number
+                        E(int number) {
+                            this.number = number
+                        }
+                    }
+                }
+
+                assert C.E.FOO.number == 2
+            """
+        }
     }
 
     // GROOVY-5737
     void testGeneratedFieldAccessInClosure() {
         assertScript '''
-            import groovy.transform.*
-            import groovy.util.logging.*
-
-            @Log
+            @groovy.util.logging.Log
             class GreetingActor {
-
-              def receive = {
-                log.info "test"
-              }
-
+                def receive = {
+                    log.info "test"
+                }
             }
+
             new GreetingActor()
         '''
     }

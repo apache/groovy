@@ -205,6 +205,7 @@ class EnumTest extends CompilableTestSupport {
                 }
             }
         '''
+
         shouldCompile '''
             enum E {
                 FOO;
@@ -215,6 +216,7 @@ class EnumTest extends CompilableTestSupport {
                 }
             }
         '''
+
         shouldNotCompile '''
             enum E {
                 FOO;
@@ -281,7 +283,7 @@ class EnumTest extends CompilableTestSupport {
             class Mother3483 {
                 Mother3483.Child child
 
-                enum Child{
+                enum Child {
                     Franz,
                     Ferdi,
                     Nand
@@ -297,20 +299,42 @@ class EnumTest extends CompilableTestSupport {
     // GROOVY-3110
     void testInnerEnumUsedInDefiningClassWithUnqualifiedEnumNameUsed() {
         assertScript '''
-            class Class3110 {
-                enum Enum3110{FOO, BAR}
-                Enum3110 var
-                def setEnumVar() {
-                    var = Enum3110.FOO
+            class C {
+                enum E {
+                    FOO, BAR
                 }
-                def getEnumVar() {
-                    var
+                E enumVar
+                void setEnumVar() {
+                    enumVar = E.FOO
                 }
             }
 
-            def obj = new Class3110()
-            obj.setEnumVar()
-            assert obj.getEnumVar() == Class3110.Enum3110.FOO
+            def c = new C()
+            assert c.enumVar == null
+
+            c.setEnumVar()
+            assert c.enumVar == C.E.FOO
+
+            c.setEnumVar(C.E.BAR)
+            assert c.enumVar == C.E.BAR
+        '''
+    }
+
+    // GROOVY-11198
+    void testInnerEnumInitWithUnqualifiedOuterClassField() {
+        assertScript '''
+            class C {
+                private static final int ONE = 1
+                enum E {
+                    FOO(1 + ONE)
+                    final value
+                    E(value) {
+                        this.value = value
+                    }
+                }
+            }
+
+            assert C.E.FOO.value == 2
         '''
     }
 

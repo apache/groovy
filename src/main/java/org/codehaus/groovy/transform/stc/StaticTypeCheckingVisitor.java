@@ -590,14 +590,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Checks for private field access from inner or outer class.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final FieldNode fn, final boolean lhsOfAssignment) {
-        if (fn == null || !fn.isPrivate()) return;
-        ClassNode declaringClass = fn.getDeclaringClass();
-        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-        if (declaringClass == enclosingClass && typeCheckingContext.getEnclosingClosure() == null) return;
-
-        if (declaringClass == enclosingClass || getOutermost(declaringClass) == getOutermost(enclosingClass)) {
-            StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
-            addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
+        if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
+            ClassNode declaringClass = fn.getDeclaringClass();
+            ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+            if (declaringClass == enclosingClass && typeCheckingContext.getEnclosingClosure() == null) return;
+            if (declaringClass == enclosingClass || getOutermost(declaringClass) == getOutermost(enclosingClass)) {
+                StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
+                addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
+            }
         }
     }
 
@@ -1603,11 +1603,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
 
-                MethodNode getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
+                MethodNode getter = current.getGetterMethod("is" + capName);
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = findGetter(current, getGetterName(propertyName), pexp.isImplicitThis());
+                if (getter == null) getter = current.getGetterMethod(getGetterName(propertyName));
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*enforce void:*/false);
+                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*voidOnly:*/false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
 
                 if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
@@ -1750,14 +1750,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return true;
         }
         return Modifier.isProtected(modifiers) && accessor.isDerivedFrom(receiver);
-    }
-
-    private MethodNode findGetter(final ClassNode current, String name, final boolean searchOuterClasses) {
-        MethodNode getterMethod = current.getGetterMethod(name);
-        if (getterMethod == null && searchOuterClasses && current.getOuterClass() != null) {
-            return findGetter(current.getOuterClass(), name, true);
-        }
-        return getterMethod;
     }
 
     private ClassNode getTypeForMultiValueExpression(final ClassNode compositeType, final Expression prop) {
