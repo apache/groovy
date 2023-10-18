@@ -1215,6 +1215,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
             }
+            target.setGenericsTypes(out);
+            return;
         }
         else {
             genericsTypes = genericsTypes.clone();
