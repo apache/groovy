@@ -1721,7 +1721,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test([(A.X): B.Y])
         '''
     }
-
+    // GROOVY-11193
+    void testDiamondInferenceFromConstructor38() {
+        assertScript '''
+            interface A<K, V> {
+            }
+            class B<V> implements A<Long, V>{
+            }
+            A<Long, String> a = new B<>()
+        '''
+    }
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
