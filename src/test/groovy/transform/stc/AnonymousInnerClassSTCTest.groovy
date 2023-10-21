@@ -19,8 +19,7 @@
 package groovy.transform.stc
 
 /**
- * Test cases specifically aimed at testing the behaviour of the type checker
- * with regards to anonymous inner classes.
+ * Unit tests for static type checking : anonymous inner classes.
  */
 class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
 
@@ -222,6 +221,139 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert A.create().answer() == 42
+        '''
+    }
+
+    void testPrivateFieldAccess() {
+        assertScript '''
+            class C {
+                private int x
+                void test() {
+                    def aic = new Runnable() {
+                        void run() { x = 666 }
+                    }
+                    aic.run()
+                    assert x == 666
+                }
+            }
+
+            new C().test()
+        '''
+    }
+
+    // GROOVY-7994
+    void testOuterPropertyAccess() {
+        String other = '''
+            class Other {
+                public final String text
+                String toString() { text }
+                Other(             ) { text = "" }
+                Other(Object object) { text = "Object:$object" }
+                Other(String string) { text = "String:$string" }
+                static String foo(Object object) { "Object:$object" }
+                static String foo(String string) { "String:$string" }
+                       String bar(Object object) { "Object:$object" }
+                       String bar(String string) { "String:$string" }
+            }
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                String test() {
+                    [ new Other(p), new Other(getP()) ].join('|')
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                class Inner {
+                    String test() { // unqualified "p" should resolve to outer property
+                        [ new Other(p), new Other(Outer.this.p), new Other(getP()) ].join('|')
+                    }
+                }
+            }
+
+            String result = new Outer.Inner(new Outer()).test()
+            assert result == 'String:x|String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                String test() {
+                    new Object() {
+                        String toString() {
+                            [ new Other(p), new Other(Outer.this.p), new Other(getP()) ].join('|')
+                        }
+                    }
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String p = 'x'
+                String test() {
+                    new Object() {
+                        String toString() {
+                            [ new Other(p), new Other(getP()) ].join('|')
+                        }
+                    }
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                String test() {
+                    new Object() {
+                        String toString() {
+                            [ Other.foo(p), Other.foo(Outer.this.p), Other.foo(getP()) ].join('|')
+                        }
+                    }
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                String test() {
+                    new Object() {
+                        String toString() {
+                            [ new Other().bar(p), new Other().bar(getP()) ].join('|')
+                        }
+                    }
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x'
+        '''
+        assertScript other + '''
+            class Outer {
+                String getP() { 'x' }
+                String test() {
+                    new Object() {
+                        String toString() {
+                            new Other().with { [ bar(p), bar(getP()) ].join('|') }
+                        }
+                    }
+                }
+            }
+
+            String result = new Outer().test()
+            assert result == 'String:x|String:x'
         '''
     }
 }

@@ -20,6 +20,9 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
+/**
+ * Unit tests for static compilation : fields and properties.
+ */
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5561

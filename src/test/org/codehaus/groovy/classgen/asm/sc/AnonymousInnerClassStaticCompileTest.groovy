@@ -21,8 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.AnonymousInnerClassSTCTest
 
 /**
- * Statically compiled the {@link AnonymousInnerClassSTCTest tests} and runs them
- * to ensure they are compatible with static compilation.
+ * Unit tests for static compilation : anonymous inner classes.
  */
-class AnonymousInnerClassStaticCompileTest extends AnonymousInnerClassSTCTest implements StaticCompilationTestSupport {}
-
+final class AnonymousInnerClassStaticCompileTest extends AnonymousInnerClassSTCTest implements StaticCompilationTestSupport {
+}

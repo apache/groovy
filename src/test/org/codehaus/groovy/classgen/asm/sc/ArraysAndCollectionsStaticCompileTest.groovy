@@ -21,9 +21,9 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.ArraysAndCollectionsSTCTest
 
 /**
- * Unit tests for static type checking : miscellaneous tests.
+ * Unit tests for static compilation : arrays and collections.
  */
-class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
+final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
 
     void testListStarWithMethodReturningVoid() {
         assertScript '''

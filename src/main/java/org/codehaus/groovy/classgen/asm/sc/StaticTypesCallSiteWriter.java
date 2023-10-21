@@ -159,6 +159,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
+
         boolean[] isClassReceiver = new boolean[1];
         ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
         if (receiverType.isArray() && "length".equals(propertyName)) {
@@ -188,6 +189,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
+
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (isThisExpression(receiver) && receiverType.getOuterClass() != null) { // GROOVY-11198: outer field
             if (makeGetField(receiver, receiverType.getOuterClass(), propertyName, safe, implicitThis)) return;
@@ -436,7 +438,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             getterName = "get" + capitalize(propertyName);
             getterNode = receiverType.getGetterMethod(getterName);
         }
-        if (getterNode != null && receiver instanceof ClassExpression && !isClassType(receiverType) && !getterNode.isStatic()) {
+        if (getterNode != null && !getterNode.isStatic() && receiver instanceof ClassExpression && !isClassType(receiverType)) {
             return false;
         }
 
@@ -467,22 +469,24 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return true;
         }
 
-        if (receiverType instanceof InnerClassNode && !receiverType.isStaticClass()) {
-            if (makeGetPropertyWithGetter(receiver,  receiverType.getOuterClass(), propertyName,  safe, implicitThis)) {
-                return true;
-            }
-        }
-
         // GROOVY-7149: check direct interfaces
         for (ClassNode node : receiverType.getInterfaces()) {
             if (makeGetPropertyWithGetter(receiver, node, propertyName, safe, implicitThis)) {
                 return true;
             }
         }
-        // go upper level
+        // check super class
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass != null) {
-            return makeGetPropertyWithGetter(receiver, superClass, propertyName, safe, implicitThis);
+            if (makeGetPropertyWithGetter(receiver, superClass, propertyName, safe, implicitThis)) {
+                return true;
+            }
+        }
+        // check outer class
+        if (implicitThis && receiverType instanceof InnerClassNode && !receiverType.isStaticClass()) {
+            if (makeGetPropertyWithGetter(receiver,  receiverType.getOuterClass(), propertyName,  safe, implicitThis)) {
+                return true;
+            }
         }
 
         return false;

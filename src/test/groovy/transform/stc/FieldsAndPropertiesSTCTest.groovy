@@ -783,6 +783,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+
             def i = new Outer.Inner(new Outer())
             def x = i.p
         ''',
@@ -797,6 +798,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+
             def i = new Outer.Inner(new Outer())
             def x = i.getP()
         ''',
@@ -850,8 +852,56 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10981, GROOVY-10985
     void testOuterPropertyAccess9() {
+        assertScript '''
+            class Outer {
+                static final int ONE = 1
+                enum Inner {
+                    CONST(1 + ONE)
+                    final int value
+                    Inner(int value) {
+                        this.value = value
+                    }
+                }
+            }
+
+            assert Outer.Inner.CONST.value == 2
+        '''
+    }
+
+    void testOuterPropertyAccess10() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() { p }
+                }
+                String p = 'field'
+                String getP() { 'property' }
+            }
+
+            String which = new Outer.Inner(new Outer()).m()
+            assert which == 'property'
+        '''
+    }
+
+    // GROOVY-11199
+    void testOuterPropertyAccess11() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() { p = 'method' }
+                }
+                String p = 'field'
+                String getP() { 'property' }
+            }
+
+            String which = new Outer.Inner(new Outer()).m()
+            assert which == 'method'
+        '''
+    }
+
+    // GROOVY-10981, GROOVY-10985
+    void testOuterPropertyAccess12() {
         for (propertySource in [
                 'def get(String name){if(name=="VALUE")return 2}',
                 'def getProperty(String name){if(name=="VALUE")return 2}',
@@ -876,102 +926,72 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testOuterPropertyAccess10() {
-        assertScript '''
-            class Outer {
-                class Inner {
-                    def m() { p }
-                }
-                String p = 'field'
-                String getP() { 'property' }
-            }
-
-            String which = new Outer.Inner(new Outer()).m()
-            assert which == 'property'
-        '''
-    }
-
-    // GROOVY-11199
-    void testOuterPropertyAccess11() {
-        assertScript '''
-            class C {
-                class D {
-                    def m() { p = 'method' }
-                }
-                String p = 'field'
-                String getP() { 'property' }
-            }
-
-            String which = new C.D(new C()).m()
-            assert which == 'method'
-        '''
-    }
-
     // GROOVY-11029
     void testSuperPropertyAccess1() {
         assertScript '''
-            class Foo {
-                Object myThing
+            class One {
+                Object thing
             }
-            class Bar extends Foo {
+            class Two extends One {
                 @Override
-                Object getMyThing() {
-                    super.myThing
+                Object getThing() {
+                    super.thing
                 }
                 @Override
-                void setMyThing(Object object) {
-                    super.myThing = object
+                void setThing(object) {
+                    super.thing = object
                 }
             }
 
-            def bar = new Bar()
-            def value = 'thing'
-            bar.myThing = value
-            assert bar.myThing === value
+            def two = new Two()
+            two.thing = 'value'
+            assert two.thing == 'value'
         '''
     }
 
-    // GROOVY-9562
     void testSuperPropertyAccess2() {
         assertScript '''
-            abstract class One {
-                int prop = 1
+            abstract class One implements java.util.function.IntSupplier {
+                final int prop = 1
             }
-
-            abstract class Two {
-                int prop = 2
-
-                abstract baz()
-            }
-
-            class Foo extends One {
-                Two bar() {
-                    new Two() {
-                        def baz() {
+            class Two {
+                final int prop = 2
+                One m() {
+                    new One() {
+                        int getAsInt() {
                             prop
                         }
                     }
                 }
             }
 
-            assert new Foo().bar().baz() == 2
+            Number which = new Two().m().getAsInt()
+            assert which == 1 // super before outer
         '''
     }
 
-    void testPrivateFieldAccessInAIC() {
+    // GROOVY-9562
+    void testSuperPropertyAccess3() {
         assertScript '''
-            class C {
-                private int x
-                void test() {
-                    def aic = new Runnable() {
-                        void run() { x = 666 }
+            abstract class One {
+                final int prop = 1
+            }
+            abstract class Two {
+                final int prop = 2
+                abstract int baz()
+            }
+            class Foo extends One {
+                Two bar() {
+                    new Two() {
+                        int baz() {
+                            prop
+                        }
                     }
-                    aic.run()
-                    assert x == 666
                 }
             }
 
-            new C().test()
+            Number which = new Foo().bar().baz()
+            assert which == 2 // super before outer
         '''
     }
 
@@ -1008,7 +1028,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-11198
     void testPrivateFieldAccessInEnumInit() {
-        for (mode in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
+        for (mode in ['public', 'private', 'protected', '@groovy.transform.PackageScope']) {
             assertScript """
                 class C {
                     $mode static int ONE = 1
@@ -1308,7 +1328,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     assert md.parameters[0].originType == STRING_TYPE
                 }
             })
-            void testBody() {
+            void test() {
                 def a = new A()
                 test1:
                 a.x = 1
@@ -1317,7 +1337,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 a.x = "3"
                 assert a.x == "3"
             }
-            testBody()
+            test()
         '''
     }
 
@@ -1331,12 +1351,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 void setX(boolean b) { which = 'boolean' }
             }
 
-            void test() {
-                def c = new C()
-                c.x = 'value'
-                assert c.which == 'String'
-            }
-            test()
+            def c = new C()
+            c.x = 'value'
+            assert c.which == 'String'
         '''
     }
 
@@ -1350,11 +1367,11 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 void setX(boolean b) { which = 'boolean' }
             }
 
-            void test(A a) {
-                a.x = 'value'
-                assert a.which == 'String'
+            A a = new A() {
+                void setX(String s) { which = 'String' }
             }
-            test(new A() { void setX(String s) { which = 'String' } })
+            a.x = 'value'
+            assert a.which == 'String'
         '''
     }
 
@@ -1368,12 +1385,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 void setX(boolean b) { which = 'boolean' }
             }
 
-            void test() {
-                def c = new C()
-                c.x = 'value'
-                assert c.which == 'String'
-            }
-            test()
+            def c = new C()
+            c.x = 'value'
+            assert c.which == 'String'
         '''
     }
 

@@ -215,6 +215,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
@@ -1735,6 +1736,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             String delegationData = receiver.getData();
             if (delegationData != null) pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
             return true;
+        }
+
+        if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
+            Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
+            boolean staticOnly = Modifier.isStatic(iter.next().getModifiers()) || staticOnlyAccess;
+            while (iter.hasNext()) {
+                ClassNode outer = iter.next();
+                // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
+                PropertyExpression pe = propX(staticOnly ? classX(outer) : propX(classX(outer), "this"), pexp.getProperty());
+                if (existsProperty(pe, readMode, visitor)) {
+                    pexp.copyNodeMetaData(pe);
+                    return true;
+                }
+                staticOnly = staticOnly || Modifier.isStatic(outer.getModifiers());
+            }
         }
 
         return foundGetterOrSetter;
