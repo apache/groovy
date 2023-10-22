@@ -101,9 +101,9 @@ class XmlUtilTest extends GroovyTestCase {
         }
     }
 
-    // GROOVY-5775
+    // GROOVY-5775, GROOVY-11209
     void testEscaping() {
-      def ans = escapeControlCharacters(escapeXml('"bread" & "butter"\r\n'))
-      assert ans == '&quot;bread&quot; &amp; &quot;butter&quot;&#13;&#10;'
+      def ans = escapeControlCharacters(escapeXml('"bread" & "butter"\r\n\u0000\u001f'))
+      assert ans == '&quot;bread&quot; &amp; &quot;butter&quot;&#13;&#10;&#0;&#31;'
     }
 }
