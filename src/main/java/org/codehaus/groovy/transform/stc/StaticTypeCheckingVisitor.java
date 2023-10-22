@@ -4437,15 +4437,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (op == EQUAL || op == ELVIS_EQUAL) {
             if (rightRedirect.isDerivedFrom(CLOSURE_TYPE)) {
-                ClosureExpression closureExpression = null;
-                if (rightExpression instanceof ClosureExpression) {
-                    closureExpression = (ClosureExpression) rightExpression;
-                } else if (rightExpression instanceof MethodReferenceExpression) {
-                    closureExpression = rightExpression.getNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION);
-                }
-                if (closureExpression != null) {
-                    MethodNode abstractMethod = findSAM(left);
-                    if (abstractMethod != null) {
+                MethodNode abstractMethod = findSAM(left);
+                if (abstractMethod != null) {
+                    ClosureExpression closureExpression = null;
+                    if (rightExpression instanceof ClosureExpression) {
+                        closureExpression = (ClosureExpression) rightExpression;
+                    } else if (rightExpression instanceof MethodPointerExpression) {
+                        closureExpression = rightExpression.getNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION);
+                        if (closureExpression == null) { // GROOVY-11201
+                            ClassNode[] paramTypes;
+                            List<MethodNode> methods = rightExpression.getNodeMetaData(MethodNode.class);
+                            if (methods == null || methods.isEmpty()) { int nParameters = abstractMethod.getParameters().length;
+                                paramTypes = IntStream.range(0, nParameters).mapToObj(i -> dynamicType()).toArray(ClassNode[]::new);
+                            } else {
+                                paramTypes = collateMethodReferenceParameterTypes((MethodPointerExpression) rightExpression, methods.get(0));
+                            }
+                            Parameter[] parameters = new Parameter[paramTypes.length];
+                            for (int i = 0; i < paramTypes.length; i += 1) {
+                                parameters[i] = new Parameter(paramTypes[i], "p" + i);
+                            }
+                            closureExpression = new ClosureExpression(parameters, GENERATED_EMPTY_STATEMENT);
+                            closureExpression.putNodeMetaData(INFERRED_TYPE, rightExpression.getNodeMetaData(INFERRED_TYPE));
+                        }
+                    }
+                    if (closureExpression != null) {
                         return inferSAMTypeGenericsInAssignment(left, abstractMethod, right, closureExpression);
                     }
                 }
