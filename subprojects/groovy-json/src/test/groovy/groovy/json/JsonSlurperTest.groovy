@@ -384,4 +384,23 @@ class JsonSlurperTest extends GroovyTestCase {
 
     }
 
+    void testParseStringEndedWithRightCurlyBrace() {
+        def jsonSlurper = new JsonSlurper()
+        def inValid = """
+                            {
+                            "a":1,
+                            "b": {
+                                "c":2
+                            }"""
+        shouldFail (JsonException) { jsonSlurper.parseText(inValid) }
+
+        def valid = """
+                            {
+                            "a":1,
+                            "b": {
+                                "c":2
+                            }}"""
+        assert jsonSlurper.parseText(valid) == [a: 1, b:[c:2]]
+    }
+
 }
