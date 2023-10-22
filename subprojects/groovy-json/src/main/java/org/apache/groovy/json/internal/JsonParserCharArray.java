@@ -35,12 +35,18 @@ public class JsonParserCharArray extends BaseJsonParser {
     protected char __currentChar;
 
     private int lastIndex;
+    private int openLeftCurlyBraces;
 
     protected Object decodeFromChars(char[] cs) {
         __index = 0;
         charArray = cs;
         lastIndex = cs.length - 1;
-        return decodeValue();
+        openLeftCurlyBraces = 0;
+        Object result = decodeValue();
+        if (openLeftCurlyBraces != 0) {
+            complain("Curly braces do not match");
+        }
+        return result;
     }
 
     protected final boolean hasMore() {
@@ -95,6 +101,9 @@ public class JsonParserCharArray extends BaseJsonParser {
 
     protected final Object decodeJsonObject() {
         if (__currentChar == '{') {
+            if (hasCurrent()) {
+                openLeftCurlyBraces++;
+            }
             __index++;
         }
 
@@ -132,6 +141,9 @@ public class JsonParserCharArray extends BaseJsonParser {
             }
 
             if (__currentChar == '}') {
+                if (hasCurrent()) {
+                    openLeftCurlyBraces--;
+                }
                 __index++;
                 break;
             } else if (__currentChar == ',') {
@@ -202,6 +214,8 @@ public class JsonParserCharArray extends BaseJsonParser {
                 throw new JsonException(exceptionDetails("Unable to determine the " +
                         "current character, it is not a string, number, array, or object"));
         }
+
+
 
         return value;
     }
