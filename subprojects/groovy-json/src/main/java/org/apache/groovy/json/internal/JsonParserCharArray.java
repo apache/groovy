@@ -38,8 +38,11 @@ public class JsonParserCharArray extends BaseJsonParser {
 
     protected Object decodeFromChars(char[] cs) {
         __index = 0;
-        charArray = cs;
-        lastIndex = cs.length - 1;
+        char[] newCs = new char[cs.length + 1];
+        System.arraycopy(cs, 0, newCs, 0, cs.length);
+        newCs[newCs.length - 1] = '\n';
+        charArray = newCs;
+        lastIndex = newCs.length - 1;
         return decodeValue();
     }
 
