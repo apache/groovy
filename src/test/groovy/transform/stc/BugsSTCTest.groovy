@@ -655,29 +655,24 @@ assert o.bar() == 2*o.x
     // GROOVY-6965
     void testShouldNotFailWithClassCastExceptionDuringCompilation() {
         assertScript '''
-interface Job {
-  Runnable getRunnable()
-}
+            interface Job {
+                Runnable getRunnable()
+            }
+            class Printer implements Job {
+                protected void execute() {
+                    println "Printing"
+                }
+                void acceptsRunnable(Runnable r) {
+                    r.run()
+                }
+                Runnable getRunnable() {
+                    acceptsRunnable(this.&execute) // works
+                    return this.&execute           // fails
+                }
+            }
 
-
-class Printer implements Job{
-
-  protected void execute() {
-    println "Printing"
-  }
-
-  public void acceptsRunnable(Runnable r){
-    r.run()
-  }
-
-  public Runnable getRunnable(){
-     acceptsRunnable(this.&execute) // OK
-     return this.&execute           // compile error
-  }
-}
-
-Printer
-'''
+            new Printer().runnable.run()
+        '''
     }
 
     // GROOVY-6970
@@ -952,14 +947,26 @@ Printer
         shouldFailWithMessages '''
             class C { final foo }
             def set = C.&setFoo
-        ''', 'Cannot find matching method C#setFoo'
+        ''',
+        'Cannot find matching method C#setFoo'
     }
 
     // GROOVY-9463
     void testMethodPointerUnknownReference() {
         shouldFailWithMessages '''
             def ptr = String.&toLowerCaseX
-        ''', 'Cannot find matching method java.lang.String#toLowerCaseX.'
+        ''',
+        'Cannot find matching method java.lang.String#toLowerCaseX'
+    }
+
+    // GROOVY-11201
+    void testMethodPointerClosureCoercion() {
+        for (op in ['.&', '::']) {
+            assertScript """import java.util.function.Consumer
+                void setX(String string) { }
+                Consumer<String> c = this${op}setX
+            """
+        }
     }
 
     // GROOVY-9938
