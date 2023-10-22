@@ -476,7 +476,7 @@ public class XmlUtil {
     public static String escapeControlCharacters(String orig) {
         return StringGroovyMethods.collectReplacements(orig, new Closure<String>(null) {
             public String doCall(Character arg) {
-                if (arg < 31) {
+                if (arg < 0x20) {
                         return "&#" + (int) arg + ";";
                 }
                 return null;
