@@ -239,12 +239,30 @@ public class InvokeMethodTest extends GroovyTestCase {
     public void testBadBDToDoubleCoerce() throws Throwable {
         try {
             invoke(Math.class, "floor", new BigDecimal("1.7E309"));
+            fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");
         } catch (IllegalArgumentException e) {
-            assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. "
-                    + e, e.getMessage().indexOf("out of range") > 0);
-            return;
+            assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. " + e, e.getMessage().indexOf("out of range") > 0);
         }
-        fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");
+    }
+
+    // GROOVY-11203
+    public void testBadNullToBoolCoerce() throws Throwable {
+        try {
+            invoke(Boolean.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, boolean.class));
+            fail("Boolean.toString(null) should fail because null cannot be cast to boolean.");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot call method with null for parameter 0, which expects boolean", e.getMessage());
+        }
+    }
+
+    // GROOVY-11203
+    public void testBadNullToIntCoerce() throws Throwable {
+        try {
+            invoke(Integer.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, int.class));
+            fail("Integer.toString(null) should fail because null cannot be cast to int.");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot call method with null for parameter 0, which expects int", e.getMessage());
+        }
     }
 
     public void testClassMethod() throws Throwable {

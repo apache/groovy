@@ -136,10 +136,13 @@ public class ParameterTypes {
         // TODO: if isVargsMethod, coerce array items
         for (int i = 0; i != arguments.length; ++i) {
             var argument = arguments[i];
+            if (argument instanceof Wrapper)
+                argument = ((Wrapper) argument).unwrap();
             if (argument != null) {
-                if (argument instanceof Wrapper)
-                    argument = ((Wrapper) argument).unwrap();
                 arguments[i] = parameterTypes[i].coerceArgument(argument);
+            } else if (parameterTypes[i].isPrimitive()) { // GROOVY-11203, et al.
+                throw new IllegalArgumentException("Cannot call method with null" +
+                    " for parameter " + i + ", which expects " + parameterTypes[i]);
             }
         }
         return arguments;
