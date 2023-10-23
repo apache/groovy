@@ -1140,7 +1140,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             // GROOVY-11192: mapping between source and target type parameter(s)
             if (!source.equals(target)) {
-                assert source.isInterface() ? target.implementsInterface(source) : target.isDerivedFrom(source);
                 ClassNode mapped = adjustForTargetType(target, source);
                 genericsTypes = mapped.getGenericsTypes();
             }
@@ -3953,7 +3952,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Deprecated
     protected void visitInstanceofNot(final BinaryExpression be) {
         BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
-        assert currentBlock != null;
         if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
             // another instanceOf_not was before, no need store vars
         } else {
