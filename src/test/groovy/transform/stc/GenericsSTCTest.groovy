@@ -1786,6 +1786,94 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11192
+    void testDiamondInferenceFromConstructor38() {
+        assertScript '''
+            interface I<X,Y> {}
+            class C<Z> implements I<Number,Z> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <java.lang.String>'
+            })
+            I<Number,String> i = new C<>()
+        '''
+
+        assertScript '''
+            interface I<X,Y> {}
+            class C<Z> implements I<Z,String> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <java.lang.Number>'
+            })
+            I<Number,String> i = new C<>()
+        '''
+
+        assertScript '''
+            interface I<X,Y> {}
+            class C<Z> implements I<Z,Z> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <java.lang.String>'
+            })
+            I<String,String> i = new C<>()
+        '''
+
+        assertScript '''
+            interface I<X,Y> {}
+            class C<V,K> implements I<K,V> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <java.lang.String, java.lang.Number>'
+            })
+            I<Number,String> i = new C<>()
+        '''
+
+        assertScript '''
+            interface I<X,Y,Z> {}
+            abstract class A<K,V>
+                implements I<K,V,Short> {}
+            class C<T,U> extends A<U,T> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <java.lang.Long, java.lang.Integer>'
+            })
+            I<Integer,Long,Short> i = new C<>()
+        '''
+    }
+
+    void testDiamondInferenceFromConstructor39() {
+        // no relation between C's and I's type vars
+
+        assertScript '''
+            interface I<X,Y> {}
+            class C<Z> implements I<Number,String> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <Z>' // TODO: <> or <?>
+            })
+            I<Number,String> i = new C<>() // TODO: Should this be an error?
+        '''
+
+        assertScript '''
+            interface I<X,Y,Z> {}
+            abstract class A<K,V>
+                implements I<K,V,Short> {}
+            class C<T> extends A<Integer,Long> {}
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.type
+                assert type.toString(false) == 'C <T>' // TODO: <> or <?>
+            })
+            I<Integer,Long,Short> i = new C<>() // TODO: Should this be an error?
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''

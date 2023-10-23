@@ -840,28 +840,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
 
-                if (lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
-                    // unchecked assignment
-                    // List<Type> list = new LinkedList()
-                    // Iterable<Type> iter = new LinkedList()
-                    // Collection<Type> coll = Collections.emptyList()
-                    // Collection<Type> view = ConcurrentHashMap.newKeySet()
-
-                    // the inferred type of the binary expression is the type of the RHS
-                    // "completed" with generics type information available from the LHS
-                    if (lType.equals(resultType)) {
-                        if (!lType.isGenericsPlaceHolder()) resultType = lType;
-                    } else if (!resultType.isGenericsPlaceHolder()) { // GROOVY-10235, GROOVY-10324, et al.
-                        Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
-                        extractGenericsConnections(gt, resultType, resultType.redirect());
-                        ClassNode sc = resultType;
-                        do { sc = getNextSuperClass(sc, lType);
-                        } while (sc != null && !sc.equals(lType));
-                        extractGenericsConnections(gt, lType, sc);
-
-                        resultType = applyGenericsContext(gt, resultType.redirect());
-                    }
-                }
+                // handle unchecked assignment: List<Type> list = []
+                resultType = adjustForTargetType(resultType, lType);
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
@@ -1120,12 +1100,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void adjustGenerics(final ClassNode source, final ClassNode target) {
         GenericsType[] genericsTypes = source.getGenericsTypes();
-        if (genericsTypes == null) {
-            // case of: def foo = new HashMap<>()
+        if (genericsTypes == null) { // Map foo = new HashMap<>()
             genericsTypes = target.redirect().getGenericsTypes();
+        } else if (!source.equals(target)) {
+            // GROOVY-11192: mapping between source and target type parameter(s)
+            genericsTypes = adjustForTargetType(target, source).getGenericsTypes();
         }
         GenericsType[] copy = new GenericsType[genericsTypes.length];
-        for (int i = 0; i < genericsTypes.length; i++) {
+        for (int i = 0; i < genericsTypes.length; i += 1) {
             GenericsType genericsType = genericsTypes[i];
             copy[i] = new GenericsType(
                     wrapTypeIfNecessary(genericsType.getType()),
@@ -2418,6 +2400,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             : new Parameter[]{new Parameter(receiver.redirect().getOuterClass(), "$p$"), new Parameter(MAP_TYPE, "map")};
                     node = new ConstructorNode(Opcodes.ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                     node.setDeclaringClass(receiver);
+                    node.setSynthetic(true);
                 }
             }
         }
@@ -4375,6 +4358,50 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return sourceType != UNKNOWN_PARAMETER_TYPE ? sourceType : targetType;
     }
 
+    private static ClassNode adjustForTargetType(final ClassNode resultType, final ClassNode targetType) {
+        if (targetType.isUsingGenerics()
+                && missesGenericsTypes(resultType)
+                // GROOVY-10324, GROOVY-10342, et al.
+                && !resultType.isGenericsPlaceHolder()) {
+            // unchecked assignment
+            // List<Type> list = new LinkedList()
+            // Iterable<Type> iter = new LinkedList()
+            // Collection<Type> col1 = Collections.emptyList()
+            // Collection<Type> col2 = Collections.emptyList() ?: []
+            // Collection<Type> view = ConcurrentHashMap.newKeySet()
+
+            // the inferred type of the binary expression is the type of the RHS
+            // "completed" with generics type information available from the LHS
+            if (targetType.equals(resultType)) {
+                // GROOVY-6126, GROOVY-6558, GROOVY-6564, et al.
+                if (!targetType.isGenericsPlaceHolder()) return targetType;
+            } else {
+                // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, GROOVY-10688, et al.
+                Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
+                ClassNode sc = resultType;
+                for (;;) {
+                    sc = getNextSuperClass(sc,targetType);
+                    if (!gt.isEmpty()) {
+                        // propagate resultType's generics
+                        sc = applyGenericsContext(gt, sc);
+                    }
+                    if (sc == null || sc.equals(targetType)) {
+                        gt.clear();
+                        break;
+                    }
+                    // map of sc's type vars to resultType's type vars
+                    extractGenericsConnections(gt, sc, sc.redirect());
+                }
+                extractGenericsConnections(gt, resultType, resultType.redirect());
+                extractGenericsConnections(gt, targetType, sc); // maps rt's tv(s)
+
+                return applyGenericsContext(gt, resultType.redirect());
+            }
+        }
+
+        return resultType;
+    }
+
     private static boolean isTypeSource(final Expression expr, final Expression right) {
         if (right instanceof TernaryExpression) {
             return isTypeSource(expr, ((TernaryExpression) right).getTrueExpression())
@@ -5934,8 +5961,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return the wrapped type
      */
     protected static ClassNode wrapTypeIfNecessary(final ClassNode type) {
-        if (isPrimitiveType(type)) return getWrapper(type);
-        return type;
+        return (type != null && isPrimitiveType(type) ? getWrapper(type) : type);
     }
 
     protected static boolean isClassInnerClassOrEqualTo(final ClassNode toBeChecked, final ClassNode start) {
