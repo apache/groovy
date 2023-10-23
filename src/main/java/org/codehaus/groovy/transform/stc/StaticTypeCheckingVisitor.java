@@ -1138,6 +1138,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 genericsTypes[i] = cn.getPlainNodeReference().asGenericsType();
             }
         } else {
+            // GROOVY-11192: mapping between source and target type parameter(s)
+            if (!source.equals(target)) {
+                assert source.isInterface() ? target.implementsInterface(source) : target.isDerivedFrom(source);
+                ClassNode mapped = adjustForTargetType(target, source);
+                genericsTypes = mapped.getGenericsTypes();
+            }
             genericsTypes = genericsTypes.clone();
             for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
                 GenericsType gt = genericsTypes[i];
@@ -4294,13 +4300,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // GROOVY-6126, GROOVY-6558, GROOVY-6564, et al.
                 if (!targetType.isGenericsPlaceHolder()) return targetType;
             } else {
-                // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, GROOVY-10688, et al.
+                // GROOVY-5640, GROOVY-9033, GROOVY-10220, GROOVY-10235, GROOVY-10688, GROOVY-11192, et al.
                 Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
-                extractGenericsConnections(gt, resultType, resultType.redirect());
                 ClassNode sc = resultType;
-                do { sc = getNextSuperClass(sc, targetType);
-                } while (sc != null && !sc.equals(targetType));
-                extractGenericsConnections(gt, targetType, sc);
+                for (;;) {
+                    sc = getNextSuperClass(sc,targetType);
+                    if (!gt.isEmpty()) {
+                        // propagate resultType's generics
+                        sc = applyGenericsContext(gt, sc);
+                    }
+                    if (sc == null || sc.equals(targetType)) {
+                        gt.clear();
+                        break;
+                    }
+                    // map of sc's type vars to resultType's type vars
+                    extractGenericsConnections(gt, sc, sc.redirect());
+                }
+                extractGenericsConnections(gt, resultType, resultType.redirect());
+                extractGenericsConnections(gt, targetType, sc); // maps rt's tv(s)
 
                 return applyGenericsContext(gt, resultType.redirect());
             }
