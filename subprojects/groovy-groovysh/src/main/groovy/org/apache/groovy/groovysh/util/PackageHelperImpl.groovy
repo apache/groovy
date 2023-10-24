@@ -247,7 +247,7 @@ Files.walkFileTree(fs.getPath('modules'),
         File urlFile = Paths.get(url.toURI()).toFile()
 
         if (urlFile.isDirectory()) {
-            return new HashSet<>().tap {
+            return new HashSet<String>().tap {
                 collectPackageNamesFromFolderRecursive(urlFile, '', it)
             }
         }

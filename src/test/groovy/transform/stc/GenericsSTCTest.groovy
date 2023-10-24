@@ -1414,7 +1414,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10228
-    @NotYetImplemented
     void testDiamondInferenceFromConstructor18() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)

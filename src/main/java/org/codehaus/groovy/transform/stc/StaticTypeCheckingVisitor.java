@@ -1101,21 +1101,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void adjustGenerics(final ClassNode source, final ClassNode target) {
         GenericsType[] genericsTypes = source.getGenericsTypes();
         if (genericsTypes == null) { // Map foo = new HashMap<>()
-            genericsTypes = target.redirect().getGenericsTypes();
-        } else if (!source.equals(target)) {
+            genericsTypes = target.redirect().getGenericsTypes().clone();
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                GenericsType gt = genericsTypes[i];
+                // GROOVY-10055: handle diamond or raw
+                ClassNode cn = gt.getUpperBounds() != null
+                        ? gt.getUpperBounds()[0] : gt.getType().redirect();
+                genericsTypes[i] = cn.getPlainNodeReference().asGenericsType();
+            }
+        } else {
             // GROOVY-11192: mapping between source and target type parameter(s)
-            genericsTypes = adjustForTargetType(target, source).getGenericsTypes();
+            if (!source.equals(target)) {
+                ClassNode mapped = adjustForTargetType(target, source);
+                genericsTypes = mapped.getGenericsTypes();
+            }
+            genericsTypes = genericsTypes.clone();
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                GenericsType gt = genericsTypes[i];
+                genericsTypes[i] = new GenericsType(gt.getType(),
+                        gt.getUpperBounds(), gt.getLowerBound());
+            }
         }
-        GenericsType[] copy = new GenericsType[genericsTypes.length];
-        for (int i = 0; i < genericsTypes.length; i += 1) {
-            GenericsType genericsType = genericsTypes[i];
-            copy[i] = new GenericsType(
-                    wrapTypeIfNecessary(genericsType.getType()),
-                    genericsType.getUpperBounds(),
-                    genericsType.getLowerBound()
-            );
-        }
-        target.setGenericsTypes(copy);
+        target.setGenericsTypes(genericsTypes);
     }
 
     /**
@@ -3423,17 +3430,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         objectExpression.visit(this);
         call.getMethod().visit(this);
 
+        ClassNode receiver = getType(objectExpression);
+        if (objectExpression instanceof ConstructorCallExpression) { // GROOVY-10228
+            inferDiamondType((ConstructorCallExpression) objectExpression, receiver.getPlainNodeReference());
+        }
+
         // if the call expression is a spread operator call, then we must make sure that
         // the call is made on a collection type
         if (call.isSpreadSafe()) {
             // TODO: check if this should not be change to iterator based call logic
-            ClassNode expressionType = getType(objectExpression);
-            if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
+            if (!implementsInterfaceOrIsSubclassOf(receiver, Collection_TYPE) && !receiver.isArray()) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
                 return;
             } else {
                 // type check call as if it was made on component type
-                ClassNode componentType = inferComponentType(expressionType, int_TYPE);
+                ClassNode componentType = inferComponentType(receiver, int_TYPE);
                 MethodCallExpression subcall = callX(castX(componentType, EmptyExpression.INSTANCE), name, call.getArguments());
                 subcall.setLineNumber(call.getLineNumber());
                 subcall.setColumnNumber(call.getColumnNumber());
@@ -3455,9 +3466,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
 
         checkForbiddenSpreadArgument(argumentList);
-
-        ClassNode receiver = getType(objectExpression);
-        // visit closures *after* the method has been chosen
+        // visit closures/lambdas *after* the method has been chosen
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
