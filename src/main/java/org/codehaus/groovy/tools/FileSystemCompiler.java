@@ -22,6 +22,7 @@ import groovy.lang.GroovySystem;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
@@ -357,17 +358,32 @@ public class FileSystemCompiler {
         @Option(names = "-d", paramLabel = "<dir>", description = "Specify where to place generated class files")
         private File targetDir;
 
+        @Option(names = {"-de", "--debug"}, description = "If set, outputs a little more information during compilation when errors occur.")
+        private boolean debug;
+
         @Option(names = {"-e", "--exception"}, description = "Print stack trace on error")
         private boolean printStack;
 
+        @Option(names = {"-w", "--warningLevel"}, description = "The amount of warnings to print. Set to 0 for none, 1 for likely errors, 2 for possible errors, and 3 for as many warnings as possible.", defaultValue = "1")
+        private String warningLevel;
+
         @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
         private boolean parameterMetadata;
+
+        @Option(names = {"-pl", "--parallel-parsing"}, description = "Enable parallel parsing")
+        private boolean parallelParsing;
 
         @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (jdk12+ only) - must be after classpath but before other arguments")
         private boolean previewFeatures;
 
         @Option(names = {"-j", "--jointCompilation"}, description = "Attach javac compiler to compile .java files")
         private boolean jointCompilation;
+
+        @Option(names = {"-s", "--stubDirectory"}, description = "The directory into which the Java source stub files should be generated")
+        private String stubDirectory;
+
+        @Option(names = {"-ks", "--keepStubs"}, description = "Whether to keep the generated stubs rather than deleting them")
+        private boolean keepStubs;
 
         @Option(names = {"-b", "--basescript"}, paramLabel = "<class>", description = "Base class name for scripts (must derive from Script)")
         private String scriptBaseClass;
@@ -381,8 +397,11 @@ public class FileSystemCompiler {
         @Option(names = {"--indy"}, description = "Enables compilation using invokedynamic")
         private boolean indy;
 
-        @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
+        @Option(names = {"-cf", "--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
         private String configScript;
+
+        @Option(names = {"-t", "--tolerance"}, description = "The number of non-fatal errors to allow before bailing")
+        private int tolerance;
 
         @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this help message and exit")
         private boolean helpRequested;
@@ -416,18 +435,40 @@ public class FileSystemCompiler {
             configuration.setPreviewFeatures(previewFeatures);
             configuration.setSourceEncoding(encoding);
             configuration.setScriptBaseClass(scriptBaseClass);
+            if (tolerance > 0) {
+                configuration.setTolerance(tolerance);
+            }
+
+            if (Integer.parseInt(warningLevel) == WarningMessage.NONE
+                    || Integer.parseInt(warningLevel) == WarningMessage.LIKELY_ERRORS
+                    || Integer.parseInt(warningLevel) == WarningMessage.POSSIBLE_ERRORS
+                    || Integer.parseInt(warningLevel) == WarningMessage.PARANOIA) {
+                configuration.setWarningLevel(Integer.parseInt(warningLevel));
+            } else {
+                System.err.println("error: warning level not recognized: " + warningLevel);
+            }
 
             // joint compilation parameters
             if (jointCompilation) {
                 Map<String, Object> compilerOptions = new HashMap<>();
                 compilerOptions.put("flags", javacFlags());
                 compilerOptions.put("namedValues", javacNamedValues());
+                if (stubDirectory != null) {
+                    compilerOptions.put("stubDir", stubDirectory);
+                }
+                if (keepStubs) {
+                    compilerOptions.put("keepStubs", true);
+                }
                 configuration.setJointCompilationOptions(compilerOptions);
             }
 
             if (indy) {
                 configuration.getOptimizationOptions().put("int", Boolean.FALSE);
                 configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
+            }
+
+            if (parallelParsing) {
+                configuration.getOptimizationOptions().put("parallelParse", true);
             }
 
             final List<String> transformations = new ArrayList<>();
