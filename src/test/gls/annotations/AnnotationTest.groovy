@@ -687,6 +687,27 @@ final class AnnotationTest {
         '''
     }
 
+    // GROOVY-11207
+    @Test
+    void testAttributeValueConstants11() {
+        assertScript shell, '''
+            @Retention(RUNTIME)
+            @interface Foo {
+                String value()
+            }
+            @groovy.transform.CompileStatic
+            class Bar {
+                public static final String BASE = 'base'
+                @Foo('all your ' + BASE)
+                def baz() {
+                }
+            }
+
+            def foo = Bar.getMethod('baz').getAnnotation(Foo)
+            assert foo.value() == 'all your base'
+        '''
+    }
+
     @Test
     void testRuntimeRetentionAtAllLevels() {
         assertScript shell, '''
