@@ -132,7 +132,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-4811
+    // GROOVY-4811
+    @Test
     void testArrayDefault() {
         assertScript shell, '''
             @Retention(RetentionPolicy.RUNTIME)
@@ -416,7 +417,7 @@ final class AnnotationTest {
     }
 
     @Test
-    void testAttributeValueConstants() {
+    void testAttributeValueConstants1() {
         assertScript shell, '''
             import static Constants.*
 
@@ -491,7 +492,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-3278
+    // GROOVY-3278
+    @Test
     void testAttributeValueConstants3() {
         assertScript shell, '''
             import gls.annotations.*
@@ -516,7 +518,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-8898
+    // GROOVY-8898
+    @Test
     void testAttributeValueConstants4() {
         assertScript shell, '''
             @Retention(RetentionPolicy.RUNTIME)
@@ -605,7 +608,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-10068
+    // GROOVY-10068
+    @Test
     void testAttributeValueConstants6() {
         assertScript shell, '''
             @interface A {
@@ -620,7 +624,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-7252
+    // GROOVY-7252
+    @Test
     void testAttributeValueConstants7() {
         assertScript shell, '''
             @interface A {
@@ -632,7 +637,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-9366
+    // GROOVY-9366
+    @Test
     void testAttributeValueConstants8() {
         assertScript shell, '''
             @interface A {
@@ -644,7 +650,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-9206
+    // GROOVY-9206
+    @Test
     void testAttributeValueConstants9() {
         assertScript shell, '''
             @interface A {
@@ -653,6 +660,51 @@ final class AnnotationTest {
 
             @A( 'c' )
             def local
+        '''
+    }
+
+    // GROOVY-10750
+    @NotYetImplemented @Test
+    void testAttributeValueConstants10() {
+        assertScript shell, '''
+            @Retention(RUNTIME)
+            @interface Foo {
+                String value()
+            }
+            @groovy.transform.CompileStatic
+            @Foo(BarController.BASE_URL)
+            class BarController {
+                public static final String BASE_URL = '/bars'
+            }
+            @groovy.transform.CompileStatic
+            @Foo(BazController.BASE_URL)
+            class BazController {
+                public static final String BASE_URL = BarController.BASE_URL + '/{barId}/bazs'
+            }
+
+            def foo = BazController.getAnnotation(Foo)
+            assert foo.value() == '/bars/{barId}/bazs'
+        '''
+    }
+
+    // GROOVY-11207
+    @Test
+    void testAttributeValueConstants11() {
+        assertScript shell, '''
+            @Retention(RUNTIME)
+            @interface Foo {
+                String value()
+            }
+            @groovy.transform.CompileStatic
+            class Bar {
+                public static final String BASE = 'base'
+                @Foo('all your ' + BASE)
+                def baz() {
+                }
+            }
+
+            def foo = Bar.getMethod('baz').getAnnotation(Foo)
+            assert foo.value() == 'all your base'
         '''
     }
 
@@ -776,7 +828,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-6025
+    // GROOVY-6025
+    @Test
     void testAnnotationDefinitionDefaultValues() {
         assertScript shell, '''
             @Retention(RetentionPolicy.RUNTIME)
@@ -813,7 +866,8 @@ final class AnnotationTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-6025
+    // GROOVY-6025
+    @NotYetImplemented @Test
     void testAnnotationDefinitionDefaultValues2() {
         assertScript shell, '''
             @interface A {
@@ -828,7 +882,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-9205
+    // GROOVY-9205
+    @Test
     void testAnnotationDefinitionDefaultValues3() {
         assertScript shell, '''
             @interface A {
@@ -850,7 +905,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-9205
+    // GROOVY-9205
+    @Test
     void testAnnotationDefinitionDefaultValues4() {
         assertScript shell, '''
             @interface A {
@@ -866,7 +922,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-6093
+    // GROOVY-6093
+    @Test
     void testAnnotationOnEnumConstant() {
         assertScript shell, '''
             import gls.annotations.XmlEnum
@@ -881,7 +938,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-7151
+    // GROOVY-7151
+    @Test
     void testAnnotateAnnotationDefinitionWithAnnotationWithTypeTarget() {
         shell.parse codeWithMetaAnnotationWithTarget('TYPE')
     }
@@ -907,7 +965,8 @@ final class AnnotationTest {
         """
     }
 
-    @Test // GROOVY-7806
+    // GROOVY-7806
+    @Test
     void testNewlinesAllowedBeforeBlock() {
         shell.parse '''
             @interface ANNOTATION_A
@@ -916,7 +975,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-8226
+    // GROOVY-8226
+    @Test
     void testAnnotationOnParameterType() {
         assertScript shell, '''
             @Target([PARAMETER, FIELD, METHOD, ANNOTATION_TYPE, TYPE_USE])
@@ -924,8 +984,8 @@ final class AnnotationTest {
             public @interface NonNull { }
 
             class Foo {
-              @NonNull public Integer foo
-              @NonNull Integer bar(@NonNull String baz) {}
+                @NonNull public Integer foo
+                @NonNull Integer bar(@NonNull String baz) {}
             }
 
             def expected = '@NonNull()'
@@ -938,7 +998,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-8234
+    // GROOVY-8234
+    @Test
     void testAnnotationWithRepeatableSupported() {
         assertScript shell, '''
             class MyClass {
@@ -1021,7 +1082,8 @@ final class AnnotationTest {
         }
     }
 
-    @Test // GROOVY-9452
+    // GROOVY-9452
+    @Test
     void testDuplicationAnnotationOnClassWithParams() {
         def err = shouldFail shell, '''
             @Target(ElementType.TYPE)
@@ -1044,7 +1106,8 @@ final class AnnotationTest {
         assert err =~ /Cannot specify duplicate annotation/
     }
 
-    @Test // GROOVY-7033
+    // GROOVY-7033
+    @Test
     void testClassLiteralsRecognizedForAnonymousInnerClassAnnotationUsage() {
         shell.parse '''
             @interface A {
@@ -1129,7 +1192,8 @@ final class AnnotationTest {
         '''
     }
 
-    @Test // GROOVY-10857
+    // GROOVY-10857
+    @Test
     void testAnnotationWithCircularReference() {
         assertScript shell, '''
             @A @Documented @Retention(RUNTIME) @Target(TYPE)

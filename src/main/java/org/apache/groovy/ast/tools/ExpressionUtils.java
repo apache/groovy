@@ -231,16 +231,22 @@ public final class ExpressionUtils {
             if (pe.getObjectExpression() instanceof ClassExpression) {
                 ClassNode clazz = pe.getObjectExpression().getType();
                 FieldNode field = ClassNodeUtils.getField(clazz, pe.getPropertyAsString());
-                if (field != null && field.isStatic() && field.isFinal() && !field.isEnum()
-                        && field.getInitialValueExpression() instanceof ConstantExpression) {
-                    ConstantExpression value = (ConstantExpression) field.getInitialValueExpression();
-                    value = new ConstantExpression(value.getValue());
-                    // GROOVY-10068, et al.: retain field's type
-                    if (!value.getType().equals(field.getType())
-                            && ClassHelper.isNumberType(field.getType()))
-                        value.setType(field.getType());
-                    // TODO: Boolean, Character, String
-                    return configure(exp, value);
+                if (field != null && !field.isEnum() && field.isFinal() && field.isStatic()) {
+                    Expression value = transformInlineConstants(field.getInitialValueExpression(), field.getType()); // GROOVY-10750, GROOVY-10068
+                    if (value instanceof ConstantExpression) {
+                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue()));
+                    }
+                }
+            }
+        } else if (exp instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) exp;
+            if (ve.getAccessedVariable() instanceof FieldNode) {
+                FieldNode field = (FieldNode) ve.getAccessedVariable();
+                if (!field.isEnum() && field.isFinal() && field.isStatic()) {
+                    Expression value = transformInlineConstants(field.getInitialValueExpression(), field.getType()); // GROOVY-11207, GROOVY-10068
+                    if (value instanceof ConstantExpression) {
+                        return configure(exp, new ConstantExpression(((ConstantExpression) value).getValue()));
+                    }
                 }
             }
         } else if (exp instanceof BinaryExpression) {
