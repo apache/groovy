@@ -245,7 +245,7 @@ public class WideningCategories {
         // it according to the types provided by the two class nodes
         ClassNode holderForA = findGenericsTypeHolderForClass(a, lub);
         ClassNode holderForB = findGenericsTypeHolderForClass(b, lub);
-        // let's compare their generics type
+        // let's compare their generics
         GenericsType[] agt = holderForA == null ? null : holderForA.getGenericsTypes();
         GenericsType[] bgt = holderForB == null ? null : holderForB.getGenericsTypes();
         if (agt == null || bgt == null || agt.length != bgt.length) {
@@ -349,32 +349,25 @@ public class WideningCategories {
         boolean isInterfaceA = a.isInterface();
         boolean isInterfaceB = b.isInterface();
         if (isInterfaceA && isInterfaceB) {
-            if (a.equals(b)) return a;
-            if (b.implementsInterface(a)) {
+            if (a.equals(b) || b.implementsInterface(a)) {
                 return a;
             }
             if (a.implementsInterface(b)) {
                 return b;
             }
-            // each interface may have one or more "extends", so we must find those
-            // which are common
-            ClassNode[] interfacesFromA = a.getInterfaces();
-            ClassNode[] interfacesFromB = b.getInterfaces();
-            Set<ClassNode> common = new HashSet<>();
-            Collections.addAll(common, interfacesFromA);
-            Set<ClassNode> fromB = new HashSet<>();
-            Collections.addAll(fromB, interfacesFromB);
-            common.retainAll(fromB);
+
+            // GROOVY-11189: find common interface(s)
+            interfacesImplementedByA = GeneralUtils.getInterfacesAndSuperInterfaces(a);
+            interfacesImplementedByB = GeneralUtils.getInterfacesAndSuperInterfaces(b);
+            Collection<ClassNode> common = keepLowestCommonInterfaces(interfacesImplementedByA, interfacesImplementedByB);
 
             if (common.size() == 1) {
                 return common.iterator().next();
             } else if (common.size() > 1) {
                 return buildTypeWithInterfaces(a, b, common);
+            } else {
+                return OBJECT_TYPE; // no common interface, so Object is implied
             }
-
-            // we have two interfaces, but none inherits from the other
-            // so the only possible return type is Object
-            return OBJECT_TYPE;
         } else if (isInterfaceB) {
             return lowestUpperBound(b, a, null, null);
         } else if (isInterfaceA) {
