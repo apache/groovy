@@ -57,6 +57,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Member;
@@ -423,9 +424,11 @@ public class Java8 implements VMPlugin {
                 setAnnotationMetaData(clazz.getPackage().getAnnotations(), packageNode);
             }
         } catch (NoClassDefFoundError e) {
-            throw new NoClassDefFoundError("Unable to load class " + classNode.toString(false) + " due to missing dependency " + e.getMessage());
-        } catch (MalformedParameterizedTypeException e) {
-            throw new RuntimeException("Unable to configure class node for class " + classNode.toString(false) + " due to malformed parameterized types", e);
+            throw new NoClassDefFoundError("Unable to configure " + classNode.getName() + " due to missing dependency " + e.getMessage());
+        } catch (TypeNotPresentException e) {
+            throw new NoClassDefFoundError("Unable to configure " + classNode.getName() + " due to missing dependency " + e.typeName());
+        } catch (GenericSignatureFormatError | MalformedParameterizedTypeException e) {
+            throw new RuntimeException(    "Unable to configure " + classNode.getName() + " due to malformed type info" , e);
         }
     }
 
