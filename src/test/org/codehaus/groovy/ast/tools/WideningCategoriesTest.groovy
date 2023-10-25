@@ -60,7 +60,14 @@ final class WideningCategoriesTest extends GenericsTestCase {
         assert lowestUpperBound(a,b) == SERIALIZABLE_TYPE
     }
 
-    void testBuildCommonTypeWithOneInterfaceInheritsFromOther() {
+    void testBuildCommonTypeWithDivergentInterfaces() {
+        ClassNode a = SET_TYPE
+        ClassNode b = LIST_TYPE
+        assert lowestUpperBound(a,b) == COLLECTION_TYPE
+        assert lowestUpperBound(b,a) == COLLECTION_TYPE
+    }
+
+    void testBuildCommonTypeWithOneInterfaceExtendsOther() {
         ClassNode a = SET_TYPE
         ClassNode b = make(SortedSet)
         assert lowestUpperBound(a,b) == SET_TYPE
@@ -130,6 +137,14 @@ final class WideningCategoriesTest extends GenericsTestCase {
     void testBuildCommonTypeWithTwoInterfacesSharingOneParent() {
         ClassNode a = make(InterfaceCA)
         ClassNode b = make(InterfaceDA)
+        assert lowestUpperBound(a,b) == make(InterfaceA)
+        assert lowestUpperBound(b,a) == make(InterfaceA)
+    }
+
+    // GROOVY-11189
+    void testBuildCommonTypeWithTwoInterfacesSharingOneParent2() {
+        ClassNode a = make(InterfaceCCA)
+        ClassNode b = make(InterfaceDDA)
         assert lowestUpperBound(a,b) == make(InterfaceA)
         assert lowestUpperBound(b,a) == make(InterfaceA)
     }
@@ -357,6 +372,8 @@ final class WideningCategoriesTest extends GenericsTestCase {
     private static interface InterfaceE {}
     private static interface InterfaceCA extends InterfaceA {}
     private static interface InterfaceDA extends InterfaceA {}
+    private static interface InterfaceCCA extends InterfaceCA {}
+    private static interface InterfaceDDA extends InterfaceDA {}
     private static interface InterfaceCAB extends InterfaceA, InterfaceB {}
     private static interface InterfaceDAB extends InterfaceA, InterfaceB {}
     private static interface InterfaceDABE extends InterfaceA, InterfaceB, InterfaceE {}
