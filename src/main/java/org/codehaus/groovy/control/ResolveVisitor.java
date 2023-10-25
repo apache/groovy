@@ -264,13 +264,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
-    public void visitMethod(final MethodNode node) {
-        super.visitMethod(node);
-        visitGenericsTypeAnnotations(node);
-        visitTypeAnnotations(node.getReturnType());
-    }
-
-    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
@@ -334,7 +327,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node, final boolean preferImports) {
-        visitTypeAnnotations(type);
+        if (type.isRedirectNode() || !type.isPrimaryClassNode()) {
+            visitTypeAnnotations(type); // JSR 308 support
+        }
         if (preferImports) {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
@@ -997,13 +992,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
 
-        if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
-            /*
-             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to
-             *  resolve its type. Variable type resolve should proceed only if the variable is being declared.
-             */
-            return ve;
-        }
         if (v instanceof DynamicVariable) {
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
@@ -1029,8 +1017,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
                     if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
-                return new ClassExpression(t);
+                ClassExpression ce = new ClassExpression(t);
+                ce.setSourcePosition(ve);
+                return ce;
             }
+        } else if (!checkingVariableTypeInDeclaration) {
+            // GROOVY-4009: When a normal variable is simply being used, there is no need to try to
+            // resolve its type. Variable type resolve should proceed only if the variable is being declared.
+            return ve;
         }
         resolveOrFail(ve.getType(), ve);
         ClassNode origin = ve.getOriginType();
@@ -1189,27 +1183,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private void visitTypeAnnotations(final ClassNode node) {
         visitAnnotations(node.getTypeAnnotations());
-        visitGenericsTypeAnnotations(node);
-    }
-
-    private void visitGenericsTypeAnnotations(final ClassNode node) {
-        GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (node.isUsingGenerics() && genericsTypes != null) {
-            visitGenericsTypeAnnotations(genericsTypes);
-        }
-    }
-
-    private void visitGenericsTypeAnnotations(final MethodNode node) {
-        GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (genericsTypes != null) {
-            visitGenericsTypeAnnotations(genericsTypes);
-        }
-    }
-
-    private void visitGenericsTypeAnnotations(final GenericsType[] genericsTypes) {
-        for (GenericsType gt : genericsTypes) {
-            visitTypeAnnotations(gt.getType());
-        }
     }
 
     @Override
@@ -1330,8 +1303,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // initialize scopes/variables now that imports and super types are resolved
             new VariableScopeVisitor(source).visitClass(node);
 
-            visitTypeAnnotations(node);
-            super.visitClass(node);
+            visitPackage(node.getPackage());
+            visitImports(node.getModule());
+
+            node.visitContents(this);
+            visitObjectInitializerStatements(node);
+            visitAnnotations(node); // GROOVY-10750, GROOVY-11206
         }
         currentClass = oldNode;
     }
@@ -1416,6 +1393,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             String name = type.getName();
             ClassNode typeType = type.getType();
+            visitTypeAnnotations(typeType); // JSR 308 support
             GenericsTypeName gtn = new GenericsTypeName(name);
             boolean isWildcardGT = QUESTION_MARK.equals(name);
             boolean dealWithGenerics = (level == 0 || (level > 0 && genericParameterNames.get(gtn) != null));
@@ -1466,7 +1444,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (genericsType.isResolved()) return true;
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
-        visitTypeAnnotations(type); // JSR-308 support
+        visitTypeAnnotations(type); // JSR 308 support
         GenericsType tp = genericParameterNames.get(new GenericsTypeName(type.getName()));
         if (tp != null) {
             ClassNode[] bounds = tp.getUpperBounds();

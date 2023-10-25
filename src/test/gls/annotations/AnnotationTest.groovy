@@ -664,7 +664,7 @@ final class AnnotationTest {
     }
 
     // GROOVY-10750
-    @NotYetImplemented @Test
+    @Test
     void testAttributeValueConstants10() {
         assertScript shell, '''
             @Retention(RUNTIME)
@@ -687,9 +687,29 @@ final class AnnotationTest {
         '''
     }
 
-    // GROOVY-11207
+    // GROOVY-11206
     @Test
     void testAttributeValueConstants11() {
+        assertScript shell, '''
+            @Retention(RUNTIME)
+            @interface Foo {
+                String value()
+            }
+            @groovy.transform.CompileStatic
+            @Foo(BarController.SOME_URL)
+            class BarController {
+                public static final String BASE_URL = '/bars'
+                public static final String SOME_URL = BASE_URL + '/{barId}/bazs'
+            }
+
+            def foo = BarController.getAnnotation(Foo)
+            assert foo.value() == '/bars/{barId}/bazs'
+        '''
+    }
+
+    // GROOVY-11207
+    @Test
+    void testAttributeValueConstants12() {
         assertScript shell, '''
             @Retention(RUNTIME)
             @interface Foo {
@@ -996,6 +1016,43 @@ final class AnnotationTest {
             def baz = bar.parameters[0]
             assert baz.annotations[0].toString() == expected
         '''
+    }
+
+    // GROOVY-11178
+    @NotYetImplemented @Test
+    void testAnnotationOnConstructorType() {
+        assertScript shell, '''package p
+            @Target(TYPE_USE)
+            @interface Tag {}
+
+            @groovy.transform.ASTTest(phase=CLASS_GENERATION, value={
+                def cce = node.rightExpression
+                assert cce.type.typeAnnotations.size() == 1
+                assert cce.type.typeAnnotations[0].classNode.name == 'p.Tag'
+            })
+            Object o = new @Tag Object()
+        '''
+
+        def err = shouldFail shell, '''\
+            @Target(PARAMETER)
+            @interface Tag {}
+
+            Object o = new @Tag Object()
+        '''
+        assert err =~ /Annotation @Tag is not allowed on element TYPE/
+    }
+
+    // GROOVY-9155
+    @Test
+    void testAnnotationOnTypeArgumentType() {
+        def err = shouldFail shell, '''package p
+            @Target(TYPE_USE)
+            @interface Tag {}
+
+            def m(List<@Tag(foo="") String> strings) {
+            }
+        '''
+        assert err =~ /'foo' is not part of the annotation Tag in @p.Tag/
     }
 
     // GROOVY-8234
