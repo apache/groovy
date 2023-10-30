@@ -471,12 +471,12 @@ class CliBuilder {
                 // special flag: treat like normal not boolean expecting explicit 'true' or 'false' param
                 isFlag = false
             }
+            if (type.isArray()) {
+                builder.optionalArg(optionalArg)
+            }
             if (!isFlag) {
                 builder.hasArg(true)
                 if (details.containsKey('args')) builder.numberOfArgs(details.args)
-            }
-            if (type.isArray()) {
-                builder.optionalArg(optionalArg)
             }
         }
         def typedOption = create(builder.build(), convert ? null : type, defaultValue, convert)
