@@ -40,6 +40,7 @@ import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
+import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
@@ -77,7 +78,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  */
 public class WideningCategories {
 
-    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = org.apache.groovy.util.Maps.of(
+    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Map.of(
         double_TYPE, 0,
         float_TYPE,  1,
         long_TYPE,   2,
@@ -87,87 +88,101 @@ public class WideningCategories {
     );
 
     /**
-     * Used to check if a type is an int or Integer.
-     * @param type the type to check
+     * Checks if type is an int.
+     *
+     * @since 2.0.0
      */
     public static boolean isInt(final ClassNode type) {
         return isPrimitiveInt(type);
     }
 
     /**
-     * Used to check if a type is a double or Double.
-     * @param type the type to check
-     */
-    public static boolean isDouble(final ClassNode type) {
-        return isPrimitiveDouble(type);
-    }
-
-    /**
-     * Used to check if a type is a float or Float.
-     * @param type the type to check
+     * Checks if type is a float.
+     *
+     * @since 2.0.0
      */
     public static boolean isFloat(final ClassNode type) {
         return isPrimitiveFloat(type);
     }
 
     /**
-     * It is of an int category, if the provided type is a
-     * byte, char, short, int.
+     * Checks if type is a double.
+     *
+     * @since 2.0.0
      */
-    public static boolean isIntCategory(final ClassNode type) {
-        return isPrimitiveByte(type) || isPrimitiveChar(type) || isPrimitiveInt(type) || isPrimitiveShort(type);
+    public static boolean isDouble(final ClassNode type) {
+        return isPrimitiveDouble(type);
     }
 
     /**
-     * It is of a long category, if the provided type is a
-     * long, its wrapper or if it is a long category.
+     * Checks if type is an int, byte, char or short.
+     *
+     * @since 2.0.0
+     */
+    public static boolean isIntCategory(final ClassNode type) {
+        return isPrimitiveInt(type) || isPrimitiveByte(type) || isPrimitiveChar(type) || isPrimitiveShort(type);
+    }
+
+    /**
+     * Checks if type is a long, int, byte, char or short.
+     *
+     * @since 2.0.0
      */
     public static boolean isLongCategory(final ClassNode type) {
         return isPrimitiveLong(type) || isIntCategory(type);
     }
 
     /**
-     * It is of a BigInteger category, if the provided type is a
-     * long category or a BigInteger.
+     * Checks if type is a BigInteger, long, int, byte, char or short.
+     *
+     * @since 2.0.0
      */
     public static boolean isBigIntCategory(final ClassNode type) {
         return isBigIntegerType(type) || isLongCategory(type);
     }
 
     /**
-     * It is of a BigDecimal category, if the provided type is a
-     * BigInteger category or a BigDecimal.
+     * Checks if type is a BigDecimal, BigInteger, long, int, byte, char or short.
+     *
+     * @since 2.0.0
      */
     public static boolean isBigDecCategory(final ClassNode type) {
         return isBigDecimalType(type) || isBigIntCategory(type);
     }
 
     /**
-     * It is of a double category, if the provided type is a
-     * BigDecimal, a float, double. C(type)=double
+     * Checks if type is a float, double or BigDecimal (category).
+     *
+     * @since 2.0.0
      */
     public static boolean isDoubleCategory(final ClassNode type) {
         return isPrimitiveFloat(type) || isPrimitiveDouble(type) || isBigDecCategory(type);
     }
 
     /**
-     * It is of a floating category, if the provided type is
-     * a float, double. C(type)=float
+     * Checks if type is a float or double.
+     *
+     * @since 2.0.0
      */
     public static boolean isFloatingCategory(final ClassNode type) {
         return isPrimitiveFloat(type) || isPrimitiveDouble(type);
     }
 
+    /**
+     * Checks if type is a BigDecimal (category) or Number.
+     *
+     * @since 2.0.0
+     */
     public static boolean isNumberCategory(final ClassNode type) {
         return isBigDecCategory(type) || type.isDerivedFrom(Number_TYPE);
     }
 
     /**
-     * Given a list of class nodes, returns the first common supertype.
-     * For example, Double and Float would return Number, while
-     * Set and String would return Object.
-     * @param nodes the list of nodes for which to find the first common super type.
-     * @return first common supertype
+     * Given a list of types, returns the first common supertype. For example,
+     * Double and Float would return Number, while Set and String would return
+     * Object.
+     *
+     * @since 2.0.0
      */
     public static ClassNode lowestUpperBound(final List<ClassNode> nodes) {
         int n = nodes.size();
@@ -177,21 +192,19 @@ public class WideningCategories {
     }
 
     /**
-     * Given two class nodes, returns the first common supertype, or the class itself
-     * if there are equal. For example, Double and Float would return Number, while
-     * Set and String would return Object.
-     *
+     * Given two types, returns the first common supertype, or the class itself
+     * if there are equal. For example, Double and Float would return Number,
+     * while Set and String would return Object.
+     * <p>
      * This method is not guaranteed to return a class node which corresponds to a
      * real type. For example, if two types have more than one interface in common
      * and are not in the same hierarchy branch, then the returned type will be a
      * virtual type implementing all those interfaces.
-     *
+     * <p>
      * Calls to this method are supposed to be made with resolved generics. This means
      * that you can have wildcards, but no placeholder.
      *
-     * @param a first class node
-     * @param b second class node
-     * @return first common supertype
+     * @since 2.0.0
      */
     public static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b) {
         ClassNode lub = lowestUpperBound(a, b, null, null);
@@ -327,28 +340,30 @@ public class WideningCategories {
             return VOID_TYPE;
         }
 
-        // now handle primitive types
-        boolean isPrimitiveA = isPrimitiveType(a);
-        boolean isPrimitiveB = isPrimitiveType(b);
-        if (isPrimitiveA && !isPrimitiveB) {
-            return lowestUpperBound(getWrapper(a), b, null, null);
-        }
-        if (isPrimitiveB && !isPrimitiveA) {
-            return lowestUpperBound(a, getWrapper(b), null, null);
-        }
-        if (isPrimitiveA && isPrimitiveB) {
-            Integer pa = NUMBER_TYPES_PRECEDENCE.get(a);
-            Integer pb = NUMBER_TYPES_PRECEDENCE.get(b);
-            if (pa != null && pb != null) {
-                return (pa <= pb ? a : b);
+        // handle primitives
+        boolean aIsPrimitive = isPrimitiveType(a);
+        boolean bIsPrimitive = isPrimitiveType(b);
+        if (aIsPrimitive || bIsPrimitive) {
+            if (a.equals(b)) return a;
+            // GROOVY-8965, GROOVY-11014, et al.
+            Integer pa = NUMBER_TYPES_PRECEDENCE.get(aIsPrimitive ? a : getUnwrapper(a));
+            Integer pb = NUMBER_TYPES_PRECEDENCE.get(bIsPrimitive ? b : getUnwrapper(b));
+            ClassNode wa = aIsPrimitive ? getWrapper(a) : a;
+            ClassNode wb = bIsPrimitive ? getWrapper(b) : b;
+            if (pa != null && pb != null) { // coercion
+                if (pa.compareTo(pb) <= 0) {
+                    return bIsPrimitive ? a : wa;
+                } else {
+                    return aIsPrimitive ? b : wb;
+                }
             }
-            return a.equals(b) ? a : lowestUpperBound(getWrapper(a), getWrapper(b), null, null);
+            return lowestUpperBound(wa, wb, null, null);
         }
 
         // handle interfaces
-        boolean isInterfaceA = a.isInterface();
-        boolean isInterfaceB = b.isInterface();
-        if (isInterfaceA && isInterfaceB) {
+        boolean aIsInterface = a.isInterface();
+        boolean bIsInterface = b.isInterface();
+        if (aIsInterface && bIsInterface) {
             if (a.equals(b) || b.implementsInterface(a)) {
                 return a;
             }
@@ -368,9 +383,9 @@ public class WideningCategories {
             } else {
                 return OBJECT_TYPE; // no common interface, so Object is implied
             }
-        } else if (isInterfaceB) {
+        } else if (bIsInterface) {
             return lowestUpperBound(b, a, null, null);
-        } else if (isInterfaceA) {
+        } else if (aIsInterface) {
             // a is an interface, b is not
 
             // a ClassNode superclass for an interface is not
@@ -634,19 +649,26 @@ public class WideningCategories {
     }
 
     /**
-     * Determines if the source class implements an interface or subclasses the target type.
-     * This method takes the {@link org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode lowest
-     * upper bound class node} type into account, allowing to remove unnecessary casts.
-     * @param source the type of interest
-     * @param targetType the target type of interest
+     * Determines if the source class implements an interface or subclasses the
+     * target type. This method takes the {@link LowestUpperBoundClassNode
+     * lowest upper bound class node} type into account, allowing removal of
+     * unnecessary casts.
+     *
+     * @since 2.3.0
      */
-    public static boolean implementsInterfaceOrSubclassOf(final ClassNode source, final ClassNode targetType) {
-        if (source.isDerivedFrom(targetType) || source.implementsInterface(targetType)) return true;
-        if (targetType instanceof WideningCategories.LowestUpperBoundClassNode) {
-            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) targetType;
-            if (implementsInterfaceOrSubclassOf(source, lub.getSuperClass())) return true;
+    public static boolean implementsInterfaceOrSubclassOf(final ClassNode source, final ClassNode target) {
+        if (source.isDerivedFrom(target) || source.implementsInterface(target)) {
+            return true;
+        }
+        if (target instanceof LowestUpperBoundClassNode) {
+            LowestUpperBoundClassNode lub = (LowestUpperBoundClassNode) target;
+            if (implementsInterfaceOrSubclassOf(source, lub.getSuperClass())) {
+                return true;
+            }
             for (ClassNode classNode : lub.getInterfaces()) {
-                if (source.implementsInterface(classNode)) return true;
+                if (source.implementsInterface(classNode)) {
+                    return true;
+                }
             }
         }
         return false;

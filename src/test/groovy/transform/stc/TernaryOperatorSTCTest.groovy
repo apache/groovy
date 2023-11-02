@@ -30,7 +30,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE
             })
-            def y = true?(byte)1:(byte)0
+            def n = true?(byte)1:(byte)0
         '''
     }
 
@@ -39,7 +39,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == short_TYPE
             })
-            def y = true?(short)1:(short)0
+            def n = true?(short)1:(short)0
         '''
     }
 
@@ -48,7 +48,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
             })
-            def y = true?1:0
+            def n = true?1:0
         '''
     }
 
@@ -57,7 +57,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
             })
-            def y = true?1L:0L
+            def n = true?1L:0L
         '''
     }
 
@@ -66,7 +66,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == float_TYPE
             })
-            def y = true?1f:0f
+            def n = true?1f:0f
         '''
     }
 
@@ -75,7 +75,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
-            def y = true?1d:0d
+            def n = true?1d:0d
         '''
     }
 
@@ -84,7 +84,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == boolean_TYPE
             })
-            def y = true?true:false
+            def n = true?true:false
         '''
     }
 
@@ -93,43 +93,57 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
-            def y = true?1d:1f
+            def n = true?1d:1f
         '''
     }
 
-    void testDoubleDoubleWithBoxedTypes() {
+    // GROOVY-11014
+    void testBoxedDoubleInt() {
+        assertScript '''
+            void test(Double d) {
+                double n = d?.doubleValue() ?: 0
+            }
+            test(null)
+        '''
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?new Double(1d):new Double(1f)
+            def n = new Double(0) ?: 0
         '''
     }
 
-    void testDoubleFloatWithBoxedTypes() {
+    void testDoubleFloatOneIsBoxed() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def n = true?1d:Float.valueOf(1f)
+        '''
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def n = true?Double.valueOf(1d):1f
+        '''
+    }
+
+    // GROOVY-8965
+    void testDoubleFloatBothAreBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
             })
-            def y = true?new Double(1d):new Float(1f)
+            def n = true?Double.valueOf(1d):Float.valueOf(1f)
         '''
     }
 
-    void testDoubleFloatWithOneBoxedType1() {
+    void testDoubleDoubleBothAreBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?1d:new Float(1f)
-        '''
-    }
-
-    void testDoubleFloatWithOneBoxedType2() {
-        assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE).name == 'java.lang.Number'
-            })
-            def y = true?new Double(1d):1f
+            def n = true?Double.valueOf(1d):Double.valueOf(1f)
         '''
     }
 
