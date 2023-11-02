@@ -168,14 +168,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class C {
                 int i
-
-                static main(args) {
-                    def c = new C()
-                    c.i = 5
-                    c.i += 10
-                    assert c.i == 15
-                }
             }
+            def c = new C(i: 5)
+            def ret = c.i += 10
+
+            assert c.i == 15
+            assert ret == 15
         '''
     }
 
@@ -768,10 +766,22 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         assertScript '''
             double m() {
                 double a = 10d
-                float b = 1f
+                float  b =  1f
                 double c = a+b
             }
-            assert m()==11d
+            assert m() == 11.0
+        '''
+    }
+
+    // GROOVY-11006
+    void testDoubleVsLiteral() {
+        assertScript '''
+            void setValue(double d) {
+            }
+            final double zero = 0.0
+            value = zero
+            value = 1.1
+            value = 1
         '''
     }
 
@@ -864,7 +874,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //GROOVY-6435
+    // GROOVY-6435
     void testBigDecAndBigIntSubclass() {
         assertScript '''
             class MyDecimal extends BigDecimal {

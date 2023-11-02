@@ -1199,7 +1199,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
             new FooWorker().doSomething()
         ''',
-        'Cannot assign value of type java.util.ArrayList <Integer> to variable of type java.util.List <String>'
+        'Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
     }
 
     void testAICAsStaticProperty() {

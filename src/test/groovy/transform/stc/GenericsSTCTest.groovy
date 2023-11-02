@@ -2561,7 +2561,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                     x = Collections.<Integer>emptyList()
                 }
             """,
-            'Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+            'Cannot assign java.util.List <Integer> to: java.util.List <String>'
         }
     }
 

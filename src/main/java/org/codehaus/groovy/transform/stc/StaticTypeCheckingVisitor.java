@@ -976,20 +976,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // we know that the RHS type is a closure
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
-        VariableExpression ve = varX("%", setterInfo.receiverType);
-        ve.setType(setterInfo.receiverType); // same as origin type
+        VariableExpression receiver = varX("%", setterInfo.receiverType);
+        receiver.setType(setterInfo.receiverType); // same as origin type
 
-        Function<MethodNode, ClassNode> firstParamType = (method) -> {
-            ClassNode type = method.getParameters()[0].getOriginType();
-            if (!method.isStatic() && !(method instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
-                Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(setterInfo.receiverType, method.getDeclaringClass());
-                type = applyGenericsContext(spec, type);
+        Function<Expression, MethodNode> setterCall = (value) -> {
+            typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628
+            try {
+                MethodCallExpression call = callX(receiver, setterInfo.name, value);
+                call.setImplicitThis(false);
+                visitMethodCallExpression(call);
+                return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            } finally {
+                typeCheckingContext.popEnclosingBinaryExpression();
+            }
+        };
+
+        Function<MethodNode, ClassNode> setterType = (setter) -> {
+            ClassNode type = setter.getParameters()[0].getOriginType();
+            if (!setter.isStatic() && !(setter instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
+                type = applyGenericsContext(extractPlaceHolders(setterInfo.receiverType, setter.getDeclaringClass()), type);
             }
             return type;
         };
 
-        // for compound assignment "x op= y" find type as if it was "x = (x op y)"
         Expression valueExpression = rightExpression;
+        // for "x op= y", find type as if it was "x = x op y"
         if (isCompoundAssignment(expression)) {
             Token op = ((BinaryExpression) expression).getOperation();
             if (op.getType() == ELVIS_EQUAL) { // GROOVY-10419: "x ?= y"
@@ -999,43 +1010,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 valueExpression = binX(leftExpression, op, rightExpression);
             }
         }
-        MethodCallExpression call = new MethodCallExpression(ve, setterInfo.name, valueExpression);
-        typeCheckingContext.pushEnclosingBinaryExpression(null); // GROOVY-10628: LHS re-purposed
-        try {
-            call.setImplicitThis(false);
-            visitMethodCallExpression(call);
-        } finally {
-            typeCheckingContext.popEnclosingBinaryExpression();
-        }
-        MethodNode directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (directSetterCandidate == null) {
-            // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
-            // notation AND that the RHS is not a boolean/String/Class
+
+        MethodNode methodTarget = setterCall.apply(valueExpression);
+        if (methodTarget == null && !isCompoundAssignment(expression)) {
+            // if no direct match, try implicit conversion
             for (MethodNode setter : setterInfo.setters) {
-                ClassNode type = getWrapper(firstParamType.apply(setter));
-                if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
-                    call = new MethodCallExpression(ve, setterInfo.name, castX(type, valueExpression));
-                    call.setImplicitThis(false);
-                    visitMethodCallExpression(call);
-                    directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                    if (directSetterCandidate != null) {
+                ClassNode lType = setterType.apply(setter);
+                ClassNode rType = getDeclaredOrInferredType(valueExpression);
+                if (checkCompatibleAssignmentTypes(lType, rType, valueExpression, false)) {
+                    methodTarget = setterCall.apply(castX(lType, valueExpression));
+                    if (methodTarget != null) {
                         break;
                     }
                 }
             }
         }
-        if (directSetterCandidate != null) {
+
+        if (methodTarget != null) {
             for (MethodNode setter : setterInfo.setters) {
-                if (setter == directSetterCandidate) {
-                    leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
+                if (setter == methodTarget) {
+                    leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodTarget);
                     leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
-                    storeType(leftExpression, firstParamType.apply(setter));
+                    storeType(leftExpression, setterType.apply(methodTarget));
                     break;
                 }
             }
             return false;
         } else {
-            ClassNode firstSetterType = firstParamType.apply(setterInfo.setters.get(0));
+            ClassNode firstSetterType = setterType.apply(setterInfo.setters.get(0));
             addAssignmentError(firstSetterType, getType(valueExpression), expression);
             return true;
         }
