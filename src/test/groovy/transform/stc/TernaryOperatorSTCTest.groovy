@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : ternary operator.
  */
@@ -28,7 +30,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE
             })
-            def y = true?(byte)1:(byte)0
+            def n = true?(byte)1:(byte)0
         '''
     }
 
@@ -37,7 +39,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == short_TYPE
             })
-            def y = true?(short)1:(short)0
+            def n = true?(short)1:(short)0
         '''
     }
 
@@ -46,7 +48,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
             })
-            def y = true?1:0
+            def n = true?1:0
         '''
     }
 
@@ -55,7 +57,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
             })
-            def y = true?1L:0L
+            def n = true?1L:0L
         '''
     }
 
@@ -64,7 +66,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == float_TYPE
             })
-            def y = true?1f:0f
+            def n = true?1f:0f
         '''
     }
 
@@ -73,7 +75,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
-            def y = true?1d:0d
+            def n = true?1d:0d
         '''
     }
 
@@ -82,7 +84,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == boolean_TYPE
             })
-            def y = true?true:false
+            def n = true?true:false
         '''
     }
 
@@ -91,43 +93,57 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
-            def y = true?1d:1f
+            def n = true?1d:1f
         '''
     }
 
-    void testDoubleDoubleWithBoxedTypes() {
+    // GROOVY-11014
+    void testBoxedDoubleInt() {
+        assertScript '''
+            void test(Double d) {
+                double n = d?.doubleValue() ?: 0
+            }
+            test(null)
+        '''
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?new Double(1d):new Double(1f)
+            def n = new Double(0) ?: 0
         '''
     }
 
-    void testDoubleFloatWithBoxedTypes() {
+    void testDoubleFloatOneIsBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?new Double(1d):new Float(1f)
+            def n = true?1d:Float.valueOf(1f)
         '''
-    }
-
-    void testDoubleFloatWithOneBoxedType1() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?1d:new Float(1f)
+            def n = true?Double.valueOf(1d):1f
         '''
     }
 
-    void testDoubleFloatWithOneBoxedType2() {
+    // GROOVY-8965
+    void testDoubleFloatBothAreBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
-            def y = true?new Double(1d):1f
+            def n = true?Double.valueOf(1d):Float.valueOf(1f)
+        '''
+    }
+
+    void testDoubleDoubleBothAreBoxed() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
+            })
+            def n = true?Double.valueOf(1d):Double.valueOf(1f)
         '''
     }
 
@@ -202,7 +218,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10358
-    void testCommonInterface() {
+    void testCommonInterface1() {
         assertScript '''
             interface I {
                 int m(int i)
@@ -238,6 +254,13 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
                 true ? x : y // Cannot return value of type GroovyObject for method returning I
             }
             test(null, null)
+        '''
+    }
+
+    @NotYetImplemented
+    void testCommonInterface3() {
+        assertScript '''import static java.util.concurrent.ConcurrentHashMap.*
+            Set<Integer> integers = false ? new HashSet<>() : newKeySet()
         '''
     }
 
@@ -295,8 +318,15 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10226
+    @NotYetImplemented // GROOVY-10095
     void testNull4() {
+        assertScript '''
+            float x = false ? 1.0 : null
+        '''
+    }
+
+    // GROOVY-10226
+    void testNull5() {
         assertScript '''
             class A<T> {
             }
@@ -309,7 +339,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10158
-    void testNull5() {
+    void testNull6() {
         assertScript '''
             class A<T> {
             }
