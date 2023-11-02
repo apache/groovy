@@ -54,6 +54,13 @@ final class WideningCategoriesTest extends GenericsTestCase {
         assert lowestUpperBound(b,a) == OBJECT_TYPE
     }
 
+    void testBuildCommonTypeWithTwoIdenticalClasses() {
+        ClassNode a = make(HashSet)
+        ClassNode b = make(HashSet)
+        assert lowestUpperBound(a,b) == make(HashSet)
+        assert lowestUpperBound(b,a) == make(HashSet)
+    }
+
     void testBuildCommonTypeWithIdenticalInterfaces() {
         ClassNode a = SERIALIZABLE_TYPE
         ClassNode b = SERIALIZABLE_TYPE
@@ -102,8 +109,15 @@ final class WideningCategoriesTest extends GenericsTestCase {
         assert lowestUpperBound(b,a) == GROOVY_OBJECT_TYPE
     }
 
+    void testBuildCommonTypeWithOneClassInheritsFromAnother() {
+        ClassNode a = make(HashSet)
+        ClassNode b = make(LinkedHashSet)
+        assert lowestUpperBound(a,b) == make(HashSet)
+        assert lowestUpperBound(b,a) == make(HashSet)
+    }
+
     void testBuildCommonTypeWithIdenticalPrimitiveTypes() {
-        [int_TYPE, long_TYPE, short_TYPE, boolean_TYPE, float_TYPE, double_TYPE].each {
+        [byte_TYPE, short_TYPE, int_TYPE, long_TYPE, float_TYPE, double_TYPE, boolean_TYPE].each {
             ClassNode a = it
             ClassNode b = it
             assert lowestUpperBound(a,b) == it
@@ -111,8 +125,8 @@ final class WideningCategoriesTest extends GenericsTestCase {
         }
     }
 
-    void testBuildCommonTypeWithPrimitiveTypeAndItsBoxedVersion() {
-        [int_TYPE, long_TYPE, short_TYPE, boolean_TYPE, float_TYPE, double_TYPE].each {
+    void testBuildCommonTypeWithPrimitiveAndWrapperType() {
+        [byte_TYPE, short_TYPE, int_TYPE, long_TYPE, float_TYPE, double_TYPE, boolean_TYPE].each {
             ClassNode a = it
             ClassNode b = getWrapper(it)
             assert lowestUpperBound(a,b) == getWrapper(it)
@@ -120,18 +134,20 @@ final class WideningCategoriesTest extends GenericsTestCase {
         }
     }
 
-    void testBuildCommonTypeWithTwoIdenticalClasses() {
-        ClassNode a = make(HashSet)
-        ClassNode b = make(HashSet)
-        assert lowestUpperBound(a,b) == make(HashSet)
-        assert lowestUpperBound(b,a) == make(HashSet)
-    }
-
-    void testBuildCommonTypeWithOneClassInheritsFromAnother() {
-        ClassNode a = make(HashSet)
-        ClassNode b = make(LinkedHashSet)
-        assert lowestUpperBound(a,b) == make(HashSet)
-        assert lowestUpperBound(b,a) == make(HashSet)
+    // GROOVY-11014
+    void testBuildCommonTypeWithPrimitiveAndWrapperType2() {
+        [[Float_TYPE, Double_TYPE], [double_TYPE]].combinations().each { ClassNode a, ClassNode b ->
+            assert lowestUpperBound(a,b) == Double_TYPE
+            assert lowestUpperBound(b,a) == Double_TYPE
+        }
+        [[Float_TYPE, Double_TYPE], [int_TYPE, long_TYPE, float_TYPE]].combinations().each { ClassNode a, ClassNode b ->
+            assert lowestUpperBound(a,b) == a
+            assert lowestUpperBound(b,a) == a
+        }
+        [[Byte_TYPE, Short_TYPE, Integer_TYPE/*, Long_TYPE*/], [int_TYPE]].combinations().each { ClassNode a, ClassNode b ->
+            assert lowestUpperBound(a,b) == Integer_TYPE
+            assert lowestUpperBound(b,a) == Integer_TYPE
+        }
     }
 
     void testBuildCommonTypeWithTwoInterfacesSharingOneParent() {
