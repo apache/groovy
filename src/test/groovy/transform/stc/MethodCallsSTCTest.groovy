@@ -1261,6 +1261,42 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with '
     }
 
+    // GROOVY-8488
+    void testBigDecimalLiteralArgument() {
+        assertScript '''
+            def m1(double d) { Double.valueOf(d) }
+            def m2(float f) { Float.valueOf(f) }
+            assert m1(1.0) == 1.0d
+            assert m2(1.0) == 1.0f
+        '''
+
+        shouldFailWithMessages '''
+            class C {
+                def m1(long l) { Long.valueOf(l) }
+                def m2(int i) { new Integer(i) }
+                void test() {
+                    m1(1.0)
+                    m2(1.0)
+                }
+            }
+        ''',
+        'Cannot find matching method C#m1(java.math.BigDecimal)',
+        'Cannot find matching method C#m2(java.math.BigDecimal)'
+
+        shouldFailWithMessages '''
+            class C {
+                def m1(long l) { Long.valueOf(l) }
+                def m2(int i) { new Integer(i) }
+                void test() {
+                    m1(1g)
+                    m2(1g)
+                }
+            }
+        ''',
+        'Cannot find matching method C#m1(java.math.BigInteger)',
+        'Cannot find matching method C#m2(java.math.BigInteger)'
+    }
+
     void testBoxingShouldCostMore() {
         assertScript '''
             int foo(int x) { 1 }

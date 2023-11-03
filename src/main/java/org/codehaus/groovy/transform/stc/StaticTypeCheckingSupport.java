@@ -192,8 +192,8 @@ public abstract class StaticTypeCheckingSupport {
             Short_TYPE,   1,
             int_TYPE,     2,
             Integer_TYPE, 2,
-            Long_TYPE,    3,
             long_TYPE,    3,
+            Long_TYPE,    3,
             float_TYPE,   4,
             Float_TYPE,   4,
             double_TYPE,  5,
@@ -467,8 +467,11 @@ public abstract class StaticTypeCheckingSupport {
         if (type == toBeAssignedTo || type == UNKNOWN_PARAMETER_TYPE) return true;
         if (isPrimitiveType(type)) type = getWrapper(type);
         if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
-        if (NUMBER_TYPES.containsKey(type.redirect()) && NUMBER_TYPES.containsKey(toBeAssignedTo.redirect())) {
-            return NUMBER_TYPES.get(type.redirect()) <= NUMBER_TYPES.get(toBeAssignedTo.redirect());
+        Integer source= NUMBER_TYPES.get(type), target= NUMBER_TYPES.get(toBeAssignedTo);
+        if (source != null && target != null) { return (source.compareTo(target) <= 0); }
+        // GROOVY-8325, GROOVY-8488: float or double can be assigned a BigDecimal literal
+        if (isBigDecimalType(type) && isFloatingCategory(getUnwrapper(toBeAssignedTo))) {
+            return true;
         }
         if (type.isArray() && toBeAssignedTo.isArray()) {
             ClassNode sourceComponent = type.getComponentType(), targetComponent = toBeAssignedTo.getComponentType();
