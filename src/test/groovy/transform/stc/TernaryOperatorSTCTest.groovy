@@ -147,6 +147,17 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8029
+    void testListLiteralAndListCoerce() {
+        assertScript '''
+            List<String> getStrings(List<Object> list) {
+                list.collectMany{ [it.toString()] } ?: ([] as List<String>)
+            }
+            assert getStrings([]).isEmpty()
+            assert getStrings([new Object(), new String()]).size() == 2
+        '''
+    }
+
     // GROOVY-10330
     void testTypeParameterTypeParameter1() {
         assertScript '''
