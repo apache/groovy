@@ -5465,7 +5465,7 @@ out:                if (mn.size() != 1) {
                 }
             }
 
-            // in case of "<T, U extends Type<T>>" we can learn about "T" from a resolved "U"
+            // in case of "<T, U extends Type<T>>", we can learn about "T" from a resolved "U"
             extractGenericsConnectionsForBoundTypes(methodGenericTypes, resolvedPlaceholders);
         }
 
@@ -5506,7 +5506,7 @@ out:                if (mn.size() != 1) {
             } else if (a instanceof MapExpression) {
                 actuals[i] = getLiteralResultType(pt, at, LinkedHashMap_TYPE);
             } else if (a instanceof ConstructorCallExpression) {
-                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-8974, GROOVY-9983, GROOVY-10086, et al.
+                inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-8974, GROOVY-9983, GROOVY-10086, GROOVY-10890, et al.
             } else if (a instanceof TernaryExpression && at.getGenericsTypes() != null && at.getGenericsTypes().length == 0) {
                 // GROOVY-9983: double diamond scenario -- "m(flag ? new Type<>(...) : new Type<>(...))"
                 typeCheckingContext.pushEnclosingBinaryExpression(assignX(varX(p), a, a));
@@ -5556,6 +5556,7 @@ out:                if (mn.size() != 1) {
 
     private static void extractGenericsConnectionsForBoundTypes(final GenericsType[] spec, final Map<GenericsTypeName, GenericsType> target) {
         if (spec.length < 2) return;
+        Map<GenericsTypeName, GenericsType> outer = new HashMap<>();
         for (GenericsType tp : spec) {
             ClassNode[] bounds = tp.getUpperBounds();
             if (bounds == null || bounds.length == 0) continue;
@@ -5568,8 +5569,9 @@ out:                if (mn.size() != 1) {
             for (ClassNode bound : bounds) {
                 extractGenericsConnections(inner,value.getType(),bound);
             }
-            inner.forEach(target::putIfAbsent); // GROOVY-10890
+            inner.forEach((k, v) -> outer.merge(k, v, StaticTypeCheckingSupport::getCombinedGenericsType)); // GROOVY-5893
         }
+        outer.forEach(target::putIfAbsent);
     }
 
     private static ClassNode[] collateMethodReferenceParameterTypes(final MethodPointerExpression source, final MethodNode target) {

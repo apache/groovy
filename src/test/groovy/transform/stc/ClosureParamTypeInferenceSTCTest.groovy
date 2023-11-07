@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
@@ -1498,6 +1499,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert [a:'1',b:'2',c:'C'].groupBy { it.key.toUpperCase()==it.value?1:0 } == [0:[a:'1',b:'2'], 1:[c:'C']]
         '''
     }
+
     void testDGM_groupEntriesBy() {
         assertScript '''
             def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { k,v -> v % 2 }
@@ -1505,57 +1507,71 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { e -> e.value % 2 }
             assert result[0]*.key == ["b", "d", "f"]
             assert result[1]*.value == [1, 3, 5]
-     '''
-    }
-
-    void testDGM_injectOnCollectionWithInitialValue() {
-        assertScript '''
-            assert ['a','bb','ccc'].inject(0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-
-    void testDGM_injectOnArrayWithInitialValue() {
-        assertScript '''
-            String[] array = ['a','bb','ccc']
-            assert array.inject(0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-
-    void testDGM_injectOnIteratorWithInitialValue() {
-        assertScript '''
-            assert ['a','bb','ccc'].iterator().inject(0) { acc, str -> acc += str.length(); acc } == 6
         '''
     }
 
     void testDGM_injectOnCollection() {
         assertScript '''
-            assert ['a','bb','ccc'].inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
+            def items = ['a','bb','ccc']
+            def value = items.inject { acc, str -> acc += str.toUpperCase(); acc }
+            assert value == 'aBBCCC'
+        '''
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+            def items = ['a','bb','ccc']
+            def value = DGM.inject(items, { acc, str -> acc += str.toUpperCase(); acc })
+            assert value == 'aBBCCC'
         '''
     }
-
+    @NotYetImplemented
+    void testDGM_injectOnIterator() {
+        assertScript '''
+            def items = ['a','bb','ccc'].iterator()
+            def value = items.inject { acc, str -> acc += str.toUpperCase(); acc }
+            //                ^^^^^^ inject(Object,Closure) without metadata
+            assert value == 'aBBCCC'
+        '''
+    }
     void testDGM_injectOnArray() {
         assertScript '''
-            String[] array = ['a','bb','ccc']
-            assert array.inject { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
+            def items = new String[]{'a','bb','ccc'}
+            def value = items.inject { acc, str -> acc += str.toUpperCase(); acc }
+            assert value == 'aBBCCC'
         '''
     }
 
-    void testDGM_injectOnCollectionWithInitialValueDirect() {
-        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
-            assert DGM.inject(['a','bb','ccc'],0) { acc, str -> acc += str.length(); acc } == 6
-        '''
-    }
-
-    void testDGM_injectOnCollectionDirect() {
-        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
-            assert DGM.inject(['a','bb','ccc']) { acc, str -> acc += str.toUpperCase(); acc } == 'aBBCCC'
-        '''
-    }
-
-    void testDGM_injectOnMap() {
+    void testDGM_injectOnCollectionWithInitialValue() {
         assertScript '''
-            assert [a:1,b:2].inject(0) { acc, entry -> acc += entry.value; acc} == 3
-            assert [a:1,b:2].inject(0) { acc, k, v -> acc += v; acc} == 3
+            def items = ['a','bb','ccc']
+            def value = items.inject(0) { acc, str -> acc += str.length(); acc }
+            assert value == 6
+        '''
+        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+            def items = ['a','bb','ccc']
+            def value = DGM.inject(items, 0, { acc, str -> acc += str.length(); acc })
+            assert value == 6
+        '''
+    }
+    void testDGM_injectOnIteratorWithInitialValue() {
+        assertScript '''
+            def items = ['a','bb','ccc'].iterator()
+            def value = items.inject(0) { acc, str -> acc += str.length(); acc }
+            assert value == 6
+        '''
+    }
+    void testDGM_injectOnArrayWithInitialValue() {
+        assertScript '''
+            def items = new String[]{'a','bb','ccc'}
+            def value = items.inject(0) { acc, str -> acc += str.length(); acc }
+            assert value == 6
+        '''
+    }
+    void testDGM_injectOnMapWithInitialValue() {
+        assertScript '''
+            def items = [a:1,b:2]
+            def value = items.inject(0) { acc, entry -> acc += entry.value; acc}
+            assert value == 3
+            value = items.inject(0) { acc, k, v -> acc += v; acc}
+            assert value == 3
         '''
     }
 

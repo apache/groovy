@@ -157,11 +157,10 @@ import java.util.function.Function;
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
 /**
- * This class defines new groovy methods which appear on normal JDK
- * classes inside the Groovy environment. Static methods are used with the
- * first parameter being the destination class,
- * i.e. <code>public static String reverse(String self)</code>
- * provides a <code>reverse()</code> method for <code>String</code>.
+ * Defines new groovy methods which appear on classes inside the Groovy environment.
+ * Static methods are used with the first parameter being the destination class,
+ * i.e. <code>public static String reverse(String self)</code> provides a
+ * <code>reverse()</code> method for <code>String</code>.
  * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
@@ -7304,43 +7303,90 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // inject
 
     /**
-     * Performs the same function as the version of inject that takes an initial value, but
-     * uses the head of the Collection as the initial value, and iterates over the tail.
-     * <pre class="groovyTestCase">
-     * assert 1 * 2 * 3 * 4 == [ 1, 2, 3, 4 ].inject { acc, val {@code ->} acc * val }
-     * assert ['b'] == [['a','b'], ['b','c'], ['d','b']].inject { acc, val {@code ->} acc.intersect( val ) }
-     * LinkedHashSet set = [ 't', 'i', 'm' ]
-     * assert 'tim' == set.inject { a, b {@code ->} a + b }
-     * </pre>
+     * Iterates through the given object, passing the first two elements to the
+     * closure. The result is passed back (injected) to the closure along with
+     * the third element and so on until all elements have been consumed.
      *
-     * @param self         a Collection
+     * @param self         an object
      * @param closure      a closure
      * @return the result of the last closure call
-     * @throws NoSuchElementException if the collection is empty.
-     * @see #inject(Collection, Object, Closure)
+     * @throws NoSuchElementException if the iterator is empty
+     * @see #inject(Object, Object, Closure)
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T, V extends T> T inject(Collection<T> self, @ClosureParams(value=FromString.class,options="V,T") Closure<V> closure ) {
-        if( self.isEmpty() ) {
-            throw new NoSuchElementException( "Cannot call inject() on an empty collection without passing an initial value." ) ;
+    public static <T, V extends T> T inject(Object self, @ClosureParams(value=FromString.class,options="?,?") Closure<V> closure) {
+        Iterator<?> iter = InvokerHelper.asIterator(self);
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
         }
-        Iterator<T> iter = self.iterator();
-        T head = iter.next();
-        Collection<T> tail = tail(self);
-        if (!tail.iterator().hasNext()) {
-            return head;
-        }
-        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
-        return (T) inject((Collection) tail, head, closure);
+        return (T) inject(iter, iter.next(), closure);
     }
 
     /**
-     * Iterates through the given Collection, passing in the initial value to
+     * Iterates through the given object, passing the first two elements to the
+     * closure. The result is passed back (injected) to the closure along with
+     * the third element and so on until all elements have been consumed.
+     *
+     * <pre class="groovyTestCase">
+     * def items = [1, 2, 3, 4]
+     * def value = items.inject { acc, val -> acc * val }
+     * assert value == 1 * 2 * 3 * 4
+     *
+     * items = [['a','b'], ['b','c'], ['d','b']]
+     * value = items.inject { acc, val -> acc.intersect(val) }
+     * assert value == ['b']
+     *
+     * items = ['j', 'o', 'i', 'n'] as Set
+     * value = items.inject(String.&plus)
+     * assert value == 'join'
+     * </pre>
+     *
+     * @param self         an iterable
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @throws NoSuchElementException if the iterator is empty
+     * @see #inject(Iterable, Object, Closure)
+     * @since 5.0.0
+     */
+    public static <E, T, V extends T> T inject(Iterable<E> self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+        Iterator<E> iter = self.iterator();
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
+        }
+        return (T) inject(iter, iter.next(), closure);
+    }
+
+    //
+
+    /**
+     * Iterates through the given object, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration is
+     * not possible.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     *
+     * @param self         an object
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @see #inject(Iterator, Object, Closure)
+     * @since 1.5.0
+     */
+    public static <T, U extends T, V extends T> T inject(Object self, U initialValue, @ClosureParams(value=FromString.class,options="U,?") Closure<V> closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given object, passing in the initial value to
      * the 2-arg closure along with the first item. The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     * the closure along with the third item and so on until further iteration is
+     * not possible.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
      *
      * Examples:
      * <pre class="groovyTestCase">
@@ -7369,25 +7415,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                                          max('rat',  'cat')  {@code =>}  'rat'
      * </pre>
      *
-     * @param self         a Collection
+     * @param self         an iterable
      * @param initialValue some initial value
      * @param closure      a closure
      * @return the result of the last closure call
-     * @since 1.0
+     * @since 5.0.0
      */
-    @SuppressWarnings("unchecked")
-    public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        // cast with explicit weaker generics for now to keep jdk6 happy, TODO: find better fix
-        return (T) inject((Iterator) self.iterator(), initialValue, closure);
+    public static <E, T, U extends T, V extends T> T inject(Iterable<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        return inject(self.iterator(), initialValue, closure);
     }
 
     /**
-     * Iterates through the given Map, passing in the initial value to
+     * Iterates through the given iterator, passing in the initial value to
+     * the closure along with the first item. The result is passed back (injected) into
+     * the closure along with the second item. The new result is injected back into
+     * the closure along with the third item and so on until further iteration is
+     * not possible.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     *
+     * @param self         an iterator
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the result of the last closure call
+     * @since 1.5.0
+     */
+    public static <E, T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        T value = initialValue;
+        Object[] params = new Object[2];
+        while (self.hasNext()) {
+            params[0] = value;
+            params[1] = self.next();
+            value = closure.call(params);
+        }
+        return value;
+    }
+
+    /**
+     * Iterates through the given map, passing in the initial value to
      * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value).
      * The result is passed back (injected) into
      * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the entire collection
-     * has been used. Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     * the closure along with the third item and so on until further iteration is
+     * not possible.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
      *
      * Examples:
      * <pre class="groovyTestCase">
@@ -7397,13 +7469,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * } == ['a', 'b', 'b', 'c', 'c', 'c']
      * </pre>
      *
-     * @param self         a Map
+     * @param self         a map
      * @param initialValue some initial value
      * @param closure      a 2 or 3 arg Closure
      * @return the result of the last closure call
      * @since 1.8.1
      */
-    public static <K, V, T, U extends T, W extends T> T inject(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"U,Map.Entry<K,V>","U,K,V"})  Closure<W> closure) {
+    public static <K, V, T, U extends T, W extends T> T inject(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"U,Map.Entry<K,V>","U,K,V"}) Closure<W> closure) {
         T value = initialValue;
         for (Map.Entry<K, V> entry : self.entrySet()) {
             if (closure.getMaximumNumberOfParameters() == 3) {
@@ -7413,76 +7485,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return value;
-    }
-
-    /**
-     * Iterates through the given Iterator, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until the Iterator has been
-     * expired of values. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Iterator
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.5.0
-     */
-    public static <E,T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        T value = initialValue;
-        Object[] params = new Object[2];
-        while (self.hasNext()) {
-            Object item = self.next();
-            params[0] = value;
-            params[1] = item;
-            value = closure.call(params);
-        }
-        return value;
-    }
-
-    /**
-     * Iterates through the given Object, passing in the first value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until further iteration of
-     * the object is not possible. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Object
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @throws NoSuchElementException if the collection is empty.
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.8.7
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, V extends T> T inject(Object self, Closure<V> closure) {
-        Iterator iter = InvokerHelper.asIterator(self);
-        if( !iter.hasNext() ) {
-            throw new NoSuchElementException( "Cannot call inject() over an empty iterable without passing an initial value." ) ;
-        }
-        Object initialValue = iter.next() ;
-        return (T) inject(iter, initialValue, closure);
-    }
-
-    /**
-     * Iterates through the given Object, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until further iteration of
-     * the object is not possible. Also known as foldLeft in functional parlance.
-     *
-     * @param self         an Object
-     * @param initialValue some initial value
-     * @param closure      a closure
-     * @return the result of the last closure call
-     * @see #inject(Collection, Object, Closure)
-     * @since 1.5.0
-     */
-    @SuppressWarnings("unchecked")
-    public static <T, U extends T, V extends T> T inject(Object self, U initialValue, Closure<V> closure) {
-        Iterator iter = InvokerHelper.asIterator(self);
-        return (T) inject(iter, initialValue, closure);
     }
 
     //--------------------------------------------------------------------------
@@ -16680,13 +16682,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     @Deprecated(since = "5.0.0")
-    public static <E,T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+    public static <E, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
         return ArrayGroovyMethods.inject(self, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <E, T, V extends T> T inject(Collection<E> self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+        return inject((Iterable<E>) self, closure);
     }
 
     @Deprecated(since = "5.0.0")
     public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
         return ArrayGroovyMethods.inject(self, initialValue, closure);
+    }
+
+    @Deprecated(since = "5.0.0")
+    public static <E, T, U extends T, V extends T> T inject(Collection<E> self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+        return inject((Iterable<E>) self, initialValue, closure);
     }
 
     @Deprecated(since = "5.0.0")

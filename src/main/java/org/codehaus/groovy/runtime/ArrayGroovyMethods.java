@@ -81,10 +81,10 @@ import java.util.function.LongConsumer;
 import java.util.function.LongUnaryOperator;
 
 /**
- * This class defines new groovy methods which appear on primitive arrays inside
- * the Groovy environment. Static methods are used with the first parameter being
- * the destination class, i.e. <code>public static int[] each(int[] self, Closure closure)</code>
- * provides a <code>each({i -> })</code> method for <code>int[]</code>.
+ * Defines new groovy methods which appear on arrays inside the Groovy environment.
+ * Static methods are used with the first parameter being the destination class,
+ * i.e. <code>public static int[] each(int[] self, Closure closure)</code>
+ * provides an <code>each({i -> })</code> method for <code>int[]</code>.
  * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
@@ -4616,42 +4616,77 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // inject
 
     /**
-     * Iterates through the given array as with inject(Object[],initialValue,closure), but
-     * using the first element of the array as the initialValue, and then iterating
-     * the remaining elements of the array.
+     * Iterates through the given array, passing the first two elements to the
+     * closure. The result is passed back (injected) to the closure along with
+     * the third element and so on until all array elements have been consumed.
+     *
+     * <pre class="groovyTestCase">
+     * def array = new Number[] {1, 2, 3, 4}
+     * def value = array.inject { acc, val -> acc * val }
+     * assert value == 24
+     *
+     * array = new Object[] {['a','b'], ['b','c'], ['d','b']}
+     * value = array.inject { acc, val -> acc.intersect(val) }
+     * assert value == ['b']
+     *
+     * array = new String[] {'t', 'i', 'm'}
+     * value = array.inject { acc, val -> acc + val }
+     * assert value == 'tim'
+     * </pre>
      *
      * @param self    an array
      * @param closure a closure
-     * @return the result of the last closure call
-     * @throws NoSuchElementException if the array is empty.
+     * @return first value for single-element array or the result of the last closure call
+     * @throws NoSuchElementException if the array is empty
      * @see #inject(Object[], Object, Closure)
      * @since 1.8.7
      */
     public static <E, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
-        return DefaultGroovyMethods.inject((Object) self, closure);
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot call inject() on an empty array without passing an initial value.");
+        }
+        T value = (T) self[0];
+        Object[] params = new Object[2];
+        for (int i = 1; i < self.length; i += 1) {
+            params[0] = value;
+            params[1] = self[i];
+            value = closure.call(params);
+        }
+        return value;
     }
 
     /**
-     * Iterates through the given array, passing in the initial value to
-     * the closure along with the first item. The result is passed back (injected) into
-     * the closure along with the second item. The new result is injected back into
-     * the closure along with the third item and so on until all elements of the array
-     * have been used.
-     * <p>
-     * Also known as foldLeft in functional parlance.
+     * Iterates through the given array, passing in the initial value and the
+     * first element to the closure. The result is sent back (injected) with the
+     * second element. The new result is injected back into the closure with the
+     * third element and so on until all elements have been consumed.
      *
-     * @param self         an Object[]
-     * @param initialValue some initial value
+     * <pre class="groovyTestCase">
+     * def array = new Number[] {2, 3, 4}
+     * def value = array.inject(1) { acc, val -> acc * val }
+     * assert value == 24
+     *
+     * array = new Object[] {['a','b'], ['b','c'], ['d','b']}
+     * value = array.inject(['a','b','c']) { acc, val -> acc.intersect(val) }
+     * assert value == ['b']
+     *
+     * array = new String[] {'t', 'i', 'm'}
+     * value = array.inject("") { acc, val -> acc + val }
+     * assert value == 'tim'
+     * </pre>
+     *
+     * @param self         an array
+     * @param initialValue base value
      * @param closure      a closure
-     * @return the result of the last closure call
+     * @return base value for empty array or the result of the last closure call
      * @since 1.5.0
      */
     public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
-        Object[] params = new Object[2];
         T value = initialValue;
-        for (Object next : self) {
+        Object[] params = new Object[2];
+        for (int i = 0; i < self.length; i += 1) {
             params[0] = value;
-            params[1] = next;
+            params[1] = self[i];
             value = closure.call(params);
         }
         return value;
@@ -5064,7 +5099,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T last(T[] self) {
         if (self.length == 0) {
-            throw new NoSuchElementException("Cannot access last() element from an empty Array");
+            throw new NoSuchElementException("Cannot access last() element from an empty array");
         }
         return self[self.length - 1];
     }

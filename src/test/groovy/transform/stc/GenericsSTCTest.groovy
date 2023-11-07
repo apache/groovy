@@ -4050,9 +4050,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 list.each { int i -> sum += i }
                 assert sum == 6
 
-                $type sumWithInject = list.inject(0, { int x, int y -> x + y })
-                //    ^^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ U    ^ E  ^^^^^ V
-                assert sumWithInject == 6
+                $type  sumViaInject = list.inject(0, { int x, int y -> x + y })
+                //     ^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ U    ^ E  ^^^^^ V
+                assert sumViaInject == 6
+            """
+        }
+    }
+
+    // GROOVY-5893, GROOVY-7934
+    void testPlusInClosure2() {
+        for (type in ['def', 'var', 'Object', 'String', 'Serializable']) {
+            assertScript """
+                String[] array = ['1', '2', '3']
+                $type  joinViaInject = array.inject(0, { x,y -> (x + ',' + y) })
+                //                     integer or string ^ ^ string
+                assert joinViaInject == '0,1,2,3'
             """
         }
     }
@@ -4616,30 +4628,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6504
-    void testInjectMethodWithInitialValueChoosesTheCollectionVersion() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+    void testInjectMethodWithInitialValueChoosesTheIterableVersion() {
+        assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert method.name == 'inject'
-                assert method instanceof ExtensionMethodNode
                 method = method.extensionMethodNode
-                assert method.parameters[0].type == make(Collection)
+                assert method.parameters[0].type == ITERABLE_TYPE
             })
             def result = ['a','bb','ccc'].inject(0) { int acc, String str -> acc += str.length(); acc }
-            assert  result == 6
+            assert result == 6
         '''
     }
 
     // GROOVY-6504
-    void testInjectMethodWithInitialValueChoosesTheCollectionVersionUsingDGM() {
+    void testInjectMethodWithInitialValueChoosesTheCollectionVersion() {
         assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert method.name == 'inject'
-                assert method.parameters[0].type == make(Collection)
+                assert method.parameters[0].type == COLLECTION_TYPE
             })
-            def result = DefaultGroovyMethods.inject(['a','bb','ccc'],0, { int acc, String str -> acc += str.length(); acc })
-            assert  result == 6
+            def result = DefaultGroovyMethods.inject(['a','bb','ccc'], 0, { int acc, String str -> acc += str.length(); acc })
+            assert result == 6
         '''
     }
 
