@@ -464,7 +464,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def a = [1,2,3,4] as Set
      * def b = [3,4,5,6] as Set
-     * assert (a & b) == [3,4] as Set
+     * assert (a &amp; b) == [3,4] as Set
      * </pre>
      *
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -512,7 +512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def a = [1,2,3,4] as SortedSet
      * def b = [3,4,5,6] as Set
-     * assert (a & b) == [3,4] as SortedSet
+     * assert (a &amp; b) == [3,4] as SortedSet
      * </pre>
      *
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -7337,7 +7337,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert value == ['b']
      *
      * items = ['j', 'o', 'i', 'n'] as Set
-     * value = items.inject(String.&plus)
+     * value = items.inject(String.&amp;plus)
      * assert value == 'join'
      * </pre>
      *
