@@ -987,7 +987,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     configureAST(
                             closureX(null, createBlockStatement(declarationStatement, switchStatement)),
                             ctx
-                    ), "call");
+                    ), CALL_STR);
             callClosure.setImplicitThis(false);
 
             return configureAST(callClosure, ctx);
@@ -1073,7 +1073,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                     configureAST(
                                             closureX(null, exprOrBlockStatement),
                                             exprOrBlockStatement
-                                    ), "call");
+                                    ), CALL_STR);
                             callClosure.setImplicitThis(false);
                             Expression resultExpr = exprOrBlockStatement instanceof ExpressionStatement
                                     ? ((ExpressionStatement) exprOrBlockStatement).getExpression()
