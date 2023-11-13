@@ -3478,7 +3478,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (site.getName().equals(CALL_METHOD) && GeneratedClosure.class.isAssignableFrom(theClass)) {
                 // here, we want to point to a method named "doCall" instead of "call"
                 // but we don't want to replace the original call site name, otherwise
-                // we loose the fact that the original method name was "call" so instead
+                // we lose the fact that the original method name was "call" so instead
                 // we will point to a metamethod called "doCall"
                 // see GROOVY-5806 for details
                 tempSite = new AbstractCallSite(site.getArray(), site.getIndex(), DO_CALL_METHOD);
