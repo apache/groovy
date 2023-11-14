@@ -353,8 +353,7 @@ d.methodFromB()                     // <5>
     }
 
     void testSAMCoercion() {
-        assertScript '''import org.codehaus.groovy.runtime.Greeter
-
+        assertScript '''
 // tag::sam_trait[]
 trait Greeter {
     String greet() { "Hello $name" }        // <1>

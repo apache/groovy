@@ -106,7 +106,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testStaticMethodCallWithInheritance() {
         assertScript '''
             String echo = B.echo 'echo'
-            assert  echo == 'echo'
+            assert echo == 'echo'
         '''
     }
 
@@ -130,7 +130,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] arr = ['3','2','1']
             Arrays.sort(arr)
-            assert arr == ['1','2','3']  as String[]
+            assert arr == ['1','2','3'] as String[]
         '''
     }
 
@@ -153,7 +153,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testPlusStaticMethodCall() {
         assertScript '''
             static int foo() { 1 }
-            assert 1+foo() == 2
+            assert 1 + foo() == 2
         '''
     }
 
@@ -307,12 +307,12 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     return t
                 }
             }
-            class C implements I<String> {
+            class C10494 implements I<String> {
                 @Override m(String s) {
                     I.super.m(s)
                 }
             }
-            String result = new C().m('works')
+            String result = new C10494().m('works')
             assert result == 'works'
         '''
 
@@ -321,7 +321,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 default void m(T t) {
                 }
             }
-            class C implements I<String> {
+            class C10494 implements I<String> {
                 @Override void m(String s) {
                     super.m(s)
                 }
@@ -1014,39 +1014,39 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldNotAllowMethodCallFromStaticInitializer() {
         shouldFailWithMessages '''
-            class A {
+            class Foo {
                 void instanceMethod() {}
                 static {
                     instanceMethod()
                 }
             }
-            new A()
+            new Foo()
         ''',
-        'Non-static method A#instanceMethod cannot be called from static context'
+        'Non-static method Foo#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticMethod() {
         shouldFailWithMessages '''
-            class A {
+            class Foo {
                 void instanceMethod() {}
                 static void staticMethod() {
                     instanceMethod()
                 }
             }
-            A.staticMethod()
+            Foo.staticMethod()
         ''',
-        'Non-static method A#instanceMethod cannot be called from static context'
+        'Non-static method Foo#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticField() {
         shouldFailWithMessages '''
-            class A {
+            class Foo {
                 boolean instanceMethod() {}
                 static FOO = instanceMethod()
             }
-            new A()
+            new Foo()
         ''',
-        'Non-static method A#instanceMethod cannot be called from static context'
+        'Non-static method Foo#instanceMethod cannot be called from static context'
     }
 
     // GROOVY-5495
@@ -1054,17 +1054,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class ClassUnderTest {
                 void methodFromString(SecondInterface si) {
-                    si.methodFromSecondInterface();
-                    si.methodFromFirstInterface();
+                    si.methodFromSecondInterface()
+                    si.methodFromFirstInterface()
                 }
             }
 
             interface FirstInterface {
-                void methodFromFirstInterface();
+                void methodFromFirstInterface()
             }
 
             interface SecondInterface extends FirstInterface {
-                void methodFromSecondInterface();
+                void methodFromSecondInterface()
             }
 
             new ClassUnderTest()
@@ -1112,7 +1112,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5540
     void testChoosePublicMethodInHierarchy() {
         assertScript '''import groovy.transform.stc.MethodCallsSTCTest.Child2
-            class A {
+            class Foo {
                 int delegate() {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
                         def md = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
@@ -1122,7 +1122,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     res
                 }
             }
-            assert new A().delegate() == 2
+            assert new Foo().delegate() == 2
         '''
     }
 
@@ -1301,32 +1301,32 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testSpreadArgsRestrictedInConstructorCall() {
         // GROOVY-10597
         assertScript '''
-            class C {
-                C(String one, String... zeroOrMore) {
+            class Foo {
+                Foo(String one, String... zeroOrMore) {
                     String result = one + zeroOrMore.join('')
                     assert result == 'ABC'
                 }
             }
-            new C('A', *['B'], 'C')
+            new Foo('A', *['B'], 'C')
         '''
 
         shouldFailWithMessages '''
-            class C {
-                C(String one, String... zeroOrMore) {
+            class Foo {
+                Foo(String one, String... zeroOrMore) {
                 }
             }
-            new C(*['A','B'])
+            new Foo(*['A','B'])
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
 
         shouldFailWithMessages '''
-            class C {
-                C(String a, String b) {
+            class Foo {
+                Foo(String a, String b) {
                 }
             }
-            new C(*['A','B'])
+            new Foo(*['A','B'])
         ''',
-        'Cannot find matching constructor C(',
+        'Cannot find matching constructor Foo(',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
@@ -1366,7 +1366,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            class C {
+            class Foo {
                 def m1(long l) { Long.valueOf(l) }
                 def m2(int i) { new Integer(i) }
                 void test() {
@@ -1375,11 +1375,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method C#m1(java.math.BigDecimal)',
-        'Cannot find matching method C#m2(java.math.BigDecimal)'
+        'Cannot find matching method Foo#m1(java.math.BigDecimal)',
+        'Cannot find matching method Foo#m2(java.math.BigDecimal)'
 
         shouldFailWithMessages '''
-            class C {
+            class Foo {
                 def m1(long l) { Long.valueOf(l) }
                 def m2(int i) { new Integer(i) }
                 void test() {
@@ -1388,8 +1388,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method C#m1(java.math.BigInteger)',
-        'Cannot find matching method C#m2(java.math.BigInteger)'
+        'Cannot find matching method Foo#m1(java.math.BigInteger)',
+        'Cannot find matching method Foo#m2(java.math.BigInteger)'
     }
 
     void testBoxingShouldCostMore() {
@@ -1758,35 +1758,35 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldFindSetProperty() {
         assertScript '''
-            class C {
+            class Foo {
                 int p
                 void m() {
                     this.setProperty('p', 1)
                 }
             }
-            def c = new C()
-            c.m()
-            assert c.p == 1
+            def o = new Foo()
+            o.m()
+            assert o.p == 1
         '''
     }
 
     // GROOVY-5888
     void testStaticContext1() {
         assertScript '''
-            class C {
+            class Foo {
                 static List p = 'a,b,c'.split(/,/)*.trim()
             }
-            assert C.p == ['a','b','c']
+            assert Foo.p == ['a','b','c']
         '''
     }
 
     // GROOVY-11195
     void testStaticContext2() {
         assertScript '''
-            class C {
+            class Foo {
                 static String p = this.getName() // instance method of Class
             }
-            assert C.p == 'C'
+            assert Foo.p == 'Foo'
         '''
     }
 

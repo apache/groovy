@@ -45,6 +45,31 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8254
+    void testAliasAIC() {
+        assertScript '''import Foo as Bar
+            class Foo {}
+            class Bar {}
+
+            def regular = new Bar()
+            def anonymous = new Bar() {}
+            assert regular.class.name == 'Foo'
+            assert anonymous.class.superclass.name == 'Foo'
+        '''
+
+        assertScript '''import static Baz.Foo as Bar
+            class Bar {}
+            class Baz {
+                static class Foo {}
+            }
+
+            def regular = new Bar()
+            def anonymous = new Bar() {}
+            assert regular.class.name == 'Baz$Foo'
+            assert anonymous.class.superclass.name == 'Baz$Foo'
+        '''
+    }
+
     @Test // GROOVY-10840
     void testArrayAIC() {
         assertScript '''

@@ -332,7 +332,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (type.isRedirectNode() || !type.isPrimaryClassNode()) {
             visitTypeAnnotations(type); // JSR 308 support
         }
-        if (preferImports) {
+        if (preferImports && !type.isResolved() && !type.isPrimaryClassNode()) {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
         }
@@ -597,9 +597,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveAliasFromModule(final ClassNode type) {
-        // In case of getting a ConstructedClassWithPackage here we do not do checks for partial
-        // matches with imported classes. The ConstructedClassWithPackage is already a constructed
-        // node and any subclass resolving will then take place elsewhere
+        // In case of getting a ConstructedClassWithPackage here we do not check
+        // for partial matches with imported classes. ConstructedClassWithPackage
+        // is already a constructed node and subclass resolving takes place elsewhere.
         if (type instanceof ConstructedClassWithPackage) return false;
 
         ModuleNode module = currentClass.getModule();
@@ -666,50 +666,64 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected boolean resolveFromModule(final ClassNode type, final boolean testModuleImports) {
-        if (type instanceof ConstructedNestedClass) return false;
+        ModuleNode module = currentClass.getModule();
+        if (module == null) return false;
 
-        // we decided if we have a vanilla name starting with a lower case
+        if (type instanceof ConstructedNestedClass) return false;
+        // We decided if we have a vanilla name starting with a lower case
         // letter that we will not try to resolve this name against .*
         // imports. Instead a full import is needed for these.
         // resolveAliasFromModule will do this check for us. This method
         // does also check the module contains a class in the same package
         // of this name. This check is not done for vanilla names starting
-        // with a lower case letter anymore
-        if (type instanceof LowerCaseClass) {
-            return resolveAliasFromModule(type);
-        }
+        // with a lower case letter anymore.
+        if (type instanceof LowerCaseClass) return resolveAliasFromModule(type);
 
         String name = type.getName();
-        ModuleNode module = currentClass.getModule();
-        if (module == null) return false;
-
-        boolean newNameUsed = false;
-        // we add a package if there is none yet and the module has one. But we
-        // do not add that if the type is a ConstructedClassWithPackage. The code in ConstructedClassWithPackage
-        // hasPackageName() will return true if ConstructedClassWithPackage#className has no dots.
-        // but since the prefix may have them and the code there does ignore that
-        // fact. We check here for ConstructedClassWithPackage.
-        if (!type.hasPackageName() && module.hasPackageName() && !(type instanceof ConstructedClassWithPackage)) {
-            type.setName(module.getPackageName() + name);
-            newNameUsed = true;
+        boolean type_setName = false;
+        if (!type.hasPackageName()) {
+            if (testModuleImports) { // GROOVY-8254
+                ImportNode importNode = module.getImport(name);
+                if (importNode != null && importNode != currentImport && !importNode.getAlias().equals(importNode.getType().getNameWithoutPackage())) {
+                    type.setRedirect(importNode.getType());
+                    return true;
+                }
+                importNode = module.getStaticImports().get(name);
+                if (importNode != null && importNode != currentImport && !importNode.getAlias().equals(importNode.getFieldName())) {
+                    ClassNode tmp = new ConstructedNestedClass(importNode.getType(), importNode.getFieldName());
+                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
+                        type.setRedirect(tmp.redirect());
+                        return true;
+                    }
+                }
+            }
+            // We add a package if there is none yet and the module has one. But we
+            // do not add that if the type is a ConstructedClassWithPackage. The code in ConstructedClassWithPackage
+            // hasPackageName() will return true if ConstructedClassWithPackage#className has no dots.
+            // but since the prefix may have them and the code there does ignore that fact.
+            if (module.hasPackageName() && !(type instanceof ConstructedClassWithPackage)) {
+                type.setName(module.getPackageName() + name);
+                type_setName = true;
+            }
         }
-        // look into the module node if there is a class with that name
-        List<ClassNode> moduleClasses = module.getClasses();
-        for (ClassNode mClass : moduleClasses) {
-            if (mClass.getName().equals(type.getName())) {
-                if (mClass != type) type.setRedirect(mClass);
+        // check the module node for a class with the name
+        for (ClassNode localClass : module.getClasses()) {
+            if (localClass.getName().equals(type.getName())) {
+                if (localClass != type) type.setRedirect(localClass);
                 return true;
             }
         }
-        if (newNameUsed) type.setName(name);
+        if (type_setName) type.setName(name);
 
         if (testModuleImports) {
-            if (resolveAliasFromModule(type)) return true;
-
+            // check regular imports
+            if (resolveAliasFromModule(type)) {
+                return true;
+            }
+            // check enclosing package
             if (module.hasPackageName()) {
-                // check package this class is defined in. The usage of ConstructedClassWithPackage here
-                // means, that the module package will not be involved when the
-                // compiler tries to find an inner class.
+                // The usage of ConstructedClassWithPackage indicates the module
+                // package will not be involved when the compiler tries to find an inner class.
                 ClassNode tmp = new ConstructedClassWithPackage(module.getPackageName(), name);
                 if (resolve(tmp, false, false, false)) {
                     ambiguousClass(type, tmp, name);
