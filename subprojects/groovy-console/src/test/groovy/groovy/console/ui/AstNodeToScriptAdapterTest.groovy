@@ -563,7 +563,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('import java.lang.Double as BadaBing')
         assert result.contains('@java.lang.SuppressWarnings')
         assert result.contains("@java.lang.SuppressWarnings(value = 'some parameter')")
-        assert result.contains('import java.lang.String as String')
+        assert result.contains('import java.lang.String')
         assert result.contains('@java.lang.SuppressWarnings')
         assert result.contains('import java.util.concurrent.*')
     }

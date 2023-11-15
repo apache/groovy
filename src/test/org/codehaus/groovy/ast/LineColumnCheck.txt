@@ -223,19 +223,23 @@ class BaseClass implements IBase1, IBase2, IBase3 {}
 
 ###importStatement:::
 import java.io.File
-:::[ClassNode,(1:1),(1:20)]
+:::[ClassNode,(1:8),(1:20)]
 
 ###importStatementAliased:::
 import java.util.ArrayList as MyList
-:::[ClassNode,(1:1),(1:37)]
+:::[ClassNode,(1:8),(1:27)]
 
 ###staticImportStatementStar:::
 import static java.lang.Math.*
-:::[ClassNode,(1:1),(1:31)]
+:::[ClassNode,(1:15),(1:29)]
 
-###staticImportStatementAliases:::
+###staticImportStatementName:::
 import static java.lang.Math.cos
-:::[ClassNode,(1:1),(1:33)]
+:::[ClassNode,(1:15),(1:29)]
+
+###staticImportStatementAliased:::
+import static java.lang.Math.cos as cosine
+:::[ClassNode,(1:15),(1:29)]
 
 ###castExpressionClassNode:::
 String s = (String)i

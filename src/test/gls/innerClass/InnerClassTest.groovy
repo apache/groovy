@@ -49,7 +49,6 @@ final class InnerClassTest {
     void testAliasAIC() {
         assertScript '''import Foo as Bar
             class Foo {}
-            class Bar {}
 
             def regular = new Bar()
             def anonymous = new Bar() {}
@@ -58,7 +57,6 @@ final class InnerClassTest {
         '''
 
         assertScript '''import static Baz.Foo as Bar
-            class Bar {}
             class Baz {
                 static class Foo {}
             }

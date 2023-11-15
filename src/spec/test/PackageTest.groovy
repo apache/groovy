@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,8 +16,14 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class PackageTest extends GroovyTestCase {
 
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class PackageTest {
+
+    @Test
     void testPackages() {
         assertScript '''
             // tag::package_statement[]
@@ -27,11 +31,8 @@ class PackageTest extends GroovyTestCase {
             package com.yoursite
             // end::package_statement[]
 
-            class Foo {
-
-            }
-
-            def foo = new Foo()        
+            class Foo { }
+            def foo = new Foo()
 
             assert foo != null
             assert Foo.class.name == 'com.yoursite.Foo'
@@ -50,6 +51,7 @@ class PackageTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDefaultImports() {
         assertScript '''
             // tag::default_import[]
@@ -58,6 +60,7 @@ class PackageTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMultipleImportsFromSamePackage() {
         assertScript '''
             // tag::multiple_import[]
@@ -68,11 +71,12 @@ class PackageTest extends GroovyTestCase {
 
             assert markupBuilder != null
 
-            assert new StreamingMarkupBuilder() != null 
+            assert new StreamingMarkupBuilder() != null
             // end::multiple_import[]
         '''
     }
 
+    @Test
     void testStarImports() {
         assertScript '''
             // tag::star_import[]
@@ -83,49 +87,45 @@ class PackageTest extends GroovyTestCase {
             assert markupBuilder != null
 
             assert new StreamingMarkupBuilder() != null
-
             // end::star_import[]
         '''
     }
 
+    @Test
     void testStaticImports() {
         assertScript '''
             // tag::static_imports[]
-
-            import static Boolean.FALSE
+            import static java.lang.Boolean.FALSE
 
             assert !FALSE //use directly, without Boolean prefix!
-
             // end::static_imports[]
-
         '''
     }
 
-    void testStaticImportWithAs() {
+    @Test
+    void testStaticImportAlias() {
         assertScript '''
             // tag::static_importswithas[]
-
             import static Calendar.getInstance as now
 
             assert now().class == Calendar.getInstance().class
-
             // end::static_importswithas[]
         '''
     }
 
+    @Test
     void testStaticStarImport() {
         assertScript '''
             // tag::static_importswithstar[]
-
             import static java.lang.Math.*
 
             assert sin(0) == 0.0
             assert cos(0) == 1.0
-
             // end::static_importswithstar[]
         '''
     }
 
+    @Test
     void testStaticStarImportSameMethodNameDifferentParameterType() {
         assertScript '''
             // tag::static_import_same_method_name_different_parameter_type[]
@@ -146,6 +146,7 @@ class PackageTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAliasImport() {
         assertScript '''
             // tag::alias_import[]

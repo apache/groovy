@@ -82,7 +82,7 @@ This is done because the classes from these packages are most commonly used. By 
 
 === Simple import
 
-A simple import is an import statement where you fully define the class name along with the package. For example the import statement ++import groovy.xml.MarkupBuilder++ in the code below is a simple import which directly refers to a class inside a package.
+A simple import is an import statement where you fully define the class name along with the package. For example the import statement `import groovy.xml.MarkupBuilder` in the code below is a simple import which directly refers to a class inside a package.
 
 [source,groovy]
 ----
@@ -91,7 +91,7 @@ include::../test/PackageTest.groovy[tags=import_statement,indent=0]
 
 === Star import
 
-Groovy, like Java, provides a special way to import all classes from a package using `*`, the so-called star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
+Groovy, like Java, provides a special way to import all classes from a package using `*`, the so-called on-demand or star import. `MarkupBuilder` is a class which is in package `groovy.xml`, alongside another class called `StreamingMarkupBuilder`. In case you need to use both classes, you can do:
 
 [source,groovy]
 ----
@@ -124,9 +124,9 @@ include::../test/PackageTest.groovy[tags=static_import_same_method_name_differen
 ----
 <1> static import of method
 <2> declaration of method with same name as method statically imported above, but with a different parameter type
-<3> compile error in java, but is valid groovy code
+<3> compile error in Java, but is valid Groovy code
 
-If you have the same types, the imported class takes precedence.
+If you have the same signature, the imported method takes precedence.
 
 === Static import aliasing
 
@@ -141,10 +141,9 @@ Now, that's clean!
 
 === Static star import
 
-A static star import is very similar to the regular star import. It will import all the static methods from the given class.
+A static star import is very similar to the regular star import. It will import all the static members from the given class.
 
-For example, lets say we need to calculate sines and cosines for our application.
-The class `java.lang.Math` has static methods named `sin` and `cos` which fit our need. With the help of a static star import, we can do:
+For example, let's say we need to calculate sines and cosines for our application. The class `java.lang.Math` has static methods named `sin` and `cos` which fit our need. With the help of a static star import, we can do:
 
 [source,groovy]
 ----
@@ -162,6 +161,34 @@ For example we can import `java.sql.Date` as `SQLDate` and use it in the same fi
 [source,groovy]
 ----
 include::../test/PackageTest.groovy[tags=alias_import,indent=0]
+----
+
+=== Namespace conflicts
+
+Similar to Java, it is an error in Groovy to specify multiple imports with the same name but different types:
+
+[source,groovy]
+----
+import java.awt.List
+import java.util.List // error: name already declared
+----
+
+And to declare an import and a top-level type with the same name:
+
+[source,groovy]
+----
+import java.util.List
+class List { } // error: name already declared
+----
+
+However, inner types can shadow names from the unit scope:
+
+[source,groovy]
+----
+import java.util.List
+class Main {
+    class List { } // allowed; "List" refers to this type within `Main`'s scope and `java.util.List` elsewhere
+}
 ----
 
 == Scripts versus classes

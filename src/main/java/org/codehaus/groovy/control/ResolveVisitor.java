@@ -681,30 +681,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         String name = type.getName();
         boolean type_setName = false;
-        if (!type.hasPackageName()) {
-            if (testModuleImports) { // GROOVY-8254
-                ImportNode importNode = module.getImport(name);
-                if (importNode != null && importNode != currentImport && !importNode.getAlias().equals(importNode.getType().getNameWithoutPackage())) {
-                    type.setRedirect(importNode.getType());
-                    return true;
-                }
-                importNode = module.getStaticImports().get(name);
-                if (importNode != null && importNode != currentImport && !importNode.getAlias().equals(importNode.getFieldName())) {
-                    ClassNode tmp = new ConstructedNestedClass(importNode.getType(), importNode.getFieldName());
-                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
-                        type.setRedirect(tmp.redirect());
-                        return true;
-                    }
-                }
-            }
-            // We add a package if there is none yet and the module has one. But we
-            // do not add that if the type is a ConstructedClassWithPackage. The code in ConstructedClassWithPackage
-            // hasPackageName() will return true if ConstructedClassWithPackage#className has no dots.
-            // but since the prefix may have them and the code there does ignore that fact.
-            if (module.hasPackageName() && !(type instanceof ConstructedClassWithPackage)) {
-                type.setName(module.getPackageName() + name);
-                type_setName = true;
-            }
+        // We add a package if there is none yet and the module has one. But we
+        // do not add that if the type is a ConstructedClassWithPackage. The code in ConstructedClassWithPackage
+        // hasPackageName() will return true if ConstructedClassWithPackage#className has no dots.
+        // but since the prefix may have them and the code there does ignore that fact.
+        if (!type.hasPackageName() && module.hasPackageName() && !(type instanceof ConstructedClassWithPackage)) {
+            type.setName(module.getPackageName() + name);
+            type_setName = true;
         }
         // check the module node for a class with the name
         for (ClassNode localClass : module.getClasses()) {

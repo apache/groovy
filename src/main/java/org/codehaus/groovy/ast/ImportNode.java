@@ -97,23 +97,27 @@ public class ImportNode extends AnnotatedNode {
      */
     @Override
     public String getText() {
-        String typeName = getClassName();
-        if (isStar && !isStatic) {
-            return "import " + packageName + "*";
-        }
-        if (isStar) {
-            return "import static " + typeName + ".*";
-        }
-        if (isStatic) {
-            if (alias != null && !alias.isEmpty() && !alias.equals(fieldName)) {
-                return "import static " + typeName + "." + fieldName + " as " + alias;
+        String simpleName = getAlias();
+        String memberName = getFieldName();
+
+        if (!isStatic()) {
+            if (isStar()) {
+                return "import " + getPackageName() + "*";
+            } else if (simpleName == null || simpleName.isEmpty()
+                    || simpleName.equals(getType().getNameWithoutPackage())) {
+                return "import " + getClassName();
+            } else {
+                return "import " + getClassName() + " as " + simpleName;
             }
-            return "import static " + typeName + "." + fieldName;
+        } else {
+            if (isStar()) {
+                return "import static " + getClassName() + ".*";
+            } else if (simpleName == null || simpleName.isEmpty() || simpleName.equals(memberName)) {
+                return "import static " + getClassName() + "." + memberName;
+            } else {
+                return "import static " + getClassName() + "." + memberName + " as " + simpleName;
+            }
         }
-        if (alias == null || alias.isEmpty()) {
-            return "import " + typeName;
-        }
-        return "import " + typeName + " as " + alias;
     }
 
     public boolean isStar() {

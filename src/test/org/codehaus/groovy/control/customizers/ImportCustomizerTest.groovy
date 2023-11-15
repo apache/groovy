@@ -125,14 +125,15 @@ final class ImportCustomizerTest {
         scriptEngine.run(script.name, new Binding())
     }
 
-    @Test // GROOVY-8399
+    // GROOVY-8399
+    @Test
     void testAddImportsOnModuleWithMultipleClasses() {
         importCustomizer.addImports('java.text.SimpleDateFormat')
         def shell = new GroovyShell(configuration)
         shell.evaluate('''\
             @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={
                 def imports = node.module.imports*.text
-                assert imports == ['import java.text.SimpleDateFormat as SimpleDateFormat']
+                assert imports == ['import java.text.SimpleDateFormat']
             })
             class A {
                 static class AA {
@@ -150,7 +151,8 @@ final class ImportCustomizerTest {
         ''')
     }
 
-    @Test // GROOVY-8399
+    // GROOVY-8399
+    @Test
     void testAddStarImportsOnModuleWithMultipleClasses() {
         importCustomizer.addStarImports('java.text', 'groovy.transform')
         def shell = new GroovyShell(configuration)
@@ -174,6 +176,8 @@ final class ImportCustomizerTest {
             println new SimpleDateFormat()
         ''')
     }
+
+    //--------------------------------------------------------------------------
 
     protected static class Inner {}
 }

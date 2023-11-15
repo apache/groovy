@@ -150,6 +150,7 @@ import java.util.stream.Stream;
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
+import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
@@ -329,60 +330,51 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ImportNode visitImportDeclaration(final ImportDeclarationContext ctx) {
-        ImportNode importNode;
+        List<AnnotationNode> annotations = this.visitAnnotationsOpt(ctx.annotationsOpt());
 
         boolean hasStatic = asBoolean(ctx.STATIC());
-        boolean hasStar = asBoolean(ctx.MUL());
-        boolean hasAlias = asBoolean(ctx.alias);
+        boolean hasStar   = asBoolean(ctx.MUL());
+        boolean hasAlias  = asBoolean(ctx.alias);
 
-        List<AnnotationNode> annotationNodeList = this.visitAnnotationsOpt(ctx.annotationsOpt());
+        ImportNode importNode;
 
         if (hasStatic) {
             if (hasStar) { // e.g. import static java.lang.Math.*
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
-                ClassNode type = makeClassNode(qualifiedName);
-                configureAST(type, ctx);
+                ClassNode importType = makeClassNode(qualifiedName);
+                configureAST(importType, ctx.qualifiedName());
 
-                moduleNode.addStaticStarImport(type.getText(), type, annotationNodeList);
-
+                moduleNode.addStaticStarImport(importType.getText(), importType, annotations);
                 importNode = last(moduleNode.getStaticStarImports().values());
             } else { // e.g. import static java.lang.Math.pow
                 List<? extends QualifiedNameElementContext> identifierList = ctx.qualifiedName().qualifiedNameElement();
                 int identifierListSize = identifierList.size();
-                String name = identifierList.get(identifierListSize - 1).getText();
-                ClassNode classNode =
-                        makeClassNode(
-                                identifierList.stream()
-                                        .limit(identifierListSize - 1)
-                                        .map(ParseTree::getText)
-                                        .collect(Collectors.joining(DOT_STR)));
-                String alias = hasAlias
-                        ? ctx.alias.getText()
-                        : name;
-                configureAST(classNode, ctx);
 
-                moduleNode.addStaticImport(classNode, name, alias, annotationNodeList);
+                String qualifiedName = identifierList.stream().limit(identifierListSize - 1).map(ParseTree::getText).collect(Collectors.joining(DOT_STR));
+                ClassNode importType = makeClassNode(qualifiedName);
+                configureAST(importType, ctx.qualifiedName()); // qualifiedName() includes member name
+                configureEndPosition(importType, identifierList.get(Math.max(0, identifierListSize - 2)).getStop());
 
+                String memberName = identifierList.get(identifierListSize - 1).getText();
+                String simpleName = hasAlias ? ctx.alias.getText() : memberName;
+
+                moduleNode.addStaticImport(importType, memberName, simpleName, annotations);
                 importNode = last(moduleNode.getStaticImports().values());
             }
         } else {
             if (hasStar) { // e.g. import java.util.*
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
-
-                moduleNode.addStarImport(qualifiedName + DOT_STR, annotationNodeList);
-
+                moduleNode.addStarImport(qualifiedName + DOT_STR, annotations);
                 importNode = last(moduleNode.getStarImports());
             } else { // e.g. import java.util.Map
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
-                String name = last(ctx.qualifiedName().qualifiedNameElement()).getText();
-                ClassNode classNode = makeClassNode(qualifiedName);
-                String alias = hasAlias
-                        ? ctx.alias.getText()
-                        : name;
-                configureAST(classNode, ctx);
+                ClassNode importType = makeClassNode(qualifiedName);
+                configureAST(importType, ctx.qualifiedName());
 
-                moduleNode.addImport(alias, classNode, annotationNodeList);
+                String simpleName = hasAlias ? ctx.alias.getText()
+                                             : last(ctx.qualifiedName().qualifiedNameElement()).getText();
 
+                moduleNode.addImport(simpleName, importType, annotations);
                 importNode = last(moduleNode.getImports());
             }
         }
