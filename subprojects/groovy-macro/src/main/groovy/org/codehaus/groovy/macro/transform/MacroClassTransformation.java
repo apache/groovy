@@ -38,7 +38,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -127,7 +126,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
                         List<ClassNode> classes = sourceUnit.getAST().getClasses();
                         classes.removeIf(aClass -> aClass == type || type == aClass.getOuterClass());
                     } catch (Exception e) {
-                        LOGGER.log(Level.WARNING, DefaultGroovyMethods.asString(e));
+                        LOGGER.warning(DefaultGroovyMethods.asString(e));
                     }
                     return;
                 }
