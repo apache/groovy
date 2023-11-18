@@ -19,32 +19,31 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Checks that {@code @AutoImplement} annotated classes work correctly with stubs.
+ * GROOVY-9801: interface default method stays default
  */
-class AutoImplementWithJointCompilation extends StringSourcesStubTestCase {
+final class InterfaceWithDefaultMethodStubTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'foo/JavaI.java': '''package foo;
-                    public interface JavaI {}
-                ''',
-                'foo/GroovyClass.groovy': '''package foo
-                    @groovy.transform.AutoImplement
-                    class GroovyClass implements Runnable {}
-                ''',
-                'foo/Main.groovy': '''package foo
-                    class Main {
-                        boolean runGroovyClass() {
-                            new GroovyClass().run()
-                            return true
-                        }
-                    }
-                '''
+            'Dummy.java': '''
+                public class Dummy {
+                }
+            ''',
+
+            'MyInterface.groovy': '''
+                interface MyInterface {
+                            String m1()
+                    default String m2() { "" }
+                }
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-        def main = loader.loadClass('foo.Main').newInstance()
-        assert main.runGroovyClass()
+        String stub = stubJavaSourceFor('MyInterface')
+        assert stub.contains('java.lang.String m1();')
+        assert stub.contains('default  java.lang.String m2() { return null; }')
     }
 }

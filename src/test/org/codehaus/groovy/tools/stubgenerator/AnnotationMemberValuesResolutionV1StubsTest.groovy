@@ -19,16 +19,15 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that FQN appears fine in generated stub when a enum ClassExpression.<EnumConstant> 
+ * Test that FQN appears fine in generated stub when a enum ClassExpression.<EnumConstant>
  *  is used as an annotation member value
  */
-class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestCase {
+final class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-            'foo/Foo4434V1.java': '''
-                package foo;
-
+            'foo/Foo4434V1.java': '''package foo;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Retention;
                 import java.lang.annotation.RetentionPolicy;
@@ -42,11 +41,11 @@ class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestC
                     MyEnum4434V1 val() default MyEnum4434V1.OTHER_VALUE;
                 }
             ''',
-            'baz/MyEnum4434V1.java': '''
-                package baz;
 
+            'baz/MyEnum4434V1.java': '''package baz;
                 public enum MyEnum4434V1 {SOME_VALUE, OTHER_VALUE}
             ''',
+
             'Bar4434V1.groovy': '''
                 import foo.Foo4434V1
                 import baz.MyEnum4434V1
@@ -57,9 +56,10 @@ class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestC
         ]
     }
 
+    @Override
     void verifyStubs() {
         classes['Bar4434V1'].with {
-            assert annotations[0].getProperty('val').toString() == 'baz.MyEnum4434V1.SOME_VALUE'
+            assert annotations[0].getProperty('val').parameterValue.toString() == 'baz.MyEnum4434V1.SOME_VALUE'
         }
     }
 }

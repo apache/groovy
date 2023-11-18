@@ -19,8 +19,7 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * GROOVY-5630:
- * Java stub generator generates wrong cast for return value of generic method
+ * GROOVY-5630: stub generator inserted wrong cast for generic method return
  *
  * (also covers GROOVY-5439)
  */
@@ -28,35 +27,41 @@ final class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSource
 
     Map<String, String> provideSources() {
         [
-                'HelperUtil.groovy': '''
-                    class HelperUtil {
-                        final Map<String, String> test = new HashMap<String, String>()
-                        static <T extends Task> T createTask(Class<T> type) { }
-                        public <T extends List> T foo() { null }
+            'Task.java': '''
+                public class Task {
+                }
+            ''',
+
+            'Schedule.groovy': '''
+                class Schedule<T extends ScheduleItem> extends HashSet<T> {
+                    T getCurrentItem() {
                     }
-                ''',
-                'Task.java': '''
-                    public class Task {}
-                ''',
-                'Schedule.groovy': '''
-                    class Schedule<T extends ScheduleItem> extends HashSet<T> {
-                        T getCurrentItem() { }
-                    }
-                ''',
-                'ScheduleItem.java': '''
-                    public class ScheduleItem {}
-                '''
+                }
+            ''',
+
+            'ScheduleItem.java': '''
+                public class ScheduleItem {
+                }
+            ''',
+
+            'Utility.groovy': '''
+                class Utility {
+                    final Map<String, String> test = new HashMap<String, String>()
+                    static <T extends Task> T createTask(Class<T> type) { }
+                    public <T extends List> T foo() { null }
+                }
+            '''
         ]
     }
 
     void verifyStubs() {
-        def stubSourceForHelper = stubJavaSourceFor('HelperUtil')
-        def stubSourceForSchedule = stubJavaSourceFor('Schedule')
+        String stub = stubJavaSourceFor('Schedule')
+        assert stub.contains("T getCurrentItem() { return null; }")
 
-        assert stubSourceForHelper.contains("public static <T extends Task> T createTask(java.lang.Class<T> type) { return null; }")
-        assert stubSourceForHelper.contains("public final  java.util.Map<java.lang.String, java.lang.String> getTest() { return null; }")
-        assert stubSourceForHelper.contains("public <T extends java.util.List> T foo() { return null; }")
+               stub = stubJavaSourceFor('Utility')
+        assert stub.contains("static <T extends Task> T createTask(java.lang.Class<T> type) { return null; }")
+        assert stub.contains("java.util.Map<java.lang.String, java.lang.String> getTest() { return null; }")
+        assert stub.contains("<T extends java.util.List> T foo() { return null; }")
 
-        assert stubSourceForSchedule.contains("public  T getCurrentItem() { return null; }")
     }
 }

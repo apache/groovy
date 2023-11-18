@@ -16,48 +16,31 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy7366pt2 extends StringSourcesStubTestCase {
+/**
+ * Checks the stub generator defines initialization expressions for primitive fields.
+ */
+final class InterfaceWithPrimitiveFieldsStubTest extends StringSourcesStubTestCase {
 
-    @Override
     Map<String, String> provideSources() {
         [
-            'test/Constants.java': '''package test;
-                public interface Constants {
-                    String C1 = "c1";
+            'Dummy.java': '''
+                public class Dummy {
                 }
             ''',
 
-            'test/MyAnnotation.java': '''package test;
-                public @interface MyAnnotation {
-                    String value();
-                }
-            ''',
-
-            'test/Test.groovy': '''package test
-                import static test.Constants.*
-                @MyAnnotation(C1)
-                class Test {
-                    def test
-                    Test(test) {
-                        this.test = test
-                    }
-                }
-            ''',
-
-            'Main.java': '''import test.*;
-                public class Main {
-                    public static void main(String[] args) {
-                        System.out.println(new Test("hello").getTest());
-                    }
+            'Interface.groovy': '''
+                interface Interface {
+                    int bar = 42
+                    short baz
                 }
             '''
         ]
     }
 
-    @Override
     void verifyStubs() {
+        assert classes['Interface'].getFieldByName('bar').initializationExpression
+        assert classes['Interface'].getFieldByName('baz').initializationExpression
     }
 }

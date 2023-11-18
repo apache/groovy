@@ -765,27 +765,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         Statement setterBlock = node.getSetterBlock();
         if (setterBlock == null) {
-            MethodNode setter = classNode.getSetterMethod(setterName,
-                    false); // atypical: allow setter with non-void return type
-            if ((accessorModifiers & (ACC_FINAL | ACC_PRIVATE)) == 0 && methodNeedsReplacement(setter)) {
+            MethodNode setter = classNode.getSetterMethod(setterName, false); // atypical: allow setter with non-void return type
+            if (!node.isFinal() && !node.isPrivate() && methodNeedsReplacement(setter)) {
                 setterBlock = createSetterBlock(node, field);
             }
         }
 
-        int getterModifiers = accessorModifiers;
-        // don't make static accessors final
-        if (node.isStatic()) {
-            getterModifiers &= ~ACC_FINAL;
-        }
-
         if (getterBlock != null) {
-            visitGetter(node, field, getterBlock, getterModifiers, getterName);
+            visitGetter(node, field, getterBlock, accessorModifiers, getterName);
 
             if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
                 String altGetterName = "is" + capitalize(name);
                 MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
                 if (methodNeedsReplacement(altGetter)) {
-                    visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
+                    visitGetter(node, field, getterBlock, accessorModifiers, altGetterName);
                 }
             }
         }
@@ -806,7 +799,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         MethodNode getter = new MethodNode(getterName, getterModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
         getter.setSynthetic(true);
         addPropertyMethod(getter);
-        if (classNode.getNodeMetaData("_RECORD_HEADER") != null || !field.isSynthetic()) {
+        if (!field.isSynthetic() || classNode.getNodeMetaData("_RECORD_HEADER") != null) {
             copyAnnotations(node, getter);
         }
         visitMethod(getter);

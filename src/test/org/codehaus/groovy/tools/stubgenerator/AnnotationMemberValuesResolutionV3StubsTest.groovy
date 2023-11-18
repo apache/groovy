@@ -21,13 +21,12 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that FQN appears fine in generated stub when ClassExpression.<Prop> is used as an annotation member value
  */
-class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestCase {
+final class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-            'foo/Foo4434V3.java': '''
-                package foo;
-
+            'foo/Foo4434V3.java': '''package foo;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Retention;
                 import java.lang.annotation.RetentionPolicy;
@@ -41,11 +40,11 @@ class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestC
                     String val() default "";
                 }
             ''',
-            'baz/MyClass4434V3.java': '''
-                package baz;
 
+            'baz/MyClass4434V3.java': '''package baz;
                 public class MyClass4434V3 {public static final String SOME_CONST = "some constant";}
             ''',
+
             'Bar4434V3.groovy': '''
                 import foo.Foo4434V3
                 import baz.MyClass4434V3
@@ -56,9 +55,10 @@ class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestC
         ]
     }
 
+    @Override
     void verifyStubs() {
         classes['Bar4434V3'].with {
-            assert annotations[0].getProperty('val').toString() == 'baz.MyClass4434V3.SOME_CONST'
+            assert annotations[0].getProperty('val').parameterValue.toString() == 'baz.MyClass4434V3.SOME_CONST'
         }
     }
 }

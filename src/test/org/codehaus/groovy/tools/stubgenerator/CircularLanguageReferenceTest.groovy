@@ -32,10 +32,10 @@ final class CircularLanguageReferenceTest extends StubTestCase {
         classes['stubgenerator.circularLanguageReference.Rectangle'].with {
             assert !imports
             assert !annotations
-            assert baseClass == 'java.lang.Object'
-            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
-            assert methods['area'     ].signature == "public double area()"
-            assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
+            assert  baseClass == 'java.lang.Object'
+            assert  interfaces == ['stubgenerator.circularLanguageReference.Shape', 'groovy.lang.GroovyObject']
+            assert  constructors[0].toString() == 'public stubgenerator.circularLanguageReference.Rectangle(double,double)'
+            assert  methods['area'].signature == 'public double area()'
         }
     }
 }

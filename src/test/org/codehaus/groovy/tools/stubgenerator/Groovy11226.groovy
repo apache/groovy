@@ -18,29 +18,45 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class InterfaceWithDefaultMethodHasDefaultModifierStubTest extends StringSourcesStubTestCase {
+final class Groovy11226 extends StringSourcesStubTestCase {
+
     @Override
     Map<String, String> provideSources() {
         [
-                'Dummy.java': '''
-                    public class Dummy{}
-                ''',
+            'foo/Bar.java': '''package foo;
+                public class Bar {
+                }
+            ''',
 
-                'DefaultInterface.groovy': '''
-                    interface DefaultInterface {
-                        default String m0() {
-                            return "m0"
-                        }
-                        String m3();
+            'foo/Baz.java': '''package foo;
+                public interface Baz {
+                    Bar getBar();
+                }
+            ''',
+
+            'Pogo.groovy': '''import foo.*
+                //@groovy.transform.TupleConstructor
+                class Pogo implements Baz {
+                    final Bar bar
+                    Pogo(Bar bar) {
+                        this.bar = bar
                     }
-                '''
+                }
+            ''',
+
+            'Main.java': '''
+                public class Main {
+                    public static void main(String[] args) {
+                        assert new Pogo(new foo.Bar()).getBar() != null;
+                    }
+                }
+            '''
         ]
     }
 
     @Override
     void verifyStubs() {
-        def stubContent = stubJavaSourceFor('DefaultInterface');
-        assert stubContent.contains('default  java.lang.String m0() { return null; }')
-        assert stubContent.contains('java.lang.String m3();')
+        String stub = stubJavaSourceFor('Pogo')
+        assert stub.contains('@groovy.transform.Generated() public  foo.Bar getBar() { return null; }')
     }
 }

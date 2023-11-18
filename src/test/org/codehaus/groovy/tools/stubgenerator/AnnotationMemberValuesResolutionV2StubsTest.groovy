@@ -21,13 +21,12 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that FQN appears fine in generated stub when a ClassExpression is used as an annotation member value
  */
-class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestCase {
+final class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-            'foo/Foo4434V2.java': '''
-                package foo;
-
+            'foo/Foo4434V2.java': '''package foo;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Retention;
                 import java.lang.annotation.RetentionPolicy;
@@ -41,11 +40,11 @@ class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestC
                     Class val() default java.util.ArrayList.class;
                 }
             ''',
-            'baz/MyEnum4434V2.java': '''
-                package baz;
 
+            'baz/MyEnum4434V2.java': '''package baz;
                 public enum MyEnum4434V2 {SOME_VALUE, OTHER_VALUE}
             ''',
+
             'Bar4434V2.groovy': '''
                 import foo.Foo4434V2
                 import baz.MyEnum4434V2
@@ -56,10 +55,11 @@ class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestC
         ]
     }
 
+    @Override
     void verifyStubs() {
         classes['Bar4434V2'].with {
             // adjusted for GROOVY-4517
-            assert annotations[0].getProperty('val').toString() == 'baz.MyEnum4434V2.class'
+            assert annotations[0].getProperty('val').parameterValue.toString() == 'baz.MyEnum4434V2.class'
         }
     }
 }

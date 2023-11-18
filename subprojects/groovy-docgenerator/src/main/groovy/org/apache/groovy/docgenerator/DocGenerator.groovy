@@ -18,18 +18,19 @@
  */
 package org.apache.groovy.docgenerator
 
-import com.thoughtworks.qdox.JavaDocBuilder
+import com.thoughtworks.qdox.JavaProjectBuilder
 import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
 import com.thoughtworks.qdox.model.JavaParameter
-import com.thoughtworks.qdox.model.Type
+import com.thoughtworks.qdox.model.JavaType
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
+import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.MessageSource
+
 import groovy.cli.internal.CliBuilderInternal
 import groovy.text.SimpleTemplateEngine
 import groovy.text.Template
 import groovy.text.TemplateEngine
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
-import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import java.text.BreakIterator
 import java.util.concurrent.ConcurrentHashMap
@@ -41,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap
 class DocGenerator {
     private static final MessageSource MESSAGES = new MessageSource(DocGenerator)
     private static final Logger LOG = Logger.create(DocGenerator)
-    private static final Comparator SORT_KEY_COMPARATOR = [compare: { a, b -> a.sortKey <=> b.sortKey }] as Comparator
+    private static final Comparator SORT_KEY_COMPARATOR = { a, b -> a.sortKey <=> b.sortKey }
     private static final Map<String, Object> CONFIG = new ConcurrentHashMap<>()
 
     List<File> sourceFiles
@@ -59,7 +60,7 @@ class DocGenerator {
      * with its methods, javadoc comments and tags.
      */
     private static DocSource parseSource(List<File> sourceFiles) {
-        JavaDocBuilder builder = new JavaDocBuilder()
+        JavaProjectBuilder builder = new JavaProjectBuilder()
         sourceFiles.each {
             if (it.exists()) {
                 builder.addSource(it.newReader())
@@ -264,7 +265,7 @@ class DocGenerator {
     private static class DocSource {
         SortedSet<DocPackage> packages = new TreeSet<DocPackage>(SORT_KEY_COMPARATOR)
 
-        void add(Type type, JavaMethod javaMethod) {
+        void add(JavaType type, JavaMethod javaMethod) {
             DocType tempDocType = new DocType(type: type)
 
             DocPackage aPackage = packages.find { it.name == tempDocType.packageName }
@@ -284,23 +285,23 @@ class DocGenerator {
         }
 
         void populateInheritedMethods() {
-            def allTypes = allDocTypes.collectEntries{ [it.fullyQualifiedClassName, it] }
+            Map<String, DocType> allTypes = allDocTypes.collectEntries{ [it.fullyQualifiedClassName, it] }
             allTypes.each { name, docType ->
                 if (name.startsWith('primitives-and-primitive-arrays')) return
-                Type next = docType.javaClass.superClass
+                def next = docType.javaClass.superJavaClass
                 while (next != null) {
                     if (allTypes.keySet().contains(next.value)) {
                         docType.inheritedMethods[allTypes[next.value]] = allTypes[next.value].docMethods
                     }
-                    next = next.javaClass.superClass
+                    next = next.superJavaClass
                 }
-                def remaining = docType.javaClass.implementedInterfaces.toList()
+                def remaining = docType.javaClass.interfaces
                 while (!remaining.empty) {
                     def nextInt = remaining.remove(0)
                     if (allTypes.keySet().contains(nextInt.fullyQualifiedName)) {
                         docType.inheritedMethods[allTypes[nextInt.fullyQualifiedName]] = allTypes[nextInt.fullyQualifiedName].docMethods
                     }
-                    remaining.addAll(nextInt.implementedInterfaces.toList())
+                    remaining.addAll(nextInt.interfaces)
                 }
             }
         }
@@ -327,17 +328,17 @@ class DocGenerator {
     }
 
     private static class DocType {
-        private Type type
+        private JavaType type
         final String shortComment = '' // empty because cannot get a comment of JDK
         SortedSet<DocMethod> docMethods = new TreeSet<DocMethod>(SORT_KEY_COMPARATOR)
         Map<String, List<DocMethod>> inheritedMethods = new LinkedHashMap<String, List<DocMethod>>()
 
         JavaClass getJavaClass() {
-            type.javaClass
+            type as JavaClass
         }
 
         String getPackageName() {
-            if (type.primitive) {
+            if (type.isPrimitive()) {
                 return DocPackage.PRIMITIVE_TYPE_PSEUDO_PACKAGE
             }
             def fqcn = fullyQualifiedClassName
@@ -352,14 +353,14 @@ class DocGenerator {
         }
 
         String getFullyQualifiedClassName() {
-            if (type.primitive) {
+            if (type.isPrimitive()) {
                 return DocPackage.PRIMITIVE_TYPE_PSEUDO_PACKAGE + '.' + type.toString()
             }
             DocUtil.resolveJdkClassName(type.toString())
         }
 
         boolean isInterface() {
-            type.javaClass.interface
+            javaClass.isInterface()
         }
 
         String getSortKey() {
@@ -387,9 +388,10 @@ class DocGenerator {
          */
         List<JavaParameter> getParameters() {
             if (javaMethod.parameters.size() > 1) {
-                return javaMethod.parameters.toList()[1..-1]
+                javaMethod.parameters.toList()[1..-1]
+            } else {
+                []
             }
-            []
         }
 
         String getParametersSignature() {
@@ -435,7 +437,7 @@ class DocGenerator {
         }
 
         boolean isStatic() {
-            javaMethod.parentClass.name.endsWith('StaticMethods') || javaMethod.parentClass.name.endsWith('StaticExtensions')
+            javaMethod.declaringClass.name.endsWith('StaticMethods') || javaMethod.declaringClass.name.endsWith('StaticExtensions')
         }
 
         String getSortKey() {

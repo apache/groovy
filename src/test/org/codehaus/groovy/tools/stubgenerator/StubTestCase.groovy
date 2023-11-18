@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import groovy.test.GroovyTestCase
-import com.thoughtworks.qdox.JavaDocBuilder
+import com.thoughtworks.qdox.JavaProjectBuilder
 import com.thoughtworks.qdox.model.JavaClass
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+
+import groovy.test.GroovyTestCase
 
 import static groovy.io.FileType.*
 
@@ -59,7 +60,7 @@ abstract class StubTestCase extends GroovyTestCase {
 
     protected File sourceRootPath
 
-    protected JavaDocBuilder qdox = new JavaDocBuilder()
+    protected JavaProjectBuilder qdox = new JavaProjectBuilder()
 
     protected GroovyClassLoader loader
     protected CompilerConfiguration config = new CompilerConfiguration()
@@ -162,8 +163,8 @@ abstract class StubTestCase extends GroovyTestCase {
             compile(sources)
 
             // use QDox for parsing the Java stubs and Java sources
-            qdox.addSourceTree sourceRootPath
-            qdox.addSourceTree stubDir
+            qdox.addSourceTree(sourceRootPath)
+            qdox.addSourceTree(stubDir)
 
             if (debug) {
                 println ">>> Stubs generated"
@@ -196,7 +197,7 @@ abstract class StubTestCase extends GroovyTestCase {
                 }
                 throw e
             }
-            if (sourceRootPath.getAbsolutePath() =~ 'stubgentests') {
+            if (sourceRootPath.absolutePath =~ 'stubgentests') {
                 sourceRootPath.deleteDir()
             }
         }
@@ -275,7 +276,7 @@ abstract class StubTestCase extends GroovyTestCase {
      * @return an array of QDox' <code>JavaClass</code>es.
      */
     protected JavaClass[] getClasses() {
-        qdox.classes
+        qdox.classes as JavaClass[]
     }
 
     /**

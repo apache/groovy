@@ -37,7 +37,7 @@ public class PropertyNodeUtils {
      * @return the modifiers which make sense for an accessor method
      */
     public static int adjustPropertyModifiersForMethod(PropertyNode propNode) {
-        // GROOVY-3726: clear volatile, transient modifiers so that they don't get applied to methods
-        return ~(Modifier.TRANSIENT | Modifier.VOLATILE) & propNode.getModifiers();
+        // GROOVY-3726: clear some modifiers so that they do not get applied to methods
+        return propNode.getModifiers() & ~(Modifier.FINAL | Modifier.TRANSIENT | Modifier.VOLATILE);
     }
 }

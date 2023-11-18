@@ -273,13 +273,20 @@ public class JavaStubGenerator {
                 protected void addInitialization(ClassNode cn, ConstructorNode c) {}
                 @Override
                 protected void addPropertyMethod(MethodNode mn) {
+                    markAsGenerated(getClassNode(), mn);
                     doAddMethod(mn);
                 }
                 @Override
                 protected void addReturnIfNeeded(MethodNode mn) {}
 
+                private   MethodNode doAddMethod(MethodNode mn) {
+                    propertyMethods.putIfAbsent(mn.getTypeDescriptor(), mn);
+                    return mn;
+                }
+
                 @Override
                 protected MethodNode addMethod(ClassNode cn, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+                    if (!shouldBeSynthetic) modifiers &= ~Opcodes.ACC_SYNTHETIC;
                     return doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
 
@@ -297,28 +304,23 @@ public class JavaStubGenerator {
                 }
 
                 @Override
-                protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
-                    final Parameter[] parameters = method.getParameters();
-                    final Expression[] saved = new Expression[parameters.length];
-                    for (int i = 0; i < parameters.length; i++) {
-                        if (parameters[i].hasInitialExpression())
-                            saved[i] = parameters[i].getInitialExpression();
-                    }
-                    super.addDefaultParameters(action, method);
-                    for (int i = 0; i < parameters.length; i++) {
-                        if (saved[i] != null)
-                            parameters[i].setInitialExpression(saved[i]);
-                    }
-                }
-
-                private MethodNode doAddMethod(MethodNode method) {
-                    propertyMethods.putIfAbsent(method.getTypeDescriptor(), method);
-                    return method;
+                protected void addDefaultConstructor(ClassNode node) {
+                    // not required for stub generation
                 }
 
                 @Override
-                protected void addDefaultConstructor(ClassNode node) {
-                    // not required for stub generation
+                protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
+                    Parameter[] parameters = method.getParameters();
+                    Expression[] arguments = new Expression[parameters.length];
+                    for (int i = 0; i < parameters.length; ++i) {
+                        if (parameters[i].hasInitialExpression())
+                            arguments[i] = parameters[i].getInitialExpression();
+                    }
+                    super.addDefaultParameters(action, method);
+                    for (int i = 0; i < parameters.length; ++i) {
+                        if (arguments[i] != null)
+                            parameters[i].setInitialExpression(arguments[i]);
+                    }
                 }
 
                 @Override
@@ -326,10 +328,10 @@ public class JavaStubGenerator {
                     return null;
                 }
             };
-            int origNumConstructors = classNode.getDeclaredConstructors().size();
+            int constructorCount = classNode.getDeclaredConstructors().size();
             verifier.visitClass(classNode);
-            // undo unwanted side effect of verifier
-            if (origNumConstructors == 0 && classNode.getDeclaredConstructors().size() == 1) {
+            // undo unwanted side effect of Verifier
+            if (constructorCount == 0 && classNode.getDeclaredConstructors().size() == 1) {
                 classNode.getDeclaredConstructors().clear();
             }
 
@@ -390,7 +392,7 @@ public class JavaStubGenerator {
             printMethods(out, classNode, isEnum);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
-                // GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
+                // GROOVY-4004: clear the methods from the outer class so that they don't get duplicated in inner ones
                 constructors.clear();
                 propertyMethods.clear();
                 printClassContents(out, inner.next());
@@ -722,16 +724,16 @@ public class JavaStubGenerator {
 
         printAnnotations(out, methodNode);
         if (!isInterfaceOrTrait(classNode)) {
-            int flags = methodNode.getModifiers();
-            if (classNode.isEnum()) flags &= ~Opcodes.ACC_ABSTRACT;
-            else if (isDefaultTraitImpl(methodNode)) flags ^= Opcodes.ACC_ABSTRACT;
-            if (methodNode.isSyntheticPublic() && hasPackageScopeXform(methodNode, PackageScopeTarget.METHODS)) flags &= ~Opcodes.ACC_PUBLIC;
-            printModifiers(out, flags);
-        }
+            int modifiers = methodNode.getModifiers();
+            if (classNode.isEnum()) modifiers &= ~Opcodes.ACC_ABSTRACT;
+            else if (isDefaultTraitImpl(methodNode)) modifiers ^= Opcodes.ACC_ABSTRACT;
+            if (methodNode.isSyntheticPublic() && hasPackageScopeXform(methodNode, PackageScopeTarget.METHODS)) modifiers &= ~Opcodes.ACC_PUBLIC;
 
-        if (methodNode.isDefault()) {
+            printModifiers(out, modifiers);
+        } else if (methodNode.isDefault()) {
             out.print("default ");
         }
+
         printTypeParameters(out, methodNode.getGenericsTypes());
         out.print(" ");
         printType(out, methodNode.getReturnType());
@@ -1021,7 +1023,7 @@ public class JavaStubGenerator {
         return replaceDollars ? val.replace('$', '.') : val;
     }
 
-    private static void printModifiers(PrintWriter out, int modifiers) {
+    private static void printModifiers(final PrintWriter out, final int modifiers) {
         if ((modifiers & Opcodes.ACC_PUBLIC) != 0)
             out.print("public ");
 

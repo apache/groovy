@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.stubgenerator
 
 import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
+import groovy.transform.CompileStatic
 
 /**
  * Category methods for the QDox library to simplify the writing assertions to check the generated stubs.
@@ -27,7 +28,7 @@ import com.thoughtworks.qdox.model.JavaMethod
 class QDoxCategory {
 
     /**
-     * Given <code>JavaClass[]</code> array,
+     * Given a <code>JavaClass[]</code> array,
      * like provided by the <code>getClasses()</code> method (or <code>classes</code> property) in <code>StubTestCase</code>,
      * you can access a specific class by its fully qualified name, using the subscript notation:
      *
@@ -60,10 +61,16 @@ class QDoxCategory {
      */
     static getAt(JavaMethod[] self, String methodName) {
         def methods = self.findAll { JavaMethod jc -> jc.name == methodName }
-        if (methods.size() == 1)
+        if (methods.size() == 1) {
             return methods[0]
-        else
+        } else {
             return methods
+        }
+    }
+
+    @CompileStatic
+    static JavaMethod[] getMethods(JavaClass self) {
+        self.methods as JavaMethod[]
     }
 
     /**
@@ -97,8 +104,9 @@ class QDoxCategory {
      * @param self a <code>JavaClass</code>
      * @return a list of fully qualified interface names
      */
+    @CompileStatic
     static List<String> getInterfaces(JavaClass self) {
-        self.implementedInterfaces.collect { JavaClass jc -> jc.fullyQualifiedName }
+        self.interfaces*.fullyQualifiedName
     }
 
     /**
@@ -132,6 +140,6 @@ class QDoxCategory {
      * @return the list of fully qualified imports
      */
     static List<String> getImports(JavaClass self) {
-        self.source.imports.toList()
+        self.source.imports
     }
 }

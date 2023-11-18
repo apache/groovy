@@ -21,7 +21,7 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * GROOVY-8224: Checks that trait properties appear within stubs
  */
-class TraitPropertiesStubTest extends StringSourcesStubTestCase {
+final class TraitPropertiesStubTest extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
@@ -47,11 +47,6 @@ class TraitPropertiesStubTest extends StringSourcesStubTestCase {
             ''',
         ]
     }
-
-//    protected void init() {
-//        debug = true
-//        delete = false
-//    }
 
     @Override
     void verifyStubs() {
