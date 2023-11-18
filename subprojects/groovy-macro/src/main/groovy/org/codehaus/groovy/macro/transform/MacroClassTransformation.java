@@ -36,7 +36,6 @@ import org.codehaus.groovy.macro.methods.MacroGroovyMethods;
 import org.codehaus.groovy.macro.runtime.MacroBuilder;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
-import java.util.Iterator;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -122,12 +121,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
                         macroCall.setImplicitThis(false);
                         call.putNodeMetaData(MacroTransformation.class, macroCall);
                         List<ClassNode> classes = sourceUnit.getAST().getClasses();
-                        for (Iterator<ClassNode> iterator = classes.iterator(); iterator.hasNext(); ) {
-                            final ClassNode aClass = iterator.next();
-                            if (aClass == type || type == aClass.getOuterClass()) {
-                                iterator.remove();
-                            }
-                        }
+                        classes.removeIf(aClass -> aClass == type || type == aClass.getOuterClass());
                     } catch (Exception e) {
                         // FIXME
                         e.printStackTrace();
