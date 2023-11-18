@@ -29,7 +29,6 @@ import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.sql.DataSource;
-
 import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -4041,7 +4040,7 @@ public class Sql implements AutoCloseable {
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
 
-        try {
+        try (rs) {
             if (metaClosure != null) {
                 metaClosure.call(rs.getMetaData());
             }
@@ -4057,8 +4056,6 @@ public class Sql implements AutoCloseable {
         } catch (SQLException e) {
             LOG.warning("Failed to retrieve row from ResultSet for: " + sql + " because: " + e.getMessage());
             throw e;
-        } finally {
-            rs.close();
         }
     }
 
