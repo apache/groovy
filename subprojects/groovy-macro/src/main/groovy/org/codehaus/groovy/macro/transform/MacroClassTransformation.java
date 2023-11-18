@@ -34,9 +34,12 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.macro.methods.MacroGroovyMethods;
 import org.codehaus.groovy.macro.runtime.MacroBuilder;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -55,6 +58,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
 
     private static final String MACRO_METHOD = "macro";
     private static final ClassNode MACROCLASS_TYPE = ClassHelper.make(MacroClass.class);
+    private static final Logger LOGGER = Logger.getLogger(MacroClassTransformation.class.getName());
 
     @Override
     protected GroovyCodeVisitor getTransformer(final ASTNode[] nodes, final SourceUnit sourceUnit) {
@@ -123,8 +127,7 @@ public class MacroClassTransformation extends MethodCallTransformation {
                         List<ClassNode> classes = sourceUnit.getAST().getClasses();
                         classes.removeIf(aClass -> aClass == type || type == aClass.getOuterClass());
                     } catch (Exception e) {
-                        // FIXME
-                        e.printStackTrace();
+                        LOGGER.log(Level.WARNING, DefaultGroovyMethods.asString(e));
                     }
                     return;
                 }
