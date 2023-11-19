@@ -25,7 +25,6 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter;
-import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -37,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +48,7 @@ import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_CLASS_ARRAY;
  * Generates 'Proxy' objects which implement interfaces, maps of closures and/or
  * extend classes/delegates.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "serial"})
 public class ProxyGenerator {
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
 
@@ -60,12 +60,21 @@ public class ProxyGenerator {
     public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO: Should we make ProxyGenerator singleton?
 
     /**
-     * The adapter cache is used to cache proxy classes. When, for example, a call like:
-     * map as MyClass is found, then a lookup is made into the cache to find if a suitable
-     * adapter already exists. If so, then the class is reused, instead of generating a
-     * new class.
+     * Caches proxy classes. When, for example, a call like: <code>map as MyClass</code>
+     * is found, then a lookup is made into the cache to find if a suitable adapter
+     * exists already. If so, it is reused instead of generating a new one.
      */
-    private final LRUCache<CacheKey,ProxyGeneratorAdapter> adapterCache = new LRUCache<>(Integer.getInteger("groovy.adapter.cache.default.size", 64));
+    private final Map<CacheKey,ProxyGeneratorAdapter> adapterCache;
+
+    {
+        final int cache_size = Integer.getInteger("groovy.adapter.cache.default.size", 64);
+        float load_factor = 0.75f; int init_capacity = (int) Math.ceil(cache_size / load_factor) + 1;
+        adapterCache = new LinkedHashMap<CacheKey,ProxyGeneratorAdapter>(init_capacity, load_factor, true) {
+            @Override protected boolean removeEldestEntry(Map.Entry<CacheKey,ProxyGeneratorAdapter> entry) {
+                return size() > cache_size;
+            }
+        };
+    }
 
     private boolean debug;
     private boolean emptyMethods;
@@ -213,7 +222,7 @@ public class ProxyGenerator {
         boolean useDelegate = (delegateClass != null);
         CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, methodNames, interfaces, emptyMethods, useDelegate);
 
-        return adapterCache.getAndPut(key, k -> {
+        return adapterCache.computeIfAbsent(key, k -> {
             ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
             return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
         });
