@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import groovy.test.GroovyTestCase
 import com.thoughtworks.qdox.JavaDocBuilder
 import com.thoughtworks.qdox.model.JavaClass
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+
+import groovy.test.GroovyTestCase
 
 import static groovy.io.FileType.*
 
@@ -162,8 +163,8 @@ abstract class StubTestCase extends GroovyTestCase {
             compile(sources)
 
             // use QDox for parsing the Java stubs and Java sources
-            qdox.addSourceTree sourceRootPath
-            qdox.addSourceTree stubDir
+            qdox.addSourceTree(sourceRootPath)
+            qdox.addSourceTree(stubDir)
 
             if (debug) {
                 println ">>> Stubs generated"
@@ -182,25 +183,25 @@ abstract class StubTestCase extends GroovyTestCase {
 
                 println "Verifying the stubs"
             }
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             compileError = t
         } finally {
             try {
                 use (QDoxCategory) {
                     verifyStubs()
                 }
-            } catch(ex) {
+            } catch (AssertionError | RuntimeException e) {
                 if (compileError) {
-                    println "Unable to verify stubs: $ex.message\nPerhaps due to earlier error?"
+                    println "Unable to verify stubs: $e.message\nPerhaps due to earlier error?"
                     throw compileError
                 }
-                throw ex
+                throw e
             }
-            if (sourceRootPath.getAbsolutePath() =~ 'stubgentests') {
+            if (sourceRootPath.absolutePath =~ 'stubgentests') {
                 sourceRootPath.deleteDir()
             }
         }
-
+        if (compileError) throw compileError
     }
 
     /**
@@ -330,4 +331,3 @@ abstract class StubTestCase extends GroovyTestCase {
         }
     }
 }
-

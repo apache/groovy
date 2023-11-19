@@ -27,10 +27,11 @@ import com.thoughtworks.qdox.model.JavaMethod
 class QDoxCategory {
 
     /**
-     * Given <code>JavaClass[]</code> array,
+     * Given a <code>JavaClass[]</code> array,
      * like provided by the <code>getClasses()</code> method (or <code>classes</code> property) in <code>StubTestCase</code>,
-     * you can access a specific class by its fully qualified name, using the subscript notation:
-     *
+     * you can access a specific class by its fully qualified name, using the subscript notation.
+     * <p>
+     * Usage:
      * <pre><code>
      * classes['com.bar.Rectangle']
      * </code></pre>
@@ -47,9 +48,8 @@ class QDoxCategory {
 
     /**
      * Find one or several methods from a <code>JavaMethod[]</code> array.
-     *
+     * <p>
      * Usage:
-     *
      * <pre><code>
      * classes['com.bar.Rectangle'].methods['area']
      * </code></pre>
@@ -60,17 +60,17 @@ class QDoxCategory {
      */
     static getAt(JavaMethod[] self, String methodName) {
         def methods = self.findAll { JavaMethod jc -> jc.name == methodName }
-        if (methods.size() == 1)
+        if (methods.size() == 1) {
             return methods[0]
-        else
+        } else {
             return methods
+        }
     }
 
     /**
      * Get a normalized string of the signature of a method, including its modifiers.
-     * <br><br>
+     * <p>
      * Usage:
-     *
      * <pre><code>
      * // an area() method
      * assert classes['Rectangle'].methods['area'].signature == "public double area()"
@@ -87,9 +87,8 @@ class QDoxCategory {
 
     /**
      * Lists the interfaces implemented by a class.
-     * <br><br>
+     * <p>
      * Usage:
-     *
      * <pre><code>
      *  assert classes['Rectangle'].interfaces == ['groovy.lang.GroovyObject', 'Shape']
      * </code></pre>
@@ -98,14 +97,13 @@ class QDoxCategory {
      * @return a list of fully qualified interface names
      */
     static List<String> getInterfaces(JavaClass self) {
-        self.implementedInterfaces.collect { JavaClass jc -> jc.fullyQualifiedName }
+        self.implementedInterfaces*.fullyQualifiedName
     }
 
     /**
      * Get the name of the base class of that class.
-     * <br><br>
+     * <p>
      * Usage:
-     *
      * <pre><code>
      *  assert classes['Rectangle'].baseClass == 'java.lang.Object'
      * </code></pre>
@@ -119,9 +117,8 @@ class QDoxCategory {
 
     /**
      * Shortcut to get the imports from the source associated with the class.
-     * <br><br>
+     * <p>
      * Usage:
-     *
      * <pre><code>
      *  assert classes['Rectangle'].imports == ['java.lang.*', 'java.io.*',
      *      'java.net.*', 'java.util.*',

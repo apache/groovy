@@ -19,31 +19,36 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Checks the stub generator defines initialization expressions for primitive fields.
+ * Checks that {@code @AutoImplement} annotated classes work correctly with stubs.
  */
-class InterfaceWithPrimitiveFieldsTest extends StringSourcesStubTestCase {
+final class AutoImplementWithJointCompilationStubTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Dummy.java': '''
-                    class Dummy {}
-                ''',
+            'foo/JavaI.java': '''package foo;
+                public interface JavaI {}
+            ''',
 
-                'InterfaceWithPrimitiveField.groovy': '''
-                    interface InterfaceWithPrimitiveField {
-                        int bar = 42
-                        short baz
+            'foo/GroovyClass.groovy': '''package foo
+                @groovy.transform.AutoImplement
+                class GroovyClass implements Runnable {}
+            ''',
+
+            'foo/Main.groovy': '''package foo
+                class Main {
+                    boolean runGroovyClass() {
+                        new GroovyClass().run()
+                        return true
                     }
-                '''
+                }
+            '''
         ]
     }
 
-    /**
-     * Asserts an initialization value is provided for primitive fields
-     */
+    @Override
     void verifyStubs() {
-        assert classes['InterfaceWithPrimitiveField'].getFieldByName('bar').initializationExpression
-        assert classes['InterfaceWithPrimitiveField'].getFieldByName('baz').initializationExpression
+        def main = loader.loadClass('foo.Main').newInstance()
+        assert main.runGroovyClass()
     }
 }
-

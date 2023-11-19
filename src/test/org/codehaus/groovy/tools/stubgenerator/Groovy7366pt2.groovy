@@ -24,22 +24,19 @@ final class Groovy7366pt2 extends StringSourcesStubTestCase {
     @Override
     Map<String, String> provideSources() {
         [
-            'Constants.java': '''
-                package test;
+            'test/Constants.java': '''package test;
                 public interface Constants {
                     String C1 = "c1";
                 }
             ''',
 
-            'MyAnnotation.java': '''
-                package test;
+            'test/MyAnnotation.java': '''package test;
                 public @interface MyAnnotation {
                     String value();
                 }
             ''',
 
-            'Test.groovy': '''
-                package test
+            'test/Test.groovy': '''package test
                 import static test.Constants.*
                 @MyAnnotation(C1)
                 class Test {
@@ -50,9 +47,8 @@ final class Groovy7366pt2 extends StringSourcesStubTestCase {
                 }
             ''',
 
-            'Hello.java': '''
-                package test;
-                public class Hello {
+            'Main.java': '''import test.*;
+                public class Main {
                     public static void main(String[] args) {
                         System.out.println(new Test("hello").getTest());
                     }

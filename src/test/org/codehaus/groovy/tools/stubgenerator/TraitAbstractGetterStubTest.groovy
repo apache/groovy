@@ -21,48 +21,38 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * GROOVY-8895: Checks that a trait with an abstract getter isn't included in stub by mistake
  */
-class TraitAbstractGetterStubTest extends StringSourcesStubTestCase {
+final class TraitAbstractGetterStubTest extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-            'Foo8895.java': '''
-                public class Foo8895 { }
-            ''',
-
-            'GetFoo.groovy': '''
-                trait GetFoo {
-                    abstract Foo8895 getFoo()
+            'Pogo.java': '''
+                public class Pogo {
                 }
             ''',
 
-            'BaseFooSpec.groovy': '''
-                class BaseFooSpec {
-                    Foo8895 foo = new Foo8895()
+            'GetPogo.groovy': '''
+                trait GetPogo {
+                    abstract Pogo getPogo()
                 }
             ''',
 
-            'FooSpec.groovy': '''
-                class FooSpec extends BaseFooSpec implements GetFoo { }
+            'BaseSpec.groovy': '''
+                class BaseSpec {
+                    Pogo pogo = new Pogo()
+                }
             ''',
 
-            'Control.groovy': '''
-                class Control implements GetFoo { }
-            ''',
+            'PogoSpec.groovy': '''
+                class PogoSpec extends BaseSpec implements GetPogo {
+                }
+            '''
         ]
     }
 
-//    protected void init() {
-//        debug = true
-//        delete = false
-//    }
-
     @Override
     void verifyStubs() {
-        String stubSource = stubJavaSourceFor('FooSpec')
-        assert !stubSource.contains('Foo8895 getFoo()')
-        stubSource = stubJavaSourceFor('Control')
-        assert !stubSource.contains('Foo8895 getFoo()')
+        String stub = stubJavaSourceFor('PogoSpec')
+        assert !stub.contains('Pogo getPogo()')
     }
-
 }

@@ -18,48 +18,45 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-/**
- * GROOVY-8224: Checks that trait properties appear within stubs
- */
-final class TraitPropertiesStubTest extends StringSourcesStubTestCase {
+final class Groovy11226 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-            'GroovyXTrait.groovy': '''
-                trait GroovyXTrait {
-                    int bar
-                    boolean foo
-                    String baz() { 'baz' }
+            'foo/Bar.java': '''package foo;
+                public class Bar {
                 }
             ''',
 
-            'GroovyXImpl.groovy': '''
-                class GroovyXImpl implements GroovyXTrait { }
+            'foo/Baz.java': '''package foo;
+                public interface Baz {
+                    Bar getBar();
+                }
+            ''',
+
+            'Pogo.groovy': '''import foo.*
+                class Pogo implements Baz {
+                    final Bar bar
+                    Pogo(Bar bar) {
+                        this.bar = bar
+                    }
+                }
             ''',
 
             'Main.java': '''
                 public class Main {
                     public static void main(String[] args) {
-                        new GroovyXImpl();
+                        assert new Pogo(new foo.Bar()).getBar() != null;
                     }
                 }
-            ''',
+            '''
         ]
     }
 
     @Override
     void verifyStubs() {
-        verifyMethodAndPropsInStubs(stubJavaSourceFor('GroovyXTrait'))
-        verifyMethodAndPropsInStubs(stubJavaSourceFor('GroovyXImpl'))
-    }
-
-    private static void verifyMethodAndPropsInStubs(String stubSource) {
-        assert stubSource.contains('String baz()')
-        assert stubSource.contains('int getBar()')
-        assert stubSource.contains('void setBar(int value)')
-        assert stubSource.contains('boolean getFoo()')
-        assert stubSource.contains('boolean isFoo()')
-        assert stubSource.contains('void setFoo(boolean value)')
+        String stub = stubJavaSourceFor('Pogo')
+        assert stub.contains('import foo.*;')
+        assert stub.contains('public final  Bar getBar() { return (Bar)null;}') // TODO: @Generated and non-final
     }
 }

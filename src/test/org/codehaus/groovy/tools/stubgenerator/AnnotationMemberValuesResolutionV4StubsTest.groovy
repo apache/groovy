@@ -22,13 +22,12 @@ package org.codehaus.groovy.tools.stubgenerator
  * Test that FQN appears in generated stub when an annotation node
  *  is used as an annotation member value.
  */
-class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestCase {
+final class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-            'foo/MainAnno4768.java': '''
-                package foo;
-
+            'foo/MainAnno4768.java': '''package foo;
                 import java.lang.annotation.*;
                 import static java.lang.annotation.ElementType.*;
                 import static java.lang.annotation.RetentionPolicy.*;
@@ -38,9 +37,8 @@ class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestC
                     OtherAnno4768 other();
                 }
             ''',
-            'foo/OtherAnno4768.java': '''
-                package foo;
 
+            'foo/OtherAnno4768.java': '''package foo;
                 import java.lang.annotation.*;
                 import static java.lang.annotation.ElementType.*;
                 import static java.lang.annotation.RetentionPolicy.*;
@@ -50,6 +48,7 @@ class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestC
                     String name() default "";
                 }
             ''',
+
             'Main4768.groovy': '''
                 import foo.*
 
@@ -59,6 +58,7 @@ class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestC
         ]
     }
 
+    @Override
     void verifyStubs() {
         classes['Main4768'].with {
             assert annotations[0].getProperty('other').getProperty('name').value == 'baz'

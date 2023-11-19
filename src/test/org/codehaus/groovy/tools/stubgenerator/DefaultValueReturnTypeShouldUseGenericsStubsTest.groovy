@@ -21,8 +21,9 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * GROOVY-5710: Stub generator should not use raw types when casting default return values
  */
-class DefaultValueReturnTypeShouldUseGenericsStubsTest extends StringSourcesStubTestCase  {
+final class DefaultValueReturnTypeShouldUseGenericsStubsTest extends StringSourcesStubTestCase  {
 
+    @Override
     Map<String, String> provideSources() {
         [
                 'GantBinding.groovy': '''
@@ -37,9 +38,9 @@ class DefaultValueReturnTypeShouldUseGenericsStubsTest extends StringSourcesStub
         ]
     }
 
+    @Override
     void verifyStubs() {
-        def stubSource = stubJavaSourceFor('GantBinding')
-
-        assert stubSource.contains('return (java.util.List<BuildListener>)null')
+        String stub = stubJavaSourceFor('GantBinding')
+        assert stub.contains('return (java.util.List<BuildListener>)null;')
     }
 }
