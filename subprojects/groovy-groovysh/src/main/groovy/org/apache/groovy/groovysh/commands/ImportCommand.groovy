@@ -79,6 +79,16 @@ class ImportCommand extends CommandSupport {
 
     }
 
+    String simpleName(String importSpec) {
+        int index = importSpec.lastIndexOf(' as ')
+        if (index >= 0)
+            return importSpec.substring(index + 4)
+        index = importSpec.lastIndexOf('.')
+        if (index >= 0)
+            return importSpec.substring(index + 1)
+        importSpec
+    }
+
     Object execute(final List<String> args) {
         assert args != null
 
@@ -103,18 +113,37 @@ class ImportCommand extends CommandSupport {
         // remove last semicolon
         importSpec = importSpec.replace(';', '')
 
-        def buff = ['import ' + args.join(' ')]
-        buff << 'def dummp = false'
+        def buff = ['import ' + importSpec]
+        buff << 'def dummy = false'
 
         def type
         try {
             type = classLoader.parseClass(buff.join(NEWLINE))
 
-            // No need to keep duplicates, but order may be important so remove the previous def, since
-            // the last defined import will win anyways
+            def sn = simpleName(importSpec)
 
-            if (imports.remove(importSpec)) {
-                log.debug('Removed duplicate import from list')
+            if (sn == '*') {
+                if (imports.remove(importSpec)) {
+                    log.debug('Removed duplicate import from list')
+                }
+            } else {
+                // remove duplicates
+                imports.removeAll{
+                    def dup = simpleName(it) == sn
+                    if (dup) {
+                        log.debug("Removed duplicate import: $it")
+                    }
+                    dup
+                }
+
+                // avoid class clashes
+                def classNames = classLoader.loadedClasses*.simpleName
+
+                if (classNames.contains(sn)) {
+                    def msg = "Invalid import definition: '${importSpec}'; conflicts with existing class: $sn" // TODO: i18n
+                    log.debug(msg)
+                    fail(msg)
+                }
             }
 
             log.debug("Adding import: $importSpec")
@@ -144,17 +173,17 @@ class ImportCompleter implements Completer {
     Groovysh shell
 
     /*
-     * The following rules do not need to work for all thinkable situations,just for all reasonable situations.
+     * The following rules do not need to work for all thinkable situations, just for all reasonable situations.
      * In particular the underscore and dollar signs in Class or method names usually indicate something internal,
      * which we intentionally want to hide in tab completion
      */
-    // matches fully qualified Classnames with dot at the end
+    // matches fully qualified class names with dot at the end
     private static final Pattern QUALIFIED_CLASS_DOT_PATTERN = ~/^[a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*\.[A-Z][^.]*\.$/
-    // matches empty, packagenames or fully qualified classNames
+    // matches empty, package names or fully qualified class names
     private static final Pattern PACK_OR_CLASSNAME_PATTERN = ~/^([a-z_]{1}[a-z0-9_]*(\.[a-z0-9_]*)*(\.[A-Z][^.]*)?)?$/
-    // matches empty, packagenames or fully qualified classNames without special symbols
+    // matches empty, package names or fully qualified class names without special symbols
     private static final Pattern PACK_OR_SIMPLE_CLASSNAME_PATTERN = ~'^([a-z_]{1}[a-z0-9_]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*)?)?\$'
-    // matches empty, packagenames or fully qualified classNames or fully qualified method names
+    // matches empty, package names or fully qualified class names or fully qualified method names
     private static final Pattern PACK_OR_CLASS_OR_METHODNAME_PATTERN = ~'^([a-z_]{1}[a-z0-9.]*(\\.[a-z0-9_]*)*(\\.[A-Z][^.\$_]*(\\.[a-zA-Z0-9_]*)?)?)?\$'
     private static final Pattern LOWERCASE_IMPORT_ITEM_PATTERN = ~/^[a-z0-9.]+$/
 
