@@ -184,7 +184,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Constructor
      *
-     * @param theClass The class this is the metaclass dor
+     * @param theClass The class this is the metaclass for
      * @param add      The methods for this class
      */
     public MetaClassImpl(final Class theClass, final MetaMethod[] add) {
@@ -207,7 +207,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Constructor that sets the methods to null
      *
-     * @param theClass The class this is the metaclass dor
+     * @param theClass The class this is the metaclass for
      */
     public MetaClassImpl(final Class theClass) {
         this(theClass, null);
