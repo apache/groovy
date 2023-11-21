@@ -221,12 +221,10 @@ public class ProxyGenerator {
         }
         boolean useDelegate = (delegateClass != null);
         CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, methodNames, interfaces, emptyMethods, useDelegate);
+        final ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
 
         synchronized (adapterCache) {
-            return adapterCache.computeIfAbsent(key, k -> {
-                ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
-                return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
-            });
+            return adapterCache.computeIfAbsent(key, k -> new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null));
         }
     }
 
