@@ -18,10 +18,13 @@
  */
 package groovy.test
 
+import groovy.transform.PackageScope
+import groovy.transform.TypeChecked
 import org.junit.Test
+
 import static groovy.test.GroovyAssert.*
 
-class GroovyAssertTest {
+final class GroovyAssertTest {
 
     @Test
     void assertScriptWithAssertion() {
@@ -36,42 +39,41 @@ class GroovyAssertTest {
     void notYetImplementedStaticMethod() {
         if (notYetImplemented(this)) return
 
-        assert 1 == 2
+        throw new AssertionError()
     }
 
     @Test
     void shouldFailAndReturnException() {
         def re = shouldFail { throw new RuntimeException('x') }
-        assert re?.message == 'x'
         assert re instanceof RuntimeException
+        assert re.message == 'x'
     }
 
-    @Test
+    @Test @TypeChecked // GROOVY-11225
     void shouldFailCheckExceptionClassAndReturnException() {
-        def re = shouldFail(RuntimeException) { throw new RuntimeException('x') }
-        assert re?.message == 'x'
-        assert re instanceof RuntimeException
+        RuntimeException re = shouldFail(RuntimeException) { throw new RuntimeException('x') }
+        assert re.message == 'x'
     }
 
-    @Test
+    @Test @TypeChecked // GROOVY-11225
     void shouldFailCheckingCustomException() {
-        shouldFail(GroovyAssertDummyException) {
+        RuntimeException re = shouldFail(GroovyAssertDummyException) {
             GroovyAssertDummyClass.throwException()
         }
     }
 
-    @Test
+    @Test @TypeChecked // GROOVY-11225
     void shouldFailWithNestedException() {
-        def throwable = shouldFail(GroovyAssertDummyException) {
-            new GroovyAssertDummyClass().throwExceptionWithCause()
+        GroovyAssertDummyException exception = shouldFail(GroovyAssertDummyException) {
+            GroovyAssertDummyClass.throwExceptionWithCause()
         }
-        assert throwable instanceof GroovyAssertDummyException
-        assert throwable.cause instanceof NullPointerException
+        assert exception instanceof GroovyAssertDummyException
+        assert exception.cause instanceof NullPointerException
 
-        throwable = shouldFailWithCause(NullPointerException) {
-            new GroovyAssertDummyClass().throwExceptionWithCause()
+        NullPointerException cause = shouldFailWithCause(NullPointerException) {
+            GroovyAssertDummyClass.throwExceptionWithCause()
         }
-        assert throwable instanceof NullPointerException
+        assert cause instanceof NullPointerException
     }
 
     @Test
@@ -81,22 +83,24 @@ class GroovyAssertTest {
     }
 }
 
-@groovy.transform.PackageScope class GroovyAssertDummyClass {
+@PackageScope class GroovyAssertDummyClass {
+
     static throwException() {
         throw new GroovyAssertDummyException()
     }
 
-    def throwExceptionWithCause() {
+    static throwExceptionWithCause() {
         throw new GroovyAssertDummyException(new NullPointerException())
     }
 }
 
-@groovy.transform.PackageScope class GroovyAssertDummyException extends RuntimeException {
+@PackageScope class GroovyAssertDummyException extends RuntimeException {
+
     GroovyAssertDummyException(Throwable cause) {
-        super(cause);
+        super((Throwable)cause)
     }
 
     GroovyAssertDummyException() {
-        super();
+        super()
     }
 }

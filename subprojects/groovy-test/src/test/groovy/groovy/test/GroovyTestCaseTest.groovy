@@ -18,12 +18,13 @@
  */
 package groovy.test
 
+import groovy.transform.PackageScope
 import junit.framework.AssertionFailedError
 
 /**
  * Testing the notYetImplemented feature of GroovyTestCase.
  */
-class GroovyTestCaseTest extends GroovyTestCase {
+final class GroovyTestCaseTest extends GroovyTestCase {
 
     void testNotYetImplementedSubclassUse () {
         if (notYetImplemented()) return
@@ -77,12 +78,12 @@ class GroovyTestCaseTest extends GroovyTestCase {
                 throw new Exception()
             }
         }
-        assert msg.contains("was expected to fail due to a nested cause of type java.lang.Exception but instead got a direct exception of type java.lang.Exception with no nested cause(s).")
+        assert msg.contains("should have failed with an exception having a nested cause of type java.lang.Exception but instead got a direct exception of type java.lang.Exception with no cause.")
         assert msg.contains("Code under test has a bug or perhaps you meant shouldFail?")
     }
 }
 
-class Foo {
+@PackageScope class Foo {
     def createBar() {
         throw new MyException(null)
     }
@@ -92,8 +93,8 @@ class Foo {
     }
 }
 
-class MyException extends RuntimeException {
+@PackageScope class MyException extends RuntimeException {
     MyException(Throwable cause) {
-        super((Throwable) cause);
+        super((Throwable) cause)
     }
 }
