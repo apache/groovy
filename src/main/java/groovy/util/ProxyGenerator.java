@@ -69,8 +69,8 @@ public class ProxyGenerator {
     {
         final int cache_size = Integer.getInteger("groovy.adapter.cache.default.size", 64);
         float load_factor = 0.75f; int init_capacity = (int) Math.ceil(cache_size / load_factor) + 1;
-        adapterCache = new LinkedHashMap<CacheKey,ProxyGeneratorAdapter>(init_capacity, load_factor, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<CacheKey,ProxyGeneratorAdapter> entry) {
+        adapterCache = new LinkedHashMap<CacheKey, ProxyGeneratorAdapter>(init_capacity, load_factor, true) {
+            @Override protected boolean removeEldestEntry(Map.Entry<CacheKey, ProxyGeneratorAdapter> entry) {
                 return size() > cache_size;
             }
         };
@@ -222,10 +222,12 @@ public class ProxyGenerator {
         boolean useDelegate = (delegateClass != null);
         CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, methodNames, interfaces, emptyMethods, useDelegate);
 
-        return adapterCache.computeIfAbsent(key, k -> {
-            ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
-            return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
-        });
+        synchronized (adapterCache) {
+            return adapterCache.computeIfAbsent(key, k -> {
+                ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
+                return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
+            });
+        }
     }
 
     private static void setMetaClass(final MetaClass metaClass) {
