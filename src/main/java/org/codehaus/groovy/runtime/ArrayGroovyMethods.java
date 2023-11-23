@@ -4641,11 +4641,11 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Object[], Object, Closure)
      * @since 1.8.7
      */
-    public static <E, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="E,E") Closure<V> closure) {
+    public static <E extends T, T, V extends T> T inject(E[] self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot call inject() on an empty array without passing an initial value.");
         }
-        T value = (T) self[0];
+        T value = self[0];
         Object[] params = new Object[2];
         for (int i = 1; i < self.length; i += 1) {
             params[0] = value;
@@ -4681,7 +4681,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return base value for empty array or the result of the last closure call
      * @since 1.5.0
      */
-    public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="U,E") Closure<V> closure) {
+    public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         T value = initialValue;
         Object[] params = new Object[2];
         for (int i = 0; i < self.length; i += 1) {

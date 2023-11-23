@@ -4037,7 +4037,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5893
-    void testPlusInClosure() {
+    void testPlusInClosure1() {
         for (type in ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable']) {
             assertScript """
                 List<Integer> list = [1, 2, 3]
@@ -4051,7 +4051,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert sum == 6
 
                 $type  sumViaInject = list.inject(0, { int x, int y -> x + y })
-                //     ^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ U    ^ E  ^^^^^ V
+                //     ^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ T    ^ E  ^^^^^ V
                 assert sumViaInject == 6
             """
         }
