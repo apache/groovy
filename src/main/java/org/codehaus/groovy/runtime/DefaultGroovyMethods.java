@@ -4493,6 +4493,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // equalsIgnoreZeroSign
+
+    /**
+     * Compares this object against the specified object returning the same result
+     * as {@link Float#equals(Object)} but returning true if this object
+     * and the specified object are both zero and negative zero respectively or vice versa.
+     *
+     * @since 3.0.8
+     */
+    public static boolean equalsIgnoreZeroSign(Float number, Object other) {
+        if (other instanceof Float && 0.0f == number && 0.0f == (Float) other)
+            return true;
+        return number.equals(other);
+    }
+
+    /**
+     * Compares this object against the specified object returning the same result
+     * as {@link Double#equals(Object)} but returning true if this object
+     * and the specified object are both zero and negative zero respectively or vice versa.
+     *
+     * @since 3.0.8
+     */
+    public static boolean equalsIgnoreZeroSign(Double number, Object other) {
+        if (other instanceof Double && 0.0d == number && 0.0d == (Double) other)
+            return true;
+        return number.equals(other);
+    }
+
+    //--------------------------------------------------------------------------
     // every
 
     /**
@@ -4599,35 +4628,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return true;
-    }
-
-    //--------------------------------------------------------------------------
-    // equalsIgnoreZeroSign
-
-    /**
-     * Compares this object against the specified object returning the same result
-     * as {@link Float#equals(Object)} but returning true if this object
-     * and the specified object are both zero and negative zero respectively or vice versa.
-     *
-     * @since 3.0.8
-     */
-    public static boolean equalsIgnoreZeroSign(Float number, Object other) {
-        if (other instanceof Float && 0.0f == number && 0.0f == (Float) other)
-            return true;
-        return number.equals(other);
-    }
-
-    /**
-     * Compares this object against the specified object returning the same result
-     * as {@link Double#equals(Object)} but returning true if this object
-     * and the specified object are both zero and negative zero respectively or vice versa.
-     *
-     * @since 3.0.8
-     */
-    public static boolean equalsIgnoreZeroSign(Double number, Object other) {
-        if (other instanceof Double && 0.0d == number && 0.0d == (Double) other)
-            return true;
-        return number.equals(other);
     }
 
     //--------------------------------------------------------------------------

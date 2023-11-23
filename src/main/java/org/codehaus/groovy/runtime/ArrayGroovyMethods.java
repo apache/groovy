@@ -4319,6 +4319,33 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // indexOf
+
+    /**
+     * Returns the index of the first occurrence of the specified element in the
+     * array. That is, the lowest index {@code i} such that
+     * {@code Objects.equals(array[i], object)} or -1 if there is no such index.
+     *
+     * <pre class="groovyTestCase">
+     * String[] array = ['foo','bar','foo']
+     * assert array.indexOf('foo') ==  0
+     * assert array.indexOf('bar') ==  1
+     * assert array.indexOf('baz') == -1
+     * assert array.indexOf(12345) == -1
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static int indexOf(Object[] self, Object object) {
+        for (int i = 0; i < self.length; i += 1) {
+            if (Objects.equals(self[i], object)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    //--------------------------------------------------------------------------
     // indexed
 
     /**
@@ -5102,6 +5129,33 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new NoSuchElementException("Cannot access last() element from an empty array");
         }
         return self[self.length - 1];
+    }
+
+    //--------------------------------------------------------------------------
+    // lastIndexOf
+
+    /**
+     * Returns the index of the last occurrence of the specified element in the
+     * array. That is, the highest index {@code i} such that
+     * {@code Objects.equals(array[i], object)} or -1 if there is no such index.
+     *
+     * <pre class="groovyTestCase">
+     * String[] array = ['foo','bar','foo']
+     * assert array.lastIndexOf('foo') ==  2
+     * assert array.lastIndexOf('bar') ==  1
+     * assert array.lastIndexOf('baz') == -1
+     * assert array.lastIndexOf(12345) == -1
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static int lastIndexOf(Object[] self, Object object) {
+        for (int i = self.length - 1; i >= 0; i -= 1) {
+            if (Objects.equals(self[i], object)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     //--------------------------------------------------------------------------
