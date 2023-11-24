@@ -18,40 +18,42 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MethodRankHelper;
 
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
- * 
+ * <p>
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
  */
 public class MissingPropertyException extends GroovyRuntimeException {
 
-    public static final Object MPE = new Object();
+    public  static final Object MPE = new Object(); // synchronization?
+
     private static final long serialVersionUID = -1780027060966200019L;
 
     private final String property;
-    private final Class type;
+    private final Class  type;
 
-    public MissingPropertyException(String property, Class type) {
+    public MissingPropertyException(final String property, final Class type) {
         this.property = property;
         this.type = type;
     }
 
-    public MissingPropertyException(String property, Class type, Throwable t) {
-        super(t);
+    public MissingPropertyException(final String property, final Class type, final Throwable cause) {
+        super(cause);
         this.property = property;
         this.type = type;
     }
 
-    public MissingPropertyException(String message) {
+    public MissingPropertyException(final String message) {
         super(message);
         this.property = null;
         this.type = null;
     }
 
-    public MissingPropertyException(String message, String property, Class type) {
+    public MissingPropertyException(final String message, final String property, final Class type) {
         super(message);
         this.property = property;
         this.type = type;
@@ -59,18 +61,26 @@ public class MissingPropertyException extends GroovyRuntimeException {
 
     @Override
     public String getMessageWithoutLocationText() {
-        if (property == null || type == null) {
-            return super.getMessageWithoutLocationText();
-        }
-        final Throwable cause = getCause();
-        if (cause == null) {
-            if (super.getMessageWithoutLocationText() != null) {
-                return super.getMessageWithoutLocationText();
+        String message = super.getMessageWithoutLocationText();
+        String name = getProperty();
+        Class  type = getType();
+
+        if (name != null && type != null) {
+            if (getCause() != null) {
+                message = "No such property: " + name + " for class: " + type.getName() + ". Reason: " + getCause();
+            } else if (message == null) {
+                var mp = InvokerHelper.getMetaClass(type).getMetaProperty(name); // GROOVY-6260, GROOVY-8064, et al.
+                if (mp instanceof MetaBeanProperty
+                        && ((MetaBeanProperty) mp).getField() == null
+                        && ((MetaBeanProperty) mp).getGetter() == null) {
+                    message = "Cannot get write-only property: " + name + " for class: " + type.getName();
+                } else {
+                    message = "No such property: " + name + " for class: " + type.getName() + MethodRankHelper.getPropertySuggestionString(name, type);
+                }
             }
-            return "No such property: " + property + " for class: " + type.getName() +
-                   MethodRankHelper.getPropertySuggestionString(property, type);
         }
-        return "No such property: " + property + " for class: " + type.getName() + ". Reason: " + cause;
+
+        return message;
     }
 
     /**
@@ -81,8 +91,7 @@ public class MissingPropertyException extends GroovyRuntimeException {
     }
 
     /**
-     * 
-     * @return The type on which the property was attempted to be called
+     * @return the class which cannot answer the property
      */
     public Class getType() {
         return type;

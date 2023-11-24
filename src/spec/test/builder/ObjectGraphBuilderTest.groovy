@@ -102,7 +102,7 @@ def person = builder.person(name:'Jon', age:17)
         '''
         assert err == Utils.stripAsciidocMarkup('''
 // tag::expected_error_immutable[]
-Cannot set readonly property: name for class: com.acme.Person
+Cannot set read-only property: name for class: com.acme.Person
 // end::expected_error_immutable[]
 ''')
     }
