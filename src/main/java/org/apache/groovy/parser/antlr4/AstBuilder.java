@@ -3069,7 +3069,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
           case INSTANCEOF:
               ctx.patternVariableDeclaration().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
               PatternVariableExpression patternVariableExpression = this.visitPatternVariableDeclaration(ctx.patternVariableDeclaration());
-              ClassNode type = patternVariableExpression.getType();
+              ClassNode type = patternVariableExpression.getOriginType();
               ClassExpression classExpression = configureAST(new ClassExpression(type), type);
               classExpression.setPatternVariableExpression(patternVariableExpression);
               return configureAST(
