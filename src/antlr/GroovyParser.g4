@@ -343,6 +343,10 @@ options { baseContext = type; }
         emptyDimsOpt
     ;
 
+patternVariableDeclaration
+    :   type variableDeclaratorId? // TODO support destructing
+    ;
+
 type
     :   annotationsOpt
         (
@@ -815,7 +819,8 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                  #relationalExprAlt
+    |   left=expression nls op=INSTANCEOF nls patternVariableDeclaration                    #relationalExprAlt
+    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls type                               #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)

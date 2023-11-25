@@ -20,7 +20,11 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
-import groovy.transform.*;
+import groovy.transform.CompileStatic;
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
+import groovy.transform.Trait;
+import groovy.transform.TupleConstructor;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -87,6 +91,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PatternVariableExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -3062,6 +3067,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(cast, ctx);
 
           case INSTANCEOF:
+              ctx.patternVariableDeclaration().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+              PatternVariableExpression patternVariableExpression = this.visitPatternVariableDeclaration(ctx.patternVariableDeclaration());
+              ClassNode type = patternVariableExpression.getType();
+              ClassExpression classExpression = configureAST(new ClassExpression(type), type);
+              classExpression.setPatternVariableExpression(patternVariableExpression);
+              return configureAST(
+                  new BinaryExpression(
+                      (Expression) this.visit(ctx.left),
+                      this.createGroovyToken(ctx.op),
+                      classExpression),
+                  ctx);
           case NOT_INSTANCEOF:
             ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             return configureAST(
@@ -3998,6 +4014,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         return this.visitEmptyDims(ctx.emptyDims());
+    }
+
+    @Override
+    public PatternVariableExpression visitPatternVariableDeclaration(PatternVariableDeclarationContext ctx) {
+        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+            ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+        }
+        ClassNode type = this.visitType(ctx.type());
+        PatternVariableExpression patternVariableExpression;
+        if (asBoolean(ctx.variableDeclaratorId())) {
+            VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
+            patternVariableExpression = new PatternVariableExpression(variable.getName(), type);
+        } else {
+            patternVariableExpression = new PatternVariableExpression(type);
+        }
+
+        return configureAST(patternVariableExpression, ctx);
     }
 
     // type { ------------------------------------------------------------------
