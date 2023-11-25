@@ -4026,11 +4026,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.variableDeclaratorId())) {
             VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
             patternVariableExpression = new PatternVariableExpression(variable.getName(), type);
+            return configureAST(patternVariableExpression, variable);
         } else {
             patternVariableExpression = new PatternVariableExpression(type);
+            return configureAST(patternVariableExpression, ctx);
         }
-
-        return configureAST(patternVariableExpression, ctx);
     }
 
     // type { ------------------------------------------------------------------
