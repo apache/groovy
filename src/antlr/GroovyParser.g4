@@ -343,7 +343,7 @@ options { baseContext = type; }
         emptyDimsOpt
     ;
 
-patternVariableDeclaration
+patternType
     :   type variableDeclaratorId? // TODO support destructing
     ;
 
@@ -819,7 +819,7 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=INSTANCEOF nls patternVariableDeclaration                    #relationalExprAlt
+    |   left=expression nls op=INSTANCEOF nls patternType                                   #relationalExprAlt
     |   left=expression nls op=(AS | NOT_INSTANCEOF) nls type                               #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 

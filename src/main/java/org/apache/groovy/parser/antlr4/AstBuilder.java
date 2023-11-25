@@ -91,7 +91,7 @@ import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
-import org.codehaus.groovy.ast.expr.PatternVariableExpression;
+import org.codehaus.groovy.ast.expr.PatternClassExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -3067,16 +3067,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(cast, ctx);
 
           case INSTANCEOF:
-              ctx.patternVariableDeclaration().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
-              PatternVariableExpression patternVariableExpression = this.visitPatternVariableDeclaration(ctx.patternVariableDeclaration());
-              ClassNode type = patternVariableExpression.getOriginType();
-              ClassExpression classExpression = configureAST(new ClassExpression(type), type);
-              classExpression.setPatternVariableExpression(patternVariableExpression);
+              ctx.patternType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+              PatternClassExpression patternClassExpression = this.visitPatternType(ctx.patternType());
               return configureAST(
                   new BinaryExpression(
                       (Expression) this.visit(ctx.left),
                       this.createGroovyToken(ctx.op),
-                      classExpression),
+                      patternClassExpression),
                   ctx);
           case NOT_INSTANCEOF:
             ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
@@ -4017,20 +4014,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public PatternVariableExpression visitPatternVariableDeclaration(PatternVariableDeclarationContext ctx) {
+    public PatternClassExpression visitPatternType(PatternTypeContext ctx) {
         if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
             ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
         }
         ClassNode type = this.visitType(ctx.type());
-        PatternVariableExpression patternVariableExpression;
+        PatternClassExpression patternClassExpression;
         if (asBoolean(ctx.variableDeclaratorId())) {
             VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
-            patternVariableExpression = new PatternVariableExpression(variable.getName(), type);
-            return configureAST(patternVariableExpression, variable);
+            patternClassExpression = new PatternClassExpression(variable, type);
         } else {
-            patternVariableExpression = new PatternVariableExpression(type);
-            return configureAST(patternVariableExpression, ctx);
+            patternClassExpression = new PatternClassExpression(type);
         }
+
+        return configureAST(patternClassExpression, ctx);
     }
 
     // type { ------------------------------------------------------------------

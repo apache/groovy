@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * as when invoking a static method or accessing a static type
  */
 public class ClassExpression extends Expression {
-    private PatternVariableExpression patternVariableExpression;
+    private PatternClassExpression patternClassExpression;
 
     public ClassExpression(ClassNode type) {
         super.setType(type);
@@ -47,12 +47,12 @@ public class ClassExpression extends Expression {
         return getType().getName();
     }
 
-    public PatternVariableExpression getPatternVariableExpression() {
-        return patternVariableExpression;
+    public PatternClassExpression getPatternVariableExpression() {
+        return patternClassExpression;
     }
 
-    public void setPatternVariableExpression(PatternVariableExpression patternVariableExpression) {
-        this.patternVariableExpression = patternVariableExpression;
+    public void setPatternVariableExpression(PatternClassExpression patternClassExpression) {
+        this.patternClassExpression = patternClassExpression;
     }
 
     @Override
