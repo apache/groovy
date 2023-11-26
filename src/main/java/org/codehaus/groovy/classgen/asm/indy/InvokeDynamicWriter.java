@@ -171,6 +171,11 @@ public class InvokeDynamicWriter extends InvocationWriter {
             PropertyExpression pexp = (PropertyExpression) exp;
             if (pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString())) {
                 return bytecodeX(pexp.getObjectExpression().getType(), mv -> mv.visitIntInsn(Opcodes.ALOAD, 0));
+            } else if (pexp.getObjectExpression() instanceof ClassExpression && "this".equals(pexp.getPropertyAsString())) {
+                ClassExpression ce = (ClassExpression) pexp.getObjectExpression();
+                if (ce.getType().isInterface()) {
+                    return bytecodeX(pexp.getObjectExpression().getType(), mv -> mv.visitIntInsn(Opcodes.ALOAD, 0));
+                }
             }
         }
         return exp;

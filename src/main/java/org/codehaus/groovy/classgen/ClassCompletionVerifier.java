@@ -187,8 +187,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkInterfaceMethodVisibility(final ClassNode node) {
         if (!node.isInterface()) return;
         for (MethodNode method : node.getMethods()) {
-            if (method.isPrivate()) {
-                addError("Method '" + method.getName() + "' is private but should be public in " + getDescription(currentClass) + ".", method);
+            if (method.isPrivate() && method.isAbstract()) {
+                addError("Method '" + method.getName() + "' from " + getDescription(node) +
+                    " must not be private as it is declared as an abstract method.", method);
             } else if (method.isProtected()) {
                 addError("Method '" + method.getName() + "' is protected but should be public in " + getDescription(currentClass) + ".", method);
             }

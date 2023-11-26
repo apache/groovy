@@ -233,18 +233,6 @@ class ClassTest extends GroovyTestCase {
             '''
         }
         assert err.contains("Method 'greet' is protected but should be public in interface 'Greeter'")
-
-        err = shouldFail {
-            assertScript '''
-                // tag::private_forbidden[]
-                interface Greeter {
-                    private void greet(String name)
-                }
-                // end::private_forbidden[]
-                1
-            '''
-        }
-        assert err.contains("Method 'greet' is private but should be public in interface 'Greeter'")
     }
 
 
