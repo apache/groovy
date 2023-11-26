@@ -231,6 +231,12 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
+if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_1_8)) {
+    sourceSets {
+        test.groovy.filter.exclude '**/Groovy9962.groovy'
+    }
+}
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
     logger.lifecycle '''
 ************************************* WARNING ***********************************************
