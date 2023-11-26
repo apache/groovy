@@ -46,7 +46,9 @@ jobs:
         run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 3.8.x
 
       - name: Checkout Micronaut Groovy
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b 3.5.x
+        # Temporarily use fork until the Gradle build is fixed on upstream branch
+#        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b 3.5.x
+        run: cd .. && git clone --depth 1 https://github.com/groovy/micronaut-groovy -b 3.5.x
 
       - name: Build and install groovy (no docs)
         run: ./gradlew --no-build-cache --no-daemon --no-scan clean install -x asciidoc -x docGDK -x groovydoc -x javadoc -x javadocAll -x groovydocAll
