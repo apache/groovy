@@ -964,7 +964,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!prop.equals("this") && !prop.equals("super")) return;
 
         ClassNode type = expression.getObjectExpression().getType();
-        if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression)) {
+        if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression) && !isThisCallToPrivateInterfaceMethod(expression)) {
             if (!(currentClass instanceof InnerClassNode) && !Traits.isTrait(type)) {
                 addError("The usage of 'Class.this' and 'Class.super' is only allowed in nested/inner classes.", expression);
                 return;
@@ -992,6 +992,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // a more sophisticated check might be required in the future
         ClassExpression clazzExpression = (ClassExpression) expression.getObjectExpression();
         return clazzExpression.getType().isInterface() && expression.getPropertyAsString().equals("super");
+    }
+
+    private boolean isThisCallToPrivateInterfaceMethod(PropertyExpression expression) {
+        // a more sophisticated check might be required in the future
+        ClassExpression clazzExpression = (ClassExpression) expression.getObjectExpression();
+        return clazzExpression.getType().isInterface() && expression.getPropertyAsString().equals("this");
     }
 
     protected Expression transformVariableExpression(final VariableExpression ve) {

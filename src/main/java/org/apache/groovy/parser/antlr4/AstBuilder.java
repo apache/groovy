@@ -1288,7 +1288,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         configureAST(classNode, ctx);
         classNode.setSyntheticPublic(syntheticPublic);
         classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
-        boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
+        boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultOrPrivateMethods(ctx));
 
         if (isSealed) {
             AnnotationNode sealedAnnotationNode = makeAnnotationNode(Sealed.class);
@@ -1395,7 +1395,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
-    private boolean containsDefaultMethods(final ClassDeclarationContext ctx) {
+    private boolean containsDefaultOrPrivateMethods(final ClassDeclarationContext ctx) {
         List<MethodDeclarationContext> methodDeclarationContextList =
                 (List<MethodDeclarationContext>) ctx.classBody().classBodyDeclaration().stream()
                         .map(ClassBodyDeclarationContext::memberDeclaration)
@@ -1403,7 +1403,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         .map(e -> (Object) e.methodDeclaration())
                         .filter(Objects::nonNull).reduce(new LinkedList<MethodDeclarationContext>(), (r, e) -> {
                             MethodDeclarationContext methodDeclarationContext = (MethodDeclarationContext) e;
-                            if (createModifierManager(methodDeclarationContext).containsAny(DEFAULT)) {
+                            if (createModifierManager(methodDeclarationContext).containsAny(DEFAULT, PRIVATE)) {
                                 ((List) r).add(methodDeclarationContext);
                             }
                             return r;
@@ -1812,8 +1812,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
 
             boolean isInterfaceOrAbstractClass = asBoolean(classNode) && classNode.isAbstract() && !classNode.isAnnotationDefinition();
-            if (isInterfaceOrAbstractClass && !modifierManager.containsAny(DEFAULT) && isAbstractMethod && hasMethodBody) {
-                throw createParsingFailedException("You defined an abstract method[" + methodNode.getName() + "] with a body. Try removing the method body" + (classNode.isInterface() ? ", or declare it default" : ""), methodNode);
+            if (isInterfaceOrAbstractClass && !modifierManager.containsAny(DEFAULT, PRIVATE) && isAbstractMethod && hasMethodBody) {
+                throw createParsingFailedException("You defined an abstract method[" + methodNode.getName() + "] with a body. Try removing the method body" + (classNode.isInterface() ? ", or declare it default or private" : ""), methodNode);
             }
         }
 
@@ -1867,7 +1867,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         }
 
-        modifiers |= !modifierManager.containsAny(STATIC) && classNode.isInterface() && !(isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && modifierManager.containsAny(DEFAULT)) ? Opcodes.ACC_ABSTRACT : 0;
+        modifiers |= !modifierManager.containsAny(STATIC) && classNode.isInterface() && !(isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && modifierManager.containsAny(DEFAULT, PRIVATE)) ? Opcodes.ACC_ABSTRACT : 0;
         MethodNode methodNode = new MethodNode(methodName, modifiers, returnType, parameters, exceptions, code);
         classNode.addMethod(methodNode);
 

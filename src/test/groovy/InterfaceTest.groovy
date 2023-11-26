@@ -56,4 +56,39 @@ final class InterfaceTest extends CompilableTestSupport {
         '''
         assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
     }
+
+    // GROOVY-10060
+    void testPrivateInterfaceMethod() {
+        assertScript '''
+            interface Foo {
+                default foo() { Foo.this.hello 'Foo#foo' }
+                @groovy.transform.CompileStatic
+                default baz() { hello 'Foo#baz' }
+                private hello(where) { "hello from $where"}
+            }
+
+            class Parent {
+                public bar() {
+                    hello 'Parent#bar'
+                }
+                private hello(where) { "howdy from $where"}
+            }
+
+            class Impl1 extends Parent implements Foo {
+                def baz() { 'hi from Impl1#baz' }
+            }
+
+            class Impl2 extends Parent implements Foo {
+            }
+
+            def impl1 = new Impl1()
+            assert impl1.baz() == 'hi from Impl1#baz'
+            assert impl1.bar() == 'howdy from Parent#bar'
+            assert impl1.foo() == 'hello from Foo#foo'
+            def impl2 = new Impl2()
+            assert impl2.baz() == 'hello from Foo#baz'
+            assert impl2.bar() == 'howdy from Parent#bar'
+            assert impl2.foo() == 'hello from Foo#foo'
+        '''
+    }
 }

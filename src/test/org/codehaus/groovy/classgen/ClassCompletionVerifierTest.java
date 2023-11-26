@@ -156,17 +156,15 @@ public class ClassCompletionVerifierTest extends TestSupport {
 
     public void testDetectsIncorrectMemberVisibilityInInterface() throws Exception {
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("prim", ACC_PRIVATE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("prom", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addField("prif", ACC_PRIVATE, ClassHelper.OBJECT_TYPE, null);
         node.addField("prof", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, null);
         addDummyConstructor(node);
         verifier.visitClass(node);
-        checkErrorCount(4);
+        checkErrorCount(3);
         checkErrorMessage(EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsCorrectMethodModifiersInClass() throws Exception {
