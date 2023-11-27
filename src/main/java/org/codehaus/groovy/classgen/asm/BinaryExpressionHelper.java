@@ -82,6 +82,7 @@ import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.ELVIS_EQUAL;
 import static org.codehaus.groovy.syntax.Types.EQUAL;
 import static org.codehaus.groovy.syntax.Types.FIND_REGEX;
+import static org.codehaus.groovy.syntax.Types.IMPLIES;
 import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
@@ -214,6 +215,10 @@ public class BinaryExpressionHelper {
 
         case BITWISE_XOR:
             evaluateBinaryExpression("xor", expression);
+            break;
+
+        case IMPLIES:
+            evaluateImplicationExpression(expression);
             break;
 
         case BITWISE_XOR_EQUAL:
@@ -654,6 +659,30 @@ public class BinaryExpressionHelper {
         expression.getLeftExpression().visit(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label trueCase = operandStack.jump(IFNE);
+
+        expression.getRightExpression().visit(acg);
+        operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
+        Label falseCase = operandStack.jump(IFEQ);
+
+        mv.visitLabel(trueCase);
+        ConstantExpression.PRIM_TRUE.visit(acg);
+        Label end = new Label();
+        operandStack.jump(GOTO, end);
+
+        mv.visitLabel(falseCase);
+        ConstantExpression.PRIM_FALSE.visit(acg);
+
+        mv.visitLabel(end);
+    }
+
+    private void evaluateImplicationExpression(final BinaryExpression expression) {
+        AsmClassGenerator acg = controller.getAcg();
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
+        expression.getLeftExpression().visit(acg);
+        operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
+        Label trueCase = operandStack.jump(IFEQ);
 
         expression.getRightExpression().visit(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);

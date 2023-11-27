@@ -69,6 +69,7 @@ public class Types {
     public static final int FIND_REGEX = 90;    // =~
     public static final int MATCH_REGEX = 94;    // ==~
     public static final int REGEX_PATTERN = 97;    // ~
+    public static final int IMPLIES = 99;    // ==>
 
     public static final int EQUAL = 100;   // =
     public static final int EQUALS = EQUAL;
@@ -136,7 +137,6 @@ public class Types {
     public static final int SEMICOLON = 320;   // ;
     public static final int QUESTION = 330;   // ?
 
-    // TODO refactor PIPE to be BITWISE_OR
     public static final int PIPE = 340;   // |
     public static final int DOUBLE_PIPE = LOGICAL_OR;   // ||
     public static final int BITWISE_OR = PIPE;  // |
@@ -953,6 +953,9 @@ public class Types {
             case QUESTION:
                 return 10;
 
+            case IMPLIES:
+                return 12;
+
             case LOGICAL_OR:
                 return 15;
 
@@ -1148,6 +1151,7 @@ public class Types {
         addTranslation("=~", FIND_REGEX);
         addTranslation("==~", MATCH_REGEX);
         addTranslation("~", REGEX_PATTERN);
+        addTranslation("==>", IMPLIES);
 
         addTranslation("=", EQUAL);
 

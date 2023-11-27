@@ -848,6 +848,9 @@ expression
     // logical or (||)  (level 13)
     |   left=expression nls op=OR nls right=expression                                      #logicalOrExprAlt
 
+    // implication (==>)  (level 13.5)
+    |   <assoc=right> left=expression nls op=IMPLIES nls right=expression                                 #implicationExprAlt
+
     // conditional test (level 14)
     |   <assoc=right> con=expression nls
         (   QUESTION nls tb=expression nls COLON nls
