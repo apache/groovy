@@ -27,7 +27,7 @@ final class Groovy9962 extends StringSourcesStubTestCase {
                 public class Foo {}
             ''',
             'Groovy9962.groovy': '''
-                @Deprecated(since = '${name} paid $7') // value with $
+                @SuppressWarnings('${name} paid $7') // value with $
                 class Groovy9962 {}
             '''
         ]
