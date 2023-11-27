@@ -3126,6 +3126,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
+    public BinaryExpression visitImplicationExprAlt(final ImplicationExprAltContext ctx) {
+        return configureAST(
+                this.createBinaryExpression(ctx.left, ctx.op, ctx.right),
+                ctx);
+    }
+
+    @Override
     public Expression visitConditionalExprAlt(final ConditionalExprAltContext ctx) {
         ctx.fb.putNodeMetaData(IS_INSIDE_CONDITIONAL_EXPRESSION, Boolean.TRUE);
 

@@ -585,7 +585,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 return true;
             } else if ("remainder".equals(message) || "leftShift".equals(message)
                     || "rightShift".equals(message) || "rightShiftUnsigned".equals(message)
-                    || "and".equals(message) || "or".equals(message) || "xor".equals(message)) {
+                    || "and".equals(message) || "or".equals(message) || "xor".equals(message) || "implies".equals(message)) {
                 writeOperatorCall(receiver, arguments, message);
                 return true;
             }
