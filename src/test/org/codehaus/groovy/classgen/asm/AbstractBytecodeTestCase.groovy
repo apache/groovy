@@ -70,7 +70,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
     }
 
     /**
-     * Compiles a script into bytecode and returns the decompiled string equivalent using ASM.
+     * Compiles a script into bytecode and returns the instructions for a class.
      *
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
@@ -87,20 +87,21 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         }
         cu.compile(Phases.CLASS_GENERATION)
 
-        cu.classes.each {
-            if (it.name ==~ (options.classNamePattern)) {
-                sequence = extractSequence(it.bytes, options)
+        for (gc in cu.classes) {
+            if (gc.name ==~ options.classNamePattern) {
+                sequence = extractSequence(gc.bytes, options)
             }
         }
         if (sequence == null && cu.classes) {
             sequence = extractSequence(cu.classes[0].bytes, options)
         }
-        cu.classes.each {
+        for (gc in cu.classes) {
             try {
-                def dep = cu.classLoader.defineClass(it.name, it.bytes)
-                if (Script.class.isAssignableFrom(dep)) {
-                    clazz = dep
-                }
+                Class c = cu.classLoader.defineClass(gc.name, gc.bytes)
+                if (Script.isAssignableFrom(c)) { clazz = c }
+                c.isInterface() // trigger verification
+            } catch (VerifyError e) {
+                throw e
             } catch (Throwable t) {
                 t.printStackTrace()
                 System.err.println(sequence)
@@ -149,6 +150,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
  * to find subsequences of bytecode instructions.
  */
 class InstructionSequence {
+
     List<String> instructions
 
     /**

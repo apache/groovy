@@ -48,6 +48,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
@@ -215,12 +216,17 @@ public class InvocationWriter {
             ownerClass = receiverType;
         }
 
-        loadArguments(args.getExpressions(), target.getParameters());
-
-        String ownerName = BytecodeHelper.getClassInternalName(ownerClass), methodName = target.getName();
-        String signature = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, ownerName, methodName, signature, ownerClass.isInterface());
         ClassNode returnType = target.getReturnType();
+        Parameter[] parameters = target.getParameters();
+        if (parameters.length > 0 && parameters[0].isReceiver())
+            parameters = Arrays.copyOfRange(parameters, 1, parameters.length);
+
+        loadArguments(args.getExpressions(), parameters);
+
+        String ownerName = BytecodeHelper.getClassInternalName(ownerClass);
+        String signature = BytecodeHelper.getMethodDescriptor(returnType, parameters);
+        mv.visitMethodInsn(opcode, ownerName, target.getName(), signature, ownerClass.isInterface());
+
         if (isPrimitiveVoid(returnType)) {
             returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
