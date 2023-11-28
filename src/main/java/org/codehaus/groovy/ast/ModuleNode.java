@@ -416,8 +416,7 @@ public class ModuleNode extends ASTNode {
             }
         }
 
-        if (existingMain != null && !hasUncontainedStatements) {
-            // this is a JEP-445 compatible class
+        if (existingMain != null && !hasUncontainedStatements) { // JEP 445 main
             ClassNode result = new ClassNode(classNode.getName(), 0, ClassHelper.OBJECT_TYPE);
             result.addAnnotations(existingMain.getAnnotations());
             result.setScriptBody(false);
@@ -513,10 +512,10 @@ public class ModuleNode extends ASTNode {
                     ClassNode argType = numParams > 0 ? node.getParameters()[0].getType() : null;
                     ClassNode retType = node.getReturnType();
 
-                    boolean argTypeMatches = argType == null || ClassHelper.isObjectType(argType) || argType.getName().contains("String[]");
-                    boolean retTypeMatches = ClassHelper.isPrimitiveVoid(retType) || ClassHelper.isObjectType(retType);
+                    boolean argTypeMatches = argType == null || argType.getNameWithoutPackage().equals("Object") || (argType.isArray() && argType.getComponentType().getNameWithoutPackage().equals("String"));
+                    boolean retTypeMatches = ClassHelper.isPrimitiveVoid(retType) || retType.getNameWithoutPackage().equals("Object");
                     if (retTypeMatches && argTypeMatches) {
-                        if ((foundStatic && node.isStatic()) || (foundInstance && !node.isStatic())) {
+                        if (node.isStatic() ? foundStatic : foundInstance) {
                             throw new RuntimeException("Repetitive main method found.");
                         }
                         if (!foundStatic) { // static trumps instance

@@ -1308,8 +1308,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.TRAIT())) {
             classNode.addAnnotation(makeAnnotationNode(Trait.class));
         }
-
-
         classNode.addAnnotations(modifierManager.getAnnotations());
         if (isRecord && classNode.getAnnotations().stream().noneMatch(a ->
                         a.getClassNode().getName().equals(RECORD_TYPE_NAME))) {

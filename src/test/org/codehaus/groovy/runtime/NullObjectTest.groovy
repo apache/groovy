@@ -25,6 +25,7 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class NullObjectTest {
 
+    // GROOVY-5769
     @Test
     void testInit1() {
         shouldFail(RuntimeException) {
@@ -32,6 +33,7 @@ final class NullObjectTest {
         }
     }
 
+    // GROOVY-5769
     @Test
     void testInit2() {
         shouldFail(RuntimeException) {
@@ -39,6 +41,7 @@ final class NullObjectTest {
         }
     }
 
+    // GROOVY-5769
     @Test
     void testInit3() {
         shouldFail(NoSuchMethodException) {

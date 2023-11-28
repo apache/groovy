@@ -18,71 +18,64 @@
  */
 package org.codehaus.groovy.classgen
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.tools.FileSystemCompiler
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.junit.Test
 
-class InterfaceTest extends GroovyTestCase {
+final class InterfaceTest {
 
-    void testCompile() {
-        File dir = createTempDir("groovy-src-", "-src")
-        assertNotNull dir
+    @Test
+    void testJavaImplementsGroovyInterface() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'test').mkdir()
 
-        def fileList = [
-                "GClass.groovy": """
-         package test;
+            def a = new File(parentDir, 'test/GClass.groovy')
+            a.write '''package test
+                class GClass {
+                }
+            '''
+            def b = new File(parentDir, 'test/GInterface.groovy')
+            b.write '''package test
+                interface GInterface {
+                    GClass[] getGC()
+                    default String foo() { 'foo' + GInterface.this.bar() }
+                    private String bar() { 'bar' }
+//                    static  String baz() { 'baz' }
+                }
+            '''
+            def c = new File(parentDir, 'test/JClass.java')
+            c.write '''package test;
+                public class JClass implements GInterface {
+                    public GClass[] getGC() {
+                        return new GClass[0];
+                    }
+                    public String toString() {
+                        return this.foo();
+                    }
+                }
+            '''
+            def d = new File(parentDir, 'Main.groovy')
+            d.write '''
+                def jc = new test.JClass()
+                assert jc.getGC().length == 0
+                assert jc.toString() == 'foobar'
+//                assert test.JClass.baz() == 'baz'
+            '''
 
-         class GClass {}
-    """,
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c, d)
+            cu.compile()
 
-                "GInterface.groovy": """
-         package test;
-
-         interface GInterface {
-            GClass [] get ();
-         }
-    """,
-
-                "JClass.java": """
-         package test;
-
-         public class JClass implements GInterface {
-            public GClass [] get () { return new GClass [0]; };
-         }
-    """,
-        ].collect {
-            name, text ->
-            File file = new File(dir, name)
-            file.write text
-            file
+            loader.loadClass('Main').main()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
         }
-
-        CompilerConfiguration config = new CompilerConfiguration()
-        config.targetDirectory = createTempDir("groovy-target-", "-target")
-        config.jointCompilationOptions = [
-                "stubDir": createTempDir("groovy-stub-", "-stub"),
-//            "namedValues" : ["target","1.5","source","1.5"] as String[]
-        ]
-        config.classpath = "build/classes"
-        FileSystemCompiler compiler = new FileSystemCompiler(config)
-        compiler.compile(fileList.toArray(new File[fileList.size()]))
-    }
-
-    private filesToDelete = []
-
-    void tearDown() {
-        filesToDelete.each {file ->
-            if (file instanceof File) {
-                // remember: null instanceof anything is false
-                FileSystemCompiler.deleteRecursive file
-            }
-        }
-    }
-
-    private File createTempDir(prefix, suffix) {
-        File tempFile = File.createTempDir(prefix, suffix);
-        tempFile.deleteOnExit()
-        filesToDelete.add(tempFile)
-        return tempFile
     }
 }

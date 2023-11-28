@@ -355,7 +355,7 @@ public class WriterController {
      *         local variables but are properties
      */
     public boolean isInScriptBody() {
-        return classNode.isScriptBody() || (classNode.isScript() && methodNode != null && methodNode.getName().equals("run"));
+        return classNode.isScriptBody() || (methodNode != null && methodNode.isScriptBody());
     }
 
     public boolean shouldOptimizeForInt() {

@@ -591,7 +591,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         FieldNode dummyField = new FieldNode(
                 dummyFieldName,
                 ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_SYNTHETIC,
-                field.getOriginType().getPlainNodeReference(),
+                field.getOriginType(),
                 fieldHelper,
                 null
         );

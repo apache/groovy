@@ -219,7 +219,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             traitType.redirect().setNodeMetaData(UNRESOLVED_HELPER_CLASS, helperType);
             return helperType;
         }
-        return Traits.findHelper(traitType);
+        return Traits.findHelper(traitType).getPlainNodeReference();
     }
 
     private ClassNode getTraitSuperTarget(final Expression exp) {

@@ -1480,7 +1480,7 @@ final class InnerClassTest {
             new File(parentDir, 'p').mkdir()
             new File(parentDir, 'q').mkdir()
 
-            def a = new File(parentDir, 'p/A.Java')
+            def a = new File(parentDir, 'p/A.java')
             a.write '''
                 package p;
                 public abstract class A {
@@ -1521,7 +1521,7 @@ final class InnerClassTest {
             new File(parentDir, 'p').mkdir()
             new File(parentDir, 'q').mkdir()
 
-            def a = new File(parentDir, 'p/A.Java')
+            def a = new File(parentDir, 'p/A.java')
             a.write '''
                 package p;
                 public abstract class A {

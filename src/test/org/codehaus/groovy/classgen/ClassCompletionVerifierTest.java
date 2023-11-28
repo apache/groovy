@@ -43,9 +43,10 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The method 'java.lang.Object yyy()' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
-    // can't check synchronized here as it doubles up with ACC_SUPER
-    //private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
-    //        "The class 'DodgyClass' has an incorrect modifier synchronized.";
+    /* can't check synchronized here as it doubles up with ACC_SUPER
+    private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
+            "The class 'DodgyClass' has an incorrect modifier synchronized.";
+    */
     private static final String EXPECTED_NATIVE_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier native.";
     private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
@@ -54,9 +55,10 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Repetitive method name/signature for method 'java.lang.Object xxx()' in class 'zzz'.";
     private static final String EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE =
             "Repetitive method name/signature for method 'java.lang.Object xxx(java.lang.String)' in interface 'zzz'.";
-    // can't check volatile here as it doubles up with bridge
-    //private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
-    //        "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
+    /* can't check volatile here as it doubles up with bridge
+    private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
+    */
     private static final String EXPECTED_STRICT_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object st()' has an incorrect modifier strictfp.";
     private static final String EXPECTED_NATIVE_METHOD_ERROR_MESSAGE =
@@ -71,8 +73,6 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The field 'prif' is not 'public static final' but is defined in interface 'zzz'.";
     private static final String EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE =
             "Method 'prom' is protected but should be public in interface 'zzz'.";
-    private static final String EXPECTED_PRIVATE_METHOD_ERROR_MESSAGE =
-            "Method 'prim' is private but should be public in interface 'zzz'.";
     private static final String EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE =
             "Method 'y' from class 'X' must not be private as it is declared as an abstract method.";
 

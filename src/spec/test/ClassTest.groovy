@@ -222,19 +222,25 @@ class ClassTest extends GroovyTestCase {
             // end::interface_coercion[]
         '''
 
-        def err = shouldFail {
-            assertScript '''
-                // tag::protected_forbidden[]
-                interface Greeter {
-                    protected void greet(String name)           // <1>
-                }
-                // end::protected_forbidden[]
-                1
-            '''
-        }
+        def err = shouldFail '''
+            // tag::protected_forbidden[]
+            interface Greeter {
+                protected void greet(String name)           // <1>
+            }
+            // end::protected_forbidden[]
+        '''
         assert err.contains("Method 'greet' is protected but should be public in interface 'Greeter'")
+/*
+        err = shouldFail '''import groovy.transform.*
+            // tag::package_private_forbidden[]
+            interface Greeter {
+                @PackageScope void greet(String name)
+            }
+            // end::package_private_forbidden[]
+        '''
+        assert err.contains("Method 'greet' is package-private but should be public or private in interface 'Greeter'")
+*/
     }
-
 
     void testFields() {
         assertScript '''
@@ -382,7 +388,6 @@ class ClassTest extends GroovyTestCase {
             // end::annotated_properties[]
         '''
     }
-
 
     void testDefineAnnotation() {
         assertScript '''

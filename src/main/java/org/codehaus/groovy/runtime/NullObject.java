@@ -105,7 +105,7 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
-     * Tries to invoke a method on null, which will always fail.
+     * Tries to invoke a method on null, which fails.
      *
      * @return never
      * @throws NullPointerException

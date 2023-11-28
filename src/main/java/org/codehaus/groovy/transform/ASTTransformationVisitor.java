@@ -131,7 +131,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
                 for (ASTNode node : entry.getValue()) {
                     List<ASTTransformation> list = transforms.computeIfAbsent(node, k -> new ArrayList<>());
-                    list.add(transformInstances.get(entry.getKey()));
+                    ASTTransformation aTransform = transformInstances.get(entry.getKey());
+                    if (aTransform != null) list.add(aTransform);
                 }
             }
 
@@ -385,10 +386,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         + entry.getValue().toExternalForm() + " is not an ASTTransformation.", null));
                 }
             } catch (Exception e) {
-                Throwable effectiveException = e instanceof InvocationTargetException ? e.getCause() : e;
+                Throwable t = e instanceof InvocationTargetException ? e.getCause() : e;
                 compilationUnit.getErrorCollector().addError(new SimpleMessage(
                     "Could not instantiate global transform class " + entry.getKey() + " specified at "
-                    + entry.getValue().toExternalForm() + "  because of exception " + effectiveException.toString(), null));
+                    + entry.getValue().toExternalForm() + "  because of exception " + t.toString(), null));
             }
         }
     }

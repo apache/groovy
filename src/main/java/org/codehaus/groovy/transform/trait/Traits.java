@@ -47,8 +47,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-
 /**
  * A collection of utility methods used to deal with traits.
  *
@@ -110,7 +108,7 @@ public abstract class Traits {
     }
 
     private static ClassNode unwrapOwner(ClassNode owner) {
-        if (isClassType(owner) && owner.getGenericsTypes() != null && owner.getGenericsTypes().length == 1) {
+        if (ClassHelper.isClassType(owner) && owner.getGenericsTypes() != null && owner.getGenericsTypes().length == 1) {
             return owner.getGenericsTypes()[0].getType();
         }
         return owner;
@@ -134,22 +132,22 @@ public abstract class Traits {
         ClassNode staticFieldHelperClassNode = null;
         Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
         if (innerClasses != null && innerClasses.hasNext()) {
-            // trait defined in same source unit
+            // trait declared in same unit
             while (innerClasses.hasNext()) {
                 ClassNode icn = innerClasses.next();
-                if (icn.getName().endsWith(Traits.FIELD_HELPER)) {
+                if (icn.getName().endsWith(Traits.TRAIT_HELPER)) {
+                    helperClassNode = icn;
+                } else if (icn.getName().endsWith(Traits.FIELD_HELPER)) {
                     fieldHelperClassNode = icn;
                 } else if (icn.getName().endsWith(Traits.STATIC_FIELD_HELPER)) {
                     staticFieldHelperClassNode = icn;
-                } else if (icn.getName().endsWith(Traits.TRAIT_HELPER)) {
-                    helperClassNode = icn;
                 }
             }
         } else {
             // precompiled trait
             try {
-                final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
                 String helperClassName = Traits.helperClassName(trait);
+                ClassLoader classLoader = trait.getTypeClass().getClassLoader();
                 helperClassNode = ClassHelper.make(Class.forName(helperClassName, false, classLoader));
                 try {
                     fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.fieldHelperClassName(trait)));
@@ -158,7 +156,7 @@ public abstract class Traits {
                     // not a problem, the field helpers may be absent
                 }
             } catch (ClassNotFoundException e) {
-                throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!",e);
+                throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!", e);
             }
         }
         return new TraitHelpersTuple(helperClassNode, fieldHelperClassNode, staticFieldHelperClassNode);
@@ -407,5 +405,4 @@ public abstract class Traits {
          */
         String desc();
     }
-
 }
