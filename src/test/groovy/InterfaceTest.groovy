@@ -91,4 +91,27 @@ final class InterfaceTest extends CompilableTestSupport {
             assert impl2.foo() == 'hello from Foo#foo'
         '''
     }
+
+    // GROOVY-11237
+    void testStaticInterfaceMethod() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            interface Foo {
+                static hello(where) { "hello $where" }
+                static String BAR = 'bar'
+                String BAA = 'baa' // implicit static
+            }
+
+            assert Foo.hello('world') == 'hello world'
+            assert Foo.BAR == 'bar'
+            assert Foo.BAA == 'baa'
+            shouldFail(MissingMethodException) {
+                Foo.getBAR()
+            }
+            shouldFail(MissingMethodException) {
+                Foo.getBAA()
+            }
+        '''
+    }
 }

@@ -39,8 +39,6 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The interface '" + FINAL_INTERFACE + "' must not be final. It is by definition abstract.";
     private static final String EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object xxx()' from interface 'zzz' must not be final. It is by definition abstract.";
-    private static final String EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE =
-            "The method 'java.lang.Object yyy()' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
     /* can't check synchronized here as it doubles up with ACC_SUPER
@@ -59,20 +57,8 @@ public class ClassCompletionVerifierTest extends TestSupport {
     private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
     */
-    private static final String EXPECTED_STRICT_METHOD_ERROR_MESSAGE =
-            "The method 'java.lang.Object st()' has an incorrect modifier strictfp.";
-    private static final String EXPECTED_NATIVE_METHOD_ERROR_MESSAGE =
-            "The method 'java.lang.Object na()' has an incorrect modifier native.";
-    private static final String EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE =
-            "The method 'java.lang.Object sy()' has an incorrect modifier synchronized.";
     private static final String EXPECTED_TRANSIENT_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object tr()' has an incorrect modifier transient.";
-    private static final String EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE =
-            "The field 'prof' is not 'public static final' but is defined in interface 'zzz'.";
-    private static final String EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE =
-            "The field 'prif' is not 'public static final' but is defined in interface 'zzz'.";
-    private static final String EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE =
-            "Method 'prom' is protected but should be public in interface 'zzz'.";
     private static final String EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE =
             "Method 'y' from class 'X' must not be private as it is declared as an abstract method.";
 
@@ -127,44 +113,44 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkErrorMessage(EXPECTED_INTERFACE_MODIFIER_ERROR_MESSAGE);
     }
 
-    public void testDetectsFinalAndStaticMethodsInInterface() throws Exception {
+    public void testDetectsFinalMethodsInInterface() throws Exception {
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("xxx", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("yyy", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         addDummyConstructor(node);
         verifier.visitClass(node);
-        checkErrorCount(2);
+        checkErrorCount(1);
         checkErrorMessage(EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsIncorrectMethodModifiersInInterface() throws Exception {
         // can't check volatile here as it doubles up with bridge
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("tr", ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("st", ACC_PUBLIC | ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("na", ACC_PUBLIC | ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("sy", ACC_PUBLIC | ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("tr", ACC_PUBLIC | ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         addDummyConstructor(node);
         verifier.visitClass(node);
         checkErrorCount(4);
-        checkErrorMessage(EXPECTED_STRICT_METHOD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_NATIVE_METHOD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE);
+        checkErrorMessage("The method 'java.lang.Object st()' has an incorrect modifier strictfp.");
+        checkErrorMessage("The method 'java.lang.Object na()' has an incorrect modifier native.");
+        checkErrorMessage("The method 'java.lang.Object sy()' has an incorrect modifier synchronized.");
         checkErrorMessage(EXPECTED_TRANSIENT_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsIncorrectMemberVisibilityInInterface() throws Exception {
         ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("prom", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("ppm", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addField("prif", ACC_PRIVATE, ClassHelper.OBJECT_TYPE, null);
         node.addField("prof", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, null);
         addDummyConstructor(node);
         verifier.visitClass(node);
-        checkErrorCount(3);
-        checkErrorMessage(EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_PROTECTED_METHOD_ERROR_MESSAGE);
+        checkErrorCount(4);
+        checkErrorMessage("The field 'prof' is not 'public static final' but is defined in interface 'zzz'.");
+        checkErrorMessage("The field 'prif' is not 'public static final' but is defined in interface 'zzz'.");
+        checkErrorMessage("Method 'prom' is protected but should be public or private in interface 'zzz'.");
+        checkErrorMessage("Method 'ppm' is package-private but should be public or private in interface 'zzz'.");
     }
 
     public void testDetectsCorrectMethodModifiersInClass() throws Exception {
