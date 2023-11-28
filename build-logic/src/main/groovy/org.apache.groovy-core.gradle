@@ -191,7 +191,7 @@ tasks.named('javadoc') {
 }
 
 tasks.withType(Test).configureEach {
-    jvmArgs /*"-Dgroovy.attach.groovydoc=true", "-Dgroovy.attach.runtime.groovydoc=true",*/ "-Dgroovy.antlr4.cache.threshold=100"
+    jvmArgs /*"-Dgroovy.attach.groovydoc=true", "-Dgroovy.attach.runtime.groovydoc=true",*/ "-Dgroovy.antlr4.cache.threshold=0"
 }
 
 def generateGrammarSourceTask = tasks.named("generateGrammarSource") {

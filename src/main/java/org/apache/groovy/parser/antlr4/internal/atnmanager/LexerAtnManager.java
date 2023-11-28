@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4.internal.atnmanager;
 
-import org.antlr.v4.runtime.atn.ATN;
 import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.util.SystemUtil;
 
@@ -28,7 +27,6 @@ import org.apache.groovy.util.SystemUtil;
 public class LexerAtnManager extends AtnManager {
     private static final String GROOVY_CLEAR_LEXER_DFA_CACHE = "groovy.antlr4.clear.lexer.dfa.cache";
     private static final boolean TO_CLEAR_LEXER_DFA_CACHE;
-    private final AtnWrapper lexerAtnWrapper = new AtnManager.AtnWrapper(GroovyLangLexer._ATN);
     public static final LexerAtnManager INSTANCE = new LexerAtnManager();
 
     static {
@@ -36,8 +34,8 @@ public class LexerAtnManager extends AtnManager {
     }
 
     @Override
-    public ATN getATN() {
-        return lexerAtnWrapper.checkAndClear();
+    protected AtnWrapper createAtnWrapper() {
+        return new AtnWrapper(GroovyLangLexer._ATN);
     }
 
     @Override
