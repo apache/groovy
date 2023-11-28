@@ -142,7 +142,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (parent != null) {
             result = parent.getDeclaredMethodsMap();
         } else {
-            result = new HashMap<String, MethodNode>();
+            result = new HashMap<>();
         }
         // add in unimplemented abstract methods from the interfaces
         ClassNodeUtils.addDeclaredMethodsFromInterfaces(node, result);
@@ -187,11 +187,15 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkInterfaceMethodVisibility(final ClassNode node) {
         if (!node.isInterface()) return;
         for (MethodNode method : node.getMethods()) {
-            if (method.isPrivate() && method.isAbstract()) {
-                addError("Method '" + method.getName() + "' from " + getDescription(node) +
-                    " must not be private as it is declared as an abstract method.", method);
-            } else if (method.isProtected()) {
-                addError("Method '" + method.getName() + "' is protected but should be public in " + getDescription(currentClass) + ".", method);
+            if (!method.isPublic()) {
+                if (method.isAbstract()) {
+                    addError("Method '" + method.getName() + "' from " + getDescription(node) +
+                        " must be public as it is declared as an abstract method.", method);
+                } else if (!method.isPrivate() && !method.isStaticConstructor()) {
+                    addError("Method '" + method.getName() + "' is " +
+                        (method.isProtected() ? "protected" : "package-private") +
+                        " but should be public or private in " + getDescription(node) + ".", method);
+                }
             }
         }
     }
@@ -417,10 +421,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             if (method.isFinal()) {
                 addError("The " + getDescription(method) + " from " + getDescription(cn) +
                         " must not be final. It is by definition abstract.", method);
-            }
-            if (method.isStatic() && !method.isStaticConstructor()) {
-                addError("The " + getDescription(method) + " from " + getDescription(cn) +
-                        " must not be static. Only fields may be static in an interface.", method);
             }
         }
     }

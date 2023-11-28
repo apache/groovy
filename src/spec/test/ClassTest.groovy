@@ -229,7 +229,7 @@ class ClassTest extends GroovyTestCase {
             }
             // end::protected_forbidden[]
         '''
-        assert err.contains("Method 'greet' is protected but should be public in interface 'Greeter'")
+        assert err.contains("Method 'greet' from interface 'Greeter' must be public as it is declared as an abstract method.")
 /*
         err = shouldFail '''import groovy.transform.*
             // tag::package_private_forbidden[]

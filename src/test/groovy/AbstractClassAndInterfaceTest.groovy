@@ -39,7 +39,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 }
             }
 
-            def b = new B();
+            def b = new B()
             return b.methodTwo()
             """
         def retVal = shell.evaluate(text)
@@ -105,7 +105,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o){assert true}
             }
 
-            def b = new B();
+            def b = new B()
             return b.methodTwo()
             """
         def retVal = shell.evaluate(text)
@@ -321,6 +321,6 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 private abstract void y()
             }
         """
-        assert msg.contains("Method 'y' from interface 'X' must not be private as it is declared as an abstract method.")
+        assert msg.contains("Method 'y' from interface 'X' must be public as it is declared as an abstract method.")
     }
 }
