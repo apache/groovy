@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class StaticCompileFlowTypingTest {
 
     @Test
@@ -42,7 +40,8 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @Test // GROOVY-9344
+    // GROOVY-9344
+    @Test
     void testFlowTyping2() {
         assertScript '''
             class A {}
@@ -61,7 +60,8 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @Test // GROOVY-9344
+    // GROOVY-9344
+    @Test
     void testFlowTyping3() {
         assertScript '''
             class A {}
@@ -81,6 +81,7 @@ final class StaticCompileFlowTypingTest {
     }
 
     // GROOVY-8946
+    @Test
     void testFlowTyping4() {
         assertScript '''
             /*@GrabResolver(name='grails', root='https://repo.grails.org/grails/core')
