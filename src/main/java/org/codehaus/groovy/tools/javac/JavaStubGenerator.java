@@ -732,6 +732,8 @@ public class JavaStubGenerator {
             printModifiers(out, modifiers);
         } else if (methodNode.isDefault()) {
             out.print("default ");
+        } else if (methodNode.isStatic()) {
+            out.print("static ");
         }
 
         printTypeParameters(out, methodNode.getGenericsTypes());

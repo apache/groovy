@@ -257,17 +257,20 @@ The `extends` keyword is used immediately prior to giving the superclass type.
 === Interfaces
 
 An interface defines a contract that a class needs to conform to.
-An interface only defines a list of methods that need
-to be implemented, but does not define the method's implementation.
+Typically, an interface defines zero or more abstract method definitions,
+but does not define the method's implementation.
+
+Here is a `Greeter` interface defining one `greet` method:
 
 [source,groovy]
 ----
 include::../test/ClassTest.groovy[tags=interface_def_1,indent=0]
 ----
 <1> an interface needs to be declared using the `interface` keyword
-<2> an interface only defines method signatures
+<2> the abstract method signature for the `greet` method
 
-Methods of an interface are always *public*. It is an error to use `protected` or `private` methods in interfaces:
+Such method signatures are public by default.
+It is an error to use `protected` or package-private methods in interfaces:
 
 [source,groovy]
 ----
@@ -317,9 +320,22 @@ include::../test/ClassTest.groovy[tags=interface_coercion,indent=0]
 You can see that there are two distinct objects: one is the source object, a `DefaultGreeter` instance, which does not
 implement the interface. The other is an instance of `Greeter` that delegates to the coerced object.
 
-TIP: Groovy interfaces do not support default implementation like Java 8 interfaces. If you are looking for something
-similar (but not equal), <<_traits,traits>> are close to interfaces, but allow default implementation as well as other
-important features described in this manual.
+TIP: Groovy <<_traits,traits>> are close to interfaces, but support other
+important features described elsewhere in this manual. If you need more
+power than offered by interfaces, consider using traits.
+
+While interfaces typically contain abstract method definitions,
+non-abstract methods are also possible.
+Variants allowed are `default`, `static`, or `private`:
+
+* Default methods provide a mechanism to evolve API functionality.
+You can add new functionality to existing interfaces but maintain
+binary compatibility with code written for older versions of those interfaces.
+Shared functionality for default methods may be placed in private methods.
+* Static methods provide a mechanism to associate methods directly
+an interface class without it impacting the OO contracts or being overridden.
+You could use them for writing factory or utility methods without
+creating an additional utility class.
 
 == Class members
 

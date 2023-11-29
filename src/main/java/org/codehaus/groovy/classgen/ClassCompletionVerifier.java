@@ -192,6 +192,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                     addError("Method '" + method.getName() + "' from " + getDescription(node) +
                         " must be public as it is declared as an abstract method.", method);
                 } else if (!method.isPrivate() && !method.isStaticConstructor()) {
+                    // normal parsing won't get here since ASTBuilder only lets through default and private,
+                    // but we'll do a check in case any AST transforms have created dodgy method definitions
                     addError("Method '" + method.getName() + "' is " +
                         (method.isProtected() ? "protected" : "package-private") +
                         " but should be public or private in " + getDescription(node) + ".", method);
