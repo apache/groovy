@@ -2649,6 +2649,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         entry.getKey().putNodeMetaData(marker, value);
                     }
                 }
+                entry.getKey().removeNodeMetaData(DECLARATION_INFERRED_TYPE); // GROOVY-8946
             }
         }
     }

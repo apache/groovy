@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class StaticCompileFlowTypingTest {
 
     @Test
@@ -42,7 +40,8 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @Test // GROOVY-9344
+    // GROOVY-9344
+    @Test
     void testFlowTyping2() {
         assertScript '''
             class A {}
@@ -61,7 +60,8 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @Test // GROOVY-9344
+    // GROOVY-9344
+    @Test
     void testFlowTyping3() {
         assertScript '''
             class A {}
@@ -77,6 +77,44 @@ final class StaticCompileFlowTypingTest {
                 x.class.simpleName
             }
             assert m() == 'B'
+        '''
+    }
+
+    // GROOVY-8946
+    @Test
+    void testFlowTyping4() {
+        assertScript '''
+            /*@GrabResolver(name='grails', root='https://repo.grails.org/grails/core')
+            @Grapes([
+                @Grab('javax.servlet:javax.servlet-api:3.0.1'),
+                @Grab('org.grails.plugins:converters:3.3.+'),
+                @Grab('org.grails:grails-web:3.3.+'),
+                @Grab('org.slf4j:slf4j-nop:1.7.33')
+            ])
+            @GrabExclude('org.codehaus.groovy:*')
+            import static grails.converters.JSON.parse
+            */
+            class JSONElement {
+                def getProperty(String name) {
+                    if (name == 'k') return [1,2]
+                }
+            }
+            JSONElement parse(String json) {
+                new JSONElement()
+            }
+
+            @groovy.transform.CompileStatic
+            def test() {
+                def json = parse('[{"k":1},{"k":2}]')
+                def vals = json['k']
+                assert vals == [1,2]
+                boolean result = 'k'.tokenize('.').every { token -> // 'k' represents a path like 'a.b.c.d'
+                    json = json[token]
+                }
+                assert result
+                return json // Cannot cast object '[1, 2]' with class 'java.util.ArrayList' to class 'org.grails.web.json.JSONElement'
+            }
+            test()
         '''
     }
 
