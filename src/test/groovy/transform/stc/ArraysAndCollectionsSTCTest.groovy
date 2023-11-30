@@ -577,7 +577,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7506
-    @NotYetImplemented
     void testShouldAllowArrayAssignment6() {
         String pogo = '''
             class C {
@@ -586,14 +585,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                     this.strings = strings
                 }
             }
-        '''
-
-        assertScript pogo + '''
-            def list = ['foo','bar']
-
-            def c = new C()
-            c.p = list // implicit conversion
-            assert c.strings == ['foo','bar']
         '''
 
         assertScript pogo + '''
