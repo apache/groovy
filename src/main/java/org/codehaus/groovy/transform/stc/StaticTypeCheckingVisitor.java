@@ -2219,11 +2219,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         typeCheckingContext.pushEnclosingMethod(node);
+        final ClassNode returnType = node.getReturnType(); // GROOVY-10660: implicit return case
+        if (!isConstructor && (isClosureWithType(returnType) || isFunctionalInterface(returnType))) {
+            new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
+        }
         if (!isSkipMode(node) && !shouldSkipMethodNode(node)) {
             super.visitConstructorOrMethod(node, isConstructor);
         }
         if (!isConstructor) {
-            returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `typeCheckingContext.pushEnclosingReturnStatement`
+            returnAdder.visitMethod(node); // GROOVY-7753: we cannot count these auto-generated return statements, see `typeCheckingContext.pushEnclosingReturnStatement`
         }
         typeCheckingContext.popEnclosingMethod();
     }
@@ -2237,6 +2241,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitReturnStatement(final ReturnStatement statement) {
+        if (typeCheckingContext.getEnclosingClosure() == null) {
+            MethodNode method = typeCheckingContext.getEnclosingMethod();
+            if (method != null && !method.isVoidMethod() && !method.isDynamicReturnType()) {
+                applyTargetType(method.getReturnType(), statement.getExpression()); // GROOVY-10660
+            }
+        }
         super.visitReturnStatement(statement);
         returnListener.returnStatementAdded(statement);
     }
