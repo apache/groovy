@@ -180,8 +180,53 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10688
+    void testTypeParameterTypeParameter3() {
+        assertScript '''
+            class A<T,U> {
+            }
+            <T> void test(
+                A<Double, ? extends T> x) {
+                A<Double, ? extends T> y = x
+                A<Double, ? extends T> z = true ? y : x
+            }
+            test(null)
+        '''
+    }
+
+    // GROOVY-10271
+    void testFunctionalInterfaceTarget1() {
+        for (flag in ['true', 'false']) {
+            assertScript """import java.util.function.Supplier
+
+                Supplier<Integer> x = { -> 1 }
+                Supplier<Integer> y = $flag ? x : { -> 2 }
+
+                assert y.get() == ($flag ? 1 : 2)
+            """
+        }
+    }
+
+    // GROOVY-10272
+    void testFunctionalInterfaceTarget2() {
+        assertScript '''
+            import java.util.function.Function
+
+            Function<Integer, Long> x
+            if (true) {
+                x = { a -> a.longValue() }
+            } else {
+                x = { Integer b -> (Long)b }
+            }
+            assert x.apply(42) == 42L
+
+            Function<Integer, Long> y = (true ? { a -> a.longValue() } : { Integer b -> (Long)b })
+            assert y.apply(42) == 42L
+        '''
+    }
+
     // GROOVY-10701
-    void testFunctionalInterfaceTarget() {
+    void testFunctionalInterfaceTarget3() {
         for (type in ['Function<T,T>', 'UnaryOperator<T>']) {
             assertScript """import java.util.function.*
 
