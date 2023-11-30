@@ -337,7 +337,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     private   static final ClassNode SET_TYPE = ClassHelper.make(Set.class);
 
-    private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
+    private static final List<ClassNode> TUPLE_TYPES = Arrays.stream(TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
@@ -655,7 +655,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
             if (inferredType != null && !inferredType.equals(OBJECT_TYPE)
                     && !inferredType.equals(accessedVariable.getOriginType())) {
-                vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+                vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
             }
         }
     }
@@ -764,11 +764,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
             } else {
                 if (op != EQUAL && op != ELVIS_EQUAL) {
-                    if (leftExpression instanceof VariableExpression && hasInferredReturnType(leftExpression)) {
-                        lType = getInferredReturnType(leftExpression); // GROOVY-10217
-                    } else {
-                        lType = getType(leftExpression);
-                    }
+                    lType = getType(leftExpression);
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
 
@@ -1335,23 +1331,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
-        ClassNode rTypeInferred; // see if any instanceof exists
-        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
-            rTypeInferred = getInferredReturnType(rightExpression);
-        } else {
-            rTypeInferred = rightExpressionType;
-        }
-        ClassNode rTypeAdjusted = adjustTypeForSpreading(rTypeInferred, leftExpression);
+        ClassNode rTypeAdjusted = adjustTypeForSpreading(rightExpressionType, leftExpression);
 
         if (!checkCompatibleAssignmentTypes(leftExpressionType, rTypeAdjusted, rightExpression)) {
             if (!extension.handleIncompatibleAssignment(leftExpressionType, rTypeAdjusted, assignmentExpression)) {
-                addAssignmentError(leftExpressionType, rTypeInferred, rightExpression);
+                addAssignmentError(leftExpressionType, rightExpressionType, rightExpression);
             }
         } else {
             ClassNode lTypeRedirect = leftExpressionType.redirect();
             addPrecisionErrors(lTypeRedirect, leftExpressionType, rTypeAdjusted, rightExpression);
             if (rightExpression instanceof ListExpression) {
-                addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
+                addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
                 addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression)rightExpression);
             }
@@ -1999,12 +1989,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             visitStatement(forLoop);
             collectionExpression.visit(this);
-            ClassNode collectionType;
-            if (collectionExpression instanceof VariableExpression && hasInferredReturnType(collectionExpression)) {
-                collectionType = getInferredReturnType(collectionExpression);
-            } else {
-                collectionType = getType(collectionExpression);
-            }
+            ClassNode collectionType = getType(collectionExpression);
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
             if (Character_TYPE.equals(getWrapper(forLoopVariableType)) && STRING_TYPE.equals(collectionType)) {
@@ -2271,18 +2256,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
-        ClassNode type;
-        if (expression instanceof VariableExpression && hasInferredReturnType(expression)) {
-            type = getInferredReturnType(expression);
-        } else {
-            type = getType(expression);
-        }
+        ClassNode type = getType(expression);
         if (typeCheckingContext.getEnclosingClosure() != null) {
             ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
             // GROOVY-9995: return ctor call with diamond operator
             if (expression instanceof ConstructorCallExpression) {
-                ClassNode inferredClosureReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                if (inferredClosureReturnType != null) inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
+                inferDiamondType((ConstructorCallExpression) expression, inferredReturnType != null ? inferredReturnType : DYNAMIC_TYPE); // GROOVY-10080
             }
             if (inferredReturnType != null && inferredReturnType.equals(STRING_TYPE) && isGStringOrGStringStringLUB(type)) {
                 type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
@@ -2419,7 +2398,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected ClassNode[] getArgumentTypes(final ArgumentListExpression args) {
         return args.getExpressions().stream().map(exp ->
-            isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getInferredTypeFromTempInfo(exp, getType(exp))
+            isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getType(exp)
         ).toArray(ClassNode[]::new);
     }
 
@@ -3848,11 +3827,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         visitClosureExpression(closure);
 
-        if (getInferredReturnType(closure) != null) {
-            return getInferredReturnType(closure);
-        }
-
-        return null;
+        return getInferredReturnType(closure);
     }
 
     /**
@@ -4328,7 +4303,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param type the inferred type of {@code expr}
      */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        ClassNode sourceType = type;
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         MethodCall enclosingMethodCall = (MethodCall)typeCheckingContext.getEnclosingMethodCall();
@@ -4348,27 +4322,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
              targetType = enclosingMethod.getReturnType();
         }
 
-        if (expr instanceof VariableExpression && hasInferredReturnType(expr)) {
-            sourceType = getInferredReturnType(expr);
-        }
+        if (targetType == null)
+            targetType = type.getPlainNodeReference();
+        if (type == UNKNOWN_PARAMETER_TYPE) return targetType;
 
-        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983
-            // GROOVY-10114: type parameter(s) could be inferred from call arguments
-            if (targetType == null) targetType = sourceType.getPlainNodeReference();
+        if (expr instanceof ConstructorCallExpression) { // GROOVY-9972, GROOVY-9983, GROOVY-10114
             inferDiamondType((ConstructorCallExpression) expr, targetType);
-            return sourceType;
         }
 
-        if (targetType == null) return sourceType;
-
-        if (!isPrimitiveType(getUnwrapper(targetType)) && !OBJECT_TYPE.equals(targetType)
-                && !sourceType.isGenericsPlaceHolder() && missesGenericsTypes(sourceType)) {
-            // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
-            // the inferred type is the RHS type "completed" with generics information from LHS
-            return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
-        }
-
-        return sourceType != UNKNOWN_PARAMETER_TYPE ? sourceType : targetType;
+        return adjustForTargetType(type, targetType); // GROOVY-10688
     }
 
     private static ClassNode adjustForTargetType(final ClassNode resultType, final ClassNode targetType) {
@@ -4452,11 +4414,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static boolean isEmptyCollection(final Expression expr) {
         return (expr instanceof ListExpression && ((ListExpression) expr).getExpressions().isEmpty())
                 || (expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().isEmpty());
-    }
-
-    private static boolean hasInferredReturnType(final Expression expression) {
-        ClassNode type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        return type != null && !type.getName().equals(ClassHelper.OBJECT);
     }
 
     @Override
@@ -4778,8 +4735,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
         ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
-            // GROOVY-5521
-            // try to identify a getAt method
+            // GROOVY-5521: check for "getAt" method
             typeCheckingContext.pushErrorCollector();
             MethodCallExpression vcall = callX(localVarX("_hash_", containerType), "getAt", varX("_index_", indexType));
             vcall.setImplicitThis(false); // GROOVY-8943
@@ -4788,10 +4744,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } finally {
                 typeCheckingContext.popErrorCollector();
             }
-            return getType(vcall);
-        } else {
-            return componentType;
+            componentType = getType(vcall);
         }
+        return componentType;
     }
 
     protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
@@ -5312,14 +5267,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Returns the inferred return type of a closure or a method, if stored on the AST node. This method
-     * doesn't perform any type inference by itself.
+     * Returns the inferred return type of a closure or method, if stored on the
+     * AST node. This method doesn't perform any type inference by itself.
      *
-     * @param exp a {@link ClosureExpression} or {@link MethodNode}
-     * @return the inferred type, as stored on node metadata.
+     * @param node a {@link ClosureExpression} or {@link MethodNode}
+     * @return the expected return type
      */
-    protected ClassNode getInferredReturnType(final ASTNode exp) {
-        return exp.getNodeMetaData(INFERRED_RETURN_TYPE);
+    protected ClassNode getInferredReturnType(final ASTNode node) {
+        return node.getNodeMetaData(INFERRED_RETURN_TYPE);
     }
 
     protected ClassNode inferListExpressionType(final ListExpression list) {

@@ -1037,6 +1037,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10308
+    void testAssignToNullAfterCall() {
+        assertScript '''
+            class C<T> {
+                T p
+            }
+            def x = { -> new C<String>() }
+            def y = x()
+            def z = y.p // false positive: field access error
+            y = null
+        '''
+    }
+
     // GROOVY-5798
     void testShouldNotThrowConversionError() {
         assertScript '''

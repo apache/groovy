@@ -257,7 +257,6 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
     void testCommonInterface3() {
         assertScript '''import static java.util.concurrent.ConcurrentHashMap.*
             Set<Integer> integers = false ? new HashSet<>() : newKeySet()
