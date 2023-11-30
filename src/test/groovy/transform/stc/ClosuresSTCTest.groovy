@@ -373,7 +373,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10356
-    @NotYetImplemented
     void testClosureSharedVariable4() {
         assertScript '''
             interface A {

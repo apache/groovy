@@ -4442,11 +4442,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void storeType(final Expression exp, ClassNode cn) {
-        if (cn == UNKNOWN_PARAMETER_TYPE) {
-            // this can happen for example when "null" is used in an assignment or a method parameter.
-            // In that case, instead of storing the virtual type, we must "reset" type information
+        if (cn == UNKNOWN_PARAMETER_TYPE) { // null for assignment or parameter
+            // instead of storing an "unknown" type, reset the type information
             // by determining the declaration type of the expression
             cn = getOriginalDeclarationType(exp);
+            // GROOVY-10356, GROOVY-10623 : "def"
+            if (cn == DYNAMIC_TYPE) return;
         }
         if (cn != null && isPrimitiveType(cn)) {
             if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {
