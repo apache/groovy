@@ -1925,7 +1925,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
         ''',
-        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.ArrayList <java.lang.Integer>]'
     }
 
     void testCompatibleGenericAssignmentWithInference() {
@@ -2531,65 +2531,54 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assertScript """
                 $mods void setX(List<String> strings) {
                 }
-                void test() {
-                    x = Collections.emptyList()
-                }
-                test()
+                x = Collections.emptyList()
             """
             assertScript """
                 $mods void setX(Collection<String> strings) {
                 }
-                void test() {
-                    x = Collections.emptyList()
-                }
-                test()
+                x = Collections.emptyList()
             """
             assertScript """
                 $mods void setX(Iterable<String> strings) {
                 }
-                void test() {
-                    x = Collections.emptyList()
-                }
-                test()
+                x = Collections.emptyList()
             """
 
             shouldFailWithMessages """
                 $mods void setX(List<String> strings) {
                 }
-                void test() {
-                    x = Collections.<Integer>emptyList()
-                }
+                x = Collections.<Integer>emptyList()
             """,
             'Cannot assign java.util.List <Integer> to: java.util.List <String>'
         }
     }
 
-    // GROOVY-9734, GROOVY-9915
+    // GROOVY-9734, GROOVY-9915, GROOVY-11057
     void testShouldUseMethodGenericType4() {
         for (mods in ['', 'static']) {
             assertScript """
                 $mods void m(List<String> strings) {
                 }
-                void test() {
-                    m(Collections.emptyList())
-                }
-                test()
+                m(Collections.emptyList())
+                m([])
             """
             assertScript """
                 $mods void m(Collection<String> strings) {
                 }
-                void test() {
-                    m(Collections.emptyList())
-                }
-                test()
+                m(Collections.emptyList())
+                m([])
             """
             assertScript """
                 $mods void m(Iterable<String> strings) {
                 }
-                void test() {
-                    m(Collections.emptyList())
+                m(Collections.emptyList())
+                m([])
+            """
+            assertScript """
+                $mods void m(Map<String,Long> mapping) {
                 }
-                test()
+                m(Collections.emptyMap())
+                m([:])
             """
         }
     }
@@ -3901,7 +3890,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Foo.bar([new Object()])
         ''',
-        'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.Object>]'
+        'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
 
     void testOutOfBoundsBySuperGenericParameterType() {
@@ -3911,7 +3900,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Foo.bar(['abc'])
         ''',
-        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.String>]'
+        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.String>]'
     }
 
     void testOutOfBoundsByExtendsPlaceholderParameterType() {
@@ -5414,10 +5403,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10673
+    // GROOVY-10673, GROOVY-11057
     void testMockito() {
         assertScript '''
-            @Grab('org.mockito:mockito-core:4.5.1')
+            @Grab('org.mockito:mockito-core:4.11.0')
             import static org.mockito.Mockito.*
 
             class C {
@@ -5429,13 +5418,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             def i = mock(I)
             when(i.f(anyString())).thenAnswer { /*InvocationOnMock*/ iom ->
-              //new C(string: iom.arguments[0]) works
+                new C(string: iom.arguments[0])
                 new C().tap {
                     string = iom.arguments[0]
                 }
             }
             assert i.f('x') instanceof C
         '''
+
+        for (map in ['Collections.emptyMap()', '[:]']) {
+            assertScript """
+                @Grab('org.mockito:mockito-core:4.11.0')
+                import static org.mockito.Mockito.*
+
+                interface Configuration {
+                    Map<String,Object> getSettings()
+                }
+
+                def configuration = mock(Configuration).tap {
+                    when(it.getSettings()).thenReturn($map)
+                }
+                assert configuration.settings.isEmpty()
+            """
+        }
     }
 
     //--------------------------------------------------------------------------

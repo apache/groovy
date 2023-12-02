@@ -18,60 +18,65 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests
+import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
 
 /**
  * Unit tests for static type checking : extension methods.
  */
 class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 
-    void testShouldFindExtensionMethod() {
+    void testStaticExtensionMethod() {
         assertScript '''
-            // reverseToUpperCase is an extension method specific to unit tests
-            def str = 'This is a string'
-            assert str.reverseToUpperCase() == str.toUpperCase().reverse()
             assert String.answer() == 42
         '''
     }
 
-    void testShouldFindExtensionMethodWithGrab() {
-        ExtensionModuleHelperForTests.doInFork('groovy.transform.stc.StaticTypeCheckingTestCase', '''
-        def impl = new MetaClassImpl(String)
-        impl.initialize()
-        String.metaClass = impl
-        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-        // ensure that the module isn't loaded
-        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.3' }
+    void testNonStaticExtensionMethod() {
+        assertScript '''
+            def str = 'This is a string'
+            // reverseToUpperCase is a usnit test extension method
+            assert str.reverseToUpperCase() == str.toUpperCase().reverse()
+        '''
+    }
 
-        // find jar resource
-        def jarURL = this.class.getResource("/jars")
-        assert jarURL
-
-        def resolver = "@GrabResolver(name='local',root='$jarURL')"
-
-        assertScript resolver + """
-        @Grab('module-test:module-test:1.4')
-        import org.codehaus.groovy.runtime.m12n.*
-
-        // the following methods are added by the Grab test module
-        def str = 'This is a string'
-        assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
-        // a static method added to String thanks to a @Grab extension
-        assert String.answer2() == 42
-        """
-        ''')
+    // GROOVY-7953
+    void testExtensionPropertyWithPrimitiveReceiver() {
+        assertScript '''
+            assert 4.even
+        '''
     }
 
     void testExtensionMethodWithGenericsAndPrimitiveReceiver() {
         assertScript '''
             assert 2d.groovy6496(2d) == 2d
-    '''
+        '''
     }
 
-    //GROOVY-7953
-    void testExtensionPropertyWithPrimitiveReceiver() {
-        assertScript '''
-            assert 4.even
+    void testShouldFindExtensionMethodWithGrab() {
+        doInFork 'groovy.transform.stc.StaticTypeCheckingTestCase', '''
+            def impl = new MetaClassImpl(String)
+            impl.initialize()
+            String.metaClass = impl
+            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+            // ensure that the module isn't loaded
+            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.3' }
+
+            // find jar resource
+            def jarURL = this.class.getResource('/jars')
+            assert jarURL
+
+            def resolver = "@GrabResolver(name='local',root='$jarURL')"
+
+            assertScript resolver + """
+                @Grab('module-test:module-test:1.4')
+                import org.codehaus.groovy.runtime.m12n.*
+
+                // the following methods are added by the Grab test module
+                def str = 'This is a string'
+                assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
+                // a static method added to String thanks to a @Grab extension
+                assert String.answer2() == 42
+            """
         '''
     }
 }

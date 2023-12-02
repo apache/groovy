@@ -194,6 +194,49 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2 <Integer>#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
     }
 
+    // GROOVY-8909
+    void testGenericMethodCall4() {
+        assertScript '''
+            void m(List<Object> list) {
+                assert list.size() == 3
+            }
+            m([1,2,3])
+        '''
+        // no coercion like assignment
+        shouldFailWithMessages '''
+            void m(Set<Integer> set) {
+            }
+            m([1,2,3,3])
+        ''',
+        'm(java.util.List <java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
+    }
+
+    // GROOVY-7106, GROOVY-7274, GROOVY-9844
+    void testGenericMethodCall5() {
+        assertScript '''
+            void m(Map<CharSequence,Number> map) {
+                assert map.size() == 3
+                assert map['a'] == 1
+                assert 'z' !in map
+            }
+            m([a:1,b:2,c:3])
+        '''
+
+        assertScript '''
+            void m(Map<String,Object> map) {
+            }
+            m([d:new Date(), i:1, s:""])
+        '''
+
+        assertScript '''
+            void m(Map<String,Object> map) {
+            }
+            ['x'].each {
+                m([(it): it.toLowerCase()])
+            }
+        '''
+    }
+
     // GROOVY-10922
     void testCallToSuperGenerated() {
         assertScript '''

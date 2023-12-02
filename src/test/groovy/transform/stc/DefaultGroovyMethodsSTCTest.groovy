@@ -116,8 +116,8 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot call <CS extends java.lang.CharSequence> java.util.ArrayList <java.lang.Number>#getSequence() with arguments []',
         'Cannot call java.util.ArrayList <java.lang.Number>#getString() with arguments []',
-        'No such property: sequence for class: java.util.ArrayList <java.lang.Number>',
-        'No such property: string for class: java.util.ArrayList <java.lang.Number>'
+        'No such property: sequence for class: java.util.ArrayList',
+        'No such property: string for class: java.util.ArrayList'
     }
 
     // GROOVY-5584

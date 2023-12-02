@@ -1057,6 +1057,48 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8001, GROOVY-11028, GROOVY-11080
+    void testMapWithTypeArgumentsInitializedByMapLiteral() {
+        for (spec in ['CharSequence,Integer', 'String,Number', 'CharSequence,Number']) {
+            assertScript """
+                Map<$spec> map = [a:1,b:2,c:3]
+                assert map.size() == 3
+                assert map['c'] == 3
+                assert 'x' !in map
+            """
+        }
+
+        assertScript '''
+            Map<String,Map<String,Object>> map = [:]
+            map.put('foo', [bar:null])
+            map.put('baz', [:])
+            assert 'foo' in map
+        '''
+
+        assertScript '''
+            class C {
+                Map<String,Object> map
+            }
+            int value = 42
+            def c = new C()
+            c.map = [key:"$value"]
+            assert c.map['key'] == '42'
+            c = new C(map: [key:value])
+            assert c.map.key.toString() == '42'
+        '''
+
+        assertScript '''
+            Map<String,Integer> map = [:].withDefault { 0 }
+            assert map.size() == 0
+            assert map.foo == 0
+        '''
+
+        shouldFailWithMessages '''
+            Map<String,Integer> map = [1:2]
+        ''',
+        'Cannot assign java.util.LinkedHashMap <java.lang.Integer, java.lang.Integer> to: java.util.Map <String, Integer>'
+    }
+
     // GROOVY-8136
     void testInterfaceThatExtendsMapInitializedByMapLiteral() {
         shouldFailWithMessages '''
