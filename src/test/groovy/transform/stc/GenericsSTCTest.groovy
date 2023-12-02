@@ -1736,7 +1736,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10674
-    @NotYetImplemented
     void testDiamondInferenceFromConstructor36() {
         assertScript '''
             class Foo<BB extends Bar<Byte>, X extends BB> {
@@ -3517,7 +3516,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10153
-    @NotYetImplemented
     void testCompatibleArgumentsForPlaceholders11() {
         for (t in ['A', 'B', 'C']) {
             assertScript """
@@ -5400,6 +5398,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             test(1,[2,3])
+        '''
+    }
+
+    // GROOVY-10671
+    void testAssertJ() {
+        assertScript '''
+            @Grab('org.assertj:assertj-core:3.23.1')
+            import static org.assertj.core.api.Assertions.assertThat
+
+            def strings = (Collection<String>) ['a','b']
+            assertThat(strings).as('assertion description')
+                .containsExactlyInAnyOrderElementsOf(['a','b'])
         '''
     }
 

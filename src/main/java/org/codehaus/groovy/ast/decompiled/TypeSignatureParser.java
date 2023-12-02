@@ -104,7 +104,21 @@ abstract class TypeSignatureParser extends SignatureVisitor {
             finished(baseType);
         } else {
             ClassNode parameterizedType = baseType.getPlainNodeReference();
-            if (!arguments.isEmpty()) { // else GROOVY-10234: no type arguments -> raw type
+            if (arguments.isEmpty()) {
+                // GROOVY-10234: no type arguments -> raw type
+            } else {
+                try { // see ResolveVisitor#resolveWildcardBounding
+                    for (int i = 0, n = arguments.size(); i < n; i += 1) {
+                        GenericsType argument = arguments.get(i);
+                        if (!argument.isWildcard() || argument.getUpperBounds() != null) continue;
+                        ClassNode[] implicitBounds = baseType.getGenericsTypes()[i].getUpperBounds();
+                        if (implicitBounds != null && !ClassHelper.OBJECT_TYPE.equals(implicitBounds[0])) {
+                            argument.getType().setRedirect(implicitBounds[0]); // GROOVY-10671: bound isn't Object
+                        }
+                    }
+                } catch (StackOverflowError ignore) {
+                    // TODO: self-referential type parameter
+                }
                 parameterizedType.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
             }
             finished(parameterizedType);
