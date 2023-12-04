@@ -21,6 +21,7 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
 import org.apache.groovy.gradle.JarJarTask
 import org.apache.groovy.gradle.ReleaseInfoGenerator
+import com.github.spotbugs.snom.Effort
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 import com.github.spotbugs.snom.SpotBugsTask
@@ -123,7 +124,7 @@ configurations {
 }
 
 dependencies {
-    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsAnnotations}" }
+    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${versions.spotbugs}" }
 
     codenarc "org.codenarc:CodeNarc:${versions.codenarc}"
     codenarc project(":groovy-templates")
@@ -228,12 +229,14 @@ tasks.withType(CodeNarc).configureEach {
 tasks.withType(SpotBugsTask).configureEach {
     excludeFilter = rootProject.file("config/spotbugs/exclude.xml")
     ignoreFailures = true
-    effort = 'max'
+    effort = Effort.valueOf('MAX')
     maxHeapSize = '2g'
     reports {
-        xml.enabled = false
+        xml {
+            required = false
+        }
         html {
-            enabled = true
+            required = true
             stylesheet = 'fancy.xsl'
         }
     }
