@@ -2547,6 +2547,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             if (!candidates.isEmpty()) {
+                ClassNode[] arguments = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+                if (asBoolean(arguments) && asBoolean(receiverType.redirect().getGenericsTypes())
+                                         && expression.getExpression() instanceof ClassExpression) {
+                    receiverType = GenericsUtils.parameterizeType(arguments[0], receiverType); // GROOVY-11241
+                }
+
                 Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
                 candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
@@ -2562,8 +2568,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         });
                 expression.putNodeMetaData(MethodNode.class, candidates);
 
-                ClassNode[] arguments = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                if (arguments != null && arguments.length > 0) {
+                if (asBoolean(arguments)) {
                     ClassNode[] parameters = collateMethodReferenceParameterTypes(expression, candidates.get(0));
                     for (int i = 0; i < arguments.length; i += 1) {
                         ClassNode at = arguments[i];

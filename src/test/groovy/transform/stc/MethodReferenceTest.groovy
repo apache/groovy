@@ -232,6 +232,26 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-11241
+    void testFunctionCI9() {
+        assertScript shell, '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.*
+
+            Option<Integer> option() { Option.of(3) }
+
+            @CompileStatic
+            Try<Integer> test() {
+              //Try.of { option() }.mapTry(Option::get)
+                def try_of = Try.of { option() }
+                def result = try_of.mapTry(Option::get)
+                result
+            }
+
+            test()
+        '''
+    }
+
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript shell, '''
