@@ -238,6 +238,48 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-11241
+    void testFunctionCI9() {
+        assertScript imports + '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.*
+
+            Option<Integer> option() { Option.of(42) }
+
+            @CompileStatic
+            Try<Integer> test() {
+                Try.of{ option() }.<Integer>mapTry(Option::get)
+                //                 ^^^^^^^^^
+            }
+
+            assert test().get() == 42
+        '''
+
+        def err = shouldFail imports + '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            class Option<X> {
+                private final X x
+                def X get() { x }
+                static <Y> Option<Y> of(Y y) {
+                    new Option(x: y)
+                }
+            }
+
+            Option<Integer> option() { Option.of(666) }
+
+            @CompileStatic
+            Try<Integer> test() {
+              //Try.of { option() }.mapTry(Option::get)
+                def try_of = Try.of { option() }
+                def result = try_of.mapTry(Option::get)
+                result
+            }
+        '''
+        assert err =~ /Cannot (assign|return) io.vavr.control.Try <java.lang.Object> / // not <X> or <Option<Integer>>
+    }
+
     @Test // class::instanceMethod -- GROOVY-9974
     void testPredicateCI() {
         assertScript imports + '''
