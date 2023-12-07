@@ -20,11 +20,11 @@ package groovy
 
 import gls.CompilableTestSupport
 
-class AbstractClassAndInterfaceTest extends CompilableTestSupport {
+final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
     void testInterface() {
         def shell = new GroovyShell()
-        def text = """
+        def text = '''
             interface A {
                 void methodOne(Object o)
                 Object methodTwo()
@@ -41,13 +41,13 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
             def b = new B()
             return b.methodTwo()
-            """
+        '''
         def retVal = shell.evaluate(text)
         assert retVal.class == Object
     }
 
     void testClassImplementingAnInterfaceButMissesMethod() {
-        shouldNotCompile """
+        shouldNotCompile '''
             interface A {
                 void methodOne(Object o)
                 Object methodTwo()
@@ -57,11 +57,11 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o){assert true}
             }
 
-            def b = new B();
+            def b = new B()
             return b.methodTwo()
-            """
+        '''
 
-        shouldNotCompile """
+        shouldNotCompile '''
             interface A {
                 Object methodTwo()
             }
@@ -73,25 +73,25 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o){assert true}
             }
 
-            def b = new C();
+            def b = new C()
             return b.methodTwo()
-            """
+        '''
     }
 
     void testClassImplementingNestedInterfaceShouldContainMethodsFromSuperInterfaces() {
-        shouldNotCompile """
+        shouldNotCompile '''
             interface A { def a() }
             interface B extends A { def b() }
             class BImpl implements B {
                 def b(){ println 'foo' }
             }
             new BImpl().b()
-            """
+        '''
     }
 
     void testAbstractClass() {
         def shell = new GroovyShell()
-        def text = """
+        def text = '''
             abstract class A {
                 abstract void methodOne(Object o)
                 Object methodTwo(){
@@ -107,13 +107,13 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
             def b = new B()
             return b.methodTwo()
-            """
+        '''
         def retVal = shell.evaluate(text)
         assert retVal.class == Object
     }
 
     void testClassExtendingAnAbstractClassButMissesMethod() {
-        shouldNotCompile """
+        shouldNotCompile '''
             abstract class A {
                 abstract void methodOne(Object o)
                 Object methodTwo(){
@@ -130,11 +130,11 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
             class C extends B{}
 
-            def b = new C();
+            def b = new C()
             return b.methodTwo()
-            """
+        '''
 
-       shouldNotCompile """
+       shouldNotCompile '''
             abstract class A {
                 abstract void methodOne(Object o)
                 Object methodTwo(){
@@ -149,14 +149,14 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o){assert true}
             }
 
-            def b = new B();
+            def b = new B()
             return b.methodTwo()
-            """
+        '''
     }
 
     void testInterfaceAbstractClassCombination() {
         def shell = new GroovyShell()
-        def text = """
+        def text = '''
             interface A {
                 void methodOne()
             }
@@ -173,10 +173,10 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             }
             def c = new C()
             c.methodTwo()
-            """
+        '''
         shell.evaluate(text)
 
-        shouldNotCompile """
+        shouldNotCompile '''
             interface A {
                 void methodOne()
             }
@@ -188,12 +188,12 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             class C extends B {}
             def c = new c()
             c.methodTwo()
-            """
+        '''
     }
 
     void testDefaultModifiersForInterfaces() {
         def shell = new GroovyShell()
-        def text = """
+        def text = '''
             import java.lang.reflect.Modifier
 
             interface A {
@@ -202,17 +202,17 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
             def fields = A.class.declaredFields
             assert fields.length==1
-            assert fields[0].name == "foo"
+            assert fields[0].name == 'foo'
             assert Modifier.isPublic (fields[0].modifiers)
             assert Modifier.isStatic (fields[0].modifiers)
             assert Modifier.isFinal  (fields[0].modifiers)
-            """
+        '''
         shell.evaluate(text)
     }
 
     void testAccessToInterfaceField() {
         def shell = new GroovyShell()
-        def text = """
+        def text = '''
             interface A {
                 def foo=1
             }
@@ -220,90 +220,87 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
               def foo(){foo}
             }
             assert new B().foo()==1
-       """
+       '''
        shell.evaluate(text)
     }
 
     void testImplementsDuplicateInterface() {
-        shouldCompile """
-        interface I {}
-        class C implements I {}
-        """
-        shouldNotCompile """
-        interface I {}
-        class C implements I, I {}
-        """
+        shouldCompile '''
+            interface I {}
+            class C implements I {}
+        '''
+        shouldNotCompile '''
+            interface I {}
+            class C implements I, I {}
+        '''
     }
 
     void testDefaultMethodParamsNotAllowedInInterface() {
-        shouldCompile """
-        interface Foo {
-           def doit( String param, int o )
-        }
-        """
-        shouldNotCompile """
-        interface Foo {
-           def doit( String param = "Groovy", int o )
-        }
-        """
+        shouldCompile '''
+            interface Foo {
+                def doit(String string, int i)
+            }
+        '''
+        shouldNotCompile '''
+            interface Foo {
+                def doit(String string = 'Groovy', int i)
+            }
+        '''
     }
 
     void testClassImplementsItselfCreatingACycle() {
-        def scriptStr = """
+        shouldNotCompile '''
             package p1
             class XXX implements XXX {}
-        """
-        shouldNotCompile scriptStr
-
-        scriptStr = """
+        '''
+        shouldNotCompile '''
             class YYY implements YYY {}
-        """
-        shouldNotCompile scriptStr
+        '''
     }
 
     void testAbstractClassWithPrivateAbstractMethod() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             abstract class X {
                 private abstract void y()
             }
-        """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        '''
+        assert msg.contains("The method 'y' must not be private as it is declared abstract in class 'X'")
     }
 
     void testAbstractClassWithPrivateAbstractMethods() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             abstract class X {
                 private abstract void y()
                 private abstract void z()
             }
-        """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
-        assert msg.contains("Method 'z' from class 'X' must not be private as it is declared as an abstract method.")
+        '''
+        assert msg.contains("The method 'y' must not be private as it is declared abstract in class 'X'")
+        assert msg.contains("The method 'z' must not be private as it is declared abstract in class 'X'")
     }
 
     void testAbstractNestedClassWithPrivateAbstractMethod() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             class Z {
                 abstract class X {
                     private abstract void y()
                 }
             }
-        """
-        assert msg.contains("Method 'y' from class 'Z\$X' must not be private as it is declared as an abstract method.")
+        '''
+        assert msg.contains("The method 'y' must not be private as it is declared abstract in class 'Z\$X'")
     }
 
     void testClassWithPrivateAbstractMethod() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             class X {
                 private abstract void y()
             }
-        """
-        assert !msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        '''
+        assert !msg.contains("The method 'y' must not be private as it is declared abstract in class 'X'")
         assert msg.contains("Can't have an abstract method in a non-abstract class. The class 'X' must be declared abstract or the method 'void y()' must be implemented.")
     }
 
     void testEnumWithPrivateAbstractMethod() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             enum X {
                 CONST {
                     private void y() { }
@@ -311,16 +308,16 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
                 private abstract void y()
             }
-        """
-        assert msg.contains("Method 'y' from class 'X' must not be private as it is declared as an abstract method.")
+        '''
+        assert msg.contains("The method 'y' must not be private as it is declared abstract in enum 'X'")
     }
 
     void testInterfaceWithPrivateAbstractMethod() {
-        def msg = shouldNotCompile """
+        def msg = shouldNotCompile '''
             interface X {
                 private abstract void y()
             }
-        """
-        assert msg.contains("Method 'y' from interface 'X' must be public as it is declared as an abstract method.")
+        '''
+        assert msg.contains("The method 'y' must be public as it is declared abstract in interface 'X'")
     }
 }

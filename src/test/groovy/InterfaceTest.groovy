@@ -61,9 +61,9 @@ final class InterfaceTest extends CompilableTestSupport {
     void testPrivateInterfaceMethod() {
         assertScript '''
             interface Foo {
-                default foo() { Foo.this.hello 'Foo#foo' }
+                default foo() { Foo.this.hello('Foo#foo') }
                 @groovy.transform.CompileStatic
-                default baz() { hello 'Foo#baz' }
+                default baz() { hello('Foo#baz') }
                 private hello(where) { "hello from $where"}
             }
 
@@ -93,24 +93,23 @@ final class InterfaceTest extends CompilableTestSupport {
     }
 
     // GROOVY-11237
-    void testStaticInterfaceMethod() {
-        assertScript '''
-            import static groovy.test.GroovyAssert.shouldFail
-
+    void testPublicStaticInterfaceMethod() {
+        assertScript '''import static groovy.test.GroovyAssert.shouldFail
             interface Foo {
                 static hello(where) { "hello $where" }
                 static String BAR = 'bar'
-                String BAA = 'baa' // implicit static
+                       String BAZ = 'baz' // implicit static
             }
 
             assert Foo.hello('world') == 'hello world'
             assert Foo.BAR == 'bar'
-            assert Foo.BAA == 'baa'
+            assert Foo.BAZ == 'baz'
+
             shouldFail(MissingMethodException) {
                 Foo.getBAR()
             }
             shouldFail(MissingMethodException) {
-                Foo.getBAA()
+                Foo.getBAZ()
             }
         '''
     }

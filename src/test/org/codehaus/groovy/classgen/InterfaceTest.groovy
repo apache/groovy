@@ -45,7 +45,7 @@ final class InterfaceTest {
                     GClass[] getGC()
                     default String foo() { 'foo' + GInterface.this.bar() }
                     private String bar() { 'bar' }
-//                    static  String baz() { 'baz' }
+                    static  String baz() { 'baz' }
                 }
             '''
             def c = new File(parentDir, 'test/JClass.java')
@@ -64,7 +64,7 @@ final class InterfaceTest {
                 def jc = new test.JClass()
                 assert jc.getGC().length == 0
                 assert jc.toString() == 'foobar'
-//                assert test.JClass.baz() == 'baz'
+                assert test.GInterface.baz() == 'baz'
             '''
 
             def loader = new GroovyClassLoader(this.class.classLoader)

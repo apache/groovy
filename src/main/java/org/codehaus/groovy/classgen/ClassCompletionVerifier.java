@@ -189,14 +189,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode method : node.getMethods()) {
             if (!method.isPublic()) {
                 if (method.isAbstract()) {
-                    addError("Method '" + method.getName() + "' from " + getDescription(node) +
-                        " must be public as it is declared as an abstract method.", method);
+                    addError("The method '" + method.getName() + "' must be public as it is declared abstract in " + getDescription(node) + ".", method);
                 } else if (!method.isPrivate() && !method.isStaticConstructor()) {
-                    // normal parsing won't get here since ASTBuilder only lets through default and private,
-                    // but we'll do a check in case any AST transforms have created dodgy method definitions
-                    addError("Method '" + method.getName() + "' is " +
-                        (method.isProtected() ? "protected" : "package-private") +
-                        " but should be public or private in " + getDescription(node) + ".", method);
+                    // normal parsing blocks non-static protected or @PackageScope
+                    addError("The method '" + method.getName() + "' is " + (method.isProtected() ? "protected" : "package-private") +
+                            " but must be " + (method.isStatic() ? "public" : "default") + " or private in " + getDescription(node) + ".", method);
                 }
             }
         }
@@ -207,8 +204,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (!node.isAbstract() || node.isInterface()) return;
         for (MethodNode method : node.getAbstractMethods()) {
             if (method.isPrivate()) {
-                addError("Method '" + method.getName() + "' from " + getDescription(node) +
-                        " must not be private as it is declared as an abstract method.", method);
+                addError("The method '" + method.getName() + "' must not be private as it is declared abstract in " + getDescription(node) + ".", method);
             }
         }
     }
@@ -297,7 +293,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private static String getDescription(final ClassNode node) {
-        return (node.isInterface() ? (Traits.isTrait(node) ? "trait" : "interface") : "class") + " '" + node.getName() + "'";
+        String kind = (node.isInterface() ? (Traits.isTrait(node) ? "trait" : "interface") : (node.isEnum() ? "enum" : "class"));
+        return kind + " '" + node.getName() + "'";
     }
 
     private static String getDescription(final MethodNode node) {
@@ -616,11 +613,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkInterfaceFieldModifiers(final FieldNode node) {
-        if (!currentClass.isInterface()) return;
-        if ((node.getModifiers() & (ACC_PUBLIC | ACC_STATIC | ACC_FINAL)) == 0 ||
-                (node.getModifiers() & (ACC_PRIVATE | ACC_PROTECTED)) != 0) {
-            addError("The " + getDescription(node) + " is not 'public static final' but is defined in " +
-                    getDescription(currentClass) + ".", node);
+        if (currentClass.isInterface() && !(node.isPublic() && node.isStatic() && node.isFinal())) {
+            addError("The " + getDescription(node) + " is not 'public static final' but is defined in " + getDescription(currentClass) + ".", node);
         }
     }
 

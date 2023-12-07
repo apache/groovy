@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +16,10 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class ClassTest extends GroovyTestCase {
+
+import groovy.test.GroovyTestCase
+
+final class ClassTest extends GroovyTestCase {
 
     void testClassDefinition() {
         assertScript '''
@@ -225,21 +226,11 @@ class ClassTest extends GroovyTestCase {
         def err = shouldFail '''
             // tag::protected_forbidden[]
             interface Greeter {
-                protected void greet(String name)           // <1>
+                protected void greet(String name)                       // <1>
             }
             // end::protected_forbidden[]
         '''
-        assert err.contains("Method 'greet' from interface 'Greeter' must be public as it is declared as an abstract method.")
-/*
-        err = shouldFail '''import groovy.transform.*
-            // tag::package_private_forbidden[]
-            interface Greeter {
-                @PackageScope void greet(String name)
-            }
-            // end::package_private_forbidden[]
-        '''
-        assert err.contains("Method 'greet' is package-private but should be public or private in interface 'Greeter'")
-*/
+        assert err.contains("The method 'greet' must be public as it is declared abstract in interface 'Greeter'")
     }
 
     void testFields() {
@@ -508,8 +499,6 @@ class ClassTest extends GroovyTestCase {
             }
             // end::annotation_value_set_option[]
         '''
-
-
     }
 
     void testAnnotationTarget() {
