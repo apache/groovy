@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 /**
@@ -148,6 +150,22 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testPlusStaticMethodCall() {
+        assertScript '''
+            static int foo() { 1 }
+            assert 1+foo() == 2
+        '''
+    }
+
+    void testExplicitTargetMethodWithCast() {
+        assertScript '''
+            String foo(String str) { 'STRING' }
+            String foo(Object o) { 'OBJECT' }
+            assert foo('call') == 'STRING'
+            assert foo((Object)'call') == 'OBJECT'
+        '''
+    }
+
     void testGenericMethodCall() {
         assertScript '''
             C c = new C()
@@ -237,6 +255,99 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testNullSafeCall() {
+        assertScript '''
+            String str = null
+            assert str?.toString() == null
+        '''
+    }
+
+    void testCallToSuper() {
+        assertScript '''
+            class Foo {
+                int foo() { 1 }
+            }
+            class Bar extends Foo {
+                int foo() { super.foo() }
+            }
+            def bar = new Bar()
+            assert bar.foo() == 1
+        '''
+    }
+
+    // GROOVY-10897
+    void testCallToSuper2() {
+        assertScript '''
+            interface A10897 {
+                def m()
+            }
+            interface B10897 extends A10897 {
+                @Override def m()
+            }
+            class C10897 implements A10897 {
+                @Override def m() { "C" }
+            }
+            class D10897 extends C10897 implements B10897 {
+            }
+            class E10897 extends D10897 {
+                @Override
+                def m() {
+                    "E then " + super.m()
+                }
+            }
+            assert new E10897().m() == 'E then C'
+        '''
+    }
+
+    // GROOVY-11242
+    void testCallToSuper3() {
+        assertScript '''
+            class DirtyCheckingCollection implements Collection {
+                private final @Delegate Collection target
+                DirtyCheckingCollection(Collection target) {
+                    this.target = target
+                }
+                @Override
+                boolean add(Object o) {
+                    target.add(o)
+                }
+            }
+            class DirtyCheckingSet extends DirtyCheckingCollection implements Set {
+                DirtyCheckingSet(Set target) {
+                    super(target)
+                }
+            }
+            class MySet extends DirtyCheckingSet {
+                MySet(Set delegate) {
+                    super(delegate)
+                }
+                @Override
+                boolean add(Object o) {
+                    super.add(o) // StackOverflowError
+                }
+            }
+            MySet set = new MySet([] as Set)
+            set.add('myProperty')
+        '''
+    }
+
+    void testCallToSuperDefault() {
+        assertScript '''
+            interface I<T> {
+                default m(T t) {
+                    return t
+                }
+            }
+            class C implements I<String> {
+                @Override m(String s) {
+                    I.super.m(s)
+                }
+            }
+            String result = new C().m('works')
+            assert result == 'works'
+        '''
+    }
+
     // GROOVY-10922
     void testCallToSuperGenerated() {
         assertScript '''
@@ -273,6 +384,152 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new Child()
+        '''
+    }
+
+    void testCallToPrivateInnerClassMethod() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    private static void foo() {}
+                }
+                static main(args) { Inner.foo() }
+            }
+        '''
+    }
+
+    void testCallToPrivateOuterClassMethod() {
+        assertScript '''
+            class Outer {
+                private static void foo() {}
+                static class Inner {
+                    private static void bar() { Outer.foo() }
+                }
+            }
+            new Outer.Inner()
+        '''
+    }
+
+    void testCallToPrivateInnerClassConstant() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    private static int foo = 42
+                }
+                static main(args) { Inner.foo }
+            }
+        '''
+    }
+
+    void testCallToPrivateOuterClassConstant() {
+        assertScript '''
+            class Outer {
+                private static int foo = 42
+                static class Inner {
+                    private static void bar() { Outer.foo }
+                }
+            }
+            new Outer.Inner()
+        '''
+    }
+
+    void testReferenceToInaccessiblePrivateMethod() {
+        shouldFail(MultipleCompilationErrorsException) {
+            assertScript '''
+                class Main {
+                    static main(args) { Peer.foo() }
+                }
+                class Peer {
+                    private static void foo() {}
+                }
+            '''
+        }
+    }
+
+    // GROOVY-6647
+    void testReferenceToInaccessiblePrivateConstructor() {
+        shouldFailWithMessages '''
+            class Main {
+                private Main() {}
+            }
+            class Peer {
+                def foo() { new Main() }
+            }
+        ''',
+        'Cannot find matching method Main#<init>()'
+    }
+
+    // GROOVY-8509
+    void testCallProtectedFromClassInSamePackage() {
+        assertScript '''
+            class Foo {
+                protected Foo() {}
+                protected int m() { 123 }
+            }
+            class Bar {
+                int test() {
+                    new Foo().m()
+                }
+            }
+            assert new Bar().test() == 123
+        '''
+    }
+
+    // GROOVY-7862
+    void testCallProtectedMethodFromInnerClassInSeparatePackage() {
+        assertScript '''
+            import groovy.transform.stc.MethodCallsSTCTest.BaseWithProtected as Foo
+
+            class Bar extends Foo {
+                class Baz {
+                    int test() {
+                        m()
+                    }
+                }
+                int test() {
+                    new Baz().test()
+                }
+            }
+            assert new Bar().test() == 1
+        '''
+    }
+
+    // GROOVY-7063
+    void testCallProtectedMethodFromSubclassClosureInDifferentPackage() {
+        assertScript '''
+            import groovy.transform.stc.MethodCallsSTCTest.BaseWithProtected as Foo
+
+            class Bar extends Foo {
+                int baz() {
+                    def c = {
+                        m()
+                    }
+                    c.call()
+                }
+            }
+            def bar = new Bar()
+            assert bar.baz() == 1
+        '''
+    }
+
+    // GROOVY-7264
+    void testCallProtectedMethodWithGenericTypes() {
+        assertScript '''
+            class Foo<T> {
+                protected boolean m(T t) {
+                    true
+                }
+            }
+            class Bar extends Foo<Integer> {
+                int baz() {
+                    def c = {
+                        m(123)
+                    }
+                    c.call() ? 1 : 0
+                }
+            }
+            def bar = new Bar()
+            assert bar.baz() == 1
         '''
     }
 
@@ -343,6 +600,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar((Date)null, new Date())
                 }
             }
+        '''
+    }
+
+    void testMethodCallWithDefaultParams() {
+        assertScript '''
+            class Support {
+                Support(String name, String val, List arg=null, Set set = null, Date suffix = new Date()) {
+                    "$name$val$suffix"
+                }
+            }
+            new Support(null, null, null, null)
         '''
     }
 
@@ -488,6 +756,34 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Reference to method is ambiguous'
+    }
+
+    // GROOVY-5703
+    void testShouldNotConvertStringToStringArray() {
+        assertScript '''
+            int printMsgs(String ... msgs) {
+                int i = 0
+                for(String s : msgs) { i++ }
+
+                i
+            }
+            assert printMsgs('foo') == 1
+            assert printMsgs('foo','bar') == 2
+        '''
+    }
+
+    // GROOVY-5780
+    void testShouldNotConvertGStringToStringArray() {
+        assertScript '''
+            int printMsgs(String ... msgs) {
+                int i = 0
+                for(String s : msgs) { i++ }
+
+                i
+            }
+            assert printMsgs("f${'o'}o") == 1
+            assert printMsgs("${'foo'}","${'bar'}") == 2
+        '''
     }
 
     void testInstanceOfOnExplicitParameter() {
