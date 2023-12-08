@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
@@ -331,7 +332,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testCallToSuperDefault() {
+    void testCallToSuperDefault1() {
         assertScript '''
             interface I<T> {
                 default m(T t) {
@@ -346,6 +347,23 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             String result = new C().m('works')
             assert result == 'works'
         '''
+    }
+
+    // GROOVY-10494
+    @NotYetImplemented
+    void testCallToSuperDefault2() {
+        shouldFailWithMessages '''
+            interface I<T> {
+                default void m(T t) {
+                }
+            }
+            class C implements I<String> {
+                @Override void m(String s) {
+                    super.m(s)
+                }
+            }
+        ''',
+        'Default method m(T) requires qualified super'
     }
 
     // GROOVY-10922
@@ -1634,6 +1652,22 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             int h = this.getClass().hashCode()
         '''
+    }
+
+    // GROOVY-10341
+    void testCallAbstractSuperMethod() {
+        shouldFailWithMessages '''
+            abstract class Foo {
+                abstract def m()
+            }
+            class Bar extends Foo {
+                @Override
+                def m() {
+                    super.m()
+                }
+            }
+        ''',
+        'Abstract method m() cannot be called directly'
     }
 
     // GROOVY-5810

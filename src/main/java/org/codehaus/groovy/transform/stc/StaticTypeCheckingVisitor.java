@@ -3570,6 +3570,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (!directMethodCallCandidate.isStatic() && !(declaringClass.equals(CLASS_Type) || declaringClass.equals(OBJECT_TYPE)) // GROOVY-10939
                                 && receiver.equals(CLASS_Type) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                        } else if (directMethodCallCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
+                            String target = toMethodParametersString(directMethodCallCandidate.getName(), extractTypesFromParameters(directMethodCallCandidate.getParameters()));
+                            if (Traits.hasDefaultImplementation(directMethodCallCandidate)) { // GROOVY-10494
+                                addStaticTypeError("Default method " + target + " requires qualified super", call);
+                            } else {
+                                addStaticTypeError("Abstract method " + target + " cannot be called directly", call);
+                            }
                         }
 
                         ClassNode returnType = getType(directMethodCallCandidate);
