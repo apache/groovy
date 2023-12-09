@@ -105,7 +105,7 @@ public class GroovyDocParser implements GroovyDocParserI {
         compUnit.compile(phase);
         ModuleNode root = unit.getAST();
         GroovydocVisitor visitor = new GroovydocVisitor(unit, packagePath, links, properties);
-        root.getClasses().stream().forEach(clazz -> visitor.visitClass(clazz));
+        root.getClasses().forEach(clazz -> visitor.visitClass(clazz));
         return visitor.getGroovyClassDocs();
     }
 
