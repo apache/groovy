@@ -1588,45 +1588,37 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 continue;
             }
 
-            ClassNode classNode = type.getType();
             String name = type.getName();
+            ClassNode typeType = type.getType();
             GenericsTypeName gtn = new GenericsTypeName(name);
-            ClassNode[] bounds = type.getUpperBounds();
-            boolean isWild = QUESTION_MARK.equals(name);
-            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(gtn));
+            boolean isWildcardGT = QUESTION_MARK.equals(name);
+            boolean dealWithGenerics = (level == 0 || (level > 0 && genericParameterNames.get(gtn) != null));
 
-            if (bounds != null) {
+            if (type.getUpperBounds() != null) {
                 boolean nameAdded = false;
-                for (ClassNode upperBound : bounds) {
-                    if (!isWild) {
-                        if (!nameAdded && upperBound != null || !resolve(classNode)) {
-                            if (toDealWithGenerics) {
-                                genericParameterNames.put(gtn, type);
+                for (ClassNode upperBound : type.getUpperBounds()) {
+                    if (upperBound == null) continue;
+                    if (!isWildcardGT) {
+                        if (!nameAdded || !resolve(typeType)) {
+                            if (dealWithGenerics) {
                                 type.setPlaceholder(true);
-                                classNode.setRedirect(upperBound);
+                                typeType.setRedirect(upperBound);
+                                genericParameterNames.put(gtn, type);
                                 nameAdded = true;
                             }
                         }
-
-                        upperBoundsToResolve.add(tuple(upperBound, classNode));
+                        upperBoundsToResolve.add(tuple(upperBound, typeType));
                     }
-
-                    if (upperBound != null && upperBound.isUsingGenerics()) {
+                    if (upperBound.isUsingGenerics()) {
                         upperBoundsWithGenerics.add(tuple(upperBound, type));
                     }
                 }
             } else {
-                if (!isWild) {
-                    if (toDealWithGenerics) {
-                        GenericsType originalGt = genericParameterNames.get(gtn);
-                        genericParameterNames.put(gtn, type);
+                if (!isWildcardGT) {
+                    if (dealWithGenerics) {
                         type.setPlaceholder(true);
-
-                        if (null == originalGt) {
-                            classNode.setRedirect(ClassHelper.OBJECT_TYPE);
-                        } else {
-                            classNode.setRedirect(originalGt.getType());
-                        }
+                        GenericsType last = genericParameterNames.put(gtn, type);
+                        typeType.setRedirect(last != null ? last.getType().redirect() : ClassHelper.OBJECT_TYPE);
                     }
                 }
             }

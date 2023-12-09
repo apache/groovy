@@ -50,7 +50,6 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GeneratedLambda;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
@@ -69,6 +68,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
@@ -209,7 +210,7 @@ public class ClassHelper {
      * A new ClassNode object is only created if the class
      * is not one of the predefined ones
      *
-     * @param c class used to created the ClassNode
+     * @param c class used to create the ClassNode
      * @return ClassNode instance created from the given class
      */
     public static ClassNode make(Class c) {
@@ -487,39 +488,30 @@ public class ClassHelper {
     }
 
     /**
-     * Returns a super class or interface for a given class depending on a given target.
-     * If the target is no super class or interface, then null will be returned.
-     * For a non-primitive array type, returns an array of the componentType's super class
-     * or interface if the target is also an array.
-     *
-     * @param clazz     the start class
-     * @param goalClazz the goal class
-     * @return the next super class or interface
+     * Returns a super class or interface for a given class depending on supplied
+     * target. If the target is not a super class or interface, then null will be
+     * returned. For a non-primitive array type -- if the target is also an array
+     * -- returns an array of the component type's super class or interface.
      */
-    public static ClassNode getNextSuperClass(ClassNode clazz, ClassNode goalClazz) {
-        if (clazz.isArray()) {
-            if (!goalClazz.isArray()) return null;
-            ClassNode cn = getNextSuperClass(clazz.getComponentType(), goalClazz.getComponentType());
+    public static ClassNode getNextSuperClass(final ClassNode source, final ClassNode target) {
+        if (source.isArray()) {
+            if (!target.isArray()) return null;
+
+            ClassNode cn = getNextSuperClass(source.getComponentType(), target.getComponentType());
             if (cn != null) cn = cn.makeArray();
             return cn;
         }
 
-        if (!goalClazz.isInterface()) {
-            if (clazz.isInterface()) {
-                if (OBJECT_TYPE.equals(clazz)) return null;
-                return OBJECT_TYPE;
-            } else {
-                return clazz.getUnresolvedSuperClass();
+        if (target.isInterface()) {
+            for (ClassNode face : source.getUnresolvedInterfaces()) {
+                if (implementsInterfaceOrIsSubclassOf(face,target)) {
+                    return face;
+                }
             }
+        } else if (source.isInterface()) {
+            return OBJECT_TYPE;
         }
 
-        ClassNode[] interfaces = clazz.getUnresolvedInterfaces();
-        for (ClassNode anInterface : interfaces) {
-            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(anInterface, goalClazz)) {
-                return anInterface;
-            }
-        }
-        //none of the interfaces here match, so continue with super class
-        return clazz.getUnresolvedSuperClass();
+        return source.getUnresolvedSuperClass();
     }
 }

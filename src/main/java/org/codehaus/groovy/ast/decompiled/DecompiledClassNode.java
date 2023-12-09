@@ -39,13 +39,12 @@ import java.util.function.Supplier;
  * @see AsmDecompiler
  */
 public class DecompiledClassNode extends ClassNode {
+
     private final ClassStub classData;
     private final AsmReferenceResolver resolver;
-    private volatile boolean supersInitialized;
-    private volatile boolean membersInitialized;
 
     public DecompiledClassNode(final ClassStub classData, final AsmReferenceResolver resolver) {
-        super(classData.className, getFullModifiers(classData), null, null, MixinNode.EMPTY_ARRAY);
+        super(classData.className, getModifiers(classData), null, null, MixinNode.EMPTY_ARRAY);
         this.classData = classData;
         this.resolver = resolver;
         isPrimaryNode = false;
@@ -54,12 +53,13 @@ public class DecompiledClassNode extends ClassNode {
     /**
      * Handle the case of inner classes returning the correct modifiers from
      * the INNERCLASS reference since the top-level modifiers for inner classes
-     * wont include static or private/protected.
+     * won't include static or private/protected.
      */
-    private static int getFullModifiers(ClassStub data) {
-        return (data.innerClassModifiers == -1)
-                ? data.accessModifiers : data.innerClassModifiers;
+    private static int getModifiers(ClassStub classData) {
+        return (classData.innerClassModifiers != -1 ? classData.innerClassModifiers : classData.accessModifiers);
     }
+
+    //
 
     public long getCompilationTimeStamp() {
         if (classData.fields != null) {
@@ -76,64 +76,40 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     @Override
-    public GenericsType[] getGenericsTypes() {
-        lazyInitSupers();
-        return super.getGenericsTypes();
+    public Class getTypeClass() {
+        return resolver.resolveJvmClass(getName());
+    }
+
+    public boolean isParameterized() {
+        return (classData.signature != null && classData.signature.charAt(0) == '<');
     }
 
     @Override
-    public boolean isUsingGenerics() {
-        lazyInitSupers();
-        return super.isUsingGenerics();
+    public boolean isResolved() {
+        return true;
     }
 
     @Override
-    public List<FieldNode> getFields() {
-        lazyInitMembers();
-        return super.getFields();
+    public String setName(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public ClassNode[] getInterfaces() {
-        lazyInitSupers();
-        return super.getInterfaces();
+    public void setRedirect(ClassNode cn) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<MethodNode> getMethods() {
-        lazyInitMembers();
-        return super.getMethods();
+    public void setUsingGenerics(boolean b) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<ConstructorNode> getDeclaredConstructors() {
-        lazyInitMembers();
-        return super.getDeclaredConstructors();
+    public void setGenericsPlaceHolder(boolean b) {
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public FieldNode getDeclaredField(String name) {
-        lazyInitMembers();
-        return super.getDeclaredField(name);
-    }
-
-    @Override
-    public List<MethodNode> getDeclaredMethods(String name) {
-        lazyInitMembers();
-        return super.getDeclaredMethods(name);
-    }
-
-    @Override
-    public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
-        lazyInitSupers();
-        return super.getUnresolvedSuperClass(useRedirect);
-    }
-
-    @Override
-    public ClassNode[] getUnresolvedInterfaces(boolean useRedirect) {
-        lazyInitSupers();
-        return super.getUnresolvedInterfaces(useRedirect);
-    }
+    //--------------------------------------------------------------------------
 
     @Override
     public List<AnnotationNode> getAnnotations() {
@@ -148,38 +124,36 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     @Override
-    public void setRedirect(ClassNode cn) {
-        throw new UnsupportedOperationException();
+    public GenericsType[] getGenericsTypes() {
+        lazyInitSupers();
+        return super.getGenericsTypes();
     }
 
     @Override
-    public void setGenericsPlaceHolder(boolean b) {
-        throw new UnsupportedOperationException();
+    public ClassNode[] getInterfaces() {
+        lazyInitSupers();
+        return super.getInterfaces();
     }
 
     @Override
-    public void setUsingGenerics(boolean b) {
-        throw new UnsupportedOperationException();
+    public ClassNode[] getUnresolvedInterfaces(boolean useRedirect) {
+        lazyInitSupers();
+        return super.getUnresolvedInterfaces(useRedirect);
     }
 
     @Override
-    public String setName(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isParameterized() {
-        return (classData.signature != null && classData.signature.charAt(0) == '<');
+    public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
+        lazyInitSupers();
+        return super.getUnresolvedSuperClass(useRedirect);
     }
 
     @Override
-    public boolean isResolved() {
-        return true;
+    public boolean isUsingGenerics() {
+        lazyInitSupers();
+        return super.isUsingGenerics();
     }
 
-    @Override
-    public Class getTypeClass() {
-        return resolver.resolveJvmClass(getName());
-    }
+    private volatile boolean supersInitialized;
 
     private void lazyInitSupers() {
         if (supersInitialized) return;
@@ -193,6 +167,40 @@ public class DecompiledClassNode extends ClassNode {
         }
     }
 
+    //--------------------------------------------------------------------------
+
+    @Override
+    public List<ConstructorNode> getDeclaredConstructors() {
+        lazyInitMembers();
+        return super.getDeclaredConstructors();
+    }
+
+    @Override
+    public FieldNode getDeclaredField(final String name) {
+        lazyInitMembers();
+        return super.getDeclaredField(name);
+    }
+
+    @Override
+    public List<MethodNode> getDeclaredMethods(final String name) {
+        lazyInitMembers();
+        return super.getDeclaredMethods(name);
+    }
+
+    @Override
+    public List<FieldNode> getFields() {
+        lazyInitMembers();
+        return super.getFields();
+    }
+
+    @Override
+    public List<MethodNode> getMethods() {
+        lazyInitMembers();
+        return super.getMethods();
+    }
+
+    private volatile boolean membersInitialized;
+
     private void lazyInitMembers() {
         if (membersInitialized) return;
 
@@ -200,7 +208,7 @@ public class DecompiledClassNode extends ClassNode {
             if (!membersInitialized) {
                 if (classData.methods != null) {
                     for (MethodStub method : classData.methods) {
-                        if (isConstructor(method)) {
+                        if ("<init>".equals(method.methodName)) {
                             addConstructor(createConstructor(method));
                         } else {
                             addMethod(createMethodNode(method));
@@ -247,10 +255,6 @@ public class DecompiledClassNode extends ClassNode {
         }
 
         return constructorNodeSupplier.get();
-    }
-
-    private boolean isConstructor(MethodStub method) {
-        return "<init>".equals(method.methodName);
     }
 
     private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {

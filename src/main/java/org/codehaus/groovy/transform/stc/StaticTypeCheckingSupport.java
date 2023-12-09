@@ -1018,9 +1018,6 @@ public abstract class StaticTypeCheckingSupport {
         if (!asBoolean(methods)) {
             return Collections.emptyList();
         }
-        if (isUsingUncheckedGenerics(receiver)) {
-            return chooseBestMethod(makeRawType(receiver), methods, argumentTypes);
-        }
 
         int bestDist = Integer.MAX_VALUE;
         List<MethodNode> bestChoices = new LinkedList<>();
@@ -1295,7 +1292,7 @@ public abstract class StaticTypeCheckingSupport {
         if (cn.isArray()) {
             return isUsingGenericsOrIsArrayUsingGenerics(cn.getComponentType());
         }
-        return (cn.isUsingGenerics() && cn.getGenericsTypes() != null);
+        return (cn.isUsingGenerics() && (cn.getGenericsTypes() != null || cn.isGenericsPlaceHolder()));
     }
 
     /**
@@ -1633,10 +1630,19 @@ public abstract class StaticTypeCheckingSupport {
                         checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);
                     } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
                         // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
-                        // the original bounds are lost, which can result in accepting an incompatible type as an argument.
+                        // the original bounds are lost, which can result in accepting an incompatible type as an argument!
                         ClassNode replacementType = extractType(newValue);
-                        if (oldValue.isCompatibleWith(replacementType)) {
-                            entry.setValue(newValue);
+                        ClassNode suitabilityType = !replacementType.isGenericsPlaceHolder()
+                                ? replacementType : Optional.ofNullable(replacementType.getGenericsTypes())
+                                        .map(gts -> extractType(gts[0])).orElse(replacementType.redirect());
+
+                        if (oldValue.isCompatibleWith(suitabilityType)) {
+                            if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
+                                // GROOVY-9998: apply upper/lower bound for unknown
+                                entry.setValue(replacementType.asGenericsType());
+                            } else {
+                                entry.setValue(newValue);
+                            }
                             if (!checkForMorePlaceholders && newValue.isPlaceholder()) {
                                 checkForMorePlaceholders = !equalIncludingGenerics(oldValue, newValue);
                             }
@@ -1654,7 +1660,7 @@ public abstract class StaticTypeCheckingSupport {
     private static ClassNode extractType(GenericsType gt) {
         ClassNode cn;
         if (!gt.isPlaceholder()) {
-            cn = gt.getType();
+            cn = getCombinedBoundType(gt);
         } else {
             // discard the placeholder
             cn = gt.getType().redirect();
@@ -1727,7 +1733,7 @@ public abstract class StaticTypeCheckingSupport {
      * Should the target not have any generics this method does nothing.
      */
     static void extractGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final ClassNode type, final ClassNode target) {
-        if (target == null || target == type || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
+        if (target == null || target == type || (!target.isGenericsPlaceHolder() && !isUsingGenericsOrIsArrayUsingGenerics(target))) return;
         if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
 
         if (target.isGenericsPlaceHolder()) {
@@ -1741,18 +1747,21 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(GenericsUtils.parameterizeSAM(target).getV2());
             extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {new GenericsType(returnType)});
 
-        } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
+        } else if (type.equals(target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
 
-        } else { // find matching super class or interface
+        } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
             ClassNode superClass = GenericsUtils.getSuperClass(type, target);
             if (superClass != null) {
                 if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
-                    // propagate type arguments to the super class or interface
-                    Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
-                    extractGenericsConnections(spec, type.getGenericsTypes(),
-                                    type.redirect().getGenericsTypes());
-                    superClass = applyGenericsContext(spec, superClass);
+                    GenericsType[] tp = type.redirect().getGenericsTypes();
+                    if (tp != null) {
+                        GenericsType[] ta = type.getGenericsTypes();
+                        // propagate type arguments to the super class or interface
+                        Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+                        extractGenericsConnections(spec, ta, tp);
+                        superClass = applyGenericsContext(spec, superClass);
+                    }
                 }
                 extractGenericsConnections(connections, superClass, target);
             } else {
@@ -1787,15 +1796,6 @@ public abstract class StaticTypeCheckingSupport {
                     else if (ui.getUpperBounds()!=null) for (ClassNode ub: ui.getUpperBounds())
                         extractGenericsConnections(connections, ub, boundType); // GROOVY-10911
                 } else {
-                    /*if (boundType.isGenericsPlaceHolder()) { // di like "? extends/super T"
-                        // 6731,7992,8983,9998,10047,10499,10749,10765,...
-                        ui = new GenericsType(ui.getType()); // erase type
-                        if (lowerBound) ui.setWildcard(true); // binds weak
-                        String placeholderName = boundType.getUnresolvedName();
-                        storeGenericsConnection(connections, placeholderName, ui);
-                    } else { // di like "? extends Iterable<T>" and ui like "List<Type>"
-                        extractGenericsConnections(connections, ui.getType(), boundType);
-                    }*/
                     extractGenericsConnections(connections, ui.getType(), boundType);
                 }
             } else {

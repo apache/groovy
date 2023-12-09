@@ -2527,9 +2527,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             List<Receiver<String>> receivers = new ArrayList<>();
             addReceivers(receivers, makeOwnerList(expression.getExpression()), false);
 
+            ClassNode receiverType = null;
             List<MethodNode> candidates = EMPTY_METHODNODE_LIST;
             for (Receiver<String> currentReceiver : receivers) {
-                ClassNode receiverType = wrapTypeIfNecessary(currentReceiver.getType());
+                receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
                 if (isBeingCompiled(receiverType) && !receiverType.isInterface()) {
@@ -2558,10 +2559,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (!candidates.isEmpty()) {
-                candidates.stream().map(MethodNode::getReturnType)
-                        .reduce(WideningCategories::lowestUpperBound)
-                        .filter(returnType -> !returnType.equals(OBJECT_TYPE))
-                        .ifPresent(returnType -> storeType(expression, wrapClosureType(returnType)));
+                Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
+                candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
+                        .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
+                            ClassNode closureType = wrapClosureType(returnType);
+                            storeType(expression, closureType);
+                        });
                 expression.putNodeMetaData(MethodNode.class, candidates);
             } else if (!(expression instanceof MethodReferenceExpression)) {
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
@@ -5602,15 +5605,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] paramTypes = samSignature.get();
         return options.stream().filter((MethodNode option) -> {
             ClassNode[] types = collateMethodReferenceParameterTypes(source, option);
-            if (types.length == paramTypes.length) {
-                for (int i = 0, n = types.length; i < n; i += 1) {
-                    if (!types[i].isGenericsPlaceHolder() && !isAssignableTo(types[i], paramTypes[i])) {
-                        return false;
-                    }
-                }
-                return true;
+            final int n = types.length;
+            if (n != paramTypes.length) {
+                return false;
             }
-            return false;
+            for (int i = 0; i < n; i += 1) {
+                // param type represents incoming argument type
+                if (!isAssignableTo(paramTypes[i], types[i]) && !paramTypes[i].isGenericsPlaceHolder()) {
+                    return false;
+                }
+            }
+            return true;
         }).findFirst().orElse(null); // TODO: order matches by param distance
     }
 
@@ -6055,19 +6060,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Wrapper for a Parameter so it can be treated like a VariableExpression
-     * and tracked in the ifElseForWhileAssignmentTracker.
-     * <p>
-     * This class purposely does not adhere to the normal equals and hashCode
-     * contract on the Object class and delegates those calls to the wrapped
-     * variable.
+     * and tracked in the {@code ifElseForWhileAssignmentTracker}.
      */
-    private static class ParameterVariableExpression extends VariableExpression {
+    private class ParameterVariableExpression extends VariableExpression {
         private final Parameter parameter;
 
         ParameterVariableExpression(final Parameter parameter) {
             super(parameter);
             this.parameter = parameter;
-            this.parameter.getNodeMetaData(INFERRED_TYPE, x -> parameter.getType());
+
+            ClassNode inferredType = getNodeMetaData(INFERRED_TYPE);
+            if (inferredType == null) {
+                inferredType = typeCheckingContext.controlStructureVariables.get(parameter); // for/catch/closure
+                if (inferredType == null) {
+                    inferredType = getTypeFromClosureArguments(parameter); // @ClosureParams or SAM-type coercion
+                }
+                setNodeMetaData(INFERRED_TYPE, inferredType != null ? inferredType : parameter.getType()); // to parameter
+            }
         }
 
         @Override
