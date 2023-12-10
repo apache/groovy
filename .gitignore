@@ -6,6 +6,7 @@ out/
 
 *.DS_Store
 *.class
+*.dat
 *.swp
 *~
 

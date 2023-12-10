@@ -798,7 +798,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7992
-    @NotYetImplemented
     void testReturnTypeInferenceWithMethodGenerics26() {
         assertScript '''
             List<String> strings = ['foo','bar','baz']
@@ -806,7 +805,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             @groovy.transform.ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type.toString(false) == 'java.util.List<java.lang.String>'
+                assert type.toString(false) == 'java.util.List <java.lang.String>'
             })
             def result = strings.sort(false, cmp) // List<T> sort(Iterable<T>,boolean,Comparator<? super T>)
             assert result == ['bar', 'baz', 'foo']
@@ -2651,7 +2650,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                     static <U> C<U> of(U item) {
                         new C<U>()
                     }
-                    def <V> C<V> map(A<? super T, ? super V> func) {
+                    def <V> C<V> map(A<? super T, ? extends V> mapper) {
                         new C<V>()
                     }
                 }
@@ -4865,9 +4864,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9998
-    @NotYetImplemented
     void testContravariantMethodResolution2() {
-        assertScript '''import groovy.transform.*
+        assertScript '''
+            import groovy.transform.*
 
             @TupleConstructor(defaults=false)
             class A {

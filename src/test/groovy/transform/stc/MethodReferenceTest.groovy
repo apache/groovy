@@ -24,7 +24,6 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assume.assumeTrue
 
 final class MethodReferenceTest {
 
@@ -293,6 +292,18 @@ final class MethodReferenceTest {
         '''
     }
 
+    @NotYetImplemented
+    @Test // class::instanceMethod -- GROOVY-11051
+    void testPredicateCI2() {
+        [['null','Empty'],['new Object()','Present']].each { value, which ->
+            assertScript """import java.util.concurrent.atomic.AtomicReference
+                def opt = new AtomicReference<Object>($value).stream()
+                             .filter(AtomicReference::get).findFirst()
+                assert opt.is${which}()
+            """
+        }
+    }
+
     @Test // class::instanceMethod -- GROOVY-10791
     void testBiConsumerCI() {
         assertScript imports + '''
@@ -303,6 +314,21 @@ final class MethodReferenceTest {
             }
 
             test(['works']) { assert it == 'works' }
+        '''
+    }
+
+    @Test // instance::instanceMethod -- GROOVY-10974
+    void testBiConsumerII() {
+        assertScript imports + '''import java.util.stream.*
+            @CompileStatic
+            def test(DoubleStream x, ObjDoubleConsumer<Boolean> y, BiConsumer<Boolean, Boolean> z) {
+                def b = x.collect(() -> true, y::accept, z::accept) // b should infer as Boolean
+                // <R>  R collect(Supplier<R>,ObjDoubleConsumer<R>,BiConsumer<R,R>)
+                Spliterator.OfDouble s_of_d = Arrays.spliterator(new double[0])
+                StreamSupport.doubleStream(s_of_d, b)
+            }
+
+            test(DoubleStream.of(0d), (Boolean b, double d) -> {}, (Boolean e, Boolean f) -> {})
         '''
     }
 
@@ -586,6 +612,25 @@ final class MethodReferenceTest {
         '''
     }
 
+    @NotYetImplemented
+    @Test // instance::instanceMethod -- GROOVY-11026
+    void testBiFunctionII() {
+        assertScript imports + '''
+            @groovy.transform.CompileDynamic
+            def <In,InOut> InOut m(BiFunction<In,InOut,InOut> beef) {
+                beef.apply(0,'boo')
+            }
+
+            @CompileStatic
+            String test(List<String> x) {
+                m(x::set) // NPE
+            }
+
+            String result = test(['foo','bar'])
+            assert result == 'foo'
+        '''
+    }
+
     @Test // instance::instanceMethod
     void testBinaryOperatorII() {
         assertScript imports + '''
@@ -607,7 +652,7 @@ final class MethodReferenceTest {
     }
 
     @Test // instance::instanceMethod
-    void testBinaryOperatorII_COMPATIBLE() {
+    void testBinaryOperatorII2() {
         assertScript imports + '''
             class Adder {
                 BigDecimal add(Number a, Number b) {
@@ -832,14 +877,14 @@ final class MethodReferenceTest {
             }
             @CompileStatic
             class X extends A {
-              public X() {
-                super(Y::new)
-              }
-              private static class Y extends B {
-                Y(A a) {
-                  super(a)
+                public X() {
+                    super(Y::new)
                 }
-              }
+                private static class Y extends B {
+                    Y(A a) {
+                        super(a)
+                    }
+                }
             }
 
             new X()
@@ -897,29 +942,18 @@ final class MethodReferenceTest {
 
     @Test // class::staticMethod
     void testFunctionCS2() {
-        assertScript imports + '''
-            @CompileStatic
-            def test(List<String> list) {
-                list.stream().collect(Collectors.toMap(Function.identity(), Collections::singletonList))
-            }
+        def methods = ['Collections::singletonList']
+        if (isAtLeastJdk('9.0')) methods<<'List::of' // GROOVY-11024
+        for (makeList in methods) {
+            assertScript imports + """
+                @CompileStatic
+                def test(List<String> list) {
+                    list.stream().collect(Collectors.toMap(Function.identity(), $makeList))
+                }
 
-            assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
-        '''
-    }
-
-    @NotYetImplemented
-    @Test // class::staticMethod -- GROOVY-11024
-    void testFunctionCS2x() {
-        assumeTrue(isAtLeastJdk('9.0'))
-
-        assertScript imports + '''
-            @CompileStatic
-            def test(List<String> list) {
-                list.stream().collect(Collectors.toMap(Function.identity(), List::of))
-            }
-
-            assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
-        '''
+                assert test(['x','y','z']) == [x: ['x'], y: ['y'], z: ['z']]
+            """
+        }
     }
 
     @Test // class::staticMethod -- GROOVY-9799
@@ -965,7 +999,7 @@ final class MethodReferenceTest {
         assertScript imports + '''
             @CompileStatic
             void test() {
-                def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
+                def f = Math::abs // No explicit type defined, so it is actually a method closure
                 def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
@@ -1033,7 +1067,7 @@ final class MethodReferenceTest {
     }
 
     @NotYetImplemented
-    @Test // class::staticMethod
+    @Test // class::staticMethod -- GROOVY-10807
     void testFunctionCS8() {
         assertScript imports + '''
             @CompileStatic
@@ -1089,7 +1123,7 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()
@@ -1115,10 +1149,10 @@ final class MethodReferenceTest {
             @CompileStatic
             void test() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
 
                 result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
-                assert result.every(e -> e instanceof Thread)
+                assert result.every { it instanceof Thread }
             }
 
             test()

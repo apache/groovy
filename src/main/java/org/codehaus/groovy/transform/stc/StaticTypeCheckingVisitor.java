@@ -5446,58 +5446,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
-            Parameter[] parameters = method.getParameters();
-            final int  nParameters = parameters.length;
-
-            if (explicitTypeHints != null) { // resolve type parameters from type arguments
-                int n = methodGenericTypes.length;
-                if (n == explicitTypeHints.length) {
-                    for (int i = 0; i < n; i += 1) {
-                        resolvedPlaceholders.put(new GenericsTypeName(methodGenericTypes[i].getName()), explicitTypeHints[i]);
-                    }
-                }
-            } else if (nParameters > 0) { // resolve type parameters from call arguments
-                List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
-                int nArguments = expressions.size();
-                boolean isVargs = isVargs(parameters);
-                if (isVargs ? nArguments >= nParameters-1 : nArguments == nParameters) {
-                    for (int i = 0; i < nArguments; i += 1) {
-                        if (isNullConstant(expressions.get(i)))
-                            continue; // GROOVY-9984: skip null
-                        ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
-                        ClassNode paramType = parameters[Math.min(i, nParameters-1)].getType();
-                        if (GenericsUtils.hasUnresolvedGenerics(paramType)) {
-                            // if supplying array param with multiple arguments or single non-array argument, infer using element type
-                            if (isVargs && (i >= nParameters || (i == nParameters-1 && (nArguments > nParameters || !argumentType.isArray())))) {
-                                paramType = paramType.getComponentType();
-                            }
-                            if (argumentType.isDerivedFrom(CLOSURE_TYPE)) {
-                                MethodNode sam = findSAM(paramType);
-                                if (sam != null) { // implicit closure coercion in action!
-                                    argumentType = !paramType.isUsingGenerics() ? paramType
-                                            : convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType,
-                                                    applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
-                                }
-                            }
-                            Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                            extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
-                            connections.forEach((name, type) -> resolvedPlaceholders.merge(name, type, StaticTypeCheckingSupport::getCombinedGenericsType));
-                        }
-                    }
-                }
-                // in case of "<T, U extends Type<T>>", we can learn about "T" from a resolved "U"
-                extractGenericsConnectionsForBoundTypes(methodGenericTypes, resolvedPlaceholders);
-            }
-
-            for (GenericsType tp : methodGenericTypes) {
-                // GROOVY-8409, GROOVY-10343, et al.: provide "no type witness" mapping for param
-                resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(tp.getName()), gtn -> {
-                    ClassNode[] bounds = applyGenericsContext(resolvedPlaceholders, tp.getUpperBounds());
-                    GenericsType gt = new GenericsType(tp.getType(), bounds, null);
-                    gt.putNodeMetaData(GenericsType.class, tp); // record origin
-                    return gt;
-                });
-            }
+            for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
+            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, method.getParameters(), arguments, explicitTypeHints), resolvedPlaceholders);
 
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
         }
@@ -5511,6 +5461,63 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
 
         return returnType;
+    }
+
+    private Map<GenericsTypeName, GenericsType> extractGenericsConnectionsFromArguments(final GenericsType[] methodGenericTypes, final Parameter[] parameters, final Expression arguments, final GenericsType[] explicitTypeHints) {
+        Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
+
+        if (explicitTypeHints != null) { // resolve type parameters from type arguments
+            int n = methodGenericTypes.length;
+            if (n == explicitTypeHints.length) {
+                for (int i = 0; i < n; i += 1) {
+                    resolvedPlaceholders.put(new GenericsTypeName(methodGenericTypes[i].getName()), explicitTypeHints[i]);
+                }
+            }
+        } else if (parameters.length > 0) { // resolve type parameters from call arguments
+            List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
+            int nArguments = expressions.size();
+            int nParameters = parameters.length;
+            boolean isVargs = isVargs(parameters);
+            if (isVargs ? nArguments >= nParameters-1 : nArguments == nParameters) {
+                for (int i = 0; i < nArguments; i += 1) {
+                    if (isNullConstant(expressions.get(i)))
+                        continue; // GROOVY-9984: skip null
+                    ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
+                    ClassNode paramType = parameters[Math.min(i, nParameters-1)].getType();
+                    if (GenericsUtils.hasUnresolvedGenerics(paramType)) {
+                        // if supplying array param with multiple arguments or single non-array argument, infer using element type
+                        if (isVargs && (i >= nParameters || (i == nParameters-1 && (nArguments > nParameters || !argumentType.isArray())))) {
+                            paramType = paramType.getComponentType();
+                        }
+                        if (argumentType.isDerivedFrom(CLOSURE_TYPE)) {
+                            MethodNode sam = findSAM(paramType);
+                            if (sam != null) { // implicit closure coercion in action!
+                                argumentType = !paramType.isUsingGenerics() ? paramType
+                                        : convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType,
+                                                applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
+                            }
+                        }
+                        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+                        extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
+                        connections.forEach((name, type) -> resolvedPlaceholders.merge(name, type, StaticTypeCheckingSupport::getCombinedGenericsType));
+                    }
+                }
+            }
+            // in case of "<T, U extends Type<T>>", we can learn about "T" from a resolved "U"
+            extractGenericsConnectionsForBoundTypes(methodGenericTypes, resolvedPlaceholders);
+        }
+
+        for (GenericsType tp : methodGenericTypes) {
+            // GROOVY-8409, GROOVY-10343, et al.: provide "no type witness" mapping for param
+            resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(tp.getName()), gtn -> {
+                ClassNode[] bounds = applyGenericsContext(resolvedPlaceholders, tp.getUpperBounds());
+                GenericsType gt = new GenericsType(tp.getType(), bounds, null);
+                gt.putNodeMetaData(GenericsType.class, tp); // record origin
+                return gt;
+            });
+        }
+
+        return resolvedPlaceholders;
     }
 
     /**

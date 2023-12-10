@@ -218,6 +218,19 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7976, GROOVY-7992
+    void testSortMethodsWithComparatorAcceptingSuperclass() {
+        assertScript '''
+            List<Number> numbers = [2,1,3]
+            numbers.sort(new Comparator<Object>() {
+                int compare(o1, o2) {
+                    o1.toString() <=> o2.toString()
+                }
+            })
+            assert numbers == [1,2,3]
+        '''
+    }
+
     // GROOVY-8205
     void testEachOnEnumValues() {
         assertScript '''
