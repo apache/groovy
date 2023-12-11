@@ -225,7 +225,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-7971
+    // GROOVY-7971
+    @NotYetImplemented
     void testInstanceOf9() {
         assertScript '''
             import groovy.json.JsonOutput
@@ -1416,6 +1417,26 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
 
             test( [id:'x'] )
+        '''
+    }
+
+    // GROOVY-10328
+    void testInferredTypeForMapOrList() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                for (decl in node.code.statements*.expression) {
+                    assert decl.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                }
+            })
+            void test(List<? super String> list, Map<String, ? super String> map) {
+                def a = list.first()
+                def b = list.get(0)
+                def c = list[0]
+
+                def x = map.get('foo')
+                def y = map['foo']
+                def z = map.foo
+            }
         '''
     }
 }

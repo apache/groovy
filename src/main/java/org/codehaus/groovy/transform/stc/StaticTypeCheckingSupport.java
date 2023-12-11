@@ -1918,11 +1918,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static ClassNode getCombinedBoundType(final GenericsType genericsType) {
-        // TODO: this method should really return some kind of meta ClassNode
-        // representing the combination of all bounds. The code here, just picks
-        // something out to be able to proceed and is not actually correct
+        // TODO: This method should really return some kind of meta ClassNode
+        // representing the combination of all bounds. The code here just picks
+        // something out to be able to proceed and is not actually correct.
         if (hasNonTrivialBounds(genericsType)) {
-            if (genericsType.getLowerBound() != null) return genericsType.getLowerBound();
+            if (genericsType.getLowerBound() != null) return OBJECT_TYPE; // GROOVY-10328
             if (genericsType.getUpperBounds() != null) return genericsType.getUpperBounds()[0];
         }
         return genericsType.getType();

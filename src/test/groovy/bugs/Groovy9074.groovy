@@ -29,7 +29,7 @@ final class Groovy9074 extends GroovyTestCase {
 
     void _FIXME_testWildcardCapture() {
         def err = shouldFail '''
-            @groovy.transform.CompileStatic
+            @groovy.transform.TypeChecked
             class Main {
                 private static Collection<?> c = new ArrayList<String>()
                 static main(args) {
@@ -46,20 +46,20 @@ final class Groovy9074 extends GroovyTestCase {
         def err = shouldFail '''
             import java.awt.Canvas
             abstract class Shape {
-              abstract void draw(Canvas c)
+                abstract void draw(Canvas c)
             }
             class Circle extends Shape {
-              private int x, y, radius
-              @Override void draw(Canvas c) {}
+                private int x, y, radius
+                @Override void draw(Canvas c) {}
             }
             class Rectangle extends Shape {
-              private int x, y, width, height
-              @Override void draw(Canvas c) {}
+                private int x, y, width, height
+                @Override void draw(Canvas c) {}
             }
 
-            @groovy.transform.CompileStatic
+            @groovy.transform.TypeChecked
             void addRectangle(List<? extends Shape> shapes) {
-              shapes.add(0, new Rectangle()) // TODO: compile-time error!
+                shapes.add(0, new Rectangle()) // TODO: compile-time error!
             }
         '''
 
@@ -71,20 +71,20 @@ final class Groovy9074 extends GroovyTestCase {
         assertScript '''
             import java.awt.Canvas
             abstract class Shape {
-              abstract void draw(Canvas c)
+                abstract void draw(Canvas c)
             }
             class Circle extends Shape {
-              private int x, y, radius
-              @Override void draw(Canvas c) {}
+                private int x, y, radius
+                @Override void draw(Canvas c) {}
             }
             class Rectangle extends Shape {
-              private int x, y, width, height
-              @Override void draw(Canvas c) {}
+                private int x, y, width, height
+                @Override void draw(Canvas c) {}
             }
 
-            @groovy.transform.CompileStatic
+            @groovy.transform.TypeChecked
             void addRectangle(List<? super Shape> shapes) {
-              shapes.add(0, new Rectangle())
+                shapes.add(0, new Rectangle())
             }
 
             List<Shape> list = []
@@ -99,12 +99,12 @@ final class Groovy9074 extends GroovyTestCase {
         new CompilationUnit().with {
             addSource 'Main.groovy', '''
                 class Factory {
-                  def <T> T make(Class<T> type, ... args) {}
+                    def <T> T make(Class<T> type, ... args) {}
                 }
 
-                @groovy.transform.CompileStatic
+                @groovy.transform.TypeChecked
                 void test(Factory fact, Rule rule) {
-                  Type bean = fact.make(rule.type)
+                    Type bean = fact.make(rule.type)
                 }
             '''
 
@@ -124,16 +124,16 @@ final class Groovy9074 extends GroovyTestCase {
         }
     }
 
-    void _FIXME_testWildcardSuper2() {
+    void testWildcardSuper2() {
         new CompilationUnit().with {
             addSource 'Main.groovy', '''
                 class Factory {
-                  def <T> T make(Class<T> type, ... args) {}
+                    def <T> T make(Class<T> type, ... args) {}
                 }
 
-                @groovy.transform.CompileStatic
+                @groovy.transform.TypeChecked
                 void test(Factory fact, Rule rule) {
-                  Type bean = fact.make(rule.type) // can't assign "? super Type" to "Type"
+                    Type bean = fact.make(rule.type) // can't assign "? super Type" to "Type"
                 }
             '''
 
@@ -152,7 +152,7 @@ final class Groovy9074 extends GroovyTestCase {
             def err = shouldFail {
                 compile CLASS_GENERATION
             }
-            assert err =~ "cannot convert from capture#1-of ? super Type to Type"
+            assert err =~ 'Cannot assign value of type java.lang.Object to variable of type Type'
         }
     }
 }
