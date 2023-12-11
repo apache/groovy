@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
@@ -350,7 +349,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10494
-    @NotYetImplemented
     void testCallToSuperDefault2() {
         shouldFailWithMessages '''
             interface I<T> {

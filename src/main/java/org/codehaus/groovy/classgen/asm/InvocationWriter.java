@@ -167,29 +167,39 @@ public class InvocationWriter {
         makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
     }
 
+    protected void makeCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis) {
+        // direct method call path
+        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+
+        if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
+
+        // call site or indy path
+        if (makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression)) return;
+
+        // ScriptBytecodeAdapter path
+        makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
+    }
+
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null || target instanceof ExtensionMethodNode) return false;
 
         ClassNode declaringClass = target.getDeclaringClass();
         ClassNode enclosingClass = controller.getClassNode();
-        String methodName = target.getName();
-        int opcode = INVOKEVIRTUAL;
-        if (target.isStatic()) {
-            opcode = INVOKESTATIC;
-        } else if (declaringClass.isInterface()) {
-            opcode = INVOKEINTERFACE;
-        } else if (target.isPrivate() || isSuperExpression(receiver)) {
-            opcode = INVOKESPECIAL;
+        ClassNode receiverType = enclosingClass;
+        if (receiver != null) {
+            receiverType = controller.getTypeChooser().resolveType(receiver, enclosingClass);
+            if (target.isStatic() && isClassClassNodeWrappingConcreteType(receiverType)) {
+                receiverType = receiverType.getGenericsTypes()[0].getType();
+            }
         }
 
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
+        int startDepth = operandStack.getStackLength();
 
         // handle receiver
-        int argumentsToRemove = 0;
-        if (opcode != INVOKESTATIC) {
-            argumentsToRemove += 1;
+        if (!target.isStatic()) {
             if (receiver != null) {
                 Expression objectExpression = receiver;
                 if (implicitThis
@@ -215,51 +225,52 @@ public class InvocationWriter {
             }
         }
 
-        ClassNode receiverType;
-        if (receiver == null) {
-            receiverType = declaringClass;
+        int opcode;
+        if (target.isStatic()) {
+            opcode = INVOKESTATIC;
+        } else if (isSuperExpression(receiver)) {
+            opcode = INVOKESPECIAL;
+        } else if (declaringClass.isInterface()) {
+            opcode = INVOKEINTERFACE;
         } else {
-            receiverType = controller.getTypeChooser().resolveType(receiver, enclosingClass);
-            if (isClassClassNodeWrappingConcreteType(receiverType) && target.isStatic()) {
-                receiverType = receiverType.getGenericsTypes()[0].getType();
-            }
+            opcode = INVOKEVIRTUAL;
         }
 
-        int stackLen = operandStack.getStackLength();
-        String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        if (opcode == INVOKEVIRTUAL && declaringClass.equals(ClassHelper.OBJECT_TYPE)) {
-            // avoid using a narrowed type if the method is defined on object because it can interfere
+        ClassNode ownerClass = declaringClass;
+        if (opcode == INVOKESPECIAL) { // GROOVY-8693, GROOVY-9909
+            if (!declaringClass.isInterface() || receiverType.implementsInterface(declaringClass)) ownerClass = receiverType;
+        } else if (opcode == INVOKEVIRTUAL && declaringClass.equals(ClassHelper.OBJECT_TYPE)) {
+            // avoid using a narrowed type if the method is defined on Object, because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
-            receiverType = declaringClass;
         } else if (opcode == INVOKEVIRTUAL
                 && !receiverType.isArray()
                 && !receiverType.isInterface()
                 && !isPrimitiveType(receiverType)
                 && !receiverType.equals(declaringClass)
                 && receiverType.isDerivedFrom(declaringClass)) {
-
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+            ownerClass = receiverType; // use actual for typical call
             if (!receiverType.equals(operandStack.getTopOperand())) {
-                mv.visitTypeInsn(CHECKCAST, owner);
+                mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(ownerClass));
             }
-        } else if (opcode != INVOKESPECIAL && (declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
+        } else if ((declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
                 && (declaringClass.isInterface() ? receiverType.implementsInterface(declaringClass) : receiverType.isDerivedFrom(declaringClass))) {
-            // GROOVY-6962, GROOVY-9955: method declared by inaccessible class
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+            // GROOVY-6962, GROOVY-9955, GROOVY-10380: method declared by inaccessible class or interface
+            if (declaringClass.isInterface() && !receiverType.isInterface()) opcode = INVOKEVIRTUAL;
+            ownerClass = receiverType;
         }
 
         loadArguments(args.getExpressions(), target.getParameters());
 
-        String descriptor = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, owner, methodName, descriptor, declaringClass.isInterface());
-        ClassNode returnType = target.getReturnType().redirect();
-        if (returnType == ClassHelper.VOID_TYPE) {
+        String ownerName = BytecodeHelper.getClassInternalName(ownerClass), methodName = target.getName();
+        String signature = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
+        mv.visitMethodInsn(opcode, ownerName, methodName, signature, ownerClass.isInterface());
+        ClassNode returnType = target.getReturnType();
+        if (returnType.equals(ClassHelper.VOID_TYPE)){
             returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
-        argumentsToRemove += (operandStack.getStackLength() - stackLen);
-        controller.getOperandStack().remove(argumentsToRemove);
-        controller.getOperandStack().push(returnType);
+        // replace the method call's receiver and argument types with the return type
+        operandStack.replace(returnType, operandStack.getStackLength() - startDepth);
         return true;
     }
 
@@ -616,7 +627,7 @@ public class InvocationWriter {
 
         String methodName = getMethodName(message);
         if (adapter == invokeMethodOnSuper && methodName != null) {
-            controller.getSuperMethodNames().add(methodName);
+            controller.getSuperMethodNames().add(methodName); // for MOP method
         }
 
         // receiver
@@ -658,19 +669,6 @@ public class InvocationWriter {
 
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE, operandsToRemove);
-    }
-
-    protected void makeCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis) {
-        // direct method call paths
-        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-
-        if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
-
-        // normal path
-        if (makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression)) return;
-
-        // path through ScriptBytecodeAdapter
-        makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
     }
 
     /**
@@ -1002,6 +1000,7 @@ public class InvocationWriter {
             if (sameHashNode != null) {
                 controller.getSourceUnit().addError(new SyntaxException(
                     "Unable to compile class "+controller.getClassNode().getName() + " due to hash collision in constructors", call.getLineNumber(), call.getColumnNumber()));
+                return;
             }
         }
         Label[] targets = new Label[constructors.size()];

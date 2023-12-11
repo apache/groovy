@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.BugsSTCTest
 
 /**
@@ -67,24 +66,19 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-5526
     void testAssertEqualsShouldNotThrowVerifyError() {
-        assertScript '''
-            import static org.junit.Assert.*;
-            import groovy.transform.CompileStatic;
-
+        assertScript '''import static org.junit.Assert.*
             class CompilerBugs {
-              public static void main(String[] args) {
-                int expected = 0
-                assertEquals(expected, args.length)
-              }
+                public static void main(String[] args) {
+                    int expected = 0
+                    assertEquals(expected, args.length)
+                }
             }
         '''
     }
 
     // GROOVY-5529
     void testStaticCompilationOfClosureWhenSingleMethodAnnotated() {
-        new GroovyShell().evaluate '''import groovy.transform.ASTTest
-            import static org.codehaus.groovy.control.CompilePhase.*
-
+        new GroovyShell().evaluate '''
             interface Row {
                 int getKey()
             }
@@ -96,7 +90,6 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             @groovy.transform.CompileStatic
             def test() {
                 def rows = [new RowImpl(), new RowImpl(), new RowImpl()]
-
                 rows.each { Row row ->
                     println row.key
                 }
@@ -148,14 +141,14 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     void testShouldNotThrowVerifyErrorRegisterContainsWrongType() {
         assertScript '''
             void foo() {
-            boolean idx = false
-            def cl = { idx }
+                boolean idx = false
+                def cl = { idx }
             }
         '''
         assertScript '''
             void foo() {
-            int idx = 0
-            def cl = { idx }
+                int idx = 0
+                def cl = { idx }
             }
         '''
     }
@@ -211,7 +204,6 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
                 }
             }
 
-            @groovy.transform.CompileStatic
             class Main {
                 void test() {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -227,43 +219,43 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testCompileStaticTwiceShouldNotBeAProblem() {
         new GroovyShell().evaluate '''import groovy.transform.CompileStatic
-        @CompileStatic
-        class Tool {
-            @CompileStatic // annotated too, even if class is already annotated
-            String relativePath(File relbase, File file) {
-                def pathParts = []
-                def currentFile = file
-                while (currentFile != null && currentFile != relbase) {
-                    pathParts += currentFile.name
-                    currentFile = currentFile.parentFile
+            @CompileStatic
+            class Tool {
+                @CompileStatic // annotated too, even if class is already annotated
+                String relativePath(File relbase, File file) {
+                    def pathParts = []
+                    def currentFile = file
+                    while (currentFile != null && currentFile != relbase) {
+                        pathParts += currentFile.name
+                        currentFile = currentFile.parentFile
+                    }
+                    pathParts.reverse().join('/')
                 }
-                pathParts.reverse().join('/')
             }
-        }
-        File a = new File('foo')
-        File b = new File(new File(a, 'bar'), 'baz')
-        assert new Tool().relativePath(a,b) == 'bar/baz'
+            File a = new File('foo')
+            File b = new File(new File(a, 'bar'), 'baz')
+            assert new Tool().relativePath(a,b) == 'bar/baz'
         '''
     }
 
     void testCompileStaticTwiceShouldNotBeAProblemUsingCustomizer() {
         assertScript '''import groovy.transform.CompileStatic
-        @CompileStatic
-        class Tool {
-            @CompileStatic // annotated too, even if class is already annotated
-            String relativePath(File relbase, File file) {
-                def pathParts = []
-                def currentFile = file
-                while (currentFile != null && currentFile != relbase) {
-                    pathParts += currentFile.name
-                    currentFile = currentFile.parentFile
+            @CompileStatic
+            class Tool {
+                @CompileStatic // annotated too, even if class is already annotated
+                String relativePath(File relbase, File file) {
+                    def pathParts = []
+                    def currentFile = file
+                    while (currentFile != null && currentFile != relbase) {
+                        pathParts += currentFile.name
+                        currentFile = currentFile.parentFile
+                    }
+                    pathParts.reverse().join('/')
                 }
-                pathParts.reverse().join('/')
             }
-        }
-        File a = new File('foo')
-        File b = new File(new File(a, 'bar'), 'baz')
-        assert new Tool().relativePath(a,b) == 'bar/baz'
+            File a = new File('foo')
+            File b = new File(new File(a, 'bar'), 'baz')
+            assert new Tool().relativePath(a,b) == 'bar/baz'
         '''
     }
 
@@ -424,9 +416,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     void testShouldSkipSpreadOperator() {
-        new GroovyShell().evaluate '''import groovy.transform.TypeCheckingMode
-            import groovy.transform.CompileStatic
-
+        new GroovyShell().evaluate '''import groovy.transform.*
             @CompileStatic // top level must be @CS
             class Foo {
                 @CompileStatic(TypeCheckingMode.SKIP)
@@ -444,9 +434,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-5672
     void testTypeCheckedPlusCompileStatic() {
-        new GroovyShell().evaluate '''import groovy.transform.CompileStatic
-            import groovy.transform.TypeChecked
-
+        new GroovyShell().evaluate '''import groovy.transform.*
             @TypeChecked
             @CompileStatic
             class SampleClass {
@@ -717,8 +705,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     void testSuperMethodCallInSkippedSection() {
-        assertScript '''import groovy.transform.CompileStatic
-            import groovy.transform.TypeCheckingMode
+        assertScript '''import groovy.transform.*
             class Top {
                 public int foo() { 123 }
             }
@@ -758,7 +745,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     void testChainedNullSafePropertyOnMap() {
         assertScript '''
-            Map<String, Map<String,Map<String,Integer>>> m=[:]
+            Map<String, Map<String,Map<String,Integer>>> m = [:]
             // this is ok
             assert m?.a == null
             assert m?.a?.b == null
@@ -937,22 +924,18 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     void testServletError() {
         new GroovyShell().evaluate '''
             @Grab('javax.servlet:javax.servlet-api:3.0.1')
-            import groovy.transform.CompileStatic
-
             import javax.servlet.ServletContext
             import javax.servlet.ServletRegistration
 
             /**
              * author: Richard Vowles - http://gplus.to/RichardVowles
              */
-            @CompileStatic
+            @groovy.transform.CompileStatic
             class ServletExample {
-
               public void myMethod(ServletContext ctx) {
                 ctx.getServletRegistrations().each { String name, ServletRegistration sr ->
                   println name
                 }
-
               }
             }
             new ServletExample()
@@ -1404,7 +1387,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7381
-    void testNonVoidSetterCalls(){
+    void testNonVoidSetterCalls() {
         assertScript '''
             class Foo {
                 int num
@@ -1528,11 +1511,45 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
-    // GROOVY-10819
-    @NotYetImplemented
-    void testClassVersusObjectMethods() {
+    // GROOVY-9909
+    void testInvokeDefaultMethodFromDirectInterface() {
         assertScript '''
-            assert String.getMetaClass() != Class.getMetaClass()
+            class C implements groovy.transform.stc.Groovy9909 {
+                @Override String m() {
+                    'it ' + super.m() // default method
+                }
+            }
+            String result = new C().m()
+            assert result == 'it works'
+        '''
+    }
+
+    // GROOVY-10380
+    void testInvokeDefaultMethodFromPackagePrivateInterface1() {
+        assertScript '''
+            class C extends groovy.transform.stc.Groovy10380 {
+                void test() {
+                    String result = this.m() // default method
+                    assert result == 'works'
+                }
+            }
+            new C().test()
+        '''
+    }
+
+    // GROOVY-8693
+    void testInvokeDefaultMethodFromPackagePrivateInterface2() {
+        assertScript '''
+            class C extends groovy.transform.stc.Groovy10380 {
+                @Override String m() {
+                    super.m() // default method
+                }
+                void test() {
+                    String result = this.m()
+                    assert result == 'works'
+                }
+            }
+            new C().test()
         '''
     }
 }
