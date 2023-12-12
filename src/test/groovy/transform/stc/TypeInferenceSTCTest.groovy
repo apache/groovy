@@ -845,7 +845,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             a.with {
                 method().toUpperCase()
             }
-        ''', 'Cannot find matching method int#toUpperCase()'
+        ''',
+        'Cannot find matching method int#toUpperCase()'
    }
 
     void testDeclarationTypeInference() {
@@ -943,6 +944,41 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             values*.toUpperCase()
         ''',
         'Cannot find matching method java.lang.Integer#toUpperCase()'
+    }
+
+    void testStarOperatorOnMap4() {
+        assertScript '''
+            def map = [x:1,y:2,z:3]
+            map*.value = 0
+
+            assert map*.value == [0,0,0]
+        '''
+
+        assertScript '''
+            Map<String,? extends Object> map = [x:1,y:2,z:3]
+            map*.value = 0
+
+            assert map*.value == [0,0,0]
+        '''
+
+        // GROOVY-10325
+        assertScript '''
+            Map<String,Object> map = [x:1,y:2,z:3]
+            map*.value = 0 // was: Cannot assign List<Integer> to List<Object>
+
+            assert map*.value == [0,0,0]
+        '''
+
+        shouldFailWithMessages '''
+            [x:1,y:2,z:3]*.value = ""
+        ''',
+        'Cannot assign java.util.List <java.lang.String> to: java.util.List <java.lang.Integer>'
+
+        // GROOVY-10326
+        shouldFailWithMessages '''
+            [x:1,y:2,z:3]*.key = null
+        ''',
+        'Cannot set read-only property: key'
     }
 
     // GROOVY-7247

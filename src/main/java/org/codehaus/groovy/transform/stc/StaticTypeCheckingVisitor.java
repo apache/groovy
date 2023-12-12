@@ -1217,17 +1217,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private static ClassNode adjustTypeForSpreading(final ClassNode inferredRightExpressionType, final Expression leftExpression) {
-        // imagine we have: list*.foo = 100
-        // then the assignment must be checked against [100], not 100
-        ClassNode wrappedRHS = inferredRightExpressionType;
+    private ClassNode adjustTypeForSpreading(final ClassNode rightExpressionType, final Expression leftExpression) {
+        // given "list*.foo = 100" or "map*.value = 100", then the assignment must be checked against [100], not 100
         if (leftExpression instanceof PropertyExpression && ((PropertyExpression) leftExpression).isSpreadSafe()) {
-            wrappedRHS = LIST_TYPE.getPlainNodeReference();
-            wrappedRHS.setGenericsTypes(new GenericsType[]{
-                    new GenericsType(wrapTypeIfNecessary(inferredRightExpressionType))
-            });
+            return extension.buildListType(rightExpressionType);
         }
-        return wrappedRHS;
+        return rightExpressionType;
     }
 
     private boolean addedReadOnlyPropertyError(final Expression expr) {
@@ -1743,10 +1738,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         List<ClassNode> propertyTypes = new ArrayList<>();
         if (existsProperty(propX(varX("_", itemType), prop), true, new PropertyLookup(itemType, propertyTypes::add))) {
-            gts = new GenericsType[]{new GenericsType(wrapTypeIfNecessary(propertyTypes.get(0)))};
-            ClassNode listType = LIST_TYPE.getPlainNodeReference();
-            listType.setGenericsTypes(gts);
-            return listType;
+            return extension.buildListType(propertyTypes.get(0));
         }
         return null;
     }
@@ -1777,23 +1769,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isOrImplements(testClass, MAP_TYPE)) {
             ClassNode mapType = testClass.equals(MAP_TYPE) ? testClass
                     : GenericsUtils.parameterizeType(testClass, MAP_TYPE);
-            GenericsType[] gts = mapType.getGenericsTypes();//<K,V>
-            if (gts == null || gts.length != 2) return OBJECT_TYPE;
+            GenericsType[] gts = mapType.getGenericsTypes();//<K,V> params
+            if (gts == null || gts.length != 2) gts = new GenericsType[] {
+                OBJECT_TYPE.asGenericsType(), OBJECT_TYPE.asGenericsType()
+            };
 
             if (!pexp.isSpreadSafe()) {
                 return getCombinedBoundType(gts[1]);
             } else {
                 // map*.property syntax acts on Entry
                 switch (pexp.getPropertyAsString()) {
-                case "key":
-                    ClassNode keyList = LIST_TYPE.getPlainNodeReference();
-                    keyList.setGenericsTypes(new GenericsType[]{gts[0]});
-                    return keyList;
-                case "value":
-                    ClassNode valueList = LIST_TYPE.getPlainNodeReference();
-                    valueList.setGenericsTypes(new GenericsType[]{gts[1]});
-                    return valueList;
-                default:
+                  case "key":
+                    pexp.putNodeMetaData(READONLY_PROPERTY,Boolean.TRUE); // GROOVY-10326
+                    return GenericsUtils.makeClassSafe0(LIST_TYPE, gts[0]);
+                  case "value":
+                    GenericsType v = gts[1];
+                    if (!v.isWildcard()
+                            && !Modifier.isFinal(v.getType().getModifiers())
+                            && typeCheckingContext.isTargetOfEnclosingAssignment(pexp)) {
+                        v = GenericsUtils.buildWildcardType(v.getType()); // GROOVY-10325
+                    }
+                    return GenericsUtils.makeClassSafe0(LIST_TYPE, v);
+                  default:
                     addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
                 }
             }
