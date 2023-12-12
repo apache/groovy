@@ -5108,18 +5108,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 return [1,2,3]
             }
         ''',
-        'Cannot assign java.util.List <java.lang.Integer> to: java.util.List <String>'
+        'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.List <String>'
 
         shouldFailWithMessages '''
             List<CharSequence> test() {
                 return [1,2,3]
             }
         ''',
-        'Cannot assign java.util.List <java.lang.Integer> to: java.util.List <CharSequence>'
+        'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.List <CharSequence>'
     }
 
     // GROOVY-10295
-    @NotYetImplemented
     void testReturnTypeChecking2() {
         assertScript '''
             List<CharSequence> test() {
