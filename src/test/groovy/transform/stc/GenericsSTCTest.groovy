@@ -1668,7 +1668,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def x = new A<>(new B<>('str'))
         '''
 
-        assertScript '''import java.util.function.Consumer
+        assertScript '''
+            import java.util.function.Consumer
+
             class C<T> {
                 C(Consumer<T> consumer_of_t) {
                     consumer_of_t.accept(null)
@@ -1682,7 +1684,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def y = new C<>((String s) -> { print(s) }) // error: Expected type Object for lambda parameter: s
         '''
 
-        assertScript '''import java.util.function.Supplier
+        assertScript '''
+            import java.util.function.Supplier
+
             class D<T> {
                 D(Supplier<T> supplier_of_t) {
                     T t = supplier_of_t.get()
@@ -1982,6 +1986,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = list.<String,Object,String>collectEntries {
                 [(it): it.hashCode()]
             }
+        '''
+    }
+
+    // GROOVY-10765
+    void testAssignmentShouldWorkForParameterizedMap2() {
+        assertScript '''
+            import java.util.function.BiFunction
+
+            def <X, Y, Z> Map<X, Z> transform(Map<X, Y> map, BiFunction<? super X, ? super Y, Z> transformer) {
+                map.collectEntries { k, v -> [k, transformer.apply(k, v)] }
+            }
+
+            Map<String, ? extends File> one = [:]
+            Map<String, Integer> two = transform(one) { k, v -> v.hashCode() }
         '''
     }
 
@@ -2497,27 +2515,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5415
     void testShouldUseMethodGenericType1() {
-        assertScript '''import groovy.transform.stc.GenericsSTCTest.ClassA
-        class ClassB {
-            void bar() {
-                def ClassA<Long> a = new ClassA<Long>();
-                a.foo(this.getClass());
+        assertScript '''
+            import groovy.transform.stc.GenericsSTCTest.ClassA as A
+
+            class B {
+                void test() {
+                    A<Long> a = new A<Long>()
+                    a.foo(this.getClass())
+                }
             }
-        }
-        new ClassB()
+
+            new B().test()
         '''
     }
 
     // GROOVY-5415
     void testShouldUseMethodGenericType2() {
-        shouldFailWithMessages '''import groovy.transform.stc.GenericsSTCTest.ClassA
-        class ClassB {
-            void bar() {
-                def ClassA<Long> a = new ClassA<Long>();
-                a.bar(this.getClass());
+        shouldFailWithMessages '''
+            import groovy.transform.stc.GenericsSTCTest.ClassA as A
+
+            class B {
+                void test() {
+                    A<Long> a = new A<Long>()
+                    a.bar(this.getClass())
+                }
             }
-        }
-        new ClassB()
         ''',
         'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
@@ -2859,7 +2881,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+
             List<String> list = ['a','b','c']
             Collection<String> strings = list.findAll { it }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -3284,10 +3308,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5650
     void testRegressionInGenericsTypeInference() {
-        assertScript '''import groovy.transform.stc.GenericsSTCTest.JavaClassSupport as JavaClass
-            List<JavaClass.StringContainer> containers = new ArrayList<>();
-            containers.add(new JavaClass.StringContainer());
-            List<String> strings = JavaClass.unwrap(containers);
+        assertScript '''
+            import groovy.transform.stc.GenericsSTCTest.JavaClassSupport as JavaClass
+
+            List<JavaClass.StringContainer> containers = new ArrayList<>()
+            containers.add(new JavaClass.StringContainer())
+            List<String> strings = JavaClass.unwrap(containers)
         '''
     }
 
@@ -3530,7 +3556,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10270
     void testCompatibleArgumentsForPlaceholders12() {
-        assertScript '''import java.util.function.*
+        assertScript '''
+            import java.util.function.*
+
             void a(Function<Number,Byte> fn) { }
             class B {
                 B(Function<Number,Byte> fn) { }
@@ -4268,7 +4296,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6035
     void testReturnTypeInferenceWithClosure() {
-        assertScript '''import org.codehaus.groovy.ast.expr.ClosureExpression
+        assertScript '''
+            import org.codehaus.groovy.ast.expr.ClosureExpression
+
             class CTypeTest {
                 static test(String[] args) {
                     // Cannot assign value of type Object to variable of type CTypeTest
@@ -4301,7 +4331,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10557
     void testReturnTypeInferenceWithClosure2() {
-        assertScript '''import java.util.function.Function
+        assertScript '''
+            import java.util.function.Function
+
             class C {
                 def <T> T m(Function<Reader,T> f)  {
                     new StringReader("").withCloseable { reader ->
@@ -4318,7 +4350,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10436
     void testReturnTypeInferenceWithClosure3() {
         String method = '''import java.util.function.BiConsumer
-
             def <T> void m(BiConsumer<String, ? super T> consumer) { }
         '''
         assertScript method + '''
@@ -4658,7 +4689,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6504
     void testInjectMethodWithInitialValueChoosesTheCollectionVersion() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert method.name == 'inject'
@@ -4673,7 +4706,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6504
     void testInjectMethodWithInitialValueChoosesTheCollectionVersionUsingDGM() {
-        assertScript '''import org.codehaus.groovy.runtime.DefaultGroovyMethods
+        assertScript '''
+            import org.codehaus.groovy.runtime.DefaultGroovyMethods
+
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def method = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
                 assert method.name == 'inject'
@@ -4845,7 +4880,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6731
     void testContravariantMethodResolution() {
-        assertScript '''import java.util.function.Function
+        assertScript '''
+            import java.util.function.Function
 
             def <I, O> void transform(Function<? super I, ? extends O> function) {
                 function.apply('')
@@ -4896,7 +4932,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testContravariantMethodResolutionWithImplicitCoercion2() {
         for (modifier in ['public', 'static']) {
-            assertScript """import java.util.function.Function
+            assertScript """
+                import java.util.function.Function
 
                 $modifier <I, O> void transform(Function<? super I, ? extends O> function) {
                     function.apply('')

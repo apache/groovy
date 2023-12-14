@@ -5306,36 +5306,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return node.getNodeMetaData(INFERRED_RETURN_TYPE);
     }
 
-    protected ClassNode inferListExpressionType(final ListExpression list) {
-        List<Expression> expressions = list.getExpressions();
-        int nExpressions = expressions.size();
-        if (nExpressions == 0) {
-            return list.getType();
-        }
-        ClassNode listType = list.getType();
-        GenericsType[] genericsTypes = listType.getGenericsTypes();
-        if ((genericsTypes == null
-                || genericsTypes.length == 0
-                || (genericsTypes.length == 1 && OBJECT_TYPE.equals(genericsTypes[0].getType())))) {
-            // maybe we can infer the component type
-            List<ClassNode> nodes = new ArrayList<>(nExpressions);
-            for (Expression expression : expressions) {
-                if (isNullConstant(expression)) {
-                    // a null element is found in the list, skip it because we'll use the other elements from the list
-                } else {
-                    nodes.add(getType(expression));
-                }
-            }
-            if (!nodes.isEmpty()) {
-                ClassNode itemType = lowestUpperBound(nodes);
-
-                listType = listType.getPlainNodeReference();
-                listType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(itemType))});
-            }
-        }
-        return listType;
-    }
-
     protected static boolean isNullConstant(final Expression expression) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
     }
@@ -5348,38 +5318,70 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
+    protected ClassNode inferListExpressionType(final ListExpression list) {
+        ClassNode listType = list.getType();
+
+        GenericsType[] genericsTypes = listType.getGenericsTypes();
+        if (!asBoolean(genericsTypes)
+                || (genericsTypes.length == 1 && genericsTypes[0].isPlaceholder())) {
+            // maybe infer the element type
+            List<ClassNode> expressionTypes = list.getExpressions().stream()
+                .filter(e -> !isNullConstant(e)).map(this::getType).collect(Collectors.toList());
+            if (!expressionTypes.isEmpty()) {
+                ClassNode subType = lowestUpperBound(expressionTypes);
+                genericsTypes = new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subType))};
+            } else { // GROOVY-11028
+                GenericsType[] typeVars = listType.redirect().getGenericsTypes(); //TODO: ArrayList
+                Map<GenericsTypeName, GenericsType> spec = extractGenericsConnectionsFromArguments(
+                    typeVars, Parameter.EMPTY_ARRAY, ArgumentListExpression.EMPTY_ARGUMENTS, null);
+                genericsTypes = applyGenericsContext(spec, typeVars);
+            }
+            listType = listType.getPlainNodeReference();
+            listType.setGenericsTypes(genericsTypes);
+        }
+
+        return listType;
+    }
+
     protected ClassNode inferMapExpressionType(final MapExpression map) {
-        ClassNode mapType = LinkedHashMap_TYPE.getPlainNodeReference();
-        List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
-        int nExpressions = entryExpressions.size();
-        if (nExpressions == 0) return mapType;
+        ClassNode mapType = map.getType();
 
         GenericsType[] genericsTypes = mapType.getGenericsTypes();
-        if (genericsTypes == null
-                || genericsTypes.length < 2
-                || (genericsTypes.length == 2 && OBJECT_TYPE.equals(genericsTypes[0].getType()) && OBJECT_TYPE.equals(genericsTypes[1].getType()))) {
-            ClassNode keyType;
-            ClassNode valueType;
-            List<ClassNode> keyTypes = new ArrayList<>(nExpressions);
-            List<ClassNode> valueTypes = new ArrayList<>(nExpressions);
-            for (MapEntryExpression entryExpression : entryExpressions) {
-                valueType = getType(entryExpression.getValueExpression());
-                if (!(entryExpression.getKeyExpression() instanceof SpreadMapExpression)) {
-                    keyType = getType(entryExpression.getKeyExpression());
-                } else { // GROOVY-7247
-                    valueType = GenericsUtils.parameterizeType(valueType, MAP_TYPE);
-                    keyType = getCombinedBoundType(valueType.getGenericsTypes()[0]);
-                    valueType = getCombinedBoundType(valueType.getGenericsTypes()[1]);
+        if (!asBoolean(genericsTypes)
+                || (genericsTypes.length == 2 && genericsTypes[0].isPlaceholder() && genericsTypes[1].isPlaceholder())) {
+            // maybe infer the entry type
+            List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
+            int nExpressions = entryExpressions.size();
+            if (nExpressions != 0) {
+                ClassNode keyType;
+                ClassNode valueType;
+                List<ClassNode> keyTypes = new ArrayList<>(nExpressions);
+                List<ClassNode> valueTypes = new ArrayList<>(nExpressions);
+                for (MapEntryExpression entryExpression : entryExpressions) {
+                    valueType = getType(entryExpression.getValueExpression());
+                    if (!(entryExpression.getKeyExpression() instanceof SpreadMapExpression)) {
+                        keyType = getType(entryExpression.getKeyExpression());
+                    } else { // GROOVY-7247
+                        valueType = GenericsUtils.parameterizeType(valueType, MAP_TYPE);
+                        keyType = getCombinedBoundType(valueType.getGenericsTypes()[0]);
+                        valueType = getCombinedBoundType(valueType.getGenericsTypes()[1]);
+                    }
+                    keyTypes.add(keyType);
+                    valueTypes.add(valueType); // TODO: skip null value
                 }
-                keyTypes.add(keyType);
-                valueTypes.add(valueType);
+                keyType = lowestUpperBound(keyTypes);
+                valueType = lowestUpperBound(valueTypes);
+                genericsTypes = new GenericsType[]{new GenericsType(wrapTypeIfNecessary(keyType)), new GenericsType(wrapTypeIfNecessary(valueType))};
+            } else { // GROOVY-11028
+                GenericsType[] typeVars = LinkedHashMap_TYPE.getGenericsTypes();
+                Map<GenericsTypeName, GenericsType> spec = extractGenericsConnectionsFromArguments(
+                    typeVars, Parameter.EMPTY_ARRAY, ArgumentListExpression.EMPTY_ARGUMENTS, null);
+                genericsTypes = applyGenericsContext(spec, typeVars);
             }
-            keyType = lowestUpperBound(keyTypes);
-            valueType = lowestUpperBound(valueTypes);
-            if (!OBJECT_TYPE.equals(keyType) || !OBJECT_TYPE.equals(valueType)) {
-                mapType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(keyType)), new GenericsType(wrapTypeIfNecessary(valueType))});
-            }
+            mapType = LinkedHashMap_TYPE.getPlainNodeReference();
+            mapType.setGenericsTypes(genericsTypes);
         }
+
         return mapType;
     }
 
@@ -5460,6 +5462,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return returnType;
     }
 
+    /**
+     * Resolves type parameters declared by method from type or call arguments.
+     */
     private Map<GenericsTypeName, GenericsType> extractGenericsConnectionsFromArguments(final GenericsType[] methodGenericTypes, final Parameter[] parameters, final Expression arguments, final GenericsType[] explicitTypeHints) {
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
 

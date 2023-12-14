@@ -115,7 +115,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No matching constructor found: java.lang.Class()'
         shouldFailWithMessages '''
             Class c = [:]
-        ''', 'No matching constructor found: java.lang.Class(java.util.LinkedHashMap)'
+        ''', 'No matching constructor found: java.lang.Class(java.util.LinkedHashMap'
     }
 
     // GROOVY-6803

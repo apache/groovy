@@ -18,26 +18,30 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyShellTestCase
+import org.junit.Test
 
-class ReadWriteLockTransformTest extends GroovyShellTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class ReadWriteLockTransformTest {
+
+    @Test
     void testSingleton() {
-        assertScript """
+        assertScript '''
             import groovy.transform.*
 
             @CompileStatic
             class Counters {
-                public final Map<String,Integer> map = [:].withDefault { 0 }
+                private final Map<String,Integer> map = [:]
 
                 @WithReadLock
                 int get(String id) {
-                    map.get(id)
+                    map.getOrDefault(id, 0)
                 }
 
                 @WithWriteLock
-                void add(String id, int num) {
+                void add(String id, int number) {
                     Thread.sleep(100) // emulate long computation
-                    map.put(id, map.get(id)+num)
+                    map.put(id, map.getOrDefault(id, 0) + number)
                 }
             }
 
@@ -53,6 +57,6 @@ class ReadWriteLockTransformTest extends GroovyShellTestCase {
                 }
                 t.join(250)
             }
-        """
+        '''
     }
 }

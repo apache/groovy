@@ -1745,6 +1745,9 @@ public abstract class StaticTypeCheckingSupport {
                     GenericsType[] tp = type.redirect().getGenericsTypes();
                     if (tp != null) {
                         GenericsType[] ta = type.getGenericsTypes();
+                        if (!asBoolean(ta) || !type.isRedirectNode()) { // GROOVY-10651
+                            ta = Arrays.stream(tp).map(gt -> GenericsUtils.buildWildcardType(gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect())).toArray(GenericsType[]::new);
+                        }
                         // propagate type arguments to the super class or interface
                         Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
                         extractGenericsConnections(spec, ta, tp);
