@@ -140,7 +140,7 @@ ext {
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
     junitVersion = '4.13.2'
-    logbackVersion = '1.2.11'
+    logbackVersion = '1.3.14'
     log4jVersion = '1.2.17'
     log4j2Version = '2.20.0'
     openbeansVersion = '1.0.2'
