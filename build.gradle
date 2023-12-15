@@ -136,7 +136,7 @@ ext {
     ivyVersion = '2.5.2'
     jansiVersion = '2.4.1'
     jarjarVersion = '1.7.2'
-    javaParserVersion = '3.25.4'
+    javaParserVersion = '3.25.6'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
     junitVersion = '4.13.2'
