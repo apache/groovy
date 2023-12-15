@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -33,10 +34,12 @@ public class BitwiseNegationExpression extends Expression {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBitwiseNegationExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BitwiseNegationExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
@@ -44,12 +47,20 @@ public class BitwiseNegationExpression extends Expression {
         return ret;
     }
 
+    @Override
     public String getText() {
-        return expression.getText();
+        return "~(" + expression.getText() + ")";
     }
 
+    /**
+     * @see org.codehaus.groovy.runtime.InvokerHelper#bitwiseNegate(Object)
+     */
+    @Override
     public ClassNode getType() {
-        return expression.getType();
+        ClassNode type = expression.getType();
+        if (ClassHelper.STRING_TYPE.equals(type) || ClassHelper.GSTRING_TYPE.equals(type)) {
+            type = ClassHelper.PATTERN_TYPE; // GROOVY-10936
+        }
+        return type;
     }
-
 }
