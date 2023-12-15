@@ -25,7 +25,7 @@ public class UnaryMinusExpression extends Expression {
 
     private final Expression expression;
 
-    public UnaryMinusExpression(Expression expression) {
+    public UnaryMinusExpression(final Expression expression) {
         this.expression = expression;
     }
 
@@ -34,30 +34,30 @@ public class UnaryMinusExpression extends Expression {
     }
 
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitUnaryMinusExpression(this);
+    public String getText() {
+        return "-(" + getExpression().getText() + ")";
     }
 
     @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new UnaryMinusExpression(transformer.transform(expression));
+    public ClassNode getType() {
+        return getExpression().getType();
+    }
+
+    @Deprecated
+    public boolean isDynamic() {
+        return false;
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new UnaryMinusExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
 
     @Override
-    public String getText() {
-        return expression.getText();
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitUnaryMinusExpression(this);
     }
-
-    @Override
-    public ClassNode getType() {
-        return expression.getType();
-    }
-
-    public boolean isDynamic() {
-        return false;
-    }
-
 }

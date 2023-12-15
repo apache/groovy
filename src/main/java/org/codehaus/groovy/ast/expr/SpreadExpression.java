@@ -29,7 +29,7 @@ public class SpreadExpression extends Expression {
 
     private final Expression expression;
 
-    public SpreadExpression(Expression expression) {
+    public SpreadExpression(final Expression expression) {
         this.expression = expression;
     }
 
@@ -38,25 +38,25 @@ public class SpreadExpression extends Expression {
     }
 
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitSpreadExpression(this);
+    public String getText() {
+        return "*" + getExpression().getText();
     }
 
     @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new SpreadExpression(transformer.transform(expression));
+    public ClassNode getType() {
+        return getExpression().getType();
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new SpreadExpression(transformer.transform(getExpression()));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
 
     @Override
-    public String getText() {
-        return "*" + expression.getText();
-    }
-
-    @Override
-    public ClassNode getType() {
-        return expression.getType();
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitSpreadExpression(this);
     }
 }

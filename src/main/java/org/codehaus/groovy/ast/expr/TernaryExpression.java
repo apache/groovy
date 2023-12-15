@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 
 /**
  * Represents a ternary expression (booleanExpression) ? expression : expression
@@ -28,62 +28,60 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class TernaryExpression extends Expression {
 
     private final BooleanExpression booleanExpression;
-    private final Expression trueExpression;
+    private final Expression truthExpression;
     private final Expression falseExpression;
 
-    public TernaryExpression(
-        BooleanExpression booleanExpression,
-        Expression trueExpression,
-        Expression falseExpression) {
+    public TernaryExpression(final BooleanExpression booleanExpression,
+            final Expression truthExpression, final Expression falseExpression) {
         this.booleanExpression = booleanExpression;
-        this.trueExpression = trueExpression;
+        this.truthExpression = truthExpression;
         this.falseExpression = falseExpression;
-    }
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitTernaryExpression(this);
-    }
-
-    @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new TernaryExpression(
-                (BooleanExpression) transformer.transform(booleanExpression),
-                transformer.transform(trueExpression),
-                transformer.transform(falseExpression)); 
-        ret.setSourcePosition(this);
-        ret.copyNodeMetaData(this);
-        return ret; 
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() +"[" + booleanExpression + " ? " + trueExpression + " : " + falseExpression + "]";
     }
 
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
 
+    public Expression getTrueExpression() {
+        return truthExpression;
+    }
+
     public Expression getFalseExpression() {
         return falseExpression;
     }
 
-    public Expression getTrueExpression() {
-        return trueExpression;
-    }
-
     @Override
     public String getText() {
-        return "("
-            + booleanExpression.getText()
-            + ") ? "
-            + trueExpression.getText()
-            + " : "
-            + falseExpression.getText();
+        return "(" + getBooleanExpression().getText() + ") ? " + getTrueExpression().getText() + " : " + getFalseExpression().getText();
+    }
+
+    /**
+     * @see org.codehaus.groovy.classgen.asm.BinaryExpressionHelper#evaluateTernaryExpression(TernaryExpression)
+     */
+    @Override
+    public ClassNode getType() {
+        return WideningCategories.lowestUpperBound(getTrueExpression().getType(), getFalseExpression().getType());
     }
 
     @Override
-    public ClassNode getType() {
-        return ClassHelper.OBJECT_TYPE;
+    public String toString() {
+        return super.toString() + "[" + getBooleanExpression() + " ? " + getTrueExpression() + " : " + getFalseExpression() + "]";
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new TernaryExpression(
+                (BooleanExpression) transformer.transform(getBooleanExpression()),
+                                    transformer.transform(getTrueExpression()),
+                                    transformer.transform(getFalseExpression())
+        );
+        ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
+        return ret;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitTernaryExpression(this);
     }
 }

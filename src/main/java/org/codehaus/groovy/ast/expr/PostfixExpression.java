@@ -30,49 +30,48 @@ public class PostfixExpression extends Expression {
     private final Token operation;
     private Expression expression;
 
-    public PostfixExpression(Expression expression, Token operation) {
+    public PostfixExpression(final Expression expression, final Token operation) {
         this.operation = operation;
+        setExpression(expression);
+    }
+
+    public void setExpression(final Expression expression) {
         this.expression = expression;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "[" + expression + operation + "]";
-    }
-
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitPostfixExpression(this);
-    }
-
-    @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new PostfixExpression(transformer.transform(expression), operation);
-        ret.setSourcePosition(this);
-        ret.copyNodeMetaData(this);
-        return ret;
-    }
-
-    public void setExpression(Expression expression) {
-        this.expression = expression;
-    }
-
-    public Token getOperation() {
-        return operation;
     }
 
     public Expression getExpression() {
         return expression;
     }
 
+    public Token getOperation() {
+        return operation;
+    }
+
     @Override
     public String getText() {
-        return "(" + expression.getText() + operation.getText() + ")";
+        return "(" + getExpression().getText() + getOperation().getText() + ")";
     }
 
     @Override
     public ClassNode getType() {
-        return expression.getType();
+        return getExpression().getType();
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + "[" + getExpression() + getOperation() + "]";
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new PostfixExpression(transformer.transform(getExpression()), getOperation());
+        ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
+        return ret;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitPostfixExpression(this);
+    }
 }

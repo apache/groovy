@@ -18,33 +18,37 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class TernaryOperatorsTest extends GroovyTestCase {
+import java.util.regex.Pattern
 
+final class TernaryOperatorsTest {
+
+    @Test
     void testSimpleUse() {
         def y = 5
 
         def x = (y > 1) ? "worked" : "failed"
         assert x == "worked"
 
-
-        x = (y < 4) ? "failed" : "worked"
+            x = (y < 4) ? "failed" : "worked"
         assert x == "worked"
     }
 
+    @Test
     void testUseInParameterCalling() {
         def z = 123
         assertCalledWithFoo(z > 100 ? "foo" : "bar")
         assertCalledWithFoo(z < 100 ? "bar" : "foo")
-       }
+    }
 
-    def assertCalledWithFoo(param) {
+    void assertCalledWithFoo(param) {
         println "called with param ${param}"
         assert param == "foo"
     }
 
-    void testWithBoolean(){
+    @Test
+    void testWithBoolean() {
         def a = 1
         def x = a!=null ? a!=2 : a!=1
         assert x == true
@@ -52,6 +56,7 @@ class TernaryOperatorsTest extends GroovyTestCase {
         assert y == false
     }
 
+    @Test
     void testElvisOperator() {
         def a = 1
         def x = a?:2
@@ -74,12 +79,14 @@ class TernaryOperatorsTest extends GroovyTestCase {
         assert ret2 == 'b'
     }
 
+    @Test
     void testForType() {
         boolean b = false
         int anInt = b ? 100 : 100 / 3
         assert anInt.class == Integer
     }
 
+    @Test
     void testBytecodeRegisters() {
         // this code will blow up if the true and false parts
         // are not handled correctly in regards to the registers.
@@ -88,6 +95,7 @@ class TernaryOperatorsTest extends GroovyTestCase {
         assert true
     }
 
+    @Test
     void testLineBreaks() {
         def bar = 0 ? "moo" : "cow"
         assert bar == 'cow'
@@ -118,5 +126,26 @@ class TernaryOperatorsTest extends GroovyTestCase {
         bar = 0 ? "moo"
                 : "cow"
         assert bar == 'cow'
+    }
+
+    // GROOVY-10936
+    @Test
+    void testCommonType() {
+        def random = new Random()
+
+        def staticPatternSlashy = ~/some static pattern \w+/
+        def staticPatternString = ~"some static pattern \\w+"
+        def dynamicPatternSlashy = (random.nextInt() % 2 == 0) ? ~/pattern one \w+/  : ~/pattern two \w+/
+        def dynamicPatternString = (random.nextInt() % 2 == 0) ? ~"pattern one \\w+" : ~"pattern two \\w+"
+
+        assert staticPatternSlashy  instanceof Pattern
+        assert staticPatternString  instanceof Pattern
+        assert dynamicPatternSlashy instanceof Pattern
+        assert dynamicPatternString instanceof Pattern
+    }
+
+    @Test // see StatementMetaTypeChooser#resolveType
+    void testClassExpressionIsJavaLangClassNotLiteralType() {
+        Class dsClass = true ? LinkedHashSet : HashSet
     }
 }
