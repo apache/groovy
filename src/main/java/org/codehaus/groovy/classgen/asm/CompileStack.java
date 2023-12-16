@@ -740,11 +740,7 @@ public class CompileStack {
      * creates a new named label
      */
     public Label createLocalLabel(final String name) {
-        Label l = currentBlockNamedLabels.get(name);
-        if (l == null) {
-            l = new Label();
-            currentBlockNamedLabels.put(name, l);
-        }
+        Label l = currentBlockNamedLabels.computeIfAbsent(name, k -> new Label());
         return l;
     }
 
