@@ -18,7 +18,6 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -82,7 +81,7 @@ final class Groovy9244 {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testSuperConstructorsAndNullArgument4() {
         assertScript '''
             abstract class Base {
@@ -101,7 +100,7 @@ final class Groovy9244 {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testSuperConstructorsAndNullArgument5() {
         assertScript '''
             abstract class Base {

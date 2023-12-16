@@ -621,6 +621,9 @@ public class InvocationWriter {
                 loadVariableWithReference(var);
             } else {
                 arg.visit(controller.getAcg());
+                if (arg instanceof CastExpression && !isPrimitiveType(arg.getType())) {
+                    controller.getAcg().loadWrapper(arg); // GROOVY-6285, GROOVY-9244
+                }
             }
             controller.getOperandStack().doGroovyCast(p.getType());
         }

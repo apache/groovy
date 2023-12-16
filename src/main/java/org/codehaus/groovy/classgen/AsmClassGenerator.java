@@ -1614,8 +1614,10 @@ public class AsmClassGenerator extends ClassGenerator {
             Expression argument = expression.getExpression(i);
             argument.visit(this);
             operandStack.box();
-            if (useWrapper && argument instanceof CastExpression) loadWrapper(argument);
-
+            if (useWrapper && (argument instanceof CastExpression || (isParameterReference(argument)
+                    && controller.getCompileStack().isInSpecialConstructorCall()))) { // GROOVY-6285
+                loadWrapper(argument);
+            }
             mv.visitInsn(AASTORE);
             operandStack.remove(1);
         }
@@ -2359,6 +2361,10 @@ public class AsmClassGenerator extends ClassGenerator {
     private void doPostVisit(final ASTNode node) {
         Consumer<WriterController> callback = node.getNodeMetaData("classgen.callback");
         if (callback != null) callback.accept(controller);
+    }
+
+    private static boolean isParameterReference(Expression exp) {
+        return (exp instanceof VariableExpression && ((VariableExpression) exp).getAccessedVariable() instanceof Parameter);
     }
 
     private void loadThis(final VariableExpression thisOrSuper) {

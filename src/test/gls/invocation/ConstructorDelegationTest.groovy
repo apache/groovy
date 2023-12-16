@@ -29,59 +29,73 @@ final class ConstructorDelegationTest {
     @Test
     void testThisCallWithParameter() {
         assertScript '''
-            class A {
+            class C {
+                C() {
+                    this("bar")
+                }
+                C(String x) {
+                    foo = x
+                }
                 def foo
-                A(String x){foo=x}
-                A(){this("bar")}
             }
-            def a = new A()
-            assert a.foo == "bar"
+
+            def c = new C()
+            assert c.foo == "bar"
         '''
     }
 
     @Test
     void testThisCallWithoutParameter() {
         assertScript '''
-            class A {
+            class C {
+                C() {
+                    foo = "bar"
+                }
+                C(String x) {
+                    this()
+                    foo = x
+                }
                 def foo
-                A(String x){this(); foo=x}
-                A(){foo="bar"}
             }
-            def a = new A("foo")
-            assert a.foo == "foo"
+
+            def c = new C("foo")
+            assert c.foo == "foo"
         '''
     }
 
     @Test
-    void testThisConstructorCallNotOnFirstStmt() {
+    void testThisConstructorCallNotFirst() {
         shouldFail CompilationFailedException, '''
-            class ThisConstructorCall {
-                public ThisConstructorCall() {
-                    println 'dummy first statement'
+            class C {
+                C() {
+                    println 'dummy statement'
                     this(19)
                 }
-                public ThisConstructorCall(int b) {
-                    println 'another dummy statement'
+                C(int b) {
+                    println 'other statement'
                 }
             }
-            1
+
+            null
         '''
     }
 
     @Test
-    void testSuperConstructorCallNotOnFirstStmt() {
+    void testSuperConstructorCallNotFirst() {
         shouldFail CompilationFailedException, '''
-            class SuperConstructorCall {
-                public SuperConstructorCall() {
-                    println 'dummy first statement'
+            class C {
+                public C() {
+                    println 'dummy statement'
                     super()
                 }
             }
-            1
+
+            null
         '''
     }
 
-    @Test // GROOVY-9857
+    // GROOVY-9857
+    @Test
     void testImplicitSuperConstructorCallChecks() {
         String base = '''
             abstract class A {
@@ -105,13 +119,14 @@ final class ConstructorDelegationTest {
         assert err =~ /Implicit super constructor A\(\) is undefined for generated constructor. Must define an explicit constructor./
     }
 
+    // GROOVY-3128
     @Test
     void testConstructorDelegationWithThisOrSuperInArgs() {
         // all 4 cases below were compiling earlier but giving VerifyError at runtime
 
         shouldFail CompilationFailedException, '''
-            class MyClosure3128V1 extends Closure {
-                MyClosure3128V1() {
+            class MyClosure1 extends Closure {
+                MyClosure1() {
                     super(this)
                 }
                 void run() { println 'running' }
@@ -119,8 +134,8 @@ final class ConstructorDelegationTest {
         '''
 
         shouldFail CompilationFailedException, '''
-            class MyClosure3128V2 extends Closure {
-                MyClosure3128V2() {
+            class MyClosure2 extends Closure {
+                MyClosure2() {
                     super(super)
                 }
                 void run() { println 'running' }
@@ -128,71 +143,138 @@ final class ConstructorDelegationTest {
         '''
 
         shouldFail CompilationFailedException, '''
-            class MyClosure3128V3 extends Closure {
-                MyClosure3128V3() {
+            class MyClosure3 extends Closure {
+                MyClosure3() {
                     this(this)
                 }
-                MyClosure3128V3(owner) {}
+                MyClosure3(owner) {
+                }
                 void run() { println 'running' }
             }
         '''
 
         shouldFail CompilationFailedException, '''
-            class MyClosure3128V4 extends Closure {
-                MyClosure3128V4() {
+            class MyClosure4 extends Closure {
+                MyClosure4() {
                     this(super)
                 }
-                MyClosure3128V4(owner) {}
+                MyClosure4(owner) {
+                }
                 void run() { println 'running' }
             }
         '''
     }
 
-    @Test // GROOVY-6618
-    void testVariadicConstructor() {
+    // GROOVY-6285
+    @Test
+    void testDelegateDisambiguation() {
         assertScript '''
-            class Foo {
-                public info
-                Foo(String s,Integer[] a){info=a}
-                Foo() {this("foo",1)}
+            class E1 extends Exception {
+                E1() {
+                    super()
+                    info += "called E1();"
+                }
+                E1(String s) {
+                    super(s)
+                    info += "called E1(String) with $s;"
+                }
+                E1(Throwable t) {
+                    super(t)
+                    info += "called E1(Throwable) with $t;"
+                }
+                public String info = ""
             }
-            assert new Foo().info == [1]
+
+            class E2 extends E1 {
+                E2() {
+                    super()
+                    info += "called E2();"
+                }
+                E2(String s) {
+                    super(s)
+                    info += "called E2(String) with $s;"
+                }
+            }
+
+            assert new E1(               ).info == 'called E1();'
+            assert new E1((Throwable)null).info == 'called E1(Throwable) with null;'
+
+            assert new E2(    ).info == 'called E1();called E2();'
+            assert new E2(null).info == 'called E1(String) with null;called E2(String) with null;'
+        '''
+    }
+
+    // GROOVY-6618
+    @Test
+    void testVariadicConstructorCall() {
+        assertScript '''
+            class C {
+                C() {
+                    this("foo", 1)
+                }
+                C(String s, Integer[] array) {
+                    info = array
+                }
+                public info
+            }
+
+            assert new C().info == [1]
         '''
 
         assertScript '''
-            class Foo {
+            class C {
+                C() {
+                    this("foo", null)
+                }
+                C(String s, Integer[] array) {
+                    info = array
+                }
                 public info
-                Foo(String s,Integer[] a){info=a}
-                Foo() {this("foo",null)}
             }
-            assert new Foo().info == null
+
+            assert new C().info == null
         '''
 
         assertScript '''
-            class Foo {
+            class C {
+                C() {
+                    this("foo", 1, 2, 3)
+                }
+                C(String s, Integer[] array) {
+                    info = array
+                }
                 public info
-                Foo(String s,Integer[] a){info=a}
-                Foo() {this("foo",1,2,3)}
             }
-            assert new Foo().info == [1,2,3]
+
+            assert new C().info == [1,2,3]
         '''
 
         assertScript '''
-            class Foo {
+            class C {
+                C() {
+                    this("foo", new Integer[]{1,2,3})
+                }
+                C(String s, Integer[] array) {
+                    info = array
+                }
                 public info
-                Foo(String s,Integer[] a){info=a}
-                Foo() {this("foo",new Integer[]{1,2,3})}
             }
-            assert new Foo().info == [1,2,3]
+
+            assert new C().info == [1,2,3]
         '''
 
         assertScript '''
-            class Foo {
+            class C {
+                C() {
+                    this("foo")
+                }
+                C(String s, Integer[] array) {
+                    info = array
+                }
                 public info
-                Foo(String s,Integer[] a){info=a}
-                Foo() {this("foo")}
             }
-            assert new Foo().info == []
+
+            assert new C().info == []
         '''
     }
 }
