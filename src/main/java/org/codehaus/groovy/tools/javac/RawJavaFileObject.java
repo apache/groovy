@@ -53,7 +53,7 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
 
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-        return null != src ? src : (src = new String(Files.readAllBytes(javaFilePath), DEFAULT_CHARSET));
+        return null != src ? src : (src = Files.readString(javaFilePath, DEFAULT_CHARSET));
     }
 
     /**
