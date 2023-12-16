@@ -336,7 +336,7 @@ public class CharsetToolkit {
      * @return the default <code>Charset</code>.
      */
     public static Charset getDefaultSystemCharset() {
-        return Charset.forName(System.getProperty("file.encoding"));
+        return Charset.defaultCharset();
     }
 
     /**
