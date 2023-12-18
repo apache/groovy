@@ -1422,6 +1422,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return DefaultGroovyMethods.countBy(new ArrayIterator<>(self), closure);
     }
 
+    /**
+     * Creates a multiset-like map of the array members.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert [1:2, 2:2, 3:1] == ([1,2,1,2,3] as Object[]).countBy()
+     * </pre>
+     *
+     * @param self    an array to group and count
+     * @return a new Map where the keys are the set of values in the array and the values are the frequency counts
+     * @since 5.0.0
+     */
+    public static <E> Map<E, Integer> countBy(E[] self) {
+        return countBy(self, Closure.IDENTITY);
+    }
+
     //-------------------------------------------------------------------------
     // drop
 
