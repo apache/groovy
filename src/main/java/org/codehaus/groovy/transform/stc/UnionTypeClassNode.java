@@ -20,7 +20,6 @@ package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -35,6 +34,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.ASTTransformation;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,6 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
+import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 
 /**
  * This class node type is very special and should only be used by the static type checker
@@ -59,8 +63,8 @@ class UnionTypeClassNode extends ClassNode {
     private final ClassNode[] delegates;
 
     UnionTypeClassNode(final ClassNode... classNodes) {
-        super(makeName(classNodes), 0, ClassHelper.OBJECT_TYPE);
-        delegates = classNodes == null ? ClassNode.EMPTY_ARRAY : classNodes;
+        super(makeName(classNodes), 0, makeSuper(classNodes));
+        delegates = classNodes;
         isPrimaryNode = false;
     }
 
@@ -71,6 +75,18 @@ class UnionTypeClassNode extends ClassNode {
         }
         return sj.toString();
     }
+
+    private static ClassNode makeSuper(final ClassNode[] nodes) {
+        ClassNode upper = lowestUpperBound(Arrays.asList(nodes));
+        if (upper instanceof LowestUpperBoundClassNode) {
+            upper = upper.getUnresolvedSuperClass();
+        } else if (upper.isInterface()) {
+            upper = OBJECT_TYPE;
+        }
+        return upper;
+    }
+
+    //--------------------------------------------------------------------------
 
     public ClassNode[] getDelegates() {
         return delegates;
