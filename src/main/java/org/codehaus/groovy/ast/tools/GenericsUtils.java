@@ -447,14 +447,12 @@ public class GenericsUtils {
         if (type.isPlaceholder()) {
             String name = type.getName();
             ret = genericsSpec.get(name);
-        } else if (type.isWildcard()) { // GROOVY-9891
-            ret = type.getLowerBound(); // use lower or upper
-            if (ret == null && type.getUpperBounds() != null) {
-                ret = type.getUpperBounds()[0]; // ? supports 1
-            }
         }
-        if (ret == null) ret = type.getType();
-        return ret;
+        else if (type.isWildcard()) { // GROOVY-9891
+            if (type.getUpperBounds() != null)
+                ret = type.getUpperBounds()[0]; // ? supports 1
+        }
+        return (ret != null ? ret : type.getType());
     }
 
     public static ClassNode correctToGenericsSpec(Map<String, ClassNode> genericsSpec, ClassNode type) {
@@ -469,8 +467,7 @@ public class GenericsUtils {
                 return correctToGenericsSpec(genericsSpec, type);
             }
         }
-        if (type == null) type = ClassHelper.OBJECT_TYPE;
-        return type;
+        return (type != null ? type : ClassHelper.OBJECT_TYPE);
     }
 
     public static Map<String, ClassNode> createGenericsSpec(ClassNode current) {

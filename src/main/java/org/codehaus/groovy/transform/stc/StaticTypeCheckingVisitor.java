@@ -2553,6 +2553,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             if (!candidates.isEmpty()) {
                 Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
+                stubMissingTypeVariables(receiverType.redirect().getGenericsTypes(), gts); // GROOVY-11241
                 candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
                             ClassNode closureType = wrapClosureType(returnType);
@@ -2568,9 +2569,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static ClassNode wrapClosureType(final ClassNode returnType) {
-        ClassNode inferredType = CLOSURE_TYPE.getPlainNodeReference();
-        inferredType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(returnType))});
-        return inferredType;
+        ClassNode closureType = CLOSURE_TYPE.getPlainNodeReference();
+        closureType.setGenericsTypes(new GenericsType[]{
+                new GenericsType(wrapTypeIfNecessary(returnType))
+        });
+        return closureType;
     }
 
     private static MethodNode findPropertyMethod(final ClassNode type, final String name) {
@@ -5507,17 +5510,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             extractGenericsConnectionsForBoundTypes(methodGenericTypes, resolvedPlaceholders);
         }
 
-        for (GenericsType tp : methodGenericTypes) {
-            // GROOVY-8409, GROOVY-10343, et al.: provide "no type witness" mapping for param
-            resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(tp.getName()), gtn -> {
-                ClassNode[] bounds = applyGenericsContext(resolvedPlaceholders, tp.getUpperBounds());
-                GenericsType gt = new GenericsType(tp.getType(), bounds, null);
-                gt.putNodeMetaData(GenericsType.class, tp); // record origin
-                return gt;
-            });
-        }
+        // GROOVY-8409, GROOVY-10343, et al.: provide "no type witness" mappings
+        stubMissingTypeVariables(methodGenericTypes, resolvedPlaceholders);
 
         return resolvedPlaceholders;
+    }
+
+    private static void stubMissingTypeVariables(final GenericsType[] typeParameters, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
+        if (asBoolean(typeParameters)) {
+            for (GenericsType tp : typeParameters) {
+                resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(tp.getName()), name -> {
+                    ClassNode[] bounds = applyGenericsContext(resolvedPlaceholders, tp.getUpperBounds());
+                    GenericsType gt = new GenericsType(tp.getType(), bounds, null);
+                    gt.putNodeMetaData(GenericsType.class, tp); // record origin
+                    gt.setResolved(true);
+                    return gt;
+                });
+            }
+        }
     }
 
     /**

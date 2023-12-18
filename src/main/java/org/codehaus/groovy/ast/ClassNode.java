@@ -89,7 +89,7 @@ import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
  *  through a Class instance
  * <li> Labels:<br>
  * ClassNodes created through ClassHelper.makeWithoutCaching. They
- * are place holders, its redirect points to the real structure, which can
+ * are placeholders, its redirect points to the real structure, which can
  * be a label too, but following all redirects it should end with a ClassNode
  * from one of the other two categories. If ResolveVisitor finds such a
  * node, it tries to set the redirects. Any such label created after
@@ -166,7 +166,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     protected Class clazz;
     // only false when this classNode is constructed from a class
     private volatile boolean lazyInitDone = true;
-    // not null if if the ClassNode is an array
+    // not null if the ClassNode is an array
     private ClassNode componentType;
     // if not null this instance is handled as proxy
     // for the redirect
@@ -671,6 +671,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         setInterfaces(interfaces);
     }
 
+    @Override
     public boolean equals(Object that) {
         if (that == this) return true;
         if (!(that instanceof ClassNode)) return false;
@@ -679,6 +680,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
     }
 
+    @Override
     public int hashCode() {
         return (redirect != null ? redirect.hashCode() : getText().hashCode());
     }
@@ -776,10 +778,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     private MethodNode getOrAddStaticConstructorNode() {
-        MethodNode method = null;
-        List<MethodNode> declaredMethods = getDeclaredMethods("<clinit>");
+        MethodNode method;
+        final String classInitializer = "<clinit>";
+        List<MethodNode> declaredMethods = getDeclaredMethods(classInitializer);
         if (declaredMethods.isEmpty()) {
-            method = addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+            method = addMethod(classInitializer, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         } else {
             method = declaredMethods.get(0);
@@ -792,7 +795,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         BlockStatement block = getCodeAsBlock(method);
 
         // while anything inside a static initializer block is appended
-        // we don't want to append in the case we have a initialization
+        // we don't want to append in the case we have an initialization
         // expression of a static field. In that case we want to add
         // before the other statements
         if (!fieldInit) {
@@ -833,7 +836,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * This methods returns a list of all methods of the given name
+     * This method returns a list of all methods of the given name
      * defined in the current class
      * @return the method list
      * @see #getMethods(String)
@@ -846,7 +849,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * This methods creates a list of all methods with this name of the
+     * This method creates a list of all methods with this name of the
      * current class and of all super classes
      * @return the methods list
      * @see #getDeclaredMethods(String)
@@ -1187,6 +1190,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         redirect().script = script;
     }
 
+    @Override
     public String toString() {
         return toString(true);
     }
@@ -1405,7 +1409,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 && genericsTypes[0].getUpperBounds() != null) {
             return genericsTypes[0];
         } else {
-            ClassNode upper = redirect != null ? redirect : this;
+            ClassNode upper = (redirect != null ? redirect : this);
             return new GenericsType(this, new ClassNode[]{upper}, null);
         }
     }
@@ -1451,6 +1455,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return isInterface() && (getModifiers() & ACC_ANNOTATION) != 0;
     }
 
+    @Override
     public List<AnnotationNode> getAnnotations() {
         if (redirect != null)
             return redirect.getAnnotations();
@@ -1458,6 +1463,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return super.getAnnotations();
     }
 
+    @Override
     public List<AnnotationNode> getAnnotations(ClassNode type) {
         if (redirect != null)
             return redirect.getAnnotations(type);

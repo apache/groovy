@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
+
 /**
  * This class is used to describe generic type signatures for ClassNodes.
  *
@@ -141,7 +143,7 @@ public class GenericsType extends ASTNode {
     }
 
     public boolean isResolved() {
-        return (resolved || isPlaceholder());
+        return resolved;
     }
 
     public void setResolved(final boolean resolved) {
@@ -154,6 +156,8 @@ public class GenericsType extends ASTNode {
 
     public void setPlaceholder(final boolean placeholder) {
         this.placeholder = placeholder;
+        this.resolved = resolved || placeholder;
+        this.wildcard = wildcard && !placeholder;
         getType().setGenericsPlaceHolder(placeholder);
     }
 
@@ -163,6 +167,7 @@ public class GenericsType extends ASTNode {
 
     public void setWildcard(final boolean wildcard) {
         this.wildcard = wildcard;
+        this.placeholder = placeholder && !wildcard;
     }
 
     public ClassNode getLowerBound() {
@@ -236,33 +241,6 @@ public class GenericsType extends ASTNode {
         }
         // not placeholder or wildcard; no covariance allowed for type or bound(s)
         return classNode.equals(getType()) && compareGenericsWithBound(classNode, getType());
-    }
-
-    private static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
-        if (type.equals(superOrInterface)
-                || type.isDerivedFrom(superOrInterface)
-                || type.implementsInterface(superOrInterface)) {
-            return true;
-        }
-        if (ClassHelper.GROOVY_OBJECT_TYPE.equals(superOrInterface) && type.getCompileUnit() != null) {
-            // type is being compiled so it will implement GroovyObject later
-            return true;
-        }
-        if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
-            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) superOrInterface;
-            boolean result = implementsInterfaceOrIsSubclassOf(type, lub.getSuperClass());
-            if (result) {
-                for (ClassNode face : lub.getInterfaces()) {
-                    result = implementsInterfaceOrIsSubclassOf(type, face);
-                    if (!result) break;
-                }
-            }
-            if (result) return true;
-        }
-        if (type.isArray() && superOrInterface.isArray()) {
-            return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
-        }
-        return false;
     }
 
     /**
