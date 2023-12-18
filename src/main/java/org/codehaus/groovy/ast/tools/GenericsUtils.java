@@ -54,7 +54,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -434,7 +433,7 @@ public class GenericsUtils {
                     newgTypes[i] = fixed;
                 } else if (oldgType.isPlaceholder()) {
                     // correct "T"
-                    newgTypes[i] = new GenericsType(genericsSpec.getOrDefault(oldgType.getName(), ClassHelper.OBJECT_TYPE));
+                    newgTypes[i] = genericsSpec.containsKey(oldgType.getName())? new GenericsType(genericsSpec.get(oldgType.getName())): erasure(oldgType);
                 } else {
                     // correct "List<T>", etc.
                     newgTypes[i] = new GenericsType(correctToGenericsSpecRecurse(genericsSpec, correctToGenericsSpec(genericsSpec, oldgType), exclusions));
@@ -515,9 +514,9 @@ public class GenericsUtils {
                     }
                     if (redirect.isGenericsPlaceHolder()) {
                         // "T extends U" or "T super U"
-                        type = redirect;
+                        type = redirect; // GROOVY-9059
                     } else {
-                        // "T" or "T extends Thing" or "T super Thing"
+                        // "T" or "T extends Type" or "T super Type"
                         type = ClassHelper.makeWithoutCaching(name);
                         type.setGenericsPlaceHolder(true);
                         type.setRedirect(redirect);
