@@ -3850,10 +3850,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
             int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
-            if (temporaryTypesCount > 0) {
-                // GROOVY-8965, GROOVY-10180, GROOVY-10668
-                ClassNode commonType = lowestUpperBound(temporaryTypes);
-                if (!commonType.equals(OBJECT_TYPE)) owners.add(Receiver.make(commonType));
+            if (temporaryTypesCount > 0) { // GROOVY-8965, GROOVY-10180, GROOVY-10668
+                owners.add(Receiver.make(lowestUpperBound(temporaryTypes)));
             }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
                 ClassNode staticType = receiver.getGenericsTypes()[0].getType();
@@ -3877,7 +3875,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && ((Variable) objectExpression).getName().equals("it")) {
                 owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
             }
-            if (temporaryTypesCount > 1) {
+            if (temporaryTypesCount > 1 && !(objectExpression instanceof VariableExpression)) {
                 owners.add(Receiver.make(new UnionTypeClassNode(temporaryTypes.toArray(ClassNode.EMPTY_ARRAY))));
             }
         }
