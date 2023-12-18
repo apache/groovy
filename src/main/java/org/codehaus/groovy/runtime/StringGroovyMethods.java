@@ -1471,6 +1471,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given CharSequence into an array of code point values including any surrogate pairs
+     * as per {@link String#codePoints()}.
+     *
+     * @param self a CharSequence
+     * @return an array of ints
+     *
+     * @since 5.0.0
+     */
+    public static int[] getCodePoints(final CharSequence self) {
+        return self.codePoints().toArray();
+    }
+
+    /**
      * Finds the number of Strings matched to the given Matcher.
      *
      * @param self a Matcher
