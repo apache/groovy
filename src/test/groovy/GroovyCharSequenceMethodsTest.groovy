@@ -349,6 +349,15 @@ class GroovyCharSequenceMethodsTest extends GroovyTestCase {
         assert chars[-1] == 'r'
     }
 
+    void testGetCodePoints() {
+        def ints = cs2.codePoints
+        assert ints instanceof int[]
+        assert ints.size() == 6
+        assert ints[0] == 70
+        assert ints[3] == 98
+        assert ints[-1] == 114
+    }
+
     private enum Coin { penny, nickel, dime, quarter }
     void testAsType() {
         def csDime = makeCharSequence('dime')
