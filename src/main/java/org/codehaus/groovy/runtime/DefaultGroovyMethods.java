@@ -3093,6 +3093,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a multiset-like map of the collection members.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].countBy()</pre>
+     *
+     * @param self    a collection to group and count
+     * @return a new Map where the keys are the set of values in the collection and the values are the frequency counts
+     * @since 5.0.0
+     */
+    public static <E> Map<E, Integer> countBy(Iterable<E> self) {
+        return countBy(self.iterator(), Closure.IDENTITY);
+    }
+
+    /**
      * Sorts all iterator items into groups determined by the supplied mapping
      * closure and counts the group size.  The closure should return the key that each
      * item should be grouped by.  The returned Map will have an entry for each
@@ -3114,6 +3128,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             countAnswer(answer, value);
         }
         return answer;
+    }
+
+    /**
+     * Creates a multiset-like map of the iterator members.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].iterator().countBy()</pre>
+     *
+     * @param self    an iterator to group and count
+     * @return a new Map where the keys are the set of values produced by the iterator and the values are the frequency counts
+     * @since 5.0.0
+     */
+    public static <E> Map<E, Integer> countBy(Iterator<E> self) {
+        return countBy(self, Closure.IDENTITY);
     }
 
     /**
