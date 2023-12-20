@@ -18,19 +18,17 @@
  */
 package groovy.bugs
 
-
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy10998 {
+
     @Test
     void testTypeParamCycle1() {
         def err = shouldFail '''
-            class Test {
-              static <T extends T> void test() {}
-            }
+            def <T extends T> void test() {}
         '''
         assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
@@ -38,9 +36,7 @@ final class Groovy10998 {
     @Test
     void testTypeParamCycle2() {
         def err = shouldFail '''
-            class Test {
-              static <T extends U, U extends T> void test() {}
-            }
+            def <T extends U, U extends T> void test() {}
         '''
         assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
@@ -48,12 +44,10 @@ final class Groovy10998 {
     @Test
     void testTypeParamNoCycle() {
         assertScript '''
-            class Test {
-              static <T, U extends T> String test(T t, U u) {
+            def <T, U extends T> String test(T t, U u) {
                 "$t,$u"
-              }
             }
-            assert "1,2" == Test.<Number, Integer>test(1, 2)
+            assert this.<Number, Integer>test(1, 2) == "1,2"
         '''
     }
 }
