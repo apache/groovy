@@ -73,8 +73,7 @@ abstract class StubTestCase extends GroovyTestCase {
      */
     @Override
     protected void setUp() {
-        // TODO: commented super.setUp() as it generates a stackoverflow, for some reason?!
-        // super.setUp()
+        super.setUp()
         if (debug) {
             println """\
                 Stub generator test [${this.class.name}]
@@ -91,7 +90,7 @@ abstract class StubTestCase extends GroovyTestCase {
      */
     @Override
     protected void tearDown() {
-        if(delete) {
+        if (delete) {
             if (debug) println "Deleting temporary folders"
             targetDir.deleteDir()
             stubDir.deleteDir()
@@ -115,7 +114,8 @@ abstract class StubTestCase extends GroovyTestCase {
      *     }
      * </code></pre>
      */
-    protected void init() {}
+    protected void init() {
+    }
 
     /**
      * @return the folder containing the sample Groovy and Java sources for the test
@@ -267,7 +267,7 @@ abstract class StubTestCase extends GroovyTestCase {
     /**
      * All tests must implement this method, for doing
      */
-    abstract void verifyStubs()
+    protected abstract void verifyStubs()
 
     /**
      * Method providing a useful shortcut for the subclasses, so that you can use <code>classes</code>
@@ -311,18 +311,18 @@ abstract class StubTestCase extends GroovyTestCase {
     protected static void createNecessaryPackageDirs(File path, String relativeFilePath) {
         def index = relativeFilePath.lastIndexOf('/')
 
-        if(index < 0) return
+        if (index < 0) return
 
         def relativeDirectories = relativeFilePath.substring(0, index)
 
         def tmpPath = path.absolutePath
 
         relativeDirectories.split('/').each {
-            if(!tmpPath.endsWith(File.separator)) {
+            if (!tmpPath.endsWith(File.separator)) {
                 tmpPath = tmpPath + File.separator
             }
             File newDir = new File(tmpPath + it)
-            if(!newDir.exists()) {
+            if (!newDir.exists()) {
                 if (!(newDir.mkdir())) {
                     throw new IOException("Impossible to create package directory: ${newDir.absolutePath}")
                 }
