@@ -20,35 +20,36 @@ package org.codehaus.groovy.ast.decompiled
 
 import org.codehaus.groovy.tools.stubgenerator.StubTestCase
 
-class IncrementalRecompilationWithStubsTest extends StubTestCase {
+final class IncrementalRecompilationWithStubsTest extends StubTestCase {
+
+    private static File createFile(File dir, String name, String text) {
+        new File(dir, name).tap {
+            createNewFile()
+            setText(text)
+        }
+    }
+
     @Override
     void testRun() {
         configure()
-        File srcDir = createTempDirectory()
-        srcDir.deleteOnExit()
 
-        File src1 = createFile(srcDir, "AsmClass1.groovy", "class AsmClass1 {}")
-        File src2 = createFile(srcDir, "AsmClass2.groovy", "class AsmClass2 extends AsmClass1 {}")
-        File src3 = createFile(srcDir, "AsmClass3.groovy", "class AsmClass3 extends AsmClass2 {}")
-        File javaSrc = createFile(srcDir, "JavaClass.java", "class JavaClass {}")
+        File groovy1 = createFile(stubDir, "AsmClass1.groovy", "class AsmClass1 {}")
+        File groovy2 = createFile(stubDir, "AsmClass2.groovy", "class AsmClass2 extends AsmClass1 {}")
+        File groovy3 = createFile(stubDir, "AsmClass3.groovy", "class AsmClass3 extends AsmClass2 {}")
+        File javaOne = createFile(stubDir, "JavaClass.java"  , "class JavaClass {}")
 
-        compile([src1, src2, src3, javaSrc])
+        compile([groovy1, groovy2, groovy3, javaOne])
 
-        def cls1 = new File(targetDir, "AsmClass1.class")
-        assert cls1.exists()
-        assert cls1.delete()
+        File   class1 = new File(targetDir, "AsmClass1.class")
+        assert class1.exists()
+        assert class1.delete()
 
-        compile([src1, src3, javaSrc])
-        assert cls1.exists()
-    }
+        compile([groovy1, groovy3, javaOne])
 
-    private static File createFile(File srcDir, String name, String text) {
-        File srcFile = new File(srcDir, name)
-        assert srcFile.createNewFile()
-        srcFile.text = text
-        return srcFile
+        assert class1.exists()
     }
 
     @Override
-    void verifyStubs() {}
+    void verifyStubs() {
+    }
 }

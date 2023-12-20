@@ -154,9 +154,9 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     private void checkGenericsUsage(final ClassNode cn, final ClassNode rn, final Boolean isAIC) {
         if (cn.isGenericsPlaceHolder()) return;
         GenericsType[] cnTypes = cn.getGenericsTypes();
-        GenericsType[] rnTypes = rn.getGenericsTypes();
         // raw type usage is always allowed
         if (cnTypes == null) return;
+        GenericsType[] rnTypes = rn.getGenericsTypes();
         // you can't parameterize a non-generified type
         if (rnTypes == null) {
             String message = "The class " + cn.toString(false) + " (supplied with " + plural("type parameter", cnTypes.length) +
