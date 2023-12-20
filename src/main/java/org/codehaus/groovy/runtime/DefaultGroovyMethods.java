@@ -3469,9 +3469,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
                 }
-            } else
+            } else {
                 throw new GroovyRuntimeException("The argument (" + to +
-                        ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else if (to instanceof BigInteger) {
+                    ") to downto() cannot be greater than the value (" + self + ") it's called on.");
+            }
+        } else if (to instanceof BigInteger) {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
@@ -5796,7 +5798,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (element instanceof Collection) {
             flatten((Collection<T>) element, addTo, flattenOptionals);
         } else if (element != null && element.getClass().isArray()) {
-            flatten(new ArrayIterable<>((T[]) element), addTo, flattenOptionals);
+            // handles non-primitive case too
+            flatten(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(element), addTo, flattenOptionals);
         } else {
             Object flattened = element;
             if (flattened instanceof Optional && flattenOptionals) {
