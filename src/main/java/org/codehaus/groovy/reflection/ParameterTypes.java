@@ -19,6 +19,7 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -181,7 +182,7 @@ public class ParameterTypes {
         MetaClassHelper.unwrap(unwrappedArguments);
 
         // get type of each vargs element -- arguments are not primitive
-        vaType = ReflectionCache.autoboxType(vaType.getComponentType());
+        vaType = TypeUtil.autoboxType(vaType.getComponentType());
 
         if (aCount == pCount - 1) {
             // one argument is missing, so fill it with an empty array

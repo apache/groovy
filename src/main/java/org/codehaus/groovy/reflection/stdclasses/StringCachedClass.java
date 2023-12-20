@@ -21,7 +21,6 @@ package org.codehaus.groovy.reflection.stdclasses;
 import groovy.lang.GString;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
-import org.codehaus.groovy.reflection.ReflectionCache;
 
 public class StringCachedClass extends CachedClass {
     private static final Class STRING_CLASS = String.class;
@@ -40,7 +39,7 @@ public class StringCachedClass extends CachedClass {
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return  classToTransformFrom == null
               || classToTransformFrom == STRING_CLASS
-              || ReflectionCache.isAssignableFrom(GSTRING_CLASS,classToTransformFrom);
+              || GSTRING_CLASS.isAssignableFrom(classToTransformFrom);
     }
 
     @Override

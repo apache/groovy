@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.typehandling;
 import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -59,8 +60,6 @@ import java.util.stream.BaseStream;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-
-import static org.codehaus.groovy.reflection.ReflectionCache.isArray;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
@@ -235,7 +234,7 @@ public class DefaultTypeTransformation {
             return object;
         }
 
-        if (isArray(type)) {
+        if (type.isArray()) {
             return asArray(object, type);
         } else if (type.isEnum()) {
             return ShortTypeHandling.castToEnum(object, type);
@@ -743,7 +742,7 @@ public class DefaultTypeTransformation {
 
     public static Object[] primitiveArrayBox(Object array) {
         int size = Array.getLength(array);
-        Object[] ret = (Object[]) Array.newInstance(ReflectionCache.autoboxType(array.getClass().getComponentType()), size);
+        Object[] ret = (Object[]) Array.newInstance(TypeUtil.autoboxType(array.getClass().getComponentType()), size);
         for (int i = 0; i < size; i++) {
             ret[i] = Array.get(array, i);
         }
