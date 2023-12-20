@@ -287,6 +287,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
+        checkGenericsCyclicInheritance(node.getGenericsTypes());
+
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
@@ -1296,15 +1298,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (ClassNode in : node.getInterfaces()) {
                 checkCyclicInheritance(node, in);
             }
-            if (node.getGenericsTypes() != null) {
-                for (GenericsType gt : node.getGenericsTypes()) {
-                    if (gt != null && gt.getUpperBounds() != null) {
-                        for (ClassNode variant : gt.getUpperBounds()) {
-                            if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
-                        }
-                    }
-                }
-            }
+            checkGenericsCyclicInheritance(node.getGenericsTypes());
           case 2:
             // VariableScopeVisitor visits anon. inner class body inline, so resolve now
             for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
@@ -1335,6 +1329,21 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             headerAnnotations.forEach(this::visitAnnotation);
         }
         currentClass = oldNode;
+    }
+
+    private void checkGenericsCyclicInheritance(GenericsType[] genericsTypes) {
+        if (genericsTypes == null) return;
+
+        for (GenericsType gt : genericsTypes) {
+            if (gt == null) continue;
+            ClassNode[] upperBounds = gt.getUpperBounds();
+            if (upperBounds == null) continue;
+            for (ClassNode variant : upperBounds) {
+                if (variant.isGenericsPlaceHolder()) {
+                    checkCyclicInheritance(variant, gt.getType());
+                }
+            }
+        }
     }
 
     private void addFatalError(final String text, final ASTNode node) {
