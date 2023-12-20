@@ -242,14 +242,6 @@ public class CachedClass {
         modifiers = klazz.getModifiers();
         isInterface = klazz.isInterface();
         isNumber = Number.class.isAssignableFrom(klazz);
-
-        for (CachedClass inf : getInterfaces()) {
-            ReflectionCache.isAssignableFrom(klazz, inf.cachedClass);
-        }
-
-        for (CachedClass cur = this; cur != null; cur = cur.getCachedSuperClass()) {
-            ReflectionCache.setAssignableFrom(cur.cachedClass, klazz);
-        }
     }
 
     public CachedClass getCachedSuperClass() {
@@ -282,12 +274,34 @@ public class CachedClass {
         CachedMethod res = null;
         for (CachedMethod m : methods) {
             if (m.getName().equals(name)
-                    && ReflectionCache.arrayContentsEq(parameterTypes, m.getParameterTypes())
+                    && arrayContentsEq(parameterTypes, m.getParameterTypes())
                     && (res == null || res.getReturnType().isAssignableFrom(m.getReturnType())))
                 res = m;
         }
 
         return res;
+    }
+
+    private static boolean arrayContentsEq(Object[] a1, Object[] a2) {
+        if (a1 == null) {
+            return a2 == null || a2.length == 0;
+        }
+
+        if (a2 == null) {
+            return a1.length == 0;
+        }
+
+        if (a1.length != a2.length) {
+            return false;
+        }
+
+        for (int i = 0; i < a1.length; i++) {
+            if (a1[i] != a2[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public int getModifiers() {
@@ -339,7 +353,7 @@ public class CachedClass {
         return BytecodeHelper.getTypeDescription(getTheClass());
     }
 
-    public final Class getTheClass() {
+    public final Class<?> getTheClass() {
         return cachedClass;
     }
 
@@ -470,18 +484,18 @@ public class CachedClass {
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
         classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);
-        Class theClass = classInfo.getCachedClass().getTheClass();
+        var theClass = classInfo.getCachedClass().getTheClass();
         if (theClass == Closure.class || theClass == Class.class) {
             ClosureMetaClass.resetCachedMetaClasses();
         }
     }
 
-    public boolean isAssignableFrom(Class argument) {
-        return argument == null || ReflectionCache.isAssignableFrom(getTheClass(), argument);
+    public boolean isAssignableFrom(Class<?> argument) {
+        return argument == null || getTheClass().isAssignableFrom(argument);
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return ReflectionCache.isAssignableFrom(getTheClass(), argument.getClass());
+        return getTheClass().isAssignableFrom(argument.getClass());
     }
 
     public CallSiteClassLoader getCallSiteLoader() {

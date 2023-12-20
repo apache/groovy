@@ -1258,7 +1258,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) stack;
         }
 
-        if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
+        if (clazz!=String[].class && clazz.isArray()) {
             try {
                 return (T) asArrayType(col, clazz);
             } catch (GroovyCastException e) {
