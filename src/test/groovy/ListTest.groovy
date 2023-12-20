@@ -92,7 +92,7 @@ class ListTest extends GroovyTestCase {
         l = [1, 2, 7]
         assert l.max() == 7
 
-        // GROOVY-1006        
+        // GROOVY-1006
         l = [1, 3.2, 4L, (short) 7]
         assert l.max() == (short) 7
     }
@@ -107,7 +107,7 @@ class ListTest extends GroovyTestCase {
         l = [1, 2, 7]
         assert l.min() == 1
 
-        // GROOVY-1006        
+        // GROOVY-1006
         l = [(long) 1, 3.2, 4L, (short) 7]
         assert l.min() == (long) 1
     }
@@ -162,7 +162,7 @@ class ListTest extends GroovyTestCase {
         def list = [1, 1]
         assert list - [] == list
 
-        // GROOVY-1006    
+        // GROOVY-1006
         list = [1, 2, 2, 3, 1]
         assert list - [] == list
     }
@@ -238,6 +238,18 @@ class ListTest extends GroovyTestCase {
     void testFlattenWithRanges() {
         def flat = [1, 3, 20..24, 33].flatten()
         assert flat == [1, 3, 20, 21, 22, 23, 24, 33]
+    }
+
+    void testFlattenWithPrimitiveArray() {
+        char[] fooChars = 'foo'.chars
+        assert [fooChars].flatten() == ['f', 'o', 'o']
+    }
+
+    void testFlattenWithMultiDimensionalPrimitiveArray() {
+        int[][] identityMatrix = [[1, 0], [0, 1]]
+        assert identityMatrix.flatten() == [1, 0, 0, 1]
+        assert [identityMatrix].flatten() == [1, 0, 0, 1]
+        assert [[identityMatrix]].flatten() == [1, 0, 0, 1]
     }
 
     void testListsAndRangesCompare() {
