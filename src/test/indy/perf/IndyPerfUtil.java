@@ -26,7 +26,7 @@ public class IndyPerfUtil {
     private static final int TEST_ITERATIONS = 10;
     private static final int HOT_LOOP_ITERATIONS = 100_000;
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static boolean WRITE_FILE = true;
+    private static boolean WRITE_FILE = false;
 
     private static long getTotal(long[] times, int length) {
         long t_diff = 0;
@@ -209,6 +209,7 @@ public class IndyPerfUtil {
     }
 
     public static void executeTests(Class<?> clazz) {
+        System.out.println("running on JDK "+ Runtime.version());
         try {
             final Object instance = clazz.getDeclaredConstructor().newInstance();
 

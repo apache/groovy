@@ -23,7 +23,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
-import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -643,6 +642,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 11+
      */
+    @Deprecated
     public static boolean isPostJDK11(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK11);
     }
@@ -653,6 +653,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 12+
      */
+    @Deprecated
     public static boolean isPostJDK12(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK12);
     }
@@ -663,6 +664,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 13+
      */
+    @Deprecated
     public static boolean isPostJDK13(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK13);
     }
@@ -673,6 +675,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 14+
      */
+    @Deprecated
     public static boolean isPostJDK14(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK14);
     }
@@ -683,6 +686,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 15+
      */
+    @Deprecated
     public static boolean isPostJDK15(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK15);
     }
@@ -693,6 +697,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 16+
      */
+    @Deprecated
     public static boolean isPostJDK16(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK16);
     }
@@ -703,6 +708,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 17+
      */
+    @Deprecated
     public static boolean isPostJDK17(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK17);
     }
@@ -713,6 +719,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 18+
      */
+    @Deprecated
     public static boolean isPostJDK18(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK18);
     }
@@ -1115,7 +1122,7 @@ public class CompilerConfiguration {
      * @since 4.0.0
      */
     private static String defaultTargetBytecode() {
-        final String javaVersion = VMPlugin.getJavaVersion();
+        String javaVersion = Integer.toString(Runtime.version().feature());
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
             return javaVersion;
         }

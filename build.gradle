@@ -220,15 +220,6 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
-if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-    logger.lifecycle '''
-************************************* WARNING ***********************************************
-****  You're running the build with an older JDK. NEVER try to release with an old JDK!  ****
-****  You must use a JDK 16+ in order to compile all features of the language.           ****
-*********************************************************************************************
-'''
-}
-
 apply from: 'gradle/licenses.gradle'
 
 // CC: This can probably be removed as the native IDEA import
@@ -265,4 +256,36 @@ tasks.named("dependencyUpdates")?.configure {
     rejectVersionIf {
         !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
     }
+}
+
+def indyTests = [
+"IndyDirectTest",
+"IndyDoubleDispatchTest",
+"IndyPromotionTest",
+"RuntimeCallsiteGenTest",
+"SimpleReflectiveTest",
+"StaticCallsiteGenTest"]
+
+indyTests.each {name ->
+    tasks.register(name, JavaExec) {
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(23)
+        }
+        classpath = sourceSets.test.runtimeClasspath
+        mainClass = "indy.perf." + name
+    }
+}
+
+task('indyAll') {
+    dependsOn(indyTests)
+}
+
+tasks.register("main", JavaExec) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(23)
+    }
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "groovy.ui.GroovyMain"
+    args("-d","t.groovy")
+    it.workingDir("/home/blackdrag/coding/releases")
 }

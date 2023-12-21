@@ -257,7 +257,7 @@ public class ClassNodeResolver {
                     // this may happen under Windows because getResource is case-insensitive under that OS!
                     asmClass = null;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // fall through and attempt other search strategies
             }
         }
