@@ -76,7 +76,9 @@ public interface VMPlugin {
      *
      * @return java version
      * @since 4.0.0
+     * @deprecated
      */
+    @Deprecated
     static String getJavaVersion() {
         try {
             return System.getProperty("java.specification.version");

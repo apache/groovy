@@ -21,7 +21,6 @@ package org.codehaus.groovy.vmplugin;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -31,12 +30,10 @@ import java.util.Map;
  */
 public class VMPluginFactory {
 
-    private static final Map<BigDecimal,String> PLUGIN_MAP = Maps.of(
+    private static final Map<Integer,String> PLUGIN_MAP = Maps.of(
         // NOTE: Declare the vm plugin entries in *descending* order!
-        new BigDecimal( "16"), "org.codehaus.groovy.vmplugin.v16.Java16",
-        new BigDecimal( "10"), "org.codehaus.groovy.vmplugin.v10.Java10",
-        new BigDecimal(  "9"), "org.codehaus.groovy.vmplugin.v9.Java9",
-        new BigDecimal("1.8"), "org.codehaus.groovy.vmplugin.v8.Java8"
+        16, "org.codehaus.groovy.vmplugin.v16.Java16",
+        10, "org.codehaus.groovy.vmplugin.v10.Java10"
     );
 
     private static final VMPlugin PLUGIN = createPlugin();
@@ -44,9 +41,9 @@ public class VMPluginFactory {
     private static VMPlugin createPlugin() {
         return doPrivileged(() -> {
             ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            BigDecimal specVer = new BigDecimal(VMPlugin.getJavaVersion());
-            for (Map.Entry<BigDecimal,String> entry : PLUGIN_MAP.entrySet()) {
-                if (DefaultGroovyMethods.isAtLeast(specVer, entry.getKey())) {
+            int specVer = Runtime.version().feature();
+            for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
+                if (specVer >= entry.getKey()) {
                     String fullName = entry.getValue();
                     try {
                         return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
