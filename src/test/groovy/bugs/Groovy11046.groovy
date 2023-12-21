@@ -21,14 +21,30 @@ package groovy.bugs
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy11046 {
+
     @Test
-    void testGrabErrorForMissingDependency() {
+    void testMissingDependency1() {
         // throws NoClassDefFoundError: com.lmax.disruptor.EventTranslatorVararg
         assertScript '''
             @Grab('org.apache.logging.log4j:log4j-core:2.22.0')
             org.apache.logging.log4j.core.async.AsyncLogger log
         '''
+    }
+
+    @Test
+    void testMissingDependency2() {
+        def err = shouldFail '''
+            @Grab('org.apache.logging.log4j:log4j-core:2.22.0')
+            org.apache.logging.log4j.core.async.AsyncLogger log
+            System.setProperty('Log4jContextSelector',
+                'org.apache.logging.log4j.core.async.AsyncLoggerContextSelector')
+            log = org.apache.logging.log4j.LogManager.getLogger(getClass()) //XXX
+        '''
+        assert err instanceof NoClassDefFoundError // CompilationFailedException (previously)
+        assert err =~ /com.lmax.disruptor.EventTranslatorVararg/
+        assert err.asString() =~ /at org.apache.logging.log4j.LogManager.getLogger\(/ : 'script should have failed at runtime'
     }
 }
