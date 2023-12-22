@@ -84,7 +84,9 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
      *
      * @param arguments the arguments to check
      * @throws IllegalArgumentException if the parameters are not valid
+     * @deprecated
      */
+    @Deprecated
     public void checkParameters(Class[] arguments) {
         // let's check that the argument types are valid
         if (!isValidMethod(arguments)) {

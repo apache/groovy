@@ -22,7 +22,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 
 /**
  * To test the case when we call a static method on a class and while we load all the methods from its interface,
- * {@link MetaMethodIndex.Entry} contains more than one method from interface already
+ * {@link MetaMethodIndex.Cache} contains more than one method from interface already
  */
 interface FooThree {
     static String foo() {
