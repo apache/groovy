@@ -38,6 +38,10 @@ public class ParameterTypes {
         nativeParamTypes = pt;
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public ParameterTypes(String[] pt) {
         nativeParamTypes = new Class[pt.length];
         for (int i = 0; i != pt.length; ++i) {

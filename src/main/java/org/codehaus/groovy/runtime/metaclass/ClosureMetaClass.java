@@ -398,14 +398,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public synchronized void initialize() {
         if (!isInitialized()) {
             CachedMethod[] methodArray = theCachedClass.getMethods();
-            synchronized (theCachedClass) {
-                for (final CachedMethod cachedMethod : methodArray) {
-                    if (!cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
-                    closureMethods.add(cachedMethod);
-                }
+            for (final CachedMethod cachedMethod : methodArray) {
+                if (!cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
+                closureMethods.add(cachedMethod);
             }
             assignMethodChooser();
-            setInitialized(true);
+            super.reinitialize();
         }
     }
 
@@ -664,7 +662,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private synchronized void loadMetaInfo() {
-        if (metaMethodIndex.isEmpty()) {
+        if (!isInitialized()) {
           reinitialize();
         }
     }

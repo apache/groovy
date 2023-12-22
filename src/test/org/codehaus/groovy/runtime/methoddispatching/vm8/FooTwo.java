@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime.methoddispatching.vm8;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 
 /**
- * To test the case when we call a static method on a class and {@link MetaMethodIndex.Entry}
+ * To test the case when we call a static method on a class and {@link MetaMethodIndex.Cache}
  * contains more than one method from interface already
  */
 interface FooTwo {
