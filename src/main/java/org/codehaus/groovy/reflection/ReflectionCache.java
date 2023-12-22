@@ -22,6 +22,7 @@ import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.util.TripleKeyHashMap;
 
 public class ReflectionCache {
+    @Deprecated
     public static Class autoboxType(Class type) {
         return TypeUtil.autoboxType(type);
     }
@@ -38,12 +39,15 @@ public class ReflectionCache {
         return (String) mopNameEntry.value;
     }
 
+    @Deprecated
     static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
+    @Deprecated
     public static boolean isArray(Class klazz) {
-      return klazz.isArray();
+        return klazz.isArray();
     }
 
+    @Deprecated
     static void setAssignableFrom(Class klazz, Class aClass) {
         // FIXME no implementation?
 //        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
@@ -52,9 +56,10 @@ public class ReflectionCache {
 //        }
     }
 
+    @Deprecated
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
         if (klazz == aClass)
-          return true;
+            return true;
 
 //        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
 //        if (val.getValue() == null) {
@@ -64,6 +69,7 @@ public class ReflectionCache {
         return klazz.isAssignableFrom(aClass);
     }
 
+    @Deprecated
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {
         if (a1 == null) {
             return a2 == null || a2.length == 0;
@@ -92,7 +98,7 @@ public class ReflectionCache {
 
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
-          return null;
+            return null;
 
         return ClassInfo.getClassInfo(klazz).getCachedClass();
     }

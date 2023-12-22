@@ -19,6 +19,7 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -183,7 +184,7 @@ public class ParameterTypes {
      */
     private static Object[] fitToVargs(Object[] argumentArrayOrig, CachedClass[] paramTypes) {
         Class vargsClassOrig = paramTypes[paramTypes.length - 1].getTheClass().getComponentType();
-        Class vargsClass = ReflectionCache.autoboxType(vargsClassOrig);
+        Class vargsClass = TypeUtil.autoboxType(vargsClassOrig);
         Object[] argumentArray = argumentArrayOrig.clone();
         MetaClassHelper.unwrap(argumentArray);
 

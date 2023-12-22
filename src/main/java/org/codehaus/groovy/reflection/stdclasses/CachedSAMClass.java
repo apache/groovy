@@ -23,7 +23,6 @@ import groovy.util.ProxyGenerator;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -53,9 +52,9 @@ public class CachedSAMClass extends CachedClass {
 
     @Override
     public boolean isAssignableFrom(Class argument) {
-        return argument == null
-            || Closure.class.isAssignableFrom(argument)
-            || ReflectionCache.isAssignableFrom(getTheClass(), argument);
+        if (argument == null
+                || Closure.class.isAssignableFrom(argument)) return true;
+        return getTheClass().isAssignableFrom(argument);
     }
 
     @Override

@@ -123,7 +123,6 @@ import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
-import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
 import static org.codehaus.groovy.reflection.ReflectionUtils.parameterTypeMatches;
 import static org.codehaus.groovy.runtime.MetaClassHelper.castArgumentsToClassArray;
 
@@ -601,7 +600,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 boolean skip = false;
                 // skip DGM methods on an interface if the class already has the method
                 // but don't skip for GroovyObject-related methods as it breaks things :-(
-                if (method instanceof GeneratedMetaMethod && !isAssignableFrom(GroovyObject.class, method.getDeclaringClass().getTheClass())) {
+                if (method instanceof GeneratedMetaMethod && !GroovyObject.class.isAssignableFrom(method.getDeclaringClass().getTheClass())) {
                     final String generatedMethodName = method.getName();
                     final CachedClass[] generatedMethodParameterTypes = method.getParameterTypes();
                     for (Method m : (null == theClassMethods ? theClassMethods = theClass.getMethods() : theClassMethods)) {

@@ -60,7 +60,6 @@ import org.apache.groovy.util.ReversedList;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
@@ -12195,7 +12194,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return (T) stack;
         }
 
-        if (clazz!=String[].class && ReflectionCache.isArray(clazz)) {
+        if (clazz != String[].class && clazz.isArray()) {
             try {
                 return (T) asArrayType(col, clazz);
             } catch (GroovyCastException e) {
