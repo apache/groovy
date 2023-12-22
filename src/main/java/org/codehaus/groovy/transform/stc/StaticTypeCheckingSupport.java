@@ -147,6 +147,7 @@ import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.codehaus.groovy.syntax.Types.DIVIDE;
 import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.IMPLIES;
 import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
@@ -523,6 +524,7 @@ public abstract class StaticTypeCheckingSupport {
             case MATCH_REGEX:
             case KEYWORD_INSTANCEOF:
             case COMPARE_NOT_INSTANCEOF:
+            case IMPLIES:
                 return true;
             default:
                 return false;

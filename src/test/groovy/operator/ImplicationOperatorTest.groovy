@@ -19,6 +19,7 @@
 package operator
 
 import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
 
 /**
  * Test Logical Implication Operation
@@ -36,5 +37,11 @@ class ImplicationOperatorTest extends GroovyTestCase {
         assert false ==> false ==> false
         assert false ==> (false ==> false)
         assert !((false ==> false) ==> false)
+    }
+
+    @CompileStatic
+    void testImplicationOperationCS() {
+        boolean result = false ==> false && false ==> true && !(true ==> false) && true ==> true
+        assert result
     }
 }

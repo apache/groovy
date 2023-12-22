@@ -16,8 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import net.jqwik.api.*
-import net.jqwik.api.constraints.*
+
+
+import groovy.transform.CompileStatic
+import net.jqwik.api.ForAll
+import net.jqwik.api.Property
+import net.jqwik.api.constraints.IntRange
+import net.jqwik.api.constraints.Size
+import net.jqwik.api.constraints.UniqueElements
 
 class JQwikTest {
     @Property
@@ -31,13 +37,31 @@ class JQwikTest {
         i == 0 ==> i == -i
     }
 
+    @CompileStatic
+    @Property(tries=10)
+    boolean 'only zero is the same as the negative of itself - CS'(@ForAll int i) {
+        i == 0 ==> i == -i
+    }
+
     @Property(tries=100)
     boolean 'an odd number squared is still odd'(@ForAll int n) {
         n % 2 == 1 ==> (n ** 2) % 2 == 1
     }
 
+    @CompileStatic
+    @Property(tries=100)
+    boolean 'an odd number squared is still odd - CS'(@ForAll int n) {
+        n % 2 == 1 ==> (n ** 2) % 2 == 1
+    }
+
     @Property(tries=100)
     boolean 'abs of a positive integer is itself'(@ForAll int i) {
+        i >= 0 ==> i.abs() == i
+    }
+
+    @CompileStatic
+    @Property(tries=100)
+    boolean 'abs of a positive integer is itself - CS'(@ForAll int i) {
         i >= 0 ==> i.abs() == i
     }
 
