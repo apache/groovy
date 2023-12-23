@@ -18,37 +18,44 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-/**
- * Test for the BenchmarkInterceptor
- */
-class DefaultInterfaceMethodsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    void testSimpleDeclarationAndCall() {
+final class DefaultInterfaceMethodsTest {
+
+    @Test
+    void testDefaultMethod() {
         assertScript '''
-            public interface InterfaceWithDefault {
-                default String hello() {
+            interface I {
+                default String m() {
                     return 'Hello'
                 }
             }
-            class UseDefault implements InterfaceWithDefault {}
-            assert new UseDefault().hello() == 'Hello'
+
+            class C implements I {
+            }
+
+            assert new C().m() == 'Hello'
         '''
     }
-    void testSimpleDeclarationAndOverride() {
+
+    @Test
+    void testDefaultMethodOverride() {
         assertScript '''
-            public interface InterfaceWithDefault {
-                default String hello() {
+            interface I {
+                default String m() {
                     return 'Hello'
                 }
             }
-            class OverrideDefault implements InterfaceWithDefault {
-                public String hello() {
+
+            class C implements I {
+                @Override String m() {
                     return 'Bon jour'
                 }
             }
-            assert new OverrideDefault().hello() == 'Bon jour'
+
+            assert new C().m() == 'Bon jour'
         '''
     }
 }

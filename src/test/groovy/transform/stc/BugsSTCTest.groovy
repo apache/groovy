@@ -1154,9 +1154,9 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9909 tests changed for GROOVY-8299
+    // GROOVY-8299, GROOVY-9909
     void testInvokeDefaultMethodFromDirectInterface() {
-        shouldFailWithMessages('''
+        shouldFailWithMessages '''
             class C implements groovy.transform.stc.Groovy9909 {
                 @Override String m() {
                     'it ' + super.m() // default method
@@ -1164,7 +1164,25 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             }
             String result = new C().m()
             assert result == 'it works'
-        ''',  "Default method m() requires qualified super")
+        ''',
+        'Default method m() requires qualified super'
+    }
+
+    // GROOVY-8299, GROOVY-11256
+    void testInvokeAbstractFromDirectInterface() {
+        shouldFailWithMessages '''
+            interface I {
+                def m()
+            }
+
+            class C implements I {
+                @Override m() {}
+                void test() {
+                    I.super.m()
+                }
+            }
+        ''',
+        'Abstract method m() cannot be called directly'
     }
 
     // GROOVY-8339, GROOVY-10109, GROOVY-10594

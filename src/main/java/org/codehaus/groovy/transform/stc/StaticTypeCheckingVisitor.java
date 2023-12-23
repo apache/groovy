@@ -1523,31 +1523,30 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
-        if (staticOnlyAccess && "this".equals(propertyName)) {
-            // handle "Outer.this" for any level of nesting
-            ClassNode outer = objectExpressionType.getGenericsTypes()[0].getType();
+        if (staticOnlyAccess) {
+            if ("this".equals(propertyName)) {
+                // handle "Outer.this" for any level of nesting
+                ClassNode outer = objectExpressionType.getGenericsTypes()[0].getType();
 
-            ClassNode found = null;
-            for (ClassNode enclosingType : enclosingTypes) {
-                if (!enclosingType.isStaticClass() && outer.equals(enclosingType.getOuterClass())) {
-                    found = enclosingType;
-                    break;
+                ClassNode found = null;
+                for (ClassNode enclosingType : enclosingTypes) {
+                    if (!enclosingType.isStaticClass() && outer.equals(enclosingType.getOuterClass())) {
+                        found = enclosingType;
+                        break;
+                    }
                 }
-            }
-            if (found != null) {
-                storeType(pexp, outer);
-                return true;
-            }
-        }
-
-        if (staticOnlyAccess && "super".equals(propertyName)) {
-            // handle "I.super" for default interface logic
-            ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-            ClassNode accessor = objectExpressionType.getGenericsTypes()[0].getType();
-            if (accessor.isInterface() && enclosingType.implementsInterface(accessor)) {
-                storeType(pexp, accessor);
-                return true;
-            } else {
+                if (found != null) {
+                    storeType(pexp, outer);
+                    return true;
+                }
+            } else if ("super".equals(propertyName)) {
+                // GROOVY-8299: handle "Iface.super" for interface default methods
+                ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+                ClassNode accessor = objectExpressionType.getGenericsTypes()[0].getType();
+                if (accessor.isInterface() && enclosingType.implementsInterface(accessor)) {
+                    storeType(pexp, accessor);
+                    return true;
+                }
                 return false;
             }
         }
@@ -3689,10 +3688,11 @@ out:                if (mn.size() != 1) {
                         if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
                                 && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
-                        } else if ((chosenReceiver.getType().isInterface() || targetMethod.isAbstract()) && isSuperExpression(objectExpression)) { // GROOVY-10341, GROOVY-8299
+                        } else if ((chosenReceiver.getType().isInterface() || targetMethod.isAbstract()) && isSuperExpression(objectExpression)) { // GROOVY-8299, GROOVY-10341
                             String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
-                            if (Traits.hasDefaultImplementation(targetMethod) || targetMethod.isDefault()) { // GROOVY-10494
-                                addStaticTypeError("Default method " + target + " requires qualified super", call);
+                            if (targetMethod.isDefault() || Traits.hasDefaultImplementation(targetMethod)) { // GROOVY-10494
+                                if (objectExpression instanceof VariableExpression)
+                                  addStaticTypeError("Default method " + target + " requires qualified super", call);
                             } else {
                                 addStaticTypeError("Abstract method " + target + " cannot be called directly", call);
                             }
@@ -5239,6 +5239,10 @@ out:                if (mn.size() != 1) {
     }
 
     protected static boolean isSuperExpression(final Expression expression) {
+        if (expression instanceof PropertyExpression) { // GROOVY-11256
+            return "super".equals(((PropertyExpression) expression).getPropertyAsString())
+                && ((PropertyExpression) expression).getObjectExpression() instanceof ClassExpression;
+        }
         return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
