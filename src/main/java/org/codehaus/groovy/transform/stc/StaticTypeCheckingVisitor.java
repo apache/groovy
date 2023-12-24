@@ -1624,7 +1624,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (property == null || !enclosingTypes.contains(receiverType)) {
                     if (readMode) {
                         if (getter != null && hasAccessToMember(enclosingTypes.iterator().next(), getter.getDeclaringClass(), getter.getModifiers())) {
-                            ClassNode returnType = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
                             String delegationData = receiver.getData();
