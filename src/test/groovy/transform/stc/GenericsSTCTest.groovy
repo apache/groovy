@@ -937,6 +937,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11257
+    void testReturnTypeInferenceWithMethodGenerics31() {
+        assertScript '''
+            interface I<U> extends groovy.transform.stc.Groovy11257<U> {}
+            def <V> I<V> forge(V v) { return new I(){} }
+            void test() {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.util.Optional <java.math.BigInteger>'
+                })
+                def opt = forge(1G).thing
+                def num = opt.orElse(42G).intValue()
+            }
+
+            test()
+        '''
+    }
+
     void testDiamondInferenceFromConstructor1() {
         assertScript '''
             class Foo<U> {

@@ -1598,7 +1598,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (property == null || !enclosingTypes.contains(receiverType)) {
                     if (readMode) {
                         if (getter != null) {
-                            ClassNode returnType = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
                             String delegationData = receiver.getData();
