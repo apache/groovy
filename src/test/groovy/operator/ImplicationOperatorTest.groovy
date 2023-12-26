@@ -79,4 +79,12 @@ class ImplicationOperatorTest extends GroovyTestCase {
         def result = 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/
         assert result
     }
+
+    void testShortCircuiting() {
+        String str = null
+        assert str != null ==> 0 <= str.length()
+
+        str = "abc"
+        assert str != null ==> 0 <= str.length()
+    }
 }
