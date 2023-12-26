@@ -41,7 +41,42 @@ class ImplicationOperatorTest extends GroovyTestCase {
 
     @CompileStatic
     void testImplicationOperationCS() {
-        boolean result = false ==> false && false ==> true && !(true ==> false) && true ==> true
+        boolean result = (false ==> false) && (false ==> true) && !(true ==> false) && (true ==> true)
+        assert result
+    }
+
+    void testPrecedence1() {
+        def result = false ==> false ? true ==> false : true ==> true
+        assert !result
+    }
+
+    void testPrecedence2() {
+        def result = true ==> true || false ==> false
+        assert !result
+    }
+
+    void testPrecedence3() {
+        def result = true ==> true | false ==> false
+        assert !result
+    }
+
+    void testPrecedence4() {
+        def result = true ==> false && true ==> false
+        assert result
+    }
+
+    void testPrecedence5() {
+        def result = true ==> false & true ==> false
+        assert result
+    }
+
+    void testPrecedence6() {
+        def result = 'abc' ==~ /[a-z]+/ ==> 'abc' ==~ /[a]+/
+        assert !result
+    }
+
+    void testPrecedence7() {
+        def result = 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/
         assert result
     }
 }
