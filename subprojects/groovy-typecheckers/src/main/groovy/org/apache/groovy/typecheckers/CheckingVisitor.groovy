@@ -33,7 +33,7 @@ class CheckingVisitor extends ClassCodeVisitorSupport {
     protected final Map<Expression, Expression> localConstVars = new HashMap<>()
 
     protected Expression findConstExp(Expression exp, Class type) {
-        if (exp instanceof ConstantExpression && exp.value.getClass().isAssignableFrom(type)) {
+        if (exp instanceof ConstantExpression && type.isAssignableFrom(exp.value.getClass())) {
             return exp
         }
         if (exp instanceof VariableExpression) {
