@@ -24,6 +24,7 @@ import org.codehaus.groovy.syntax.Token
 
 class MatchingConstraintsBuilder {
     Set<String> placeholders = new LinkedHashSet<>()
+    Set<String> varargPlaceholders = new LinkedHashSet<>()
     ConstraintPredicate<Token> tokenPredicate
     ConstraintPredicate<TreeContext> eventually
 
@@ -36,6 +37,7 @@ class MatchingConstraintsBuilder {
 
         new MatchingConstraints(
                 placeholders: Collections.unmodifiableSet(placeholders),
+                varargPlaceholders: Collections.unmodifiableSet(varargPlaceholders),
                 tokenPredicate: tokenPredicate,
                 eventually: eventually
         )
@@ -47,6 +49,11 @@ class MatchingConstraintsBuilder {
 
     MatchingConstraintsBuilder placeholder(String... names) {
         names.each { String it -> placeholders.add(it) }
+        this
+    }
+
+    MatchingConstraintsBuilder varargPlaceholder(String... names) {
+        names.each { String it -> varargPlaceholders.add(it) }
         this
     }
 
