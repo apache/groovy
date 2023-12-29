@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.PackageNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -159,9 +160,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                 return exp.name
             } else if (exp instanceof ConstantExpression && placeholders.contains(exp.value)) {
                 return exp.value
-            } else {
-                return null
+            } else if (exp instanceof ArgumentListExpression && exp.size() == 1 && exp[0] instanceof VariableExpression) {
+                // TODO currently matches exactly all args, consider allowing
+                // other non-vararg nodes before the vararg one
+                VariableExpression ve = exp[0] as VariableExpression
+                if (varargPlaceholders.contains(ve.name)) {
+                    return ve.name
+                }
             }
+            return null
         }
     }
 

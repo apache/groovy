@@ -77,6 +77,24 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    void testMethodCallExpressionWithVarargs() {
+        assertScript '''
+        import org.codehaus.groovy.macro.matcher.ASTMatcher
+
+        def pattern = macro { foo(a) }.withConstraints{ varargPlaceholder a }
+        def ast2 = macro { foo() }
+        def ast3 = macro { foo(1) }
+        def ast4 = macro { foo(1, 2) }
+        def ast5 = macro { foo(1, 2, 3) }
+        def ast6 = macro { bar() }
+        assert ASTMatcher.matches(ast2, pattern)
+        assert ASTMatcher.matches(ast3, pattern)
+        assert ASTMatcher.matches(ast4, pattern)
+        assert ASTMatcher.matches(ast5, pattern)
+        assert !ASTMatcher.matches(ast6, pattern)
+        '''
+    }
+
     void testPropertyExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher

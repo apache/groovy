@@ -35,6 +35,7 @@ class MatchingConstraints {
     public final static ConstraintPredicate<Token> ANY_TOKEN = AnyTokenMatch.INSTANCE
 
     final Set<String> placeholders
+    final Set<String> varargPlaceholders
     final ConstraintPredicate<Token> tokenPredicate
     final ConstraintPredicate<TreeContext> eventually
 }
