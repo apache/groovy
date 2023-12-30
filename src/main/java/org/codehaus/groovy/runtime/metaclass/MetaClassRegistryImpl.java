@@ -55,13 +55,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A registry of MetaClass instances which caches introspection and
  * reflection information and allows methods to be dynamically added to
  * existing classes at runtime
  */
-public class MetaClassRegistryImpl implements MetaClassRegistry{
+public class MetaClassRegistryImpl implements MetaClassRegistry {
     /**
      * @deprecated Use {@link ExtensionModuleScanner#MODULE_META_INF_FILE} instead
      */
@@ -223,7 +225,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     instanceMethods.add(method);
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
+                Logger logger = Logger.getLogger(MetaClassRegistryImpl.class.getName());
+                if (logger.isLoggable(Level.WARNING)) {
+                    logger.warning(DefaultGroovyMethods.asString(e));
+                }
                 // we print the error, but we don't stop with an exception here
                 // since it is more comfortable this way for development
             }
@@ -267,7 +272,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     public MetaClass getMetaClass(Object obj) {
-        Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
+        Class theClass = obj instanceof Class ? (Class) obj : obj.getClass();
         return ClassInfo.getClassInfo(theClass).getMetaClass(obj);
     }
 
@@ -277,7 +282,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     private void setMetaClass(Class theClass, MetaClass oldMC, MetaClass newMC) {
         ClassInfo info = ClassInfo.getClassInfo(theClass);
-        MetaClass mc = null;
+        MetaClass mc;
         info.lock();
         try {
             mc = info.getStrongMetaClass();
@@ -303,7 +308,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public void setMetaClass(Object obj, MetaClass theMetaClass) {
         Class theClass = obj instanceof Class ? (Class)obj : obj.getClass();
         ClassInfo info = ClassInfo.getClassInfo(theClass);
-        MetaClass mc = null;
+        MetaClass mc;
         info.lock();
         try {
             mc = info.getPerInstanceMetaClass(obj);

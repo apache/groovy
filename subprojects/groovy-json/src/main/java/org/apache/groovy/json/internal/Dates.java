@@ -18,9 +18,13 @@
  */
 package org.apache.groovy.json.internal;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Dates {
 
@@ -151,7 +155,10 @@ public class Dates {
                     || length == SHORT_ISO_8601_TIME_LENGTH || (length >= 17 && (charArray[start + 16] == ':'));
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Logger logger = Logger.getLogger(Dates.class.getName());
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning(DefaultGroovyMethods.asString(ex));
+            }
             return false;
         }
     }
