@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class GeneratedMetaMethod extends MetaMethod {
     private final String name;
@@ -190,15 +191,16 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
                                  new BufferedInputStream(
                                          loader.getResourceAsStream("META-INF/dgminfo")))) {
 
-                Map<Integer, Class> classes = new HashMap<Integer, Class>();
+                final int initialCapacity = 2048;
+                Map<Integer, Class> classes = new ConcurrentHashMap<>(initialCapacity);
                 for (int i = 0; i < PRIMITIVE_CLASSES.length; i++) {
                     classes.put(i, PRIMITIVE_CLASSES[i]);
                 }
-
+                final Map<Integer, String> names = new HashMap<>(initialCapacity);
                 int skip = 0;
-                for (; ; ) {
+                for (;;) {
                     String name = in.readUTF();
-                    if (name.length() == 0)
+                    if (name.isEmpty())
                         break;
 
                     int key = in.readInt();
@@ -206,16 +208,17 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
                     if (skip++ < PRIMITIVE_CLASSES.length)
                         continue;
 
-                    Class cls = null;
+                    names.put(key, name);
+                }
+                names.entrySet().parallelStream().forEach(e -> {
                     try {
-                        cls = loader.loadClass(name);
-                    } catch (ClassNotFoundException e) {
+                        Class<?> cls = loader.loadClass(e.getValue());
+                        classes.put(e.getKey(), cls);
+                    } catch (ClassNotFoundException ex) {
                         // under certain restrictive environments, loading certain classes may be forbidden
                         // and could yield a ClassNotFoundException (Google App Engine)
-                        continue;
                     }
-                    classes.put(key, cls);
-                }
+                });
 
                 int size = in.readInt();
                 List<DgmMethodRecord> res = new ArrayList<DgmMethodRecord>(size);
@@ -232,10 +235,11 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
 
                     int psize = in.readInt();
                     record.parameters = new Class[psize];
-                    for (int j = 0; j < record.parameters.length; j++) {
-                        record.parameters[j] = classes.get(in.readInt());
+                    for (int j = 0, n = record.parameters.length; j < n; j++) {
+                        final Class<?> cls = classes.get(in.readInt());
+                        record.parameters[j] = cls;
 
-                        if (record.parameters[j] == null) {
+                        if (cls == null) {
                             skipRecord = true;
                         }
                     }
