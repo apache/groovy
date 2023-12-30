@@ -19,12 +19,12 @@
 package org.codehaus.groovy.runtime.m12n;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.util.URLStreams;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Enumeration;
 import java.util.Properties;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
@@ -57,9 +57,7 @@ public class ExtensionModuleScanner {
 
     private void scanClasspathModulesFrom(String moduleMetaInfFile) {
         try {
-            Enumeration<URL> resources = classLoader.getResources(moduleMetaInfFile);
-            while (resources.hasMoreElements()) {
-                URL url = resources.nextElement();
+            for (URL url : DefaultGroovyMethods.toSet(classLoader.getResources(moduleMetaInfFile))) {
                 scanExtensionModuleFromMetaInf(url);
             }
         } catch (IOException e) {
