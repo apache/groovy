@@ -64,6 +64,7 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -167,6 +168,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private ClassNode classNode;
     private MethodNode methodNode;
 
+    private SourceUnit source;
+
+    public Verifier() {
+    }
+
+    public Verifier(SourceUnit source) {
+        this.source = source;
+    }
+
     public ClassNode getClassNode() {
         return classNode;
     }
@@ -267,6 +277,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addCovariantMethods(node);
         detectNonSealedClasses(node);
         checkFinalVariables(node);
+        checkDeadCode(node);
     }
 
     private static final String[] INVALID_COMPONENTS = {"clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait"};
@@ -299,6 +310,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private void checkFinalVariables(final ClassNode node) {
         GroovyClassVisitor visitor = new FinalVariableAnalyzer(null, getFinalVariablesCallback());
+        visitor.visitClass(node);
+    }
+
+    private void checkDeadCode(final ClassNode node) {
+        if (null == source) return;
+        GroovyClassVisitor visitor = new DeadCodeAnalyzer(source);
         visitor.visitClass(node);
     }
 
