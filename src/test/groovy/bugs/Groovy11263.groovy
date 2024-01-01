@@ -214,7 +214,51 @@ final class Groovy11263 {
     }
 
     @Test
-    void testUnreachableStatementAfterBreak() {
+    void testUnreachableStatementAfterReturn16() {
+        def err = shouldFail '''\
+            return
+            def a = 1
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 2, column 13\.\s+def a = 1\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterReturn17() {
+        def err = shouldFail '''\
+            return
+            return
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 2, column 13\.\s+return\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterReturn19() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                return
+                break
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+break\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterReturn20() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                return
+                continue
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+continue\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterBreak1() {
         def err = shouldFail '''\
             for (var i in [1, 2, 3]) {
                 break
@@ -226,7 +270,43 @@ final class Groovy11263 {
     }
 
     @Test
-    void testUnreachableStatementAfterContinue() {
+    void testUnreachableStatementAfterBreak2() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                break
+                break
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+break\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterBreak3() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                break
+                continue
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+continue\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterBreak4() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                break
+                return
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+return\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterContinue1() {
         def err = shouldFail '''\
             for (var i in [1, 2, 3]) {
                 continue
@@ -235,5 +315,41 @@ final class Groovy11263 {
         '''
 
         assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+def a = 1\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterContinue2() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                continue
+                continue
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+continue\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterContinue3() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                continue
+                break
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+break\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterContinue4() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                continue
+                return
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+return\s+(.+)/
     }
 }
