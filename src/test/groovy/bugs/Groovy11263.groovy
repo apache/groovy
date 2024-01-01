@@ -20,7 +20,6 @@ package bugs
 
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy11263 {
@@ -351,5 +350,53 @@ final class Groovy11263 {
         '''
 
         assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+return\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterThrow1() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                throw new RuntimeException("just for test")
+                throw new RuntimeException("just for test.")
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+throw new RuntimeException\("just for test\."\)\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterThrow2() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                throw new RuntimeException("just for test")
+                return
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+return\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterThrow3() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                throw new RuntimeException("just for test")
+                break
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+break\s+(.+)/
+    }
+
+    @Test
+    void testUnreachableStatementAfterThrow4() {
+        def err = shouldFail '''\
+            for (var i in [1, 2, 3]) {
+                throw new RuntimeException("just for test")
+                continue
+            }
+        '''
+
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+continue\s+(.+)/
     }
 }

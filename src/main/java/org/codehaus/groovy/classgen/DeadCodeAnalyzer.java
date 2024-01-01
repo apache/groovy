@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
@@ -55,7 +56,7 @@ public class DeadCodeAnalyzer extends ClassCodeVisitorSupport {
             if (statement instanceof ReturnStatement
                 || statement instanceof BreakStatement
                 || statement instanceof ContinueStatement
-            ) {
+                || statement instanceof ThrowStatement) {
                 foundCnt++;
                 if (1 == foundCnt) continue;
             }

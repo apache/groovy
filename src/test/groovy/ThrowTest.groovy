@@ -22,12 +22,15 @@ import groovy.test.GroovyTestCase
 
 class ThrowTest extends GroovyTestCase {
     void testThrow() {
-        try {
-            throw new Exception("abcd")
-            fail("Should have thrown an exception by now")
-        }
-        catch (Exception e) {
-            assert e.message == "abcd"
-        }
+        def err = shouldFail '''\
+            try {
+                throw new Exception("abcd")
+                assert false: "Should have thrown an exception by now"
+            }
+            catch (Exception e) {
+                assert e.message == "abcd"
+            }
+        '''
+        assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 3, column 17\.\s+assert false: "Should have thrown an exception by now"\s+(.+)/
     }
 }
