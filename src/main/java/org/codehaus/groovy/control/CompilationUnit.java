@@ -750,8 +750,11 @@ public class CompilationUnit extends ProcessingUnit {
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
             new OptimizerVisitor(CompilationUnit.this).visitClass(classNode, source); // GROOVY-4272: repositioned from static import visitor
 
-            GroovyClassVisitor visitor = new Verifier(source);
+            GroovyClassVisitor visitor;
             try {
+                Verifier verifier = new Verifier();
+                verifier.setSourceUnit(source);
+                visitor = verifier;
                 visitor.visitClass(classNode);
             } catch (RuntimeParserException rpe) {
                 getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);

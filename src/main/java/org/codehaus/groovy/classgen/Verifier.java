@@ -168,14 +168,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private ClassNode classNode;
     private MethodNode methodNode;
 
-    private SourceUnit source;
-
-    public Verifier() {
-    }
-
-    public Verifier(SourceUnit source) {
-        this.source = source;
-    }
+    private SourceUnit sourceUnit;
 
     public ClassNode getClassNode() {
         return classNode;
@@ -187,6 +180,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public MethodNode getMethodNode() {
         return methodNode;
+    }
+
+    public void setSourceUnit(SourceUnit sourceUnit) {
+        this.sourceUnit = sourceUnit;
     }
 
     private static FieldNode getMetaClassField(final ClassNode node) {
@@ -314,8 +311,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private void checkDeadCode(final ClassNode node) {
-        if (null == source) return;
-        GroovyClassVisitor visitor = new DeadCodeAnalyzer(source);
+        if (null == sourceUnit) return;
+        GroovyClassVisitor visitor = new DeadCodeAnalyzer(sourceUnit);
         visitor.visitClass(node);
     }
 
