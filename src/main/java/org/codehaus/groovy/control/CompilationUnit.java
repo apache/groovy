@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
+import org.codehaus.groovy.classgen.DeadCodeAnalyzer;
 import org.codehaus.groovy.classgen.EnumCompletionVisitor;
 import org.codehaus.groovy.classgen.EnumVisitor;
 import org.codehaus.groovy.classgen.ExtendedVerifier;
@@ -752,13 +753,14 @@ public class CompilationUnit extends ProcessingUnit {
 
             GroovyClassVisitor visitor;
             try {
-                Verifier verifier = new Verifier();
-                verifier.setSourceUnit(source);
-                visitor = verifier;
+                visitor = new Verifier();
                 visitor.visitClass(classNode);
             } catch (RuntimeParserException rpe) {
                 getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);
             }
+
+            visitor = new DeadCodeAnalyzer(source);
+            visitor.visitClass(classNode);
 
             visitor = new LabelVerifier(source);
             visitor.visitClass(classNode);
