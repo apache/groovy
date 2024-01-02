@@ -5445,9 +5445,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // 1) resolve type parameters of method
 
         if (methodGenericTypes != null) {
+            Parameter[] parameters = method.getParameters();
+            if (asBoolean(context)) parameters = Arrays.stream(parameters).map(p ->
+                new Parameter(applyGenericsContext(context, p.getType()), p.getName())
+            ).toArray(Parameter[]::new);
+
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
             for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
-            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, method.getParameters(), arguments, explicitTypeHints), resolvedPlaceholders);
+            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, parameters, arguments, explicitTypeHints), resolvedPlaceholders);
 
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
         }
@@ -5699,7 +5704,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 int i = 0;
                 // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
                 for (Parameter p : getParametersSafe((ClosureExpression) expression))
-                    if (!p.isDynamicTyped()) extractGenericsConnections(placeholders, p.getType(), paramTypes[i++]);
+                    if (!p.isDynamicTyped())
+                        extractGenericsConnections(placeholders, p.getType(), paramTypes[i]);
+                    i += 1;
             }
         }
 

@@ -34,7 +34,7 @@ final class MethodReferenceTest {
     '''
 
     @Test // class::instanceMethod
-    void testFunctionCI() {
+    void testFunctionCI1() {
         assertScript imports + '''
             @CompileStatic
             void test() {
@@ -254,33 +254,49 @@ final class MethodReferenceTest {
             assert test().get() == 42
         '''
 
-        def err = shouldFail imports + '''
+        assertScript imports + '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.Try
 
             class Option<X> {
-                private final X x
+                private X x
                 def X get() { x }
                 static <Y> Option<Y> of(Y y) {
                     new Option(x: y)
                 }
             }
 
-            Option<Integer> option() { Option.of(666) }
+            Option<Integer> option() { Option.of(42) }
 
             @CompileStatic
             Try<Integer> test() {
-              //Try.of { option() }.mapTry(Option::get)
-                def try_of = Try.of { option() }
-                def result = try_of.mapTry(Option::get)
-                result
+                Try.of{ option() }.mapTry(Option::get)
             }
+
+            assert test().get() == 42
         '''
-        assert err =~ /Cannot (assign|return) io.vavr.control.Try <java.lang.Object> / // not <X> or <Option<Integer>>
+    }
+
+    @Test // class::instanceMethod -- GROOVY-11259
+    void testFunctionCI10() {
+        assertScript imports + '''
+            def consume(Set<String> keys){keys}
+            @CompileStatic
+            def test(Map<String, String> map) {
+                def keys = map.entrySet().stream()
+                    .map(Map.Entry::getKey).toSet()
+                consume(keys) // cannot call consume(Set<String>) with arguments [Set<Object>]
+            }
+
+            def set = test(foo:'bar', fizz:'buzz')
+            assert set.size() == 2
+            assert 'fizz' in set
+            assert 'foo' in set
+        '''
     }
 
     @Test // class::instanceMethod -- GROOVY-9974
-    void testPredicateCI() {
+    void testPredicateCI1() {
         assertScript imports + '''
             @CompileStatic
             void test(List<String> strings = ['']) {
