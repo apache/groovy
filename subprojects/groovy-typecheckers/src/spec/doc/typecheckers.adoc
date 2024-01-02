@@ -1,0 +1,102 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+ifndef::reldir_typecheckers[]
+:reldir_typecheckers: .
+endif::[]
+
+= Built-in auxiliary type checkers
+
+== Introduction
+
+Groovy's static nature includes an extensible type-checking mechanism.
+This mechanism allows users to selectively strengthen or weaken type checking
+as needed to cater for scenarios where the standard type checking isn't sufficient.
+
+In addition to allowing you to write your own customer checkers,
+Groovy offers a handful of useful built-in type checkers.
+These provide additional checks for specific scenarios.
+
+In the examples which follow, we'll explicitly show declaring
+the type checker we want to use.
+As usual, Groovy's compiler customization mechanisms would allow you to
+simplify application of such checkers, e.g. make it apply globally
+using a compiler configuration script, as just one example.
+
+== Checking Regex literals
+
+Consider the following code, which contains 3 regular expressions:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=introduction_example,indent=0]
+----
+<1> A constant String regex
+<2> Using the constant regex with the find operator
+<3> Checking the matcher's second group
+<4> A local variable containing a regex pattern
+<5> Using the pattern with grep
+<6> An API call passing a String literal regex
+
+Luckily, we made no errors in our regex definitions, and the code executes successfully.
+
+If however, we did make certain errors in those definitions, then we would expect the potential of runtime errors. Using `RegexChecker`, we can
+find certain kinds of errors during compilation.
+Let's look at some examples.
+
+Suppose at &#x2778; we looked for the third group instead of the second:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=invalid_group_count,indent=0]
+----
+
+We would see the following error at compile-time:
+
+----
+include::../test/RegexCheckerTest.groovy[tags=invalid_group_count_message,indent=0]
+----
+
+Alternatively, suppose at &#x2779; we accidentally left off the closing curly brace:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=unclosed_counted_closure,indent=0]
+----
+
+We would see the following error at compile-time:
+
+----
+include::../test/RegexCheckerTest.groovy[tags=unclosed_counted_closure_message,indent=0]
+----
+
+Alternatively, suppose at &#x277B; we accidentally left off the closing round bracket for the last (day of month) group:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=unclosed_group,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/RegexCheckerTest.groovy[tags=unclosed_group_message,indent=0]
+----

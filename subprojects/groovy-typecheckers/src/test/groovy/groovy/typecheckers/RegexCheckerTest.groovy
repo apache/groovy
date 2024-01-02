@@ -62,7 +62,7 @@ final class RegexCheckerTest {
 
         assertScript shell, '''
             def pets = ['cat', 'dog', 'goldfish']
-            def oNamed = ~/(.)o(.*)/ // missing closing bracket
+            def oNamed = ~/(.)o(.*)/
             assert pets.grep(oNamed) == ['dog', 'goldfish']
         '''
     }
