@@ -45,7 +45,7 @@ public class IndyDirectTest {
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        return new ConstantCallSite(handle);
+        return new MutableCallSite(handle);
     }
 
     @Test
