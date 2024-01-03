@@ -5700,13 +5700,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // repeat the same for each parameter given in the ClosureExpression
             if (parameters.length > 0 && expression instanceof ClosureExpression) {
-                ClassNode[] paramTypes = applyGenericsContext(placeholders, extractTypesFromParameters(parameters));
                 int i = 0;
-                // GROOVY-10054, GROOVY-10699, GROOVY-10749, et al.
-                for (Parameter p : getParametersSafe((ClosureExpression) expression))
+                // GROOVY-10054, GROOVY-10699, GROOVY-10749, GROOVY-10974, et al.
+                for (Parameter p : getParametersSafe((ClosureExpression) expression)) {
                     if (!p.isDynamicTyped())
-                        extractGenericsConnections(placeholders, p.getType(), paramTypes[i]);
+                        extractGenericsConnections(placeholders, p.getType(), parameters[i].getType());
                     i += 1;
+                }
             }
         }
 

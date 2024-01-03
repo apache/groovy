@@ -270,7 +270,9 @@ final class MethodReferenceTest {
 
             @CompileStatic
             Try<Integer> test() {
-                Try.of{ option() }.mapTry(Option::get)
+                def try_of = Try.of { option() }
+                def result = try_of.mapTry(Option::get)
+                result // cannot assign Try<Object> to: Try<Integer>
             }
 
             assert test().get() == 42
@@ -907,8 +909,41 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::new -- GROOVY-11001
+    @NotYetImplemented
+    @Test // class::new -- GROOVY-10930
+    void testFunctionCN5() {
+        def err = shouldFail imports + '''
+            class Foo { Foo() { } }
+            def <T> void m(Function<String,T> fn) { }
+
+            @CompileStatic
+            void test() {
+                m(Foo::new) // ctor does not accept String
+            }
+
+            test()
+        '''
+        assert err =~ /Cannot find matching constructor Foo\(java.lang.String\)/
+    }
+
+    @Test // class::new -- GROOVY-10971
     void testFunctionCN6() {
+        assertScript imports + '''
+            class Foo {
+                Foo(String s) { }
+            }
+
+            @CompileStatic
+            void test() {
+                Collectors.groupingBy(Foo::new)
+            }
+
+            test()
+        '''
+    }
+
+    @Test // class::new -- GROOVY-11001
+    void testFunctionCN7() {
         assertScript imports + '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.Try
