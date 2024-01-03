@@ -100,3 +100,129 @@ We would see the following error at compile-time:
 ----
 include::../test/RegexCheckerTest.groovy[tags=unclosed_group_message,indent=0]
 ----
+
+== Checking Format Strings
+
+The `format` methods in `java.util.Formatter`, and other similar methods,
+support formatted printing in the style of C's `printf` method with a
+format string and zero or more arguments.
+
+These methods have the following characteristics:
+
+* The first argument must be of type api:java.util.Locale[] or api:java.lang.String[].
+* If the first argument is of type `Locale`, the second argument must be of type `String`.
+* The `String` argument is treated as a format string containing zero or more embedded format specifiers as well as plain text. The format specifiers determine how the remaining arguments will be used within the resulting output.
+* The `FormatStringChecker` ensures that the format string is valid and the remaining arguments are compatible with the embedded format specifiers.
+
+There are numerous errors which can occur within the format string which lead
+to runtime errors. The goal of the `FormatStringChecker` is to eliminate
+a large number of such runtime errors. If the API call passes type checking,
+it will be guaranteed to succeed at runtime.
+
+The methods which are checked include:
+
+
+|===
+a|`java.lang.String`
+[source,groovy]
+----
+static String format(String format, Object... args)
+static String format(Locale l, String format, Object... args)
+String formatted(Object... args)  // JDK15+
+----
+a|`java.util.Formatter`
+[source,groovy]
+----
+String format(String format, Object... args)
+String format(Locale l, String format, Object... args)
+----
+a|`java.io.PrintStream`
+[source,groovy]
+----
+PrintStream printf(String format, Object... args)
+PrintStream printf(Locale l, String format, Object... args)
+----
+a|DGM methods
+[source,groovy]
+----
+printf(String format, Object... args)
+printf(Locale l, String format, Object... args)
+sprintf(String format, Object... args)
+sprintf(Locale l, String format, Object... args)
+----
+|===
+
+Here is an example of correctly using some of these methods:
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=valid_format_string_example,indent=0]
+----
+
+Over and above these methods, if you have your own method of this style,
+you can annotate it with `@FormatMethod`, and it will also be checked.
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=format_method_example,indent=0]
+----
+
+You can use the `FormatMethod` annotation provided in the `groovy-typecheckers`
+module or the https://checkerframework.org/api/org/checkerframework/checker/formatter/qual/FormatMethod.html[similarly named] annotation from the Java-based https://checkerframework.org/[checker framework].
+
+=== Errors detected
+
+Here are some examples of the kinds of errors detected.
+
+* The arguments much match the type of the format classifier, e.g. we can't
+use the character classifier with a boolean argument:
++
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=illegal_format_conversion,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=illegal_format_conversion_message,indent=0]
+----
+
+* We shouldn't specify precision for non-scientific arguments, e.g. we shouldn't
+expect 7 decimal places of precision for an integral value:
++
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=illegal_format_precision,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=illegal_format_precision_message,indent=0]
+----
+
+* We should specify only known format specifier conversions, e.g. `v` isn't known:
++
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=unknown_format_conversion,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=unknown_format_conversion_message,indent=0]
+----
+
+The complete list of errors detected include:
+
+* duplicate format flags
+* illegal format flags
+* illegal format precision values
+* unknown format conversions
+* illegal format conversions
+* format flags conversion mismatches
