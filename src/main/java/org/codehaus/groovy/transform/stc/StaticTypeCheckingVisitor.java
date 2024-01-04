@@ -5682,14 +5682,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn != null) {
                     ClassNode[] pTypes = collateMethodReferenceParameterTypes(mp, mn);
                     Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+                    // GROOVY-11241: implicit receiver for "Optional::get" is resolved now
+                    if (!mn.isStatic() && mp.getExpression() instanceof ClassExpression) {
+                        ClassNode objectType = parameters[0].getType();
+                        objectType = applyGenericsContext(placeholders, objectType);
+                        extractGenericsConnections(connections, objectType, pTypes[0].redirect());
+                    }
                     for (int i = 0, n = parameters.length; i < n; i += 1) {
                         // SAM parameters should align one-for-one with the referenced method's parameters
                         extractGenericsConnections(connections, parameters[i].getOriginType(), pTypes[i]);
                     }
                     // convert the method reference's generics into the SAM's generics domain
                     closureReturnType = applyGenericsContext(connections, closureReturnType);
+                    pTypes = applyGenericsContext(connections, pTypes);
                     // apply known generics connections to the placeholders of the return type
                     closureReturnType = applyGenericsContext(placeholders, closureReturnType);
+                    pTypes = applyGenericsContext(placeholders, pTypes); // and the parameters
 
                     expression = new ClosureExpression(Arrays.stream(pTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new), null);
                 }

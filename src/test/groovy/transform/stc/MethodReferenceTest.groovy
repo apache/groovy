@@ -237,8 +237,35 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-11241
+    @Test // class::instanceMethod -- GROOVY-9803
     void testFunctionCI9() {
+        assertScript imports + '''
+            class Try<X> { X x
+                static <Y> Try<Y> success(Y y) {
+                    new Try<Y>(x: y)
+                }
+                def <Z> Try<Z> map(Function<? super X, ? extends Z> f) {
+                    new Try<Z>(x: f.apply(x))
+                }
+            }
+
+            static <E> Set<E> asSet(E element) {
+                Collections.singleton(element)
+            }
+
+            @CompileStatic
+            Try<String> test() {
+                def try_of_str = Try.success('WORKS')
+                def try_of_opt = try_of_str.map(this::asSet)
+                    try_of_str = try_of_opt.map{it.first().toLowerCase()}
+            }
+
+            assert test().x == 'works'
+        '''
+    }
+
+    @Test // class::instanceMethod -- GROOVY-11241
+    void testFunctionCI10() {
         assertScript imports + '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.*
@@ -252,6 +279,26 @@ final class MethodReferenceTest {
             }
 
             assert test().get() == 42
+        '''
+
+        assertScript imports + '''
+            class Try<X> { X x
+                static <Y> Try<Y> of(Supplier<? extends Y> s) {
+                    new Try<Y>(x: s.get())
+                }
+                def <Z> Try<Z> mapTry(Function<? super X, ? extends Z> f) {
+                    new Try<Z>(x: f.apply(x))
+                }
+            }
+
+            @CompileStatic
+            Try<String> test() {
+                def try_of = Try.of{Optional.of('works')}
+                def result = try_of.mapTry(Optional.&get) // Function<T,_> and Optional<T>
+                return result
+            }
+
+            assert test().x == 'works'
         '''
 
         assertScript imports + '''
@@ -280,7 +327,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::instanceMethod -- GROOVY-11259
-    void testFunctionCI10() {
+    void testFunctionCI11() {
         assertScript imports + '''
             def consume(Set<String> keys){keys}
             @CompileStatic
