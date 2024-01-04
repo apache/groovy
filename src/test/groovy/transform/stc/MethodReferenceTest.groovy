@@ -34,7 +34,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::instanceMethod
-    void testFunctionCI() {
+    void testFunctionCI1() {
         assertScript shell, '''
             @CompileStatic
             void test() {
@@ -232,28 +232,115 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-11241
+    @Test // class::instanceMethod -- GROOVY-9803
     void testFunctionCI9() {
+        assertScript shell, '''
+            class Try<X> { X x
+                static <Y> Try<Y> success(Y y) {
+                    new Try<Y>(x: y)
+                }
+                def <Z> Try<Z> map(Function<? super X, ? extends Z> f) {
+                    new Try<Z>(x: f.apply(x))
+                }
+            }
+
+            static <E> Set<E> asSet(E element) {
+                Collections.singleton(element)
+            }
+
+            @CompileStatic
+            Try<String> test() {
+                def try_of_str = Try.success('WORKS')
+                def try_of_opt = try_of_str.map(this::asSet)
+                    try_of_str = try_of_opt.map{it.first().toLowerCase()}
+            }
+
+            assert test().x == 'works'
+        '''
+    }
+
+    @Test // class::instanceMethod -- GROOVY-11241
+    void testFunctionCI10() {
         assertScript shell, '''
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.*
 
-            Option<Integer> option() { Option.of(3) }
+            Option<Integer> option() { Option.of(42) }
 
             @CompileStatic
             Try<Integer> test() {
-              //Try.of { option() }.mapTry(Option::get)
-                def try_of = Try.of { option() }
-                def result = try_of.mapTry(Option::get)
-                result
+                Try.of{ option() }.<Integer>mapTry(Option::get)
+                //                 ^^^^^^^^^
             }
 
-            test()
+            assert test().get() == 42
+        '''
+
+        assertScript shell, '''
+            class Try<X> { X x
+                static <Y> Try<Y> of(Supplier<? extends Y> s) {
+                    new Try<Y>(x: s.get())
+                }
+                def <Z> Try<Z> mapTry(Function<? super X, ? extends Z> f) {
+                    new Try<Z>(x: f.apply(x))
+                }
+            }
+
+            @CompileStatic
+            Try<String> test() {
+                def try_of = Try.of{Optional.of('works')}
+                def result = try_of.mapTry(Optional.&get) // Function<T,_> and Optional<T>
+                return result
+            }
+
+            assert test().x == 'works'
+        '''
+
+        assertScript shell, '''
+            @Grab('io.vavr:vavr:0.10.4')
+            import io.vavr.control.Try
+
+            class Option<X> {
+                private X x
+                def X get() { x }
+                static <Y> Option<Y> of(Y y) {
+                    new Option(x: y)
+                }
+            }
+
+            Option<Integer> option() { Option.of(42) }
+
+            @CompileStatic
+            Try<Integer> test() {
+                def try_of = Try.of { option() }
+                def result = try_of.mapTry(Option::get)
+                result // cannot assign Try<Object> to: Try<Integer>
+            }
+
+            assert test().get() == 42
+        '''
+    }
+
+    @Test // class::instanceMethod -- GROOVY-11259
+    void testFunctionCI11() {
+        assertScript shell, '''
+            def consume(Set<String> keys){keys}
+            @CompileStatic
+            def test(Map<String, String> map) {
+                def keys = map.entrySet().stream()
+                    .map(Map.Entry::getKey).toSet()
+                consume(keys) // cannot call consume(Set<String>) with arguments [Set<Object>]
+            }
+
+            def set = test(foo:'bar', fizz:'buzz')
+            assert set.size() == 2
+            assert 'fizz' in set
+            assert 'foo' in set
         '''
     }
 
     @Test // class::instanceMethod -- GROOVY-9974
-    void testPredicateCI() {
+    void testPredicateCI1() {
         assertScript shell, '''
             @CompileStatic
             void test(List<String> strings = ['']) {
