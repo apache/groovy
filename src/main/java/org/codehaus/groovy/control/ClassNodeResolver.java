@@ -242,7 +242,7 @@ public class ClassNodeResolver {
     /**
      * Search for classes using ASM decompiler
      */
-    private LookupResult findDecompiled(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader, boolean failOnIllegalArguentException) {
+    private LookupResult findDecompiled(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader, boolean failOnUnexpectedParseClassException) {
         ClassNode node = ClassHelper.make(name);
         if (node.isResolved()) {
             return new LookupResult(null, node);
@@ -263,7 +263,7 @@ public class ClassNodeResolver {
             } catch (IllegalArgumentException e) {
                 // very likely resolving failed here due to a class format error or similar
                 // if we do not try other means we should report this error to the user
-                if (failOnIllegalArguentException) {
+                if (failOnUnexpectedParseClassException) {
                     throw e;
                 }
             }
