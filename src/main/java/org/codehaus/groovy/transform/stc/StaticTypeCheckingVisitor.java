@@ -5475,15 +5475,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 List<MethodNode> candidates = argument.getNodeMetaData(MethodNode.class);
                                 if (candidates != null && !candidates.isEmpty()) {
                                     MethodPointerExpression methodPointer = (MethodPointerExpression) argument;
-                                    p = methodPointer.getNodeMetaData(CLOSURE_ARGUMENTS); // GROOVY-10974, GROOVY-10975
-                                    if (p == null) p = collateMethodReferenceParameterTypes(methodPointer, candidates.get(0));
+                                    p = collateMethodReferenceParameterTypes(methodPointer, candidates.get(0));
                                     if (p.length > 0 && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                                        returnType = candidates.get(0).getReturnType(); // GROOVY-11259: #
+                                        // GROOVY-11241: implicit receiver for "Optional::get" is resolved
+                                        if (!candidates.get(0).isStatic() && methodPointer.getExpression() instanceof ClassExpression) {
+                                            extractGenericsConnections(connections, q[0], p[0].redirect());
+                                        }
                                         for (int j = 0; j < q.length; j += 1) {
                                             // SAM parameters are like arguments in this case
                                             extractGenericsConnections(connections, q[j], p[j]);
                                         }
                                         // convert the method's generics into the SAM's generics
                                         returnType = applyGenericsContext(connections, returnType);
+                                        p          = applyGenericsContext(connections, p         );
 
                                         connections.clear();
                                     }
@@ -5638,6 +5643,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             System.arraycopy(target.getParameters(), 0, params, 1, n);
         } else {
             params = target.getParameters();
+            // GROOVY-10974, GROOVY-10975: propagate type args
+            if (!target.isStatic() && target.getDeclaringClass().getGenericsTypes() != null) {
+                ClassNode objectExprType = source.getExpression().getNodeMetaData(INFERRED_TYPE);
+                if (objectExprType == null && source.getExpression() instanceof VariableExpression) {
+                    Variable variable = ((VariableExpression) source.getExpression()).getAccessedVariable();
+                    if (variable instanceof ASTNode) objectExprType = ((ASTNode) variable).getNodeMetaData(INFERRED_TYPE);
+                }
+                Map<GenericsTypeName,GenericsType> spec = extractPlaceHolders(objectExprType, target.getDeclaringClass());
+                return applyGenericsContext(spec, extractTypesFromParameters(params));
+            }
         }
 
         return extractTypesFromParameters(params);
