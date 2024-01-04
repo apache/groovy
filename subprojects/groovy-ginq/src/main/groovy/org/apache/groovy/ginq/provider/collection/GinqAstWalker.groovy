@@ -566,10 +566,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         List<Expression> argumentExpressionList = ((ArgumentListExpression) classifierExpr).getExpressions()
         ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(argumentExpressionList, MD_GROUP_NAME_LIST)
-
         LambdaExpression classifierLambdaExpression = constructLambdaExpression(dataSourceExpression, namedListCtorCallExpression)
-
-        List<Expression> argList = [classifierLambdaExpression]
+        List<Expression> argList = [classifierLambdaExpression] as List<Expression>
 
         getCurrentGinqExpression().putNodeMetaData(__GROUPBY_VISITED, true)
 
