@@ -759,8 +759,10 @@ public class CompilationUnit extends ProcessingUnit {
                 getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);
             }
 
-            visitor = new DeadCodeAnalyzer(source);
-            visitor.visitClass(classNode);
+            if (Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.ANALYZE_DEAD_CODE))) {
+                visitor = new DeadCodeAnalyzer(source);
+                visitor.visitClass(classNode);
+            }
 
             visitor = new LabelVerifier(source);
             visitor.visitClass(classNode);
