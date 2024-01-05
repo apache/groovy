@@ -52,22 +52,13 @@ public interface AbstractFunctionalInterfaceWriter {
     }
 
     default Handle createBootstrapMethod(final boolean isInterface, final boolean serializable) {
-        if (serializable) {
-            return new Handle(
-                    Opcodes.H_INVOKESTATIC,
-                    "java/lang/invoke/LambdaMetafactory",
-                    "altMetafactory",
-                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
-                    isInterface
-            );
-        }
-
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
                 "java/lang/invoke/LambdaMetafactory",
-                "metafactory",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-                isInterface
+                serializable ? "altMetafactory" : "metafactory",
+                serializable ? "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
+                             : "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                false // GROOVY-8299, GROOVY-8989, GROOVY-11265
         );
     }
 
