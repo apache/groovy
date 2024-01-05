@@ -130,7 +130,7 @@ public abstract class TraitComposer {
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        for (MethodNode methodNode : helperClassNode.getAllDeclaredMethods()) {
+        for (MethodNode methodNode : helperClassNode.getMethods()) {
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             int nParams = helperMethodParams.length;
@@ -180,7 +180,7 @@ public abstract class TraitComposer {
             // implementation of methods
             List<MethodNode> declaredMethods = new LinkedList<>();
             int pos = 0; // keep direct getters at start but in declaration order
-            for (MethodNode declaredMethod : fieldHelperClassNode.getAllDeclaredMethods()) {
+            for (MethodNode declaredMethod : fieldHelperClassNode.getMethods()) {
                 if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                     declaredMethods.add(pos++, declaredMethod);
                 } else {
@@ -189,7 +189,7 @@ public abstract class TraitComposer {
             }
 
             if (staticFieldHelperClassNode != null) {
-                for (MethodNode declaredMethod : staticFieldHelperClassNode.getAllDeclaredMethods()) {
+                for (MethodNode declaredMethod : staticFieldHelperClassNode.getMethods()) {
                     if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                         declaredMethods.add(pos++, declaredMethod);
                     } else {

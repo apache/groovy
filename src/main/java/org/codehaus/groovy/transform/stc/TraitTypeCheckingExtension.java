@@ -25,125 +25,72 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
 /**
- * A type checking extension that will take care of handling errors which are specific to traits. In particular, it will
- * handle the "super" method calls within a trait.
+ * An extension that handles field, super and static method calls within a trait.
  *
  * @since 2.3.0
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
-    private static final List<MethodNode> NOTFOUND = Collections.emptyList();
 
-    /**
-     * Builds a type checking extension relying on a Groovy script (type checking DSL).
-     *
-     * @param typeCheckingVisitor the type checking visitor
-     */
     public TraitTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
-    }
-
-    @Override
-    public void setup() {
     }
 
     @Override
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
         String[] decomposed = Traits.decomposeSuperCallName(name);
         if (decomposed != null) {
-            return convertToDynamicCall(call, receiver, decomposed, argumentTypes);
+            String traitName = decomposed[0], methodName = decomposed[1];
+            List<ClassNode> implementedTraits = Traits.findTraits(receiver);
+
+            ClassNode nextTrait = null;
+            for (int i = 0; i < implementedTraits.size() - 1; i += 1) {
+                ClassNode implementedTrait = implementedTraits.get(i);
+                if (implementedTrait.getName().equals(traitName)) {
+                    nextTrait = implementedTraits.get(i + 1);
+                }
+            }
+
+            ClassNode returnType = ClassHelper.OBJECT_TYPE;
+            if (nextTrait != null) {
+                List<MethodNode> candidates = typeCheckingVisitor.findMethod(nextTrait, methodName, argumentTypes);
+                if (candidates.size() == 1) {
+                    returnType = candidates.get(0).getReturnType();
+                }
+            }
+
+            return Collections.singletonList(makeDynamic(call, returnType));
         }
+
         if (call instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) call;
-            if (mce.getReceiver() instanceof VariableExpression) {
-                VariableExpression var = (VariableExpression) mce.getReceiver();
+            ClassNode dynamic = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (dynamic != null) return Collections.singletonList(makeDynamic(call, dynamic));
 
-                // GROOVY-7322
-                // static method call in trait?
-                ClassNode type = null;
-                if (isStaticTraitReceiver(receiver, var)) {
-                    type = receiver.getGenericsTypes()[0].getType();
-                } else if (isThisTraitReceiver(var)) {
-                    type = receiver;
-                }
-                if (Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
-                    List<ClassNode> candidates = new ArrayList<ClassNode>();
-                    candidates.add(type);
-                    while (!candidates.isEmpty()) {
-                        ClassNode next = candidates.remove(0);
-                        if (!Traits.isTrait(next)) continue;
-                        ClassNode helper = Traits.findHelper(next);
-                        Parameter[] params = new Parameter[argumentTypes.length + 1];
-                        params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");
-                        for (int i = 1; i < params.length; i++) {
-                            params[i] = new Parameter(argumentTypes[i-1], "p" + i);
-                        }
-                        MethodNode method = helper.getDeclaredMethod(name, params);
-                        if (method != null) {
-                            return Collections.singletonList(makeDynamic(call, method.getReturnType()));
-                        }
-                        // GROOVY-8272 support inherited static methods
-                        candidates.addAll(Arrays.asList(next.getInterfaces()));
+            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854: trait: this.m($static$self)
+            ClassNode targetClass = isClassClassNodeWrappingConcreteType(receiver)? receiver.getGenericsTypes()[0].getType(): receiver;
+            if (Traits.isTrait(targetClass.getOuterClass()) && argumentTypes.length > 0 && ClassHelper.isClassType(argumentTypes[0])) {
+                Parameter[] signature = java.util.Arrays.stream(argumentTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new);
+                List<ClassNode> traits = Traits.findTraits(targetClass.getOuterClass());
+                traits.remove(targetClass.getOuterClass());
+
+                for (ClassNode trait : traits) { // check super trait for static method
+                    MethodNode method = Traits.findHelper(trait).getDeclaredMethod(name, signature);
+                    if (method != null && method.isStatic()) {
+                        return Collections.singletonList(makeDynamic(call, method.getReturnType()));
                     }
                 }
             }
-
-            ClassNode dynamic = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
-            if (dynamic!=null) {
-                return Collections.singletonList(makeDynamic(call, dynamic));
-            }
         }
-        return NOTFOUND;
+
+        return Collections.emptyList();
     }
-
-    private static boolean isStaticTraitReceiver(final ClassNode receiver, final VariableExpression var) {
-        return Traits.STATIC_THIS_OBJECT.equals(var.getName()) && isClassClassNodeWrappingConcreteType(receiver);
-    }
-
-    private static boolean isThisTraitReceiver(final VariableExpression var) {
-        return Traits.THIS_OBJECT.equals(var.getName());
-    }
-
-    private List<MethodNode> convertToDynamicCall(MethodCall call, ClassNode receiver, String[] decomposed, ClassNode[] argumentTypes) {
-        String traitName = decomposed[0];
-        String name = decomposed[1];
-        LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<ClassNode>());
-        ClassNode[] implementedTraits = traitsAsList.toArray(ClassNode.EMPTY_ARRAY);
-        ClassNode nextTrait = null;
-        for (int i = 0; i < implementedTraits.length - 1; i++) {
-            ClassNode implementedTrait = implementedTraits[i];
-            if (implementedTrait.getName().equals(traitName)) {
-                nextTrait = implementedTraits[i + 1];
-            }
-        }
-        ClassNode[] newArgs = new ClassNode[argumentTypes.length];
-        System.arraycopy(argumentTypes, 0, newArgs, 0, newArgs.length);
-        ClassNode inferredReturnType = inferTraitMethodReturnType(nextTrait, name, newArgs);
-
-        return Collections.singletonList(makeDynamic(call, inferredReturnType));
-    }
-
-    private ClassNode inferTraitMethodReturnType(ClassNode nextTrait, String methodName, ClassNode[] paramTypes) {
-        ClassNode result = ClassHelper.OBJECT_TYPE;
-        if (nextTrait != null) {
-            List<MethodNode> candidates = typeCheckingVisitor.findMethod(nextTrait, methodName, paramTypes);
-            if (candidates.size() == 1) {
-                result = candidates.get(0).getReturnType();
-            }
-        }
-        return result;
-    }
-
 }

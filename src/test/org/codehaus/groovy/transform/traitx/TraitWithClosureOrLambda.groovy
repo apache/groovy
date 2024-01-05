@@ -384,4 +384,30 @@ final class TraitWithClosureOrLambda {
             assert new C().f(8) == 18
         '''
     }
+
+    // GROOVY-11267
+    @Test
+    void testInvokeTraitStaticMethodFromTraitClosure() {
+        assertScript shell, '''
+            trait T {
+                @groovy.transform.CompileDynamic
+                static one() {
+                    def me = this
+                    two('good') + ' ' +
+                    'bad '.with { me.two(it) } +
+                    'ugly'.with {    two(it) }
+                }
+                static two(String s) {
+                    three(s)
+                }
+                static three(String s) {
+                    return s
+                }
+            }
+            class C implements T {
+            }
+
+            assert C.one() == 'good bad ugly'
+        '''
+    }
 }
