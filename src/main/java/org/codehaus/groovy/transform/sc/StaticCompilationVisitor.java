@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -46,10 +47,8 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.MopWriter;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
-import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
 import org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -69,8 +68,6 @@ import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
@@ -98,9 +95,11 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STA
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INITIAL_EXPRESSION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
+import static org.codehaus.groovy.transform.trait.TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -126,10 +125,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         ARRAYLIST_CONSTRUCTOR.setDeclaringClass(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
     }
 
-    private final TypeChooser typeChooser = new StaticTypesTypeChooser();
-
-    private ClassNode classNode;
-
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node) {
         super(unit, node);
     }
@@ -139,52 +134,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return new ClassNode[]{TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
     }
 
-    public static boolean isStaticallyCompiled(final AnnotatedNode node) {
-        if (node != null && node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
-            return Boolean.TRUE.equals(node.getNodeMetaData(STATIC_COMPILE_NODE));
-        }
-        if (node instanceof MethodNode) {
-            // GROOVY-6851, GROOVY-9151, GROOVY-10104
-            if (!Boolean.TRUE.equals(node.getNodeMetaData(DEFAULT_PARAMETER_GENERATED))) {
-                return isStaticallyCompiled(node.getDeclaringClass());
-            }
-        } else if (node instanceof ClassNode) {
-            return isStaticallyCompiled(((ClassNode) node).getOuterClass());
-        }
-        return false;
-    }
-
-    private void addPrivateFieldAndMethodAccessors(final ClassNode node) {
-        addPrivateBridgeMethods(node);
-        addPrivateFieldsAccessors(node);
-        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
-            addPrivateFieldAndMethodAccessors(it.next());
-        }
-    }
-
-    private void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
-        if (outer != null) {
-            if (!isStaticallyCompiled(outer) && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
-                outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, (IPrimaryClassNodeOperation) (source, context, classNode) -> {
-                    if (classNode == outer) {
-                        addPrivateBridgeMethods(classNode);
-                        addPrivateFieldsAccessors(classNode);
-                    }
-                });
-            }
-            // GROOVY-9328: apply to outer classes
-            addDynamicOuterClassAccessorsCallback(outer.getOuterClass());
-        }
-    }
-
     @Override
     public void visitClass(final ClassNode node) {
         boolean skip = shouldSkipClassNode(node);
         if (!skip && !anyMethodSkip(node)) {
             node.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
         }
-
-        ClassNode previousClassNode = classNode; classNode = node;
 
         node.getInnerClasses().forEachRemaining(innerClass -> {
             boolean isSC = !isSkipMode(innerClass) && (isStaticallyCompiled(node) || hasAnnotation(innerClass, COMPILESTATIC_CLASSNODE));
@@ -195,14 +150,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             }
             innerClass.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
         });
+
         super.visitClass(node);
-        addPrivateFieldAndMethodAccessors(node);
+
         if (isStaticallyCompiled(node)) {
             ClassNode outerClass = node.getOuterClass();
             addDynamicOuterClassAccessorsCallback(outerClass);
         }
-
-        classNode = previousClassNode;
+        addPrivateFieldAndMethodAccessors(node); // includes inner types
     }
 
     private boolean anyMethodSkip(final ClassNode node) {
@@ -250,6 +205,210 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     @Override
     public void visitMethod(final MethodNode node) {
         visitConstructorOrMethod(node);
+    }
+
+    @Override
+    public void visitMethodCallExpression(final MethodCallExpression call) {
+        super.visitMethodCallExpression(call);
+
+        MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target != null) {
+            call.setMethodTarget(target);
+            memorizeInitialExpressions(target);
+        }
+
+        if (call.getMethodTarget() == null && call.getLineNumber() > 0) {
+            addError("Target method for method call expression hasn't been set", call);
+        }
+    }
+
+    @Override
+    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
+        super.visitConstructorCallExpression(call);
+
+        if (call.isUsingAnonymousInnerClass() && call.getType().getNodeMetaData(StaticTypeCheckingVisitor.class) != null) {
+            ClassNode anonType = call.getType();
+            anonType.putNodeMetaData(STATIC_COMPILE_NODE, anonType.getEnclosingMethod().getNodeMetaData(STATIC_COMPILE_NODE));
+            anonType.putNodeMetaData(WriterControllerFactory.class, anonType.getOuterClass().getNodeMetaData(WriterControllerFactory.class));
+        }
+
+        MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (target == null && call.getLineNumber() > 0) {
+            addError("Target constructor for constructor call expression hasn't been set", call);
+        } else if (target == null) { assert call.isSpecialCall(); // try to find target constructor
+            ClassNode enclosingClass = typeCheckingContext.getEnclosingMethod().getDeclaringClass();
+            ClassNode[] args = getArgumentTypes(InvocationWriter.makeArgumentList(call.getArguments()));
+            target = findMethodOrFail(call, call.isSuperCall() ? enclosingClass.getSuperClass() : enclosingClass, "<init>", args);
+            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);
+        }
+        if (target != null) {
+            memorizeInitialExpressions(target);
+        }
+    }
+
+    @Override
+    public void visitForLoop(final ForStatement statement) {
+        super.visitForLoop(statement);
+        Expression collectionExpression = statement.getCollectionExpression();
+        if (!(collectionExpression instanceof ClosureListExpression)) {
+            ClassNode forLoopVariableType = statement.getVariableType();
+            ClassNode collectionType = getType(collectionExpression);
+            ClassNode componentType;
+            if (ClassHelper.isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && ClassHelper.isStringType(collectionType)) {
+                // we allow auto-coercion here
+                componentType = forLoopVariableType;
+            } else {
+                componentType = inferLoopElementType(collectionType);
+            }
+            statement.getVariable().setType(componentType);
+        }
+    }
+
+    @Override
+    public void visitLambdaExpression(final LambdaExpression expression) {
+        super.visitLambdaExpression(expression);
+        // GROOVY-11256: static compiler uses lambda factory not proxy generator
+        if (ClassHelper.isFunctionalInterface(expression.getNodeMetaData(PARAMETER_TYPE))) {
+            expression.removeNodeMetaData(POST_TYPECHECKING_REPLACEMENT); // for trait: lambda.rehydrate($self,$self,$self)
+        }
+    }
+
+    @Override
+    public void visitPropertyExpression(final PropertyExpression expression) {
+        super.visitPropertyExpression(expression);
+        Object dynamic = expression.getNodeMetaData(DYNAMIC_RESOLUTION);
+        if (dynamic != null) {
+            expression.getObjectExpression().putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
+        }
+    }
+
+    @Override
+    protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
+        Expression objectExpression = pexp.getObjectExpression();
+        ClassNode objectExpressionType = getType(objectExpression);
+        Reference<ClassNode> rType = new Reference<>(objectExpressionType);
+        ClassCodeVisitorSupport receiverMemoizer = new ClassCodeVisitorSupport() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            @Override
+            public void visitField(final FieldNode node) {
+                if (visitor != null) visitor.visitField(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass != null) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                        boolean spread = declaringClass.getDeclaredField(node.getName()) != node;
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
+            }
+
+            @Override
+            public void visitMethod(final MethodNode node) {
+                if (visitor != null) visitor.visitMethod(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass != null) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                        List<MethodNode> properties = declaringClass.getDeclaredMethods(node.getName());
+                        boolean spread = true;
+                        for (MethodNode mn : properties) {
+                            if (node == mn) {
+                                spread = false;
+                                break;
+                            }
+                        }
+                        // it's no real property but a property of the component
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
+            }
+
+            @Override
+            public void visitProperty(final PropertyNode node) {
+                if (visitor != null) visitor.visitProperty(node);
+                ClassNode declaringClass = node.getDeclaringClass();
+                if (declaringClass != null) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                        List<PropertyNode> properties = declaringClass.getProperties();
+                        boolean spread = true;
+                        for (PropertyNode propertyNode : properties) {
+                            if (propertyNode == node) {
+                                spread = false;
+                                break;
+                            }
+                        }
+                        // it's no real property but a property of the component
+                        pexp.setSpreadSafe(spread);
+                    }
+                    rType.set(declaringClass);
+                }
+            }
+        };
+
+        boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
+        if (exists) {
+            objectExpressionType = rType.get();
+            if (objectExpression.getNodeMetaData(PROPERTY_OWNER) == null) {
+                objectExpression.putNodeMetaData(PROPERTY_OWNER, objectExpressionType);
+            }
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, LIST_TYPE)) {
+                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, int_TYPE));
+            }
+        }
+        return exists;
+    }
+
+    @Override
+    protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
+        MethodNode methodNode = super.findMethodOrFail(expr, receiver, name, args);
+        if (expr instanceof BinaryExpression && methodNode != null) {
+            expr.putNodeMetaData(BINARY_EXP_TARGET, new Object[]{methodNode, name});
+        }
+        return methodNode;
+    }
+
+    //--------------------------------------------------------------------------
+
+    public static boolean isStaticallyCompiled(final AnnotatedNode node) {
+        if (node != null && node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
+            return Boolean.TRUE.equals(node.getNodeMetaData(STATIC_COMPILE_NODE));
+        }
+        if (node instanceof MethodNode) {
+            // GROOVY-6851, GROOVY-9151, GROOVY-10104
+            if (!Boolean.TRUE.equals(node.getNodeMetaData(DEFAULT_PARAMETER_GENERATED))) {
+                return isStaticallyCompiled(node.getDeclaringClass());
+            }
+        } else if (node instanceof ClassNode) {
+            return isStaticallyCompiled(((ClassNode) node).getOuterClass());
+        }
+        return false;
+    }
+
+    private static void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
+        if (outer != null) {
+            if (!isStaticallyCompiled(outer) && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
+                outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, (IPrimaryClassNodeOperation) (source, context, classNode) -> {
+                    if (classNode == outer) {
+                        addPrivateBridgeMethods(classNode);
+                        addPrivateFieldsAccessors(classNode);
+                    }
+                });
+            }
+            // GROOVY-9328: apply to outer classes
+            addDynamicOuterClassAccessorsCallback(outer.getOuterClass());
+        }
+    }
+
+    private static void addPrivateFieldAndMethodAccessors(final ClassNode node) {
+        addPrivateBridgeMethods(node);
+        addPrivateFieldsAccessors(node);
+        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+            addPrivateFieldAndMethodAccessors(it.next());
+        }
     }
 
     /**
@@ -414,166 +573,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             for (Parameter parameter : node.getParameters()) {
                 parameter.putNodeMetaData(INITIAL_EXPRESSION, parameter.getInitialExpression());
             }
-        }
-    }
-
-    @Override
-    public void visitMethodCallExpression(final MethodCallExpression call) {
-        super.visitMethodCallExpression(call);
-
-        MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (target != null) {
-            call.setMethodTarget(target);
-            memorizeInitialExpressions(target);
-        }
-
-        if (call.getMethodTarget() == null && call.getLineNumber() > 0) {
-            addError("Target method for method call expression hasn't been set", call);
-        }
-    }
-
-    @Override
-    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        super.visitConstructorCallExpression(call);
-
-        if (call.isUsingAnonymousInnerClass() && call.getType().getNodeMetaData(StaticTypeCheckingVisitor.class) != null) {
-            ClassNode anonType = call.getType();
-            anonType.putNodeMetaData(STATIC_COMPILE_NODE, anonType.getEnclosingMethod().getNodeMetaData(STATIC_COMPILE_NODE));
-            anonType.putNodeMetaData(WriterControllerFactory.class, anonType.getOuterClass().getNodeMetaData(WriterControllerFactory.class));
-        }
-
-        MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (target == null && call.getLineNumber() > 0) {
-            addError("Target constructor for constructor call expression hasn't been set", call);
-        } else if (target == null) {
-            // try to find a target
-            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
-            List<Expression> expressions = argumentListExpression.getExpressions();
-            ClassNode[] args = new ClassNode[expressions.size()];
-            for (int i = 0, n = args.length; i < n; i += 1) {
-                args[i] = typeChooser.resolveType(expressions.get(i), classNode);
-            }
-            target = findMethodOrFail(call, call.isSuperCall() ? classNode.getSuperClass() : classNode, "<init>", args);
-            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);
-        }
-        if (target != null) {
-            memorizeInitialExpressions(target);
-        }
-    }
-
-    @Override
-    public void visitForLoop(final ForStatement statement) {
-        super.visitForLoop(statement);
-        Expression collectionExpression = statement.getCollectionExpression();
-        if (!(collectionExpression instanceof ClosureListExpression)) {
-            ClassNode forLoopVariableType = statement.getVariableType();
-            ClassNode collectionType = getType(collectionExpression);
-            ClassNode componentType;
-            if (isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
-                // we allow auto-coercion here
-                componentType = forLoopVariableType;
-            } else {
-                componentType = inferLoopElementType(collectionType);
-            }
-            statement.getVariable().setType(componentType);
-        }
-    }
-
-    @Override
-    protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
-        MethodNode methodNode = super.findMethodOrFail(expr, receiver, name, args);
-        if (expr instanceof BinaryExpression && methodNode != null) {
-            expr.putNodeMetaData(BINARY_EXP_TARGET, new Object[]{methodNode, name});
-        }
-        return methodNode;
-    }
-
-    @Override
-    protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
-        Expression objectExpression = pexp.getObjectExpression();
-        ClassNode objectExpressionType = getType(objectExpression);
-        Reference<ClassNode> rType = new Reference<>(objectExpressionType);
-        ClassCodeVisitorSupport receiverMemoizer = new ClassCodeVisitorSupport() {
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return null;
-            }
-
-            @Override
-            public void visitField(final FieldNode node) {
-                if (visitor != null) visitor.visitField(node);
-                ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
-                        boolean spread = declaringClass.getDeclaredField(node.getName()) != node;
-                        pexp.setSpreadSafe(spread);
-                    }
-                    rType.set(declaringClass);
-                }
-            }
-
-            @Override
-            public void visitMethod(final MethodNode node) {
-                if (visitor != null) visitor.visitMethod(node);
-                ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
-                        List<MethodNode> properties = declaringClass.getDeclaredMethods(node.getName());
-                        boolean spread = true;
-                        for (MethodNode mn : properties) {
-                            if (node == mn) {
-                                spread = false;
-                                break;
-                            }
-                        }
-                        // it's no real property but a property of the component
-                        pexp.setSpreadSafe(spread);
-                    }
-                    rType.set(declaringClass);
-                }
-            }
-
-            @Override
-            public void visitProperty(final PropertyNode node) {
-                if (visitor != null) visitor.visitProperty(node);
-                ClassNode declaringClass = node.getDeclaringClass();
-                if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
-                        List<PropertyNode> properties = declaringClass.getProperties();
-                        boolean spread = true;
-                        for (PropertyNode propertyNode : properties) {
-                            if (propertyNode == node) {
-                                spread = false;
-                                break;
-                            }
-                        }
-                        // it's no real property but a property of the component
-                        pexp.setSpreadSafe(spread);
-                    }
-                    rType.set(declaringClass);
-                }
-            }
-        };
-
-        boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
-        if (exists) {
-            objectExpressionType = rType.get();
-            if (objectExpression.getNodeMetaData(PROPERTY_OWNER) == null) {
-                objectExpression.putNodeMetaData(PROPERTY_OWNER, objectExpressionType);
-            }
-            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, LIST_TYPE)) {
-                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, int_TYPE));
-            }
-        }
-        return exists;
-    }
-
-    @Override
-    public void visitPropertyExpression(final PropertyExpression expression) {
-        super.visitPropertyExpression(expression);
-        Object dynamic = expression.getNodeMetaData(DYNAMIC_RESOLUTION);
-        if (dynamic != null) {
-            expression.getObjectExpression().putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
         }
     }
 }
