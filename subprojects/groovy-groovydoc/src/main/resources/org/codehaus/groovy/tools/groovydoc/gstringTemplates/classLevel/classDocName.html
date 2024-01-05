@@ -310,6 +310,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
         <!-- =========== FIELD SUMMARY =========== -->
         <%
         def buffer = new StringBuilder()
+        def propBuffer = new StringBuilder()
         classes = []
         if (classDoc.isInterface()) {
             classes.addAll(classDoc.interfaces().toList())
@@ -341,6 +342,19 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                             <td class="colFirst"><strong><code>${c.typeSourceDescription} ${linkable(c)}</code></strong></td>
                             <td class="colLast"><code>${list.join(', ')}</code></td>
                         </tr>
+"""
+                }
+
+                list = []
+                list = c.properties().collect { prop ->
+                        "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${prop.name()}'>${prop.name()}</a>"
+                        prop.name()
+                }
+                if (list) {
+                    propBuffer << """                        <tr class="${i%2==0?'altColor':'rowColor'}">
+                                <td class="colFirst"><strong><code>${c.typeSourceDescription} ${linkable(c)}</code></strong></td>
+                                <td class="colLast"><code>${list.join(', ')}</code></td>
+                            </tr>
 """
                 }
             }
@@ -390,8 +404,9 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
         <% } // if hasFields or buffer %>
 
         <!-- =========== PROPERTY SUMMARY =========== -->
-        <% if (hasProperties) { %>
-         <ul class="blockList">
+        <% if (hasProperties || propBuffer.length()>0) { %>
+         <ul class="blockList"> <%
+                if (hasProperties) { %>
                 <li class="blockList"><a name="property_summary"><!--   --></a>
                     <h3>Properties Summary</h3>
                     <ul class="blockList">
@@ -410,8 +425,24 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                     </table>
                    </ul>
                 </li>
+                <% } // if hasProperties
+
+                 if (propBuffer.length()>0) { %>
+                 <li class="blockList"><a name="properties_summary"><!--   --></a>
+                     <ul class="blockList">
+                         <table class="overviewSummary" border="0" cellpadding="3" cellspacing="0" summary="Inherited properties summary table">
+                             <caption><span>Inherited properties</span><span class="tabEnd">&nbsp;</span></caption>
+                             <tr>
+                                 <th class="colFirst" scope="col">Properties inherited from class</th>
+                                 <th class="colLast" scope="col">Properties</th>
+                             </tr>
+                             ${propBuffer}
+                         </table>
+                     </ul>
+                 </li>
+                 <% } // if propBuffer %>
             </ul>
-        <% } %>
+        <% } // if hasProperties or propBuffer %>
 
         <!-- =========== ELEMENT SUMMARY =========== -->
         <% if (hasElements) { %>
