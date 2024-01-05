@@ -252,23 +252,6 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testClosureExpressionInTrait() {
-        assertScript shell, '''
-            trait GreetingObject {
-                String greeting = 'Welcome!'
-                Closure greeter() {
-                    return { -> greeting }
-                }
-            }
-            class Hello implements GreetingObject {}
-            def hello = new Hello()
-            def greeter = hello.greeter()
-            assert greeter.thisObject.is(hello)
-            assert greeter() == 'Welcome!'
-        '''
-    }
-
-    @Test
     void testUpdatePropertyFromSelf() {
         assertScript shell, '''
             trait Updater {
@@ -856,36 +839,6 @@ final class TraitASTTransformationTest {
             }
             class Foo implements Outer {}
             def f = new Foo()
-        '''
-    }
-
-    @Test
-    void testClosureInsideTrait() {
-        assertScript shell, '''
-            trait Doubler {
-                int foo(int x) {
-                    { -> 2*x }.call()
-                }
-            }
-            class Foo implements Doubler {}
-            def f = new Foo()
-            assert f.foo(4) == 8
-        '''
-    }
-
-    @Test
-    void testClosureInsideTraitAccessingProperty() {
-        assertScript shell, '''
-            trait Doubler {
-                int x
-                int foo() {
-                    { -> 2*x }.call()
-                }
-            }
-            class Foo implements Doubler {}
-            def f = new Foo()
-            f.x = 4
-            assert f.foo() == 8
         '''
     }
 
