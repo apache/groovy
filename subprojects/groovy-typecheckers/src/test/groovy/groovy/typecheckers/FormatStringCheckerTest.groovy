@@ -24,7 +24,9 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
 
 final class FormatStringCheckerTest {
 
@@ -256,6 +258,38 @@ final class FormatStringCheckerTest {
     }
 
     @Test
+    void testMissingFormatArgumentForConstantArgs() {
+        def err = shouldFail shell, '''
+            String.format('%<s', 'some string')
+        '''
+        assert err =~ /MissingFormatArgument: Format specifier '%<s'/
+        err = shouldFail shell, '''
+            String.format('%s %s', 'some string')
+        '''
+        assert err =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%2$s', 'some string')
+        '''
+        assert err =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
+    }
+
+    @Test
+    void testMissingFormatArgumentForInferredArgs() {
+        def err = shouldFail shell, '''
+            String.format('%<s', 'some string' + '')
+        '''
+        assert err =~ /MissingFormatArgument: Format specifier '%<s'/
+        err = shouldFail shell, '''
+            String.format('%s %s', 'some string' + '')
+        '''
+        assert err =~ "MissingFormatArgument: Format specifier '%s'"
+        err = shouldFail shell, '''
+            String.format('%2$s', 'some string' + '')
+        '''
+        assert err =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
+    }
+
+    @Test
     void testValidFormatStringsConstantArgs() {
         assertScript shell, '''
         static int x = 254
@@ -275,8 +309,20 @@ final class FormatStringCheckerTest {
             assert sprintf('%3s', 'abcde') == 'abcde'
             assert sprintf('%6s', 'abcde') == ' abcde'
             assert sprintf('%-6s', 'abcde') == 'abcde '
+            assert String.format('%2$s %1$s', 'bar', 'foo') == 'foo bar'
+            assert String.format('%1$s %1$s', 'bar', 'foo') == 'bar bar'
+            assert String.format('%s %<s', 'bar', 'foo') == 'bar bar'
+            assert String.format('%2$s %<s', 'bar', 'foo') == 'foo foo'
+            assert String.format('%2$s %2$s', 'bar', 'foo') == 'foo foo'
         }
         '''
     }
 
+    @Test
+    void testValidFormattedCall() {
+        assumeTrue(isAtLeastJdk('15.0'))
+        assertScript shell, '''
+        assert '%x'.formatted(16) == '10'
+        '''
+    }
 }

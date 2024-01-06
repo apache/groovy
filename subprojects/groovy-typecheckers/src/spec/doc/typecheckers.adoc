@@ -40,7 +40,7 @@ As usual, Groovy's compiler customization mechanisms would allow you to
 simplify application of such checkers, e.g. make it apply globally
 using a compiler configuration script, as just one example.
 
-== Checking Regex literals
+== Checking Regular Expressions
 
 Consider the following code, which contains 3 regular expressions:
 
@@ -109,7 +109,7 @@ format string and zero or more arguments.
 
 These methods have the following characteristics:
 
-* The first argument must be of type api:java.util.Locale[] or api:java.lang.String[].
+* The first argument must be of type `java.util.Locale` or `java.lang.String`.
 * If the first argument is of type `Locale`, the second argument must be of type `String`.
 * The `String` argument is treated as a format string containing zero or more embedded format specifiers as well as plain text. The format specifiers determine how the remaining arguments will be used within the resulting output.
 * The `FormatStringChecker` ensures that the format string is valid and the remaining arguments are compatible with the embedded format specifiers.
@@ -152,7 +152,7 @@ sprintf(Locale l, String format, Object... args)
 ----
 |===
 
-Here is an example of correctly using some of these methods:
+Here is an example of correctly using some of these methods with type checking in place:
 
 [source,groovy]
 ----
@@ -169,6 +169,13 @@ include::../test/FormatStringCheckerTest.groovy[tags=format_method_example,inden
 
 You can use the `FormatMethod` annotation provided in the `groovy-typecheckers`
 module or the https://checkerframework.org/api/org/checkerframework/checker/formatter/qual/FormatMethod.html[similarly named] annotation from the Java-based https://checkerframework.org/[checker framework].
+
+The format string checker looks for a constant literal
+format string. For arguments, it also looks for constant
+literals or otherwise makes checks based on inferred type.
+When looking for constants, the checker will find inline
+literals, local variables with a constant initializer,
+and fields with a constant initializer.
 
 === Errors detected
 
@@ -226,3 +233,4 @@ The complete list of errors detected include:
 * unknown format conversions
 * illegal format conversions
 * format flags conversion mismatches
+* missing arguments
