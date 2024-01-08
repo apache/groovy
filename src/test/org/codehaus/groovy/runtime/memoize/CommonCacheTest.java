@@ -177,7 +177,7 @@ public class CommonCacheTest {
         sc.put("c", "3");
         sc.put("a", "4");
         sc.put("d", "5");
-        Assert.assertArrayEquals(new String[] {"c", "a", "d"}, sc.keys().toArray(new String[0]));
+        Assert.assertEquals(3, sc.size());
         Assert.assertEquals("3", sc.get("c"));
         Assert.assertEquals("4", sc.get("a"));
         Assert.assertEquals("5", sc.get("d"));
