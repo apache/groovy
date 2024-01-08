@@ -19,6 +19,8 @@
 
 package org.codehaus.groovy.runtime.memoize;
 
+import org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -64,14 +66,26 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
     public CommonCache(final int initialCapacity, final int maxSize, final EvictionStrategy evictionStrategy) {
-        this(new LinkedHashMap<K, V>(initialCapacity, DEFAULT_LOAD_FACTOR, EvictionStrategy.LRU == evictionStrategy) {
+        this(createMap(initialCapacity, maxSize, evictionStrategy));
+    }
+
+    private static <K, V> Map<K, V> createMap(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
+        final boolean lru = EvictionStrategy.LRU == evictionStrategy;
+
+        if (lru) {
+            return new ConcurrentLinkedHashMap.Builder<K, V>()
+                        .initialCapacity(initialCapacity)
+                        .maximumWeightedCapacity(maxSize)
+                        .build();
+        }
+        return new LinkedHashMap<K, V>(initialCapacity, DEFAULT_LOAD_FACTOR, lru) {
             private static final long serialVersionUID = -8012450791479726621L;
 
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
                 return size() > maxSize;
             }
-        });
+        };
     }
 
     /**
