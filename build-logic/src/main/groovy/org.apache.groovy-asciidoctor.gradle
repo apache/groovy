@@ -39,12 +39,6 @@ configurations {
     asciidocExtensions
 }
 
-dependencies {
-    // TODO: Remove it after AsciidoctorJ 4.0.0 new release, workaround to fix NoClassDefFoundError on Gradle 7.6+,
-    // see https://github.com/asciidoctor/asciidoctor-gradle-plugin/issues/655#issuecomment-1374479836
-    asciidocExtensions gradleApi()
-}
-
 tasks.withType(AbstractAsciidoctorTask).configureEach {
     outputs.cacheIf { true }
     usesService(ConcurrentExecutionControlBuildService.restrict(AbstractAsciidoctorTask, gradle))
@@ -99,22 +93,26 @@ asciidoctorj {
     resolutionStrategy {
         it.disableDependencyVerification()
     }
-    docExtensions {
-        def baseUrls = [
-                jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
-                gjdk: "https://docs.groovy-lang.org/${vers}/html/groovy-jdk/index.html",
-                gapi: "https://docs.groovy-lang.org/${vers}/html/gapi/index.html",
-                gapid: "https://docs.groovy-lang.org/${vers}/html/gapi/",
-        ]
-        baseUrls.each { macroName, baseURL ->
-            inline_macro(name: macroName) {
-                parent, target, attributes ->
-                    def (className, anchor) = target.split('#') as List
-                    def base = className == 'index' ?
-                            baseURL : baseURL + '?' + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
-                    createPhraseNode(parent, 'anchor', attributes.text ?: target, attributes, [type: ':link', target: base])
+    def baseUrls = [
+        jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
+        gjdk: "https://docs.groovy-lang.org/${vers}/html/groovy-jdk/index.html",
+        gapi: "https://docs.groovy-lang.org/${vers}/html/gapi/index.html",
+        gapid: "https://docs.groovy-lang.org/${vers}/html/gapi/",
+    ]
+    for (def entry : baseUrls.entrySet()) {
+        def macroName = entry.key
+        def baseUrl = entry.value
+        docExtensions """
+            inline_macro(name: '${macroName}') { parent, target, attributes ->
+                def classNameAndAnchor = target.split('#')
+                def className = classNameAndAnchor[0]
+                def anchor = classNameAndAnchor.length > 1 ? classNameAndAnchor[1] : null
+                def baseURL = '${baseUrl}'
+                def base = className == 'index' ?
+                        baseURL : baseURL + '?' + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
+                createPhraseNode(parent, 'anchor', attributes.text ?: target, attributes, [type: ':link', target: base])
             }
-        }
+        """
     }
     modules {
         diagram.version(versions.asciidoctorDiagram)
