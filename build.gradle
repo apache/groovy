@@ -257,3 +257,10 @@ tasks.named("dependencyUpdates")?.configure {
         !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
     }
 }
+
+artifacts {
+    grapesRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
+    xstreamAstRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
+    gparsRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
+    loggingRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
+}
