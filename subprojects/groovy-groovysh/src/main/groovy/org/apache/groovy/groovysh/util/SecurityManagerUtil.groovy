@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.groovysh.util
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.vmplugin.VMPlugin
-
 class SecurityManagerUtil {
     private final SecurityManager saved
 
@@ -28,14 +25,16 @@ class SecurityManagerUtil {
         if (explicitlyEnabled() || autoEnabledUntilJDK17()) {
             saved = System.getSecurityManager()
             System.setSecurityManager(new NoExitSecurityManager())
+        } else {
+            saved = null;
         }
     }
 
-    private boolean autoEnabledUntilJDK17() {
-        !CompilerConfiguration.isPostJDK18(VMPlugin.getJavaVersion())
+    private static boolean autoEnabledUntilJDK17() {
+        return Runtime.version().feature() < 18;
     }
 
-    private boolean explicitlyEnabled() {
+    private static boolean explicitlyEnabled() {
         System.getProperty('java.security.manager', 'disallow') == 'allow'
     }
 

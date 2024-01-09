@@ -23,7 +23,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
-import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -1115,7 +1114,7 @@ public class CompilerConfiguration {
      * @since 4.0.0
      */
     private static String defaultTargetBytecode() {
-        final String javaVersion = VMPlugin.getJavaVersion();
+        String javaVersion = Integer.toString(Runtime.version().feature());
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
             return javaVersion;
         }
