@@ -41,6 +41,9 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.objectweb.asm.MethodVisitor;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,8 +51,10 @@ import java.util.Map;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
@@ -257,7 +262,33 @@ public class ClosureWriter {
 
         correctAccessedVariable(answer, expression);
 
+        addSerialVersionUIDField(answer);
+
         return answer;
+    }
+
+    protected void addSerialVersionUIDField(final ClassNode classNode) {
+        // just to hash the full class name for better performance.
+        // The full spec for `serialVersionUID` is here:
+        //      https://docs.oracle.com/en/java/javase/21/docs/specs/serialization/class.html#stream-unique-identifiers
+        // As we could see, it's too complex for closures.
+        long serialVersionUID = hash(classNode.getName());
+        classNode.addFieldFirst("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(serialVersionUID, true));
+    }
+
+    private static long hash(String str) {
+        final MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new GroovyBugError("Failed to find SHA", e);
+        }
+        final byte[] hashBytes = md.digest(str.getBytes(StandardCharsets.UTF_8));
+        long hash = 0;
+        for (int i = Math.min(hashBytes.length, 7); i >= 0; i--) {
+            hash = (hash << 8) | (hashBytes[i] & 0xFF);
+        }
+        return hash;
     }
 
     protected ConstructorNode addConstructor(final ClosureExpression expression, final Parameter[] localVariableParams, final InnerClassNode answer, final BlockStatement block) {

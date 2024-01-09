@@ -56,11 +56,9 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZEDLAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -261,10 +259,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode outermostClass = controller.getOutermostClass();
         return enclosingClass.getName() + "$" + controller.getContext().getNextLambdaInnerName(outermostClass, enclosingClass, controller.getMethodNode());
-    }
-
-    private static void addSerialVersionUIDField(final ClassNode lambdaClass) {
-        lambdaClass.addFieldFirst("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(-1L, true));
     }
 
     private MethodNode addSyntheticLambdaMethodNode(final LambdaExpression expression, final ClassNode lambdaClass, final MethodNode abstractMethod) {
