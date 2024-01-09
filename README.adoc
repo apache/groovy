@@ -23,7 +23,7 @@
 The Groovy development team
 :revdate: 24-02-2014
 :build-icon: https://ci.groovy-lang.org/app/rest/builds/buildType:(id:MasterTestJdk11)/statusIcon
-:github-build-icon: https://github.com/apache/groovy/actions/workflows/groovy-build-test.yml/badge.svg?branch=master
+:github-build-icon: https://github.com/apache/groovy/actions/workflows/groovy-build-test-main.yml/badge.svg?branch=master
 :sonarcloud-icon: https://sonarcloud.io/api/project_badges/measure?project=apache_groovy&metric=sqale_rating
 :noheader:
 :groovy-www: https://groovy-lang.org/
