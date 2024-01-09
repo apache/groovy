@@ -42,6 +42,31 @@ using a compiler configuration script, as just one example.
 
 == Checking Regular Expressions
 
+A regular expression (regex) defines a search pattern for text. The pattern can be as simple as a single character, a fixed string, or a complex expression containing special characters describing a pattern.
+The JDK has special regex classes and Groovy adds some special syntactic sugar and functionality
+on top of the JDK classes.
+
+Here is an example the checks that the String 'Foo'
+matches a regular expression:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=intro_example,indent=0]
+----
+
+The regex pattern is made up of three parts:
+
+* `[Ff]` is a character class matching upper or lowercase 'f',
+* `.{2}` means exactly two occurrences of the `.` character class which matches any character
+* `\b` matches a word boundary
+
+There are more options we could add here such as grouping, lookahead and look-behind, to name just a few.
+With so many options and special characters, it isn't hard to create an invalid regular expression pattern.
+Such invalid patterns are typically found at runtime with a runtime exception.
+
+The goal of the `RegexChecker` is to find such errors at compile-time.
+If compilation of the expressions succeeds, they are guaranteed not to fail at runtime.
+
 Consider the following code, which contains 3 regular expressions:
 
 [source,groovy]
@@ -107,9 +132,13 @@ The `format` methods in `java.util.Formatter`, and other similar methods,
 support formatted printing in the style of C's `printf` method with a
 format string and zero or more arguments.
 
-Here is an example
-which prints PI (to 2 decimal places), the hex representation of 15 (as two uppercase digits with a leading 0),
-and the Boolean `True` (in uppercase).
+Let's consider an example which produces a string comprised of three terms:
+
+* a floating-point representation (`%f`) of PI (with 2 decimal places of precision),
+* the hex representation (`%X`) of 15 (as two uppercase digits with a leading 0),
+* and the Boolean (`%B`) `True` (in uppercase).
+
+The assertion checks our expectations:
 
 [source,groovy]
 ----
@@ -119,13 +148,13 @@ include::../test/FormatStringCheckerTest.groovy[tags=intro_example,indent=0]
 This is a powerful method supporting numerous conversions and flags.
 If the developer supplies incorrect conversions or flags,
 they will receive one of numerous possible runtime errors.
-As examples:
+As examples, consider the following mistakes and resulting runtime exceptions:
 
-* if we supply a String as the parameter for either
-of the first two arguments, we would receive an
-`IllegalFormatConversionException` at runtime,
-* if we supply the
-_leading zero_ flag for the Boolean parameter, we would receive a
+* supplying a String as the parameter for either of the first two arguments results in an
+`IllegalFormatConversionException`,
+* leaving out the last argument results in a
+`MissingFormatArgumentException`,
+* supplying the _leading zero_ flag for the Boolean parameter results in a
 `FlagsConversionMismatchException`.
 
 The goal of the `FormatStringChecker` is to eliminate

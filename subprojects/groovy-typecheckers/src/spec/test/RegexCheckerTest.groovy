@@ -25,6 +25,13 @@ import static groovy.test.GroovyAssert.shouldFail
 class RegexCheckerTest {
 
     @Test
+    void testIntro() {
+        // tag::intro_example[]
+        assert 'foo'.matches(/[Ff].{2}\b/)
+        // end::intro_example[]
+    }
+
+    @Test
     void testIntroduction() {
         assertScript($/
         import groovy.transform.TypeChecked
