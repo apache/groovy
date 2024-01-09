@@ -107,20 +107,62 @@ The `format` methods in `java.util.Formatter`, and other similar methods,
 support formatted printing in the style of C's `printf` method with a
 format string and zero or more arguments.
 
-These methods have the following characteristics:
+Here is an example
+which prints PI (to 2 decimal places), the hex representation of 15 (as two uppercase digits with a leading 0),
+and the Boolean `True` (in uppercase).
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=intro_example,indent=0]
+----
+
+This is a powerful method supporting numerous conversions and flags.
+If the developer supplies incorrect conversions or flags,
+they will receive one of numerous possible runtime errors.
+As examples:
+
+* if we supply a String as the parameter for either
+of the first two arguments, we would receive an
+`IllegalFormatConversionException` at runtime,
+* if we supply the
+_leading zero_ flag for the Boolean parameter, we would receive a
+`FlagsConversionMismatchException`.
+
+The goal of the `FormatStringChecker` is to eliminate
+a large number of such runtime errors. If the API call passes type checking,
+it will be guaranteed to succeed at runtime.
+
+=== Typical usage
+
+Here is an example of correctly using some of these methods with type checking in place:
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=valid_format_string_example,indent=0]
+----
+
+Over and above these methods, if you have your own method of this style,
+you can annotate it with `@FormatMethod`, and it will also be checked.
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=format_method_example,indent=0]
+----
+
+You can use the `FormatMethod` annotation provided in the `groovy-typecheckers`
+module or the https://checkerframework.org/api/org/checkerframework/checker/formatter/qual/FormatMethod.html[similarly named] annotation from the Java-based https://checkerframework.org/[checker framework].
+
+=== Covered methods
+
+The format string methods have the following characteristics:
 
 * The first argument must be of type `java.util.Locale` or `java.lang.String`.
 * If the first argument is of type `Locale`, the second argument must be of type `String`.
 * The `String` argument is treated as a format string containing zero or more embedded format specifiers as well as plain text. The format specifiers determine how the remaining arguments will be used within the resulting output.
-* The `FormatStringChecker` ensures that the format string is valid and the remaining arguments are compatible with the embedded format specifiers.
 
-There are numerous errors which can occur within the format string which lead
-to runtime errors. The goal of the `FormatStringChecker` is to eliminate
-a large number of such runtime errors. If the API call passes type checking,
-it will be guaranteed to succeed at runtime.
+The `FormatStringChecker` ensures that the format string is valid and the remaining arguments are compatible with the embedded format specifiers.
 
 The methods which are checked include:
-
 
 |===
 a|`java.lang.String`
@@ -152,30 +194,21 @@ sprintf(Locale l, String format, Object... args)
 ----
 |===
 
-Here is an example of correctly using some of these methods with type checking in place:
-
-[source,groovy]
-----
-include::../test/FormatStringCheckerTest.groovy[tags=valid_format_string_example,indent=0]
-----
-
-Over and above these methods, if you have your own method of this style,
-you can annotate it with `@FormatMethod`, and it will also be checked.
-
-[source,groovy]
-----
-include::../test/FormatStringCheckerTest.groovy[tags=format_method_example,indent=0]
-----
-
-You can use the `FormatMethod` annotation provided in the `groovy-typecheckers`
-module or the https://checkerframework.org/api/org/checkerframework/checker/formatter/qual/FormatMethod.html[similarly named] annotation from the Java-based https://checkerframework.org/[checker framework].
-
 The format string checker looks for a constant literal
 format string. For arguments, it also looks for constant
 literals or otherwise makes checks based on inferred type.
 When looking for constants, the checker will find inline
 literals, local variables with a constant initializer,
-and fields with a constant initializer.
+and fields with a constant initializer. Here are some examples:
+
+[source,groovy]
+----
+include::../test/FormatStringCheckerTest.groovy[tags=valid_format_string_variations,indent=0]
+----
+<1> Constant literals
+<2> Fields with an initializer
+<3> Local variables with an initializer
+<4> Checking of the parameter will be based on inferred type
 
 === Errors detected
 

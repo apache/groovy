@@ -25,6 +25,13 @@ import static groovy.test.GroovyAssert.shouldFail
 class FormatStringCheckerTest {
 
     @Test
+    void testIntro() {
+        // tag::intro_example[]
+        assert String.format('%4.2f %02X %B', Math.PI, 15, true) == '3.14 0F TRUE'
+        // end::intro_example[]
+    }
+
+    @Test
     void testValidFormatStringExample() {
         assertScript('''
         import groovy.transform.TypeChecked
@@ -41,6 +48,33 @@ class FormatStringCheckerTest {
             assert baos.toString() == 'x   |  true'
         }
         // end::valid_format_string_example[]
+        ''')
+    }
+
+    @Test
+    void testValidFormatStringVariations() {
+        assertScript('''
+        import groovy.transform.TypeChecked
+
+        // tag::valid_format_string_variations[]
+        static final String FIELD_PATTERN = '%x'
+        static final int FIELD_PARAM = 1023
+
+        @TypeChecked(extensions='groovy.typecheckers.FormatStringChecker')
+        static main(args) {
+            assert sprintf('%x', 1024) == '400'  // <1>
+
+            assert sprintf(FIELD_PATTERN, FIELD_PARAM) == '3ff'  // <2>
+
+            var local_var_pattern = '%x'
+            var local_var_param = 1022
+            assert sprintf(local_var_pattern, local_var_param) == '3fe'  // <3>
+
+            assert sprintf('%x%s', theParam(), 'a' + 'b') == '3fdab'  // <4>
+        }
+
+        static int theParam() { 1021 }
+        // end::valid_format_string_variations[]
         ''')
     }
 
