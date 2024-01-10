@@ -67,7 +67,55 @@ Such invalid patterns are typically found at runtime with a runtime exception.
 The goal of the `RegexChecker` is to find such errors at compile-time.
 If compilation of the expressions succeeds, they are guaranteed not to fail at runtime.
 
-Consider the following code, which contains 3 regular expressions:
+=== Typical usage
+
+The previous example can be type checked as follows:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=checked_example,indent=0]
+----
+
+If you have many examples where such checking is desirable,
+you could consider automatically adding this extension to your compilation process.
+
+=== Covered methods
+
+The methods which are checked include:
+
+|===
+a|`java.util.regex.Pattern`
+[source,groovy]
+----
+static Pattern compile(String regex)
+static Pattern compile(String regex, int flags)
+static boolean matches(String regex, CharSequence input)
+----
+a|`java.util.regex.Matcher`
+[source,groovy]
+----
+String group(int group)
+matcher[matchCount][groupCount]  // getAt shorthand
+----
+a|Operators
+[source,groovy]
+----
+~/regex/                 // pattern operator
+'string' =~ /regex/      // find operator
+'string' ==~ /regex/     // (exact) match operator
+----
+|===
+
+The RegexChecker will check any method calls listed above.
+It might find such methods when they involve explicit static
+method calls or when the receiver's type can be inferred.
+
+The regular expression must be a _constant-like_ String.
+Any group-count values must be a _constant-like_ integer.
+By _constant-like_, we mean, either an explicit String literal,
+or a field with an initializer expression or a local variable
+with an initializer expression. These possibilities are shown in
+the following code, which contains 3 regular expressions:
 
 [source,groovy]
 ----
@@ -80,7 +128,9 @@ include::../test/RegexCheckerTest.groovy[tags=introduction_example,indent=0]
 <5> Using the pattern with grep
 <6> An API call passing a String literal regex
 
-Luckily, we made no errors in our regex definitions, and the code executes successfully.
+=== Errors detected
+
+Luckily, in the above example, we made no errors in our regex definitions, and the code compiles and executes successfully.
 
 If however, we did make certain errors in those definitions, then we would expect the potential of runtime errors. Using `RegexChecker`, we can
 find certain kinds of errors during compilation.
@@ -125,6 +175,28 @@ We would see the following error at compile-time:
 ----
 include::../test/RegexCheckerTest.groovy[tags=unclosed_group_message,indent=0]
 ----
+
+Over-and-above these examples, detected errors include:
+
+* Bad class syntax
+* Bad named capturing group
+* Dangling meta character
+* Empty character family
+* Illegal character range
+* Illegal repetition
+* Illegal/unsupported escape sequence
+* Look-behind group does not have an obvious maximum length
+* Unexpected character
+* Unclosed character family
+* Unclosed character class
+* Unclosed counted closure
+* Unclosed group
+* Unknown character property name
+* Unknown Unicode property
+* Unknown group type
+* Unknown inline modifier
+* Unknown character name
+* Unmatched closing ')'
 
 == Checking Format Strings
 

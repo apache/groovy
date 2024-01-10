@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+
+import groovy.transform.TypeChecked
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -29,6 +31,20 @@ class RegexCheckerTest {
         // tag::intro_example[]
         assert 'foo'.matches(/[Ff].{2}\b/)
         // end::intro_example[]
+    }
+
+    @Test
+    void testCheckedIntro() {
+        assertScript '''
+        import groovy.transform.TypeChecked
+
+        // tag::checked_example[]
+        @TypeChecked(extensions='groovy.typecheckers.RegexChecker')
+        static main(args) {
+            assert 'foo'.matches(/[Ff].{2}\b/)
+        }
+        // end::checked_example[]
+        '''
     }
 
     @Test
