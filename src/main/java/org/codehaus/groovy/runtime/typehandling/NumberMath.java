@@ -177,7 +177,11 @@ public abstract class NumberMath {
         if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
             return BigDecimal.valueOf(n.longValue());
         }
-        return new BigDecimal(n.toString());
+        try {
+            return new BigDecimal(n.toString());
+        } catch(NumberFormatException nfe) {
+            return BigDecimal.valueOf(n.doubleValue());
+        }
     }
 
     public static BigInteger toBigInteger(Number n) {
