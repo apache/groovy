@@ -35,7 +35,7 @@ class RegexCheckerTest {
 
     @Test
     void testCheckedIntro() {
-        assertScript '''
+        assertScript($/
         import groovy.transform.TypeChecked
 
         // tag::checked_example[]
@@ -44,7 +44,7 @@ class RegexCheckerTest {
             assert 'foo'.matches(/[Ff].{2}\b/)
         }
         // end::checked_example[]
-        '''
+        /$)
     }
 
     @Test
