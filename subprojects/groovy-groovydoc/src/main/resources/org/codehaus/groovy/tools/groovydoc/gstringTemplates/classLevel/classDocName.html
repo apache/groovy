@@ -56,12 +56,12 @@
     }
     def linkfull = { t -> dolink(t, true) }
     def linkable = { t -> dolink(t, false) }
-    def modifiersWithOptions = { t, boolean ignorePublic, boolean ignoreAbstract ->
+    def modifiersWithOptions = { t, boolean ignorePublic, boolean ignoreAbstract, boolean ignoreFinal=false, boolean ignoreStatic=false ->
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isPublic() && !ignorePublic?"public&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
-        (t.isStatic()?"static&nbsp;":"") +
-        (t.isFinal()?"final&nbsp;":"") +
+        (t.isStatic() && !ignoreStatic ?"static&nbsp;":"") +
+        (t.isFinal() && !ignoreFinal?"final&nbsp;":"") +
         (!ignoreAbstract && t.respondsTo('isAbstract') && t.isAbstract()?"abstract&nbsp;":"")
     }
     def modifiers = { t -> modifiersWithOptions(t, classDoc.isGroovy(), false) }
@@ -157,14 +157,14 @@ if (location.href.indexOf('is-external=true') == -1) {
                 if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
             } else {
                 if (classDoc.isEnum()) {
-                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 }
-                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 if (classDoc.isClass()) {
-                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 }
-                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
             }
             %>
         </ul>
@@ -232,7 +232,7 @@ if (classDoc.isInterface()) {
             <hr>
 <%
 def declaration = annotations(classDoc, '\n') +
-    modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) +
+    modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType(), classDoc.isEnum(), false) +
     classDoc.typeSourceDescription +
     " ${nameEncoded}"
 final interfaces = classDoc.interfaces().collect{ linkable(it) }.join(', ')
@@ -565,7 +565,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <a name="${ec.name()}"><!-- --></a>
                         <ul class="blockListLast">
                             <li class="blockList">
-                                <h4>${modifiers(ec) + '<a href="' + classDoc.relativeRootPath + classDoc.fullPathName + '.html">' + classDoc.name() + '</a>'} <strong>${ec.name()}</strong></h4>
+                                <h4>${annotations(ec, '<br>') + modifiersWithOptions(ec, true, true, true, true) + '<a href="' + classDoc.relativeRootPath + classDoc.fullPathName + '.html">' + classDoc.name() + '</a>'} <strong>${ec.name()}</strong></h4>
                                 <p>${ec.commentText()}</p>
                             </li>
                         </ul>
@@ -710,19 +710,19 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
     if (classDoc.isAnnotationType()) {
         def hasReq = classDoc.fields().any{ isRequired(it, "true") }
         def hasOpt = classDoc.fields().any{ isRequired(it, "false") }
-        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
     } else {
-        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         if (classDoc.isEnum()) {
-            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         }
-        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         if (classDoc.isClass()) {
-            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         }
-        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
     }
     %>
         </ul>
@@ -730,17 +730,17 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
             <li>&nbsp;|&nbsp;Detail:&nbsp;</li>
             <%
             if (classDoc.isAnnotationType()) {
-                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
             } else {
                 if (classDoc.isEnum()) {
-                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                    if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 }
-                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasFields) { %><li><a href="#field_detail"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+                if (hasProperties) { %><li><a href="#prop_detail">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 if (classDoc.isClass()) {
-                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                    if (visibleConstructors) { %><li><a href="#constructor_detail"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
                 }
-                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (visibleMethods) { %><li><a href="#method_detail"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
             }
             %>
         </ul>

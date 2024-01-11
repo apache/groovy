@@ -376,7 +376,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);
         fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
-        if (currentClassDoc.isEnum()) {
+        if (node.isEnum()) {
             currentClassDoc.addEnumConstant(fieldDoc);
         } else {
             currentClassDoc.add(fieldDoc);
