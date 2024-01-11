@@ -135,7 +135,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
         currentClassDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
         currentClassDoc.setNameWithTypeArgs(name + genericTypesAsString(node.getGenericsTypes()));
-        if (!node.isInterface() && node.getSuperClass() != null) {
+        if (!node.isInterface() && !node.isEnum() && node.getSuperClass() != null) {
             String superName = makeType(node.getSuperClass());
             currentClassDoc.setSuperClassName(superName);
             String superSimpleName = node.getSuperClass().getNameWithoutPackage();
@@ -322,8 +322,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         final ClassNode cn = node.isArray() ? node.getComponentType() : node;
         return cn.getName().replace('.', '/').replace('$', '.')
             + genericTypesAsString(cn.getGenericsTypes())
-            + (node.isArray() ? "[]" : "")
-            ;
+            + (node.isArray() ? "[]" : "");
     }
 
     @Override
@@ -377,7 +376,11 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);
         fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
-        currentClassDoc.add(fieldDoc);
+        if (currentClassDoc.isEnum()) {
+            currentClassDoc.addEnumConstant(fieldDoc);
+        } else {
+            currentClassDoc.add(fieldDoc);
+        }
         super.visitField(node);
     }
 
