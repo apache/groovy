@@ -685,7 +685,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("There has to be a reference to class Enum", "Enum", m.group(3));
     }
 
-    public void testEnumInitNotDocumented() throws Exception {
+    public void testEnumConstantsDocumentedAndInitNotDocumented() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         final String klass = "EnumWithDeprecatedConstants";
         htmlTool.add(Arrays.asList(
@@ -696,6 +696,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
 
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/"+ klass +".html");
+        assertTrue(groovydoc.matches("(?s).*<table .*summary=\"Enum constants summary table\".*>bar<.*<\\/table>.*"));
 
         final Matcher ctor = Pattern.compile(Pattern.quote("$INIT")).matcher(groovydoc);
 
