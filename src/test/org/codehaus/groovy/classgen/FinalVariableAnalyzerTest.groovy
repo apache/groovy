@@ -78,7 +78,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
-    void testReassignedVarShouldNotBeFinalWhenUsingMultiAssigment() {
+    void testReassignedVarShouldNotBeFinalWhenUsingMultiAssignment() {
         assertFinals x: false, '''
             def x = 1
             (x) = [2]
@@ -131,7 +131,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
-    void testReassignedFinalParamererShouldThrowCompilationError() {
+    void testReassignedFinalParameterShouldThrowCompilationError() {
         assertFinalCompilationErrors(['x'], '''
             void foo(final int x) {
                x = 2
@@ -560,6 +560,18 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
             }
             assert evalJ() == 2
         '''
+    }
+
+    // GROOVY-11273
+    void testReassignedFinalVariableInInterfaceDefaultMethodShouldThrowCompilationError() {
+        assertFinalCompilationErrors(['x'], '''
+            interface Test {
+                default void test() {
+                    final int x = 1;
+                    x = 2;
+                }
+            }
+        ''')
     }
 
     @CompileStatic
