@@ -210,7 +210,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             String[] args = ['a','b','c']
             assert c.identity(args) == args
         ''',
-        'Cannot call groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.Integer[]) with arguments [java.lang.String[]]'
+        'Cannot find matching method groovy.transform.stc.MethodCallsSTCTest$MyMethodCallTestClass2#identity(java.lang.String[])'
     }
 
     // GROOVY-8909
