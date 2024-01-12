@@ -60,7 +60,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -1051,7 +1050,7 @@ public abstract class StaticTypeCheckingSupport {
         Iterable<MethodNode> candidates = noCulling ? methods : removeCovariantsAndInterfaceEquivalents(methods, duckType);
 
         for (MethodNode candidate : candidates) {
-            MethodNode safeNode = candidate;
+            MethodNode  safeNode = candidate;
             ClassNode[] safeArgs = argumentTypes;
             boolean isExtensionMethod = candidate instanceof ExtensionMethodNode;
             if (isExtensionMethod) {
@@ -1062,35 +1061,11 @@ public abstract class StaticTypeCheckingSupport {
                 safeNode = ((ExtensionMethodNode) candidate).getExtensionMethodNode();
             }
 
-            /* TODO: corner case
-                class B extends A {}
-                Animal foo(A a) {}
-                Person foo(B b) {}
-
-                B b = new B()
-                Person p = foo(b)
-            */
-
             ClassNode declaringClass = candidate.getDeclaringClass();
             ClassNode actualReceiver = receiver != null ? receiver : declaringClass;
+            Parameter[] simpleParams = getSafeParameters(safeNode, declaringClass, actualReceiver);
 
-            Map<GenericsType, GenericsType> spec;
-            if (candidate.isStatic()) {
-                spec = Collections.emptyMap(); // none visible
-            } else {
-                spec = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClass, actualReceiver);
-                GenericsType[] methodGenerics = candidate.getGenericsTypes();
-                if (methodGenerics != null) { // GROOVY-10322: remove hidden type parameters
-                    for (int i = 0, n = methodGenerics.length; i < n && !spec.isEmpty(); i += 1) {
-                        for (Iterator<GenericsType> it = spec.keySet().iterator(); it.hasNext(); ) {
-                            if (it.next().getName().equals(methodGenerics[i].getName())) it.remove();
-                        }
-                    }
-                }
-            }
-
-            Parameter[] params = makeRawTypes(safeNode.getParameters(), spec);
-            int dist = measureParametersAndArgumentsDistance(params, safeArgs);
+            int dist = measureParametersAndArgumentsDistance(simpleParams, safeArgs);
             if (dist >= 0) {
                 dist += getClassDistance(declaringClass, actualReceiver);
                 dist += getExtensionDistance(isExtensionMethod);
@@ -1116,6 +1091,37 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         return bestChoices;
+    }
+
+    private static Parameter[] getSafeParameters(final MethodNode methodNode, final ClassNode declaringClass, final ClassNode actualReceiver) {
+        Parameter[] params = methodNode.getParameters();
+        if (params.length > 0) {
+            Map<GenericsTypeName, GenericsType> spec;
+            if (methodNode.isStatic()) {
+                spec = Collections.emptyMap(); // not visible
+            } else {
+                extractGenericsConnections(spec = new HashMap<>(), actualReceiver, declaringClass);
+
+                GenericsType[] methodGenerics = methodNode.getGenericsTypes();
+                if (methodGenerics != null) { // GROOVY-10322: remove hidden type parameters
+                    for (GenericsType tp : methodGenerics) spec.remove(new GenericsTypeName(tp.getName()));
+                }
+            }
+
+            params = params.clone();
+
+            for (int i = 0; i < params.length; i += 1) {
+                ClassNode t = params[i].getOriginType(), x=t;
+                while (x.isArray()) x = x.getComponentType();
+                if (x.isGenericsPlaceHolder()) {
+                    // GROOVY-7204, GROOVY-8059, GROOVY-8609, GROOVY-10820, GROOVY-11276: "T" to "Foo" (via spec) or erasure
+                    params[i] = new Parameter(GenericsUtils.nonGeneric(applyGenericsContext(spec, t)), params[i].getName());
+                } else if (x.getGenericsTypes() != null) { // reduce "List<Type>" to just "List"
+                    params[i] = new Parameter(GenericsUtils.nonGeneric(t), params[i].getName());
+                }
+            }
+        }
+        return params;
     }
 
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
@@ -1178,27 +1184,6 @@ public abstract class StaticTypeCheckingSupport {
 
     private static int getExtensionDistance(final boolean isExtensionMethodNode) {
         return isExtensionMethodNode ? 0 : 1;
-    }
-
-    private static Parameter[] makeRawTypes(final Parameter[] parameters, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
-        return Arrays.stream(parameters).map(param -> {
-            String name = param.getType().getUnresolvedName();
-            Optional<GenericsType> value = genericsPlaceholderAndTypeMap.entrySet().stream()
-                .filter(e -> e.getKey().getName().equals(name)).findFirst().map(Map.Entry::getValue);
-            ClassNode type = value.map(gt -> !gt.isPlaceholder() ? gt.getType() : makeRawType(gt.getType())).orElseGet(() -> makeRawType(param.getType()));
-
-            return new Parameter(type, param.getName());
-        }).toArray(Parameter[]::new);
-    }
-
-    private static ClassNode makeRawType(final ClassNode receiver) {
-        if (receiver.isArray()) {
-            return makeRawType(receiver.getComponentType()).makeArray();
-        }
-        ClassNode raw = receiver.getPlainNodeReference();
-        raw.setUsingGenerics(false);
-        raw.setGenericsTypes(null);
-        return raw;
     }
 
     private static List<MethodNode> removeCovariantsAndInterfaceEquivalents(final Collection<MethodNode> collection, final boolean disjoint) {

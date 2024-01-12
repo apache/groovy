@@ -885,16 +885,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             interface I<U> extends groovy.transform.stc.Groovy11257<U> {}
             def <V> I<V> forge(V v) { return new I(){} }
-            void test() {
-                @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                    def type = node.getNodeMetaData(INFERRED_TYPE)
-                    assert type.toString(false) == 'java.util.Optional<java.math.BigInteger>'
-                })
-                def opt = forge(1G).thing
-                def num = opt.orElse(42G).intValue()
-            }
 
-            test()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.Optional<java.math.BigInteger>'
+            })
+            def opt = forge(1G).thing
+            def num = opt.orElse(42G).intValue()
         '''
     }
 
@@ -2303,8 +2300,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testPutAtWithWrongValueType() {
         shouldFailWithMessages '''
+            def map = new HashMap<Integer, Integer>()
+            map[123] = new Object()
+        ''',
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.Integer, java.lang.Integer>, int, java.lang.Object]'
+
+        shouldFailWithMessages '''
             def map = new HashMap<String, Integer>()
-            map['hello'] = new Object()
+            map['x'] = new Object()
         ''',
         'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.HashMap<java.lang.String, java.lang.Integer>, java.lang.String, java.lang.Object]'
     }
@@ -2322,18 +2325,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>)',
+        'Cannot call java.util.Map#put(java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>) with arguments [java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]',
         'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<K, V>, K, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
-    }
 
-    void testPutAtWithWrongValueType3() {
         assertScript '''
             void test(Map<String, Map<String, List<String>>> maps) {
                 maps.each { String key, Map<String, List<String>> map ->
                     Map<String, List<String>> value = [:]
-                    // populate value
-                    maps[key] = value
                     maps.put(key, value)
+                    maps[key] = value
                 }
             }
         '''
@@ -2518,6 +2518,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 m([:])
             """
         }
+    }
+
+    // GROOVY-11276
+    void testShouldUseMethodGenericType4a() {
+        assertScript '''
+            def map = new HashMap<String,List<String>>()
+            map.put('foo', Collections.emptyList())
+            map.put('bar', [])
+        '''
     }
 
     // GROOVY-9751
@@ -4612,7 +4621,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert method.parameters[0].type == make(Collection)
             })
             def result = ['a','bb','ccc'].inject(0) { int acc, String str -> acc += str.length(); acc }
-            assert  result == 6
+            assert result == 6
         '''
     }
 
@@ -4624,8 +4633,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert method.name == 'inject'
                 assert method.parameters[0].type == make(Collection)
             })
-            def result = DefaultGroovyMethods.inject(['a','bb','ccc'],0, { int acc, String str -> acc += str.length(); acc })
-            assert  result == 6
+            def result = DefaultGroovyMethods.inject(['a','bb','ccc'], 0, { int acc, String str -> acc += str.length(); acc })
+            assert result == 6
         '''
     }
 
