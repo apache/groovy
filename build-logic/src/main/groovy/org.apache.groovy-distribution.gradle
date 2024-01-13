@@ -78,6 +78,7 @@ configurations {
     allSourcesRuntimeClasspath {
         extendsFrom baseProjects
     }
+    asciidocExtensions
 }
 
 dependencies {
@@ -109,6 +110,7 @@ dependencies {
     }
     doc projects.groovyAll
     docgeneratorTool projects.groovyDocgenerator
+    asciidocExtensions gradleApi()
 }
 
 def docGDK = tasks.register('docGDK', DocGDK) {
@@ -202,6 +204,7 @@ tasks.register("asciidocAll", Copy) {
 
 tasks.named('asciidoctorPdf') {
     baseDirFollowsSourceFile()
+    configurations 'asciidocExtensions'
     logDocuments = true
     sourceDir = file('src/spec/doc')
     outputDir = layout.buildDirectory.dir("asciidocAll/pdf")
