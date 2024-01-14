@@ -76,7 +76,14 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(final ClassNode node) {
-        if (node.isEnum()) completeEnum(node);
+        if (node.isEnum()
+                && !EnumVisitor.isAnonymousInnerClass(node)) {
+            node.getInnerClasses().forEachRemaining(innerClass -> {
+                // EnumConstantClassNode must be completed before its enum class
+                if (EnumVisitor.isAnonymousInnerClass(innerClass)) completeEnum(innerClass);
+            });
+            completeEnum(node);
+        }
     }
 
     private void completeEnum(final ClassNode enumClass) {

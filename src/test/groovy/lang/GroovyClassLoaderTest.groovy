@@ -81,7 +81,7 @@ final class GroovyClassLoaderTest {
     //--------------------------------------------------------------------------
 
     @Test
-    void testAddsAClasspathEntryOnlyIfItHasNotAlreadyBeenAdded() {
+    void testAddsClasspathEntryOnlyIfItHasNotAlreadyBeenAdded() {
         String newClasspathEntry = '/tmp'
         int initialClasspathEntryCount = classLoader.classPath.length
 
@@ -251,6 +251,50 @@ final class GroovyClassLoaderTest {
         classNode.setModule(module)
         def clazz = loader.defineClass(classNode, classNode.getName() + '.groovy', '')
         verifyPackageDetails(clazz, 'pkg3')
+    }
+
+    // GROOVY-11117
+    @Test
+    void testParseClassReturn() {
+        def c = classLoader.parseClass '''
+            interface A {
+                interface B { }
+                interface C { }
+            }
+        '''
+        assert c.name == 'A'
+
+        c = classLoader.parseClass '''
+            interface A {
+                trait B { }
+                class C { }
+            }
+        '''
+        assert c.name == 'A'
+
+        c = classLoader.parseClass '''
+            interface A {
+                trait B {
+                    static class C { }
+                }
+            }
+        '''
+        assert c.name == 'A'
+
+        c = classLoader.parseClass '''
+            def m() {
+                def aic = new Object() {}
+            }
+            interface A { }
+            trait B { }
+            class C { }
+        '''
+        assert c.name.startsWith('Script_')
+
+        c = classLoader.parseClass '''
+            print "hello"
+        '''
+        assert c.name.startsWith('Script_')
     }
 }
 
