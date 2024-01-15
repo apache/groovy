@@ -5650,6 +5650,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Variable variable = ((VariableExpression) source.getExpression()).getAccessedVariable();
                     if (variable instanceof ASTNode) objectExprType = ((ASTNode) variable).getNodeMetaData(INFERRED_TYPE);
                 }
+                if (objectExprType == null) objectExprType = source.getExpression().getType();
                 Map<GenericsTypeName,GenericsType> spec = extractPlaceHolders(objectExprType, target.getDeclaringClass());
                 return applyGenericsContext(spec, extractTypesFromParameters(params));
             }

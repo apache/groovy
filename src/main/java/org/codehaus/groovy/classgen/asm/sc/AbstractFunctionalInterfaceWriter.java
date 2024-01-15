@@ -30,7 +30,6 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,13 +49,8 @@ public interface AbstractFunctionalInterfaceWriter {
         return type;
     }
 
-    default String createMethodDescriptor(final MethodNode abstractMethodNode) {
-        return BytecodeHelper.getMethodDescriptor(
-                abstractMethodNode.getReturnType().getTypeClass(),
-                Arrays.stream(abstractMethodNode.getParameters())
-                        .map(e -> e.getType().getTypeClass())
-                        .toArray(Class[]::new)
-        );
+    default String createMethodDescriptor(final MethodNode methodNode) {
+        return BytecodeHelper.getMethodDescriptor(methodNode);
     }
 
     default Handle createBootstrapMethod(final boolean isInterface, final boolean serializable) {
