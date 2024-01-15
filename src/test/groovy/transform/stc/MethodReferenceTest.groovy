@@ -1414,6 +1414,24 @@ final class MethodReferenceTest {
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 
+    @Test // GROOVY-11254
+    void testLocalFunctionalInterface() {
+        assertScript shell, '''
+            class C { String s }
+            @FunctionalInterface
+            interface I<T> { T m(C c) }
+
+            @CompileStatic
+            def test(I<String> i_string) {
+                I<String> i = i_string::m
+                i.m(new C(s:'something'))
+            }
+
+            String result = test(c -> c.s)
+            assert result == 'something'
+        '''
+    }
+
     @Test // GROOVY-10635
     void testRecordComponentMethodReference() {
         assertScript shell, '''

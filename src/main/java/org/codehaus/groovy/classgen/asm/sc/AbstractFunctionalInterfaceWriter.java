@@ -27,7 +27,6 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
@@ -44,11 +43,7 @@ import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getMethodDescripto
 public interface AbstractFunctionalInterfaceWriter {
 
     default String createMethodDescriptor(final MethodNode method) {
-        Class<?> returnType = method.getReturnType().getTypeClass();
-        Class<?>[] parameterTypes = Arrays.stream(method.getParameters())
-                .map(p -> p.getType().getTypeClass()).toArray(Class[]::new);
-
-        return getMethodDescriptor(returnType, parameterTypes);
+        return getMethodDescriptor(method.getReturnType(), method.getParameters());
     }
 
     default Handle createBootstrapMethod(final boolean isInterface, final boolean serializable) {

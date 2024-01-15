@@ -5608,7 +5608,8 @@ out:                if (mn.size() != 1) {
                     Variable variable = ((VariableExpression) source.getExpression()).getAccessedVariable();
                     if (variable instanceof ASTNode) objectExprType = ((ASTNode) variable).getNodeMetaData(INFERRED_TYPE);
                 }
-                Map<GenericsTypeName,GenericsType> spec = extractPlaceHolders(objectExprType, target.getDeclaringClass());
+                if (objectExprType == null) objectExprType = source.getExpression().getType();
+                var spec = extractPlaceHolders(objectExprType, target.getDeclaringClass());
                 return applyGenericsContext(spec, extractTypesFromParameters(params));
             }
         }
