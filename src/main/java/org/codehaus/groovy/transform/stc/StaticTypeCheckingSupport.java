@@ -966,14 +966,15 @@ public abstract class StaticTypeCheckingSupport {
             if (actual.implementsInterface(expect)) {
                 return dist + getMaximumInterfaceDistance(actual, expect);
             } else if (actual.equals(CLOSURE_TYPE) && (sam = findSAM(expect)) != null) {
-                // In the case of multiple overloads, give preference to equal parameter count
-                // with fuzzy matching of length for implicit-argument Closures.
+                // in case of multiple overloads, give preference to same parameter count
+                // with fuzzy matching of count for implicit-parameter closures / lambdas
                 Integer closureParamCount = actual.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                if (closureParamCount != null) {
-                    int samParamCount = sam.getParameters().length;
+                if (closureParamCount != null) { int samParamCount = sam.getParameters().length;
                     if ((closureParamCount == samParamCount) ||                                  // GROOVY-9881
                         (closureParamCount == -1 && (samParamCount == 0 || samParamCount == 1))) // GROOVY-10905
                         dist -= 1;
+                    else if (closureParamCount != -1)
+                        dist += 2; // GROOVY-11121: Object or T may match better
                 }
 
                 return dist + 13; // GROOVY-9852: @FunctionalInterface vs Object

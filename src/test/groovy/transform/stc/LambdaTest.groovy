@@ -74,7 +74,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-8917
+    // GROOVY-8917
+    @Test
     void testBinaryOperatorWithoutExplicitTypes() {
         assertScript shell, '''
             def f() {
@@ -95,7 +96,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10282
+    // GROOVY-10282
+    @Test
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
         assertScript shell, '''
             def f() {
@@ -186,7 +188,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10372
+    // GROOVY-10372
+    @Test
     void testComparator2() {
         def err = shouldFail shell, '''
             class T {
@@ -196,7 +199,8 @@ final class LambdaTest {
         assert err =~ /Expected type java.lang.Integer for lambda parameter: b/
     }
 
-    @Test // GROOVY-9977
+    // GROOVY-9977
+    @Test
     void testComparator3() {
         assertScript shell, '''
             class T {
@@ -214,7 +218,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9997
+    // GROOVY-9997
+    @Test
     void testComparator4() {
         assertScript '''
             @groovy.transform.TypeChecked
@@ -605,7 +610,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9347
+    // GROOVY-9347
+    @Test
     void testConsumer7() {
         assertScript shell, '''
             void test() {
@@ -619,7 +625,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9340
+    // GROOVY-9340
+    @Test
     void testConsumer8() {
         assertScript shell, '''
             class Test1 {
@@ -742,7 +749,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9881
+    // GROOVY-9881
+    @Test
     void testFunctionalInterface4() {
         assertScript shell, '''
             class Value<V> {
@@ -766,8 +774,32 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10372
+    // GROOVY-11121
+    @Test
     void testFunctionalInterface5() {
+        String clazz = '''
+            class C<T> {
+                public String which
+                static <T> C<T> of(T value) { new C<>(which: 'T') }
+                static <T> C<T> of(Iterable<T> values) { new C<>(which: 'Iterable<T>') }
+            }
+        '''
+        assertScript shell, clazz + '''
+            assert C.<IntUnaryOperator>of( (int i) -> i + 1 ).which == 'T'
+        '''
+        assertScript shell, clazz + '''
+            @groovy.transform.CompileDynamic
+            void p() {
+                assert C.of( (int i) -> i + 1 ).which == 'T'
+            }
+
+            p()
+        '''
+    }
+
+    // GROOVY-10372
+    @Test
+    void testFunctionalInterface6() {
         def err = shouldFail shell, '''
             interface I {
                 def m(List<String> strings)
@@ -778,8 +810,9 @@ final class LambdaTest {
         assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
     }
 
-    @Test // GROOVY-11013
-    void testFunctionalInterface6() {
+    // GROOVY-11013
+    @Test
+    void testFunctionalInterface7() {
         assertScript shell, '''
             interface I<T> {
                 def m(List<T> list_of_t)
@@ -789,21 +822,9 @@ final class LambdaTest {
         '''
     }
 
-    // GROOVY-10943
+    // GROOVY-11072
     @Test
-    void testLambdaUnderscorePlaceholder() {
-        assertScript '''
-            def e = (a, b, _, _) -> a + b
-            def f = (a, _, b, _) -> a + b
-            def g = (_, a, _, b) -> a + b
-            assert e(1000, 100, 10, 1) == 1100
-            assert f(1000, 100, 10, 1) == 1010
-            assert g(1000, 100, 10, 1) == 101
-        '''
-    }
-
-    @Test // GROOVY-11072
-    void testFunctionalInterface7() {
+    void testFunctionalInterface8() {
         assertScript shell, '''
             class Model {
             }
@@ -829,8 +850,9 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-11092
-    void testFunctionalInterface8() {
+    // GROOVY-11092
+    @Test
+    void testFunctionalInterface9() {
         assertScript shell, '''
             Function<List<String>,String> f = (one,two) -> { one + two }
             assert f.apply(['foo','bar']) == 'foobar'
@@ -851,165 +873,84 @@ final class LambdaTest {
 
     @Test
     void testFunctionWithUpdatingLocalVariable() {
-        assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
+        for (mode in ['','static']) {
+            assertScript shell, """
+                $mode void p() {
                     int i = 1
-                    assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
-                    assert 7 == i
-                }
-            }
-        '''
-    }
-
-    @Test
-    void testFunctionWithUpdatingLocalVariable2() {
-        assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    new Test1().p()
+                    Object result =  [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
+                    assert result == [2, 4, 7]
+                    assert i == 7
                 }
 
-                void p() {
-                    int i = 1
-                    assert [2, 4, 7] == [1, 2, 3].stream().map(e -> i += e).collect(Collectors.toList())
-                    assert 7 == i
-                }
-            }
-        '''
+                p()
+            """
+        }
     }
 
     @Test
     void testFunctionWithVariableDeclaration() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                public static void p() {
-                    Function<Integer, String> f = (Integer e) -> 'a' + e
-                    assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
-                }
-            }
+            Function<Integer, String> f = (Integer e) -> 'a' + e
+            assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
         '''
     }
 
     @Test
     void testFunctionWithMixingVariableDeclarationAndMethodInvocation() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
+            String x = '#'
+            Integer y = 23
+            assert [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList()) == ['23#1', '23#2', '23#3']
 
-                static void p() {
-                    String x = '#'
-                    Integer y = 23
-                    assert ['23#1', '23#2', '23#3'] == [1, 2, 3].stream().map(e -> '' + y + x + e).collect(Collectors.toList())
-
-                    Function<Integer, String> f = (Integer e) -> 'a' + e
-                    assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
-
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
-                }
-            }
+            Function<Integer, String> f = (Integer e) -> 'a' + e
+            assert [1, 2, 3].stream().map(f).collect(Collectors.toList()) == ['a1', 'a2', 'a3']
+            assert [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList()) == [2, 3, 4]
         '''
     }
 
     @Test
     void testFunctionWithNestedLambda() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    [1, 2].stream().forEach(e -> {
-                        def list = ['a', 'b'].stream().map(f -> f + e).toList()
-                        if (1 == e) {
-                            assert ['a1', 'b1'] == list
-                        } else if (2 == e) {
-                            assert ['a2', 'b2'] == list
-                        }
-                    })
-                }
-            }
+            [1, 2].stream().forEach(e -> {
+                def list = ['a', 'b'].stream().map(f -> f + e).toList()
+                assert list == (e == 1 ? ['a1', 'b1'] : ['a2', 'b2'])
+            })
         '''
     }
 
     @Test
     void testFunctionWithNestedLambda2() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
+            def list = ['a', 'b'].stream()
+            .map(e -> {
+                [1, 2].stream().map(f -> e + f).toList()
+            }).toList()
 
-                static void p() {
-                    def list = ['a', 'b'].stream()
-                    .map(e -> {
-                        [1, 2].stream().map(f -> e + f).toList()
-                    }).toList()
-
-                    assert ['a1', 'a2'] == list[0]
-                    assert ['b1', 'b2'] == list[1]
-                }
-            }
+            assert list[0] == ['a1', 'a2']
+            assert list[1] == ['b1', 'b2']
         '''
     }
 
     @Test
     void testFunctionWithNestedLambda3() {
         assertScript shell, '''
-            class Test1 {
-                static main(args) {
-                    p()
-                }
+            def list = ['a', 'b'].stream()
+            .map(e -> {
+                Function<Integer, String> x = (Integer f) -> e + f
+                [1, 2].stream().map(x).toList()
+            }).toList()
 
-                static void p() {
-                    def list = ['a', 'b'].stream()
-                    .map(e -> {
-                        Function<Integer, String> x = (Integer f) -> e + f
-                        [1, 2].stream().map(x).toList()
-                    }).toList()
-
-                    assert ['a1', 'a2'] == list[0]
-                    assert ['b1', 'b2'] == list[1]
-                }
-            }
+            assert list[0] == ['a1', 'a2']
+            assert list[1] == ['b1', 'b2']
         '''
     }
 
     @Test
     void testMixingLambdaAndMethodReference() {
         assertScript shell, '''
-            assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-            assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
-            assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-        '''
-    }
-
-    @Test
-    void testInitializeBlocks() {
-        assertScript shell, '''
-            class Test1 {
-                static sl
-                def il
-                static { sl = [1, 2, 3].stream().map(e -> e + 1).toList() }
-
-                {
-                    il = [1, 2, 3].stream().map(e -> e + 2).toList()
-                }
-            }
-
-            assert [2, 3, 4] == Test1.sl
-            assert [3, 4, 5] == new Test1().il
+            assert [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList()) == ['1', '2', '3']
+            assert [1, 2, 3].stream().map( e -> e.plus(1) ).collect(Collectors.toList()) == [2, 3, 4]
+            assert [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList()) == ['1', '2', '3']
         '''
     }
 
@@ -1033,7 +974,26 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9332
+    @Test
+    void testInitializeBlocks() {
+        assertScript shell, '''
+            class Test1 {
+                static sl
+                def il
+                static { sl = [1, 2, 3].stream().map(e -> e + 1).toList() }
+
+                {
+                    il = [1, 2, 3].stream().map(e -> e + 2).toList()
+                }
+            }
+
+            assert [2, 3, 4] == Test1.sl
+            assert [3, 4, 5] == new Test1().il
+        '''
+    }
+
+    // GROOVY-9332
+    @Test
     void testStaticInitializeBlocks1() {
         assertScript shell, '''
             class Test1 {
@@ -1046,7 +1006,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9347
+    // GROOVY-9347
+    @Test
     void testStaticInitializeBlocks2() {
         assertScript shell, '''
             class Test1 {
@@ -1058,7 +1019,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9342
+    // GROOVY-9342
+    @Test
     void testStaticInitializeBlocks3() {
         assertScript shell, '''
             class Test1 {
@@ -1067,6 +1029,20 @@ final class LambdaTest {
             }
 
             assert Test1.acc == 7
+        '''
+    }
+
+    // GROOVY-10943
+    @Test
+    void testUnderscorePlaceholder() {
+        assertScript '''
+            def e = (a, b, _, _) -> a + b
+            def f = (a, _, b, _) -> a + b
+            def g = (_, a, _, b) -> a + b
+
+            assert e(1000, 100, 10, 1) == 1100
+            assert f(1000, 100, 10, 1) == 1010
+            assert g(1000, 100, 10, 1) == 101
         '''
     }
 
@@ -1178,7 +1154,6 @@ final class LambdaTest {
 
             test()
         '''
-
         assert err.message.contains('$Lambda')
     }
 
@@ -1441,7 +1416,6 @@ final class LambdaTest {
                 }
             }
         '''
-
         assert err.message.contains('tests.lambda.C')
     }
 
@@ -1504,7 +1478,6 @@ final class LambdaTest {
                 }
             }
         '''
-
         assert err.message.contains('tests.lambda.C')
     }
 
@@ -1782,7 +1755,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9146
+    // GROOVY-9146
+    @Test
     void testScriptWithExistingMainCS() {
         assertScript shell, '''
             static void main(args) {

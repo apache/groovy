@@ -346,14 +346,17 @@ public class MetaClassHelper {
 
             Method sam;
             for (Class<?> c = TypeUtil.autoboxType(argument); c != null && c != parameterClass; c = c.getSuperclass()) {
-                if (c == Closure.class && parameterClass.isInterface() && (sam = getSAMMethod(parameterClass)) != null) {
-                    // In the case of multiple overloads, give preference to equal parameter count
-                    // with fuzzy matching of length for implicit arg Closures
-                    int paramCount = getParameterCount(argument);
+                if (c == Closure.class && parameterClass.isInterface() && (sam= getSAMMethod(parameterClass)) != null) {
+                    // in case of multiple overloads, give preference to same parameter count
+                    // with fuzzy matching of count for implicit-parameter closures / lambdas
+                    int argParamCount = getParameterCount(argument);
                     int samParamCount = sam.getParameterCount();
-                    if ((paramCount == samParamCount) ||                                   // GROOVY-9881
-                        (paramCount == -1 && (samParamCount == 0 || samParamCount == 1)))  // GROOVY-10905
+                    if ((argParamCount == samParamCount) ||                                  // GROOVY-9881
+                        (argParamCount == -1 && (samParamCount == 0 || samParamCount == 1))) // GROOVY-10905
                         objectDistance -= 1;
+                    else if (argParamCount >= 0)                                             // GROOVY-11121
+                        objectDistance += 2;
+
                     objectDistance += 5; // ahead of Object but behind GroovyObjectSupport
                     break;
                 }
