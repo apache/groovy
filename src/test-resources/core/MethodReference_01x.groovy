@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import java.util.function.Function
+import java.util.function.Supplier
 import java.util.stream.Stream
 
 import static java.util.stream.Collectors.toList
@@ -109,3 +111,9 @@ assert a.class == b.class && a == b
 a = String[][][][]::new(1, 2)
 b = new String[1][2][][]
 assert a.class == b.class && a == b
+
+static <T extends CharSequence> T chars() { 'foo' }
+Supplier foo = this::<String>chars
+assert foo() == 'foo'
+Function sz = ArrayList::<Integer>size
+assert sz([1, 2, 3, 4]) == 4

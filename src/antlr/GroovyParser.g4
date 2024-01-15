@@ -964,7 +964,7 @@ pathElement returns [int t]
             |
                 METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
             |
-                METHOD_REFERENCE nls    // Method reference: System.out::println
+                METHOD_REFERENCE nls (nonWildcardTypeArguments)?  // Method reference: System.out::println
             )
             namePart
             { $t = 1; }
