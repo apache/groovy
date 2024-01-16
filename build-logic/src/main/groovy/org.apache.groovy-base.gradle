@@ -141,6 +141,7 @@ def excludedFromManifest = [
 
 tasks.named('jar') {
     archiveAppendix = 'raw'
+    archiveClassifier.set("raw")
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
 }
 
@@ -199,7 +200,7 @@ tasks.register("jarjar", JarJarTask) {
                          'org/objectweb/asm/util/ASMifier.class',
                          'org/objectweb/asm/util/Trace*']
     ]
-    outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${it.archiveClassifier.get() ? '-' + it.archiveClassifier.get() : ''}.jar") }
+    outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${(it.archiveClassifier.get() && it.archiveClassifier.get() != 'raw') ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
     withManifest {
         def extras = project.name == 'groovy' ? ['Main-Class': 'groovy.ui.GroovyMain'] : [:]
