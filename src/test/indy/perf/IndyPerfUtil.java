@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.*;
 
 public class IndyPerfUtil {
     private static final int WARM_UP_ITERATIONS = 100;
