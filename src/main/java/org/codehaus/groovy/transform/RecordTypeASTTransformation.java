@@ -130,9 +130,7 @@ import static org.objectweb.asm.Opcodes.IRETURN;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class RecordTypeASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
-    private static final ClassNode ARRAYLIST_TYPE = makeWithoutCaching(ArrayList.class, false);
     private static final ClassNode ILLEGAL_ARGUMENT = makeWithoutCaching(IllegalArgumentException.class);
-    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode NAMED_PARAM_TYPE = make(NamedParam.class);
     private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
     private static final ClassNode SIMPLE_BEAN_INFO_TYPE = make(SimpleBeanInfo.class);
@@ -379,7 +377,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         for (PropertyNode pNode : pList) {
             args.add(callThisX(pNode.getName()));
         }
-        Statement body = returnS(ctorX(ARRAYLIST_TYPE.getPlainNodeReference(), listX(args)));
+        Statement body = returnS(listX(args));
         addGeneratedMethod(cNode, TO_LIST, ACC_PUBLIC | ACC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -389,7 +387,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             String name = pNode.getName();
             entries.add(mapEntryX(name, callThisX(name)));
         }
-        Statement body = returnS(ctorX(LHMAP_TYPE.getPlainNodeReference(), args(mapX(entries))));
+        Statement body = returnS(mapX(entries));
         addGeneratedMethod(cNode, TO_MAP, ACC_PUBLIC | ACC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
