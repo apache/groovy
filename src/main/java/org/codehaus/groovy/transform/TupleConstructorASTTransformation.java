@@ -53,10 +53,10 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,11 +76,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuper
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
@@ -103,7 +103,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
 
     private static final String NAMED_ARGS = "__namedArgs";
-    private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
+    private static final FieldNode EMPTY_MAP_FIELD = ClassHelper.makeWithoutCaching(Collections.class).getDeclaredField("EMPTY_MAP");
     private static final ClassNode POJO_TYPE = ClassHelper.make(POJO.class);
 
     @Override
@@ -347,7 +347,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     public static void addSpecialMapConstructors(final int modifiers, final ClassNode cNode, final String message, final boolean addNoArg) {
-        Parameter[] parameters = params(new Parameter(LHMAP_TYPE, NAMED_ARGS));
+        Parameter[] parameters = { new Parameter(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS) };
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = varX(NAMED_ARGS);
         namedArgs.setAccessedVariable(parameters[0]);
@@ -358,7 +358,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // potentially add a no-arg constructor too
         if (addNoArg) {
             code = new BlockStatement();
-            code.addStatement(stmt(ctorX(ClassNode.THIS, ctorX(LHMAP_TYPE))));
+            code.addStatement(stmt(ctorX(ClassNode.THIS, fieldX(EMPTY_MAP_FIELD))));
             addGeneratedConstructor(cNode, modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
         }
     }
