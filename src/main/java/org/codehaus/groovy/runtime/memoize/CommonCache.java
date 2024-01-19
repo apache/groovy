@@ -70,7 +70,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
         this(CommonCache.<K, V>createMap(initialCapacity, maxSize, evictionStrategy));
     }
 
-    private static <K, V> Map<K, V> createMap(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
+    private static <K, V> Map<K, V> createMap(int initialCapacity, final int maxSize, EvictionStrategy evictionStrategy) {
         final boolean lru = EvictionStrategy.LRU == evictionStrategy;
 
         if (lru) {
