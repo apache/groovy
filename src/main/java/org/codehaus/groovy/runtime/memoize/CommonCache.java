@@ -19,7 +19,8 @@
 
 package org.codehaus.groovy.runtime.memoize;
 
-import org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+
+import org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
