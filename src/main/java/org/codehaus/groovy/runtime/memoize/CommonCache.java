@@ -67,7 +67,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
     public CommonCache(final int initialCapacity, final int maxSize, final EvictionStrategy evictionStrategy) {
-        this(createMap(initialCapacity, maxSize, evictionStrategy));
+        this(CommonCache.<K, V>createMap(initialCapacity, maxSize, evictionStrategy));
     }
 
     private static <K, V> Map<K, V> createMap(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
