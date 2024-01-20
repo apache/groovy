@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.transform.NonSealed;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.GroovyBugError;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.lang.reflect.Modifier.isFinal;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
@@ -1331,6 +1333,16 @@ public class ClassNode extends AnnotatedNode {
     public boolean isSealed() {
         if (redirect != null) return redirect.isSealed();
         return !getAnnotations(ClassHelper.SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
+    }
+
+    @Incubating
+    public boolean isNonSealed() {
+        if (redirect != null) return redirect.isNonSealed();
+        if (Boolean.TRUE.equals(this.getNodeMetaData(NonSealed.class))) return true;
+
+        final ClassNode superClass = this.getSuperClass();
+        if (null == superClass) return false;
+        return superClass.isSealed() && !(isFinal(this.getModifiers()) || this.isSealed());
     }
 
     public boolean isResolved() {

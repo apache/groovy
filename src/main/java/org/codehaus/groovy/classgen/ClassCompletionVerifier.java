@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
@@ -368,7 +367,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private boolean nonSealed(final ClassNode node) {
-        return Boolean.TRUE.equals(node.getNodeMetaData(NonSealed.class));
+        return node.isNonSealed();
     }
 
     private void checkSealedParent(final ClassNode cn, final ClassNode parent) {
