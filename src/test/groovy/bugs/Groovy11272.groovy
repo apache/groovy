@@ -54,6 +54,28 @@ final class Groovy11272 {
     }
 
     @Test
+    void testSerialVersionUID_3() {
+        assertScript '''
+            class C {
+                static test() {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        def greeting = "Hello"
+                        def c = {p -> "$greeting, $p"}
+                        it.writeObject(c)
+                    }
+                    out.toByteArray()
+                }
+            }
+            def serializedClosureBytes = C.test()
+            new ByteArrayInputStream(serializedClosureBytes).withObjectInputStream(this.class.classLoader) {
+                def c = it.readObject()
+                assert c.call('Daniel') == 'Hello, Daniel'
+            }
+        '''
+    }
+
+    @Test
     void testSerialVersionUID_1_CS() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -75,6 +97,29 @@ final class Groovy11272 {
                     def out = new ByteArrayOutputStream()
                     out.withObjectOutputStream {
                         def c = {p -> "Hello, $p"}
+                        it.writeObject(c)
+                    }
+                    out.toByteArray()
+                }
+            }
+            def serializedClosureBytes = C.test()
+            new ByteArrayInputStream(serializedClosureBytes).withObjectInputStream(this.class.classLoader) {
+                def c = it.readObject()
+                assert c.call('Daniel') == 'Hello, Daniel'
+            }
+        '''
+    }
+
+    @Test
+    void testSerialVersionUID_3_CS() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static test() {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        def greeting = "Hello"
+                        def c = {p -> "$greeting, $p"}
                         it.writeObject(c)
                     }
                     out.toByteArray()
