@@ -110,20 +110,6 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     @Override
-    public boolean isNonSealed() {
-        Class<?> typeClass;
-        try {
-            typeClass = getTypeClass();
-        } catch (NoClassDefFoundError e) {
-            return false;
-        }
-
-        final Class<?> superclass = typeClass.getSuperclass();
-        if (null == superclass) return false;
-        return ReflectionUtils.isSealed(superclass) && !(Modifier.isFinal(typeClass.getModifiers()) || ReflectionUtils.isSealed(typeClass));
-    }
-
-    @Override
     public String setName(String name) {
         throw new UnsupportedOperationException();
     }

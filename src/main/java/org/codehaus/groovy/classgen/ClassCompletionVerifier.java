@@ -367,7 +367,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private boolean nonSealed(final ClassNode node) {
-        return node.isNonSealed();
+        return ClassNodeUtils.isNonSealed(node);
     }
 
     private void checkSealedParent(final ClassNode cn, final ClassNode parent) {
