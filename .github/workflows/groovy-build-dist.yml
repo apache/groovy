@@ -60,6 +60,9 @@ jobs:
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 90
+      - name: Publish to Local Repository
+        run: ./gradlew publishMavenPublicationToLocalFileRepository --no-build-cache --no-scan --refresh-dependencies
+        timeout-minutes: 90
       - name: Move binary distribution
         run:  mkdir -p build/distributions/binary/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
       - name: Move src distribution
