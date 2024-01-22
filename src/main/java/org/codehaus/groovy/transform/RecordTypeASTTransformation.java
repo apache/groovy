@@ -53,6 +53,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -66,7 +67,6 @@ import java.beans.SimpleBeanInfo;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,7 +97,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
@@ -142,6 +141,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final ClassNode METHOD_DESCRIPTOR_TYPE = make(MethodDescriptor.class);
     private static final ClassNode METHOD_DESCRIPTOR_ARRAY_TYPE = make(MethodDescriptor[].class);
     private static final ClassNode IMAGE_TYPE = make(Image.class);
+    private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
 
     private static final String COMPONENTS = "components";
     private static final String COPY_WITH = "copyWith";
@@ -377,7 +377,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         for (PropertyNode pNode : pList) {
             args.add(callThisX(pNode.getName()));
         }
-        Statement body = returnS(listX(args));
+        Statement body = returnS(callX(INVOKER_TYPE, "createImmutableList", args(args)));
         addGeneratedMethod(cNode, TO_LIST, ACC_PUBLIC | ACC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 

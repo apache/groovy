@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,5 +91,22 @@ public class Java16 extends Java10 {
             return Arrays.stream(maybeRecord.getRecordComponents()).map(RecordComponent::getName).toList();
         }
         return super.getRecordComponentNames(maybeRecord);
+    }
+
+    @Override
+    public List createImmutableList(Object[] values) {
+        switch (values.length) {
+            case 0:
+                return List.of();
+            case 1:
+                return values[0] == null ? Collections.singletonList(null) : List.of(values[0]);
+            case 2:
+                if (values[0] != null && values[1] != null) {
+                    return List.of(values[0], values[1]);
+                }
+                // fall through
+            default:
+                return Arrays.stream(values).toList();
+        }
     }
 }

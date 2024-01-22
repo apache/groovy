@@ -196,4 +196,13 @@ public interface VMPlugin {
     default List<String> getRecordComponentNames(Class<?> maybeRecord) {
         return Collections.emptyList();
     }
+
+    /**
+     * Creates an immutable list from the given values, using the most efficient implementation available for the
+     * current JVM, array length and nullity of the values.
+     *
+     * @param values the values to be put in an immutable list
+     * @return an immutable list
+     */
+    List createImmutableList(Object[] values);
 }

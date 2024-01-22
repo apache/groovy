@@ -1700,4 +1700,21 @@ public class Java9 extends Java8 {
                 "sun.util.xml"
         };
     }
+
+    @Override
+    public List createImmutableList(Object[] values) {
+        switch (values.length) {
+            case 0:
+                return List.of();
+            case 1:
+                return values[0] == null ? Collections.singletonList(null) : List.of(values[0]);
+            default:
+                try {
+                    return List.of(values);
+                } catch (NullPointerException e) {
+                    // has nulls - fallback to Java 8 approach
+                    return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
+                }
+        }
+    }
 }

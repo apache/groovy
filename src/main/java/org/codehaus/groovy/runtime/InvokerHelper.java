@@ -38,6 +38,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.beans.Introspector;
 import java.io.IOException;
@@ -367,6 +368,10 @@ public class InvokerHelper {
         Collections.addAll(answer, values);
 
         return answer;
+    }
+
+    public static List createImmutableList(Object[] values) {
+        return VMPluginFactory.getPlugin().createImmutableList(values);
     }
 
     /**

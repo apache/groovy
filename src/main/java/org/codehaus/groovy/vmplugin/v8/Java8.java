@@ -68,7 +68,9 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -674,5 +676,14 @@ public class Java8 implements VMPlugin {
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private static <T> T doPrivilegedInternal(final java.security.PrivilegedAction<T> action) {
         return java.security.AccessController.doPrivileged(action);
+    }
+
+    @Override
+    public List createImmutableList(Object[] values) {
+        switch (values.length) {
+            case 0: return Collections.emptyList();
+            case 1: return Collections.singletonList(values[0]);
+            default: return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
+        }
     }
 }
