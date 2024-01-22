@@ -21,19 +21,19 @@ package org.codehaus.groovy.runtime.dgmimpl.arrays;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
+import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
+
 public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
-    private static final CachedClass OBJECT_ARR_CLASS = ReflectionCache.OBJECT_ARRAY_CLASS;
 
     public Class getReturnType() {
         return Object.class;
     }
 
     public final CachedClass getDeclaringClass() {
-        return OBJECT_ARR_CLASS;
+        return OBJECT_ARRAY_CLASS;
     }
 
     public Object invoke(Object object, Object[] arguments) {

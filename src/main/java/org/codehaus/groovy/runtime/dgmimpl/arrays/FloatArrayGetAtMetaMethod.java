@@ -26,14 +26,14 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class FloatArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
-    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(float[].class);
+    private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(float[].class);
 
     public Class getReturnType() {
         return Float.class;
     }
 
     public final CachedClass getDeclaringClass() {
-        return ARR_CLASS;
+        return ARRAY_CLASS;
     }
 
     public Object invoke(Object object, Object[] args) {

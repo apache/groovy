@@ -28,16 +28,10 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class IntegerArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-    private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
-    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(int[].class);
-    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
-
-    public IntegerArrayPutAtMetaMethod() {
-        parameterTypes = PARAM_CLASS_ARR;
-    }
+    private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(int[].class);
 
     public final CachedClass getDeclaringClass() {
-        return ARR_CLASS;
+        return ARRAY_CLASS;
     }
 
     public Object invoke(Object object, Object[] args) {

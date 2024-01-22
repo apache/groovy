@@ -18,19 +18,26 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.tools.ErrorReporter
 import org.junit.Test
 
-final class Groovy10676 {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy11293 {
+
     @Test
-    void test() {
-        try {
-            // error should be at column > 40, first line should be short
-            new GroovyShell().parse('/*\r * some comment\r */\r           class class {}\r')
-        } catch(e) {
-            Writer data = new StringWriter()
-            new ErrorReporter(e, false).write(new PrintWriter(data))
-            assert data.toString().contains("Unexpected input: 'class'")
-        }
+    void testVarargs() {
+        assertScript '''
+            java.nio.file.FileSystems.getDefault().getPath('root.txt')
+        '''
+    }
+
+    @Test
+    void testVarargs_CS() {
+        assertScript '''
+            @groovy.transform.CompileStatic test() {
+                java.nio.file.FileSystems.getDefault().getPath('root.txt')
+            }
+            test()
+        '''
     }
 }
