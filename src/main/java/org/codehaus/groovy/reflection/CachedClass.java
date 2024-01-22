@@ -135,6 +135,7 @@ public class CachedClass {
         }
     };
 
+    @Deprecated
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
         private static final long serialVersionUID = 4410385968428074090L;
 
@@ -268,6 +269,7 @@ public class CachedClass {
         return constructors.get();
     }
 
+    @Deprecated
     public CachedMethod searchMethods(String name, CachedClass[] parameterTypes) {
         CachedMethod[] methods = getMethods();
 
@@ -498,6 +500,7 @@ public class CachedClass {
         return getTheClass().isAssignableFrom(argument.getClass());
     }
 
+    @Deprecated
     public CallSiteClassLoader getCallSiteLoader() {
         return callSiteClassLoader.get();
     }

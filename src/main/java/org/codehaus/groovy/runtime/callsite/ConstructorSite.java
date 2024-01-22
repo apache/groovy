@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.util.Map;
 
+@Deprecated
 public class ConstructorSite extends MetaClassSite {
     final CachedConstructor constructor;
     final Class[] params;
@@ -57,6 +58,7 @@ public class ConstructorSite extends MetaClassSite {
                 && MetaClassHelper.sameClasses(params, args);
     }
 
+    @Deprecated
     public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
         if (constructor.correctArguments(args) == args) {
             if (noWrappers(args)) {

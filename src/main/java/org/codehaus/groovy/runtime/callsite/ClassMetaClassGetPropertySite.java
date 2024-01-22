@@ -22,7 +22,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-
+@Deprecated
 class ClassMetaClassGetPropertySite extends AbstractCallSite {
     final MetaClass metaClass;
     private final Class aClass;

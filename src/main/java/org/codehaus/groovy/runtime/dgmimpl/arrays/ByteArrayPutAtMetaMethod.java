@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
+@Deprecated
 public class ByteArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
     private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(byte[].class);

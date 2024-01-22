@@ -23,6 +23,7 @@ import groovy.lang.MetaClass;
 /**
  * Call site which holds reference to metaclass.
 */
+@Deprecated
 public abstract class MetaClassSite extends AbstractCallSite {
 
     protected final MetaClass metaClass;

@@ -24,16 +24,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Helper class for internal use only. This allows to call a {@link Closure} and 
+ * Helper class for internal use only. This allows to call a {@link Closure} and
  * convert the result to a boolean. It will do this by caching the possible "doCall"
- * as well as the "asBoolean" in CallSiteArray fashion. "asBoolean" will not be 
+ * as well as the "asBoolean" in CallSiteArray fashion. "asBoolean" will not be
  * called if the result is null or a Boolean. In case of null we return false and
- * in case of a Boolean we simply unbox. This logic is designed after the one present 
+ * in case of a Boolean we simply unbox. This logic is designed after the one present
  * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
  * this class is to avoid the slow "asBoolean" call in that method.
  * {@link BooleanReturningMethodInvoker} is used for caching.
  *
  */
+@Deprecated
 public class BooleanClosureWrapper {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;

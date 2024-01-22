@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 /**
  * Call site for GroovyInterceptable
 */
+@Deprecated
 public class PogoInterceptableSite extends AbstractCallSite {
     public PogoInterceptableSite(CallSite site) {
         super(site);

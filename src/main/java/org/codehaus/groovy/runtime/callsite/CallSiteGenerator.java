@@ -32,6 +32,7 @@ import org.objectweb.asm.Opcodes;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
+@Deprecated
 public class CallSiteGenerator {
 
     private CallSiteGenerator() {

@@ -234,6 +234,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     //--------------------------------------------------------------------------
 
+    @Deprecated
     public CallSite createPogoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
         if (!skipCompiled) {
             Constructor<CallSite> ctor = deref(pogoCallSiteConstructor);
@@ -262,6 +263,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
+    @Deprecated
     public CallSite createPojoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
         if (!skipCompiled) {
             Constructor<CallSite> ctor = deref(pojoCallSiteConstructor);
@@ -290,6 +292,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return new PojoMetaMethodSite.PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
+    @Deprecated
     public CallSite createStaticMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
         if (!skipCompiled) {
             Constructor<CallSite> ctor = deref(staticCallSiteConstructor);

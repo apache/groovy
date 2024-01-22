@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
  *   method - cached
  *
  */
+@Deprecated
 public abstract class PlainObjectMetaMethodSite extends MetaMethodSite {
     public PlainObjectMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass, metaMethod, params);

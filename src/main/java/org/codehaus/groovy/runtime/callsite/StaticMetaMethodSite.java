@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  *   metaclass - cached
  *   method - cached
 */
+@Deprecated
 public class StaticMetaMethodSite extends MetaMethodSite {
     private final int version;
 

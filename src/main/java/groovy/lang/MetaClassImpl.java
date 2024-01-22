@@ -3444,6 +3444,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Create a CallSite
      */
+    @Deprecated
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
@@ -3457,6 +3458,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Create a CallSite
      */
+    @Deprecated
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
@@ -3470,6 +3472,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Create a CallSite
      */
+    @Deprecated
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
@@ -3492,6 +3495,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Create a CallSite
      */
+    @Deprecated
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
@@ -3505,6 +3509,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Create a CallSite
      */
+    @Deprecated
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class[] argTypes = MetaClassHelper.convertToTypeArray(args);
@@ -3997,10 +4002,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         NONE
     }
 
+    @Deprecated
     public boolean isPermissivePropertyAccess() {
         return permissivePropertyAccess;
     }
 
+    @Deprecated
     public void setPermissivePropertyAccess(boolean permissivePropertyAccess) {
         this.permissivePropertyAccess = permissivePropertyAccess;
     }

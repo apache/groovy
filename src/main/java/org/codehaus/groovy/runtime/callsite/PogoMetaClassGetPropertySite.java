@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+@Deprecated
 public class PogoMetaClassGetPropertySite extends AbstractCallSite {
     private final MetaClass metaClass;
 

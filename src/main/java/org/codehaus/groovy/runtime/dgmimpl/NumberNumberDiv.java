@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+@Deprecated
 public final class NumberNumberDiv extends NumberNumberMetaMethod {
     @Override
     public String getName() {

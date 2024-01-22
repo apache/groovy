@@ -27,6 +27,7 @@ import java.util.function.Predicate;
  * This creates a Predicate by calling a {@link Closure} and converting the result to a boolean.
  * {@link BooleanReturningMethodInvoker} is used for caching.
  */
+@Deprecated
 public class BooleanClosurePredicate<T> implements Predicate<T> {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;

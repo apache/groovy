@@ -25,6 +25,7 @@ import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 
+@Deprecated
 public class PogoMetaClassSite extends MetaClassSite {
 
     public PogoMetaClassSite(final CallSite site, final MetaClass metaClass) {

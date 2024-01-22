@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+@Deprecated
 public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
     private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(float[].class);

@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
+@Deprecated
 public class IntegerArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(int[].class);
 

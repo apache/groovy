@@ -23,6 +23,7 @@ import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
+@Deprecated
 public class GetEffectivePogoFieldSite extends AbstractCallSite {
     private final MetaClass metaClass;
     private final CachedField effective;

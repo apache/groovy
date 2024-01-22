@@ -637,16 +637,19 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     @Override
+    @Deprecated
     public CallSite createPojoCallSite(final CallSite site, final Object receiver, final Object[] args) {
         throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public CallSite createPogoCallSite(final CallSite site, final Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
 
     @Override
+    @Deprecated
     public CallSite createPogoCallCurrentSite(final CallSite site, final Class sender, final Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
