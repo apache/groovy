@@ -25,8 +25,8 @@ import org.codehaus.groovy.runtime.callsite.CallSiteAwareMetaMethod;
 import java.lang.reflect.Modifier;
 
 public abstract class ArrayMetaMethod extends CallSiteAwareMetaMethod {
-    protected static final CachedClass INTEGER_CLASS = ReflectionCache.getCachedClass(Integer.class);
-    protected static final CachedClass[] INTEGER_CLASS_ARR = new CachedClass[]{INTEGER_CLASS};
+    protected static final CachedClass   INTEGER_CLASS = ReflectionCache.getCachedClass(Integer.class);
+    protected static final CachedClass[] INTEGER_CLASS_ARR = {INTEGER_CLASS};
 
     protected static int normaliseIndex(int i, int size) {
         int temp = i;

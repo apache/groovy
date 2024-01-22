@@ -42,10 +42,10 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     private final Class returnType;
 
     public GeneratedMetaMethod(String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
+        super(parameters);
         this.name = name;
         this.declaringClass = declaringClass;
         this.returnType = returnType;
-        nativeParamTypes = parameters;
     }
 
     @Override

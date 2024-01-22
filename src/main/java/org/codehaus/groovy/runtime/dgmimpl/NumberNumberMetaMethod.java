@@ -30,11 +30,11 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import java.lang.reflect.Modifier;
 
 public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
-    private static final CachedClass    NUMBER_CLASS = ReflectionCache.getCachedClass(Number.class);
-    private static final CachedClass [] NUMBER_CLASS_ARR = new CachedClass[] { NUMBER_CLASS };
+    private static final CachedClass   NUMBER_CLASS = ReflectionCache.getCachedClass(Number.class);
+    private static final CachedClass[] NUMBER_CLASS_ARR = {NUMBER_CLASS};
 
     protected NumberNumberMetaMethod() {
-        parameterTypes = NUMBER_CLASS_ARR;
+        setParametersTypes(NUMBER_CLASS_ARR);
     }
 
     @Override

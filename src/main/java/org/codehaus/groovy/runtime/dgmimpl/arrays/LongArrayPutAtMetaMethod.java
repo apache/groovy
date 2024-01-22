@@ -28,17 +28,11 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class LongArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-    private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
-    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(long[].class);
-    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
-
-    public LongArrayPutAtMetaMethod() {
-        parameterTypes = PARAM_CLASS_ARR;
-    }
+    private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(long[].class);
 
     @Override
     public final CachedClass getDeclaringClass() {
-        return ARR_CLASS;
+        return ARRAY_CLASS;
     }
 
     @Override

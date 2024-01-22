@@ -18,7 +18,17 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+import org.codehaus.groovy.reflection.CachedClass;
+
+import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_CLASS;
+
 public abstract class ArrayPutAtMetaMethod extends ArrayMetaMethod {
+    private static final CachedClass[] PARAM_TYPES = {INTEGER_CLASS, OBJECT_CLASS};
+
+    protected ArrayPutAtMetaMethod() {
+        setParametersTypes(PARAM_TYPES);
+    }
+
     @Override
     public String getName() {
         return "putAt";

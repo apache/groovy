@@ -22,23 +22,17 @@ import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-    private static final CachedClass OBJECT_CLASS = ReflectionCache.getCachedClass(Object.class);
-    private static final CachedClass OBJECT_ARR_CLASS = ReflectionCache.OBJECT_ARRAY_CLASS;
-    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
+import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
 
-    public ObjectArrayPutAtMetaMethod() {
-        parameterTypes = PARAM_CLASS_ARR;
-    }
+public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
     @Override
     public final CachedClass getDeclaringClass() {
-        return OBJECT_ARR_CLASS;
+        return OBJECT_ARRAY_CLASS;
     }
 
     @Override

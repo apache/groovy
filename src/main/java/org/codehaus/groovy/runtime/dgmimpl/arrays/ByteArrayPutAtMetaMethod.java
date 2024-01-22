@@ -26,17 +26,11 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class ByteArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
-    private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
-    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(byte[].class);
-    private static final CachedClass[] PARAM_CLASS_ARR = new CachedClass[]{INTEGER_CLASS, OBJECT_CLASS};
-
-    public ByteArrayPutAtMetaMethod() {
-        parameterTypes = PARAM_CLASS_ARR;
-    }
+    private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(byte[].class);
 
     @Override
     public final CachedClass getDeclaringClass() {
-        return ARR_CLASS;
+        return ARRAY_CLASS;
     }
 
     @Override
