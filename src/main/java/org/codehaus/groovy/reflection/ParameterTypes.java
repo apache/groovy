@@ -27,10 +27,10 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import java.lang.reflect.Array;
 
 public class ParameterTypes {
-    protected volatile Class[] nativeParamTypes;
-    protected volatile CachedClass[] parameterTypes;
 
-    protected boolean isVargsMethod;
+    private volatile CachedClass[] parameterTypes;
+    private volatile Class[] nativeParamTypes;
+    private boolean isVargsMethod;
 
     public ParameterTypes() {
     }
@@ -52,8 +52,8 @@ public class ParameterTypes {
         }
     }
 
-    public ParameterTypes(CachedClass[] parameterTypes) {
-        setParametersTypes(parameterTypes);
+    public ParameterTypes(CachedClass[] pt) {
+        setParametersTypes(pt);
     }
 
     protected final void setParametersTypes(CachedClass[] pt) {
@@ -65,25 +65,23 @@ public class ParameterTypes {
         if (parameterTypes == null) {
             getParametersTypes0();
         }
-
         return parameterTypes;
     }
 
     private synchronized void getParametersTypes0() {
-        if (parameterTypes != null)
-            return;
-
-        var npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
-        if (npt.length == 0) {
-            nativeParamTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
-            setParametersTypes(CachedClass.EMPTY_ARRAY);
-        } else {
-            CachedClass[] pt = new CachedClass[npt.length];
-            for (int i = 0; i != npt.length; ++i)
-                pt[i] = ReflectionCache.getCachedClass(npt[i]);
-
-            nativeParamTypes = npt;
-            setParametersTypes(pt);
+        if (parameterTypes == null) {
+            var npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
+            if (npt.length == 0) {
+                nativeParamTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
+                setParametersTypes(CachedClass.EMPTY_ARRAY);
+            } else {
+                CachedClass[] pt = new CachedClass[npt.length];
+                for (int i = 0; i != npt.length; ++i) {
+                    pt[i] = ReflectionCache.getCachedClass(npt[i]);
+                }
+                nativeParamTypes = npt;
+                setParametersTypes(pt);
+            }
         }
     }
 
@@ -114,11 +112,14 @@ public class ParameterTypes {
     }
 
     public boolean isVargsMethod() {
+        if (parameterTypes == null) {
+            getParametersTypes0(); // GROOVY-11293
+        }
         return isVargsMethod;
     }
 
     public boolean isVargsMethod(Object[] arguments) {
-        if (isVargsMethod) {
+        if (isVargsMethod()) {
             int aCount = arguments.length;
             int pCount = parameterTypes.length;
             if (aCount > pCount || aCount == pCount-1) { // too many or too few?
@@ -156,7 +157,7 @@ public class ParameterTypes {
 
         var pt = getParameterTypes();
         if (pt.length == 1 && arguments.length == 0) {
-            if (!isVargsMethod) return MetaClassHelper.ARRAY_WITH_NULL;
+            if (!isVargsMethod()) return MetaClassHelper.ARRAY_WITH_NULL;
             return new Object[]{Array.newInstance(pt[0].getTheClass().getComponentType(), 0)};
         }
 
@@ -230,7 +231,7 @@ public class ParameterTypes {
         CachedClass[] pt = getParameterTypes();
         final int nArguments = argumentTypes.length, nParameters = pt.length, nthParameter = nParameters - 1;
 
-        if (isVargsMethod && nArguments >= nthParameter)
+        if (isVargsMethod() && nArguments >= nthParameter)
             return isValidVargsMethod(argumentTypes, pt, nthParameter);
         else if (nArguments == nParameters)
             return isValidExactMethod(argumentTypes, pt);

@@ -18,10 +18,23 @@
  */
 package org.codehaus.groovy.reflection
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class CachedMethodTest extends GroovyTestCase {
-    void testCachedMethodCompareTo() {
-        assert String.metaClass.methods.size() == String.metaClass.methods.unique().size()
+final class CachedMethodTest {
+
+    @Test
+    void testCompareTo() {
+        int methodCount = String.metaClass.methods.size()
+        int uniqueCount = String.metaClass.methods.unique().size()
+
+        assert methodCount == uniqueCount
+    }
+
+    // GROOVY-11293
+    @Test
+    void testIsVargsMethod() {
+        def cachedMethod = new CachedMethod(String.getMethod('join', CharSequence, CharSequence[]))
+
+        assert cachedMethod.isVargsMethod()
     }
 }

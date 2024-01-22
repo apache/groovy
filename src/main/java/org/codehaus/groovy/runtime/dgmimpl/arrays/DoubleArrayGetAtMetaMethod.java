@@ -26,7 +26,7 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class DoubleArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
-    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(double[].class);
+    private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(double[].class);
 
     @Override
     public Class getReturnType() {
@@ -35,7 +35,7 @@ public class DoubleArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
     @Override
     public final CachedClass getDeclaringClass() {
-        return ARR_CLASS;
+        return ARRAY_CLASS;
     }
 
     @Override

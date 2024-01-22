@@ -29,9 +29,9 @@ public class TransformMetaMethod extends MetaMethod {
     private final MetaMethod metaMethod;
 
     public TransformMetaMethod(final MetaMethod metaMethod) {
-        this.metaMethod = metaMethod;
+        super(metaMethod.getNativeParameterTypes());
         setParametersTypes(metaMethod.getParameterTypes());
-        nativeParamTypes = metaMethod.getNativeParameterTypes();
+        this.metaMethod = metaMethod;
     }
 
     @Override
