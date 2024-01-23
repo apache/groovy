@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Build and test main JDK versions
+name: Build and test LTS JDK versions
 
 on: [push, pull_request]
 
@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [11, 17]
+        java: [11, 17, 21]
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
