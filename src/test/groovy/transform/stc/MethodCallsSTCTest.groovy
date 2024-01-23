@@ -859,42 +859,68 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5226, GROOVY-11290
     void testShouldFailBecauseVariableIsReassigned() {
-        shouldFailWithMessages '''
-            static String foo(String s) {
-                'String'
-            }
+        String foo = 'def foo(CharSequence cs) { }'
+
+        shouldFailWithMessages foo + '''
             def it
             if (it instanceof String) {
                 it = new Date()
                 foo(it)
             }
         ''',
-        'foo(java.util.Date)'
+        'Cannot find matching method','#foo(java.util.Date)'
+
+        shouldFailWithMessages foo + '''
+            def bar(CharSequence cs) { }
+            def it
+            if (it instanceof CharSequence) {
+                if (it instanceof String) {
+                    it = new Date()
+                    foo(it)
+                }
+                bar(it) // it is CharSequence or Date
+            }
+        ''',
+        'Cannot find matching method','#foo(java.util.Date)',
+        'Cannot find matching method','#bar(java.util.Date)'
     }
 
+    // GROOVY-5226, GROOVY-11290
     void testShouldNotFailEvenIfVariableIsReassigned() {
-        assertScript '''
-            static String foo(int val) {
-                'int'
-            }
-            def it
+        String foobar = 'def foo(int i) { }\ndef bar(CharSequence cs) { }'
+
+        assertScript foobar + '''
+            def it = ""
             if (it instanceof String) {
+                bar(it)
                 it = 123
                 foo(it)
             }
         '''
+
+        assertScript foobar + '''
+            def it = ""
+            if (it instanceof CharSequence) {
+                bar(it)
+                if (it instanceof String) {
+                    bar(it)
+                    it = 123
+                    foo(it)
+                } else {
+                    bar(it)
+                }
+            }
+        '''
     }
 
-    void testShouldNotFailEvenIfVariableIsReassignedAndInstanceOfIsEmbed() {
+    // GROOVY-5226, GROOVY-11290
+    void testShouldNotFailEvenIfVariableIsReassignedAndMultipleInstanceOf() {
         assertScript '''
-            static String foo(int val) {
-                'int'
-            }
-            static String foo(Date val) {
-                'Date'
-            }
-            def it
+            def foo(int i) { 'int' }
+            def foo(Date d) { 'Date' }
+            def it = ""
             if (it instanceof String) {
                 it = 123
                 foo(it)

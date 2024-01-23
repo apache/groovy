@@ -904,12 +904,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (type.equals(ClassHelper.OBJECT_TYPE)) {
             return true;
         }
-        ClassNode node = this;
-        while (node != null) {
+        if (this.isArray() && type.isArray()
+                && type.getComponentType().equals(ClassHelper.OBJECT_TYPE)
+                && !ClassHelper.isPrimitiveType(this.getComponentType())){
+            return true;
+        }
+        for (ClassNode node = this; node != null; node = node.getSuperClass()) {
             if (type.equals(node)) {
                 return true;
             }
-            node = node.getSuperClass();
         }
         return false;
     }
