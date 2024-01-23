@@ -37,7 +37,6 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        java: [11.0.9]
     runs-on: ${{ matrix.os }}
     env:
         GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
@@ -45,9 +44,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 11
       - uses: gradle/gradle-build-action@v2
-      - name: env
+      - name: Env
         run: env
 
       # Select correct Grails branch for this build:

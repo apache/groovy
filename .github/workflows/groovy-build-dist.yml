@@ -26,7 +26,6 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        java: [21]
     runs-on: ${{ matrix.os }}
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
@@ -36,7 +35,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java }}
+          java-version: 21
           check-latest: true
       - uses: actions/checkout@v4
       - name: Build and package
