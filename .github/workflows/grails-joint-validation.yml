@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-latest]
         java: [11.0.9]
     runs-on: ${{ matrix.os }}
     env:
