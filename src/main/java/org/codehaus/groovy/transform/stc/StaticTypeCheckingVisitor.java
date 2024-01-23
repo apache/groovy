@@ -2262,7 +2262,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     public void visitExpressionStatement(final ExpressionStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitExpressionStatement(statement);
-        typeCheckingContext.popTemporaryTypeInfo();
+        Map<?,List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+        if (!tti.isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+            tti.forEach((k, tempTypes) -> {
+                if (tempTypes.contains(VOID_TYPE))
+                    typeCheckingContext.temporaryIfBranchTypeInformation.peek()
+                        .computeIfAbsent(k, x -> new LinkedList<>()).add(VOID_TYPE);
+            });
+        }
     }
 
     @Override
@@ -4438,11 +4445,9 @@ out:                if (mn.size() != 1) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<>());
                 assignedTypes.add(cn);
             }
-            List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
-            if (temporaryTypesForExpression != null) {
-                // a type inference has been made on a variable whose type was defined in an instanceof block
-                // erase available information with the new type
-                temporaryTypesForExpression.clear();
+            if (!var.isThisExpression() && !var.isSuperExpression() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                // GROOVY-5226, GROOVY-11290: assignment voids instanceof
+                pushInstanceOfTypeInfo(var, classX(VOID_TYPE));
             }
         }
     }
@@ -5986,50 +5991,73 @@ out:                if (mn.size() != 1) {
      * is not found. The returned type class depends on whether we have temporary type information available (due to
      * instanceof checks) and whether there is a single candidate in that case.
      *
-     * @param expr the expression for which an unknown field has been found
+     * @param expression the expression for which an unknown field has been found
      * @param type the type of the expression (used as fallback type)
      * @return if temporary information is available and there's only one type, returns the temporary type class
      * otherwise falls back to the provided type class.
      */
-    protected ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> types = getTemporaryTypesForExpression(expr);
-            if (types != null && types.size() == 1) return types.get(0);
-        }
+    protected ClassNode findCurrentInstanceOfClass(final Expression expression, final ClassNode type) {
+        List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
+        if (tempTypes.size() == 1) return tempTypes.get(0);
         return type;
     }
 
     protected List<ClassNode> getTemporaryTypesForExpression(final Expression expression) {
-        List<ClassNode> types = null;
-        int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
-        while (types == null && depth > 0) {
-            Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            if (!tempo.isEmpty()) {
-                Object key = expression instanceof ParameterVariableExpression
-                        ? ((ParameterVariableExpression) expression).parameter
-                        : extractTemporaryTypeInfoKey(expression);
-                types = tempo.get(key);
-            }
+        Object key = extractTemporaryTypeInfoKey(expression);
+        List<ClassNode> tempTypes = typeCheckingContext.temporaryIfBranchTypeInformation.stream().flatMap(tti ->
+            tti.getOrDefault(key, Collections.emptyList()).stream()
+        ).collect(Collectors.toList());
+        int i = tempTypes.lastIndexOf(VOID_TYPE);
+        if (i != -1) { // assignment overwrites instanceof
+            tempTypes = tempTypes.subList(i + 1, tempTypes.size());
         }
-        return types;
+        return DefaultGroovyMethods.unique(tempTypes); // GROOVY-6429
     }
 
     private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
-        if (expression instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+        if (expression instanceof VariableExpression) {
             List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
-            if (tempTypes != null && !tempTypes.isEmpty()) {
-                Set<ClassNode> types = new LinkedHashSet<>(tempTypes.size() + 1);
-                if (expressionType != null && !isObjectType(expressionType) // GROOVY-7333
-                        && tempTypes.stream().noneMatch(t -> implementsInterfaceOrIsSubclassOf(t, expressionType))) { // GROOVY-9769
-                    types.add(expressionType);
-                }
-                types.addAll(tempTypes);
-
-                if (types.isEmpty()) {
-                    return OBJECT_TYPE;
-                } else if (types.size() == 1) {
-                    return types.iterator().next();
+            if (!tempTypes.isEmpty()) {
+                ClassNode   superclass;
+                ClassNode[] interfaces;
+                if (expressionType instanceof WideningCategories.LowestUpperBoundClassNode) {
+                    superclass = expressionType.getSuperClass();
+                    interfaces = expressionType.getInterfaces();
+                } else if (expressionType != null && expressionType.isInterface()) {
+                    superclass = OBJECT_TYPE;
+                    interfaces = new ClassNode[]{expressionType};
                 } else {
+                    superclass = expressionType;
+                    interfaces = ClassNode.EMPTY_ARRAY;
+                }
+
+                List<ClassNode> types = new ArrayList<>();
+                if (superclass != null && !superclass.equals(OBJECT_TYPE) // GROOVY-7333
+                        && tempTypes.stream().noneMatch(t -> !t.equals(superclass) && t.isDerivedFrom(superclass))) { // GROOVY-9769
+                    types.add(superclass);
+                }
+                for (ClassNode anInterface : interfaces) {
+                    if (tempTypes.stream().noneMatch(t -> t.implementsInterface(anInterface))) { // GROOVY-9769
+                        types.add(anInterface);
+                    }
+                }
+                int tempTypesCount = tempTypes.size();
+                if (tempTypesCount == 1 && types.isEmpty()) {
+                    types.add(tempTypes.get(0));
+                } else for (ClassNode tempType : tempTypes) {
+                    if (!tempType.isInterface() // GROOVY-11290: keep most-specific types
+                            ? (superclass == null || !superclass.isDerivedFrom(tempType))
+                                    && (tempTypesCount == 1 || tempTypes.stream().noneMatch(t -> !t.equals(tempType) && t.isDerivedFrom(tempType)))
+                            : (expressionType == null || !isOrImplements(expressionType, tempType))
+                                    && (tempTypesCount == 1 || tempTypes.stream().noneMatch(t -> t != tempType && t.implementsInterface(tempType)))) {
+                        types.add(tempType);
+                    }
+                }
+
+                int typesCount = types.size();
+                if (typesCount == 1) {
+                    return types.get(0);
+                } else if (typesCount > 1) {
                     return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
                 }
             }
