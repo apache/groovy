@@ -12352,13 +12352,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Creates a new list containing the elements of the specified list
-     * but in a random order.
+     * Creates a new list containing the elements of the specified list but in a random order.
      * <pre class="groovyTestCase">
-     * def orig = ["a", 4, false]
-     * def shuffled = orig.shuffled()
-     * assert orig.size() == shuffled.size()
-     * assert orig.every{ shuffled.contains(it) }
+     * def list = ["a", 4, false]
+     * def result = list.shuffled()
+     * assert list !== result
+     * assert list == ["a", 4, false]
+     * assert list.size() == result.size()
+     * assert list.every{ result.contains(it) }
      * </pre>
      *
      * @param self a List
@@ -12372,14 +12373,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Creates a new list containing the elements of the specified list but in a random
-     * order using the specified random instance as the source of randomness.
+     * Creates a new list containing the elements of the specified list but in a random order
+     * using the specified random instance as the source of randomness.
      * <pre class="groovyTestCase">
      * def r = new Random()
-     * def orig = ["a", 4, false]
-     * def shuffled = orig.shuffled(r)
-     * assert orig.size() == shuffled.size()
-     * assert orig.every{ shuffled.contains(it) }
+     * def list = ["a", 4, false]
+     * def result = list.shuffled(r)
+     * assert list !== result
+     * assert list == ["a", 4, false]
+     * assert list.size() == result.size()
+     * assert list.every{ result.contains(it) }
      * </pre>
      *
      * @param self a List
@@ -12443,10 +12446,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new array containing the elements of the specified array but in a random order.
      * <pre class="groovyTestCase">
-     * Integer[] orig = [10, 5, 20]
-     * def array = orig.shuffled()
-     * assert orig.size() == array.size()
-     * assert orig.every{ array.contains(it) }
+     * Integer[] array = [10, 5, 20]
+     * def result = array.shuffled()
+     * assert array !== result
+     * assert array.length == result.length
+     * assert array.every{ result.contains(it) }
+     * assert array == new Integer[] {10, 5, 20}
      * </pre>
      *
      * @param self an array
@@ -12461,14 +12466,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Creates a new array containing the elements of the specified array but in a random
-     * order using the specified random instance as the source of randomness.
+     * Creates a new array containing the elements of the specified array but in a random order
+     * using the specified random instance as the source of randomness.
      * <pre class="groovyTestCase">
      * def r = new Random()
-     * Integer[] orig = [10, 5, 20]
-     * def array = orig.shuffled(r)
-     * assert orig.size() == array.size()
-     * assert orig.every{ array.contains(it) }
+     * Integer[] array = [10, 5, 20]
+     * def result = array.shuffled(r)
+     * assert array !== result
+     * assert array.length == result.length
+     * assert array.every{ result.contains(it) }
+     * assert array == new Integer[] {10, 5, 20}
      * </pre>
      *
      * @param self an array
@@ -12477,9 +12484,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] shuffled(T[] self, Random rnd) {
         T[] result = self.clone();
-        List<T> items = Arrays.asList(self);
-        Collections.shuffle(items, rnd);
-        System.arraycopy(items.toArray(), 0, result, 0, items.size());
+        Collections.shuffle(Arrays.asList(result), rnd);
         return result;
     }
 
