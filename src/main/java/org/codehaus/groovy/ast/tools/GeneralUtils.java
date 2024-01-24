@@ -98,11 +98,15 @@ public class GeneralUtils {
     public static final Token EQ = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     public static final Token NE = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
     public static final Token NOT_IDENTICAL = Token.newSymbol(Types.COMPARE_NOT_IDENTICAL, -1, -1);
+    public static final Token GE = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
+    public static final Token GT = Token.newSymbol(Types.COMPARE_GREATER_THAN, -1, -1);
+    public static final Token LE = Token.newSymbol(Types.COMPARE_LESS_THAN_EQUAL, -1, -1);
     public static final Token LT = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
     public static final Token AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
     public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
     public static final Token CMP = Token.newSymbol(Types.COMPARE_TO, -1, -1);
     public static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
+    public static final Token MINUS = Token.newSymbol(Types.MINUS, -1, -1);
     public static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
@@ -603,6 +607,14 @@ public class GeneralUtils {
         return propX(receiver, pNode.getName());
     }
 
+    public static BinaryExpression geX(final Expression lhv, final Expression rhv) {
+        return binX(lhv, GE, rhv);
+    }
+
+    public static BinaryExpression gtX(final Expression lhv, final Expression rhv) {
+        return binX(lhv, GT, rhv);
+    }
+
     public static BinaryExpression hasClassX(final Expression instance, final ClassNode cNode) {
         return eqX(classX(cNode), callX(instance, "getClass"));
     }
@@ -727,6 +739,10 @@ public class GeneralUtils {
         return result;
     }
 
+    public static BinaryExpression leX(final Expression lhv, final Expression rhv) {
+        return binX(lhv, LE, rhv);
+    }
+
     public static BinaryExpression ltX(final Expression lhv, final Expression rhv) {
         return binX(lhv, LT, rhv);
     }
@@ -741,6 +757,10 @@ public class GeneralUtils {
 
     public static MapExpression mapX(final List<MapEntryExpression> expressions) {
         return new MapExpression(expressions);
+    }
+
+    public static BinaryExpression minusX(final Expression lhv, final Expression rhv) {
+        return binX(lhv, MINUS, rhv);
     }
 
     public static BinaryExpression neX(final Expression lhv, final Expression rhv) {
