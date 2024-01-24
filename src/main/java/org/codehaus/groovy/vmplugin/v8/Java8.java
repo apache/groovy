@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -685,5 +686,13 @@ public class Java8 implements VMPlugin {
             case 1: return Collections.singletonList(values[0]);
             default: return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
         }
+    }
+
+    @Override
+    public Map createImmutableMap(Object[] values) {
+        if (values.length == 0) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(InvokerHelper.createMap(values));
     }
 }

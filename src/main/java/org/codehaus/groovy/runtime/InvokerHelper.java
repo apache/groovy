@@ -405,6 +405,10 @@ public class InvokerHelper {
         return answer;
     }
 
+    public static Map createImmutableMap(Object[] values) {
+        return VMPluginFactory.getPlugin().createImmutableMap(values);
+    }
+
     public static void assertFailed(final Object expression, final Object message) {
         throw createAssertError(expression, message);
     }

@@ -22,11 +22,13 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import groovy.lang.SpreadMap;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
 import java.lang.invoke.MethodHandle;
@@ -1716,5 +1718,20 @@ public class Java9 extends Java8 {
                     return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(values)));
                 }
         }
+    }
+
+    @Override
+    public Map createImmutableMap(Object[] values) {
+        switch (values.length) {
+            case 0:
+                return Map.of();
+            case 2:
+                if (values[0] == null || values[1] == null) break;
+                if (values[0] instanceof SpreadMap && values[1] instanceof Map) break;
+                return Map.of(values[0], values[1]);
+            default:
+                break;
+        }
+        return Collections.unmodifiableMap(InvokerHelper.createMap(values));
     }
 }

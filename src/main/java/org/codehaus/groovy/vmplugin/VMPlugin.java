@@ -205,4 +205,13 @@ public interface VMPlugin {
      * @return an immutable list
      */
     List createImmutableList(Object[] values);
+
+    /**
+     * Creates an immutable map from the given values, using the most efficient implementation available for the
+     * current JVM, array length and nullity of the values.
+     *
+     * @param values the values to be put in an immutable map
+     * @return an immutable map
+     */
+    Map createImmutableMap(Object[] values);
 }

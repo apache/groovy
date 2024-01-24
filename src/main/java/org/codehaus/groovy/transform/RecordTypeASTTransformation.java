@@ -382,12 +382,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     }
 
     private void createToMap(ClassNode cNode, List<PropertyNode> pList) {
-        List<MapEntryExpression> entries = new ArrayList<>();
+        List<Expression> args = new ArrayList<>();
         for (PropertyNode pNode : pList) {
             String name = pNode.getName();
-            entries.add(mapEntryX(name, callThisX(name)));
+            args.add(constX(name));
+            args.add(callThisX(name));
         }
-        Statement body = returnS(mapX(entries));
+        Statement body = returnS(callX(INVOKER_TYPE, "createImmutableMap", args(args)));
         addGeneratedMethod(cNode, TO_MAP, ACC_PUBLIC | ACC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
