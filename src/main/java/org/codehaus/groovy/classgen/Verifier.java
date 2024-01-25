@@ -268,6 +268,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.getObjectInitializerStatements().clear();
         node.visitContents(this);
         checkForDuplicateMethods(node);
+        checkForDuplicateConstructors(node);
         addCovariantMethods(node);
         detectNonSealedClasses(node);
         checkFinalVariables(node);
@@ -388,6 +389,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     throw new RuntimeParserException("The method " + mn.getText() +
                             " duplicates another method of the same signature", sourceOf(mn));
                 }
+            }
+            descriptors.add(mySig);
+        }
+    }
+
+    private static void checkForDuplicateConstructors(final ClassNode cn) {
+        Set<String> descriptors = new HashSet<>();
+        for (ConstructorNode cons : cn.getDeclaredConstructors()) {
+            String mySig = methodDescriptorWithoutReturnType(cons);
+            if (descriptors.contains(mySig)) {
+                throw new RuntimeParserException("The constructor " + cons.getText() +
+                    " duplicates another constructor of the same signature", sourceOf(cons));
             }
             descriptors.add(mySig);
         }
