@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -51,6 +52,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -132,6 +134,9 @@ public class GeneralUtils {
         return args(Arrays.stream(names).map(GeneralUtils::varX).toArray(Expression[]::new));
     }
 
+    public static ArrayExpression arrayX(final ClassNode elementType, List<Expression> initExpressions) {
+        return new ArrayExpression(elementType, initExpressions);
+    }
     public static CastExpression asX(final ClassNode type, final Expression expression) {
         return CastExpression.asExpression(type, expression);
     }
@@ -843,6 +848,10 @@ public class GeneralUtils {
 
     public static Statement stmt(final Expression expr) {
         return new ExpressionStatement(expr);
+    }
+
+    public static SpreadExpression spreadX(final Expression expr) {
+        return new SpreadExpression(expr);
     }
 
     public static SwitchStatement switchS(final Expression expr) {
