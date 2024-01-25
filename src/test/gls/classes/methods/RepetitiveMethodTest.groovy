@@ -48,4 +48,14 @@ class RepetitiveMethodTest extends CompilableTestSupport {
             }
         '''
     }
+
+    void testRepetitiveConstructor() {
+        def message = shouldNotCompile('''
+            class A {
+                A(int x) {}
+                A(int y) {}
+            }
+        ''')
+        assert message.contains('duplicates another constructor of the same signature')
+    }
 }
