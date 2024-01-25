@@ -29,14 +29,12 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -181,7 +179,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         {
             // create valueOf
             Parameter stringParameter = param(ClassHelper.STRING_TYPE, "name");
-            MethodNode valueOfMethod = new MethodNode("valueOf", ACC_PUBLIC | ACC_STATIC, enumRef, new Parameter[]{stringParameter}, ClassNode.EMPTY_ARRAY, null);
+            MethodNode valueOfMethod = new MethodNode("valueOf", ACC_PUBLIC | ACC_STATIC, enumRef, params(stringParameter), ClassNode.EMPTY_ARRAY, null);
             valueOfMethod.setCode(block(returnS(
                 callX(ClassHelper.Enum_Type, "valueOf", args(classX(enumClass), varX("name")))
             )));
@@ -206,7 +204,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         Parameter[] parameter = params(param(ClassHelper.OBJECT_TYPE.makeArray(), "para"));
         MethodNode initMethod = new MethodNode("$INIT", ACC_FINAL | ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC, enumRef, parameter, ClassNode.EMPTY_ARRAY, null);
         initMethod.setSynthetic(true);
-        ConstructorCallExpression cce = ctorThisX(args(new SpreadExpression(varX("para"))));
+        ConstructorCallExpression cce = ctorThisX(args(spreadX(varX("para"))));
         initMethod.setCode(block(returnS(cce)));
         addGeneratedMethod(enumClass, initMethod);
 
@@ -286,7 +284,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 enumClass.addField(maxValue);
             }
 
-            block.add(assignS(fieldX(values), new ArrayExpression(enumClass, arrayInit)));
+            block.add(assignS(fieldX(values), arrayX(enumClass, arrayInit)));
             enumClass.addField(values);
         }
         enumClass.addStaticInitializerStatements(block, true);
