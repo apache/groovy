@@ -60,7 +60,6 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
@@ -11637,10 +11636,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a new list containing the elements of the specified list
      * but in a random order.
      * <pre class="groovyTestCase">
-     * def orig = ["a", 4, false]
-     * def shuffled = orig.shuffled()
-     * assert orig.size() == shuffled.size()
-     * assert orig.every{ shuffled.contains(it) }
+     * def list = ["a", 4, false]
+     * def result = list.shuffled()
+     * assert list !== result
+     * assert list == ["a", 4, false]
+     * assert list.size() == result.size()
+     * assert list.every{ result.contains(it) }
      * </pre>
      *
      * @param self a List
@@ -11658,10 +11659,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * order using the specified random instance as the source of randomness.
      * <pre class="groovyTestCase">
      * def r = new Random()
-     * def orig = ["a", 4, false]
-     * def shuffled = orig.shuffled(r)
-     * assert orig.size() == shuffled.size()
-     * assert orig.every{ shuffled.contains(it) }
+     * def list = ["a", 4, false]
+     * def result = list.shuffled(r)
+     * assert list !== result
+     * assert list == ["a", 4, false]
+     * assert list.size() == result.size()
+     * assert list.every{ result.contains(it) }
      * </pre>
      *
      * @param self a List
@@ -14525,12 +14528,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> Collection<T> unique(Collection<T> self, boolean mutate) {
-        List<T> answer = uniqueItems(self);
+        Collection<T> answer = null;
+        if (mutate || (self != null && self.size() > 1)) {
+            answer = uniqueItems(self);
+        }
         if (mutate) {
             self.clear();
             self.addAll(answer);
+
+            return self;
+        } else {
+            return answer;
         }
-        return mutate ? self : answer ;
     }
 
     /**

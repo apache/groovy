@@ -869,10 +869,9 @@ public abstract class StaticTypeCheckingSupport {
         return true; // possible loss of precision
     }
 
-    static String toMethodParametersString(final String methodName, final ClassNode... parameters) {
-        if (parameters == null || parameters.length == 0) return methodName + "()";
-
-        StringJoiner joiner = new StringJoiner(", ", methodName + "(", ")");
+    static String toMethodParametersString(final String methodName, ClassNode... parameters) {
+        if (parameters == null) parameters = ClassNode.EMPTY_ARRAY;
+        var joiner = new StringJoiner(", ", methodName + "(", ")");
         for (ClassNode parameter : parameters) {
             joiner.add(prettyPrintType(parameter));
         }
@@ -884,6 +883,12 @@ public abstract class StaticTypeCheckingSupport {
      * with trailing "[]".
      */
     static String prettyPrintType(final ClassNode type) {
+        if (type instanceof UnionTypeClassNode) {
+            StringJoiner joiner = new StringJoiner(" or "); // GROOVY-11289
+            for (ClassNode cn : ((UnionTypeClassNode) type).getDelegates())
+                joiner.add(prettyPrintType(cn));
+            return joiner.toString();
+        }
         if (type.getUnresolvedName().charAt(0) == '#') {
             return type.redirect().toString(false);
         }
@@ -891,8 +896,8 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Returns string representation of type *no* generics. Arrays are indicated
-     * with trailing "[]".
+     * Returns string representation of type without any type arguments. Arrays
+     * are indicated with trailing "[]".
      */
     static String prettyPrintTypeName(final ClassNode type) {
         if (type.isArray()) {

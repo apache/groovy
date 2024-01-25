@@ -677,7 +677,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
                 $type z = bar(foo(), 1)
             """,
-            'Cannot assign value of type'
+            'Cannot assign value of type (java.io.Serializable & java.lang.Comparable',') to variable of type java.lang.' + type
         }
     }
 

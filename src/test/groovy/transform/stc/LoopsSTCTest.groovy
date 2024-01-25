@@ -35,70 +35,75 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    void testMethodCallWithEachAndDefAndTwoFooMethods() {
-        shouldFailWithMessages '''
-            Date foo(Integer x) { new Date() }
-            Integer foo(Date x) { 1 }
-            def x = 0
-            10.times {
-                 // there are two possible target methods. This is not a problem for STC, but it is for static compilation
-                x = foo(x)
-            }
-        ''',
-        'Cannot find matching method'
-    }
-
+    // GROOVY-5258
     void testMethodCallInLoopAndDefAndTwoFooMethods() {
         shouldFailWithMessages '''
-            Date foo(Integer x) { new Date() }
-            Integer foo(Date x) { 1 }
+            Date    foo(Integer x) { new Date() }
+            Integer foo(Date    x) { 1 }
             def x = 0
-            for (int i=0;i<10;i++) {
-                 // there are two possible target methods. This is not a problem for STC, but it is for static compilation
+            2.times {
+                // there are two possible target methods; this is not a problem for STC, but it is for static compilation
                 x = foo(x)
             }
         ''',
         'Cannot find matching method'
     }
 
+    // GROOVY-5258
+    void testMethodCallInLoopAndDefAndTwoFooMethods2() {
+        shouldFailWithMessages '''
+            Date    foo(Integer x) { new Date() }
+            Integer foo(Date    x) { 1 }
+            def x = 0
+            for (int i=0;i<10;i++) {
+                // there are two possible target methods; this is not a problem for STC, but it is for static compilation
+                x = foo(x)
+            }
+        ''',
+        'Cannot find matching method'
+    }
+
+    // GROOVY-5258
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadType() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
-            Date foo(Double x) { new Date((long)x) }
+            Date   foo(Double  x) { new Date(x.longValue()) }
             def x = 0
             for (int i=0;i<10;i++) {
                 // there are two possible target methods and one returns a type which is assigned to 'x'
-                // then called in turn as a parameter of foo(). There's no #foo(Date)
+                // then called in turn as a parameter of foo() -- there's no foo(Date)
                 x = foo(x)
             }
         ''',
         'Cannot find matching method'
     }
 
+    // GROOVY-5258
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
-            Date foo(Double x) { new Date((long)x) }
+            Date   foo(Double  x) { new Date(x.longValue()) }
             def x = 0
             for (int i=0;i<10;i++) {
                 def y = foo(x)
                 // there are two possible target methods and one returns a type which is assigned to 'x'
-                // then called in turn as a parameter of foo(). There's no #foo(Date)
+                // then called in turn as a parameter of foo() -- there's no foo(Date)
                 x = y
             }
         ''',
         'Cannot find matching method'
     }
 
-    void testMethodCallWithEachAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
+    // GROOVY-5258
+    void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection2() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
-            Date foo(Double x) { new Date((long)x) }
+            Date   foo(Double  x) { new Date(x.longValue()) }
             def x = 0
-            10.times {
+            2.times {
                 def y = foo(x)
                 // there are two possible target methods and one returns a type which is assigned to 'x'
-                // then called in turn as a parameter of foo(). There's no #foo(Date)
+                // then called in turn as a parameter of foo() -- there's no foo(Date)
                 x = y
             }
         ''',

@@ -362,7 +362,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             def x = '123';
             { -> x = new StringBuffer() }
-            x.charAt(0) // available in String and StringBuffer
+            x.charAt(0) // available in (CharSequence & ...)
         '''
     }
 
@@ -370,9 +370,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             def x = '123';
             { -> x = 123 }
-            x.charAt(0) // available in String but not available in Integer
+            x.charAt(0) // not available in (Serializable & ...)
         ''',
-        'Cannot find matching method (java.io.Serializable or java.lang.Comparable'
+        'Cannot find matching method (java.io.Serializable & ','#charAt(int)'
     }
 
     // GROOVY-9516

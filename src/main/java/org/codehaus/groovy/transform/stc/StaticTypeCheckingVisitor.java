@@ -2262,7 +2262,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     public void visitExpressionStatement(final ExpressionStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitExpressionStatement(statement);
-        typeCheckingContext.popTemporaryTypeInfo();
+        Map<?,List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+        if (!tti.isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+            tti.forEach((k, tempTypes) -> {
+                if (tempTypes.contains(VOID_TYPE))
+                    typeCheckingContext.temporaryIfBranchTypeInformation.peek()
+                        .computeIfAbsent(k, x -> new LinkedList<>()).add(VOID_TYPE);
+            });
+        }
     }
 
     @Override
@@ -3797,28 +3804,29 @@ out:                if (mn.size() != 1) {
     }
 
     /**
-     * A special method handling the "withTrait" call for which the type checker knows more than
-     * what the type signature is able to tell. If "withTrait" is detected, then a new class node
-     * is created representing the list of trait interfaces.
+     * A special method handling the "withTraits" call for which the type checker
+     * knows more than what the type signature is able to tell. If "withTraits"
+     * is detected, then a new class node is created representing the receiver
+     * type interfaces and the trait interface(s).
      *
      * @param directMethodCallCandidate a method selected by the type checker
      * @param receiver                  the receiver of the method call
-     * @param args                      the arguments of the method call
-     * @param returnType                the original return type, as inferred by the type checker
-     * @return fixed return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
+     * @param argumentTypes             the argument types of the method call
+     * @param returnType                the return type as inferred by the type checker
+     * @return proxy return type if the selected method is {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#withTraits(Object, Class[]) withTraits}
      */
-    private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] args, final ClassNode returnType) {
+    private static ClassNode adjustWithTraits(final MethodNode directMethodCallCandidate, final ClassNode receiver, final ClassNode[] argumentTypes, final ClassNode returnType) {
         if ("withTraits".equals(directMethodCallCandidate.getName()) && isDefaultExtension(directMethodCallCandidate)) {
-            List<ClassNode> nodes = new ArrayList<>();
-            Collections.addAll(nodes, receiver.getInterfaces());
-            for (ClassNode arg : args) {
-                if (isClassClassNodeWrappingConcreteType(arg)) {
-                    nodes.add(arg.getGenericsTypes()[0].getType());
-                } else {
-                    nodes.add(arg);
+            List<ClassNode> interfaces = new ArrayList<>(Arrays.asList(receiver.getInterfaces()));
+            for (ClassNode argumentType : argumentTypes) {
+                if (isClassClassNodeWrappingConcreteType(argumentType)) {
+                    argumentType = argumentType.getGenericsTypes()[0].getType();
+                }
+                if (argumentType.isInterface()) {
+                    interfaces.add(argumentType);
                 }
             }
-            return new WideningCategories.LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
+            return new WideningCategories.LowestUpperBoundClassNode("ProxyOf$" + receiver.getNameWithoutPackage(), OBJECT_TYPE, interfaces.toArray(ClassNode.EMPTY_ARRAY));
         }
         return returnType;
     }
@@ -4438,11 +4446,9 @@ out:                if (mn.size() != 1) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<>());
                 assignedTypes.add(cn);
             }
-            List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(var);
-            if (temporaryTypesForExpression != null) {
-                // a type inference has been made on a variable whose type was defined in an instanceof block
-                // erase available information with the new type
-                temporaryTypesForExpression.clear();
+            if (!var.isThisExpression() && !var.isSuperExpression() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                // GROOVY-5226, GROOVY-11290: assignment voids instanceof
+                pushInstanceOfTypeInfo(var, classX(VOID_TYPE));
             }
         }
     }
@@ -5168,13 +5174,13 @@ out:                if (mn.size() != 1) {
     }
 
     private static ClassNode makeSelf(final ClassNode trait) {
-        ClassNode selfType = trait;
-        Set<ClassNode> selfTypes = Traits.collectSelfTypes(selfType, new LinkedHashSet<>());
-        if (!selfTypes.isEmpty()) {
-            selfTypes.add(selfType);
-            selfType = new UnionTypeClassNode(selfTypes.toArray(ClassNode.EMPTY_ARRAY));
+        Set<ClassNode> selfTypes = Traits.collectSelfTypes(trait, new LinkedHashSet<>());
+        if (!selfTypes.isEmpty()) { // TODO: reduce to the most-specific type(s)
+            ClassNode superclass = selfTypes.stream().filter(t -> !t.isInterface()).findFirst().orElse(OBJECT_TYPE);
+            selfTypes.remove(superclass); selfTypes.add(trait);
+            return new WideningCategories.LowestUpperBoundClassNode("TypesOf$" + trait.getNameWithoutPackage(), superclass, selfTypes.toArray(ClassNode.EMPTY_ARRAY));
         }
-        return selfType;
+        return trait;
     }
 
     private ClassNode makeSuper() {
@@ -5865,19 +5871,16 @@ out:                if (mn.size() != 1) {
                 if (left instanceof VariableExpression) {
                     Variable target = findTargetVariable((VariableExpression) left);
                     if (target instanceof VariableExpression) {
-                        VariableExpression var = (VariableExpression) target;
-                        List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
+                        List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(target);
                         if (classNodes != null && classNodes.size() > 1) {
-                            ClassNode lub = lowestUpperBound(classNodes);
+                            ClassNode type = lowestUpperBound(classNodes);
                             String message = getOperationName(((BinaryExpression) expression).getOperation().getType());
                             if (message != null) {
-                                List<MethodNode> method = findMethod(lub, message, getType(((BinaryExpression) expression).getRightExpression()));
-                                if (method.isEmpty()) {
-                                    addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
-                                            " [" + toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression())) + "]" +
-                                            " does not exist in the lowest upper bound of those types: [" +
-                                            prettyPrintType(lub) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
-                                            " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", expression);
+                                List<MethodNode> methods = findMethod(type, message, getType(((BinaryExpression) expression).getRightExpression()));
+                                if (methods.isEmpty()) {
+                                    String methSpec = toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression()));
+                                    String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
+                                    addStaticTypeError(stcError + ". In general, this style of variable reuse is a bad practice because the compiler cannot determine safely what is the type of the variable at the moment of the call in a multi-threaded context.", expression );
                                 }
                             }
                         }
@@ -5890,22 +5893,16 @@ out:                if (mn.size() != 1) {
                     // this should always be the case, but adding a test is safer
                     Variable target = findTargetVariable((VariableExpression) objectExpression);
                     if (target instanceof VariableExpression) {
-                        VariableExpression var = (VariableExpression) target;
-                        List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
+                        List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(target);
                         if (classNodes != null && classNodes.size() > 1) {
-                            ClassNode lub = lowestUpperBound(classNodes);
-                            MethodNode methodNode = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                            // we must check that such a method exists on the LUB
-                            Parameter[] parameters = methodNode.getParameters();
-                            ClassNode[] params = extractTypesFromParameters(parameters);
-                            ClassNode[] argTypes = (ClassNode[]) wrapper.getData();
-                            List<MethodNode> method = findMethod(lub, methodNode.getName(), argTypes);
-                            if (method.size() != 1) {
-                                addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
-                                        " [" + toMethodParametersString(methodNode.getName(), params) + "]" +
-                                        " does not exist in the lowest upper bound of those types: [" +
-                                        prettyPrintType(lub) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
-                                        " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", call);
+                            ClassNode type = lowestUpperBound(classNodes);
+                            MethodNode mct = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                            // we must check that such a method exists for the common type(s)
+                            List<MethodNode> methods = findMethod(type, mct.getName(), (ClassNode[]) wrapper.getData());
+                            if (methods.size() != 1) {
+                                String methSpec = toMethodParametersString(mct.getName(), extractTypesFromParameters(mct.getParameters()));
+                                String stcError = String.format("The closure shared variable \"%s\" has been assigned with various types and the method %s does not exist in the lowest upper bound of those types: %s", target.getName(), methSpec, prettyPrintTypeName(type));
+                                addStaticTypeError(stcError + ". In general, this style of variable reuse is a bad practice because the compiler cannot determine safely what is the type of the variable at the moment of the call in a multi-threaded context.", expression );
                             }
                         }
                     }
@@ -5986,50 +5983,73 @@ out:                if (mn.size() != 1) {
      * is not found. The returned type class depends on whether we have temporary type information available (due to
      * instanceof checks) and whether there is a single candidate in that case.
      *
-     * @param expr the expression for which an unknown field has been found
+     * @param expression the expression for which an unknown field has been found
      * @param type the type of the expression (used as fallback type)
      * @return if temporary information is available and there's only one type, returns the temporary type class
      * otherwise falls back to the provided type class.
      */
-    protected ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> types = getTemporaryTypesForExpression(expr);
-            if (types != null && types.size() == 1) return types.get(0);
-        }
+    protected ClassNode findCurrentInstanceOfClass(final Expression expression, final ClassNode type) {
+        List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
+        if (tempTypes.size() == 1) return tempTypes.get(0);
         return type;
     }
 
     protected List<ClassNode> getTemporaryTypesForExpression(final Expression expression) {
-        List<ClassNode> types = null;
-        int depth = typeCheckingContext.temporaryIfBranchTypeInformation.size();
-        while (types == null && depth > 0) {
-            Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.get(--depth);
-            if (!tempo.isEmpty()) {
-                Object key = expression instanceof ParameterVariableExpression
-                        ? ((ParameterVariableExpression) expression).parameter
-                        : extractTemporaryTypeInfoKey(expression);
-                types = tempo.get(key);
-            }
+        Object key = extractTemporaryTypeInfoKey(expression);
+        List<ClassNode> tempTypes = typeCheckingContext.temporaryIfBranchTypeInformation.stream().flatMap(tti ->
+            tti.getOrDefault(key, Collections.emptyList()).stream()
+        ).collect(Collectors.toList());
+        int i = tempTypes.lastIndexOf(VOID_TYPE);
+        if (i != -1) { // assignment overwrites instanceof
+            tempTypes = tempTypes.subList(i + 1, tempTypes.size());
         }
-        return types;
+        return DefaultGroovyMethods.unique(tempTypes); // GROOVY-6429
     }
 
     private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
-        if (expression instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+        if (expression instanceof VariableExpression) {
             List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
-            if (tempTypes != null && !tempTypes.isEmpty()) {
-                Set<ClassNode> types = new LinkedHashSet<>(tempTypes.size() + 1);
-                if (expressionType != null && !isObjectType(expressionType) // GROOVY-7333
-                        && tempTypes.stream().noneMatch(t -> implementsInterfaceOrIsSubclassOf(t, expressionType))) { // GROOVY-9769
-                    types.add(expressionType);
-                }
-                types.addAll(tempTypes);
-
-                if (types.isEmpty()) {
-                    return OBJECT_TYPE;
-                } else if (types.size() == 1) {
-                    return types.iterator().next();
+            if (!tempTypes.isEmpty()) {
+                ClassNode   superclass;
+                ClassNode[] interfaces;
+                if (expressionType instanceof WideningCategories.LowestUpperBoundClassNode) {
+                    superclass = expressionType.getSuperClass();
+                    interfaces = expressionType.getInterfaces();
+                } else if (expressionType != null && expressionType.isInterface()) {
+                    superclass = OBJECT_TYPE;
+                    interfaces = new ClassNode[]{expressionType};
                 } else {
+                    superclass = expressionType;
+                    interfaces = ClassNode.EMPTY_ARRAY;
+                }
+
+                List<ClassNode> types = new ArrayList<>();
+                if (superclass != null && !superclass.equals(OBJECT_TYPE) // GROOVY-7333
+                        && tempTypes.stream().noneMatch(t -> !t.equals(superclass) && t.isDerivedFrom(superclass))) { // GROOVY-9769
+                    types.add(superclass);
+                }
+                for (ClassNode anInterface : interfaces) {
+                    if (tempTypes.stream().noneMatch(t -> t.implementsInterface(anInterface))) { // GROOVY-9769
+                        types.add(anInterface);
+                    }
+                }
+                int tempTypesCount = tempTypes.size();
+                if (tempTypesCount == 1 && types.isEmpty()) {
+                    types.add(tempTypes.get(0));
+                } else for (ClassNode tempType : tempTypes) {
+                    if (!tempType.isInterface() // GROOVY-11290: keep most-specific types
+                            ? (superclass == null || !superclass.isDerivedFrom(tempType))
+                                    && (tempTypesCount == 1 || tempTypes.stream().noneMatch(t -> !t.equals(tempType) && t.isDerivedFrom(tempType)))
+                            : (expressionType == null || !isOrImplements(expressionType, tempType))
+                                    && (tempTypesCount == 1 || tempTypes.stream().noneMatch(t -> t != tempType && t.implementsInterface(tempType)))) {
+                        types.add(tempType);
+                    }
+                }
+
+                int typesCount = types.size();
+                if (typesCount == 1) {
+                    return types.get(0);
+                } else if (typesCount > 1) {
                     return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
                 }
             }

@@ -521,15 +521,14 @@ public class WideningCategories {
     }
 
     /**
-     * This {@link ClassNode} specialization is used when the lowest upper bound of two types
-     * cannot be represented by an existing type. For example, if B extends A,  C extends A
-     * and both C and B implement a common interface not implemented by A, then we use this class
-     * to represent the bound.
-     *
-     * At compile time, some classes like {@link org.codehaus.groovy.classgen.AsmClassGenerator} need
-     * to know about a real class node, so we compute a "compile time" node which will be used
-     * to return a name and a type class.
-     *
+     * This {@link ClassNode} specialization is used when the lowest upper bound
+     * of two types cannot be represented by an existing type. For example, if B
+     * extends A,  C extends A and both C and B implement a common interface not
+     * implemented by A, then we use this class to represent the bound.
+     * <p>
+     * At compile time, some classes like {@link org.codehaus.groovy.classgen.AsmClassGenerator AsmClassGenerator}
+     * need to know about a real class node, so we compute a "compile time" node
+     * which will be used to return a name and a type class.
      */
     public static class LowestUpperBoundClassNode extends ClassNode {
         private final String text;
@@ -548,7 +547,7 @@ public class WideningCategories {
             });
             compileTimeClassNode = isObjectType(upper) && interfaces.length > 0 ? interfaces[0] : upper;
 
-            StringJoiner sj = new StringJoiner(" or ", "(", ")");
+            StringJoiner sj = new StringJoiner(" & ","(",")");
             if (!isObjectType(upper)) sj.add(upper.getText());
             for (ClassNode i: interfaces) sj.add(i.getText());
             text = sj.toString();

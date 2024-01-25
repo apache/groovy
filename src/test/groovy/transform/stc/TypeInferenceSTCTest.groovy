@@ -242,7 +242,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10096
+    // GROOVY-10096
+    @NotYetImplemented
     void testInstanceOf10() {
         shouldFailWithMessages '''
             class Foo {
@@ -282,9 +283,24 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11290
+    void testInstanceOf12() {
+        assertScript '''
+            def test(List<String> list) {
+                if (list instanceof List) {
+                    (list*.toLowerCase()).join()
+                }
+            }
+
+            String result = test(['foo', 'bar'])
+            assert result == 'foobar'
+        '''
+    }
+
+    // GROOVY-5226
     void testNestedInstanceOf1() {
         assertScript '''
-            Object o
+            Object o = "foo"
             if (o instanceof Object) {
                 if (o instanceof String) {
                     o.toUpperCase()
@@ -293,19 +309,42 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5226
     void testNestedInstanceOf2() {
-        shouldFailWithMessages '''
-            Object o
+        assertScript '''
+            Object o = "foo"
             if (o instanceof String) {
-                if (o instanceof Object) { // causes the inferred type of 'o' to be overwritten
+                if (o instanceof Object) {
                     o.toUpperCase()
                 }
             }
-        ''',
-        'Cannot find matching method java.lang.Object#toUpperCase()'
+        '''
     }
 
+    // GROOVY-11290
     void testNestedInstanceOf3() {
+        assertScript '''
+            Object o = null
+            if (o instanceof Closeable) {
+                if (o instanceof Cloneable) {
+                    o.close()
+                }
+            }
+        '''
+    }
+
+    void testNestedInstanceOf4() {
+        assertScript '''
+            Object o = [1,2] as Number[]
+            if (o instanceof Object[]) {
+                if (o instanceof Number[]) {
+                    o[0].intValue()
+                }
+            }
+        '''
+    }
+
+    void testNestedInstanceOf5() {
         assertScript '''
             class A {
                int foo() { 1 }
@@ -313,8 +352,16 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             class B {
                int foo2() { 2 }
             }
+
             def o = new A()
             int result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            assert result == 1
+            o = new B()
+            result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            assert result == 2
+            o = new Object()
+            result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            assert result == 3
         '''
     }
 

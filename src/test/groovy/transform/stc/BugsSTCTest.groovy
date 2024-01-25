@@ -115,9 +115,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
         shouldFailWithMessages '''
             class C {
-                def m() { }
             }
-            @groovy.transform.CompileStatic
             @groovy.transform.SelfType(C)
             trait T {
                 void test() {
@@ -125,7 +123,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot find matching method <UnionType:C+T>#x'
+        'Cannot find matching method (C & T)#x()'
     }
 
     // GROOVY-10102
@@ -409,14 +407,14 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5874 (pt.1)
+    // GROOVY-5874
     void testClosureSharedVariableInBinExp() {
         shouldFailWithMessages '''
             def sum = 0
             def cl1 = { sum = sum + 1 }
             def cl2 = { sum = new Date() }
         ''',
-        'A closure shared variable [sum] has been assigned with various types'
+        'The closure shared variable "sum" has been assigned with various types'
     }
 
     // GROOVY-5870

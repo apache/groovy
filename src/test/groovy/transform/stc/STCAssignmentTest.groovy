@@ -44,7 +44,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Integer to variable of type java.util.Set'
     }
 
-    void testIndirectAssignment1() {
+    void testAssignmentFailure4() {
         shouldFailWithMessages '''
             def o = new Object()
             int x = o
@@ -52,7 +52,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
-    void testIndirectAssignment2() {
+    void testAssignmentFailure5() {
         shouldFailWithMessages '''
             def o = new Object()
             Set set = o
@@ -60,12 +60,24 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
-    void testIndirectAssignment3() {
+    void testAssignmentFailure6() {
         shouldFailWithMessages '''
             int x = 2
             Set set = x
         ''',
         'Cannot assign value of type int to variable of type java.util.Set'
+    }
+
+    // GROOVY-11289
+    void testAssignmentFailure7() {
+        shouldFailWithMessages '''
+            class C {
+                void setP(java.util.regex.Matcher matcher) {}
+                void setP(java.util.regex.Pattern pattern) {}
+            }
+            new C(p: new Object())
+        ''',
+        'Cannot assign value of type java.lang.Object to variable of type java.util.regex.Matcher or java.util.regex.Pattern'
     }
 
     void testAssignmentToEnum() {
@@ -523,9 +535,9 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testTernaryOperatorAssignmentShouldFailBecauseOfIncompatibleGenericTypes() {
         shouldFailWithMessages '''
-            List<Integer> foo = true?new LinkedList<String>():new LinkedList<Integer>();
+            List<Integer> foo = true ? new LinkedList<String>() : new LinkedList<Integer>()
         ''',
-        'Incompatible generic argument types. Cannot assign java.util.LinkedList<? extends java.io.Serializable<? extends java.io.Serializable<java.lang.String>>> to: java.util.List<java.lang.Integer>'
+        'Incompatible generic argument types. Cannot assign java.util.LinkedList<? extends java.io.Serializable & java.lang.Comparable','> to: java.util.List<java.lang.Integer>'
     }
 
     void testCastStringToChar() {
