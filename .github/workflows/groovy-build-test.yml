@@ -13,37 +13,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Build and test ea
+name: Build and test JDK versions
 
-on: [push]
+on: [push, pull_request]
 
 permissions:
   contents: read
 
+env:
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+
 jobs:
-  test:
+  lts:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        java: [17]
-        # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
-        jdk: ["https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz",
-              "https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz"]
+        os: [ubuntu-latest]
+        java: [11, 17, 21]
     runs-on: ${{ matrix.os }}
-    env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          check-latest: true
+      - uses: gradle/gradle-build-action@v2
+      - name: Test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+
+  additional:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [12, 13, 14, 15, 16, 18, 19, 20]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          check-latest: true
+      - uses: gradle/gradle-build-action@v2
+      - name: Test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+  ea:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
+        jdk:
+          - "https://download.java.net/java/early_access/jdk22/31/GPL/openjdk-22-ea+31_linux-x64_bin.tar.gz"
+        # TODO: JDK 23 is not working for now.
+        # - "https://download.java.net/java/early_access/jdk23/5/GPL/openjdk-23-ea+5_linux-x64_bin.tar.gz"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Download JDK ${{ matrix.jdk }}
         run: wget -c ${{ matrix.jdk }} -O /tmp/openjdk.tar.gz
       - name: Set up JDK ${{ matrix.jdk }}
         run: mkdir -p /home/runner/openjdk && tar -xvf /tmp/openjdk.tar.gz -C /home/runner/openjdk && chmod -R 755 /home/runner/openjdk && mv /home/runner/openjdk/jdk*/* /home/runner/openjdk/
       - uses: actions/checkout@v4
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java }}
+          java-version: 21
           check-latest: true
       - uses: gradle/gradle-build-action@v2
       - name: Test with Gradle
