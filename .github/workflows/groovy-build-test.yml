@@ -13,15 +13,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Build and test ea
+name: Build and test JDK versions
 
-on: [push]
+on: [push, pull_request]
 
 permissions:
   contents: read
 
+env:
+  GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+
 jobs:
-  test:
+  lts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [11, 17, 21]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          check-latest: true
+      - uses: gradle/gradle-build-action@v2
+      - name: Test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+
+  additional:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [12, 13, 14, 15, 16, 18, 19, 20]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          check-latest: true
+      - uses: gradle/gradle-build-action@v2
+      - name: Test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+  ea:
+    if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
@@ -32,8 +74,6 @@ jobs:
         # TODO: JDK 23 is not working for now.
         # - "https://download.java.net/java/early_access/jdk23/5/GPL/openjdk-23-ea+5_linux-x64_bin.tar.gz"
     runs-on: ${{ matrix.os }}
-    env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - name: Download JDK ${{ matrix.jdk }}
         run: wget -c ${{ matrix.jdk }} -O /tmp/openjdk.tar.gz
