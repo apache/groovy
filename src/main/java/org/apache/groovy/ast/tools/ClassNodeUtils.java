@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import groovy.transform.NonSealed;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -26,11 +27,13 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
@@ -47,6 +50,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static java.lang.reflect.Modifier.isFinal;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
@@ -323,6 +327,32 @@ public class ClassNodeUtils {
             return accessorName.length() > prefixLength;
         }
         return false;
+    }
+
+    /**
+     * Check if the type is declared {@code non-sealed}
+     *
+     * @param cn the type
+     * @return the check result
+     */
+    public static boolean isNonSealed(final ClassNode cn) {
+        if (cn instanceof DecompiledClassNode) {
+            Class<?> typeClass;
+            try {
+                typeClass = cn.getTypeClass();
+            } catch (NoClassDefFoundError e) {
+                return false;
+            }
+
+            final Class<?> superclass = typeClass.getSuperclass();
+            if (null == superclass) return false;
+            return ReflectionUtils.isSealed(superclass) && !(Modifier.isFinal(typeClass.getModifiers()) || ReflectionUtils.isSealed(typeClass));
+        }
+
+        if (Boolean.TRUE.equals(cn.getNodeMetaData(NonSealed.class))) return true;
+        final ClassNode superClass = cn.getSuperClass();
+        if (null == superClass) return false;
+        return superClass.isSealed() && !(isFinal(cn.getModifiers()) || cn.isSealed());
     }
 
     public static boolean hasStaticProperty(final ClassNode cNode, final String propName) {
