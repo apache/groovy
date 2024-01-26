@@ -30,6 +30,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -41,7 +42,6 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -97,8 +97,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -297,12 +295,15 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             createGetAt(cNode, pList);
         }
 
+        boolean nullable;
         if ((options == null || !memberHasValue(options, TO_LIST, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_LIST, 0)) {
-            createToList(cNode, pList);
+            nullable = areAnyRecordComponentsNullable(pList);
+            createToList(cNode, pList, nullable);
         }
 
         if ((options == null || !memberHasValue(options, TO_MAP, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_MAP, 0)) {
-            createToMap(cNode, pList);
+            nullable = areAnyRecordComponentsNullable(pList);
+            createToMap(cNode, pList, nullable);
         }
 
         if (options != null && memberHasValue(options, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
@@ -372,23 +373,33 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         addGeneratedMethod(cNode, COMPONENTS, ACC_PUBLIC | ACC_FINAL, tuple, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private void createToList(ClassNode cNode, List<PropertyNode> pList) {
+    private void createToList(ClassNode cNode, List<PropertyNode> pList, boolean nullable) {
         List<Expression> args = new ArrayList<>();
         for (PropertyNode pNode : pList) {
             args.add(callThisX(pNode.getName()));
         }
-        Statement body = returnS(callX(INVOKER_TYPE, "createImmutableList", args(args)));
+        Statement body;
+        if (nullable) {
+            body = returnS(callX(INVOKER_TYPE, "createImmutableList", args(args)));
+        } else {
+            body = returnS(callX(LIST_TYPE, "of", args(args)));
+        }
         addGeneratedMethod(cNode, TO_LIST, ACC_PUBLIC | ACC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private void createToMap(ClassNode cNode, List<PropertyNode> pList) {
+    private void createToMap(ClassNode cNode, List<PropertyNode> pList, boolean nullable) {
         List<Expression> args = new ArrayList<>();
         for (PropertyNode pNode : pList) {
             String name = pNode.getName();
             args.add(constX(name));
             args.add(callThisX(name));
         }
-        Statement body = returnS(callX(INVOKER_TYPE, "createImmutableMap", args(args)));
+        Statement body;
+        if (nullable || pList.size() > 10) { // Map.of() goes up-to 10 key-value pairs before needing Map.ofEntries()
+            body = returnS(callX(INVOKER_TYPE, "createImmutableMap", args(args)));
+        } else {
+            body = returnS(callX(MAP_TYPE, "of", args(args)));
+        }
         addGeneratedMethod(cNode, TO_MAP, ACC_PUBLIC | ACC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -558,5 +569,17 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 pNode.setGetterBlock(getter);
             }
         }
+    }
+
+    private static boolean areAnyRecordComponentsNullable(List<PropertyNode> pList) {
+        if (pList.isEmpty()) return false;
+
+        for (PropertyNode component : pList) {
+            if (!ClassHelper.isPrimitiveType(component.getType())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
