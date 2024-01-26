@@ -181,7 +181,7 @@ tasks.register('dist') {
 
 tasks.register("installGroovy", Sync) {
     duplicatesStrategy = DuplicatesStrategy.FAIL
-    def installDir = sharedConfiguration.installationDirectory.orElse(project.layout.buildDir.file("install"))
+    def installDir = sharedConfiguration.installationDirectory.orElse(layout.buildDirectory.dir("install").get().asFile)
     description 'Generates a groovy distribution into an install directory'
     doLast {
         logger.lifecycle "Groovy installed under ${installDir.get()}"
@@ -204,7 +204,7 @@ tasks.named('asciidoctorPdf') {
     baseDirFollowsSourceFile()
     logDocuments = true
     sourceDir = file('src/spec/doc')
-    outputDir = "$buildDir/asciidocAll/pdf"
+    outputDir = layout.buildDirectory.dir("asciidocAll/pdf")
 }
 
 // The Groovy distribution module isn't a Java library

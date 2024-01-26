@@ -56,12 +56,12 @@ rootProject.allprojects {
                 packageExcludes = ["**internal**", "groovyjarjar**"]
 //                TODO consider using rich report but we need to add a custom rule first
 //                richReport {
-//                    destinationDir = file("${thisProject.buildDir}/reports/")
+//                    destinationDir = layout.buildDirectory.dir("reports")
 //                    reportName = "${taskName}.html"
 //                }
-                htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
+                htmlOutputFile = layout.buildDirectory.file("reports/${taskName}.html").get().asFile
 //                uncomment below if also wanting text only output
-//                txtOutputFile = file("${thisProject.buildDir}/reports/${taskName}.txt")
+//                txtOutputFile = layout.buildDirectory.file("${thisProject.buildDir}/reports/${taskName}.txt").get().asFile
             }
             checkBinaryCompatibility.configure {
                 dependsOn(singleProjectCheck)

@@ -53,14 +53,14 @@ asciidoctor {
     sources {
         include '*.adoc'
     }
-    outputDir = "$buildDir/asciidoc/html5"
+    outputDir = layout.buildDirectory.dir("asciidoc/html5")
     resources {
         duplicatesStrategy = DuplicatesStrategy.WARN
 
         from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
         }
-        from("$buildDir/tmp/asciidoctor-assets")
+        from layout.buildDirectory.dir("tmp/asciidoctor-assets")
         into 'assets'
     }
     forkOptions {
@@ -126,7 +126,7 @@ asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
 def asciidoctorAssets = tasks.register("asciidoctorAssets", Copy) {
     from project.fileTree('src/spec/doc/assets')
-    into "$buildDir/tmp/asciidoctor-assets"
+    into layout.buildDirectory.dir("tmp/asciidoctor-assets")
 }
 asciidoctor.dependsOn asciidoctorAssets
 
