@@ -128,7 +128,7 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
         }
     }
 
-    sourceSets.main.java.srcDirs += "${buildDir}/generated/sources/antlr4"
+    sourceSets.main.java.srcDirs += layout.buildDirectory.dir('generated/sources/antlr4')
 
     eclipseClasspath.dependsOn(generateGrammarSource)
 }

@@ -71,7 +71,7 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
 }
 
 def javadocAll = tasks.register("javadocAll", Javadoc) {
-    destinationDir = file("$buildDir/alljavadoc")
+    destinationDir = layout.buildDirectory.dir("alljavadoc").get().asFile
     source configurations.allSources
     classpath = configurations.allSourcesRuntimeClasspath + configurations.allSources
     docAggregation.excludedFromJavadocs.each {
@@ -85,7 +85,7 @@ def javadocAllJar = tasks.register("javadocAllJar", Jar) {
 }
 
 def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
-    destinationDir = file("${buildDir}/allgroovydoc")
+    destinationDir = layout.buildDirectory.dir("allgroovydoc").get().asFile
     source = configurations.allSources
     classpath = configurations.allSourcesRuntimeClasspath
     includeAuthor = false
