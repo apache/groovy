@@ -54,7 +54,7 @@ rootProject.allprojects {
                 ignoreMissingClasses = true
                 classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
                 packageExcludes = ["**internal**", "groovyjarjar**"]
-                htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
+                htmlOutputFile = layout.buildDirectory.file("reports/${taskName}.html").get().asFile
             }
             checkBinaryCompatibility.configure {
                 dependsOn(singleProjectCheck)

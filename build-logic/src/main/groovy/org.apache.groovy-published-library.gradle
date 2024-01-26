@@ -20,7 +20,7 @@ publishing {
     repositories {
         maven {
             name "LocalFile"
-            url "${rootProject.buildDir}/repo"
+            url rootProject.layout.buildDirectory.dir("repo").get().asFile.absolutePath
         }
         maven {
             name "Apache"
