@@ -100,7 +100,7 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
         }
     }
 
-    void testOverideStringAsBooleanThroughEMC() {
+    void testOverrideStringAsBooleanThroughEMC() {
         try {
             String.metaClass.asBoolean = { -> true }
 
@@ -116,7 +116,7 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
     }
 }
 
-/** A Predicate classe coercible to a boolea expression */
+/** A Predicate class coercible to a boolean expression */
 class Predicate {
     boolean value
     boolean asBoolean() { value }
