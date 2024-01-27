@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           java-version: 11
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/actions/setup-gradle@v3
       - name: env
         run: env
 

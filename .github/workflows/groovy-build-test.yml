@@ -38,7 +38,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/actions/setup-gradle@v3
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
@@ -58,7 +58,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/actions/setup-gradle@v3
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
@@ -85,7 +85,7 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/actions/setup-gradle@v3
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk
         timeout-minutes: 60
