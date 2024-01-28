@@ -2209,7 +2209,7 @@ final class TraitASTTransformationTest {
             trait Foo extends Serializable {}
             Foo x = null
         '''
-        assert err =~ 'Trait cannot extend an interface.'
+        assert err =~ 'A trait cannot extend an interface.'
     }
 
     @Test

@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import java.util.LinkedList;
 
 /**
- * Represents an inner class declaration
+ * Represents an inner class definition.
  */
 public class InnerClassNode extends ClassNode {
 
@@ -37,7 +37,7 @@ public class InnerClassNode extends ClassNode {
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
-        this(outerClass, name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
+        this(outerClass, name, modifiers, superClass, ClassNode.EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
@@ -50,7 +50,7 @@ public class InnerClassNode extends ClassNode {
         this.outerClass = outerClass;
 
         if (outerClass.innerClasses == null)
-            outerClass.innerClasses = new LinkedList<InnerClassNode> ();
+            outerClass.innerClasses = new LinkedList<>();
         outerClass.innerClasses.add(this);
     }
 
@@ -59,7 +59,7 @@ public class InnerClassNode extends ClassNode {
         return outerClass;
     }
 
-    public ClassNode getOuterMostClass()  {
+    public ClassNode getOuterMostClass() {
         ClassNode outerClass = getOuterClass();
         while (outerClass instanceof InnerClassNode)  {
             outerClass = outerClass.getOuterClass();
@@ -67,9 +67,6 @@ public class InnerClassNode extends ClassNode {
         return outerClass;
     }
 
-    /**
-     * @return the field node on the outer class or null if this is not an inner class
-     */
     @Override
     public FieldNode getOuterField(String name) {
         return outerClass.getDeclaredField(name);

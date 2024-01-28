@@ -867,9 +867,9 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * This method returns a list of all methods of the given name
-     * defined in the current class
-     * @return the method list
+     * Returns a list of all methods with the given name from this class.
+     *
+     * @return method list (possibly empty)
      * @see #getMethods(String)
      */
     public List<MethodNode> getDeclaredMethods(String name) {
@@ -880,25 +880,26 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * This method creates a list of all methods with this name of the
-     * current class and of all super classes
-     * @return the methods list
+     * Returns a list of all methods with the given name from this class and its
+     * super class(es).
+     *
+     * @return method list (possibly empty)
      * @see #getDeclaredMethods(String)
      */
     public List<MethodNode> getMethods(String name) {
-        List<MethodNode> result = new ArrayList<>();
+        List<MethodNode> list = new ArrayList<>(4);
         ClassNode node = this;
         while (node != null) {
-            result.addAll(node.getDeclaredMethods(name));
+            list.addAll(node.getDeclaredMethods(name));
             node = node.getSuperClass();
         }
-        return result;
+        return list;
     }
 
     /**
      * Finds a method matching the given name and parameters in this class.
      *
-     * @return the method matching the given name and parameters or null
+     * @return method node or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
         for (MethodNode method : getDeclaredMethods(name)) {
@@ -911,9 +912,9 @@ public class ClassNode extends AnnotatedNode {
 
     /**
      * Finds a method matching the given name and parameters in this class
-     * or any parent class.
+     * or any super class.
      *
-     * @return the method matching the given name and parameters or null
+     * @return method node or null
      */
     public MethodNode getMethod(String name, Parameter[] parameters) {
         for (MethodNode method : getMethods(name)) {

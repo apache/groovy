@@ -133,23 +133,22 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private void checkNoConstructor(final ClassNode cNode) {
         if (!cNode.getDeclaredConstructors().isEmpty()) {
-            addError("Error processing trait '" + cNode.getName() + "'. " + " Constructors are not allowed.", cNode);
+            addError("Error processing trait '" + cNode.getName() + "'. Constructors are not allowed.", cNode);
         }
     }
 
     private void checkExtendsClause(final ClassNode cNode) {
-        ClassNode superClass = cNode.getSuperClass();
+        ClassNode superClass = cNode.getUnresolvedSuperClass(false);
         if (superClass.isInterface() && !Traits.isTrait(superClass)) {
-            addError("Trait cannot extend an interface. Use 'implements' instead", cNode);
+            addError("A trait cannot extend an interface. Use 'implements' instead.", cNode);
         }
     }
 
     private static void replaceExtendsByImplements(final ClassNode cNode) {
-        ClassNode superClass = cNode.getUnresolvedSuperClass();
+        ClassNode superClass = cNode.getUnresolvedSuperClass(false);
         if (Traits.isTrait(superClass)) {
             // move from super class to interface
             cNode.setSuperClass(OBJECT_TYPE);
-            cNode.setUnresolvedSuperClass(OBJECT_TYPE);
             cNode.addInterface(superClass);
         }
     }
@@ -537,7 +536,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         FieldNode dummyField = new FieldNode(
                 dummyFieldName,
                 ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_SYNTHETIC,
-                field.getOriginType().getPlainNodeReference(),
+                field.getOriginType(),
                 fieldHelper,
                 null
         );

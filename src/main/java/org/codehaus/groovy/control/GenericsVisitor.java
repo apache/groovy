@@ -61,11 +61,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode sn = node.getUnresolvedSuperClass(false);
-        if (checkWildcard(sn)) return;
+        ClassNode sc = node.getUnresolvedSuperClass(false);
+        if (checkWildcard(sc)) return;
 
         boolean isAIC = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
-        checkGenericsUsage(sn, node.getSuperClass(), isAIC ? Boolean.TRUE : null);
+        checkGenericsUsage(sc, sc.redirect(), isAIC ? Boolean.TRUE : null);
         for (ClassNode face : node.getInterfaces()) {
             checkGenericsUsage(face);
         }
