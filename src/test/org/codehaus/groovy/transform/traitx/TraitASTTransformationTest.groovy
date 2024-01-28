@@ -298,7 +298,6 @@ final class TraitASTTransformationTest {
                private String msg = 'foo'
                abstract String bar()
                public String foo() { bar()+msg }
-
             }
             @CompileStatic
             class A implements Foo {
@@ -884,7 +883,7 @@ final class TraitASTTransformationTest {
                 void update(String msg ) { message = msg}
             }
             @CompileStatic
-            class Foo implements TestTrait{
+            class Foo implements TestTrait {
             }
 
             @CompileStatic
@@ -1014,6 +1013,21 @@ final class TraitASTTransformationTest {
 
             def c = new C()
             assert c.foo() == 2
+        '''
+
+        // GROOVY-10144
+        assertScript shell, '''
+            trait T {
+                def m() { 'T' }
+            }
+            class C implements T {
+                @Override
+                def m() {
+                    'C' + T.super.m()
+                }
+            }
+            String result = new C().m()
+            assert result == 'CT'
         '''
 
         // GROOVY-8587
@@ -2192,7 +2206,7 @@ final class TraitASTTransformationTest {
             trait Foo extends Serializable {}
             Foo x = null
         '''
-        assert err =~ 'Trait cannot extend an interface.'
+        assert err =~ 'A trait cannot extend an interface.'
     }
 
     @Test

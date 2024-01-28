@@ -39,7 +39,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.transform.trait.Traits;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_MANDATED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -86,12 +86,12 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
 
         super.visitClass(node);
 
-        if (node.isEnum() || node.isInterface()) return;
-        if (innerClass == null) return;
-
-        if (node.getSuperClass().isInterface() || Traits.isAnnotatedWithTrait(node.getSuperClass())) {
-            node.addInterface(node.getUnresolvedSuperClass());
-            node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
+        if (innerClass != null && innerClass.isAnonymous()) {
+            var upperClass = node.getUnresolvedSuperClass(false);
+            if (upperClass.isInterface() || isTrait(upperClass)) {
+                node.addInterface(upperClass);
+                node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
+            }
         }
     }
 
@@ -151,9 +151,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
 
         InnerClassNode innerClass = (InnerClassNode) call.getType();
         ClassNode outerClass = innerClass.getOuterClass();
-        ClassNode superClass = innerClass.getSuperClass();
-        if (!superClass.isInterface() && superClass.getOuterClass() != null
-                && !(superClass.isStaticClass() || (superClass.getModifiers() & ACC_STATIC) != 0)) {
+        ClassNode upperClass = innerClass.getUnresolvedSuperClass(false);
+        if (upperClass.getOuterClass() != null && !upperClass.isInterface()
+                && !(upperClass.isStaticClass() || (upperClass.getModifiers() & ACC_STATIC) != 0)) {
             insertThis0ToSuperCall(call, innerClass);
         }
         if (!innerClass.getDeclaredConstructors().isEmpty()) return;
