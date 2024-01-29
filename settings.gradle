@@ -30,15 +30,11 @@ pluginManagement {
 
 // check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
 plugins {
-    id "com.gradle.enterprise" version "3.12.3"
+    // Before updating this, please check the compatibility from https://docs.gradle.com/enterprise/compatibility/#develocity_compatibility and https://ge.apache.org/scans.
+    id "com.gradle.enterprise" version "3.16.2"
 }
 
-gradleEnterprise {
-    buildScan {
-        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-        apply from: 'gradle/build-scans.gradle'
-    }
-}
+apply from: 'gradle/build-scans.gradle'
 
 dependencyResolutionManagement {
     repositories {
