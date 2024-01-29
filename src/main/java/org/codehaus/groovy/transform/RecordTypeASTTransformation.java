@@ -134,6 +134,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
     private static final ClassNode SIMPLE_BEAN_INFO_TYPE = make(SimpleBeanInfo.class);
     private static final ClassNode BEAN_DESCRIPTOR_TYPE = make(BeanDescriptor.class);
+    private static final ClassNode COLLECTIONS_TYPE = makeWithoutCaching(Collections.class, false);
     private static final ClassNode PROPERTY_DESCRIPTOR_TYPE = make(PropertyDescriptor.class);
     private static final ClassNode PROPERTY_DESCRIPTOR_ARRAY_TYPE = make(PropertyDescriptor[].class);
     private static final ClassNode EVENT_SET_DESCRIPTOR_TYPE = make(EventSetDescriptor.class);
@@ -376,7 +377,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         for (PropertyNode pNode : pList) {
             args.add(callThisX(pNode.getName()));
         }
-        Statement body = returnS(listX(args));
+        Statement body = returnS(callX(COLLECTIONS_TYPE, "unmodifiableList", listX(args)));
         addGeneratedMethod(cNode, TO_LIST, ACC_PUBLIC | ACC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -386,7 +387,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             String name = pNode.getName();
             entries.add(mapEntryX(name, callThisX(name)));
         }
-        Statement body = returnS(mapX(entries));
+        Statement body = returnS(callX(COLLECTIONS_TYPE, "unmodifiableMap", mapX(entries)));
         addGeneratedMethod(cNode, TO_MAP, ACC_PUBLIC | ACC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
