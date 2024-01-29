@@ -135,6 +135,11 @@ public class GeneralUtils {
     public static ArrayExpression arrayX(final ClassNode elementType, List<Expression> initExpressions) {
         return new ArrayExpression(elementType, initExpressions);
     }
+
+    public static ArrayExpression arrayX(final ClassNode elementType, List<Expression> initExpressions, List<Expression> sizeExpressions) {
+        return new ArrayExpression(elementType, initExpressions, sizeExpressions);
+    }
+
     public static CastExpression asX(final ClassNode type, final Expression expression) {
         return CastExpression.asExpression(type, expression);
     }

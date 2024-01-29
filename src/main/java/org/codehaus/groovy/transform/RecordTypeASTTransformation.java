@@ -85,6 +85,7 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.arrayX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -323,7 +324,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         BlockStatement block = new BlockStatement();
         VariableExpression p = varX("p", PROPERTY_DESCRIPTOR_ARRAY_TYPE);
         block.addStatement(
-            declS(p, new ArrayExpression(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(pList.size()))))
+            declS(p, arrayX(PROPERTY_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(pList.size()))))
         );
         for (int i = 0; i < pList.size(); i++) {
             String name = pList.get(i).getName();
@@ -334,10 +335,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         block.addStatement(returnS(p));
         beanInfoClass.addMethod("getPropertyDescriptors", ACC_PUBLIC, PROPERTY_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block);
         beanInfoClass.addMethod("getEventSetDescriptors", ACC_PUBLIC, EVENT_SET_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
-            new ArrayExpression(EVENT_SET_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+            arrayX(EVENT_SET_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
         ));
         beanInfoClass.addMethod("getMethodDescriptors", ACC_PUBLIC, METHOD_DESCRIPTOR_ARRAY_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
-            new ArrayExpression(METHOD_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
+            arrayX(METHOD_DESCRIPTOR_TYPE, Collections.emptyList(), List.of(constX(0)))
         ));
         beanInfoClass.addMethod("getDefaultPropertyIndex", ACC_PUBLIC, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(
             constX(-1)
