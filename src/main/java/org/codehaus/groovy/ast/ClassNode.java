@@ -51,6 +51,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.transform.RecordTypeASTTransformation.recordNative;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -397,9 +398,13 @@ public class ClassNode extends AnnotatedNode {
         if (!lazyInitDone && !isResolved()) {
             throw new GroovyBugError("ClassNode#getSuperClass for " + getName() + " called before class resolving");
         }
-        ClassNode sn = redirect().getUnresolvedSuperClass();
-        if (sn != null) sn = sn.redirect();
-        return sn;
+        var sc = redirect().getUnresolvedSuperClass();
+        if (sc != null) {
+            sc = sc.redirect();
+            if (isPrimaryClassNode() && (sc.isInterface() || isTrait(sc)))
+                sc = ClassHelper.OBJECT_TYPE; // GROOVY-8272, GROOVY-11299
+        }
+        return sc;
     }
 
     public void setSuperClass(final ClassNode superClass) {

@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
@@ -101,31 +100,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) exp;
             String obj = mce.getObjectExpression().getText();
-            if (mce.isImplicitThis() || "this".equals(obj)) {
-                return transformMethodCallOnThis(mce); // this.m(p) --> this.m($self, p)
-            } else if ("super".equals(obj)) {
-                return transformSuperMethodCall(mce); // super.m(p) --> $self.Ttrait$super$m(p)
-            }
-        } else if (exp instanceof StaticMethodCallExpression) {
-            StaticMethodCallExpression call = (StaticMethodCallExpression) exp;
-            if (call.getOwnerType().equals(traitClass)) {
-                // GROOVY-7191, GROOVY-8272, GROOVY-8854, GROOVY-10312: T.m(p) --> this.m($static$self, p)
-                Expression staticSelf = varX(weaved);
-                if (!ClassHelper.isClassType(weavedType)) {
-                    staticSelf = callX(staticSelf, "getClass");
-                    ((MethodCallExpression) staticSelf).setImplicitThis(false);
-                    staticSelf = castX(ClassHelper.CLASS_Type.getPlainNodeReference(), staticSelf);
-                }
-                MethodCallExpression mce = callX(
-                        varX("this"),
-                        call.getMethod(),
-                        createArgumentList(staticSelf, call.getArguments())
-                );
-                mce.setSafe(false);
-                mce.setSpreadSafe(false);
-                mce.setImplicitThis(false);
-                mce.setSourcePosition(exp);
-                return mce;
+            if ("super".equals(obj)) {
+                return transformSuperMethodCall(mce); // super.m(x) --> $self.Ttrait$super$m(x)
+            } else if ("this".equals(obj)) {
+                return transformMethodCallOnThis(mce); // this.m(x) --> $self.m(x) or this.m($self, x)
             }
         } else if (exp instanceof FieldExpression) {
             FieldNode fn = ((FieldExpression) exp).getField();
@@ -303,38 +281,54 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression transformMethodCallOnThis(final MethodCallExpression call) {
-        Expression method = call.getMethod();
+        Expression method    = call.getMethod();
         Expression arguments = call.getArguments();
-        Expression thisExpr = call.getObjectExpression();
+        Expression thisExpr  = call.getObjectExpression();
 
         if (method instanceof ConstantExpression) {
-            String methodName = call.getMethodAsString();
-            for (MethodNode methodNode : traitClass.getMethods(methodName)) {
-                if (methodName.equals(methodNode.getName()) && (methodNode.isStatic() || methodNode.isPrivate())) {
-                    MethodCallExpression newCall;
-                    if (!inClosure && methodNode.isStatic()) { // GROOVY-10312: $self or $static$self.staticMethod(...)
-                        newCall = callX(varX(weaved), methodName, transform(arguments));
-                        newCall.setImplicitThis(false);
-                        newCall.setSafe(false);
-                    } else {
-                        ArgumentListExpression newArgs = createArgumentList(methodNode.isStatic() ? asClass(thisExpr) : weaved, arguments);
-                        newCall = callX(inClosure ? classX(traitHelperClass) : thisExpr, methodName, newArgs);
-                        newCall.setImplicitThis(true);
-                        newCall.setSafe(call.isSafe());
-                    }
-                    newCall.setSpreadSafe(call.isSpreadSafe());
-                    newCall.setSourcePosition(call);
-                    return newCall;
-                }
+            // GROOVY-7213, GROOVY-7214, GROOVY-8282, GROOVY-8859, GROOVY-10106, GROOVY-10312
+            MethodNode methodNode = findConcreteMethod(traitClass, call.getMethodAsString());
+            if (methodNode != null) {
+                // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
+                Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
+                MethodCallExpression newCall = callX(!inClosure ? thisExpr : classX(traitHelperClass), method, createArgumentList(selfClassOrObject, arguments));
+                newCall.setGenericsTypes(call.getGenericsTypes());
+                newCall.setSpreadSafe(call.isSpreadSafe());
+                newCall.setSourcePosition(call);
+                return newCall;
             }
         }
 
+        // this.m(x) --> ($self or $static$self).m(x)
         MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
         newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
         newCall.setSafe(inClosure ? call.isSafe() : false);
         newCall.setSpreadSafe(call.isSpreadSafe());
         newCall.setSourcePosition(call);
         return newCall;
+    }
+
+    private static MethodNode findConcreteMethod(final ClassNode traitClass, final String methodName) {
+        for (MethodNode methodNode : traitClass.getDeclaredMethods(methodName)) {
+            if (methodNode.isPrivate() || methodNode.isStatic()) {
+                return methodNode;
+            }
+        }
+
+        // GROOVY-8272, GROOVY-10312: public static method from super trait
+        var traits = Traits.findTraits(traitClass); traits.remove(traitClass);
+
+        for (ClassNode superTrait : traits) {
+            for (MethodNode methodNode : Traits.findHelper(superTrait).getDeclaredMethods(methodName)) {
+                if (methodNode.isPublic() && methodNode.isStatic()
+                        // exclude public method with body as it's included in trait interface
+                        && ClassHelper.isClassType(methodNode.getParameters()[0].getType())) {
+                    return methodNode;
+                }
+            }
+        }
+
+        return null;
     }
 
     private ArgumentListExpression createArgumentList(final Expression self, final Expression arguments) {

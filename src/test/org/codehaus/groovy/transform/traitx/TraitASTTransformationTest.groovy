@@ -1687,6 +1687,26 @@ final class TraitASTTransformationTest {
                 assert c.foo() == 1
                 assert c.foo() == 2
             """
+
+            // GROOVY-7214
+            assertScript shell, """
+                $mode
+                trait T {
+                    private static int x = 0
+                    private static initX() {
+                        x = 42
+                    }
+                    static getValue() {
+                        initX()
+                        x
+                    }
+                }
+                $mode
+                class C implements T {
+                }
+
+                assert C.value == 42
+            """
         }
     }
 
@@ -2933,7 +2953,7 @@ final class TraitASTTransformationTest {
             @SelfType(T)
             trait B implements A {
                 void methodB() {
-                    methodA() // Cannot find matching method <UnionType:T+B>#methodA()
+                    methodA() // Cannot find matching method (T & B)#methodA()
                 }
             }
             class C extends T implements B {

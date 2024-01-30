@@ -65,12 +65,12 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
-import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 
 /**
  * Visitor to resolve constants and method calls from static imports.
@@ -271,42 +271,41 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             return result;
         }
 
-        if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String && (mce.isImplicitThis() || isThisOrSuper(object))) {
-            String methodName = (String) ((ConstantExpression) method).getValue();
+        if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String
+                && mce.isImplicitThis() && !isTrait(currentClass)) { // GROOVY-7191, GROOVY-8272, GROOVY-10312
+            String name = mce.getMethodAsString();
 
-            boolean foundInstanceMethod = !staticWrtCurrent && currentClass.hasPossibleMethod(methodName, args);
+            boolean foundInstanceMethod = !staticWrtCurrent && currentClass.hasPossibleMethod(name, args);
 
             Predicate<ClassNode> hasPossibleStaticMember = cn -> {
-                if (hasPossibleStaticMethod(cn, methodName, args, true)) {
+                if (hasPossibleStaticMethod(cn, name, args, true)) {
                     return true;
                 }
-                // GROOVY-9587: don't check for property for non-empty call args
+                // GROOVY-9587: skip property check for non-empty call arguments
                 if (args instanceof TupleExpression && ((TupleExpression) args).getExpressions().isEmpty()
-                        && hasPossibleStaticProperty(cn, methodName)) {
+                        && hasPossibleStaticProperty(cn, name)) {
                     return true;
                 }
                 return false;
             };
 
-            if (mce.isImplicitThis()) {
-                if (isInnerClass(currentClass)) {
-                    if (inSpecialConstructorCall && !foundInstanceMethod) {
-                        // check for reference to outer class method in this(...) or super(...)
-                        if (currentClass.getOuterClass().hasPossibleMethod(methodName, args)) {
-                            object = new PropertyExpression(new ClassExpression(currentClass.getOuterClass()), new ConstantExpression("this"));
-                        } else if (hasPossibleStaticMember.test(currentClass.getOuterClass())) {
-                            Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), methodName, args);
-                            result.setSourcePosition(mce);
-                            return result;
-                        }
-                    }
-                } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !methodName.equals("call"))) {
-                    // check for reference to static method in this(...) or super(...) or when call not resolved
-                    if (hasPossibleStaticMember.test(currentClass)) {
-                        Expression result = new StaticMethodCallExpression(currentClass, methodName, args);
+            if (isInnerClass(currentClass)) {
+                if (inSpecialConstructorCall && !foundInstanceMethod) {
+                    // check for reference to outer class method in this(...) or super(...)
+                    if (currentClass.getOuterClass().hasPossibleMethod(name, args)) {
+                        object = new PropertyExpression(new ClassExpression(currentClass.getOuterClass()), new ConstantExpression("this"));
+                    } else if (hasPossibleStaticMember.test(currentClass.getOuterClass())) {
+                        Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), name, args);
                         result.setSourcePosition(mce);
                         return result;
                     }
+                }
+            } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !name.equals("call"))) {
+                // check for reference to static method in this(...) or super(...) or when call not resolved
+                if (hasPossibleStaticMember.test(currentClass)) {
+                    Expression result = new StaticMethodCallExpression(currentClass, name, args);
+                    result.setSourcePosition(mce);
+                    return result;
                 }
             }
         }

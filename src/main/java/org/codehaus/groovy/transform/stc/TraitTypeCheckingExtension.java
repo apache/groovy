@@ -72,10 +72,10 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
         if (call instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) call;
-            ClassNode dynamic = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
-            if (dynamic != null) return Collections.singletonList(makeDynamic(call, dynamic));
+            ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (returnType != null) return Collections.singletonList(makeDynamic(call, returnType));
 
-            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854: trait: this.m($static$self)
+            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854, GROOVY-10312: trait: this.m($static$self)
             ClassNode targetClass = isClassClassNodeWrappingConcreteType(receiver)? receiver.getGenericsTypes()[0].getType(): receiver;
             if (Traits.isTrait(targetClass.getOuterClass()) && argumentTypes.length > 0 && ClassHelper.isClassType(argumentTypes[0])) {
                 Parameter[] signature = java.util.Arrays.stream(argumentTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new);
