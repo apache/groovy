@@ -61,7 +61,7 @@ rootProject.allprojects {
 //                }
                 htmlOutputFile = layout.buildDirectory.file("reports/${taskName}.html").get().asFile
 //                uncomment below if also wanting text only output
-//                txtOutputFile = layout.buildDirectory.file("${thisProject.buildDir}/reports/${taskName}.txt").get().asFile
+//                txtOutputFile = layout.buildDirectory.file("reports/${taskName}.txt").get().asFile
             }
             checkBinaryCompatibility.configure {
                 dependsOn(singleProjectCheck)
