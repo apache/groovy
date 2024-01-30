@@ -31,6 +31,8 @@ import org.codehaus.groovy.transform.trait.Traits;
 import java.util.Collections;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
 /**
@@ -42,6 +44,17 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
     public TraitTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
+    }
+
+    private static Parameter[] asParameters(final ClassNode traitClass, final ClassNode[] argumentTypes) {
+        ClassNode classType = makeClassSafe0(ClassHelper.CLASS_Type, traitClass.asGenericsType());
+
+        Parameter[] parameters = new Parameter[1 + argumentTypes.length];
+        parameters[0] = new Parameter(classType,"self");
+        for (int i = 1; i < parameters.length; i += 1) {
+            parameters[i] = new Parameter(argumentTypes[i - 1], "p" + i);
+        }
+        return parameters;
     }
 
     @Override
@@ -72,20 +85,19 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
         if (call instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) call;
-            ClassNode dynamic = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
-            if (dynamic != null) return Collections.singletonList(makeDynamic(call, dynamic));
+            ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
+            if (returnType != null) return Collections.singletonList(makeDynamic(call, returnType));
 
-            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854: trait: this.m($static$self)
+            // GROOVY-7191, GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-10106, GROOVY-10312: STC: (this or $self or $static$self).m()
             ClassNode targetClass = isClassClassNodeWrappingConcreteType(receiver)? receiver.getGenericsTypes()[0].getType(): receiver;
-            if (Traits.isTrait(targetClass.getOuterClass()) && argumentTypes.length > 0 && ClassHelper.isClassType(argumentTypes[0])) {
-                Parameter[] signature = java.util.Arrays.stream(argumentTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new);
-                List<ClassNode> traits = Traits.findTraits(targetClass.getOuterClass());
-                traits.remove(targetClass.getOuterClass());
-
-                for (ClassNode trait : traits) { // check super trait for static method
-                    MethodNode method = Traits.findHelper(trait).getDeclaredMethod(name, signature);
-                    if (method != null && method.isStatic()) {
-                        return Collections.singletonList(makeDynamic(call, method.getReturnType()));
+            if (targetClass.getName().endsWith("$Trait$Helper")) targetClass = targetClass.getOuterClass();
+            if (Traits.isTrait(targetClass)) {
+                for (ClassNode trait : Traits.findTraits(targetClass)) {
+                    for (MethodNode method : Traits.findHelper(trait).getDeclaredMethods(name)) {
+                        if (method.isPublic() && method.isStatic() && parametersCompatible(
+                                asParameters(trait, argumentTypes), method.getParameters())) {
+                            return Collections.singletonList(makeDynamic(call, method.getReturnType()));
+                        }
                     }
                 }
             }

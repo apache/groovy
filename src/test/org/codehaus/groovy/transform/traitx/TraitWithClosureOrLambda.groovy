@@ -308,8 +308,8 @@ final class TraitWithClosureOrLambda {
 
     // GROOVY-10106
     @Test
-    void testCallStaticOrPrivateMethodInTraitFieldInitializer() {
-        ['private', 'static', 'private static'].each { mods ->
+    void testCallPrivateMethodInTraitFieldInitializer() {
+        for (mods in ['private', 'static', 'private static']) {
             assertScript shell, """
                 class C {
                     String s
@@ -339,7 +339,7 @@ final class TraitWithClosureOrLambda {
                 }
             }
         '''
-        assert err.message.contains('Cannot find matching method T$Trait$Helper#config')
+        assert err =~ /Cannot find matching method [\w\$]+#config/
     }
 
     // GROOVY-11265

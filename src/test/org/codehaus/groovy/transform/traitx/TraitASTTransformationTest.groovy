@@ -1031,6 +1031,42 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-7909
+    @Test
+    void testTraitSuperMethodOrder() {
+        for (mode in ['','@TypeChecked','@CompileStatic']) {
+            assertScript shell, """
+                $mode
+                trait Three implements One, Two {
+                    def m() {
+                        return [
+                            One.super.m(),
+                            Two.super.m(),
+                            'Three'
+                        ].join(' ')
+                    }
+                }
+                $mode
+                trait One {
+                    def m() { 'One' }
+                }
+                $mode
+                trait Two {
+                    def m() { 'Two' }
+                }
+                $mode
+                class Four implements Three {
+                    def test() {
+                        Three.super.m()
+                    }
+                }
+                def four = new Four()
+                def out = four.test()
+                assert out == 'One Two Three'
+            """
+        }
+    }
+
     // GROOVY-8587
     @Test @NotYetImplemented
     void testTraitSuperSuperMethod() {
@@ -1689,6 +1725,26 @@ final class TraitASTTransformationTest {
                 def c = new C()
                 assert c.foo() == 1
                 assert c.foo() == 2
+            """
+
+            // GROOVY-7214
+            assertScript shell, """
+                $mode
+                trait T {
+                    private static int x = 0
+                    private static initX() {
+                        x = 42
+                    }
+                    static getValue() {
+                        initX()
+                        x
+                    }
+                }
+                $mode
+                class C implements T {
+                }
+
+                assert C.value == 42
             """
         }
     }
@@ -3157,40 +3213,33 @@ final class TraitASTTransformationTest {
         assertScript shell, '''
             trait Configurable<ConfigObject> {
                 ConfigObject configObject
-
                 void configure(Closure<Void> configSpec) {
                     configSpec.resolveStrategy = Closure.DELEGATE_FIRST
                     configSpec.delegate = configObject
                     configSpec()
                 }
             }
-            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
+            def <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
                 Configurable<T> obj = (Configurable<T>) clazz.newInstance()
                 obj.configure(configSpec)
                 obj
             }
-
-
             class Module implements Configurable<ModuleConfig> {
                 String value
-
-                Module(){
+                Module() {
                     configObject = new ModuleConfig()
                 }
-
-
                 @Override
                 void configure(Closure<Void> configSpec) {
                     Configurable.super.configure(configSpec)
                     value = "${configObject.name}-${configObject.version}"
                 }
             }
-
-
             class ModuleConfig {
                 String name
                 String version
             }
+
             def module = configure(Module) {
                 name = 'test'
                 version = '1.0'
@@ -3255,19 +3304,48 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-11302
+    @Test
+    void testTraitWithMethodGenericsSTC() {
+        assertScript shell, '''
+            trait T {
+                def <X> X m(x) {x}
+                @TypeChecked
+                def test() {
+                    Number n = 1
+                    n = this.<Number>m(n)
+                }
+            }
+            class C implements T {
+            }
+            new C().test()
+        '''
+
+        def err = shouldFail shell, '''
+            trait U {
+                def <X> X m(x) {x}
+                @TypeChecked
+                def test() {
+                    Number n = 1
+                    n = this.<Object>m(n)
+                }
+            }
+        '''
+        assert err =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
+    }
+
     // GROOVY-8281
     @Test
     void testFinalFieldsDependency() {
         assertScript shell, '''
-            trait MyTrait {
+            trait T {
                 private final String foo = 'foo'
                 private final String foobar = foo.toUpperCase() + 'bar'
-                int foobarSize() { foobar.size() }
+                int test() { foobar.size() }
             }
-
-            class Baz implements MyTrait {}
-
-            assert new Baz().foobarSize() == 6
+            class C implements T {
+            }
+            assert new C().test() == 6
         '''
     }
 
@@ -3504,7 +3582,7 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-8272
-    @Test @NotYetImplemented
+    @Test
     void testTraitAccessToInheritedStaticMethods() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
             assertScript shell, """
@@ -3530,7 +3608,7 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-10312
-    @Test @NotYetImplemented
+    @Test
     void testTraitAccessToInheritedStaticMethods2() {
         for (mode in ['','@TypeChecked','@CompileStatic']) {
             assertScript shell, """
