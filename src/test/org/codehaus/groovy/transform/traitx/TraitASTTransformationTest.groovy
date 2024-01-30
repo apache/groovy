@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.NotYetImplemented
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -626,7 +625,7 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-7984
-    @Test @NotYetImplemented
+    @Test
     void testRuntimeWithTraitsDGM2() {
         assertScript shell, '''
             class C {

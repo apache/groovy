@@ -123,7 +123,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 checkMethodsForWeakerAccess(node);
                 checkMethodsForOverridingFinal(node);
                 checkNoAbstractMethodsNonAbstractClass(node);
-                checkClassExtendsAllSelfTypes(node);
+                checkClassExtendsOrImplementsSelfTypes(node);
                 checkNoStaticMethodWithSameSignatureAsNonStatic(node);
                 checkGenericsUsage(node, node.getUnresolvedInterfaces());
                 checkGenericsUsage(node, node.getUnresolvedSuperClass());
@@ -234,22 +234,16 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void checkClassExtendsAllSelfTypes(final ClassNode node) {
+    private void checkClassExtendsOrImplementsSelfTypes(final ClassNode node) {
         if (node.isInterface()) return;
         for (ClassNode anInterface : GeneralUtils.getInterfacesAndSuperInterfaces(node)) {
             if (Traits.isTrait(anInterface)) {
-                LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
-                for (ClassNode type : Traits.collectSelfTypes(anInterface, selfTypes, true, false)) {
-                    if (type.isInterface() && !node.implementsInterface(type)) {
-                        addError(getDescription(node)
-                            + " implements " + getDescription(anInterface)
-                            + " but does not implement self type " + getDescription(type),
-                            anInterface);
-                    } else if (!type.isInterface() && !node.isDerivedFrom(type)) {
-                        addError(getDescription(node)
-                            + " implements " + getDescription(anInterface)
-                            + " but does not extend self type " + getDescription(type),
-                            anInterface);
+                for (ClassNode selfType : Traits.collectSelfTypes(anInterface, new LinkedHashSet<>(), true, false)) {
+                    ClassNode superClass;
+                    if (selfType.isInterface() ? !node.implementsInterface(selfType) : !(node.isDerivedFrom(selfType)
+                            || ((superClass = node.getNodeMetaData("super.class")) != null && superClass.isDerivedFrom(selfType)))) {
+                        addError(getDescription(node) + " implements " + getDescription(anInterface) + " but does not " +
+                            (selfType.isInterface() ? "implement" : "extend") + " self type " + getDescription(selfType), anInterface);
                     }
                 }
             }

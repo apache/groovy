@@ -186,12 +186,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
         this.hasWildcard = wildcard;
 
+        this.delegateClass = delegateClass;
         Class<?> fixedSuperClass = adjustSuperClass(superClass, interfaces);
         // if we have to delegate to another object, generate the appropriate delegate field
         // and collect the name of the methods for which delegation is active
         this.generateDelegateField = delegateClass != null;
         this.objectDelegateMethods = generateDelegateField ? createDelegateMethodList(fixedSuperClass, delegateClass, interfaces) : Collections.emptySet();
-        this.delegateClass = delegateClass;
 
         // a proxy is supposed to be a concrete class, so it cannot extend an interface.
         // If the provided superclass is an interface, then we replace the superclass with Object
@@ -240,6 +240,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
             ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(ClassNode.EMPTY_ARRAY), null);
+            if (delegateClass != null) cn.putNodeMetaData("super.class", ClassHelper.make(delegateClass)); // GROOVY-7984
             CompilationUnit cu = new CompilationUnit(innerLoader);
             CompilerConfiguration config = new CompilerConfiguration();
             SourceUnit su = new SourceUnit(name + "wrapper", "", config, innerLoader, new ErrorCollector(config));
