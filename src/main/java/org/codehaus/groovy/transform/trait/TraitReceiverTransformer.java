@@ -301,6 +301,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         // this.m(x) --> ($self or $static$self).m(x)
         MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
+        newCall.setGenericsTypes(call.getGenericsTypes()); // GROOVY-11302: this.<T>m(x)
         newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
         newCall.setSafe(inClosure ? call.isSafe() : false);
         newCall.setSpreadSafe(call.isSpreadSafe());

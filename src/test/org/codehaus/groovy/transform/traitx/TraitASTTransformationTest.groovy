@@ -3175,40 +3175,33 @@ final class TraitASTTransformationTest {
         assertScript shell, '''
             trait Configurable<ConfigObject> {
                 ConfigObject configObject
-
                 void configure(Closure<Void> configSpec) {
                     configSpec.resolveStrategy = Closure.DELEGATE_FIRST
                     configSpec.delegate = configObject
                     configSpec()
                 }
             }
-            public <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
+            def <T,U extends Configurable<T>> U configure(Class<U> clazz, @DelegatesTo(type="T") Closure configSpec) {
                 Configurable<T> obj = (Configurable<T>) clazz.newInstance()
                 obj.configure(configSpec)
                 obj
             }
-
-
             class Module implements Configurable<ModuleConfig> {
                 String value
-
-                Module(){
+                Module() {
                     configObject = new ModuleConfig()
                 }
-
-
                 @Override
                 void configure(Closure<Void> configSpec) {
                     Configurable.super.configure(configSpec)
                     value = "${configObject.name}-${configObject.version}"
                 }
             }
-
-
             class ModuleConfig {
                 String name
                 String version
             }
+
             def module = configure(Module) {
                 name = 'test'
                 version = '1.0'
@@ -3273,19 +3266,48 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-11302
+    @Test
+    void testTraitWithMethodGenericsSTC() {
+        assertScript shell, '''
+            trait T {
+                def <X> X m(x) {x}
+                @TypeChecked
+                def test() {
+                    Number n = 1
+                    n = this.<Number>m(n)
+                }
+            }
+            class C implements T {
+            }
+            new C().test()
+        '''
+
+        def err = shouldFail shell, '''
+            trait U {
+                def <X> X m(x) {x}
+                @TypeChecked
+                def test() {
+                    Number n = 1
+                    n = this.<Object>m(n)
+                }
+            }
+        '''
+        assert err =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
+    }
+
     // GROOVY-8281
     @Test
     void testFinalFieldsDependency() {
         assertScript shell, '''
-            trait MyTrait {
+            trait T {
                 private final String foo = 'foo'
                 private final String foobar = foo.toUpperCase() + 'bar'
-                int foobarSize() { foobar.size() }
+                int test() { foobar.size() }
             }
-
-            class Baz implements MyTrait {}
-
-            assert new Baz().foobarSize() == 6
+            class C implements T {
+            }
+            assert new C().test() == 6
         '''
     }
 
