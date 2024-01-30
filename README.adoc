@@ -107,8 +107,8 @@ As mentioned in the previous paragraph, if you download the source distribution
 you need to bootstrap Gradle. This isn't needed if you clone from the GitHub repo.
 
 Each version of Groovy is built and tested using a specific version of Gradle.
-That version is specified by the `gradle_version` property defined in the `gradle.properties`
-file within the root directory. Luckily you shouldn't need to know that version and,
+That version is defined in the `gradle/wrapper/gradle-wrapper.properties` file.
+Luckily you shouldn't need to know that version and,
 after bootstrapping, you should use the `gradlew` command which will ensure the
 correct version is always used.
 

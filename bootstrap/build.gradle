@@ -24,10 +24,6 @@ file("$projectDir/../gradle.properties").withInputStream {
 
 defaultTasks 'bootstrap'
 
-tasks.withType(Wrapper).configureEach {
-    gradleVersion = props.gradle_version
-}
-
 tasks.register('bootstrap') {
     dependsOn 'wrapper'
     doLast {
