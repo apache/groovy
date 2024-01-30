@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.NotYetImplemented
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
@@ -616,6 +617,35 @@ final class TraitASTTransformationTest {
     @Test
     void testRuntimeWithTraitsDGM() {
         assertScript shell, '''
+            class C { }
+            trait T { }
+            def c = new C()
+            def t = c.withTraits(T)
+            def u = t.withTraits(T) // shouldn't fail
+        '''
+    }
+
+    // GROOVY-7984
+    @Test @NotYetImplemented
+    void testRuntimeWithTraitsDGM2() {
+        assertScript shell, '''
+            class C {
+                def m() { 'C' }
+            }
+            @SelfType(C)
+            trait T {
+                def x() { m() }
+            }
+
+            def c = new C()
+            def t = c.withTraits(T) // 'T$TraitAdapter' implements trait 'T' but does not extend self type class 'C'
+            assert t.x() == 'C'
+        '''
+    }
+
+    @Test
+    void testRuntimeWithTraitsDGM3() {
+        assertScript shell, '''
             trait Flying {
                 String fly() {
                     "I'm flying!"
@@ -777,17 +807,6 @@ final class TraitASTTransformationTest {
             }
             exec()
             '''
-    }
-
-    @Test
-    void testProxyGenerationShouldNotFail() {
-        assertScript shell, '''
-            trait T { }
-            class C { }
-            def o = new C()
-            def t = o.withTraits(T)
-            def u = t.withTraits(T) // shouldn't fail
-        '''
     }
 
     @Test
