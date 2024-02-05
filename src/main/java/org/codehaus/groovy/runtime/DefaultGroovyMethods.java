@@ -8561,6 +8561,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.leftShift(self, operand);
     }
 
+    /**
+     * Implementation of the left shift operator for BitSets,
+     * returning a new BitSet and leaving the original unchanged.
+     * The {@code intValue()} is taken for the shift distance for non-integer operands.
+     *
+     * @param self    a BitSet
+     * @param operand the shift distance by which to shift the BitSet left
+     * @return the resulting BitSet
+     * @since 5.0.0
+     */
+    public static BitSet leftShift(BitSet self, Number operand) {
+        BitSet result = new BitSet(self.size());
+        final int limit = self.size() - 1;
+        self.stream().forEach(i -> {
+            if (i < limit)
+                result.set(i + operand.intValue());
+        });
+        return result;
+    }
+
     //--------------------------------------------------------------------------
     // max
 
@@ -11397,6 +11417,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.rightShift(self, operand);
     }
 
+    /**
+     * Implementation of the right shift operator for BitSets,
+     * returning a new BitSet and leaving the original unchanged.
+     * The {@code intValue()} is taken for the shift distance for non-integer operands.
+     *
+     * @param self    a BitSet
+     * @param operand the shift distance by which to right shift the BitSet
+     * @return the resulting BitSet
+     * @since 5.0.0
+     */
+    public static BitSet rightShift(BitSet self, Number operand) {
+        boolean carry = self.get(self.size() - 1);
+        BitSet result = self.get(operand.intValue(), Math.max(operand.intValue(), self.length()));
+        result.set(self.size() - 1, carry);
+        return result;
+    }
+
     //--------------------------------------------------------------------------
     // rightShiftUnsigned
 
@@ -11412,6 +11449,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Number rightShiftUnsigned(Number self, Number operand) {
         return NumberMath.rightShiftUnsigned(self, operand);
     }
+
+    /**
+     * Implementation of the right shift (unsigned) operator for BitSets,
+     * returning a new BitSet and leaving the original unchanged.
+     * The {@code intValue()} is taken for the shift distance for non-integer operands.
+     *
+     * @param self    a BitSet
+     * @param operand the shift distance by which to right shift (unsigned) the BitSet
+     * @return the resulting BitSet
+     * @since 5.0.0
+     */
+    public static BitSet rightShiftUnsigned(BitSet self, Number operand) {
+        return self.get(operand.intValue(), Math.max(operand.intValue(), self.length()));
+    }
+
 
     //--------------------------------------------------------------------------
     // round

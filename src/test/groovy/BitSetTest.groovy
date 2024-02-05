@@ -162,6 +162,24 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse b, 3
     }
 
+    void testLeftShift() {
+        def testCases = [
+            [1, -12L],
+            [3, 271],
+            [1, (Long.MAX_VALUE/2 - 10).longValue()],
+            [1, (Long.MAX_VALUE/2 + 10).longValue()]
+        ]
+        testCases.each { int operand, long value ->
+            def a = BitSet.valueOf(value)
+            def b = BitSet.valueOf(value << operand)
+            def c = BitSet.valueOf(value >> operand)
+            def d = BitSet.valueOf(value >>> operand)
+            assert b == a << operand
+            assert c == a >> operand
+            assert d == a >>> operand
+        }
+    }
+
     private assertBitTrue(bitset, index) {
         assertTrue  'index ' + index + ' should have been true',  bitset[index]
     }
