@@ -49,4 +49,13 @@ class DirectMethodCallTest extends AbstractBytecodeTestCase {
           ])
       }
   }
+
+  //GROOVY-11309
+  void testNewArrayListForEmptyListExpression() {
+      assert compile (method:"run", """
+          def emptyListExpr = []
+      """).hasSequence([
+          "INVOKESPECIAL java/util/ArrayList.<init> ()V"
+      ])
+  }
 }
