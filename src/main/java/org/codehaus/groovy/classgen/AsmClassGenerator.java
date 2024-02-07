@@ -259,6 +259,8 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
+    private static final ClassNode ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
+
     private final Map<String,ClassNode> referencedClasses = new HashMap<>();
     private boolean passingParams;
 
@@ -1936,6 +1938,13 @@ public class AsmClassGenerator extends ClassGenerator {
         OperandStack operandStack = controller.getOperandStack();
         if (!containsSpreadExpression) {
             MethodVisitor mv = controller.getMethodVisitor();
+            if (size == 0) { // GROOVY-11309
+                mv.visitTypeInsn(NEW, "java/util/ArrayList");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
+                operandStack.push(ARRAYLIST_CLASSNODE);
+                return;
+            }
             BytecodeHelper.pushConstant(mv, size);
             mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
             int maxInit = 1000;
