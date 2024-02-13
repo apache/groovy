@@ -14580,10 +14580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> Collection<T> unique(Collection<T> self, boolean mutate) {
-        Collection<T> answer = null;
-        if (mutate || (self != null && self.size() > 1)) {
-            answer = uniqueItems(self);
-        }
+        Collection<T> answer = uniqueItems(self);
         if (mutate) {
             self.clear();
             self.addAll(answer);
