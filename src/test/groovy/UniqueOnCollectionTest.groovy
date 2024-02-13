@@ -112,4 +112,22 @@ class UniqueOnCollectionTest extends GroovyTestCase {
         assert orig == [1, 3, 2, 3]
         assert uniq == [1, 3, 2]
     }
+
+    /** GROOVY-11308 */
+    void testNonMutatingEmpty() {
+        def it = []
+        def uniq = it.unique( false )
+        assert uniq !== it : "Must be a different instance to preserve documented behavior"
+        assert uniq == []
+        assert it == []
+    }
+
+    /** GROOVY-11308 */
+    void testNonMutatingSingleElement() {
+        def it = [1]
+        def uniq = it.unique( false )
+        assert uniq !== it : "Must be a different instance to preserve documented behavior"
+        assert uniq == [1]
+        assert it == [1]
+    }
 }
