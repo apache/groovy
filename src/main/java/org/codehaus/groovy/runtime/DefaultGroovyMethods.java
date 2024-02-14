@@ -14575,13 +14575,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self a collection
-     * @param mutate false will cause a new list containing unique items from the collection to be created, true will mutate collections in place
-     * @return the now modified collection
+     * @param mutate false will return a new collection containing the unique items from the collection, true will mutate collections in place and return the original collection
+     * @return a collection with unique elements
      * @since 1.8.1
      */
     public static <T> Collection<T> unique(Collection<T> self, boolean mutate) {
         Objects.requireNonNull(self);
-        if (!mutate && self.size() <= 1) {
+        if (mutate && self.size() <= 1) {
             return self;
         }
         Collection<T> answer = uniqueItems(self);
