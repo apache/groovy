@@ -84,4 +84,4 @@ include::_design-pattern-visitor.adoc[leveloffset=+2]
  * _Discusses Visitor, Builder and other Patterns._
 . Brad Appleton (1999). http://www.bradapp.com/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
  * _One of the most frequently used patterns by many software engineers!_
-. _Design Patterns in Dynamic Languages_ by Neil Ford. Houston Java User’s Group. Examples in Groovy and Ruby. http://www.oracle.com/technetwork/server-storage/ts-4961-159222.pdf
+. _Design Patterns in Dynamic Languages_ by Neil Ford. https://github.com/nealford/presentations/blob/master/Design%20Patterns%20in%20Dynamic%20Languages%20(Neal%20Ford).pdf[Design Patterns in Dynamic Languages].

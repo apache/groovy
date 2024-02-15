@@ -47,7 +47,7 @@ include::../test/json/JsonTest.groovy[tags=parse_text,indent=0]
 ----
 
 Notice the result is a plain map and can be handled like a normal Groovy object instance. `JsonSlurper` parses the
-given JSON as defined by the http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf[ECMA-404 JSON Interchange Standard]
+given JSON as defined by the https://ecma-international.org/publications-and-standards/standards/ecma-404/[ECMA-404 JSON Interchange Standard]
 plus support for JavaScript comments and dates.
 
 In addition to maps `JsonSlurper` supports JSON arrays which are converted to lists.
