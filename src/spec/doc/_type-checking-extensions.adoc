@@ -1113,7 +1113,7 @@ https://github.com/apache/groovy/blob/master/src/test/groovy/transform/stc/TypeC
 class which is linked to
 https://github.com/apache/groovy/tree/master/src/test-resources/groovy/transform/stc[various extension scripts].
 
-An example of a complex type checking extension can be found in the link:markup-template-engine.html[Markup Template Engine]
+An example of a complex type checking extension can be found in the link:templating.html#_the_markuptemplateengine[Markup Template Engine]
 source code: this template engine relies on a type checking extension and AST transformations to transform templates into
 fully statically compiled code. Sources for this can be found
 https://github.com/apache/groovy/tree/master/subprojects/groovy-templates/src/main/groovy/groovy/text/markup[here].

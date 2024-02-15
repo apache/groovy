@@ -33,7 +33,7 @@ Many IDEs and text editors support the Groovy programming language.
 |https://github.com/textmate/groovy.tmbundle[TextMate]|Yes|No|No
 |http://www.vim.org/[vim]|Yes|No|No
 |http://www.ultraedit.com/[UltraEdit]|Yes|No|No
-|https://www.slickedit.com/products/slickedit/419-the-most-powerful-groovy-editor-in-the-world/[SlickEdit]|Yes|No|No
+|https://www.slickedit.com/[SlickEdit]|Yes|No|No
 |https://editrocket.com/features/groovy_editor.html[EditRocket]|Yes|No|No
 |https://code.visualstudio.com/[VSCode]|Yes|No|https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-groovy-lint[Yes]
 |===============================================================

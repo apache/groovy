@@ -116,7 +116,7 @@ sudo port install groovy
 
 ==== Homebrew
 
-If you're on macOS and have https://mxcl.github.com/homebrew[Homebrew] installed, you can run:
+If you're on macOS and have https://brew.sh/[Homebrew] installed, you can run:
 
 [source,shell]
 ----
