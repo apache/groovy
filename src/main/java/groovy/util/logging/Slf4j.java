@@ -50,7 +50,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
  * log.name(exp)
  * </pre>is mapped to
  * <pre>
- * if (log.isNameLoggable() {
+ * if (log.isNameEnabled() {
  *    log.name(exp)
  * }</pre>
  * Here name is a place holder for info, debug, warning, error, etc.
