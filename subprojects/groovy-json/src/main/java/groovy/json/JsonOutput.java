@@ -156,17 +156,29 @@ public class JsonOutput {
     /**
      * Pretty print a JSON payload.
      *
-     * @param jsonPayload
+     * @param jsonPayload a JSON payload
      * @return a pretty representation of JSON payload.
      */
     public static String prettyPrint(String jsonPayload) {
+        return prettyPrint(jsonPayload, false);
+    }
+
+    /**
+     * Pretty print a JSON payload.
+     *
+     * @param jsonPayload a JSON payload
+     * @param disableUnicodeEscaping whether to disable unicode escaping
+     * @return a pretty representation of JSON payload.
+     * @since 4.0.19
+     */
+    public static String prettyPrint(String jsonPayload, boolean disableUnicodeEscaping) {
         int indentSize = 0;
         // Just a guess that the pretty view will take 20 percent more than original.
         final CharBuf output = CharBuf.create((int) (jsonPayload.length() * 1.2));
 
         JsonLexer lexer = new JsonLexer(new StringReader(jsonPayload));
         // Will store already created indents.
-        Map<Integer, char[]> indentCache = new HashMap<Integer, char[]>();
+        Map<Integer, char[]> indentCache = new HashMap<>();
         while (lexer.hasNext()) {
             JsonToken token = lexer.next();
             switch (token.getType()) {
@@ -209,8 +221,8 @@ public class JsonOutput {
                 case STRING:
                     String textStr = token.getText();
                     String textWithoutQuotes = textStr.substring(1, textStr.length() - 1);
-                    if (textWithoutQuotes.length() > 0) {
-                        output.addJsonEscapedString(textWithoutQuotes);
+                    if (!textWithoutQuotes.isEmpty()) {
+                        output.addJsonEscapedString(textWithoutQuotes, disableUnicodeEscaping);
                     } else {
                         output.addQuoted(Chr.array());
                     }
@@ -225,7 +237,7 @@ public class JsonOutput {
     }
 
     /**
-     * Creates new indent if it not exists in the indent cache.
+     * Creates a new indent if it doesn't exist in the indent cache.
      *
      * @return indent with the specified size.
      */
@@ -254,7 +266,7 @@ public class JsonOutput {
      * Represents unescaped JSON
      */
     public static class JsonUnescaped {
-        private CharSequence text;
+        private final CharSequence text;
 
         public JsonUnescaped(CharSequence text) {
             this.text = text;
