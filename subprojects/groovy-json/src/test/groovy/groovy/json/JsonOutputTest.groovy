@@ -315,6 +315,22 @@ final class JsonOutputTest {
     }
 
     @Test
+    void testPrettyPrintUnicodeEscapeVariants() {
+        def map = [name: "Järry"]
+        def json = JsonOutput.toJson(map)
+        // with escaping
+        assert JsonOutput.prettyPrint(json) == '''\
+            {
+                "name": "J\\u00e4rry"
+            }'''.stripIndent()
+        // with escaping disabled
+        assert JsonOutput.prettyPrint(json, true) == '''\
+            {
+                "name": "Järry"
+            }'''.stripIndent()
+    }
+
+    @Test
     void testSerializePogos() {
         def city = new JsonCity("Paris", [
                 new JsonDistrict(1, [
