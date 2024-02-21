@@ -44,7 +44,7 @@ jobs:
         timeout-minutes: 60
 
   additional:
-    if: github.event_name == 'push'
+    #if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +63,7 @@ jobs:
         run: ./gradlew test
         timeout-minutes: 60
   ea:
-    if: github.event_name == 'push'
+    #if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
