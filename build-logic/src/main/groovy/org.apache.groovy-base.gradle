@@ -276,6 +276,12 @@ tasks.withType(Checkstyle).configureEach {
     }
 }
 
+configurations.checkstyle {
+    resolutionStrategy.capabilitiesResolution.withCapability("com.google.collections:google-collections") {
+        select("com.google.guava:guava:0")
+    }
+}
+
 // Groovy doesn't publish the regular jars: it publishes
 // the repackaged jars, which is why we can't use the
 // default publication, and need to create our own
