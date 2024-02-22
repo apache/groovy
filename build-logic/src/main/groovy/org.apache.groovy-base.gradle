@@ -276,6 +276,7 @@ tasks.withType(Checkstyle).configureEach {
     }
 }
 
+// remove below if checkstyle fix up their dependency metadata to no longer have conflicts
 configurations.checkstyle {
     resolutionStrategy.capabilitiesResolution.withCapability("com.google.collections:google-collections") {
         select("com.google.guava:guava:0")
