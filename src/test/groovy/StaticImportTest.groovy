@@ -162,6 +162,26 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         '''
     }
 
+    // GROOVY-11323
+    void testStaticImportAndInterfaceDefaultMethod() {
+        assertScript '''import static Bar.*
+            interface Foo {
+                default m() { 'Foo' }
+            }
+            class Bar {
+                static  m() { 'Bar' }
+            }
+
+            class Baz implements Foo {
+                void test() {
+                    assert m() == 'Foo'
+                }
+            }
+
+            new Baz().test()
+        '''
+    }
+
     void testStaticImportProperty() {
         for (imports in ['import static Foo.getX; import static Foo.setX', 'import static Foo.*']) {
             assertScript """$imports
