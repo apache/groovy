@@ -1441,4 +1441,20 @@ final class MethodReferenceTest {
             assert bars.stream().map(Bar::name).map(String::toLowerCase).toList() == ['a', 'b']
         '''
     }
+
+    @Test // GROOVY-11301
+    void testInnerClassPrivateMethodReference() {
+        assertScript shell, '''
+            class C {
+                static class D {
+                    private static String m() { 'D' }
+                }
+                @CompileStatic
+                static main(args) {
+                    Supplier<String> str = D::m
+                    assert str.get() == 'D'
+                }
+            }
+        '''
+    }
 }
