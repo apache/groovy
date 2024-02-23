@@ -94,14 +94,15 @@ final class NestHostTests {
                 }
             }
         '''
-//X
+
         types.init().each { type ->
             assert type.nestHost.name == 'C'
+            if (Runtime.version().feature() >= 15)
             assert type.nestMembers*.name.sort() == ['C', 'C$D', 'C$_closure1', /* TODO: 'C$D$_closure1'*/]
         }
         types.last().with { type -> // TODO
             assert type.nestHost.name == 'C$D$_closure1'
-            assert type.nestMembers*.name.sort() == ['C$D$_closure1']
+            if (Runtime.version().feature() >= 15) assert type.nestMembers*.name.sort() == ['C$D$_closure1']
         }
     }
 }
