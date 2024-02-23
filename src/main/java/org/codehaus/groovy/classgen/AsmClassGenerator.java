@@ -330,10 +330,13 @@ public class AsmClassGenerator extends ClassGenerator {
             if (classNode instanceof InnerClassNode && !(classNode instanceof InterfaceHelperClassNode)) {
                 makeInnerClassEntry(classNode); // GROOVY-4649, et al.
 
+                ClassNode nestHost = controller.getOutermostClass(); // GROOVY-10687
+                classVisitor.visitNestHost(BytecodeHelper.getClassInternalName(nestHost));
+
                 MethodNode enclosingMethod = classNode.getEnclosingMethod();
                 if (enclosingMethod != null) {
                     classVisitor.visitOuterClass(
-                            BytecodeHelper.getClassInternalName(classNode.getOuterClass().getName()),
+                            BytecodeHelper.getClassInternalName(classNode.getOuterClass()),
                             enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
                 }
             }
@@ -375,7 +378,10 @@ public class AsmClassGenerator extends ClassGenerator {
                     createSyntheticStaticFields();
                 }
             }
-
+            // GROOVY-10687
+            if (classNode.getOuterClass() == null && classNode.getInnerClasses().hasNext()) {
+                makeNestMatesEntries(classNode);
+            }
             // GROOVY-4649, GROOVY-6750, GROOVY-6808
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
@@ -444,6 +450,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int modifiers = adjustedClassModifiersForInnerClassTable(innerClass);
         classVisitor.visitInnerClass(innerClassInternalName, outerClassInternalName, innerClassName, modifiers);
+    }
+
+    private void makeNestMatesEntries(final ClassNode classNode) {
+        for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
+            ClassNode innerClass = it.next();
+            classVisitor.visitNestMember(BytecodeHelper.getClassInternalName(innerClass));
+            makeNestMatesEntries(innerClass);
+        }
     }
 
     /*
