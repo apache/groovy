@@ -1444,7 +1444,7 @@ final class MethodReferenceTest {
 
     @Test // GROOVY-11301
     void testInnerClassPrivateMethodReference() {
-        assertScript shell, '''
+        def script = '''
             class C {
                 static class D {
                     private static String m() { 'D' }
@@ -1456,5 +1456,10 @@ final class MethodReferenceTest {
                 }
             }
         '''
+        if (Runtime.version().feature() < 15) {
+            shouldFail(shell, IllegalAccessError, script)
+        } else {
+            assertScript(shell, script)
+        }
     }
 }
