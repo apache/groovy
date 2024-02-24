@@ -19,7 +19,7 @@
 package groovy.sql;
 
 import groovy.lang.GroovyObjectSupport;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.sql.SQLException;
@@ -116,7 +116,7 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         if (batchCount != lastResult.length) {
             log.warning("Problem executing batch - expected result length of " + batchCount + " but got " + lastResult.length);
         } else if (foundError) {
-            log.warning("Problem executing batch - at least one result failed in: " + DefaultGroovyMethods.toList(lastResult));
+            log.warning("Problem executing batch - at least one result failed in: " + ArrayGroovyMethods.toList(lastResult));
         } else {
             log.fine("Successfully executed batch with " + lastResult.length + " command(s)");
         }
