@@ -154,8 +154,8 @@ final class LambdaTest {
 
     @Test
     void testComparator() {
-        assertScript '''
-            @groovy.transform.CompileStatic class T {
+        assertScript imports + '''
+            @CompileStatic class T {
                 Comparator<Integer> c = (Integer a, Integer b) -> Integer.compare(a, b)
             }
             def t = new T()
@@ -165,8 +165,8 @@ final class LambdaTest {
 
     @Test // GROOVY-10372
     void testComparator2() {
-        def err = shouldFail '''
-            @groovy.transform.CompileStatic class T {
+        def err = shouldFail imports + '''
+            @CompileStatic class T {
                 Comparator<Integer> c = (int a, String b) -> 42
             }
         '''
@@ -175,9 +175,8 @@ final class LambdaTest {
 
     @Test // GROOVY-9977
     void testComparator3() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class T {
+        assertScript imports + '''
+            @CompileStatic class T {
                 Comparator<Integer> c = (a, b) -> Integer.compare(a, b)
 
                 void m1() {
@@ -204,6 +203,45 @@ final class LambdaTest {
                 assert coerce.compare(0,0) == 0
             }
             test()
+        '''
+    }
+
+    @Test
+    void testCollectors1() {
+        for (spec in ['', '<String,String,String>']) {
+            assertScript imports + """
+                @CompileStatic f() {
+                    def set = ['a', 'b', 'c'] as Set<String>
+                    def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e))
+                }
+                assert f() == [a: 'a', b: 'b', c: 'c']
+            """
+        }
+    }
+
+    @Test
+    void testCollectors2() {
+        for (spec in ['', '<String,String,String>']) {
+            assertScript imports + """
+                @CompileStatic f() {
+                    def set = ['a', 'b', 'c'] as Set<String>
+                    def map = set.stream().collect(Collectors.${spec}toMap(e -> e, e -> e, (v, w) -> w))
+                }
+                assert f() == [a: 'a', b: 'b', c: 'c']
+            """
+        }
+    }
+
+    @Test // GROOVY-11304
+    void testCollectors3() {
+        assertScript imports + '''
+            @CompileStatic f() {
+                List<String> list = ['a', 'b', 'c']
+                Map<String, Integer> map = list.stream().collect(
+                    Collectors.toMap(Function.identity(), (k) -> 1, (v, w) -> v + w)
+                )
+            }
+            assert f() == [a: 1, b: 1, c: 1]
         '''
     }
 
@@ -1837,6 +1875,21 @@ final class LambdaTest {
                 java.util.function.Function<String, String> lower = String::toLowerCase
                 assert lower.toString().contains('$$Lambda$')
             }
+        '''
+    }
+
+    @Test // GROOVY-9770
+    void testLambdaClassIsntSynthetic() {
+        assertScript imports + '''
+            class Foo {
+                @CompileStatic bar(String arg) {
+                    Function<String, String> fun = (String s) -> s.toUpperCase()
+                    fun.apply(arg)
+                }
+            }
+
+            assert new Foo().bar('hello') == 'HELLO'
+            assert this.class.classLoader.loadClass('Foo$_bar_lambda1').modifiers == 17 // public(1) + final(16)
         '''
     }
 }
