@@ -62,7 +62,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -108,13 +108,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             expression.setSerializable(true);
         }
 
-        ClassNode enclosingClass = controller.getClassNode();
-        int modifiers = ACC_FINAL | ACC_PUBLIC;
-        if (enclosingClass.isInterface()) modifiers |= ACC_STATIC;
-        ClassNode lambdaClass = getOrAddLambdaClass(expression, modifiers, abstractMethod);
+        ClassNode lambdaClass = getOrAddLambdaClass(expression, abstractMethod);
         MethodNode lambdaMethod = lambdaClass.getMethods("doCall").get(0);
 
-        boolean canDeserialize = enclosingClass.hasMethod(createDeserializeLambdaMethodName(lambdaClass), createDeserializeLambdaMethodParams());
+        boolean canDeserialize = controller.getClassNode().hasMethod(createDeserializeLambdaMethodName(lambdaClass), createDeserializeLambdaMethodParams());
         if (!canDeserialize) {
             if (expression.isSerializable()) {
                 addDeserializeLambdaMethodForEachLambdaExpression(expression, lambdaClass);
@@ -127,7 +124,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitInvokeDynamicInsn(
                 abstractMethod.getName(),
                 createAbstractMethodDesc(functionalType.redirect(), lambdaClass),
-                createBootstrapMethod(enclosingClass.isInterface(), expression.isSerializable()),
+                createBootstrapMethod(controller.getClassNode().isInterface(), expression.isSerializable()),
                 createBootstrapMethodArguments(createMethodDescriptor(abstractMethod), H_INVOKEVIRTUAL, lambdaClass, lambdaMethod, lambdaMethod.getParameters(), expression.isSerializable())
         );
         if (expression.isSerializable()) {
@@ -206,9 +203,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return BytecodeHelper.getMethodDescriptor(functionalInterface, lambdaSharedVariables.toArray(Parameter.EMPTY_ARRAY));
     }
 
-    private ClassNode getOrAddLambdaClass(final LambdaExpression expression, final int modifiers, final MethodNode abstractMethod) {
+    private ClassNode getOrAddLambdaClass(final LambdaExpression expression, final MethodNode abstractMethod) {
         return lambdaClassNodes.computeIfAbsent(expression, key -> {
-            ClassNode lambdaClass = createLambdaClass(expression, modifiers, abstractMethod);
+            ClassNode lambdaClass = createLambdaClass(expression, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
@@ -225,10 +222,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     protected ClassNode createLambdaClass(final LambdaExpression expression, final int modifiers, final MethodNode abstractMethod) {
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode outermostClass = controller.getOutermostClass();
-        boolean staticMethodOrInStaticClass = (controller.isStaticMethod() || enclosingClass.isStaticClass());
 
         InnerClassNode lambdaClass = new InnerClassNode(enclosingClass, nextLambdaClassName(), modifiers, CLOSURE_TYPE.getPlainNodeReference());
-      //lambdaClass.setUsingGenerics(outermostClass.isUsingGenerics());
         lambdaClass.setEnclosingMethod(controller.getMethodNode());
         lambdaClass.setSourcePosition(expression);
         lambdaClass.setSynthetic(true);
@@ -236,7 +231,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         if (controller.isInScriptBody()) {
             lambdaClass.setScriptBody(true);
         }
-        if (staticMethodOrInStaticClass) {
+        if (controller.isStaticMethod()
+                || enclosingClass.isStaticClass()) {
             lambdaClass.setStaticClass(true);
         }
         if (expression.isSerializable()) {
@@ -244,9 +240,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
 
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, lambdaClass, abstractMethod);
-        Parameter[] localVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
 
+        Parameter[] localVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
         addFieldsAndGettersForLocalVariables(lambdaClass, localVariableParameters);
+
         ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, lambdaClass, createBlockStatementForConstructor(expression, outermostClass, enclosingClass));
         constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
 
@@ -282,17 +279,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     private Parameter[] createParametersWithExactType(final LambdaExpression expression, final MethodNode abstractMethod) {
         Parameter[] targetParameters = abstractMethod.getParameters();
-        Parameter[] parameters = getParametersSafe(expression);
-        for (int i = 0, n = parameters.length; i < n; i += 1) {
-            Parameter targetParameter = targetParameters[i];
-            Parameter parameter = parameters[i];
-            ClassNode inferredType = parameter.getNodeMetaData(INFERRED_TYPE);
-            if (inferredType != null) {
-                ClassNode type = convertParameterType(targetParameter.getType(), parameter.getType(), inferredType);
-                parameter.setType(type);
-            }
+        Parameter[] lambdaParameters = getParametersSafe(expression);
+        ClassNode[] lambdaParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+        for (int i = 0, n = lambdaParameters.length; i < n; i += 1) {
+            ClassNode resolvedType = convertParameterType(targetParameters[i].getType(), lambdaParameters[i].getType(), lambdaParamTypes[i]);
+            lambdaParameters[i].setType(resolvedType);
         }
-        return parameters;
+        return lambdaParameters;
     }
 
     private void addDeserializeLambdaMethod() {
