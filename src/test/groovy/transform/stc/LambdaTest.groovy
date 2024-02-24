@@ -253,6 +253,18 @@ final class LambdaTest {
         }
     }
 
+    @Test // GROOVY-11304
+    void testCollectors3() {
+        assertScript shell, '''
+            List<String> list = ['a', 'b', 'c']
+            Map<String, Integer> map = list.stream().collect(
+                Collectors.toMap(Function.identity(), (k) -> 1, (v, w) -> v + w)
+            )
+
+            assert map == [a: 1, b: 1, c: 1]
+        '''
+    }
+
     @Test
     void testFunctionWithLocalVariables() {
         assertScript shell, '''
@@ -1756,6 +1768,21 @@ final class LambdaTest {
                 Function<String, String> lower = String::toLowerCase
                 assert lower.toString().contains('$$Lambda')
             }
+        '''
+    }
+
+    @Test // GROOVY-9770
+    void testLambdaClassIsntSynthetic() {
+        assertScript shell, '''
+            class Foo {
+                def bar(String arg) {
+                    Function<String, String> fun = (String s) -> s.toUpperCase()
+                    fun.apply(arg)
+                }
+            }
+
+            assert new Foo().bar('hello') == 'HELLO'
+            assert this.class.classLoader.loadClass('Foo$_bar_lambda1').modifiers == 17 // public(1) + final(16)
         '''
     }
 }
