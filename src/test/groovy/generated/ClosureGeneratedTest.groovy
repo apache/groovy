@@ -20,21 +20,37 @@ package groovy.generated
 
 import org.junit.Test
 
-class ClosureGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> classUnderTest = parseClass('''class ClassUnderTest {
-           Closure<String> c(String arg) {
-               def closureVar = {
-                   arg
-               }
-               closureVar
-           }
-       }''')
+final class ClosureGeneratedTest extends AbstractGeneratedAstTestCase {
 
     @Test
-    void test_captured_argument_is_annotated() {
+    void 'captured argument accessor is annotated'() {
+        def classUnderTest = parseClass '''
+            class C {
+                Closure<String> m(String string) {
+                    return { -> string }
+                }
+            }
+        '''
         def objectUnderTest = classUnderTest.newInstance()
-        Closure<String> cls = classUnderTest.getMethod('c', String)
-            .invoke(objectUnderTest, 'var')
-        assertMethodIsAnnotated(cls.class, 'getArg')
+        Closure<String> cls = classUnderTest.getMethod('m', String).invoke(objectUnderTest, 'value')
+
+        assertMethodIsAnnotated/*AsGenerated*/(cls.class, 'getString')
+    }
+
+    // GROOVY-11313
+    @Test
+    void 'no accessor for captured argument with reserved name'() {
+        def classUnderTest = parseClass '''
+            class C {
+                Closure<String> m(String owner) {
+                    return { -> owner }
+                }
+            }
+        '''
+        def objectUnderTest = classUnderTest.newInstance()
+        Closure<String> cls = classUnderTest.getMethod('m', String).invoke(objectUnderTest, 'value')
+
+        def getter = cls.getClass().getMethod('getOwner')
+        assert getter.declaringClass == Closure.class
     }
 }

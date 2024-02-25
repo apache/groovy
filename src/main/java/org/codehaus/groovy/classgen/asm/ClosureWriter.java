@@ -317,15 +317,28 @@ public class ClosureWriter {
             paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
             paramField.setHolder(true);
 
-            MethodNode getMethod = closureClass.addMethod(
-                getGetterName(paramName),
-                ACC_PUBLIC,
-                paramType.getPlainNodeReference(),
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                returnS(fieldX(paramField))
-            );
-            markAsGenerated(closureClass, getMethod, true);
+            switch (paramName) {
+              case "class":
+              case "owner":
+              case "delegate":
+              case "directive":
+              case "metaClass":
+              case "thisObject":
+              case "parameterTypes":
+              case "resolveStrategy":
+              case "maximumNumberOfParameters":
+                  break; // GROOVY-11313
+              default:
+                MethodNode getMethod = closureClass.addMethod(
+                    getGetterName(paramName),
+                    ACC_PUBLIC,
+                    paramType.getPlainNodeReference(),
+                    Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
+                    returnS(fieldX(paramField))
+                );
+                markAsGenerated(closureClass, getMethod, true);
+            }
         }
     }
 
