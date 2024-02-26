@@ -156,7 +156,6 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Logger;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -177,13 +176,23 @@ import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
-    private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
-    private static final Integer ONE = 1;
-    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
+    public static final Class[] DGM_LIKE_CLASSES = {
+            DefaultGroovyMethods.class,
+            EncodingGroovyMethods.class,
+            IOGroovyMethods.class,
+            ProcessGroovyMethods.class,
+            ResourceGroovyMethods.class,
+            SocketGroovyMethods.class,
+            StringGroovyMethods.class//,
+            // Below are registered as module extension classes
+//            DateUtilExtensions.class,
+//            DateTimeStaticExtensions.class,
+//            DateTimeExtensions.class,
+//            SqlExtensions.class,
+//            SwingGroovyMethods.class,
+//            XmlExtensions.class,
+//            NioExtensions.class
+    };
     public static final Class[] ADDITIONAL_CLASSES = {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
@@ -209,25 +218,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             DoubleArrayPutAtMetaMethod.class,
     };
 
-    public static final Class[] DGM_LIKE_CLASSES = new Class[]{
-            DefaultGroovyMethods.class,
-            EncodingGroovyMethods.class,
-            IOGroovyMethods.class,
-            ProcessGroovyMethods.class,
-            ResourceGroovyMethods.class,
-            SocketGroovyMethods.class,
-            StringGroovyMethods.class//,
-            // Below are registered as module extension classes
-//            DateUtilExtensions.class,
-//            DateTimeStaticExtensions.class,
-//            DateTimeExtensions.class,
-//            SqlExtensions.class,
-//            SwingGroovyMethods.class,
-//            XmlExtensions.class,
-//            NioExtensions.class
-    };
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-    private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
+    private static final BigInteger BI_INT_MAX  = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger BI_INT_MIN  = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(   Long.MAX_VALUE);
+    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(   Long.MIN_VALUE);
+
+    private static final NumberAwareComparator<Comparable<?>> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -549,7 +545,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             try {
                 props.put(mp.getName(), mp.getValue());
             } catch (Exception e) {
-                LOG.throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
+                java.util.logging.Logger.getLogger(DefaultGroovyMethods.class.getName())
+                    .throwing(self.getClass().getName(), "getProperty(" + mp.getName() + ")", e);
             }
         }
         return props;
@@ -788,7 +785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Closure self) {
         Object owner = getClosureOwner(self);
-        InvokerHelper.invokeMethod(owner, "println", EMPTY_OBJECT_ARRAY);
+        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
     }
 
     private static Object getClosureOwner(Closure cls) {
@@ -1149,13 +1146,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def someList = []
      * switch (someList) {
      *   case List:
-     *     assert true, 'is a list'
+     *     assert true : 'is a list'
      *     break
      *   case Map:
-     *     assert false, 'is not a Map'
+     *     assert false : 'is not a Map'
      *     break
      *   default:
-     *     assert false, 'should never get here'
+     *     assert false : 'should never get here'
      *     break
      * }
      * </pre>
@@ -1166,13 +1163,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * switch (ArrayList) {
      *   case List:
-     *     assert true, 'is a list'
+     *     assert true : 'is a list'
      *     break
      *   case Map:
-     *     assert false, 'is not a Map'
+     *     assert false : 'is not a Map'
      *     break
      *   default:
-     *     assert false, 'should never get here'
+     *     assert false : 'should never get here'
      *     break
      * }
      * </pre>
@@ -3532,7 +3529,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <T> List<T> collect(Object self, Closure<T> transform) {
-        return (List<T>) collect(self, new ArrayList<>(), transform);
+        return collect(self, new ArrayList<>(), transform);
     }
 
     /**
@@ -3545,7 +3542,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T> Collection<T> collect(Object self, Collection<T> collector, Closure<? extends T> transform) {
+    public static <T, C extends Collection<T>> C collect(Object self, C collector, Closure<? extends T> transform) {
         return collect(InvokerHelper.asIterator(self), collector, transform);
     }
 
@@ -3558,7 +3555,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
-    public static <S,T> List<T> collect(S[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
+    public static <E, T> List<T> collect(E[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
         return collect(new ArrayIterator<>(self), transform);
     }
 
@@ -3578,7 +3575,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.5.0
      */
-    public static <S,T> Collection<T> collect(S[] self, Collection<T> collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
+    public static <E, T, C extends Collection<T>> C collect(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
         return collect(new ArrayIterator<>(self), collector, transform);
     }
 
@@ -3591,8 +3588,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
-    public static <S,T> List<T> collect(Iterator<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
-        return (List<T>) collect(self, new ArrayList<>(), transform);
+    public static <E, T> List<T> collect(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        return collect(self, new ArrayList<>(), transform);
     }
 
     /**
@@ -3605,7 +3602,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.5.0
      */
-    public static <S,T> Collection<T> collect(Iterator<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+    public static <E, T, C extends Collection<T>> C collect(Iterator<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
         while (self.hasNext()) {
             collector.add(transform.call(self.next()));
         }
@@ -3639,7 +3636,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     @Deprecated
-    public static <S,T> List<T> collect(Collection<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+    public static <E, T> List<T> collect(Collection<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
     }
 
@@ -3656,9 +3653,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     @Deprecated
-    public static <S,T> Collection<T> collect(Collection<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
-        for (S item : self) {
-            collector.add(transform.call(item));
+    public static <E, T> Collection<T> collect(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        for (E element : self) {
+            collector.add(transform.call(element));
             if (transform.getDirective() == Closure.DONE) {
                 break;
             }
@@ -3691,7 +3688,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
-    public static <S,T> List<T> collect(Iterable<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+    public static <E, T> List<T> collect(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return collect(self.iterator(), transform);
     }
 
@@ -3706,9 +3703,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.5.0
      */
-    public static <S,T> Collection<T> collect(Iterable<S> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
-        for (S item : self) {
-            collector.add(transform.call(item));
+    public static <E, T, C extends Collection<T>> C collect(Iterable<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        for (E element : self) {
+            collector.add(transform.call(element));
             if (transform.getDirective() == Closure.DONE) {
                 break;
             }
@@ -3741,7 +3738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static List collectNested(Collection self, Closure transform) {
-        return (List) collectNested((Iterable) self, new ArrayList(self.size()), transform);
+        return collectNested((Iterable) self, new ArrayList(self.size()), transform);
     }
 
     /**
@@ -3758,7 +3755,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static List collectNested(Iterable self, Closure transform) {
-        return (List) collectNested(self, new ArrayList(), transform);
+        return collectNested(self, new ArrayList(), transform);
     }
 
     /**
@@ -3798,13 +3795,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.2.0
      */
-    public static Collection collectNested(Iterable self, Collection collector, Closure transform) {
-        for (Object item : self) {
-            if (item instanceof Collection) {
-                Collection c = (Collection) item;
+    public static <C extends Collection> C collectNested(Iterable self, C collector, Closure transform) {
+        for (Object element : self) {
+            if (element instanceof Collection) {
+                Collection c = (Collection) element;
                 collector.add(collectNested((Iterable)c, createSimilarCollection(collector, c.size()), transform));
             } else {
-                collector.add(transform.call(item));
+                collector.add(transform.call(element));
             }
             if (transform.getDirective() == Closure.DONE) {
                 break;
@@ -3819,7 +3816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @Deprecated
-    public static <T,E> List<T> collectMany(Collection<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, E> List<T> collectMany(Collection<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable)self, projection);
     }
 
@@ -3829,7 +3826,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.5
      */
     @Deprecated
-    public static <T,E> Collection<T> collectMany(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, E> Collection<T> collectMany(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable)self, collector, projection);
     }
 
@@ -3857,8 +3854,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(java.lang.Iterable, groovy.lang.Closure)
      * @since 2.2.0
      */
-    public static <T,E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
-        return (List<T>) collectMany(self, new ArrayList<>(), projection);
+    public static <T, E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
     }
 
     /**
@@ -3866,13 +3863,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * collections adding them into the <code>collector</code>.
      * <p>
      * <pre class="groovyTestCase">
-     * def animals = ['CAT', 'DOG', 'ELEPHANT'] as Set
-     * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() {@code >} 3 ? [] : [it.toLowerCase()] }
+     * def animals = ['CAT', 'DOG', 'ELEPHANT']
+     * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() &gt; 3 ? [] : [it.toLowerCase()] }
      * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
      *
      * def nums = 1..5
      * def origPlusIncrements = nums.collectMany([] as Set){ [it, it+1] }
      * assert origPlusIncrements.size() == nums.size() + 1
+     *
+     * &#64;groovy.transform.TypeChecked void test() {
+     *   LinkedHashSet&lt;String> lhs = ['abc','def'].collectMany(new LinkedHashSet&lt;&gt;()){ it.iterator().collect() }
+     *   assert lhs == ['a','b','c','d','e','f'] as Set&lt;String>
+     * }
+     * test()
      * </pre>
      *
      * @param self       an Iterable
@@ -3881,7 +3884,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) into it
      * @since 2.2.0
      */
-    public static <T,E> Collection<T> collectMany(Iterable<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, E, C extends Collection<T>> C collectMany(Iterable<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(self.iterator(), collector, projection);
     }
 
@@ -3901,7 +3904,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.8
      */
-    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, K, V, C extends Collection<T>> C collectMany(Map<K, V> self, C collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             Collection items = callClosureForMapEntry(projection, entry);
             if (items != null && !items.isEmpty()) collector.addAll(items);
@@ -3924,12 +3927,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a list created from the projected collections concatenated (flattened) together
      * @since 1.8.8
      */
-    public static <T,K,V> List<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
-        return (List<T>) collectMany(self, new ArrayList<>(), projection);
+    public static <T, K, V> List<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
     }
 
     @Deprecated
-    public static <T,K,V> Collection<T> collectMany$$bridge(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, K, V> Collection<T> collectMany$$bridge(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(self, projection);
     }
 
@@ -3948,8 +3951,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Object[], groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T,E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
-        return (List<T>) collectMany(self, new ArrayList<>(), projection);
+    public static <T, E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
     }
 
     /**
@@ -3968,7 +3971,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Object[], groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T,E> Collection<T> collectMany(E[] self, Collection<T> collector, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, E, C extends Collection<T>> C collectMany(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(new ArrayIterable<>(self), collector, projection);
     }
 
@@ -3988,7 +3991,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(Iterator, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T,E> Collection<T> collectMany(Iterator<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+    public static <T, E, C extends Collection<T>> C collectMany(Iterator<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         while (self.hasNext()) {
             E next = self.next();
             Collection items = projection.call(next);
@@ -4012,8 +4015,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectMany(Iterator, Collection, groovy.lang.Closure)
      * @since 1.8.1
      */
-    public static <T,E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
-        return (List<T>) collectMany(self, new ArrayList<>(), projection);
+    public static <T, E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
     }
 
     /**
@@ -4028,7 +4031,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
-    public static <T,K,V> Collection<T> collect(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
+    public static <T, K, V, C extends Collection<T>> C collect(Map<K, V> self, C collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             collector.add(callClosureForMapEntry(transform, entry));
         }
@@ -4046,8 +4049,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant list of transformed values
      * @since 1.0
      */
-    public static <T,K,V> List<T> collect(Map<K,V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
-        return (List<T>) collect(self, new ArrayList<>(self.size()), transform);
+    public static <T, K, V> List<T> collect(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
+        return collect(self, new ArrayList<>(self.size()), transform);
     }
 
     /**
@@ -4876,9 +4879,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.6
      */
     public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
-        Collection<T> answer = createSimilarCollection(self);
-        Iterator<T> iter = self.iterator();
-        return findAll(closure, answer, iter);
+        return findAll(closure, createSimilarCollection(self), self.iterator());
     }
 
     /**
@@ -4890,12 +4891,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      an array
      * @param condition a closure condition
-     * @return a Collection of matching values
+     * @return a List of matching values
      * @since 2.0
      */
-    public static <T> Collection<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
-        Collection<T> answer = new ArrayList<>();
-        return findAll(condition, answer, new ArrayIterator<>(self));
+    public static <T> List<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findAll(condition, new ArrayList<>(), new ArrayIterator<>(self));
+    }
+
+    @Deprecated
+    public static <T> Collection<T> findAll$$bridge(T[] self, @ClosureParams(FirstParam.Component.class) Closure condition) {
+        return findAll(self, condition);
     }
 
     /**
@@ -4962,12 +4967,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an array
-     * @return a collection of the truthy values
+     * @return a List of the truthy values
      * @see Closure#IDENTITY
      * @since 2.0
      */
-    public static <T> Collection<T> findAll(T[] self) {
+    public static <T> List<T> findAll(T[] self) {
         return findAll(self, Closure.IDENTITY);
+    }
+
+    @Deprecated
+    public static <T> Collection<T> findAll$$bridge(T[] self) {
+        return findAll(self);
     }
 
     /**
@@ -4978,10 +4988,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the values found
      * @since 1.6.0
      */
-    public static Collection findAll(Object self, Closure closure) {
-        List answer = new ArrayList();
-        Iterator iter = InvokerHelper.asIterator(self);
-        return findAll(closure, answer, iter);
+    public static List findAll(Object self, Closure closure) {
+        return findAll(closure, new ArrayList(), InvokerHelper.asIterator(self));
+    }
+
+    @Deprecated
+    public static Collection findAll$$bridge(Object self, Closure closure) {
+        return findAll(self, closure);
     }
 
     /**
@@ -4994,23 +5007,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an Object with an Iterator returning its values
-     * @return a List of the values found
+     * @return a List of the truthy values
      * @since 1.8.1
      * @see Closure#IDENTITY
      */
-    public static Collection findAll(Object self) {
+    public static List findAll(Object self) {
         return findAll(self, Closure.IDENTITY);
     }
 
-    private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<? extends T> iter) {
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+    @Deprecated
+    public static Collection findAll$$bridge(Object self) {
+        return findAll(self);
+    }
+
+    private static <T, C extends Collection<T>> C findAll(Closure closure, C collector, Iterator<? extends T> iter) {
+        BooleanClosureWrapper test = new BooleanClosureWrapper(closure);
         while (iter.hasNext()) {
             T value = iter.next();
-            if (bcw.call(value)) {
-                answer.add(value);
+            if (test.call(value)) {
+                collector.add(value);
             }
         }
-        return answer;
+        return collector;
     }
 
     /**
@@ -15806,7 +15824,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number next(Number self) {
-        return NumberNumberPlus.plus(self, ONE);
+        return NumberNumberPlus.plus(self, Integer.valueOf(1));
     }
 
     /**
@@ -15828,7 +15846,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number previous(Number self) {
-        return NumberNumberMinus.minus(self, ONE);
+        return NumberNumberMinus.minus(self, Integer.valueOf(1));
     }
 
     /**
