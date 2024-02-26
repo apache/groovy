@@ -901,11 +901,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this Array transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
+     *
      * <pre class="groovyTestCase">
      * Integer[] nums = [1,2,3]
      * List<Integer> answer = []
      * nums.collect(answer) { it * 2 }
-     * assert [2,4,6] == answer
+     * assert answer == [2,4,6]
      * </pre>
      *
      * @param self      an array
@@ -949,14 +950,16 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this array transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
+     *
      * <pre class="groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
      * // collect letters with index using list style
-     * assert nums.collectEntries { index {@code ->} [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert nums.collectEntries { index -&gt; [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
      * // collect letters with index using map style
-     * assert nums.collectEntries { index {@code ->} [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert nums.collectEntries { index -&gt; [(index): letters[index]] } == [0:'a', 1:'b', 2:'c']
      * </pre>
+     *
      * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
      * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
      * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
@@ -975,14 +978,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this array transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
+     *
      * <pre class="groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
      * // collect letters with index
-     * assert nums.collectEntries( [:] ) { index {@code ->} [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
-     * assert nums.collectEntries( [4:'d'] ) { index {@code ->}
-     *     [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
+     * assert nums.collectEntries( [:] ) { index -&gt; [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
+     * assert nums.collectEntries( [4:'d'] ) { index -&gt; [(index+1): letters[index]] } == [1:'a', 2:'b', 3:'c', 4:'d']
      * </pre>
+     *
      * Note: When using the list-style of result, the behavior is '<code>def (key, value) = listResultFromClosure</code>'.
      * While we strongly discourage using a list of size other than 2, Groovy's normal semantics apply in this case;
      * throwing away elements after the second one and using null for the key or value for the case of a shortened list.
@@ -1002,9 +1006,10 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
+     *
      * <pre class="groovyTestCase">
      * String[] languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
-     * def firstLetter = s {@code ->} s[0]
+     * def firstLetter = (s) -&gt; s[0]
      * assert languages.collectEntries(firstLetter, String::size) == [G:6, J:4, K:6, S:5]
      * </pre>
      *
@@ -1435,7 +1440,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static <E> Map<E, Integer> countBy(E[] self) {
-        return countBy(self, Closure.IDENTITY);
+        return countBy(self, (Closure<E>) Closure.IDENTITY);
     }
 
     //-------------------------------------------------------------------------
@@ -3011,9 +3016,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return S flattened Collection
      * @since 1.6.0
      */
-    @SuppressWarnings("unchecked")
     public static List<Object> flatten(Object[] self) {
-        return (List<Object>) DefaultGroovyMethods.flatten(Arrays.asList(self));
+        return DefaultGroovyMethods.flatten(Arrays.asList(self));
     }
 
     //
@@ -3216,7 +3220,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static Collection flattenMany(Object[] self, Closure<?> transform) {
-        return DefaultGroovyMethods.flattenMany(new ArrayIterable(self), transform);
+        return DefaultGroovyMethods.flattenMany(new ArrayIterable<>(self), transform);
     }
 
     //--------------------------------------------------------------------------
