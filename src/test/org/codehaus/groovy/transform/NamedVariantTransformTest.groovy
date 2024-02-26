@@ -329,7 +329,7 @@ final class NamedVariantTransformTest {
     }
 
     @Test // GROOVY-9183, GROOVY-10500
-    void testNamedDelegateWithPropertyDefaults() {
+    void testNamedDelegateWithPropertyDefault() {
         assertScript shell, '''
             class RowMapper {
                 final Settings settings
@@ -369,7 +369,7 @@ final class NamedVariantTransformTest {
     }
 
     @Test // GROOVY-10561
-    void testReferenceToEarlierParam() {
+    void testDefaultArgumentReferenceToParam1() {
         assertScript shell, '''
             @NamedVariant
             String fileInSourceSet(String language = 'java', String extension = language) {
@@ -384,7 +384,7 @@ final class NamedVariantTransformTest {
     }
 
     @Test // GROOVY-10561
-    void testEarlierParamInExpression() {
+    void testDefaultArgumentReferenceToParam2() {
         assertScript shell, '''
             @NamedVariant
             String foo(String a = 'a', String b = a, String c = (String) a) {
@@ -398,8 +398,28 @@ final class NamedVariantTransformTest {
         '''
     }
 
+    @Test // GROOVY-11325
+    void testDefaultArgumentReferenceToParam3() {
+        assertScript shell, '''
+            @NamedVariant
+            String foo(String a = 'a', String b = a + 'b', String c = a + b) {
+                return "$a $b $c"
+            }
+
+            assert foo() == 'a ab aab'
+            assert foo('c') == 'c cb ccb'
+            assert foo('c', 'd') == 'c d cd'
+            assert foo('c', 'd', 'e') == 'c d e'
+
+            assert foo(c: 'c') == 'a ab c'
+            assert foo(a: 'c') == 'c cb ccb'
+            assert foo(a: 'c', b: 'd') == 'c d cd'
+            assert foo(a: 'c', b: 'd', c: 'e') == 'c d e'
+        '''
+    }
+
     @Test // GROOVY-10889
-    void testDefaultValueCastIsRetained() {
+    void testDefaultArgumentCoerceIsPreserved() {
         assertScript shell, '''
             @NamedVariant
             Tuple2<Integer,Set<String>> createSampleData(Integer integer = 0, Set<String> strings = [] as Set) {

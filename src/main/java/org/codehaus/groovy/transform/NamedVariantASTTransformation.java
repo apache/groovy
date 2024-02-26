@@ -30,8 +30,8 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -292,14 +292,16 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     }
 
     private static Expression getDefaultValue(final Expression defaultValue, final Map<Parameter, Expression> seen) {
-        if (defaultValue != null && seen != null) { // GROOVY-10561, GROOVY-10889
-            Expression v = defaultValue;
-            while (v instanceof CastExpression) {
-                v = ((CastExpression) v).getExpression();
-            }
-            if (v instanceof VariableExpression) { // maybe it's a reference to a previous parameter
-                return seen.getOrDefault(((VariableExpression) v).getAccessedVariable(), defaultValue);
-            }
+        if (defaultValue != null && seen != null && !seen.isEmpty()) { // GROOVY-10561, GROOVY-10889, GROOVY-11325
+            ExpressionTransformer variableTransformer = (expression) -> {
+                if (expression instanceof VariableExpression) { // maybe it's a reference to a previous parameter
+                    return seen.getOrDefault(((VariableExpression) expression).getAccessedVariable(), expression);
+                }
+                return expression;
+            };
+            return (defaultValue instanceof VariableExpression
+                    ? variableTransformer.transform(defaultValue)
+                    : defaultValue.transformExpression(variableTransformer));
         }
         return defaultValue;
     }
