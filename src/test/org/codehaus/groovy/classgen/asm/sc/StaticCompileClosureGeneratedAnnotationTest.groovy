@@ -46,7 +46,7 @@ final class StaticCompileClosureGeneratedAnnotationTest {
     }
 
     /**
-     * For closure without params, two annotated {@code call} methods should be generated.
+     * For closure with implicit param, two annotated {@code call} methods should be generated.
      */
     @Test
     void testClosureWithNoParameters() {
@@ -60,16 +60,15 @@ final class StaticCompileClosureGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
-        assert callMethodCollection.size() == 2
-        callMethodCollection.each { Method method ->
+        assert callMethods.size() == 2
+        callMethods.each { Method method ->
             assert method.getAnnotation(Generated)
         }
-        assert callMethodCollection.find { it.getParameterTypes() == new Class[] {} }
-        assert callMethodCollection.find { it.getParameterTypes() == new Class[] {Object} }
+        assert callMethods.find { it.getParameterTypes() == new Class[] {} }
+        assert callMethods.find { it.getParameterTypes() == new Class[] {Object} }
     }
 
     /**
@@ -87,13 +86,12 @@ final class StaticCompileClosureGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
-        assert callMethodCollection.size() == 1
-        assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange}
+        assert callMethods.size() == 1
+        assert callMethods[0].getAnnotation(Generated)
+        assert callMethods[0].getParameterTypes() == new Class[] {IntRange}
     }
 
     /**
@@ -111,12 +109,11 @@ final class StaticCompileClosureGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
-        assert callMethodCollection.size() == 1
-        assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange, Integer}
+        assert callMethods.size() == 1
+        assert callMethods[0].getAnnotation(Generated)
+        assert callMethods[0].getParameterTypes() == new Class[] {IntRange, Integer}
     }
 }

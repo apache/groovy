@@ -23,6 +23,8 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.Test
 
+import java.lang.reflect.Method
+
 /**
  * Verifies if {@link Generated} annotations are added on {@code call} methods of generated closure classes.
  */
@@ -44,10 +46,10 @@ final class ClosureWriterGeneratedAnnotationTest {
     }
 
     /**
-     * For closure without params, no {@code call} methods should be generated.
+     * For closure with implicit param, no {@code call} methods should be generated.
      */
     @Test
-    void testClosureWithNoParameters() {
+    void testClosureWithSingleParameter1() {
         String scriptText = '''
             class MyClass {
                 void myMethod() {
@@ -57,18 +59,39 @@ final class ClosureWriterGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethods = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
         assert callMethods.size() == 0
     }
 
     /**
-     * For closure with single param, a single annotated {@code call} method with corresponding parameter should be generated.
+     * For closure with annotated param, a single annotated {@code call} method with corresponding parameter should be generated.
      */
     @Test
-    void testClosureWithSingleParameter() {
+    void testClosureWithSingleParameter2() {
+        String scriptText = '''
+            class MyClass {
+                void myMethod() {
+                    [1..3].each { @Deprecated i ->
+                        println i
+                    }
+                }
+            }
+        '''
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
+
+        assert callMethods.size() == 1
+        assert callMethods[0].getAnnotation(Generated)
+        assert callMethods[0].getParameterTypes() == new Class[] {Object}
+    }
+
+    /**
+     * For closure with non-object param, a single annotated {@code call} method with corresponding parameter should be generated.
+     */
+    @Test
+    void testClosureWithSingleParameter3() {
         String scriptText = '''
             class MyClass {
                 void myMethod() {
@@ -78,13 +101,12 @@ final class ClosureWriterGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
-        assert callMethodCollection.size() == 1
-        assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {Integer}
+        assert callMethods.size() == 1
+        assert callMethods[0].getAnnotation(Generated)
+        assert callMethods[0].getParameterTypes() == new Class[] {Integer}
     }
 
     /**
@@ -101,12 +123,11 @@ final class ClosureWriterGeneratedAnnotationTest {
                 }
             }
         '''
-        CompilationUnit compilationUnit = compileScript(scriptText)
-        Class myClosureClassCompiled = findGeneratedClosureClasses('MyClass', compilationUnit)[0]
-        Collection callMethodCollection = myClosureClassCompiled.declaredMethods.findAll { it.name == 'call' }
+        Class<?> generatedClosureClass = findGeneratedClosureClasses('MyClass',compileScript(scriptText))[0]
+        Collection<Method> callMethods = generatedClosureClass.declaredMethods.findAll { it.name == 'call' }
 
-        assert callMethodCollection.size() == 1
-        assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange, Integer}
+        assert callMethods.size() == 1
+        assert callMethods[0].getAnnotation(Generated)
+        assert callMethods[0].getParameterTypes() == new Class[] {IntRange, Integer}
     }
 }

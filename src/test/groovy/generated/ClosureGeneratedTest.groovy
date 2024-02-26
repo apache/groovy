@@ -22,20 +22,19 @@ import org.junit.Test
 
 final class ClosureGeneratedTest extends AbstractGeneratedAstTestCase {
 
-    // GROOVY-11313
+    // GROOVY-11311
     @Test
-    void 'no accessor for captured argument with reserved name'() {
+    void 'call method annotated'() {
         def classUnderTest = parseClass '''
             class C {
-                Closure<String> m(String owner) {
-                    return { -> owner }
+                Closure m() {
+                    return { @Deprecated p -> }
                 }
             }
         '''
-        def objectUnderTest = classUnderTest.newInstance()
-        Closure<String> cls = classUnderTest.getMethod('m', String).invoke(objectUnderTest, 'value')
+        Object instance = classUnderTest.newInstance()
+        Closure closure = classUnderTest.getMethod('m').invoke(instance)
 
-        def getter = cls.getClass().getMethod('getOwner')
-        assert getter.declaringClass == Closure.class
+        assertMethodIsAnnotated/*AsGenerated*/(closure.getClass(), 'call', Object)
     }
 }

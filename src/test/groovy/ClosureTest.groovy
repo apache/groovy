@@ -136,17 +136,15 @@ final class ClosureTest {
     @Test
     void testEach() {
         assertScript '''
-            Object[] arr = new Object[1]
-            arr[0] = "1"
-            List list = new ArrayList()
-            list.add(arr)
+            Object[] array = new Object[]{"1"}
+            List<Object[]> list = [array]
 
-            list.each { def obj ->
-                assert obj[0] == "1"
+            list.each { item ->
+                assert item[0] == "1"
             }
 
-            list.each { Object[] obj ->
-                assert obj[0] == "1"
+            list.each { Object[] item ->
+                assert item[0] == "1"
             }
         '''
     }

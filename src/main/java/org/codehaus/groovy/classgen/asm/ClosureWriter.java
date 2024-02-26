@@ -187,6 +187,10 @@ public class ClosureWriter {
         return false;
     }
 
+    private static boolean isNotObjectOrObjectArray(final ClassNode classNode) {
+        return !ClassHelper.isObjectType(classNode) && !ClassHelper.isObjectType(classNode.getComponentType());
+    }
+
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         ClassNode classNode = controller.getClassNode();
         ClassNode rootClass = controller.getOutermostClass();
@@ -222,22 +226,19 @@ public class ClosureWriter {
         answer.setSynthetic(true);
         answer.setUsingGenerics(rootClass.isUsingGenerics());
 
-        MethodNode method = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
-        method.setSourcePosition(expression);
-
-        VariableScope varScope = expression.getVariableScope();
-        if (varScope == null) {
-            throw new RuntimeException(
-                    "Must have a VariableScope by now! for expression: " + expression + " class: " + name);
-        } else {
-            method.setVariableScope(varScope.copy());
+        {
+            MethodNode doCall = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
+            doCall.setSourcePosition(expression);
+            VariableScope varScope = expression.getVariableScope();
+            if (varScope == null) {
+                throw new RuntimeException("Must have a VariableScope by now for expression: " + expression + " class: " + name);
+            } else {
+                doCall.setVariableScope(varScope.copy());
+            }
         }
-        if (parameters.length > 1
-                || (parameters.length == 1
-                    && parameters[0].getType() != null
-                    && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType())
-                    && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType().getComponentType()))) {
-            // let's add a typesafe call method
+
+        if (parameters.length > 1 || (parameters.length == 1 && (isNotObjectOrObjectArray(parameters[0].getType())
+                || !parameters[0].getAnnotations().isEmpty() || !parameters[0].getType().getTypeAnnotations().isEmpty()))) { // GROOVY-11311
             MethodNode call = new MethodNode(
                     "call",
                     ACC_PUBLIC,
@@ -246,16 +247,12 @@ public class ClosureWriter {
                     ClassNode.EMPTY_ARRAY,
                     returnS(callThisX("doCall", args(parameters))));
             addGeneratedMethod(answer, call, true);
-            call.setSourcePosition(expression);
         }
 
-        // let's make the constructor
         BlockStatement block = createBlockStatementForConstructor(expression, rootClass, classNode);
-
-        // let's make fields for variables from outer context
-        addFieldsForLocalVariables(answer, localVariableParams);
-
         addConstructor(expression, localVariableParams, answer, block);
+
+        addFieldsForLocalVariables(answer, localVariableParams);
 
         correctAccessedVariable(answer, expression);
 
