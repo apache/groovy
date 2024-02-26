@@ -85,6 +85,22 @@ public final class ClassNodeTest {
     }
 
     @Test
+    public void testPlainReference() {
+        ClassNode arrayNode = classNode.getPlainNodeReference().makeArray().makeArray();
+        ClassNode plainNode = arrayNode.getPlainNodeReference();
+
+        assertTrue(plainNode.isArray());
+        assertTrue(plainNode.getComponentType().isArray());
+        assertEquals(arrayNode.getComponentType(), plainNode.getComponentType());
+        assertEquals(classNode, plainNode.getComponentType().getComponentType());
+
+        assertEquals(arrayNode.getName(), plainNode.getName());
+        assertEquals(arrayNode.toString(), plainNode.toString());
+        assertEquals(arrayNode.getComponentType().getName(), plainNode.getComponentType().getName());
+        assertEquals(arrayNode.getComponentType().toString(), plainNode.getComponentType().toString());
+    }
+
+    @Test
     public void testTypeAnnotations() {
         var annotation = new AnnotationNode(ClassHelper.make(Deprecated.class));
         // TYPE_USE annotations are recoreded as class annotations, not type annotations
@@ -98,9 +114,9 @@ public final class ClassNodeTest {
 
     @Test
     public void testPermittedSubclasses() throws Exception {
-        assumeTrue(groovy.test.GroovyAssert.isAtLeastJdk("17.0"));
+        assumeTrue(Runtime.version().feature() >= 17);
 
-        Class<?> c = Class.forName("java.lang.constant.ConstantDesc");
+        Class<?>  c  = Class.forName("java.lang.constant.ConstantDesc");
         ClassNode cn = new ClassNode(c);
         assertTrue(!cn.getPermittedSubclasses().isEmpty());
         assertTrue(cn.isSealed());
@@ -109,9 +125,10 @@ public final class ClassNodeTest {
         assertTrue(!cn.getPermittedSubclasses().isEmpty());
         assertTrue(cn.isSealed());
 
-        // some constructors of ClassNode do not trigger the lazy initialization
-//        cn = ClassHelper.make("java.lang.constant.ConstantDesc");
-//        assertTrue(!cn.getPermittedSubclasses().isEmpty());
-//        assertTrue(cn.isSealed());
+        /* some constructors of ClassNode do not trigger the lazy initialization
+        cn = ClassHelper.make("java.lang.constant.ConstantDesc");
+        assertTrue(!cn.getPermittedSubclasses().isEmpty());
+        assertTrue(cn.isSealed());
+        */
     }
 }

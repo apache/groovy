@@ -78,25 +78,6 @@ final class GeneratedAnnotationTest {
         assert !annos.contains('groovy.transform.Generated')
     }
 
-    // GROOVY-9396
-    @Test
-    void testCapturedArgForGeneratedClosureIsAnnotatedWithGenerated() {
-        def closure = evaluate '''
-            class C {
-                Closure<String> m(String string) {
-                    return { ->
-                        string
-                    }
-                }
-            }
-            new C().m('value')
-        '''
-
-        def method = closure.getClass().getMethod('getString')
-        def annos  = method.annotations*.annotationType()*.name
-        assert annos.contains('groovy.transform.Generated')
-    }
-
     // GROOVY-10505
     @Test
     void testTraitComposerMarksGeneratedMethodsForVariablesAsGenerated() {

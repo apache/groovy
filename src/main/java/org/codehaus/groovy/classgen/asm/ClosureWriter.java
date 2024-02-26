@@ -49,15 +49,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -255,8 +252,8 @@ public class ClosureWriter {
         // let's make the constructor
         BlockStatement block = createBlockStatementForConstructor(expression, rootClass, classNode);
 
-        // let's assign all the parameter fields from the outer context
-        addFieldsAndGettersForLocalVariables(answer, localVariableParams);
+        // let's make fields for variables from outer context
+        addFieldsForLocalVariables(answer, localVariableParams);
 
         addConstructor(expression, localVariableParams, answer, block);
 
@@ -303,10 +300,15 @@ public class ClosureWriter {
         return constructorNode;
     }
 
-    protected void addFieldsAndGettersForLocalVariables(final InnerClassNode closureClass, final Parameter[] localVariableParams) {
+    protected void addFieldsForLocalVariables(final InnerClassNode closureClass, final Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
             String     paramName = param.getName();
-            ClassNode  paramType = param.getType();
+            ClassNode  paramType = param.getOriginType();
+            if (ClassHelper.isPrimitiveType(paramType)) {
+                paramType = ClassHelper.getWrapper(paramType);
+            } else {
+                paramType = paramType.getPlainNodeReference();
+            }
 
             VariableExpression initialValue = varX(paramName);
             initialValue.setAccessedVariable(param);
@@ -314,31 +316,8 @@ public class ClosureWriter {
             param.setType(ClassHelper.makeReference());
 
             FieldNode paramField = closureClass.addField(paramName, ACC_PRIVATE | ACC_SYNTHETIC, param.getType(), initialValue);
-            paramField.setOriginType(ClassHelper.getWrapper(param.getOriginType()));
+            paramField.setOriginType(paramType);
             paramField.setHolder(true);
-
-            switch (paramName) {
-              case "class":
-              case "owner":
-              case "delegate":
-              case "directive":
-              case "metaClass":
-              case "thisObject":
-              case "parameterTypes":
-              case "resolveStrategy":
-              case "maximumNumberOfParameters":
-                  break; // GROOVY-11313
-              default:
-                MethodNode getMethod = closureClass.addMethod(
-                    getGetterName(paramName),
-                    ACC_PUBLIC,
-                    paramType.getPlainNodeReference(),
-                    Parameter.EMPTY_ARRAY,
-                    ClassNode.EMPTY_ARRAY,
-                    returnS(fieldX(paramField))
-                );
-                markAsGenerated(closureClass, getMethod, true);
-            }
         }
     }
 

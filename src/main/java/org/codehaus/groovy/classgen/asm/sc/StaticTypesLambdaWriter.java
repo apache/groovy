@@ -242,7 +242,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, lambdaClass, abstractMethod);
 
         Parameter[] localVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
-        addFieldsAndGettersForLocalVariables(lambdaClass, localVariableParameters);
+        addFieldsForLocalVariables(lambdaClass, localVariableParameters);
 
         ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, lambdaClass, createBlockStatementForConstructor(expression, outermostClass, enclosingClass));
         constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
