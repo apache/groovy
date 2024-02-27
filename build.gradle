@@ -143,7 +143,7 @@ dependencies {
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
 
     testRuntimeOnly(project(":")) {
         because "Tests are using Grapes"
