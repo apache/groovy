@@ -378,15 +378,17 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkImplementsAndExtends(final ClassNode node) {
-        ClassNode sn = node.getSuperClass();
-        if (sn != null && sn.isInterface() && !node.isInterface()) {
-            addError("You are not allowed to extend the " + getDescription(sn) + ", use implements instead.", node);
+        if (!node.isInterface()) {
+            ClassNode type = node.getUnresolvedSuperClass();
+            if (type != null && type.isInterface()) {
+                addError("You are not allowed to extend the " + getDescription(type) + ", use implements instead.", node);
+            }
         }
-        for (ClassNode anInterface : node.getInterfaces()) {
-            if (!anInterface.isInterface()) {
-                addError("You are not allowed to implement the " + getDescription(anInterface) + ", use extends instead.", node);
-            } else if (anInterface.isSealed()) {
-                checkSealedParent(node, anInterface);
+        for (ClassNode type : node.getInterfaces()) {
+            if (!type.isInterface()) {
+                addError("You are not allowed to implement the " + getDescription(type) + ", use extends instead.", node);
+            } else if (type.isSealed()) {
+                checkSealedParent(node, type);
             }
         }
     }
