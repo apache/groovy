@@ -27,6 +27,9 @@ final class TraitWithClosureOrLambda {
 
     private final GroovyShell shell = GroovyShell.withConfig {
         ast groovy.transform.CompileStatic
+        imports {
+            star 'groovy.transform'
+        }
     }
 
     @Test
@@ -179,11 +182,12 @@ final class TraitWithClosureOrLambda {
         '''
     }
 
-    // GROOVY-7456,  GROOVY-7797
+    // GROOVY-7456, GROOVY-7797
     @Test
     void testInvokePrivateTraitMethodFromTraitClosure() {
         assertScript shell, '''
             trait T {
+                @CompileDynamic
                 def f() {
                     ['a'].collect { String s -> g(s) }
                 }
@@ -390,7 +394,7 @@ final class TraitWithClosureOrLambda {
     void testInvokeTraitStaticMethodFromTraitClosure() {
         assertScript shell, '''
             trait T {
-                @groovy.transform.CompileDynamic
+                @CompileDynamic
                 static one() {
                     def me = this
                     two('good') + ' ' +

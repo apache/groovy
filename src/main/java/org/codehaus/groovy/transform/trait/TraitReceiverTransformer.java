@@ -52,6 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
@@ -217,7 +218,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                         super.transform(rightExpression)
                 );
                 mce.setImplicitThis(false);
-                mce.setSourcePosition(exp);
+                mce.setSourcePosition(leftExpression instanceof PropertyExpression ? ((PropertyExpression) leftExpression).getProperty() : leftExpression);
                 markDynamicCall(mce, staticField, isStatic);
                 return mce;
             }
@@ -240,7 +241,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         MethodCallExpression mce = callX(receiver, Traits.helperGetterName(fn));
         mce.setImplicitThis(false);
-        mce.setSourcePosition(exp);
+        mce.setSourcePosition(exp instanceof PropertyExpression ? ((PropertyExpression) exp).getProperty() : exp);
         markDynamicCall(mce, fn, isStatic);
         return mce;
     }
@@ -288,9 +289,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 Traits.getSuperTraitMethodName(traitClass, method),
                 superCallArgs
         );
-        newCall.setSourcePosition(call);
-        newCall.setSafe(call.isSafe());
+        newCall.getMethod().setSourcePosition(call.getMethod());
         newCall.setSpreadSafe(call.isSpreadSafe());
+        newCall.setSafe(call.isSafe());
         newCall.setImplicitThis(false);
         return newCall;
     }
@@ -304,9 +305,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             // GROOVY-7191, GROOVY-7213, GROOVY-7214, GROOVY-8282, GROOVY-8854, GROOVY-8859, et al.
             for (MethodNode methodNode : traitClass.getDeclaredMethods(call.getMethodAsString())) {
                 if (methodNode.isPrivate()) {
-                    // this.m(x) --> this.m($self or $static$self or (Class) $self.getClass(), x)
+                    // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class) $self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
-                    MethodCallExpression newCall = callX(thisExpr, method, createArgumentList(selfClassOrObject, arguments));
+                    MethodCallExpression newCall = callX(inClosure ? classX(traitHelperClass) : thisExpr, method, createArgumentList(selfClassOrObject, arguments));
                     newCall.setGenericsTypes(call.getGenericsTypes());
                     newCall.setImplicitThis(call.isImplicitThis());
                     newCall.setSpreadSafe(call.isSpreadSafe());
