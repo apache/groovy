@@ -28,16 +28,14 @@ jobs:
   build:
     strategy:
       fail-fast: true
-      matrix:
-        java: [11]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: 11
-          distribution: adopt
+          distribution: 'adopt'
+          java-version: '11'
       - name: env
         run: env
 
