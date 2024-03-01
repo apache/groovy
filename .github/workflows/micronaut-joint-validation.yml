@@ -25,9 +25,7 @@ jobs:
   build:
     strategy:
       fail-fast: true
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
@@ -45,10 +43,10 @@ jobs:
 
       # Clone Micronaut Repos
       - name: Checkout Micronaut Core
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 4.0.x
+        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 4.4.x
 
       - name: Checkout Micronaut Groovy
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b master
+        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b 4.1.x
 
       - name: Build and install groovy (no docs)
         run: ./gradlew --no-build-cache --no-daemon --no-scan clean install -x asciidoc -x docGDK -x groovydoc -x javadoc -x javadocAll -x groovydocAll
