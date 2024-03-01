@@ -16,45 +16,38 @@
 name: "Grails Joint Validation Build"
 #  GROOVY_2_5_X == Grails 4.0.x
 #  GROOVY_3_0_X == grails master
-#  Groovy master branch does not map to any due to changed package names.
+#  GROOVY_4_0_X/master branches do not currently map to any Grails version.
 on:
   push:
     branches:
       - GROOVY_2_5_X
-      - GROOVY_3_0_X
-  #      - master
   pull_request:
     branches:
       - GROOVY_2_5_X
-      - GROOVY_3_0_X
-#      - master
 jobs:
   build:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest]
         java: [11]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 11
+          distribution: adopt
       - name: env
         run: env
 
       # Select correct Grails branch for this build:
-      - name: Checkout Grails 4.1.x (master)
-        run: cd .. && git clone --depth 1 https://github.com/grails/grails-core.git -b master
-        if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'GROOVY_3_0_X') || github.ref == 'refs/heads/GROOVY_3_0_X' }}
       - name: Checkout Grails 4.0.x (4.0.x)
         run: cd .. && git clone --depth 1 https://github.com/grails/grails-core.git -b 4.0.x
         if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'GROOVY_2_5_X') || github.ref == 'refs/heads/GROOVY_2_5_X' }}
 
       - name: Build and install groovy (no docs)
-        run: ./gradlew clean install -x groovydoc -x javadoc -x javadocAll -x groovydocAll -x asciidoc -x docGDK --no-build-cache --no-scan --no-daemon
+        run: ./gradlew clean install -x groovydoc -x javadoc -x javadocAll -x groovydocAll -x asciidoc -x asciidocAll -x docGDK --no-build-cache --no-scan --no-daemon
         timeout-minutes: 60
 
       - name: Set CI_GROOVY_VERSION for Grails
