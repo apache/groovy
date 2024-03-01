@@ -36,8 +36,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: 15
-          distribution: adopt
+          distribution: 'adopt'
+          java-version: '15'
       - name: env
         run: env
 
