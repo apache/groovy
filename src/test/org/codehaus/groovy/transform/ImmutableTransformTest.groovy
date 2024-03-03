@@ -109,8 +109,9 @@ final class ImmutableTransformTest {
 
     @Test
     void testCloneableFieldNotCloneableObject() {
-        // attempting to access the protected clone() method is illegal from JDK16
-        def expectedException = isAtLeastJdk('16.0') ? IllegalAccessException : CloneNotSupportedException
+        // non-indy bytecode attempts to access the protected clone() method which is illegal from JDK16
+        def indy = System.getProperty('groovy.target.indy')
+        def expectedException = isAtLeastJdk('16.0') && !indy ? IllegalAccessException : CloneNotSupportedException
         shouldFail expectedException, '''
             import groovy.transform.*
             class Dolly {
