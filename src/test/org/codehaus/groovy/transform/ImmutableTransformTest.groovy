@@ -22,6 +22,7 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
@@ -108,7 +109,10 @@ final class ImmutableTransformTest {
 
     @Test
     void testCloneableFieldNotCloneableObject() {
-        shouldFail CloneNotSupportedException, '''import groovy.transform.*
+        // attempting to access the protected clone() method is illegal from JDK16
+        def expectedException = isAtLeastJdk('16.0') ? IllegalAccessException : CloneNotSupportedException
+        shouldFail expectedException, '''
+            import groovy.transform.*
             class Dolly {
                 String name
             }
@@ -125,7 +129,8 @@ final class ImmutableTransformTest {
 
     @Test
     void testImmutableListProp() {
-        def objects = new GroovyShell().evaluate '''import groovy.transform.*
+        def objects = new GroovyShell().evaluate '''
+            import groovy.transform.*
             @Immutable class HasList {
                 char[] letters
                 List   numbers
