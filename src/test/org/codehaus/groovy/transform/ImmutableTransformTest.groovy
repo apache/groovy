@@ -1074,4 +1074,23 @@ final class ImmutableTransformTest {
             assert obj['data'][2L] == 'bar'
         '''
     }
+
+    // GROOVY-11329
+    @Test
+    void testAllPropertiesAndTrait() {
+        assertScript shell, '''
+            import groovy.transform.Immutable
+
+            trait T {
+                String foo
+            }
+
+            @Immutable(allProperties=true)
+            class C implements T {
+                String bar
+            }
+
+            assert new C('bar', 'foo').toString() == 'C(bar, foo)'
+        '''
+    }
 }

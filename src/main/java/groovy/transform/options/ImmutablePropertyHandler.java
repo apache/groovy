@@ -234,7 +234,10 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         get.setImplicitThis(false);
         MethodCallExpression containsKey = callX(varX(map), "containsKey", nameArg);
         containsKey.setImplicitThis(false);
-        fNode.getDeclaringClass().getField(fNode.getName()).setInitialValueExpression(null); // to avoid default initialization
+        // avoid NPE if no declaring class - can be the case for traits
+        if (fNode.getDeclaringClass() != null) {
+            fNode.getDeclaringClass().getField(fNode.getName()).setInitialValueExpression(null); // to avoid default initialization
+        }
         return ifElseS(containsKey, assignStmt, assignInit);
     }
 
