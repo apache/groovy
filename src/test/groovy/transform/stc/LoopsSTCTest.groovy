@@ -252,6 +252,20 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11335
+    void testForInLoopOnCollection() {
+        assertScript '''
+            def whatever(Collection<String> coll) {
+                if (coll instanceof Serializable) {
+                    for (item in coll) {
+                        return item.toLowerCase()
+                    }
+                }
+            }
+            assert whatever(['Works']) == 'works'
+        '''
+    }
+
     // GROOVY-6123
     void testForInLoopOnEnumeration() {
         assertScript '''

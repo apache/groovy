@@ -2067,33 +2067,34 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * @see #inferComponentType
      */
     public static ClassNode inferLoopElementType(final ClassNode collectionType) {
-        ClassNode componentType = collectionType.getComponentType();
-        if (componentType == null) {
-            if (isOrImplements(collectionType, ITERABLE_TYPE)) {
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
-                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+        ClassNode componentType;
+        if (collectionType.isArray()) { // GROOVY-11335
+            componentType = collectionType.getComponentType();
 
-            } else if (isOrImplements(collectionType, MAP_TYPE)) { // GROOVY-6240
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
-                componentType = makeClassSafe0(MAP_ENTRY_TYPE, col.getGenericsTypes());
+        } else if (isOrImplements(collectionType, ITERABLE_TYPE)) {
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
+            componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
 
-            } else if (isOrImplements(collectionType, STREAM_TYPE)) { // GROOVY-10476
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, STREAM_TYPE);
-                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+        } else if (isOrImplements(collectionType, MAP_TYPE)) { // GROOVY-6240
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
+            componentType = makeClassSafe0(MAP_ENTRY_TYPE, col.getGenericsTypes());
 
-            } else if (isOrImplements(collectionType, ENUMERATION_TYPE)) { // GROOVY-6123
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
-                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+        } else if (isOrImplements(collectionType, STREAM_TYPE)) { // GROOVY-10476
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, STREAM_TYPE);
+            componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
 
-            } else if (isOrImplements(collectionType, Iterator_TYPE)) { // GROOVY-10712
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, Iterator_TYPE);
-                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+        } else if (isOrImplements(collectionType, Iterator_TYPE)) { // GROOVY-10712
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, Iterator_TYPE);
+            componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
 
-            } else if (isStringType(collectionType)) {
-                componentType = STRING_TYPE;
-            } else {
-                componentType = OBJECT_TYPE;
-            }
+        } else if (isOrImplements(collectionType, ENUMERATION_TYPE)) { // GROOVY-6123
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
+            componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+
+        } else if (isStringType(collectionType)) {
+            componentType = STRING_TYPE;
+        } else {
+            componentType = OBJECT_TYPE;
         }
         return componentType;
     }
@@ -4678,8 +4679,10 @@ out:                if (mn.size() != 1) {
     }
 
     protected ClassNode inferComponentType(final ClassNode receiverType, final ClassNode subscriptType) {
-        ClassNode componentType = receiverType.getComponentType();
-        if (componentType == null) {
+        ClassNode componentType = null;
+        if (receiverType.isArray()) { // GROOVY-11335
+            componentType = receiverType.getComponentType();
+        } else {
             MethodCallExpression mce;
             if (subscriptType != null) { // GROOVY-5521: check for a suitable "getAt(T)" method
                 mce = callX(varX("#", receiverType), "getAt", varX("selector", subscriptType));
