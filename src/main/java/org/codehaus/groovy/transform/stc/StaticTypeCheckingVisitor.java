@@ -1985,26 +1985,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @see #inferComponentType
      */
     public static ClassNode inferLoopElementType(final ClassNode collectionType) {
-        ClassNode componentType = collectionType.getComponentType();
-        if (componentType == null) {
-            if (implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_TYPE)) {
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
-                componentType = col.getGenericsTypes()[0].getType();
+        ClassNode componentType;
+        if (collectionType.isArray()) { // GROOVY-11335
+            componentType = collectionType.getComponentType();
 
-            } else if (implementsInterfaceOrIsSubclassOf(collectionType, MAP_TYPE)) { // GROOVY-6240
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
-                componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
-                componentType.setGenericsTypes(col.getGenericsTypes());
+        } else if (implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_TYPE)) {
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
+            componentType = col.getGenericsTypes()[0].getType();
 
-            } else if (implementsInterfaceOrIsSubclassOf(collectionType, ENUMERATION_TYPE)) { // GROOVY-6123
-                ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
-                componentType = col.getGenericsTypes()[0].getType();
+        } else if (implementsInterfaceOrIsSubclassOf(collectionType, MAP_TYPE)) { // GROOVY-6240
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
+            componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
+            componentType.setGenericsTypes(col.getGenericsTypes());
 
-            } else if (collectionType.equals(STRING_TYPE)) {
-                componentType = STRING_TYPE;
-            } else {
-                componentType = OBJECT_TYPE;
-            }
+        } else if (implementsInterfaceOrIsSubclassOf(collectionType, ENUMERATION_TYPE)) { // GROOVY-6123
+            ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
+            componentType = col.getGenericsTypes()[0].getType();
+
+        } else if (collectionType.equals(STRING_TYPE)) {
+            componentType = STRING_TYPE;
+        } else {
+            componentType = OBJECT_TYPE;
         }
         return componentType;
     }
@@ -4692,8 +4693,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
-        ClassNode componentType = containerType.getComponentType();
-        if (componentType == null) {
+        ClassNode componentType = null;
+        if (containerType.isArray()) { // GROOVY-11335
+            componentType = containerType.getComponentType();
+        } else {
             // GROOVY-5521: check for "getAt" method
             typeCheckingContext.pushErrorCollector();
             MethodCallExpression vcall = callX(localVarX("_hash_", containerType), "getAt", varX("_index_", indexType));
