@@ -60,9 +60,9 @@ public class MissingMethodException extends GroovyRuntimeException {
                 + "."
                 + method
                 + "() is applicable for argument types: ("
-                + FormatHelper.toTypeString(arguments, 60)
+                + FormatHelper.toTypeString(arguments, 80)
                 + ") values: "
-                + FormatHelper.toArrayString(arguments, 60, true)
+                + FormatHelper.toArrayString(arguments, 80, true)
                 + (type != null ? MethodRankHelper.getMethodSuggestionString(method, type, arguments) : "");
     }
 
