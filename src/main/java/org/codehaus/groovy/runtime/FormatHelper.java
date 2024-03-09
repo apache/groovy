@@ -43,16 +43,17 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.Math.max;
+import static java.util.Arrays.stream;
 
 /**
  * Formatting methods
  */
 public class FormatHelper {
 
+    private FormatHelper() {}
+
     private static final String SQ = "'";
     private static final String DQ = "\"";
-
-    private FormatHelper() {}
 
     private static final Object[] EMPTY_ARGS = {};
 
@@ -319,19 +320,42 @@ public class FormatHelper {
         if (arguments == null) {
             return "null";
         }
-        StringBuilder argBuf = new StringBuilder();
-        for (int i = 0; i < arguments.length; i++) {
-            if (maxSize != -1 && argBuf.length() > maxSize) {
-                argBuf.append("...");
-                break;
-            } else {
-                if (i > 0) {
-                    argBuf.append(", ");
+        if (arguments.length == 0) {
+            return "";
+        }
+        if (maxSize < 0) {
+            return stream(arguments)
+                    .map(arg -> arg != null ? typeName(arg) : "null")
+                    .collect(java.util.stream.Collectors.joining(", "));
+        }
+
+        var plainForm = new StringBuilder();
+        var shortForm = new StringBuilder();
+        for (int i = 0; i < arguments.length; i += 1) {
+            String type = arguments[i] != null ? typeName(arguments[i]) : "null";
+
+            if (plainForm.length() < maxSize) {
+                if (i > 0) plainForm.append(", ");
+                plainForm.append(type);
+            } else if (plainForm.charAt(plainForm.length() - 1) != '.') {
+                plainForm.append("...");
+            }
+
+            if (shortForm.length() < maxSize) {
+                if (i > 0) shortForm.append(", ");
+                String[] tokens = type.split("\\.");
+                for (int j = 0; j < tokens.length - 1; j += 1) {
+                    // GROOVY-11270: reduce "foo.bar.Baz" to "f.b.Baz"
+                    shortForm.appendCodePoint(tokens[j].codePointAt(0)).append('.');
                 }
-                argBuf.append(arguments[i] != null ? typeName(arguments[i]) : "null");
+                shortForm.append(tokens[tokens.length - 1]);
+            } else {
+                shortForm.append("...");
+                break;
             }
         }
-        return argBuf.toString();
+
+        return (plainForm.length() <= maxSize ? plainForm : shortForm).toString();
     }
 
     /**
