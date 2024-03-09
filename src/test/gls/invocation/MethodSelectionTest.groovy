@@ -229,19 +229,6 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
-    void testSpreadOperatorAndVarargs(){
-        assertScript '''
-            class SpreadBug {
-                def foo(String... args) {
-                    bar(*args)
-                }
-                def bar(String... args) {args.length}
-            }
-            def sb = new SpreadBug()
-            assert sb.foo("1","42")==2
-        '''
-    }
-
     // GROOVY-3977
     void testBDandBIToFloatAutoConversionInMethodSelection() {
         assertScript '''

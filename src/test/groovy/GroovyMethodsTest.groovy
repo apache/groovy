@@ -19,16 +19,16 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import org.codehaus.groovy.util.StringUtil
 
 import java.awt.Dimension
 import java.nio.CharBuffer
 import java.util.concurrent.LinkedBlockingQueue
-import org.codehaus.groovy.util.StringUtil
 
 /**
  * Tests various GDK methods
  */
-class GroovyMethodsTest extends GroovyTestCase {
+final class GroovyMethodsTest extends GroovyTestCase {
 
     void testAbs() {
         def absoluteNumberOne = 1
@@ -2357,7 +2357,7 @@ class WackyHashCode {
 }
 
 class Things implements Iterable<String> {
-    Iterator iterator() {
+    Iterator<String> iterator() {
         ["a", "B", "c"].iterator()
     }
 }

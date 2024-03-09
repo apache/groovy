@@ -18,17 +18,21 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
+
+import static org.junit.Assert.assertEquals
 
 /**
- * Test for the spread dot operator "*.".
+ * Tests for the spread dot operator "*.".
  *
  * For an example,
  *          list*.property
  * means
  *          list.collect { it?.property }
  */
-class SpreadDotTest extends GroovyTestCase {
+final class SpreadDotTest {
+
+    @Test
     void testSpreadDot() {
         def m1 = ["a": 1, "b": 2]
         def m2 = ["a": 11, "b": 22]
@@ -59,6 +63,7 @@ class SpreadDotTest extends GroovyTestCase {
         assert x == [m1, m2, m3, null, d, y]
     }
 
+    @Test
     void testSpreadDot2() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
@@ -68,6 +73,7 @@ class SpreadDotTest extends GroovyTestCase {
         assert [a, b]*.fnB() == [a.fnB(), b.fnB()]
     }
 
+    @Test
     void testSpreadDotArrays() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
@@ -86,16 +92,18 @@ class SpreadDotTest extends GroovyTestCase {
         assert pets*.length() == nums
     }
 
-    void testSpreadDotOnArrays2() {
+    @Test
+    void testSpreadDotArrays2() {
         def books = [Book1, Book2, Book3] as Object[]
 
-        books*.metaClass*.foo = { "Hello, ${delegate.class.name}" }
+        books*.metaClass*.foo = { "Hello, ${delegate.class.simpleName}".toString() }
 
-        assertEquals "Hello, groovy.Book1", new Book1().foo()
-        assertEquals "Hello, groovy.Book2", new Book2().foo()
-        assertEquals "Hello, groovy.Book3", new Book3().foo()
+        assertEquals("Hello, Book1", new Book1().foo())
+        assertEquals("Hello, Book2", new Book2().foo())
+        assertEquals("Hello, Book3", new Book3().foo())
     }
 
+    @Test
     void testSpreadDotAdvanced() {
         assertEquals([3, 3], ['cat', 'dog']*.size())
         assertEquals([3, 3], (['cat', 'dog'] as Vector)*.size())
@@ -108,6 +116,7 @@ class SpreadDotTest extends GroovyTestCase {
         assertEquals(['Large'], new Shirt()*.size())
     }
 
+    @Test
     void testSpreadDotMap() {
         def map = [A: "one", B: "two", C: "three"]
         assert map.collect { child -> child.value.size() } == [3, 3, 5]
@@ -115,6 +124,7 @@ class SpreadDotTest extends GroovyTestCase {
         assert map*.getKey() == ['A', 'B', 'C']
     }
 
+    @Test
     void testSpreadDotAttribute() {
         def s = new Singlet()
         assert s.size == 1
@@ -124,7 +134,8 @@ class SpreadDotTest extends GroovyTestCase {
         assert wardrobe*.@size == [12, 12]
     }
 
-    void testNewLine() {
+    @Test
+    void testSpreadDotMultiLine() {
         def x = [a: 1, b: 2]
         def y = x
                 *.value
@@ -140,53 +151,53 @@ class SpreadDotTest extends GroovyTestCase {
                 *.@size
         assert y == [12, 12]
     }
-}
 
-class SpreadDotDemo {
-    java.util.Date getA() {
-        return new Date()
+    //--------------------------------------------------------------------------
+
+    static class SpreadDotDemo {
+        Date getA() {
+            return new Date()
+        }
+
+        String fnB() {
+            return "bb"
+        }
+
+        String fnB(String m) {
+            return "BB$m"
+        }
     }
 
-    String fnB() {
-        return "bb"
+    static class SpreadDotDemo2 {
+        String getAttribute(String key) {
+            return "Attribute $key"
+        }
+
+        String get(String key) {
+            return getAttribute("Get $key")
+        }
+
+        String fnB() {
+            return "cc"
+        }
+
+        String fnB(String m) {
+            return "CC$m"
+        }
     }
 
-    String fnB(String m) {
-        return "BB$m"
-    }
-}
+    static class Book1 {}
 
-class SpreadDotDemo2 {
-    String getAttribute(String key) {
-        return "Attribute $key"
-    }
+    static class Book2 {}
 
-    String get(String key) {
-        return getAttribute("Get $key")
+    static class Book3 {}
+
+    static class Shirt {
+        def size() { 'Large' }
     }
 
-    String fnB() {
-        return "cc"
+    static class Singlet {
+        private size = 12
+        def getSize() {1}
     }
-
-    String fnB(String m) {
-        return "CC$m"
-    }
-}
-
-
-class Book1 {}
-
-class Book2 {}
-
-class Book3 {}
-
-class Shirt {
-    def size() { 'Large' }
-}
-
-class Singlet {
-    private size = 12
-
-    def getSize() { 1 }
 }
