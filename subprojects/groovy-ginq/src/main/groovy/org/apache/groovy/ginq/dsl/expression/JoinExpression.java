@@ -21,7 +21,6 @@ package org.apache.groovy.ginq.dsl.expression;
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,7 +36,7 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
     public static final String LEFT_HASH_JOIN = "lefthashjoin";
     private static final String CROSS_JOIN = "crossjoin";
     public static final List<String> JOIN_NAME_LIST =
-            Arrays.asList(SMART_INNER_JOIN, INNER_JOIN, INNER_HASH_JOIN, LEFT_JOIN, LEFT_HASH_JOIN, "rightjoin", "righthashjoin", "fulljoin", "fullhashjoin", CROSS_JOIN);
+            List.of(SMART_INNER_JOIN, INNER_JOIN, INNER_HASH_JOIN, LEFT_JOIN, LEFT_HASH_JOIN, "rightjoin", "righthashjoin", "fulljoin", "fullhashjoin", CROSS_JOIN);
 
     private final String joinName;
     private OnExpression onExpression;

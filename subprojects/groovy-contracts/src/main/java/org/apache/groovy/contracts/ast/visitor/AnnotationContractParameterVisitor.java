@@ -64,6 +64,6 @@ public class AnnotationContractParameterVisitor extends BaseVisitor {
     @Override
     public void visitAnnotations(AnnotatedNode node) {
         if (!(node instanceof Parameter) || currentMethodNode == null) return;
-        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(node, "org.apache.groovy.contracts.annotations.meta.ContractElement");
+        AnnotationUtils.hasMetaAnnotations(node, "org.apache.groovy.contracts.annotations.meta.ContractElement");
     }
 }
