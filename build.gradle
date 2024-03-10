@@ -95,20 +95,21 @@ dependencies {
 
     antlr "me.sunlan:antlr4:${versions.antlr4}"
 
-    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
-
-    xstreamAstImplementation("com.thoughtworks.xstream:xstream:${versions.xstream}") {
-        exclude(group: 'xpp3', module: 'xpp3_min')
-        exclude(group: 'junit', module: 'junit')
-        exclude(group: 'jmock', module: 'jmock')
-        exclude(group: 'xmlpull', module: 'xmlpull')
+    gparsImplementation "org.codehaus.gpars:gpars:${versions.gpars}", {
+        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
-    grapesImplementation("org.apache.ivy:ivy:${versions.ivy}") {
+
+    grapesImplementation "org.apache.ivy:ivy:${versions.ivy}", {
         transitive = false
     }
 
-    gparsImplementation("org.codehaus.gpars:gpars:${versions.gpars}") {
-        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
+    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
+
+    xstreamAstImplementation "com.thoughtworks.xstream:xstream:${versions.xstream}", {
+        exclude(group: 'xpp3'   , module: 'xpp3_min')
+        exclude(group: 'junit'  , module: 'junit'   )
+        exclude(group: 'jmock'  , module: 'jmock'   )
+        exclude(group: 'xmlpull', module: 'xmlpull' )
     }
 
     testImplementation projects.groovyAnt
@@ -122,7 +123,6 @@ dependencies {
     testImplementation "log4j:log4j:${versions.log4j}"
     testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
-    testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jacksonDatabind}"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
@@ -135,18 +135,19 @@ dependencies {
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
 
-    tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
-        exclude(group: 'asm')
-        exclude(group: 'org.ow2.asm')
+    tools "net.sourceforge.cobertura:cobertura:${versions.cobertura}", {
         exclude(module: 'ant')
+        exclude(group : 'asm')
+        exclude(group : 'org.ow2.asm')
     }
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
 
-    testRuntimeOnly(project(":")) {
-        because "Tests are using Grapes"
+    testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using Grapes'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
