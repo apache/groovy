@@ -51,6 +51,7 @@ For every method call Groovy checks whether the object is a POJO or a POGO. For 
 .Groovy interception mechanism
 [plantuml, GroovyInterceptions, png]
 ....
+!pragma layout smetana
 start
 if (Class implements\nGroovyInterceptable?) then (yes)
     :Call its invokeMethod();

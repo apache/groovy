@@ -38,6 +38,7 @@ Here is a UML representation:
 
 [plantuml, ChainOfResponsibilityClasses, png]
 ....
+!pragma layout smetana
 skinparam nodesep 100
 hide <<HIDDEN>>
 class UnixLister {

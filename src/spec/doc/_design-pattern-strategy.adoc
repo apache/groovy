@@ -25,6 +25,7 @@ The http://en.wikipedia.org/wiki/Strategy_pattern[Strategy Pattern] allows you t
 
 [plantuml, StrategyClasses, png]
 ....
+!pragma layout smetana
 hide fields
 hide <<Hidden>> circle
 skinparam ClassBorderColor<<Hidden>> Transparent

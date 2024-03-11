@@ -34,6 +34,7 @@ The class diagram showing the typical classes is:
 
 [plantuml, CommandClasses, png]
 ....
+!pragma layout smetana
 skinparam nodesep 100
 hide fields
 interface Command {
@@ -54,6 +55,7 @@ The sequence of interactions is as shown below for an arbitrary receiver:
 
 [plantuml, CommandSequence, png]
 ....
+!pragma layout smetana
 client -> intermediary: command
 intermediary -> receiverN: actionN
 ....

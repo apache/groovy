@@ -29,6 +29,7 @@ Consider this usage of the composite pattern where we want to call `toString()` 
 
 [plantuml, CompositeClasses, png]
 ....
+!pragma layout smetana
 skinparam linetype ortho
 skinparam nodesep 100
 class Component {
@@ -54,6 +55,7 @@ For our purposes, we will assemble the following hierarchy of components.
 
 [plantuml, CompositeComponents, png]
 ....
+!pragma layout smetana
 object root
 object "leaf A" as leafA
 object "comp B" as compB

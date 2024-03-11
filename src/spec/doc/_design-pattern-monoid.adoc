@@ -112,6 +112,7 @@ Then the intermediate results could also be added together concurrently and so o
 
 [plantuml, MonoidAddition, png]
 ....
+!pragma layout smetana
 skinparam shadowing false
 skinparam ClassFontSize 18
 skinparam ClassBackgroundColor<<Identity>> Transparent

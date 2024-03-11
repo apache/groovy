@@ -27,6 +27,7 @@ about changes or events from a _subject_ object.
 
 [plantuml, ObserverClasses, png]
 ....
+!pragma layout smetana
 skinparam ClassBorderColor<<Hidden>> Transparent
 skinparam ClassBackgroundColor<<Hidden>> Transparent
 skinparam ClassStereotypeFontColor<<Hidden>> Transparent

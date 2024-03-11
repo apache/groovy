@@ -30,6 +30,7 @@ The generic pattern of classes involved looks like this:
 
 [plantuml, TemplateMethodClasses, png]
 ....
+!pragma layout smetana
 skinparam nodesep 100
 class AbstractClass {
     +algorithm1()
