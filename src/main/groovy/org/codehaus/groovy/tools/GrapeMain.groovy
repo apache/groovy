@@ -161,7 +161,7 @@ class GrapeMain implements Runnable {
             try {
                 Grape.grab(autoDownload: true, group: group, module: module, version: version, classifier: classifier, noExceptions: true)
             } catch (Exception ex) {
-                System.err.println "An error occured : $ex"
+                System.err.println "An error occurred : $ex"
             }
         }
     }
