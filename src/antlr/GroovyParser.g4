@@ -849,7 +849,7 @@ expression
     |   left=expression nls op=OR nls right=expression                                      #logicalOrExprAlt
 
     // implication (==>)  (level 13.5)
-    |   <assoc=right> left=expression nls op=IMPLIES nls right=expression                                 #implicationExprAlt
+    |   <assoc=right> left=expression nls op=IMPLIES nls right=expression                   #implicationExprAlt
 
     // conditional test (level 14)
     |   <assoc=right> con=expression nls
