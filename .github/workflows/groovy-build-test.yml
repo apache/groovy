@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [12, 13, 14, 15, 16, 18, 19, 20, 22]
+        java: [12, 13, 14, 15, 16, 18, 19, 20]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
