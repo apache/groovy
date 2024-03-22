@@ -1044,29 +1044,35 @@ public class ClassNode extends AnnotatedNode {
 
     public MethodNode getGetterMethod(String getterName, boolean searchSuperClasses) {
         MethodNode getterMethod = null;
+
+        java.util.function.Predicate<MethodNode> isNullOrSynthetic = (method) ->
+                (method == null || (method.getModifiers() & ACC_SYNTHETIC) != 0);
+
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (method.getName().equals(getterName) && method.getParameters().length == 0
                     && (booleanReturnOnly ? ClassHelper.isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod())) {
-                // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
+                // GROOVY-7363, GROOVY-11341: There can be multiple matches if a method returns a non-final type due to
                 // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
                 // has the most specific and exact return type of the two. Picking the bridge method results in loss of
                 // type information, as it down-casts the return type to the lower bound of the generic parameter.
-                if (getterMethod == null || getterMethod.isSynthetic()) {
+                if (isNullOrSynthetic.test(getterMethod)) {
                     getterMethod = method;
                 }
             }
         }
-        if (getterMethod != null) {
-            return getterMethod;
-        }
-        if (searchSuperClasses) {
+
+        if (searchSuperClasses && isNullOrSynthetic.test(getterMethod)) {
             ClassNode parent = getSuperClass();
             if (parent != null) {
-                return parent.getGetterMethod(getterName);
+                MethodNode method = parent.getGetterMethod(getterName);
+                if (getterMethod == null || !isNullOrSynthetic.test(method)) {
+                    getterMethod = method;
+                }
             }
         }
-        return null;
+
+        return getterMethod;
     }
 
     public MethodNode getSetterMethod(String setterName) {

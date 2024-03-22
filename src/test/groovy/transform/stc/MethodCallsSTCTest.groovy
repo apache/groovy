@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
@@ -1602,6 +1603,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5525
+    void testShouldFindArraysCopyOf() {
+        assertScript '''
+            class CopyOf {
+                public static void main(String[] args) {
+                    def copy = Arrays.copyOf(args, 1)
+                    assert copy.length == 1
+                }
+            }
+        '''
+    }
+
     // GROOVY-5702
     void testShouldFindInterfaceMethod() {
         assertScript '''
@@ -1884,22 +1897,69 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6751
-    void testMethodInBothInterfaceAndSuperclass() {
+    void testMethodInBothInterfaceAndSuperclass1() {
         assertScript '''
-            interface Ifc {
+            interface Face {
               Object getProperty(String s)
             }
-
-            class DuplicateMethodInIfc implements Ifc {}  // implemented in groovy.lang.GroovyObject
-
-            class Tester {
-              DuplicateMethodInIfc dup = new DuplicateMethodInIfc()
-              Object obj = dup.getProperty("foo")
+            class Impl implements Face { // implemented in groovy.lang.GroovyObject
             }
 
-            try { new Tester()}
-            catch(groovy.lang.MissingPropertyException expected) {}
+            try {
+                Impl impl = new Impl()
+                impl.getProperty('xx')
+            }
+            catch(MissingPropertyException expected) {
+            }
         '''
+    }
+
+    // GROOVY-11341
+    void testMethodInBothInterfaceAndSuperclass2() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/A.java')
+            a.write '''package p;
+                public interface A {
+                    Object getValue();
+                }
+            '''
+            def b = new File(parentDir, 'p/B.java')
+            b.write '''package p;
+                public class B {
+                    public Long getValue() { return 21L; }
+                }
+            '''
+            def c = new File(parentDir, 'p/C.java')
+            c.write '''package p;
+                public class C extends B implements A {
+                    // public bridge Object getValue() { ... }
+                }
+            '''
+            def d = new File(parentDir, 'D.groovy')
+            d.write '''
+                def pojo = new p.C()
+                Long value = pojo.getValue() // Cannot assign value of type Object to variable of type Long
+                value += pojo.value
+                assert value == 42L
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c, d)
+            cu.compile()
+
+            loader.loadClass('D').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     // GROOVY-7987

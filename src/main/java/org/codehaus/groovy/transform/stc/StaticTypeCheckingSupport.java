@@ -1208,7 +1208,7 @@ public abstract class StaticTypeCheckingSupport {
                 if (toBeRemoved.contains(two)) continue;
                 if (one.getParameters().length == two.getParameters().length) {
                     ClassNode oneDC = one.getDeclaringClass(), twoDC = two.getDeclaringClass();
-                    if (oneDC == twoDC) {
+                    if (oneDC == twoDC || isSynthetic(one,two)||isSynthetic(two,one)) { // GROOVY-11341
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             ClassNode oneRT = one.getReturnType(), twoRT = two.getReturnType();
                             if (isCovariant(oneRT, twoRT)) {
