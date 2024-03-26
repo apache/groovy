@@ -38,6 +38,8 @@ class AppendableDgmMethodsTest extends GroovyTestCase {
             f.format(" %tY", Date.parse('dd MM yyyy', '01 01 2001'))
             f.format(Locale.FRANCE, " e = %+10.4f", Math.E)
         }
-        assert store.join('') == 'hello [a:1, b:2] 2001 e =    +2,7183'
+        assert store.join('') in ['hello [a:1, b:2] 2001 e =    +2,7183',
+                                  'hello [a:1, b:2] 2001 e =    +2.7183' // for JDK 23
+                                 ]
     }
 }
