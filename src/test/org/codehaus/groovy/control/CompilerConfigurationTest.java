@@ -297,8 +297,8 @@ public final class CompilerConfigurationTest {
     @Test // GROOVY-10278
     public void testTargetVersion() {
         CompilerConfiguration config = new CompilerConfiguration();
-        String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5" , "6" , "7" , "8" , "9" , "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"};
-        String[] expect = {"11" , "11" , "11" , "11" , "11" , "11" , "11" , "11", "11", "11", "11", "11", "11" , "11", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "22"};
+        String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5" , "6" , "7" , "8" , "9" , "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"};
+        String[] expect = {"11" , "11" , "11" , "11" , "11" , "11" , "11" , "11", "11", "11", "11", "11", "11" , "11", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "23"};
         assertArrayEquals(expect, Arrays.stream(inputs).map(v -> { config.setTargetBytecode(v); return config.getTargetBytecode(); }).toArray(String[]::new));
     }
 }
