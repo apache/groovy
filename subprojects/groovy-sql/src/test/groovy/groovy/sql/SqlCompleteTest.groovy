@@ -168,6 +168,19 @@ class SqlCompleteTest extends SqlHelperTestCase {
         assert personMetaClosureCalled
     }
 
+    void testExecuteWithStringAndClosures() {
+        def results = [:]
+        sql.execute("select * from PERSON", personMetaClosure) { isResultSet, rs ->
+            if (isResultSet) {
+                rs.each {
+                    results.put(it.firstname, it['lastname'])
+                }
+            }
+        }
+        assert results == ["James": "Strachan", "Bob": "Mcwhirter", "Sam": "Pullara"]
+        assert personMetaClosureCalled
+    }
+
     void testEachRowWithStringAndList() {
         def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
