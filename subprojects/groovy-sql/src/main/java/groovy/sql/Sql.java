@@ -1094,7 +1094,7 @@ public class Sql implements AutoCloseable {
     }
 
     private static ArrayList<Object> singletonList(Object item) {
-        ArrayList<Object> params = new ArrayList<Object>();
+        ArrayList<Object> params = new ArrayList<>();
         params.add(item);
         return params;
     }
@@ -2379,7 +2379,7 @@ public class Sql implements AutoCloseable {
 
     /**
      * Executes the given piece of SQL.
-     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
      * <p>
      * Example usages:
      * <pre>
@@ -2397,29 +2397,50 @@ public class Sql implements AutoCloseable {
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql the SQL to execute
-     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
-     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
-     *                       The closure will be called for each result produced from executing the SQL.
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
      * @throws SQLException if a database access error occurs
      * @since 2.3.2
      */
-    public void execute(String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+        execute(sql, (Closure) null, resultClosure);
+    }
+
+    /**
+     * Executes the given piece of SQL.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * In addition, the <code>metaClosure</code> will be called for each result producing a ResultSet, if any, passing in the <code>ResultSetMetaData</code> as argument.
+     *
+     * @param sql the SQL to execute
+     * @param metaClosure called for metadata (only called for results which produce a ResultSet, if any)
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @since 4.0.21
+     */
+    public void execute(
+        String sql,
+        @ClosureParams(value = SimpleType.class, options = "java.sql.ResultSetMetaData") Closure metaClosure,
+        @ClosureParams(value = FromString.class, options = {"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure
+    ) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         try {
             statement = getStatement(connection, sql);
             boolean isResultSet = statement.execute(sql);
             int updateCount = statement.getUpdateCount();
-            while(isResultSet || updateCount != -1) {
-                if (processResults.getMaximumNumberOfParameters() != 2) {
-                    throw new SQLException("Incorrect number of parameters for processResults Closure");
+            while (isResultSet || updateCount != -1) {
+                if (resultClosure.getMaximumNumberOfParameters() != 2) {
+                    throw new SQLException("Incorrect number of parameters for resultClosure");
                 }
                 if (isResultSet) {
                     ResultSet resultSet = statement.getResultSet();
-                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet);
-                    processResults.call(isResultSet, rowResult);
+                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet, metaClosure);
+                    resultClosure.call(isResultSet, rowResult);
                 } else {
-                    processResults.call(isResultSet, updateCount);
+                    resultClosure.call(isResultSet, updateCount);
                 }
                 isResultSet = statement.getMoreResults();
                 updateCount = statement.getUpdateCount();
@@ -2475,7 +2496,7 @@ public class Sql implements AutoCloseable {
 
     /**
      * Executes the given piece of SQL with parameters.
-     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
      * <p>
      * This method supports named and named ordinal parameters.
      * See the class Javadoc for more details.
@@ -2484,14 +2505,43 @@ public class Sql implements AutoCloseable {
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
-     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
-     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
-     *                       The closure will be called for each result produced from executing the SQL.
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
      * @throws SQLException if a database access error occurs
      * @see #execute(String, Closure)
      * @since 2.3.2
      */
-    public void execute(String sql, List<Object> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(String sql, List<Object> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * In addition, the <code>metaClosure</code> will be called for each result producing a ResultSet, if any, passing in the <code>ResultSetMetaData</code> as argument.
+     * <p>
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @param metaClosure called for metadata (only called for results which produce a ResultSet, if any)
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #execute(String, Closure)
+     * @since 4.0.21
+     */
+    public void execute(
+        String sql,
+        List<Object> params,
+        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+        @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure
+    ) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -2499,15 +2549,15 @@ public class Sql implements AutoCloseable {
             boolean isResultSet = statement.execute();
             int updateCount = statement.getUpdateCount();
             while(isResultSet || updateCount != -1) {
-                if (processResults.getMaximumNumberOfParameters() != 2) {
-                    throw new SQLException("Incorrect number of parameters for processResults Closure");
+                if (resultClosure.getMaximumNumberOfParameters() != 2) {
+                    throw new SQLException("Incorrect number of parameters for resultClosure");
                 }
                 if (isResultSet) {
                     ResultSet resultSet = statement.getResultSet();
-                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet);
-                    processResults.call(isResultSet, rowResult);
+                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet, metaClosure);
+                    resultClosure.call(isResultSet, rowResult);
                 } else {
-                    processResults.call(isResultSet, updateCount);
+                    resultClosure.call(isResultSet, updateCount);
                 }
                 isResultSet = statement.getMoreResults();
                 updateCount = statement.getUpdateCount();
@@ -2542,14 +2592,36 @@ public class Sql implements AutoCloseable {
      *
      * @param params a map containing the named parameters
      * @param sql    the SQL statement
-     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
-     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
-     *                       The closure will be called for each result produced from executing the SQL.
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
      * @throws SQLException if a database access error occurs
      * @since 2.3.2
      */
-    public void execute(Map params, String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
-        execute(sql, singletonList(params), processResults);
+    public void execute(Map params, String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+        execute(sql, singletonList(params), resultClosure);
+    }
+
+    /**
+     * A variant of {@link #execute(String, java.util.List, Closure, Closure)}
+     * useful when providing the named parameters as named arguments.
+     *
+     * @param params a map containing the named parameters
+     * @param sql    the SQL statement
+     * @param metaClosure called for metadata (only called for results which produce a ResultSet, if any)
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @since 4.0.21
+     */
+    public void execute(
+        Map params,
+        String sql,
+        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+        @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure
+    ) throws SQLException {
+        execute(sql, singletonList(params), metaClosure, resultClosure);
     }
 
     /**
@@ -2581,15 +2653,42 @@ public class Sql implements AutoCloseable {
      *
      * @param sql    the SQL statement
      * @param params an array of parameters
-     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
-     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
-     *                       The closure will be called for each result produced from executing the SQL.
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
      * @throws SQLException if a database access error occurs
      * @see #execute(String, List, Closure)
      * @since 2.3.2
      */
-    public void execute(String sql, Object[] params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
-        execute(sql, Arrays.asList(params), processResults);
+    public void execute(String sql, Object[] params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+        execute(sql, Arrays.asList(params), resultClosure);
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters.
+     * <p>
+     * An Object array variant of {@link #execute(String, List, Closure, Closure)}.
+     * <p>
+     * This method supports named and named ordinal parameters by supplying such
+     * parameters in the <code>params</code> array. See the class Javadoc for more details.
+     *
+     * @param sql    the SQL statement
+     * @param params an array of parameters
+     * @param metaClosure called for metadata (only called for results which produce a ResultSet, if any)
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #execute(String, List, Closure, Closure)
+     * @since 4.0.21
+     */
+    public void execute(
+        String sql,
+        Object[] params,
+        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+        @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure
+    ) throws SQLException {
+        execute(sql, Arrays.asList(params), metaClosure, resultClosure);
     }
 
     /**
@@ -2622,22 +2721,45 @@ public class Sql implements AutoCloseable {
 
     /**
      * Executes the given SQL with embedded expressions inside.
-     * Also calls the provided processResults Closure to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
      * Resource handling is performed automatically where appropriate.
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @param processResults a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
-     *                       derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
-     *                       The closure will be called for each result produced from executing the SQL.
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      * @see #execute(String, List, Closure)
      * @since 2.3.2
      */
-    public void execute(GString gstring, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(GString gstring, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
-        execute(sql, params, processResults);
+        execute(sql, params, resultClosure);
+    }
+
+    /**
+     * Executes the given SQL with embedded expressions inside.
+     * Also calls the provided <code>resultClosure</code> to process any ResultSet or UpdateCount results that executing the SQL might produce.
+     * In addition, the <code>metaClosure</code> will be called for each result producing a ResultSet, if any, passing in the <code>ResultSetMetaData</code> as argument.
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param resultClosure a Closure which will be passed two parameters: either {@code true} plus a list of GroovyRowResult values
+     *                      derived from {@code statement.getResultSet()} or {@code false} plus the update count from {@code statement.getUpdateCount()}.
+     *                      The closure will be called for each result produced from executing the SQL.
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     * @see #execute(String, List, Closure, Closure)
+     * @since 4.0.21
+     */
+    public void execute(GString gstring,
+                        @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
+                        @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        execute(sql, params, metaClosure, resultClosure);
     }
 
     /**
@@ -3826,7 +3948,7 @@ public class Sql implements AutoCloseable {
         boolean savedWithinBatch = withinBatch;
         BatchingPreparedStatementWrapper psWrapper = null;
         if (preCheck != null) {
-            indexPropList = new ArrayList<Tuple>();
+            indexPropList = new ArrayList<>();
             for (Object next : preCheck.getParams()) {
                 indexPropList.add((Tuple) next);
             }
@@ -3903,11 +4025,11 @@ public class Sql implements AutoCloseable {
     protected List<List<GroovyRowResult>> callWithRows(String sql, List<Object> params, int processResultsSets, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
-        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
+        List<GroovyResultSet> resultSetResources = new ArrayList<>();
         try {
             statement = getCallableStatement(connection, sql, params);
             boolean hasResultSet = statement.execute();
-            List<Object> results = new ArrayList<Object>();
+            List<Object> results = new ArrayList<>();
             int indx = 0;
             int inouts = 0;
             for (Object value : params) {
@@ -3931,9 +4053,9 @@ public class Sql implements AutoCloseable {
                 indx++;
             }
             closure.call(results.toArray(new Object[inouts]));
-            List<List<GroovyRowResult>> resultSets = new ArrayList<List<GroovyRowResult>>();
+            List<List<GroovyRowResult>> resultSets = new ArrayList<>();
             if (processResultsSets == NO_RESULT_SETS) {
-                resultSets.add(new ArrayList<GroovyRowResult>());
+                resultSets.add(new ArrayList<>());
                 return resultSets;
             }
             //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
@@ -4039,7 +4161,7 @@ public class Sql implements AutoCloseable {
 
     protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows,
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
+        List<GroovyRowResult> results = new ArrayList<>();
 
         try {
             if (metaClosure != null) {
@@ -4199,7 +4321,7 @@ public class Sql implements AutoCloseable {
      * @see #expand(Object)
      */
     protected List<Object> getParameters(GString gstring) {
-        return new ArrayList<Object>(Arrays.asList(gstring.getValues()));
+        return new ArrayList<>(Arrays.asList(gstring.getValues()));
     }
 
     /**
@@ -4311,7 +4433,7 @@ public class Sql implements AutoCloseable {
     private Connection createConnection(DataSource dataSource) throws SQLException {
         Connection con;
         try {
-            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
                 public Connection run() throws SQLException {
                     return dataSource.getConnection();
@@ -4435,12 +4557,12 @@ public class Sql implements AutoCloseable {
     private static List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
         // Prepare a list to contain the auto-generated column
         // values, and then fetch them from the statement.
-        List<List<Object>> autoKeys = new ArrayList<List<Object>>();
+        List<List<Object>> autoKeys = new ArrayList<>();
         int count = keys.getMetaData().getColumnCount();
 
         // Copy the column values into a list of a list.
         while (keys.next()) {
-            List<Object> rowKeys = new ArrayList<Object>(count);
+            List<Object> rowKeys = new ArrayList<>(count);
             for (int i = 1; i <= count; i++) {
                 rowKeys.add(keys.getObject(i));
             }
@@ -4535,7 +4657,7 @@ public class Sql implements AutoCloseable {
             return new SqlWithParams(sql, params);
         }
 
-        List<Tuple> indexPropList = new ArrayList<Tuple>();
+        List<Tuple> indexPropList = new ArrayList<>();
         for (Object next : preCheck.getParams()) {
             indexPropList.add((Tuple) next);
         }
@@ -4583,12 +4705,12 @@ public class Sql implements AutoCloseable {
             return null;
         }
 
-        List<Object> indexPropList = new ArrayList<Object>(propList);
+        List<Object> indexPropList = new ArrayList<>(propList);
         return new SqlWithParams(newSql, indexPropList);
     }
 
     public List<Object> getUpdatedParams(List<Object> params, List<Tuple> indexPropList) {
-        List<Object> updatedParams = new ArrayList<Object>();
+        List<Object> updatedParams = new ArrayList<>();
         for (Tuple tuple : indexPropList) {
             int index = (Integer) tuple.get(0);
             String prop = (String) tuple.get(1);
