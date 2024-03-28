@@ -15886,6 +15886,71 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // zip
+
+    /**
+     * An iterator of all the pairs of two Iterables.
+     * <pre class="groovyTestCase">
+     * def one = ['cat', 'spider']
+     * def two = ['fish', 'monkey']
+     * assert ['catfish', 'spidermonkey'] == one.zip(two).collect{ a, b -> a + b }
+     * assert [one, two].transpose() == one.zip(two).toList()
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param other another Iterable
+     * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
+     */
+    public static <U, V> Iterator<Tuple2<U, V>> zip(Iterable<U> self, Iterable<V> other) {
+        return zip(self.iterator(), other.iterator());
+    }
+
+    /**
+     * An iterator of all the pairs of two Iterators.
+     * <pre class="groovyTestCase">
+     * def small = [1, 2, 3].iterator()
+     * def large = [100, 200, 300].iterator()
+     * assert [101, 202, 303] == small.zip(large).collect{ a, b -> a + b }
+     * assert [small.toList(), large.toList()].transpose() == small.zip(large).toList()
+     * </pre>
+     *
+     * @param self an Iterator
+     * @param other another Iterator
+     * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
+     */
+    public static <U, V> Iterator<Tuple2<U, V>> zip(Iterator<U> self, Iterator<V> other) {
+        return new ZipIterator<>(self, other);
+    }
+
+    private static final class ZipIterator<U, V> implements Iterator<Tuple2<U, V>> {
+        private final Iterator<U> delegate;
+        private final Iterator<V> other;
+
+        private ZipIterator(Iterator<U> delegate, Iterator<V> other) {
+            this.delegate = delegate;
+            this.other = other;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext() && other.hasNext();
+        }
+
+        @Override
+        public Tuple2<U, V> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return new Tuple2<>(delegate.next(), other.next());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // withTraits
 
     /**
