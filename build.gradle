@@ -134,12 +134,6 @@ dependencies {
 
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
-
-    tools "net.sourceforge.cobertura:cobertura:${versions.cobertura}", {
-        exclude(module: 'ant')
-        exclude(group : 'asm')
-        exclude(group : 'org.ow2.asm')
-    }
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 

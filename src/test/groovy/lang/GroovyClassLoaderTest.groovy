@@ -35,7 +35,7 @@ import org.junit.Test
 import java.security.CodeSource
 import java.util.concurrent.atomic.AtomicInteger
 
-import static org.objectweb.asm.Opcodes.*
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 final class GroovyClassLoaderTest {
 
@@ -45,7 +45,7 @@ final class GroovyClassLoaderTest {
         try {
             eval = new File(eval).toURI().toURL().getFile()
             for (it in paths) {
-                if (eval.equals(it)) return true
+                if (eval == it) return true
             }
         } catch (MalformedURLException ignore) {
         }
@@ -66,7 +66,7 @@ final class GroovyClassLoaderTest {
             if (end == -1) break
             def sub = path.substring(start, end)
             if (!sub.endsWith('.jar')) {
-                list.add(new File(sub).toURL())
+                list.add(new File(sub).toURI().toURL())
             }
             end += 1
         }
@@ -130,7 +130,7 @@ final class GroovyClassLoaderTest {
             def name = file.name - '.groovy'
             def script = "class $name extends groovy.test.GroovyTestCase{}"
             file << script
-            paths << file.parentFile.toURL()
+            paths << file.parentFile.toURI().toURL()
             def cl = new URLClassLoader(paths as URL[], (ClassLoader) null)
             def gcl = new GroovyClassLoader(cl)
             try {
@@ -138,11 +138,11 @@ final class GroovyClassLoaderTest {
                 assert false
             } catch (NoClassDefFoundError ncdfe) {
                 // TODO: hack for running when under coverage; find a better way
-                assert ncdfe.message.indexOf('TestCase') > 0 || ncdfe.message.indexOf('cobertura') > 0
+                assert ncdfe.message.indexOf('TestCase') > 0
             } catch (MultipleCompilationErrorsException mce) {
                 mce.errorCollector.errors.each { err ->
                     assert err instanceof SyntaxErrorMessage
-                    assert err.cause.message.indexOf('TestCase') > 0 || err.cause.message.indexOf('cobertura') > 0
+                    assert err.cause.message.indexOf('TestCase') > 0
                 }
             }
         } finally {
@@ -213,7 +213,7 @@ final class GroovyClassLoaderTest {
         try {
             def gcl = new GroovyClassLoader(this.class.classLoader, new CompilerConfiguration().tap{sourceEncoding = 'UTF-8'})
             def clazz = gcl.parseClass('return "\u20AC"') // EURO currency symbol
-            def result = clazz.newInstance().run()
+            def result = clazz.getDeclaredConstructor().newInstance().run()
             int i = result[0]
             // 0xFFFD is used if the original character was not found,
             // it is the famous ? that can often be seen. So if this here
