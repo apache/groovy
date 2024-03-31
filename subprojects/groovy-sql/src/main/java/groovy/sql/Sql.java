@@ -4433,7 +4433,7 @@ public class Sql implements AutoCloseable {
     private Connection createConnection(DataSource dataSource) throws SQLException {
         Connection con;
         try {
-            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
+            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
                 @Override
                 public Connection run() throws SQLException {
                     return dataSource.getConnection();
