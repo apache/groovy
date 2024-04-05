@@ -37,7 +37,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
-    void testUseSuperToBypassOverride1a() {
+    void testUseSuperToBypassOverride2() {
         assertScript '''
             abstract class A {
                 protected x = 1
@@ -51,7 +51,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
-    void testUseSuperToBypassOverride2() {
+    void testUseSuperToBypassOverride3() {
         assertScript '''
             abstract class A {
                 private x = 1
@@ -65,7 +65,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
-    void testUseSuperToBypassOverride2a() {
+    void testUseSuperToBypassOverride4() {
         shouldFailWithMessages '''
             abstract class A {
                 private x = 1
@@ -76,6 +76,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
                 def getX() { super.@x }
             }
             assert false
-        ''', 'The field A.x is not accessible'
+        ''',
+        'Cannot access field: x of class: A'
     }
 }

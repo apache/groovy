@@ -161,7 +161,8 @@ final class DifferentPackageTest {
         assert loader.loadClass('p.Peer').newInstance().half() == 21
     }
 
-    @Test // GROOVY-9106
+    // GROOVY-9106
+    @Test
     void testSamePackageShouldSeeStaticProps5() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -186,8 +187,8 @@ final class DifferentPackageTest {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
-    @Test
     // GROOVY-9093
+    @Test
     void testDifferentPackageShouldNotSeeInstanceProps() {
         def err = shouldFail CompilationFailedException, {
             addSources(
@@ -207,8 +208,8 @@ final class DifferentPackageTest {
         assert err.message =~ /Access to q.Two#value is forbidden/
     }
 
-    @Test
     // GROOVY-9093
+    @Test
     void testDifferentPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
             addSources(

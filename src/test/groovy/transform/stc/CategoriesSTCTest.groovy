@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-
 /**
  * Unit tests for static type checking : categories.
  */
@@ -29,8 +28,8 @@ class CategoriesSTCTest extends StaticTypeCheckingTestCase {
             use(TimeCategory) {
                 1.day
             }
-        ''', 'Due to their dynamic nature, usage of categories is not possible with static type checking active', 'No such property: day for class: int'
+        ''',
+        'Due to their dynamic nature, usage of categories is not possible with static type checking active',
+        'No such property: day for class: java.lang.Integer'
     }
-
 }
-

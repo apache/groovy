@@ -18,343 +18,280 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy9293 {
 
-    private final GroovyShell shell = new GroovyShell()
+    private final GroovyShell shell = GroovyShell.withConfig {
+        ast(groovy.transform.CompileStatic)
+        imports {
+            normal 'groovy.transform.PackageScope'
+        }
+    }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    'something'.with {
-                        return superField
-                    }
+                    "".with { superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - diff package'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        shouldFail shell, MissingPropertyException, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    "".with { superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package, it qualifier'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    with {
-                        return it.superField
-                    }
+                    with { it.superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, it qualifier'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        def err = shouldFail shell, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    with { it.superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        with {
-                            return it.superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package, this qualifier'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    'something'.with {
-                        return this.superField
-                    }
+                    "".with { this.superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - diff package, this qualifier'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        def err = shouldFail shell, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    "".with { this.superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return this.superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package, owner qualifier'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    'something'.with {
-                        return owner.superField
-                    }
+                    "".with { owner.superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, owner qualifier'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        def err = shouldFail shell, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    "".with { owner.superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return owner.superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package, delegate qualifier'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    with {
-                        return delegate.superField
-                    }
+                    with { delegate.superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, delegate qualifier'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        def err = shouldFail shell, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    with { delegate.superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        with {
-                            return delegate.superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
     void 'test accessing a package-private super class field inside a closure - same package, thisObject qualifier'() {
-        shell.evaluate '''
+        assertScript shell, '''
             package a
 
             class A {
-                @groovy.transform.PackageScope
-                String superField = 'works'
+                @PackageScope String superField = 'works'
             }
 
             class B extends A {
-                @groovy.transform.CompileStatic
                 def test() {
-                    'something'.with {
-                        return thisObject.superField
-                    }
+                    "".with { thisObject.superField }
                 }
             }
 
-            def obj = new B()
-            assert obj.test() == "works"
+            assert new B().test() == "works"
         '''
     }
 
     @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, thisObject qualifier'() {
-        shouldFail(MissingPropertyException) {
-            shell.evaluate '''
-                package a
+        assertScript shell, '''
+            package a
 
-                class A {
-                    @groovy.transform.PackageScope
-                    String superField = 'works'
+            class A {
+                @PackageScope String superField
+            }
+
+            assert true
+        '''
+        def err = shouldFail shell, '''
+            package b
+
+            class B extends a.A {
+                def test() {
+                    "".with { thisObject.superField }
                 }
+            }
 
-                assert true
-            '''
-
-            shell.evaluate '''
-                package b
-
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return thisObject.superField
-                        }
-                    }
-                }
-
-                new B().test()
-            '''
-        }
+            new B().test()
+        '''
+        assert err =~ /No such property: superField for class: b.B/
     }
 }

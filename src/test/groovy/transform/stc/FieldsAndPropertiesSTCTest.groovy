@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.PackageScope
 
 /**
@@ -194,8 +193,41 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: C'
     }
 
-    @NotYetImplemented
+    // GROOVY-11319
     void testShouldComplainAboutMissingProperty3() {
+        shouldFailWithMessages '''
+            class C {
+                private int getX() { 1 }
+            }
+            class D extends C {
+                void test() {
+                    super.x
+                }
+            }
+            new D().test()
+        ''',
+        'No such property: x for class: C'
+    }
+
+    // GROOVY-11319
+    void testShouldComplainAboutMissingProperty4() {
+        shouldFailWithMessages '''
+            class C {
+                private void setX(int i) {
+                    assert false : 'cannot access'
+                }
+            }
+            class D extends C {
+                void test() {
+                    super.x = 1
+                }
+            }
+            new D().test()
+        ''',
+        'No such property: x for class: C'
+    }
+
+    void testShouldComplainAboutMissingProperty5() {
         shouldFailWithMessages '''
             class C {
                 private x
@@ -206,7 +238,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'The field C.x is not accessible'
+        'No such property: x for class: D'
     }
 
     void testShouldComplainAboutMissingAttribute() {
@@ -259,8 +291,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.@x
                 }
             }
+            new D().test()
         ''',
-        'The field C.x is not accessible'
+        'Cannot access field: x of class: C'
     }
 
     void testPropertyWithInheritance() {
