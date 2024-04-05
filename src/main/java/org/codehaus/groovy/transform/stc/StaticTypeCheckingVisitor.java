@@ -766,9 +766,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (existsProperty(expression, !typeCheckingContext.isTargetOfEnclosingAssignment(expression))) return;
 
         if (!extension.handleUnresolvedProperty(expression)) {
-            Expression objectExpression = expression.getObjectExpression();
-            addStaticTypeError("No such property: " + expression.getPropertyAsString() + " for class: " +
-                    prettyPrintTypeName(findCurrentInstanceOfClass(objectExpression, getType(objectExpression))), expression);
+            var objectExpression = expression.getObjectExpression();
+            var objectExpressionType = (objectExpression instanceof ClassExpression
+                    ? objectExpression.getType() : wrapTypeIfNecessary(getType(objectExpression)));
+            objectExpressionType = findCurrentInstanceOfClass(objectExpression, objectExpressionType);
+            addStaticTypeError("No such property: " + expression.getPropertyAsString() + " for class: " + prettyPrintTypeName(objectExpressionType), expression);
         }
     }
 
@@ -777,9 +779,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (existsProperty(expression, true)) return;
 
         if (!extension.handleUnresolvedAttribute(expression)) {
-            Expression objectExpression = expression.getObjectExpression();
-            addStaticTypeError("No such attribute: " + expression.getPropertyAsString() + " for class: " +
-                    prettyPrintTypeName(findCurrentInstanceOfClass(objectExpression, getType(objectExpression))), expression);
+            var objectExpression = expression.getObjectExpression();
+            var objectExpressionType = (objectExpression instanceof ClassExpression
+                    ? objectExpression.getType() : wrapTypeIfNecessary(getType(objectExpression)));
+            objectExpressionType = findCurrentInstanceOfClass(objectExpression, objectExpressionType);
+            addStaticTypeError("No such attribute: " + expression.getPropertyAsString() + " for class: " + prettyPrintTypeName(objectExpressionType), expression);
         }
     }
 
@@ -1622,8 +1626,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
+                    ClassNode enclosingType = enclosingTypes.iterator().next();
                     if (readMode) {
-                        if (getter != null && hasAccessToMember(enclosingTypes.iterator().next(), getter.getDeclaringClass(), getter.getModifiers())) {
+                        if (getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
@@ -1632,9 +1637,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
                             }
                             return true;
+                        } else {
+                            getter = null; // GROOVY-11319
                         }
                     } else {
-                        if (!setters.isEmpty()) {
+                        if (setters.stream().anyMatch(setter -> hasAccessToMember(enclosingType, setter.getDeclaringClass(), setter.getModifiers()))) {
                             if (visitor != null) {
                                 for (MethodNode setter : setters) {
                                     // visiting setter will not infer the property type since return type is void, so visit a dummy field instead
@@ -1654,8 +1661,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (getter != null && field == null) {
+                        } else if (field == null && getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
+                        } else {
+                            setters.clear(); // GROOVY-11319
                         }
                     }
                 }
@@ -1664,7 +1673,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
 
-                foundGetterOrSetter = (foundGetterOrSetter || !setters.isEmpty() || getter != null);
+                foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
             // GROOVY-5568: the property may be defined by DGM
@@ -1882,11 +1891,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        boolean accessible = hasAccessToMember(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field.getDeclaringClass(), field.getModifiers());
+        boolean superField = isSuperExpression(expressionToStoreOn.getObjectExpression());
+        boolean accessible = ( !superField && receiver.equals(field.getDeclaringClass()) ) // GROOVY-7300
+                || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
 
-        if (expressionToStoreOn instanceof AttributeExpression) { // TODO: expand to include PropertyExpression
-            if (!accessible) {
-                addStaticTypeError("The field " + field.getDeclaringClass().getNameWithoutPackage() + "." + field.getName() + " is not accessible", expressionToStoreOn.getProperty());
+        if (!accessible) {
+            if (expressionToStoreOn instanceof AttributeExpression) {
+                addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
+            } else if (field.isPrivate()) {
+                return false;
             }
         }
 
@@ -1899,7 +1912,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (enclosing == null || !enclosing.getName().endsWith("init>"))
                 expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
         } else if (accessible) {
-            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY);
+            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY); // GROOVY-9127
         }
         return true;
     }

@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.PackageScope
 
 /**
@@ -172,6 +171,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class A {
                 String name = 'Cedric'
             }
+
             A a = new A()
             def b = a.@name
             b.toUpperCase() // type of b should be inferred from field type
@@ -196,19 +196,53 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: A'
     }
 
-    @NotYetImplemented
+    // GROOVY-11319
     void testShouldComplainAboutMissingProperty3() {
         shouldFailWithMessages '''
             class A {
-                private x
+                private int getX() { 1 }
+            }
+            class B extends A {
+                void test() {
+                    super.x
+                }
+            }
+            new B().test()
+        ''',
+        'No such property: x for class: A'
+    }
+
+    // GROOVY-11319
+    void testShouldComplainAboutMissingProperty4() {
+        shouldFailWithMessages '''
+            class A {
+                private void setX(int i) {
+                    assert false : 'no access'
+                }
+            }
+            class B extends A {
+                void test() {
+                    super.x = 1
+                }
+            }
+            new B().test()
+        ''',
+        'No such property: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingProperty5() {
+        shouldFailWithMessages '''
+            class A {
+                private int x
             }
             class B extends A {
                 void test() {
                     this.x
                 }
             }
+            new B().test()
         ''',
-        'The field A.x is not accessible'
+        'No such property: x for class: B'
     }
 
     void testShouldComplainAboutMissingAttribute() {
@@ -261,8 +295,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.@x
                 }
             }
+            new B().test()
         ''',
-        'The field A.x is not accessible'
+        'Cannot access field: x of class: A'
     }
 
     void testPropertyWithInheritance() {
