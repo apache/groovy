@@ -23,6 +23,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Tests some particular script features.
@@ -36,7 +37,7 @@ public class ScriptTest extends TestSupport {
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    public void testInvokeMethodFallsThroughToMethodClosureInBinding() throws IOException, CompilationFailedException, IllegalAccessException, InstantiationException, NoSuchMethodException {
+    public void testInvokeMethodFallsThroughToMethodClosureInBinding() throws IOException, CompilationFailedException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         String text = "if (method() == 3) { println 'succeeded' }";
 
         GroovyCodeSource codeSource = new GroovyCodeSource(text, "groovy.script", "groovy.script");
