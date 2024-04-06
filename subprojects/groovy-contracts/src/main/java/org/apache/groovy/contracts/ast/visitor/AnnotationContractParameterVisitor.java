@@ -20,14 +20,11 @@ package org.apache.groovy.contracts.ast.visitor;
 
 import org.apache.groovy.contracts.util.AnnotationUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
-
-import java.util.List;
 
 /**
  * This {@link BaseVisitor} walks up the class hierarchy for the given {@link org.codehaus.groovy.ast.ClassNode}

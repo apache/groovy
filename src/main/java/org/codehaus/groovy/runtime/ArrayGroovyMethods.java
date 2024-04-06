@@ -80,7 +80,6 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
-import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongConsumer;
@@ -5336,7 +5335,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the int array
-     * using the supplier IntBinaryOperator as a comparator to determine the maximum of any two values.
+     * using the supplied IntComparator to determine the maximum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * int[] nums = [10, 20, -30]

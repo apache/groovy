@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform;
 
-import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
