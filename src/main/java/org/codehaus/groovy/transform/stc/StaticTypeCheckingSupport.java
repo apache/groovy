@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.Types;
@@ -1378,7 +1379,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         GenericsType[] gts = type.getGenericsTypes();
-        if (asBoolean(gts)) {
+        if (ArrayGroovyMethods.asBoolean(gts)) {
             gts = gts.clone();
             for (int i = 0, n = gts.length; i < n; i += 1) {
                 GenericsType gt = gts[i];

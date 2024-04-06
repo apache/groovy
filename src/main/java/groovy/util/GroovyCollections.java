@@ -21,6 +21,7 @@ package groovy.util;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.NumberAwareComparator;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -192,7 +193,7 @@ public class GroovyCollections {
      * @return the minimum value
      */
     public static <T> T min(T[] items) {
-        return DefaultGroovyMethods.min(items);
+        return ArrayGroovyMethods.min(items);
     }
 
     /**
@@ -214,7 +215,7 @@ public class GroovyCollections {
      * @return the maximum value
      */
     public static <T> T max(T[] items) {
-        return DefaultGroovyMethods.max(items);
+        return ArrayGroovyMethods.max(items);
     }
 
     /**
@@ -235,7 +236,7 @@ public class GroovyCollections {
      * @return the sum of the items
      */
     public static Object sum(Object[] items) {
-        return DefaultGroovyMethods.sum(items);
+        return ArrayGroovyMethods.sum(items);
     }
 
     /**

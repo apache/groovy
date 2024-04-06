@@ -23,16 +23,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.FormatHelper;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.NullObject;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.codehaus.groovy.runtime.StreamGroovyMethods;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
+import org.codehaus.groovy.runtime.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -843,7 +834,7 @@ public class DefaultTypeTransformation {
             right = primitiveArrayToUnmodifiableList(right);
         }
         if (left instanceof Object[] && right instanceof List) {
-            return DefaultGroovyMethods.equals((Object[]) left, (List) right);
+            return ArrayGroovyMethods.equals((Object[]) left, (List) right);
         }
         if (left instanceof List && right instanceof Object[]) {
             return DefaultGroovyMethods.equals((List) left, (Object[]) right);

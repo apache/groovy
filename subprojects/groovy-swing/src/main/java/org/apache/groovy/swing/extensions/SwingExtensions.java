@@ -19,6 +19,7 @@
 package org.apache.groovy.swing.extensions;
 
 import groovy.lang.GString;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
@@ -87,7 +88,7 @@ public class SwingExtensions {
      * @since 1.6.4
      */
     public static Iterator<Component> iterator(Container self) {
-        return DefaultGroovyMethods.iterator(self.getComponents());
+        return ArrayGroovyMethods.iterator(self.getComponents());
     }
 
     /**
@@ -659,7 +660,7 @@ public class SwingExtensions {
      * @since 1.6.4
      */
     public static Iterator<?> iterator(TreePath self) {
-        return DefaultGroovyMethods.iterator(self.getPath());
+        return ArrayGroovyMethods.iterator(self.getPath());
     }
 
     /**
@@ -852,7 +853,7 @@ public class SwingExtensions {
      * @since 1.6.4
      */
     public static Iterator<Component> iterator(JMenu self) {
-        return DefaultGroovyMethods.iterator(self.getMenuComponents());
+        return ArrayGroovyMethods.iterator(self.getMenuComponents());
     }
 
     /**
@@ -900,7 +901,7 @@ public class SwingExtensions {
      * @since 1.6.4
      */
     public static Iterator<MenuElement> iterator(JMenuBar self) {
-        return DefaultGroovyMethods.iterator(self.getSubElements());
+        return ArrayGroovyMethods.iterator(self.getSubElements());
     }
 
     /**
@@ -981,7 +982,7 @@ public class SwingExtensions {
      * @since 1.6.4
      */
     public static Iterator<MenuElement> iterator(JPopupMenu self) {
-        return DefaultGroovyMethods.iterator(self.getSubElements());
+        return ArrayGroovyMethods.iterator(self.getSubElements());
     }
 
     /**

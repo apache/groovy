@@ -230,6 +230,7 @@ public class CompilerConfiguration {
         }
 
         @Override
+        @Deprecated
         public void setOutput(final PrintWriter output) {
             throw new UnsupportedOperationException();
         }

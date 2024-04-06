@@ -202,6 +202,6 @@ public class ClosureJavaIntegrationTest extends TestCase {
                 return total.add(BigDecimal.ONE.divide(new BigDecimal(next)));
             }
         };
-        assertTrue(DefaultTypeTransformation.compareEqual(BigDecimal.ONE, inject(c, initial, closure)));
+        assertTrue(DefaultTypeTransformation.compareEqual(BigDecimal.ONE, inject((Iterable<Integer>)c, initial, closure)));
     }
 }

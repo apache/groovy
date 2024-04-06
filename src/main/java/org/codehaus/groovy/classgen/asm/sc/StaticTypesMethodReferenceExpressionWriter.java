@@ -59,7 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
+import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;

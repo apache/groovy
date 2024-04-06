@@ -655,7 +655,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a boolean Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Boolean>> chop(boolean[] self, int... chopSizes) {
@@ -674,7 +674,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a byte Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Byte>> chop(byte[] self, int... chopSizes) {
@@ -693,7 +693,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a char Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Character>> chop(char[] self, int... chopSizes) {
@@ -712,7 +712,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a short Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Short>> chop(short[] self, int... chopSizes) {
@@ -731,7 +731,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an int Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Integer>> chop(int[] self, int... chopSizes) {
@@ -750,7 +750,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a long Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Long>> chop(long[] self, int... chopSizes) {
@@ -769,7 +769,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a float Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Float>> chop(float[] self, int... chopSizes) {
@@ -788,7 +788,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a double Array to be chopped
      * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original array elements into pieces determined by chopSizes
-     * @see DefaultGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
+     * @see ArrayGroovyMethods#collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 5.0.0
      */
     public static List<List<Double>> chop(double[] self, int... chopSizes) {
@@ -4001,7 +4001,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(boolean[] self) {
@@ -4016,7 +4016,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(byte[] self) {
@@ -4031,7 +4031,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(char[] self) {
@@ -4046,7 +4046,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(short[] self) {
@@ -4061,7 +4061,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(int[] self) {
@@ -4076,7 +4076,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(long[] self) {
@@ -4091,7 +4091,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(float[] self) {
@@ -4106,7 +4106,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert array.indices == 0..1
      * </pre>
      *
-     * @see DefaultGroovyMethods#getIndices(Object[])
+     * @see ArrayGroovyMethods#getIndices(Object[])
      * @since 3.0.8
      */
     public static IntRange getIndices(double[] self) {
@@ -6076,7 +6076,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
           case 0:
             return self.clone();
           case 1:
-            return DefaultGroovyMethods.minus(self, removeMe[0]);
+            return ArrayGroovyMethods.minus(self, removeMe[0]);
           default:
             Collection<T> temp = DefaultGroovyMethods.minus((Collection<T>) toList(self), Arrays.asList(removeMe));
             return temp.toArray(createSimilarArray(self, temp.size()));
