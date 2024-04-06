@@ -103,7 +103,7 @@ public class CompilerConfiguration {
     public static final String JDK21 = "21";
     /** This (<code>"22"</code>) is the value for targetBytecode to compile for a JDK 22. */
     public static final String JDK22 = "22";
-    /** This (<code>"22"</code>) is the value for targetBytecode to compile for a JDK 23. */
+    /** This (<code>"23"</code>) is the value for targetBytecode to compile for a JDK 23. */
     public static final String JDK23 = "23";
 
     /**
