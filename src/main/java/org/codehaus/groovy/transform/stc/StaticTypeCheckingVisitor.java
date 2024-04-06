@@ -678,18 +678,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
         } else if (accessedVariable instanceof FieldNode) {
-            FieldNode accessedField = (FieldNode) accessedVariable;
-            ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
-            boolean hasProperty = tryVariableExpressionAsProperty(vexp, name);
-            if (enclosingClosure == null && !hasProperty) { // GROOVY-10981: property selected before super class field
-                checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
-                if (temporaryType == null) storeType(vexp, getType(vexp));
-            }
-            if (temporaryType != null && !isObjectType(temporaryType)) {
-                vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
+            if (tryVariableExpressionAsProperty(vexp, name)) {
+                ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
+                if (temporaryType == null) {
+                    storeType(vexp, getType(vexp));
+                } else if (!isObjectType(temporaryType)) {
+                    vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
+                }
+            } else if (!extension.handleUnresolvedVariableExpression(vexp)) { // GROOVY-11356
+                addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
             }
         } else if (accessedVariable instanceof PropertyNode) {
-            // we must be careful, because the property node may be of a wrong type:
+            // we must be careful -- the property node may be of a wrong type:
             // if a class contains a getter and a setter of different types or
             // overloaded setters, the type of the property node is arbitrary!
             if (tryVariableExpressionAsProperty(vexp, name)) {
@@ -1898,7 +1898,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (!accessible) {
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
-            } else if (field.isPrivate()) {
+            } else if (!field.isProtected()) { // private or package-private
                 return false;
             }
         }

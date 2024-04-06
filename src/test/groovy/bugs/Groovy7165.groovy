@@ -73,8 +73,7 @@ final class Groovy7165 {
             }
             new B().test()
         '''
-
-        assert err =~ /Access to B#CONST is forbidden/
+        assert err =~ /No such property: CONST for class: B/
     }
 
     @Test
@@ -91,7 +90,6 @@ final class Groovy7165 {
             }
             assert false : 'compilation should fail'
         '''
-
         assert err =~ /Access to A#CONST is forbidden/
     }
 }
