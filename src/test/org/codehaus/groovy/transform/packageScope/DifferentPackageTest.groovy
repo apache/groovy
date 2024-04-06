@@ -192,20 +192,20 @@ final class DifferentPackageTest {
     void testDifferentPackageShouldNotSeeInstanceProps() {
         def err = shouldFail CompilationFailedException, {
             addSources(
-                    One: P_DOT_ONE,
-                    Two: '''
-                        package q
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
 
-                        @groovy.transform.CompileStatic
-                        class Two extends p.One {
-                            int valueSize() {
-                                value.size() // not visible
-                            }
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        int valueSize() {
+                            value.size() // not visible
                         }
-                    ''')
+                    }
+                ''')
         }
 
-        assert err.message =~ /Access to q.Two#value is forbidden/
+        assert err.message =~ /No such property: value for class: q.Two/
     }
 
     // GROOVY-9093
@@ -213,20 +213,20 @@ final class DifferentPackageTest {
     void testDifferentPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
             addSources(
-                    One: P_DOT_ONE,
-                    Two: '''
-                        package q
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
 
-                        @groovy.transform.CompileStatic
-                        class Two extends p.One {
-                            static def half() {
-                                (CONST / 2) // not visible
-                            }
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        static def half() {
+                            (CONST / 2) // not visible
                         }
-                    ''')
+                    }
+                ''')
         }
 
-        assert err.message =~ /Access to q.Two#CONST is forbidden/
+        assert err.message =~ /No such property: CONST for class: q.Two/
     }
 
     @Test
