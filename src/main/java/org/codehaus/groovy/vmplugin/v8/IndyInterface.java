@@ -346,25 +346,20 @@ public class IndyInterface {
      * Core method for indy method selection using runtime types.
      */
     public static Object selectMethod(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
-        final MethodHandleWrapper mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        MethodHandleWrapper mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
-        if (callSite instanceof CacheableCallSite) {
-            CacheableCallSite cacheableCallSite = (CacheableCallSite) callSite;
+        MethodHandle defaultTarget = callSite.getDefaultTarget();
+        long fallbackCount = callSite.incrementFallbackCount();
+        if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
+            callSite.setTarget(defaultTarget);
+            if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
+            callSite.resetFallbackCount();
+        }
 
-            final MethodHandle defaultTarget = cacheableCallSite.getDefaultTarget();
-            final long fallbackCount = cacheableCallSite.incrementFallbackCount();
-            if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (cacheableCallSite.getTarget() != defaultTarget)) {
-                cacheableCallSite.setTarget(defaultTarget);
-                if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
-
-                cacheableCallSite.resetFallbackCount();
-            }
-
-            if (defaultTarget == cacheableCallSite.getTarget()) {
-                // correct the stale methodhandle in the inline cache of callsite
-                // it is important but impacts the performance somehow when cache misses frequently
-                doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
-            }
+        if (callSite.getTarget() == defaultTarget) {
+            // correct the stale methodhandle in the inline cache of callsite
+            // it is important but impacts the performance somehow when cache misses frequently
+            doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
         }
 
         return mhw.getCachedMethodHandle().invokeExact(arguments);
