@@ -55,7 +55,8 @@ import java.lang.annotation.Target;
  * implementations are supported both of which support the equals contract outlined in the javadoc
  * for <code>java.lang.Object</code>
  * <p>
- * To illustrate the 'canEqual' implementation style (see http://www.artima.com/lejava/articles/equality.html
+ * To illustrate the 'canEqual' implementation style (see
+ * https://www.artima.com/articles/how-to-write-an-equality-method-in-java
  * for further details), consider this class:
  * <pre>
  * {@code @EqualsAndHashCode}
