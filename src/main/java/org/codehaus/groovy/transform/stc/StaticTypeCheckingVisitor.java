@@ -702,6 +702,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo);
                     }
                 }
+            } else if (!extension.handleUnresolvedVariableExpression(vexp)) { // GROOVY-11356
+                addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
             }
         } else if (accessedVariable != null) {
             VariableExpression localVariable;

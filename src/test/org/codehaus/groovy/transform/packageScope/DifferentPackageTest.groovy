@@ -36,6 +36,8 @@ final class DifferentPackageTest {
             String value = 'value'
             @groovy.transform.PackageScope
             static final int CONST = 42
+            @groovy.transform.PackageScope
+            static int getAnswer() { 42 }
         }
     '''
 
@@ -66,8 +68,8 @@ final class DifferentPackageTest {
                         value.size()
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Two').newInstance().valueSize() == 5
     }
 
@@ -84,8 +86,8 @@ final class DifferentPackageTest {
                         new One().value.size()
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Peer').newInstance().valueSize() == 5
     }
 
@@ -98,12 +100,12 @@ final class DifferentPackageTest {
 
                 @groovy.transform.CompileStatic
                 class Two extends One {
-                    static def half() {
+                    static half() {
                         CONST / 2
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Two').half() == 21
     }
 
@@ -120,8 +122,8 @@ final class DifferentPackageTest {
                         CONST / 2
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Two').newInstance().half() == 21
     }
 
@@ -134,12 +136,12 @@ final class DifferentPackageTest {
 
                 @groovy.transform.CompileStatic
                 class Peer {
-                    static def half() {
+                    static half() {
                         One.CONST / 2
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Peer').half() == 21
     }
 
@@ -156,8 +158,8 @@ final class DifferentPackageTest {
                         One.CONST / 2
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Peer').newInstance().half() == 21
     }
 
@@ -178,12 +180,12 @@ final class DifferentPackageTest {
 
                 @groovy.transform.CompileStatic
                 class Peer {
-                    static def half() {
+                    static half() {
                         (q.Two.CONST / 2) // indirect access
                     }
                 }
-            ''')
-
+            '''
+        )
         assert loader.loadClass('p.Peer').half() == 21
     }
 
@@ -202,10 +204,10 @@ final class DifferentPackageTest {
                             value.size() // not visible
                         }
                     }
-                ''')
+                '''
+            )
         }
-
-        assert err.message =~ /No such property: value for class: q.Two/
+        assert err =~ /No such property: value for class: q.Two/
     }
 
     // GROOVY-9093
@@ -219,18 +221,39 @@ final class DifferentPackageTest {
 
                     @groovy.transform.CompileStatic
                     class Two extends p.One {
-                        static def half() {
+                        static half() {
                             (CONST / 2) // not visible
                         }
                     }
-                ''')
+                '''
+            )
         }
+        assert err =~ /No such property: CONST for class: q.Two/
+    }
 
-        assert err.message =~ /No such property: CONST for class: q.Two/
+    // GROOVY-11356
+    @Test
+    void testDifferentPackageShouldNotSeeStaticProps2() {
+        def err = shouldFail CompilationFailedException, {
+            addSources(
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
+
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        static half() {
+                            (answer / 2) // not visible
+                        }
+                    }
+                '''
+            )
+        }
+        assert err =~ /No such property: answer for class: q.Two/
     }
 
     @Test
-    void testDifferentPackageShouldNotSeeStaticProps2() {
+    void testDifferentPackageShouldNotSeeStaticProps3() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
@@ -241,13 +264,33 @@ final class DifferentPackageTest {
 
                     @groovy.transform.CompileStatic
                     class Other {
-                        static def half() {
+                        static half() {
                             (One.CONST / 2) // not visible
                         }
                     }
-                ''')
+                '''
+            )
         }
+        assert err =~ /Access to p.One#CONST is forbidden/
+    }
 
-        assert err.message =~ /Access to p.One#CONST is forbidden/
+    @Test
+    void testDifferentPackageShouldNotSeeStaticProps4() {
+        def err = shouldFail CompilationFailedException, {
+            addSources(
+                One: P_DOT_ONE,
+                Other: '''
+                    package q
+
+                    @groovy.transform.CompileStatic
+                    class Other {
+                        static half() {
+                            (p.One.answer / 2) // not visible
+                        }
+                    }
+                '''
+            )
+        }
+        assert err =~ /No such property: answer for class: p.One/ // TODO: Cannot access p.One#getAnswer?
     }
 }
