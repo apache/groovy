@@ -1081,6 +1081,33 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11358
+    void testPrivateFieldAccessOfAbstract() {
+        shouldFailWithMessages '''
+            abstract class A {
+                private int f
+            }
+            void test(A a) {
+                int i = a.@f // MissingFieldException
+                int j = a.f  // MissingPropertyException
+            }
+            test(new A() {})
+        ''',
+        'Cannot access field: f of class: A', 'No such property: f for class: A'
+
+        shouldFailWithMessages '''
+            abstract class A {
+                private int f
+            }
+            void test(A a) {
+                a.@f = 1 // MissingFieldException
+                a.f  = 2 // MissingPropertyException
+            }
+            test(new A() {})
+        ''',
+        'Cannot access field: f of class: A', 'No such property: f for class: A'
+    }
+
     // GROOVY-5737
     void testGeneratedFieldAccessInClosure() {
         assertScript '''

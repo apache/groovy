@@ -1894,7 +1894,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         boolean superField = isSuperExpression(expressionToStoreOn.getObjectExpression());
-        boolean accessible = ( !superField && receiver.equals(field.getDeclaringClass()) ) // GROOVY-7300
+        boolean accessible = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()) // GROOVY-7300, GROOVY-11358
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
 
         if (!accessible) {
