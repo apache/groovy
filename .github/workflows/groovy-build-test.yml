@@ -17,6 +17,9 @@ name: Build and test
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     strategy:
@@ -26,7 +29,7 @@ jobs:
         java: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     runs-on: ${{ matrix.os }}
     env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+      DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK

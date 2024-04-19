@@ -27,7 +27,7 @@ jobs:
       fail-fast: true
     runs-on: ubuntu-latest
     env:
-      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+      DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK
