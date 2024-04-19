@@ -28,7 +28,7 @@ jobs:
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     env:
-      DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+      GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDKs
