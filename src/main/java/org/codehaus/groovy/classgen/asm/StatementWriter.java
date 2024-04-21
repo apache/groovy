@@ -343,8 +343,8 @@ public class StatementWriter {
 
             // create variable for the exception
             compileStack.pushState();
-            // TODO: Is it okay that "catch (e)" makes variable type Object?
-            compileStack.defineVariable(catchStatement.getVariable(), true);
+            ClassNode type = catchStatement.getExceptionType();
+            compileStack.defineVariable(catchStatement.getVariable(), type, true);
             // handle catch body
             catchStatement.visit(controller.getAcg());
             // placeholder to avoid problems with empty catch block
@@ -358,8 +358,8 @@ public class StatementWriter {
                 mv.visitJumpInsn(GOTO, finallyStart);
                 fallthroughFinally = true;
             }
-            compileStack.writeExceptionTable(tryBlock, catchBlock,
-                    BytecodeHelper.getClassInternalName(catchStatement.getExceptionType()));
+            String typeName = BytecodeHelper.getClassInternalName(type);
+            compileStack.writeExceptionTable(tryBlock, catchBlock, typeName);
         }
 
         // used to handle exceptions in catches and regularly visited finals
