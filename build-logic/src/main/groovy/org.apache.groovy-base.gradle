@@ -308,8 +308,8 @@ components.groovyLibrary {
 // By declaring a codehaus capability we can tell Gradle that the user has to
 // choose between "old" groovy and "new" groovy
 List<String> capabilities = [
-        "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}",
-        "org.apache.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
+        "org.codehaus.groovy:${base.archivesName.get()}:${sharedConfiguration.groovyVersion.get()}",
+        "org.apache.groovy:${base.archivesName.get()}:${sharedConfiguration.groovyVersion.get()}"
 ]
 int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get())
 // First we create the "API" and "runtime" variants of Groovy for publication

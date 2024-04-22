@@ -33,7 +33,9 @@ buildScanRecipes {
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
-archivesBaseName = 'groovy'
+base {
+    archivesName = 'groovy'
+}
 
 groovyLibrary {
     registerOptionalFeature 'gpars'
