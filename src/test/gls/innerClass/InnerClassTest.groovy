@@ -951,6 +951,26 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-11352
+    void testUsageOfOuterMethod7() {
+        assertScript '''
+            class Super {
+              protected final String s
+              Super(String s) { this.s = s }
+            }
+            class Outer {
+              static String initValue() { 'ok' }
+              static class Inner extends Super {
+                Inner() {
+                  super(initValue()) // here
+                }
+              }
+              String test() { new Inner().s }
+            }
+            assert new Outer().test() == 'ok'
+        '''
+    }
+
     @Test
     void testUsageOfOuterMethodOverridden() {
         assertScript '''
