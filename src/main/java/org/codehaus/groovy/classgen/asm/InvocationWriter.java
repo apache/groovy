@@ -532,9 +532,18 @@ public class InvocationWriter {
     }
 
     private boolean isStaticInvocation(final MethodCallExpression call) {
-        if (!isThisExpression(call.getObjectExpression())) return false;
-        if (controller.isStaticMethod()) return true;
-        return controller.isStaticContext() && !call.isImplicitThis();
+        if (isThisExpression(call.getObjectExpression())) {
+            if (controller.getCompileStack().isInSpecialConstructorCall()) {
+                return true;
+            }
+            if (controller.isStaticContext() && !call.isImplicitThis()) {
+                return true;
+            }
+            if (controller.isStaticMethod()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void writeInvokeStaticMethod(final StaticMethodCallExpression call) {
