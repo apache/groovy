@@ -649,12 +649,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 @Override
                 public void visitMethodCallExpression(final MethodCallExpression mce) {
                     if (inSpecialConstructorCall && isThisObjectExpression(mce)) {
-                        MethodNode methodTarget = mce.getMethodTarget();
-                        if (methodTarget == null || !(methodTarget.isStatic() || classNode.getOuterClasses().contains(methodTarget.getDeclaringClass()))) {
-                            if (!mce.isImplicitThis()) {
-                                throw newVariableError(mce.getObjectExpression().getText(), mce.getObjectExpression());
-                            } else {
+                        boolean outerOrStaticMember = false;
+                        if (mce.getMethodTarget() != null) {
+                            outerOrStaticMember = mce.getMethodTarget().isStatic() || classNode.getOuterClasses().contains(mce.getMethodTarget().getDeclaringClass());
+                        } else if (mce.isImplicitThis()) { // GROOVY-11352
+                            outerOrStaticMember = classNode.getOuterClasses().stream().anyMatch(oc -> oc.hasPossibleStaticMethod(mce.getMethodAsString(), mce.getArguments()));
+                        }
+                        if (!outerOrStaticMember) {
+                            if (mce.isImplicitThis()) {
                                 throw newVariableError(mce.getMethodAsString(), mce.getMethod());
+                            } else {
+                                throw newVariableError(mce.getObjectExpression().getText(), mce.getObjectExpression());
                             }
                         }
                         mce.getMethod().visit(this);
