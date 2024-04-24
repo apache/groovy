@@ -110,6 +110,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
@@ -684,6 +685,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     storeType(vexp, getType(vexp));
                 } else if (!isObjectType(temporaryType)) {
                     vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
+                }
+                if (vexp.getAccessedVariable() != accessedVariable) { // GROOVY-11360: field hidden by dynamic property
+                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains(((long) vexp.getLineNumber()) << 16 + vexp.getColumnNumber())) {
+                        String text = "The field: " + accessedVariable.getName() + " of class: " + prettyPrintTypeName(((FieldNode) accessedVariable).getDeclaringClass()) +
+                                                " is hidden by a dynamic property. A qualifier is required to reference it.";
+                        Token token = new Token(0, name, vexp.getLineNumber(), vexp.getColumnNumber()); // ASTNode to CSTNode
+                        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.POSSIBLE_ERRORS, text, token, getSourceUnit()));
+                    }
                 }
             } else if (!extension.handleUnresolvedVariableExpression(vexp)) { // GROOVY-11356
                 addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
