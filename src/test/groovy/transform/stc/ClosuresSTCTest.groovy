@@ -716,6 +716,30 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11360
+    void testLexicalScopeVersusGetDynamicProperty() {
+        assertScript '''
+            class C {
+                private static final value = "C"
+
+                def m(D d) {
+                    d.with {
+                        return value
+                    }
+                }
+            }
+
+            class D {
+                def get(String name) {
+                    if (name == "value") "D"
+                }
+            }
+
+            String result = new C().m(new D())
+            assert result == 'C'
+        '''
+    }
+
     // GROOVY-9089
     void testOwnerVersusDelegateFromNestedClosure() {
         String declarations = '''

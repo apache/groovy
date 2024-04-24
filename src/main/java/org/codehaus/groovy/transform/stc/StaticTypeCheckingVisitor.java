@@ -1640,7 +1640,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
-                    visitor.visitMethod(mopMethod);
+                    if (visitor != null) {
+                        visitor.visitMethod(mopMethod);
+                    }
                     return true;
                 }
             }
