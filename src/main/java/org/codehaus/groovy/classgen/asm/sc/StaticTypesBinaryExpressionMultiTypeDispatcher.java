@@ -77,6 +77,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIS
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
@@ -186,8 +187,10 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
         Expression rightExpression = expression.getRightExpression();
-        if (defineVariable && (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression)) {
-            rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
+        if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
+            ClassNode leftType = leftExpression.getNodeMetaData(DECLARATION_INFERRED_TYPE);
+            if (leftType == null) leftType = leftExpression.getNodeMetaData(INFERRED_TYPE);
+            rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftType);
         }
         if (leftExpression instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) leftExpression;
