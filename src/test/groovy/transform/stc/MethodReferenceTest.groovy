@@ -1261,7 +1261,7 @@ final class MethodReferenceTest {
         assert err.message.contains("Failed to find class method 'toLowerCaseX(java.lang.String)' or instance method 'toLowerCaseX()' for the type: java.lang.String")
     }
 
-    @Test // GROOVY-10813, GROOVY-10858
+    @Test // GROOVY-10813, GROOVY-10858, GROOVY-11363
     void testMethodSelection() {
         for (spec in ['', '<?>', '<Object>', '<? extends Object>', '<? super String>']) {
             assertScript shell, """
@@ -1300,6 +1300,16 @@ final class MethodReferenceTest {
                 Supplier<String> s = 'x'::toString
                 def result = s.get()
                 assert result == 'x'
+            }
+
+            test()
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Supplier<String> s = 0::toString
+                def result = s.get()
+                assert result == '0'
             }
 
             test()
