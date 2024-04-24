@@ -1312,7 +1312,7 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-10813
+    @Test // GROOVY-10813, GROOVY-11363
     void testMethodSelection2() {
         for (spec in ['', '<?>', '<Object>', '<? extends Object>', '<? super String>']) {
             assertScript imports + """
@@ -1351,6 +1351,16 @@ final class MethodReferenceTest {
                 Supplier<String> s = 'x'::toString
                 def result = s.get()
                 assert result == 'x'
+            }
+
+            test()
+        '''
+        assertScript imports + '''
+            @CompileStatic
+            void test() {
+                Supplier<String> s = 0::toString
+                def result = s.get()
+                assert result == '0'
             }
 
             test()
