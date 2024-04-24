@@ -19,21 +19,24 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.util.FastArray;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class MetaMethodIndex {
     private static final int DEFAULT_CAPACITY = 32;
+
     /**
      * a map of the starter class plus its super classes to save method lists for
      * static/normal/super method calls. It also provides a simple cache of one
      * method name and call signature to method per static/normal/super call.
      */
     public final Map<Class<?>, Map<String, Cache>> indexMap = new ConcurrentHashMap<>(DEFAULT_CAPACITY);
+
     public final Class<?> mainClass;
 
     public static class MetaMethodCache {
@@ -69,7 +72,6 @@ public class MetaMethodIndex {
             return "[name=" + name + "]";
         }
     }
-
 
     //--------------------------------------------------------------------------
 
@@ -107,64 +109,69 @@ public class MetaMethodIndex {
         return indexMap.get(cls);
     }
 
-    public void copyNonPrivateMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
+    public  void copyNonPrivateMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
         for (Cache e : from.values()) {
             copyNonPrivateMethods(e, to);
         }
     }
 
     private void copyNonPrivateMethods(final Cache from, final Map<String, Cache> to) {
-        Object oldListOrMethod = from.methods;
-        if (oldListOrMethod instanceof FastArray) {
-            FastArray oldList = (FastArray) oldListOrMethod;
+        var fastArrayOrMetaMethod = from.methods;
+        if (fastArrayOrMetaMethod instanceof FastArray) {
+            FastArray fastArray = (FastArray) fastArrayOrMetaMethod;
             Cache e = null;
-            final int n = oldList.size();
-            Object[] array = oldList.getArray();
+            final int n = fastArray.size();
+            Object[] array = fastArray.getArray();
             for (int i = 0; i != n; i += 1) {
                 MetaMethod method = (MetaMethod) array[i];
-                if (method.isPrivate()) continue;
-                if (e == null)
-                    e = getOrPutMethods(from.name, to);
-                e.methods = addMethodToList(e.methods, method);
+                if (isNonPrivate(method)) {
+                    if (e == null)
+                        e = getOrPutMethods(from.name, to);
+                    e.methods = addMethodToList(e.methods, method);
+                }
             }
         } else {
-            MetaMethod method = (MetaMethod) oldListOrMethod;
-            if (!method.isPrivate()) {
+            MetaMethod method = (MetaMethod) fastArrayOrMetaMethod;
+            if (isNonPrivate(method)) {
                 Cache e = getOrPutMethods(from.name, to);
                 e.methods = addMethodToList(e.methods, method);
             }
         }
     }
-    public void copyNonPrivateNonNewMetaMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
+
+    public  void copyNonPrivateNonNewMetaMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
         for (Cache e : from.values()) {
             copyNonPrivateNonNewMetaMethods(e, to);
         }
     }
 
     private void copyNonPrivateNonNewMetaMethods(final Cache from, final Map<String, Cache> to) {
-        Object oldListOrMethod = from.methods;
-        if (oldListOrMethod == null) {
-            return;
-        }
-
-        if (oldListOrMethod instanceof FastArray) {
-            FastArray oldList = (FastArray) oldListOrMethod;
+        var fastArrayOrMetaMethod = from.methods;
+        if (fastArrayOrMetaMethod instanceof FastArray) {
+            FastArray fastArray = (FastArray) fastArrayOrMetaMethod;
             Cache e = null;
-            final int n = oldList.size();
-            Object[] array = oldList.getArray();
+            final int n = fastArray.size();
+            Object[] array = fastArray.getArray();
             for (int i = 0; i != n; i += 1) {
                 MetaMethod method = (MetaMethod) array[i];
-                if (method instanceof NewMetaMethod || method.isPrivate()) continue;
-                if (e == null)
-                    e = getOrPutMethods(from.name, to);
+                if (isNonPrivate(method) && !(method instanceof NewMetaMethod)) {
+                    if (e == null)
+                        e = getOrPutMethods(from.name, to);
+                    e.methods = addMethodToList(e.methods, method);
+                }
+            }
+        } else if (fastArrayOrMetaMethod != null) {
+            MetaMethod method = (MetaMethod) fastArrayOrMetaMethod;
+            if (isNonPrivate(method) && !(method instanceof NewMetaMethod)) {
+                Cache e = getOrPutMethods(from.name, to);
                 e.methods = addMethodToList(e.methods, method);
             }
-        } else {
-            MetaMethod method = (MetaMethod) oldListOrMethod;
-            if (method instanceof NewMetaMethod || method.isPrivate()) return;
-            Cache e = getOrPutMethods(from.name, to);
-            e.methods = addMethodToList(e.methods, method);
         }
+    }
+
+    private boolean isNonPrivate(final MetaMethod method) {
+        return !method.isPrivate() && (!method.isPackagePrivate() || // GROOVY-11357
+                Objects.equals(method.getDeclaringClass().getTheClass().getPackage(), mainClass.getPackage()));
     }
 
     public Object addMethodToList(final Object o, final MetaMethod toIndex) {
@@ -269,7 +276,7 @@ public class MetaMethodIndex {
         });
     }
 
-    private Stream<Cache> allEntries() {
+    private java.util.stream.Stream<Cache> allEntries() {
         return indexMap.values().stream().flatMap(map -> map.values().stream());
     }
 

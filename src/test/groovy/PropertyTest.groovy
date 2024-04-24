@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  * Tests the use of properties in Groovy
  */
-class PropertyTest extends GroovyTestCase {
+final class PropertyTest extends GroovyTestCase {
 
     void testNormalPropertyGettersAndSetters() {
         def foo = new Foo()
@@ -200,7 +200,7 @@ class PropertyTest extends GroovyTestCase {
                 }
                 class C extends A {
                     def m() {
-                        '' + x + this.x + super.x // hardwired to "super.getX()"
+                        '' + x + this.x + super.x
                     }
                 }
                 String result = new C().m()

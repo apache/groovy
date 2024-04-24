@@ -35,6 +35,8 @@ final class DifferentPackageTest {
             @groovy.transform.PackageScope
             String value = 'value'
             @groovy.transform.PackageScope
+            String getThing() { 'string' }
+            @groovy.transform.PackageScope
             static final int CONST = 42
             @groovy.transform.PackageScope
             static int getAnswer() { 42 }
@@ -56,6 +58,24 @@ final class DifferentPackageTest {
     //--------------------------------------------------------------------------
 
     @Test
+    void testSamePackageShouldSeeInstanceMethod() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Two extends One {
+                    int size() {
+                        getThing().size()
+                    }
+                }
+            '''
+        )
+        assert loader.loadClass('p.Two').newInstance().size() == 6
+    }
+
+    @Test
     void testSamePackageShouldSeeInstanceProps1() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -64,13 +84,13 @@ final class DifferentPackageTest {
 
                 @groovy.transform.CompileStatic
                 class Two extends One {
-                    int valueSize() {
+                    int size() {
                         value.size()
                     }
                 }
             '''
         )
-        assert loader.loadClass('p.Two').newInstance().valueSize() == 5
+        assert loader.loadClass('p.Two').newInstance().size() == 5
     }
 
     @Test
@@ -82,13 +102,14 @@ final class DifferentPackageTest {
 
                 @groovy.transform.CompileStatic
                 class Peer {
-                    int valueSize() {
-                        new One().value.size()
+                    int size() {
+                        def one = new One()
+                        one.value.size()
                     }
                 }
             '''
         )
-        assert loader.loadClass('p.Peer').newInstance().valueSize() == 5
+        assert loader.loadClass('p.Peer').newInstance().size() == 5
     }
 
     @Test
@@ -189,9 +210,9 @@ final class DifferentPackageTest {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
-    // GROOVY-9093
+    // GROOVY-11357
     @Test
-    void testDifferentPackageShouldNotSeeInstanceProps() {
+    void testDiffPackageShouldNotSeeInstanceMethod() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
@@ -200,7 +221,45 @@ final class DifferentPackageTest {
 
                     @groovy.transform.CompileStatic
                     class Two extends p.One {
-                        int valueSize() {
+                        int size() {
+                            getThing().size() // not visible
+                        }
+                    }
+                '''
+            )
+        }
+        assert err =~ /Cannot find matching method q.Two#getThing()/
+
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package q
+
+                class Two extends p.One {
+                    int size() {
+                        getThing().size() // not visible
+                    }
+                }
+            '''
+        )
+        def two = loader.loadClass('q.Two').newInstance()
+        shouldFail MissingMethodException, {
+            two.size()
+        }
+    }
+
+    // GROOVY-9093
+    @Test
+    void testDiffPackageShouldNotSeeInstanceProps1() {
+        def err = shouldFail CompilationFailedException, {
+            addSources(
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
+
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        int size() {
                             value.size() // not visible
                         }
                     }
@@ -210,9 +269,30 @@ final class DifferentPackageTest {
         assert err =~ /No such property: value for class: q.Two/
     }
 
+    @Test
+    void testDiffPackageShouldNotSeeInstanceProps2() {
+        def err = shouldFail CompilationFailedException, {
+            addSources(
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
+
+                    @groovy.transform.CompileStatic
+                    class Two {
+                        int size() {
+                            def one = new p.One()
+                            one.value.size() // not visible
+                        }
+                    }
+                '''
+            )
+        }
+        assert err =~ /Access to p.One#value is forbidden/
+    }
+
     // GROOVY-9093
     @Test
-    void testDifferentPackageShouldNotSeeStaticProps1() {
+    void testDiffPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
@@ -233,7 +313,7 @@ final class DifferentPackageTest {
 
     // GROOVY-11356
     @Test
-    void testDifferentPackageShouldNotSeeStaticProps2() {
+    void testDiffPackageShouldNotSeeStaticProps2() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
@@ -253,7 +333,7 @@ final class DifferentPackageTest {
     }
 
     @Test
-    void testDifferentPackageShouldNotSeeStaticProps3() {
+    void testDiffPackageShouldNotSeeStaticProps3() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
@@ -275,7 +355,7 @@ final class DifferentPackageTest {
     }
 
     @Test
-    void testDifferentPackageShouldNotSeeStaticProps4() {
+    void testDiffPackageShouldNotSeeStaticProps4() {
         def err = shouldFail CompilationFailedException, {
             addSources(
                 One: P_DOT_ONE,
