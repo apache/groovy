@@ -710,6 +710,55 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11360
+    void testLexicalScopeVersusGetDynamicProperty() {
+        config.warningLevel = org.codehaus.groovy.control.messages.WarningMessage.POSSIBLE_ERRORS
+        config.targetDirectory = File.createTempDir()
+        def parentDir = File.createTempDir()
+        try {
+            def c = new File(parentDir, 'C.groovy')
+            c.write '''
+                class C {
+                    private static final value = "C"
+
+                    def m(D d) {
+                        d.with {
+                            return value
+                        }
+                    }
+                }
+            '''
+            def d = new File(parentDir, 'D.groovy')
+            d.write '''
+                class D {
+                    def get(String name) {
+                        if (name == "value") "D"
+                    }
+                }
+            '''
+            def e = new File(parentDir, 'E.groovy')
+            e.write '''
+                String result = new C().m(new D())
+                assert result == 'D'
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            new org.codehaus.groovy.control.CompilationUnit(config, null, loader).with {
+                addSources(c, d, e)
+                compile()
+
+                assert errorCollector.hasWarnings()
+                assert errorCollector.warnings[0].message.startsWith(
+                        'The field: value of class: C is hidden by a dynamic property.')
+            }
+            loader.addClasspath(config.targetDirectory.absolutePath)
+            loader.loadClass('E', true).main()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
     // GROOVY-9089
     void testOwnerVersusDelegateFromNestedClosure() {
         String declarations = '''

@@ -108,6 +108,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
@@ -641,6 +642,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (declaredInScope) {
                     checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
+                } else if (vexp.getAccessedVariable() != accessedField) { // GROOVY-11360: field hidden by dynamic property
+                    if (vexp.getLineNumber() > 0 && !typeCheckingContext.reportedErrors.contains(((long) vexp.getLineNumber()) << 16 + vexp.getColumnNumber())) {
+                        String text = "The field: " + accessedField.getName() + " of class: " + prettyPrintTypeName(accessedField.getDeclaringClass()) +
+                                                " is hidden by a dynamic property. A qualifier is required to reference it.";
+                        Token token = new Token(0, name, vexp.getLineNumber(), vexp.getColumnNumber()); // ASTNode to CSTNode
+                        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.POSSIBLE_ERRORS, text, token, getSourceUnit()));
+                    }
                 }
             } else if (!extension.handleUnresolvedVariableExpression(vexp)) { // GROOVY-11356
                 addStaticTypeError("No such property: " + name + " for class: " + prettyPrintTypeName(typeCheckingContext.getEnclosingClassNode()), vexp);
@@ -1650,7 +1658,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
-                    visitor.visitMethod(mopMethod);
+                    if (visitor != null) {
+                        visitor.visitMethod(mopMethod);
+                    }
                     return true;
                 }
             }
