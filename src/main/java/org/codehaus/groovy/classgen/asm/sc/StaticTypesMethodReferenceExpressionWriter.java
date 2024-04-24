@@ -94,6 +94,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode typeOrTargetRefType = isClassExpression ? typeOrTargetRef.getType()
                 : controller.getTypeChooser().resolveType(typeOrTargetRef, classNode);
 
+        if (ClassHelper.isPrimitiveType(typeOrTargetRefType)) // GROOVY-11353
+            typeOrTargetRefType = ClassHelper.getWrapper(typeOrTargetRefType);
+
         ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethod, methodReferenceParamTypes);
         String methodRefName = methodReferenceExpression.getMethodName().getText();
@@ -154,6 +157,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 isClassExpression = true;
             } else {
                 typeOrTargetRef.visit(controller.getAcg());
+                controller.getOperandStack().box(); // GROOVY-11353
             }
         }
 
