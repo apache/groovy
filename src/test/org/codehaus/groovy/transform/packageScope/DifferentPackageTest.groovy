@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform.packageScope
 
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.tools.GroovyClass
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -245,6 +246,81 @@ final class DifferentPackageTest {
         def two = loader.loadClass('q.Two').newInstance()
         shouldFail MissingMethodException, {
             two.size()
+        }
+
+        loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package q
+
+                class Two extends p.One {
+                    // getThing shouldn't be indexed for Two
+                }
+            ''',
+            Three: '''
+                package r
+
+                class Three {
+                    int size() {
+                        def two = new q.Two()
+                        two.getThing().size() // not visible
+                    }
+                }
+            '''
+        )
+        def three = loader.loadClass('r.Three').newInstance()
+        shouldFail MissingMethodException, {
+            three.size()
+        }
+
+        //
+
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+            new File(parentDir, 'r').mkdir()
+
+            def a = new File(parentDir, 'p/A.java')
+            a.write '''
+                package p;
+                public class A {
+                    void packagePrivate() {}
+                }
+            '''
+            def b = new File(parentDir, 'q/B.java')
+            b.write '''
+                package q;
+                public class B extends p.A {
+                }
+            '''
+            def c = new File(parentDir, 'r/C.groovy')
+            c.write '''
+                package r
+                class C {
+                    void test() {
+                        def q_b = new q.B()
+                        q_b.packagePrivate() // indirect reference
+                    }
+                }
+            '''
+
+            loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            def pogo = loader.loadClass('r.C').newInstance()
+            shouldFail MissingMethodException, {
+                pogo.test()
+            }
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
         }
     }
 

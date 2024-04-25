@@ -19,12 +19,12 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.util.FastArray;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MetaMethodIndex {
@@ -171,7 +171,7 @@ public class MetaMethodIndex {
 
     private boolean isNonPrivate(final MetaMethod method) {
         return !method.isPrivate() && (!method.isPackagePrivate() || // GROOVY-11357
-                Objects.equals(method.getDeclaringClass().getTheClass().getPackage(), mainClass.getPackage()));
+                GeneralUtils.inSamePackage(method.getDeclaringClass().getTheClass(), mainClass));
     }
 
     public Object addMethodToList(final Object o, final MetaMethod toIndex) {

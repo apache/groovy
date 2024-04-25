@@ -379,8 +379,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             for (var metaMethod : c.getMethods()) {
                 addToAllMethodsIfPublic(metaMethod);
-                if (c == firstGroovySuper
-                      || !metaMethod.isPrivate()) {
+                if (c == firstGroovySuper || (metaMethod.isPublic() || metaMethod.isProtected() ||
+                        (!metaMethod.isPrivate() && inSamePackage(metaMethod.getDeclaringClass().getTheClass(), theClass)))) { // GROOVY-11357
                     addMetaMethodToIndex(metaMethod, header);
                 }
             }
