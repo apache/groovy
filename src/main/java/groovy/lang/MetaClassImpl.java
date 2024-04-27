@@ -2747,7 +2747,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 Object proxy = Proxy.newProxyInstance(
                         theClass.getClassLoader(),
                         new Class[]{method.getParameterTypes()[0].getTheClass()},
-                        new ConvertedClosure((Closure) newValue, name));
+                        new ConvertedClosure((Closure<?>) newValue, name));
                 arguments = new Object[]{proxy};
                 newValue = proxy;
             } else {
@@ -2758,7 +2758,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
-        if (method == null && field != null) {
+        if (field != null && (method == null || isVisibleProperty(field, method, sender))) {
             boolean mapInstance = (isMap && !isStatic);
             if (field.isFinal()) {
                 if (mapInstance) { // GROOVY-8065
@@ -2806,9 +2806,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return;
         }
 
-        //------------------------------------------------------------------
+        //----------------------------------------------------------------------
         // java.util.Map put method
-        //------------------------------------------------------------------
+        //----------------------------------------------------------------------
         if (isMap && !isStatic) {
             ((Map) object).put(name, newValue);
             return;

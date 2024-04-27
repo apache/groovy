@@ -57,4 +57,76 @@ final class Groovy8283 {
             assert new E().foo.class == A // not the field from this perspective
         '''
     }
+
+    @Test
+    void testWriteFieldPropertyShadowing() {
+        def shell = new GroovyShell()
+        shell.parse '''package p
+            class A {}
+            class B {}
+            class C {
+                boolean setter
+                protected A foo = new A()
+                A getFooA() { return this.@foo }
+                void setFoo(A a) { setter = true; this.@foo = a }
+            }
+            class D extends C {
+                protected B foo = new B() // hides A#foo; should hide A#setFoo in subclasses
+                B getFooB() { return this.@foo }
+            }
+        '''
+        assertScript shell, '''import p.*
+            class E extends D {
+                void test1() {
+                    foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                }
+                void test2() {
+                    this.foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                }
+                void test3() {
+                    this.@foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                }
+                void test4() {
+                    this.setFoo(null)
+                    assert setter
+                    assert fooA == null
+                    assert fooB != null
+                }
+                void test5() {
+                    def that = new E()
+                    that.foo = null
+                    assert !that.setter
+                    assert that.fooA != null
+                    assert that.fooB == null
+
+                    that = new E()
+                    that.@foo = null
+                    assert !that.setter
+                    assert that.fooA != null
+                    assert that.fooB == null
+
+                    that = new E()
+                    that.setFoo(null)
+                    assert that.setter
+                    assert that.fooA == null
+                    assert that.fooB != null
+                }
+            }
+
+            new E().test1()
+            new E().test2()
+            new E().test3()
+            new E().test4()
+            new E().test5()
+        '''
+    }
 }
