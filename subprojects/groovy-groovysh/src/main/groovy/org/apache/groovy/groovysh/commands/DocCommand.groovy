@@ -141,18 +141,18 @@ class DocCommand extends CommandSupport {
     }
 
     protected List urlsFor(String className, String module = '') {
-        String groovyVersion = GroovySystem.version
+        String groovyVersion = GroovySystem.getVersion()
         String path = className.replace('.', '/') + '.html'
 
         def url
         def urls = []
-        if (!module && className.matches(/^(groovy|org\.codehaus\.groovy|org\.apache\.groovy|)\..+/)) {
+        if (!module && className.matches(/^(?:org\.(?:apache|codehaus)\.)?groovy\..+/)) {
             if (sendHEADRequest(url = new URL("https://docs.groovy-lang.org/$groovyVersion/html/gapi/$path"), path)) {
                 urls << url
             }
         }
         // Don't specify package names to not depend on a specific version of Java SE.
-        // Java SE includes non-java(x) packages such as org.w3m.*, org.omg.*. org.xml.* for now
+        // Java SE includes non-java(x) packages such as org.omg.*, org.w3c.*, org.xml.* for now
         // and new packages might be added in the future.
         if (sendHEADRequest(url = new URL("https://docs.oracle.com/${versionPrefix(module)}/$path"), path) ||
             sendHEADRequest(url = new URL("https://download.java.net/java/early_access/${versionPrefix(module, true)}/$path"), path)) {
@@ -211,19 +211,20 @@ class DocCommand extends CommandSupport {
     private boolean doSendHEADRequest(URL url, String path = null) {
         HttpURLConnection conn = null
         try {
-            conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = 'HEAD'
-            conn.connectTimeout = TIMEOUT_CONN
-            conn.readTimeout = TIMEOUT_READ
-            conn.instanceFollowRedirects = true
-            def code = conn.responseCode
+            conn = (HttpURLConnection) url.openConnection()
+            conn.setInstanceFollowRedirects(true)
+            conn.setConnectTimeout(TIMEOUT_CONN)
+            conn.setReadTimeout(TIMEOUT_READ)
+            conn.setRequestMethod('HEAD')
+
             // if not found, redirects to search page, which we don't count as successful
             // if no path given (legacy calls from third parties), treat all redirects as suspicious
-            boolean successfulRedirect = path ? conn.URL.toString().endsWith(path) : url.toString() == conn.URL.toString()
-            return code == 200 && successfulRedirect
+            String  connectionURL = conn.getURL().toString()
+            boolean successfulRedirect = path ? connectionURL.endsWith(path) : connectionURL.equals(url.toString())
+
+            return (conn.getResponseCode() == HttpURLConnection.HTTP_OK) && (conn.getContentLength() > 0) && successfulRedirect
         } finally {
             conn?.disconnect()
         }
     }
 }
-
