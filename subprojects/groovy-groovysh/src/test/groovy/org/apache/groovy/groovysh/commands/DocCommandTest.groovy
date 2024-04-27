@@ -18,68 +18,85 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.apache.groovy.groovysh.Groovysh
 
 /**
  * Tests for the {@link DocCommand} class.
  */
-class DocCommandTest extends CommandTestSupport {
-    void testInitializeAWTDesktopPlatformSupportFlag() {
-        def desktopClass = Class.forName('java.awt.Desktop')
-        boolean hasSupport =
-            desktopClass.desktopSupported &&
-                    desktopClass.desktop.isSupported(desktopClass.declaredClasses.find { it.simpleName == 'Action' }.BROWSE)
+final class DocCommandTest extends CommandTestSupport {
 
-        assert DocCommand.hasAWTDesktopPlatformSupport == hasSupport
+    private DocCommand newDocCommand_sendHEADRequest(
+            @ClosureParams(value=SimpleType, options='java.net.URL') Closure<Boolean> requestStrategy) {
+        new DocCommand(new Groovysh()) {
+            @Override
+            boolean sendHEADRequest(URL url, String path) {
+                requestStrategy.call(url)
+            }
+        }
     }
 
-    void testUrlsForJavaOnlyClass() {
-        def command = docCommandWithSendHEADRequestReturnValueOf { !it.host.contains('docs.groovy-lang.org') }
+    private String getGroovyVersion() {
+        GroovySystem.getVersion()
+    }
+
+    private String getJavaVersion() {
+        Runtime.version().feature()
+    }
+
+    //--------------------------------------------------------------------------
+
+    void testUrlsForJavaClass1() {
+        def command = newDocCommand_sendHEADRequest{ return !it.host.contains('docs.groovy-lang.org') }
 
         // no module specified
-        def urls = command.urlsFor('org.ietf.jgss.GSSContext')
-        assert urls ==
-            [new URL("https://docs.oracle.com/javase/8/docs/api/org/ietf/jgss/GSSContext.html")]
+        def urls = command.urlsFor('org.ietf.jgss.GSSContext')*.toString()
+        assert urls.size() == 1
+        assert urls[0] == "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/org/ietf/jgss/GSSContext.html"
 
-        // explicit module given
-        urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')
-        assert urls == [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")] ||
-               urls == [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html")]
+        // yes module specified
+        urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')*.toString()
+        assert urls.size() == 1
+        assert urls[0] == "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.security.jgss/org/ietf/jgss/GSSContext.html"
     }
 
-    void testUrlsForJavaClass() {
-        def command = docCommandWithSendHEADRequestReturnValueOf { true }
+    void testUrlsForJavaClass2() {
+        def command = newDocCommand_sendHEADRequest{ return true }
 
-        def urls = command.urlsFor('java.util.List')
+        def urls = command.urlsFor('java.util.List')*.toString()
 
-        assert urls ==
-                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
-                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
-               urls ==
-                [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html"),
-                 new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/groovy-jdk/java/util/List.html")] ||
-               urls ==
-                [new URL("https://docs.oracle.com/en/java/javase/${simpleJavaVersion()}/docs/api/java.base/java/util/List.html")] ||
-               urls ==
-                [new URL("https://download.java.net/java/early_access/jdk${simpleJavaVersion()}/docs/api/java.base/java/util/List.html")]
+        assert urls.size() == 2
+        assert urls[1] == "https://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/java/util/List.html"
+        assert urls[0] == "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/java/util/List.html"
     }
 
     void testUrlsForGroovyClass() {
-        def command = docCommandWithSendHEADRequestReturnValueOf { true }
+        def command = newDocCommand_sendHEADRequest{ return it.host.contains('docs.groovy-lang.org') }
 
-        def urls = command.urlsFor('groovy.console.TextNode')
+        def urls = command.urlsFor('groovy.console.TextNode')*.toString()
 
-        assert urls ==
-                [new URL("https://docs.groovy-lang.org/$GroovySystem.version/html/gapi/groovy/console/TextNode.html")] ||
-               !urls
+        assert urls.size() == 2
+        assert urls[0] == "https://docs.groovy-lang.org/$groovyVersion/html/gapi/groovy/console/TextNode.html"
+        assert urls[1] == "https://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/groovy/console/TextNode.html"
     }
 
-    void testUrlsForWithUnknownClass() {
-        def command = docCommandWithSendHEADRequestReturnValueOf { false }
+    void testUrlsForUnknownClass() {
+        def command = newDocCommand_sendHEADRequest{ return false }
 
-        def urls = command.urlsFor('com.dummy.List')
+        def urls = command.urlsFor('com.dummy.List')*.toString()
 
         assert urls.isEmpty()
+    }
+
+    //--------------------------------------------------------------------------
+
+    void testInitializeAWTDesktopPlatformSupportFlag() {
+        def desktopClass = Class.forName('java.awt.Desktop')
+        boolean hasSupport = desktopClass.desktopSupported
+                && desktopClass.desktop.isSupported(desktopClass.declaredClasses.find{ it.simpleName == 'Action' }.BROWSE)
+
+        assert DocCommand.hasAWTDesktopPlatformSupport == hasSupport
     }
 
     void testFallbackToDesktopIfBrowserEnvIsMissing() {
@@ -100,7 +117,7 @@ class DocCommandTest extends CommandTestSupport {
         DocCommand.hasAWTDesktopPlatformSupport = true
         DocCommand.desktop = [:]
 
-        command.browse([new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html")])
+        command.browse([new URL("http://docs.oracle.com/javase/$javaVersion/docs/api/java/util/List.html")])
 
         assert browseWithAWT
     }
@@ -121,7 +138,7 @@ class DocCommandTest extends CommandTestSupport {
             }
         }
 
-        command.browse([new URL("http://docs.oracle.com/javase/${simpleJavaVersion()}/docs/api/java/util/List.html")])
+        command.browse([new URL("http://docs.oracle.com/javase/$javaVersion/docs/api/java/util/List.html")])
 
         assert browseWithNativeBrowser
     }
@@ -148,24 +165,5 @@ class DocCommandTest extends CommandTestSupport {
         }
 
         assert command.browserEnvironmentVariable == 'chrome'
-    }
-
-    private DocCommand docCommandWithSendHEADRequestReturnValueOf(Closure returnValue) {
-        new DocCommand(new Groovysh()) {
-            @Override
-            boolean sendHEADRequest(URL url) {
-                returnValue(url)
-            }
-        }
-    }
-
-    private simpleJavaVersion() {
-        String javaVersion = System.getProperty('java.version')
-        if (javaVersion.startsWith('1.')) {
-            javaVersion.split(/\./)[1]
-        } else {
-            // java 9 and above
-            javaVersion.replaceAll(/-.*/, '').split(/\./)[0]
-        }
     }
 }
