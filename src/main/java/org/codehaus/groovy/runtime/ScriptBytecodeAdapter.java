@@ -23,7 +23,6 @@ import groovy.lang.EmptyRange;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
@@ -244,8 +243,8 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfConstructors, Class which) throws Throwable {
-        MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(which);
         try {
+            MetaClass metaClass = InvokerHelper.getMetaClass(which);
             return metaClass.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
@@ -468,7 +467,13 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            return InvokerHelper.getProperty(receiver, messageName);
+            if (receiver instanceof GroovyObject) {
+                var groovyObject = (GroovyObject) receiver;
+                return groovyObject.getProperty(messageName);
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+                return metaClass.getProperty(senderClass, receiver, messageName, false, false);
+            }
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
@@ -494,7 +499,13 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            InvokerHelper.setProperty(receiver, messageName, messageArgument);
+            if (receiver instanceof GroovyObject) {
+                var groovyObject = (GroovyObject) receiver;
+                groovyObject.setProperty(messageName, messageArgument);
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+                metaClass.setProperty(senderClass, receiver, messageName, messageArgument, false, false);
+            }
         } catch (GroovyRuntimeException gre) {
             if (gre instanceof MissingPropertyException
                     && receiver instanceof GroovyObject
