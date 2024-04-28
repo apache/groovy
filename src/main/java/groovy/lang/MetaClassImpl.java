@@ -1820,7 +1820,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
 
         if (method == null || isSpecialProperty(name)) {
@@ -1861,10 +1861,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             // check for propertyMissing provided through a category; TODO:should this have lower precedence?
-            method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
+            method = getCategoryMethodGetter(theClass, PROPERTY_MISSING, true);
             if (method == null) {
                 // check for a generic get method provided through a category
-                method = getCategoryMethodGetter(sender, "get", true);
+                method = getCategoryMethodGetter(theClass, "get", true);
             }
             if (method != null) arguments = new Object[]{name};
         }
@@ -1935,7 +1935,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
+        Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
 
         if (method == null || isSpecialProperty(name)) {
@@ -1980,9 +1980,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic get method
         //----------------------------------------------------------------------
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            method = getCategoryMethodGetter(sender, "get", true);
+            method = getCategoryMethodGetter(theClass, "get", true);
             if (null == method) {
-                method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
+                method = getCategoryMethodGetter(theClass, PROPERTY_MISSING, true);
             }
             if (method != null) {
                 return new GetMethodMetaProperty(name, VM_PLUGIN.transformMetaMethod(this, method));
@@ -2086,13 +2086,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return "class".equals(name) || (isMap && ("empty".equals(name) || "metaClass".equals(name)));
     }
 
-    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
+    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class sender, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
-        MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
+        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {
             // GROOVY-9618 adjust because capitalised properties aren't stored as meta bean props
             MetaProperty saved = mp;
-            mp = getMetaProperty(senderForMP, BeanUtils.decapitalize(name), useSuper, isStatic);
+            mp = getMetaProperty(sender, BeanUtils.decapitalize(name), useSuper, isStatic);
             if (mp == null || (saved != null && mp instanceof CachedField)) {
                 // restore if we didn't find something better
                 mp = saved;
@@ -2109,7 +2109,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
             if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodGetter(senderForCMG, getterName, false);
+                MetaMethod categoryMethod = getCategoryMethodGetter(theClass, getterName, false);
                 if (categoryMethod != null)
                     method = categoryMethod;
             }
@@ -2706,11 +2706,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         // check for a category method named like a setter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()
-                && name.length() > 0) {
-            String getterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
-            if (getterName != null) {
-                MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
+        if (!useSuper && !isStatic && !name.isEmpty() && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            var setterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
+            if (setterName != null) {
+                MetaMethod categoryMethod = getCategoryMethodSetter(theClass, setterName, false);
                 if (categoryMethod != null) {
                     method = categoryMethod;
                     arguments = new Object[]{newValue};
@@ -2763,7 +2762,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            method = getCategoryMethodSetter(sender, "set", true);
+            method = getCategoryMethodSetter(theClass, "set", true);
             if (method != null) arguments = new Object[]{name, newValue};
         }
         if (method == null && genericSetMethod != null && (genericSetMethod.isStatic() || !isStatic)) {

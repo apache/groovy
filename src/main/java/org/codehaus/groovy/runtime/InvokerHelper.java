@@ -188,7 +188,7 @@ public class InvokerHelper {
         } else if (object instanceof Class) {
             metaRegistry.getMetaClass((Class) object).setProperty(object, property, newValue);
         } else {
-            ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object).setProperty(object, property, newValue);
+            ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object).setProperty(object, property, newValue);
         }
     }
 
@@ -586,7 +586,7 @@ public class InvokerHelper {
         } else if (object instanceof Class) {
             return metaRegistry.getMetaClass((Class<?>) object); // GROOVY-10819
         } else {
-            return ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object);
+            return ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object);
         }
     }
 
