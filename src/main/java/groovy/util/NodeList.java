@@ -27,8 +27,6 @@ import groovy.namespace.QName;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * A List implementation which is returned by queries on a {@link Node}
@@ -74,38 +72,53 @@ public class NodeList extends ArrayList {
         return result;
     }
 
-    protected static void setMetaClass(final Class nodelistClass, final MetaClass metaClass) {
-        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+    protected static void setMetaClass(final Class nodeListClass, final MetaClass metaClass) {
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodeListClass, new DelegatingMetaClass(metaClass) {
+
             @Override
             public Object getAttribute(final Object object, final String attribute) {
-                NodeList nl = (NodeList) object;
-                Iterator it = nl.iterator();
-                List result = new ArrayList();
-                while (it.hasNext()) {
-                    Node node = (Node) it.next();
-                    result.add(node.attributes().get(attribute));
+                NodeList list = (NodeList) object;
+                var result = new ArrayList<Object>(list.size());
+                for (Object node : list) {
+                    var attributes = ((Node) node).attributes();
+                    result.add(attributes.get(attribute));
                 }
                 return result;
             }
 
             @Override
+            public Object getAttribute(Class sender, Object object, String attribute, boolean isSuper) {
+                return getAttribute(object, attribute);
+            }
+
+            @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
-                for (Object o : (NodeList) object) {
-                    Node node = (Node) o;
-                    node.attributes().put(attribute, newValue);
+                for (Object node : (NodeList) object) {
+                    ((Node) node).attributes().put(attribute, newValue);
                 }
             }
 
             @Override
-            public Object getProperty(Object object, String property) {
+            public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
+                setAttribute(object, attribute, newValue);
+            }
+
+            @Override
+            public Object getProperty(final Object object, final String property) {
                 if (object instanceof NodeList) {
-                    NodeList nl = (NodeList) object;
-                    return nl.getAt(property);
+                    return ((NodeList) object).getAt(property);
                 }
                 return super.getProperty(object, property);
             }
-        };
-        GroovySystem.getMetaClassRegistry().setMetaClass(nodelistClass, newMetaClass);
+
+            @Override
+            public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
+                if (object instanceof NodeList) {
+                    return ((NodeList) object).getAt(property);
+                }
+                return super.getProperty(sender, object, property, isSuper, isInner);
+            }
+        });
     }
 
     /**
@@ -197,5 +210,4 @@ public class NodeList extends ArrayList {
             ((Node) o).plus(c);
         }
     }
-
 }

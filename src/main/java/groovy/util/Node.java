@@ -294,42 +294,65 @@ public class Node implements Serializable, Cloneable {
      * @param metaClass the original metaclass
      * @param nodeClass the class whose metaclass we wish to override (this class or a subclass)
      */
-    protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
+    protected static void setMetaClass(final MetaClass metaClass, final Class nodeClass) {
         // TODO Is protected static a bit of a smell?
         // TODO perhaps set nodeClass to be Class<? extends Node>
-        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, new DelegatingMetaClass(metaClass) {
+
             @Override
             public Object getAttribute(final Object object, final String attribute) {
-                Node n = (Node) object;
-                return n.get("@" + attribute);
+                return ((Node) object).get("@" + attribute);
+            }
+
+            @Override
+            public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean isSuper) {
+                return getAttribute(object, attribute);
             }
 
             @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
-                Node n = (Node) object;
-                n.attributes().put(attribute, newValue);
+                ((Node) object).attributes().put(attribute, newValue);
             }
 
             @Override
-            public Object getProperty(Object object, String property) {
+            public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
+                setAttribute(object, attribute, newValue);
+            }
+
+            @Override
+            public Object getProperty(final Object object, final String property) {
                 if (object instanceof Node) {
-                    Node n = (Node) object;
-                    return n.get(property);
+                    return ((Node) object).get(property);
                 }
                 return super.getProperty(object, property);
             }
 
             @Override
-            public void setProperty(Object object, String property, Object newValue) {
-                if (property.startsWith("@")) {
-                    setAttribute(object, property.substring(1), newValue);
-                    return;
+            public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
+                if (object instanceof Node) {
+                    return ((Node) object).get(property);
                 }
-                delegate.setProperty(object, property, newValue);
+                return super.getProperty(sender, object, property, isSuper, isInner);
             }
 
-        };
-        GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, newMetaClass);
+            @Override
+            public void setProperty(final Object object, final String property, final Object newValue) {
+                if (property.startsWith("@")) {
+                    setAttribute(object, property.substring(1), newValue);
+                } else {
+                    super.setProperty(object, property, newValue);
+                }
+            }
+
+            @Override
+            public void setProperty(final Class sender, final Object object, final String property, final Object newValue, final boolean isSuper, final boolean isInner) {
+                if (property.startsWith("@")) {
+                    setAttribute(object, property.substring(1), newValue);
+                } else {
+                    super.setProperty(sender, object, property, newValue, isSuper, isInner);
+                }
+            }
+        });
     }
 
     /**
@@ -785,7 +808,6 @@ public class Node implements Serializable, Cloneable {
     public void print(PrintWriter out) {
         new NodePrinter(out).print(this);
     }
-
 
     /**
      * Converts the text of this GPathResult to an Integer object.
