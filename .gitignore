@@ -1,8 +1,9 @@
-user.gradle
-!gradle/wrapper/gradle-wrapper.jar
+/user.gradle
+/build.bat
 .gradle/
 target/
 build/
+bin/
 out/
 
 *.DS_Store
@@ -14,14 +15,13 @@ out/
 *.iml
 *.ipr
 *.iws
-.shelf
 
-.fleet
-
-.vscode
 .settings/
 .classpath
 .project
-bin/
+
+.fleet
+.shelf
+.vscode
 .jqwik-database
 verification-metadata.dryrun.xml
