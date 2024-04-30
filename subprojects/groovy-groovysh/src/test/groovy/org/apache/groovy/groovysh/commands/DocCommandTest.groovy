@@ -21,8 +21,7 @@ package org.apache.groovy.groovysh.commands
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import org.apache.groovy.groovysh.Groovysh
-
-import static groovy.test.GroovyAssert.isAtLeastJdk
+import org.codehaus.groovy.vmplugin.VMPlugin
 
 /**
  * Tests for the {@link DocCommand} class.
@@ -44,7 +43,11 @@ final class DocCommandTest extends CommandTestSupport {
     }
 
     private String getJavaVersion() {
-        Runtime.version().feature()
+        String javaVersion = VMPlugin.getJavaVersion()
+        if (javaVersion.startsWith('1.')) {
+            javaVersion = javaVersion.split(/\./)[1]
+        }
+        javaVersion
     }
 
     //--------------------------------------------------------------------------
@@ -55,9 +58,12 @@ final class DocCommandTest extends CommandTestSupport {
         // no module specified
         def urls = command.urlsFor('org.ietf.jgss.GSSContext')*.toString()
         assert urls.size() == 1
-        assert urls[0] == "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/org/ietf/jgss/GSSContext.html"
+        String url = Integer.valueOf(javaVersion) < 9
+                ? "https://docs.oracle.com/javase/$javaVersion/docs/api/org/ietf/jgss/GSSContext.html"
+                : "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/org/ietf/jgss/GSSContext.html"
+        assert urls[0] == url
 
-        if (!isAtLeastJdk('11.0')) return
+        if (Integer.valueOf(javaVersion) < 11) return
 
         // yes module specified
         urls = command.urlsFor('org.ietf.jgss.GSSContext', 'java.security.jgss')*.toString()
@@ -71,8 +77,11 @@ final class DocCommandTest extends CommandTestSupport {
         def urls = command.urlsFor('java.util.List')*.toString()
 
         assert urls.size() == 2
+        String url = Integer.valueOf(javaVersion) < 9
+            ? "https://docs.oracle.com/javase/$javaVersion/docs/api/java/util/List.html"
+            : "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/java/util/List.html"
+        assert urls[0] == url
         assert urls[1] == "https://docs.groovy-lang.org/$groovyVersion/html/groovy-jdk/java/util/List.html"
-        assert urls[0] == "https://docs.oracle.com/en/java/javase/$javaVersion/docs/api/java.base/java/util/List.html"
     }
 
     void testUrlsForGroovyClass() {

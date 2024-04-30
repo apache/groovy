@@ -1,5 +1,5 @@
-/user.gradle
-/build.bat
+user.gradle
+build.bat
 .gradle/
 target/
 build/
@@ -8,6 +8,7 @@ out/
 
 *.DS_Store
 *.class
+*.dat
 *.swp
 *~
 
