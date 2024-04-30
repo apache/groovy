@@ -2497,13 +2497,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (!candidates.isEmpty()) {
-                Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
-                stubMissingTypeVariables(receiverType.redirect().getGenericsTypes(), gts); // GROOVY-11241
-                candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
-                        .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
-                            ClassNode closureType = wrapClosureType(returnType);
-                            storeType(expression, closureType);
-                        });
+                stubMissingTypeVariables(receiverType.redirect().getGenericsTypes(), GenericsUtils.extractPlaceholders(receiverType)); // GROOVY-11241
+
+                ClassNode commonReturnType = null;
+                for (MethodNode candidate : candidates) {
+                    ClassNode returnType = candidate.getReturnType();
+                    if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                        Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364
+                        extractGenericsConnections(spec, receiverType, candidate.getDeclaringClass());
+                        returnType = applyGenericsContext(spec, returnType);
+                    }
+                    commonReturnType = (commonReturnType == null ? returnType
+                            : lowestUpperBound(commonReturnType, returnType));
+                }
+                storeType(expression, wrapClosureType(commonReturnType));
                 expression.putNodeMetaData(MethodNode.class, candidates);
             } else if (!(expression instanceof MethodReferenceExpression)) {
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
