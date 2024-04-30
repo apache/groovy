@@ -38,7 +38,7 @@ final class LambdaTest {
     void testFunction() {
         assertScript shell, '''
             def f() {
-                [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList())
+                [1, 2, 3].stream().map(i -> i + 1).toList()
             }
             assert f() == [2, 3, 4]
         '''
@@ -48,19 +48,42 @@ final class LambdaTest {
     void testFunction2() {
         assertScript shell, '''
             def f() {
-                [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
+                [1, 2, 3].stream().map(i -> i.plus(1)).toList()
             }
             assert f() == [2, 3, 4]
         '''
     }
 
     @Test
-    void testFunctionWithTypeArgument() {
+    void testFunction3() {
         assertScript shell, '''
             def f() {
-                [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
+                [1, 2, 3].stream().<String>map(i -> null).toList()
             }
             assert f() == [null, null, null]
+        '''
+    }
+
+    // GROOVY-11364
+    @Test
+    void testFunction4() {
+        assertScript shell, '''
+            abstract class A<N extends Number> {
+                protected N process(N n) { n }
+            }
+
+            class C extends A<Integer> {
+                static void consume(Optional<Integer> option) {
+                    def result = option.orElse(null)
+                    assert result instanceof Integer
+                    assert result == 42
+                }
+                void test() {
+                    consume(Optional.of(42).map(i -> process(i)))
+                }
+            }
+
+            new C().test()
         '''
     }
 
@@ -68,7 +91,7 @@ final class LambdaTest {
     void testBinaryOperator() {
         assertScript shell, '''
             def f() {
-                [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e)
+                [1, 2, 3].stream().reduce(7, (Integer r, Integer i) -> r + i)
             }
             assert f() == 13
         '''
@@ -79,7 +102,7 @@ final class LambdaTest {
     void testBinaryOperatorWithoutExplicitTypes() {
         assertScript shell, '''
             def f() {
-                [1, 2, 3].stream().reduce(7, (r, e) -> r + e)
+                [1, 2, 3].stream().reduce(7, (r, i) -> r + i)
             }
             assert f() == 13
         '''
@@ -89,7 +112,7 @@ final class LambdaTest {
     void testBinaryOperatorWithoutExplicitTypes2() {
         assertScript shell, '''
             def f() {
-                BinaryOperator<Integer> accumulator = (r, e) -> r + e
+                BinaryOperator<Integer> accumulator = (r, i) -> r + i
                 return [1, 2, 3].stream().reduce(7, accumulator)
             }
             assert f() == 13

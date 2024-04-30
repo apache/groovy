@@ -2584,8 +2584,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     receiverType = GenericsUtils.parameterizeType(arguments[0], receiverType); // GROOVY-11241
                 }
 
-                Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
-                candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
+                ClassNode ownerType = receiverType;
+                candidates.stream()
+                        .map(candidate -> {
+                            ClassNode returnType = candidate.getReturnType();
+                            if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                                Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364
+                                extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
+                                returnType = applyGenericsContext(spec, returnType);
+                            }
+                            return returnType;
+                        })
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
                             ClassNode closureType = wrapClosureType(returnType);
                             storeType(expression, closureType);
@@ -2603,7 +2612,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     ClassNode[] parameters = collateMethodReferenceParameterTypes(expression, candidates.get(0));
                     for (int i = 0; i < arguments.length; i += 1) {
                         ClassNode at = arguments[i];
-                        ClassNode pt = applyGenericsContext(gts, parameters[Math.min(i, parameters.length - 1)]);
+                        ClassNode pt = parameters[Math.min(i, parameters.length - 1)];
                         if (!pt.equals(at) && (at.isInterface() ? pt.implementsInterface(at) : pt.isDerivedFrom(at)))
                             arguments[i] = pt; // GROOVY-10734, GROOVY-10807, GROPOVY-11026: expected type is refined
                     }
