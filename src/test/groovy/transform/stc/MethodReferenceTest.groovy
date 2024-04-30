@@ -28,9 +28,9 @@ import static groovy.test.GroovyAssert.shouldFail
 final class MethodReferenceTest {
 
     private static final imports = '''\
+        import groovy.transform.*
         import java.util.function.*
         import java.util.stream.Collectors
-        import groovy.transform.CompileStatic
     '''
 
     @Test // class::instanceMethod
@@ -104,7 +104,7 @@ final class MethodReferenceTest {
 
             class Two extends One { }
 
-            @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
+            @CompileStatic @Immutable(knownImmutableClasses=[Function])
             class FunctionHolder<T> {
                 Function<T, ?> extractor
 
@@ -622,6 +622,29 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11364
+    void testFunctionII5() {
+        assertScript imports + '''
+            abstract class A<N extends Number> {
+                protected N process(N n) { n }
+            }
+
+            @CompileStatic
+            class C extends A<Integer> {
+                static void consume(Optional<Integer> option) {
+                    def result = option.orElse(null)
+                    assert result instanceof Integer
+                    assert result == 42
+                }
+                void test() {
+                    consume(Optional.of(42).map(this::process))
+                }
+            }
+
+            new C().test()
+        '''
+    }
+
     @NotYetImplemented
     @Test // instance::instanceMethod -- GROOVY-10057
     void testPredicateII() {
@@ -681,7 +704,7 @@ final class MethodReferenceTest {
     @Test // instance::instanceMethod -- GROOVY-11026
     void testBiFunctionII() {
         assertScript imports + '''
-            @groovy.transform.CompileDynamic
+            @CompileDynamic
             def <In,InOut> InOut m(BiFunction<In,InOut,InOut> beef) {
                 beef.apply(0,'boo')
             }
@@ -1376,6 +1399,43 @@ final class MethodReferenceTest {
             }
         '''
         assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
+    }
+
+    @Test // GROOVY-10859
+    void testDynamicMethodSelection() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript imports + """
+                $tag
+                void test() {
+                    def result = [[]].stream().flatMap(List::stream).toList()
+                    assert result.isEmpty()
+                }
+
+                test()
+            """
+        }
+    }
+
+    @NotYetImplemented
+    @Test // GROOVY-10904
+    void testPropertyMethodLocation() {
+        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
+            assertScript imports + """
+                $tag
+                class Test {
+                    static class Profile {
+                        String foo, bar
+                    }
+
+                    Map<String, Profile> profiles = [new Profile()].stream()
+                        .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
+
+                    static main(args) {
+                        assert this.newInstance().getProfiles().size() == 1
+                    }
+                }
+            """
+        }
     }
 
     @Test // GROOVY-10742
