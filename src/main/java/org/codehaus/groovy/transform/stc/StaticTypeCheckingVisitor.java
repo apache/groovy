@@ -2509,7 +2509,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 int nParameters = candidates.stream().mapToInt(m -> m.getParameters().length).reduce((i,j) -> i == j ? i : -1).getAsInt();
                 Map<GenericsTypeName, GenericsType> gts = GenericsUtils.extractPlaceholders(receiverType);
                 stubMissingTypeVariables(receiverType.redirect().getGenericsTypes(), gts); // GROOVY-11241
-                candidates.stream().map(candidate -> applyGenericsContext(gts, candidate.getReturnType()))
+                ClassNode ownerType = receiverType;
+                candidates.stream()
+                        .map(candidate -> {
+                            ClassNode returnType = candidate.getReturnType();
+                            if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                                Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364
+                                extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
+                                returnType = applyGenericsContext(spec, returnType);
+                            }
+                            return returnType;
+                        })
                         .reduce(WideningCategories::lowestUpperBound).ifPresent(returnType -> {
                             ClassNode closureType = wrapClosureType(returnType);
                             closureType.putNodeMetaData(CLOSURE_ARGUMENTS, nParameters); // GROOVY-10714

@@ -620,6 +620,29 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-11364
+    void testFunctionII5() {
+        assertScript shell, '''
+            abstract class A<N extends Number> {
+                protected N process(N n) { n }
+            }
+
+            @CompileStatic
+            class C extends A<Integer> {
+                static void consume(Optional<Integer> option) {
+                    def result = option.orElse(null)
+                    assert result instanceof Integer
+                    assert result == 42
+                }
+                void test() {
+                    consume(Optional.of(42).map(this::process))
+                }
+            }
+
+            new C().test()
+        '''
+    }
+
     @Test // instance::instanceMethod -- GROOVY-10057
     void testPredicateII() {
         assertScript shell, '''
