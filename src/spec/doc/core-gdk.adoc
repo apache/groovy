@@ -130,8 +130,8 @@ include::../test/gdk/ObservableTest.groovy[tags=observable_list,indent=0]
 ----
 <1> Declares a `PropertyChangeEventListener` that is capturing the fired events
 <2> `ObservableList.ElementEvent` and its descendant types are relevant for this listener
-<3> Registers the listener
-<4> Creates an `ObservableList` from the given list
+<3> Creates an `ObservableList` from the given list
+<4> Registers the listener
 <5> Triggers an `ObservableList.ElementAddedEvent` event
 
 [NOTE]
