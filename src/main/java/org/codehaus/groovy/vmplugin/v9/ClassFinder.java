@@ -85,6 +85,7 @@ public class ClassFinder {
     public static Map<String, Set<String>> find(URI classpathEntryURI, String packageName, boolean recursive) {
         return find(classpathEntryURI, packageName, recursive, true);
     }
+
     /**
      * Returns the found classes
      *
@@ -122,7 +123,7 @@ public class ClassFinder {
         return find(uri, prefix, packageName, recursive, innerClasses);
     }
 
-    private static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive, final boolean innerClasses) {
+    static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive, final boolean innerClasses) {
         boolean wfs = "file".equals(uri.getScheme());
         if (wfs) prefix = prefix.replace("/", File.separator);
 
@@ -187,9 +188,9 @@ public class ClassFinder {
 
     private static Tuple2<FileSystem, Boolean> maybeNewFileSystem(URI uri) throws IOException {
         try {
-            return new Tuple2(FileSystems.newFileSystem(uri, Collections.emptyMap()), true);
+            return new Tuple2<>(FileSystems.newFileSystem(uri, Collections.emptyMap()), true);
         } catch (FileSystemAlreadyExistsException e) {
-            return new Tuple2(FileSystems.getFileSystem(uri), false);
+            return new Tuple2<>(FileSystems.getFileSystem(uri), false);
         }
     }
 

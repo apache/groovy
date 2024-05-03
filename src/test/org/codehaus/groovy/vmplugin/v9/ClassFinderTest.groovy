@@ -106,7 +106,7 @@ class ClassFinderTest {
     @Test
     void testGroovy9480() {
         try {
-            ClassFinder.find(URI.create("file:/"), "NOT_EXISTS", "org/", false)
+            ClassFinder.find(URI.create("file:/"), "NOT_EXISTS", "org/", false, true)
         } catch (ClassFindFailedException e) {
             assert e.message.contains('Failed to find classes')
         }
