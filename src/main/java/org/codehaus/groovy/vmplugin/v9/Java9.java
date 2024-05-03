@@ -132,7 +132,7 @@ public class Java9 extends Java8 {
     }
 
     private static Map<String, Set<String>> doFindClasses(final URI uri, final String packageName, final List<String> defaultPackageNames) {
-        Map<String, Set<String>> result = ClassFinder.find(uri, packageName, true)
+        Map<String, Set<String>> result = ClassFinder.find(uri, packageName, true, false)
                 .entrySet().stream()
                 .filter(e -> e.getValue().stream().anyMatch(defaultPackageNames::contains))
                 .collect(

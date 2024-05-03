@@ -83,6 +83,19 @@ public class ClassFinder {
      * @since 3.0.2
      */
     public static Map<String, Set<String>> find(URI classpathEntryURI, String packageName, boolean recursive) {
+        return find(classpathEntryURI, packageName, recursive, true);
+    }
+    /**
+     * Returns the found classes
+     *
+     * @param classpathEntryURI the classpath entry
+     * @param packageName the package under which we find classes
+     * @param recursive whether to find sub-packages
+     * @param innerClasses whether to find inner classes (class names containing a "$")
+     * @return the found classes
+     * @since 5.0.0
+     */
+    public static Map<String, Set<String>> find(URI classpathEntryURI, String packageName, boolean recursive, boolean innerClasses) {
         URI uri;
         String prefix;
         String scheme = classpathEntryURI.getScheme();
@@ -99,22 +112,22 @@ public class ClassFinder {
                 uri = URI.create("file:/");
                 prefix = path.toString();
             } else {
-                uri = URI.create("jar:" + classpathEntryURI.toString());
+                uri = URI.create("jar:" + classpathEntryURI);
                 prefix = "";
             }
         } else {
             throw new UnsupportedOperationException(classpathEntryURI + " is not supported");
         }
 
-        return find(uri, prefix, packageName, recursive);
+        return find(uri, prefix, packageName, recursive, innerClasses);
     }
 
-    private static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive) {
+    private static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive, final boolean innerClasses) {
         boolean wfs = "file".equals(uri.getScheme());
         if (wfs) prefix = prefix.replace("/", File.separator);
 
-        final String sepPatten = Pattern.quote(wfs ? File.separator : "/");
-        final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : prefix.split(sepPatten).length;
+        final String sepPattern = Pattern.quote(wfs ? File.separator : "/");
+        final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : prefix.split(sepPattern).length;
 
         Map<String, Set<String>> result = new LinkedHashMap<>();
         Tuple2<FileSystem, Boolean> fsMaybeNew = null;
@@ -128,14 +141,14 @@ public class ClassFinder {
 
                 @Override
                 public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-                    String[] pathElems = path.toString().split(sepPatten);
+                    String[] pathElems = path.toString().split(sepPattern);
                     int nameCount = pathElems.length;
                     if (nameCount <= prefixElemCnt) {
                         return FileVisitResult.CONTINUE;
                     }
 
                     String filename = pathElems[nameCount - 1];
-                    if (!filename.endsWith(".class") || "module-info.class".equals(filename) || "package-info.class".equals(filename)) {
+                    if ((!innerClasses && filename.contains("$")) || !filename.endsWith(".class") || "module-info.class".equals(filename) || "package-info.class".equals(filename)) {
                         return FileVisitResult.CONTINUE;
                     }
 
