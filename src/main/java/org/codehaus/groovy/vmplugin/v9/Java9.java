@@ -103,17 +103,18 @@ public class Java9 extends Java8 {
             CompletableFuture<Map<String, Set<String>>> javaDefaultImportsFuture =
                     CompletableFuture.supplyAsync(() -> doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages));
             try {
-                URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
+                // groovy-core (Java source)
+                URI gcjLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
                 CompletableFuture<Map<String, Set<String>>> groovyDefaultImportsFuture1 =
-                        CompletableFuture.supplyAsync(() -> doFindClasses(gsLocation, "groovy", groovyPackages));
+                        CompletableFuture.supplyAsync(() -> doFindClasses(gcjLocation, "groovy", groovyPackages));
 
-                // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
+                // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `ListenerLister`(groovy class) are all packaged in the groovy-core jar file,
                 // but in Groovy development environment, groovy-core classes are distributed in different directories
-                URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
+                URI gcgLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.beans.ListenerList")).toURI();
                 CompletableFuture<Map<String, Set<String>>> groovyDefaultImportsFuture2 =
-                        gsLocation.equals(giLocation)
+                        gcjLocation.equals(gcgLocation)
                                 ? CompletableFuture.completedFuture(Collections.emptyMap())
-                                : CompletableFuture.supplyAsync(() -> doFindClasses(giLocation, "groovy", groovyPackages));
+                                : CompletableFuture.supplyAsync(() -> doFindClasses(gcgLocation, "groovy", groovyPackages));
 
                 result.putAll(groovyDefaultImportsFuture1.get());
                 result.putAll(groovyDefaultImportsFuture2.get());
