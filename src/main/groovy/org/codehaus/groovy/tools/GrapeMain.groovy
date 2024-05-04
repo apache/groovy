@@ -26,17 +26,11 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import picocli.CommandLine.ParentCommand
-import picocli.CommandLine.RunLast
 import picocli.CommandLine.Unmatched
 
 @SuppressWarnings('Println')
 @Command(name = 'grape', description = 'Allows for the inspection and management of the local grape cache.',
-        subcommands = [
-                GrapeMain.Install,
-                GrapeMain.Uninstall,
-                GrapeMain.ListCommand,
-                GrapeMain.Resolve,
-                CommandLine.HelpCommand])
+    subcommands = [Install, Uninstall, ListCommand, Resolve, CommandLine.HelpCommand])
 class GrapeMain implements Runnable {
     @Option(names = ['-D', '--define'], description = 'define a system property', paramLabel = '<name=value>')
     private final Map<String, String> properties = new LinkedHashMap<String, String>()
@@ -71,7 +65,7 @@ class GrapeMain implements Runnable {
         parser.subcommands.findAll { k, v -> k != 'help' }.each { k, v -> v.addMixin('helpOptions', new HelpOptionsMixin()) }
 
         grape.parser = parser
-        parser.parseWithHandler(new RunLast(), args)
+        parser.execute(args)
     }
 
     void run() {
@@ -282,7 +276,7 @@ class GrapeMain implements Runnable {
             }
             try {
                 def results = []
-                def uris = Grape.resolve(* params)
+                def uris = Grape.resolve(*params)
                 if (!ivyFormatRequested) {
                     for (URI uri: uris) {
                         if (uri.scheme == 'file') {
