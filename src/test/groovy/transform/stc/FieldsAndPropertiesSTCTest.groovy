@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.transform.PackageScope
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -380,7 +381,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 String p
             }
-
             def x = new C().getP()
             x = x?.toUpperCase()
         '''
@@ -403,7 +403,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
-
                 String which = new C().m()
                 assert which == 'PROPERTY'
             """
@@ -423,6 +422,42 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
             assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
         '''
+    }
+
+    // GROOVY-11005
+    void testGetterForProperty4() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'Pogo.groovy')
+            a.write '''
+                class Pogo {
+                    String value
+                    String getValue() { value }
+                }
+            '''
+            def b = new File(parentDir, 'Test.groovy')
+            b.write '''
+                class Test extends Pogo {
+                    void test() {
+                        value = 'string'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Test').newInstance().test()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     // GROOVY-5232
@@ -518,6 +553,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5585
     void testClassPropertyOnInterface() {
         assertScript '''
             Class test(Serializable arg) {
@@ -617,8 +653,38 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8074
     void testMapPropertyAccess3() {
+        assertScript '''
+            Map map = [a:1, b:2]
+            assert map['a'] == 1
+            String bee = 'b'
+            assert map[bee] == 2
+        '''
+    }
+
+    void testMapPropertyAccess4() {
+        assertScript '''
+            class C {
+                public static final Map TABLE = [key:'value']
+            }
+            String name = 'key'
+            assert C.TABLE[name] == 'value'
+        '''
+    }
+
+    // GROOVY-5797
+    void testMapPropertyAccess5() {
+        assertScript '''
+            def test(Map foo) {
+                def map = [baz: 1]
+                map[ foo.bar ]
+            }
+            assert test(bar:'baz') == 1
+        '''
+    }
+
+    // GROOVY-8074
+    void testMapPropertyAccess6() {
         assertScript '''
             class C extends HashMap {
                 def foo = 1
@@ -627,7 +693,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             map.put('foo', 42)
             assert map.foo == 42
         '''
-
         assertScript """
             def map = new ${MapType.name}()
             map.put('foo', 42)
@@ -635,12 +700,48 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    // GROOVY-5001, GROOVY-5491, GROOVY-6144
+    void testMapPropertyAccess7() {
+        String types = '''
+            class A { }
+            class B { }
+            class C extends HashMap<String,A> {
+                B b = new B()
+            }
+        '''
+        assertScript types + '''
+            def map = new C()
+            map.put('a', new A())
+            assert map.get('a') != null
+            assert map.get('b') == null
+            A a = map.a
+            B b = map.b
+            a = map['a']
+          //b = map['b']
+            assert a instanceof A
+          //assert b instanceof B
+        '''
+        assertScript types + '''
+            def test(C map) {
+                A a = map.a
+                B b = map.b
+                a = map['a']
+              //b = map['b']
+                assert a instanceof A
+              //assert b instanceof B
+            }
+            test(new C().tap{ put('a', new A()) })
+        '''
+    }
+
     // GROOVY-5517
-    void testMapPropertyAccess4() {
-        assertScript '''
+    void testMapPropertyAccess8() {
+        String type = '''
             class C extends HashMap {
                 public static int version = 666
             }
+        '''
+        assertScript type + '''
             def map = new C()
             map.foo = 123
             def value = map.foo
@@ -652,18 +753,55 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert value == null
             assert C.version == 666
         '''
+        assertScript type + '''
+            def test(C map) {
+                map.foo = 123
+                def value = map.foo
+                assert value == 123
+                map['foo'] = 4.5
+                value = map['foo']
+                assert value == 4.5
+                value = map.version
+                assert value == null
+                assert C.version == 666
+            }
+            test(new C())
+        '''
+    }
+
+    // GROOVY-11368
+    void testMapPropertyAccess9() {
+        String type = '''
+            class C implements Map<String,String> {
+                @Delegate Map<String,String> impl = [:]
+            }
+        '''
+        assertScript type + '''
+            def map = new C()
+            assert map.entry == null
+            assert map.empty == null
+            assert map.class == null
+            assert map.metaClass == null
+        '''
+        assertScript type + '''
+            def test(C map) {
+                assert map.entry == null
+                assert map.empty == null
+                assert map.class == null
+                assert map.metaClass == null
+            }
+            test(new C())
+        '''
     }
 
     // GROOVY-5988
-    void testMapPropertyAccess5() {
+    void testMapPropertyAccess10() {
         assertScript '''
             Map<String, Object> props(Object p) {
                 Map<String, Object> props = [:]
 
                 for(String property in p.properties.keySet()){
                     props[property] = 'TEST'
-                    // I need to use calling put directy to make it work
-                    // props.put property, 'TEST'
                 }
                 props
             }
@@ -684,15 +822,12 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
             // a subclass defining its own field
             class D extends C {
-                private String foo
-
                 D(String msg) {
                     this.foo = msg
                 }
-
-                public String getFoo() { this.foo }
+                private String foo
+                public  String getFoo() { this.foo }
             }
-
             def d = new D('bar')
             assert d.foo == 'bar'
             assert d.fooFromC == 'foo'
