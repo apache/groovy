@@ -76,6 +76,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
                 def getX() { super.@x }
             }
             assert false
-        ''', 'The field A.x is not accessible'
+        ''',
+        'Cannot access field: x of class: A'
     }
 }

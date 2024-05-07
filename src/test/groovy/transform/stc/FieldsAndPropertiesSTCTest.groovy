@@ -207,7 +207,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'The field C.x is not accessible'
+        'Cannot access field: x of class: C'
     }
 
     void testShouldComplainAboutMissingAttribute() {
@@ -261,7 +261,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'The field C.x is not accessible'
+        'Cannot access field: x of class: C'
     }
 
     void testPropertyWithInheritance() {
@@ -675,13 +675,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 def foo = 1
             }
             def map = new C()
-            map.put('foo', 42)
-            assert map.foo == 42
+            map.put('foo', 11)
+            assert map.foo == 11
+            assert map['foo'] == 11
         '''
         assertScript """
             def map = new ${MapType.name}()
-            map.put('foo', 42)
-            assert map.foo == 42
+            map.put('foo', 11)
+            assert map.foo == 11
+            assert map['foo'] == 11
+            map.put('bar', 22)
+            assert map.bar == 22
+            assert map['bar'] == 22
+            map.put('baz', 33)
+            assert map.baz == 33
+            assert map['baz'] == 33
         """
     }
 
@@ -777,6 +785,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             test(new C())
         '''
+    }
+
+    // GROOVY-11223
+    void testMapPropertyAccess10() {
+        assertScript """
+            def map = new ${MapType.name}()
+            map.foo = 11 // public setter
+            assert map.foo == null
+            assert map.getFoo() == 11
+        """
+        shouldFailWithMessages """
+            def map = new ${MapType.name}()
+            map.bar = 22 // protected setter: Cannot assign value of type int to variable of type Object
+        """,
+        "Cannot access method: setBar(java.lang.Object) of class: ${MapType.name}"
+        shouldFailWithMessages """
+            def map = new ${MapType.name}()
+            map.baz = 33 // package-private setter: Cannot assign value of type int to variable of type Object
+        """,
+        "Cannot access method: setBaz(java.lang.Object) of class: ${MapType.name}"
     }
 
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
@@ -1624,8 +1652,12 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         String boo = "I don't fancy fields in interfaces"
     }
 
-    static class MapType extends HashMap<String,Object> {
+    static class MapType extends HashMap<String,Number> {
         def foo = 1
+        protected bar = 2
+        @PackageScope baz = 3
+        protected void setBar(bar) {}
+        @PackageScope void setBaz(baz) {}
     }
 
     static class BaseClass {
