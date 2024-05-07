@@ -198,7 +198,7 @@ def testExtensionModuleJar = tasks.register("testExtensionModuleJar", Jar) {
     archiveBaseName = 'module-test'
     archiveVersion = '1.4'
     from compileTestExtensionModule
-    from extModuleFixtureDir.dir("src/main/resources")
+    from extModuleFixtureDir.dir('src/main/resources')
     // emulate Maven repo format for output
     destinationDirectory = extModuleRepoDir.map { it.dir("jars/module-test/module-test/${archiveVersion.get()}") }
 }
@@ -209,6 +209,10 @@ dependencies {
 
 tasks.named('test') {
     dependsOn testExtensionModuleJar
+}
+
+clean.doFirst {
+    delete "${rootDir}/buildSrc"
 }
 
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
@@ -251,7 +255,7 @@ sonarqube {
 
 def UNSTABLE = /^([\d.-]+(alpha|beta|rc|m)[\d.-]+(groovy[\d.-]+)?|20030203.000550|20031129.200437|200404\d\d|2004-03-19)$/
 // ignore non-stable releases
-tasks.named("dependencyUpdates")?.configure {
+tasks.named('dependencyUpdates')?.configure {
     gradleReleaseChannel = 'current'
     rejectVersionIf {
         !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE

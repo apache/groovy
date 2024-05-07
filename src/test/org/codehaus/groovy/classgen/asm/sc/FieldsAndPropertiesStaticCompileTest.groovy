@@ -40,7 +40,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-5579
-    void testUseSetterAndNotSetProperty() {
+    void testUseSetterNotSetProperty() {
         assertScript '''
             Date d = new Date()
             d.time = 1
@@ -857,5 +857,28 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             }
             new D().test()
         '''
+    }
+
+    // GROOVY-11223
+    @Override
+    void testMapPropertyAccess10() {
+        assertScript """
+            def map = new ${MapType.name}()
+            map.foo = 11 // public setter
+            assert map.foo == null
+            assert map.getFoo() == 11
+        """
+        shouldFailWithMessages """
+            def map = new ${MapType.name}()
+            map.bar = 22 // protected setter
+        """,
+        "Method setBar is protected in ${MapType.name}"
+        /*
+        shouldFailWithMessages """
+            def map = new ${MapType.name}()
+            map.baz = 33 // package-private setter
+        """,
+        "Method setBaz is package-private in ${MapType.name}"
+        */
     }
 }

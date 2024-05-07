@@ -238,6 +238,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.x
                 }
             }
+            new D().test()
         ''',
         'No such property: x for class: D'
     }
@@ -705,13 +706,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 def foo = 1
             }
             def map = new C()
-            map.put('foo', 42)
-            assert map.foo == 42
+            map.put('foo', 11)
+            assert map.foo == 11
+            assert map['foo'] == 11
         '''
         assertScript """
             def map = new ${MapType.name}()
-            map.put('foo', 42)
-            assert map.foo == 42
+            map.put('foo', 11)
+            assert map.foo == 11
+            assert map['foo'] == 11
+            map.put('bar', 22)
+            assert map.bar == 22
+            assert map['bar'] == 22
+            map.put('baz', 33)
+            assert map.baz == 33
+            assert map['baz'] == 33
         """
     }
 
@@ -807,6 +816,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             test(new C())
         '''
+    }
+
+    // GROOVY-11223
+    void testMapPropertyAccess10() {
+        assertScript """
+            def map = new ${MapType.name}()
+            map.foo = 11 // public setter
+            assert map.foo == null
+            assert map.getFoo() == 11
+        """
+        assertScript """
+            def map = new ${MapType.name}()
+            map.bar = 22 // protected setter
+            assert map.bar == null
+            assert map.@bar == 2
+        """
+        assertScript """
+            def map = new ${MapType.name}()
+            map.baz = 33 // package-private setter
+            assert map.baz == null
+            assert map.@baz == 3
+        """
     }
 
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
@@ -1644,8 +1675,12 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         String boo = "I don't fancy fields in interfaces"
     }
 
-    static class MapType extends HashMap<String,Object> {
+    static class MapType extends HashMap<String,Number> {
         def foo = 1
+        protected bar = 2
+        @PackageScope baz = 3
+        protected void setBar(bar) {}
+        @PackageScope void setBaz(baz) {}
     }
 
     static class BaseClass {
