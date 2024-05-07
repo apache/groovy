@@ -1462,7 +1462,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected boolean existsProperty(final PropertyExpression pexp, final boolean readMode, final ClassCodeVisitorSupport visitor) {
         super.visitPropertyExpression(pexp);
 
-        String propertyName = pexp.getPropertyAsString();
+        final String propertyName = pexp.getPropertyAsString();
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
@@ -1494,8 +1494,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        final String isserName  = getGetterName(propertyName, Boolean.TYPE);
+        final String getterName = getGetterName(propertyName);
+        final String setterName = getSetterName(propertyName);
+
         boolean foundGetterOrSetter = false;
-        String capName = capitalize(propertyName);
         Set<ClassNode> handledNodes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
@@ -1552,15 +1555,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
-                MethodNode getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
+                MethodNode getter = findGetter(current, isserName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = findGetter(current, getGetterName(propertyName), pexp.isImplicitThis());
+                if (getter == null) getter = findGetter(current, getterName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter != null && !isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)) {
-                    getter = null; // GROOVY-11369: map entry comes before access method
+                if (getter != null
+                        // GROOVY-11319:
+                        && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
+                        // GROOVY-11369:
+                        || (!isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)))) {
+                    getter = null;
                 }
-                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*enforce void:*/false);
+                List<MethodNode> setters = findSetters(current, setterName, /*enforce void:*/false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
+                // GROOVY-11319:
+                setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
 
                 if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
 
@@ -1568,9 +1577,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
-                    ClassNode enclosingType = enclosingTypes.iterator().next();
                     if (readMode) {
-                        if (getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
+                        if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
@@ -1579,11 +1587,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
                             }
                             return true;
-                        } else {
-                            getter = null; // GROOVY-11319
                         }
                     } else {
-                        if (setters.stream().anyMatch(setter -> hasAccessToMember(enclosingType, setter.getDeclaringClass(), setter.getModifiers()))) {
+                        if (!setters.isEmpty()) {
                             if (visitor != null) {
                                 for (MethodNode setter : setters) {
                                     // visiting setter will not infer the property type since return type is void, so visit a dummy field instead
@@ -1592,7 +1598,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     visitor.visitField(virtual);
                                 }
                             }
-                            SetterInfo info = new SetterInfo(current, getSetterName(propertyName), setters);
+                            SetterInfo info = new SetterInfo(current, setterName, setters);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
                                 putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
@@ -1603,10 +1609,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (field == null && getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
+                        } else if (getter != null && (field == null || field.isFinal())) {
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
-                        } else {
-                            setters.clear(); // GROOVY-11319
                         }
                     }
                 }
@@ -1620,8 +1624,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // GROOVY-5568: the property may be defined by DGM
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
-                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName);
-                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName)) {
+                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
+                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
                 if (staticOnlyAccess && receiver.getData() == null && !isClassType(receiver.getType())) {
