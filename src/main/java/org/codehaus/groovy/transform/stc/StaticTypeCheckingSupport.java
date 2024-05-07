@@ -24,7 +24,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
@@ -2033,24 +2032,22 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Filter methods according to visibility
+     * Filters methods according to visibility.
      *
      * @param methodNodeList method nodes to filter
-     * @param enclosingClassNode the enclosing class
-     * @return filtered method nodes
+     * @param enclosingClassNode the enclosing type
+     * @return filtered method nodes (new list)
      * @since 3.0.0
      */
     public static List<MethodNode> filterMethodsByVisibility(final List<MethodNode> methodNodeList, final ClassNode enclosingClassNode) {
         if (!asBoolean(methodNodeList)) {
-            return StaticTypeCheckingVisitor.EMPTY_METHODNODE_LIST;
+            return Collections.emptyList();
         }
 
         List<MethodNode> result = new LinkedList<>();
+        List< ClassNode> outers = enclosingClassNode.getOuterClasses();
 
-        boolean isEnclosingInnerClass = enclosingClassNode instanceof InnerClassNode;
-        List<ClassNode> outerClasses = enclosingClassNode.getOuterClasses();
-
-        outer:
+        next_method:
         for (MethodNode methodNode : methodNodeList) {
             if (methodNode instanceof ExtensionMethodNode) {
                 result.add(methodNode);
@@ -2059,23 +2056,23 @@ public abstract class StaticTypeCheckingSupport {
 
             ClassNode declaringClass = methodNode.getDeclaringClass();
 
-            if (isEnclosingInnerClass) {
-                for (ClassNode outerClass : outerClasses) {
+            if (asBoolean(outers)) {
+                for (ClassNode outerClass : outers) {
                     if (outerClass.isDerivedFrom(declaringClass)) {
                         if (outerClass.equals(declaringClass)) {
                             result.add(methodNode);
-                            continue outer;
+                            continue next_method;
                         } else {
                             if (methodNode.isPublic() || methodNode.isProtected()) {
                                 result.add(methodNode);
-                                continue outer;
+                                continue next_method;
                             }
                         }
                     }
                 }
             }
 
-            if (declaringClass instanceof InnerClassNode) {
+            if (declaringClass.getOuterClass() != null) {
                 if (declaringClass.getOuterClasses().contains(enclosingClassNode)) {
                     result.add(methodNode);
                     continue;

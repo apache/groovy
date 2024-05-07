@@ -1460,7 +1460,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected boolean existsProperty(final PropertyExpression pexp, final boolean readMode, final ClassCodeVisitorSupport visitor) {
         super.visitPropertyExpression(pexp);
 
-        String propertyName = pexp.getPropertyAsString();
+        final String propertyName = pexp.getPropertyAsString();
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
@@ -1613,7 +1613,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
 
-                foundGetterOrSetter = (foundGetterOrSetter || !setters.isEmpty() || getter != null);
+                foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
             // GROOVY-5568: the property may be defined by DGM

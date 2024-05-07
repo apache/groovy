@@ -106,6 +106,10 @@ allprojects {
     }
 }
 
+clean.doFirst {
+    delete "${rootDir}/build-logic"
+}
+
 task(copyTestResources, type: Copy)
         .from('src/test')
         .into("$buildDir/classes/test")

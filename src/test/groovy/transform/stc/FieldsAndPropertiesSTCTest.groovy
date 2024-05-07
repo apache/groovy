@@ -195,8 +195,44 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: C'
     }
 
+    // GROOVY-11319
     @NotYetImplemented
     void testShouldComplainAboutMissingProperty3() {
+        shouldFailWithMessages '''
+            class C {
+                private int getX() { 1 }
+            }
+            class D extends C {
+                void test() {
+                    super.x
+                }
+            }
+            new D().test()
+        ''',
+        'No such property: x for class: C'
+    }
+
+    // GROOVY-11319
+    @NotYetImplemented
+    void testShouldComplainAboutMissingProperty4() {
+        shouldFailWithMessages '''
+            class C {
+                private void setX(int i) {
+                    assert false : 'cannot access'
+                }
+            }
+            class D extends C {
+                void test() {
+                    super.x = 1
+                }
+            }
+            new D().test()
+        ''',
+        'No such property: x for class: C'
+    }
+
+    @NotYetImplemented
+    void testShouldComplainAboutMissingProperty5() {
         shouldFailWithMessages '''
             class C {
                 private x
@@ -206,8 +242,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.x
                 }
             }
+            new D().test()
         ''',
-        'Cannot access field: x of class: C'
+        'No such property: x for class: D'
     }
 
     void testShouldComplainAboutMissingAttribute() {
@@ -624,15 +661,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5988
     void testMapPropertyAccess3() {
         assertScript '''
-            String key = 'foo'
-            Map map = [(key): 123]
+            String key = 'name'
+            Map<String, Integer> map = [:]
+            map[key] = 123
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
             })
             def val = map[key]
             assert val == 123
+        '''
+        assertScript '''
+            def names = [:].getProperties().keySet()
+            assert names.toSorted() == ['class', 'empty'] // TODO: remove?
         '''
     }
 
@@ -777,7 +820,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert map.metaClass == null
         '''
         assertScript type + '''
-            def test(C map) {
+            def test(C map) { // no diff
                 assert map.entry == null
                 assert map.empty == null
                 assert map.class == null
