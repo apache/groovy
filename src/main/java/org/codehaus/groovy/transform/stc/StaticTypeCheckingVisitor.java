@@ -1556,6 +1556,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 if (getter == null) getter = findGetter(current, getGetterName(propertyName), pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
+                if (getter != null && !isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)) {
+                    getter = null; // GROOVY-11369: map entry comes before access method
+                }
                 List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*enforce void:*/false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
 

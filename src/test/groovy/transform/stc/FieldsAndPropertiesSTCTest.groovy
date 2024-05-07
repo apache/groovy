@@ -292,7 +292,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.@x
                 }
             }
-            new D().test()
         ''',
         'Cannot access field: x of class: C'
     }
@@ -641,7 +640,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5700, GROOVY-8788
+    // GROOVY-8788
     void testMapPropertyAccess2() {
         assertScript '''
             def map = [key: 123]
@@ -653,33 +652,49 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5988
     void testMapPropertyAccess3() {
         assertScript '''
-            Map map = [a:1, b:2]
-            assert map['a'] == 1
-            String bee = 'b'
-            assert map[bee] == 2
-        '''
-    }
-
-    void testMapPropertyAccess4() {
-        assertScript '''
-            class C {
-                public static final Map TABLE = [key:'value']
-            }
-            String name = 'key'
-            assert C.TABLE[name] == 'value'
+            String key = 'name'
+            Map<String, Integer> map = [:]
+            map[key] = 123
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def val = map[key]
+            assert val == 123
         '''
     }
 
     // GROOVY-5797
-    void testMapPropertyAccess5() {
+    void testMapPropertyAccess4() {
         assertScript '''
             def test(Map foo) {
                 def map = [baz: 1]
                 map[ foo.bar ]
             }
             assert test(bar:'baz') == 1
+        '''
+    }
+
+    // GROOVY-11369
+    void testMapPropertyAccess5() {
+        assertScript '''
+            def map = [:]
+            assert map.entry     == null
+            assert map.empty     == null
+            assert map.class     == null
+            assert map.metaClass == null // TODO
+
+            map.entry     = null
+            map.empty     = null // not read-only property
+            map.class     = null // not read-only property
+            map.metaClass = null // TODO: 6549 SC is "put"
+
+            assert  map.containsKey('entry')
+            assert  map.containsKey('empty')
+            assert  map.containsKey('class')
+          //assert !map.containsKey('metaClass')
         '''
     }
 
@@ -784,30 +799,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert map.metaClass == null
         '''
         assertScript type + '''
-            def test(C map) {
+            def test(C map) { // no diff
                 assert map.entry == null
                 assert map.empty == null
                 assert map.class == null
                 assert map.metaClass == null
             }
             test(new C())
-        '''
-    }
-
-    // GROOVY-5988
-    void testMapPropertyAccess10() {
-        assertScript '''
-            Map<String, Object> props(Object p) {
-                Map<String, Object> props = [:]
-
-                for(String property in p.properties.keySet()){
-                    props[property] = 'TEST'
-                }
-                props
-            }
-            def map = props('SOME RANDOM STRING')
-            assert map['class'] == 'TEST'
-            assert map['bytes'] == 'TEST'
         '''
     }
 
