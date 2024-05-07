@@ -231,6 +231,10 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
+clean.doFirst {
+    delete "${rootDir}/buildSrc"
+}
+
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
     logger.lifecycle '''
 ************************************* WARNING ***********************************************
