@@ -682,6 +682,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11369
+    void testMapPropertyAccess5() {
+        assertScript '''
+            def map = [:]
+            assert map.entry     == null
+            assert map.empty     == null
+            assert map.class     == null
+            assert map.metaClass == null // TODO
+
+            map.entry     = null
+            map.empty     = null // not read-only property
+            map.class     = null // not read-only property
+            map.metaClass = null // not read-only property
+
+            assert  map.containsKey('entry')
+            assert  map.containsKey('empty')
+            assert  map.containsKey('class')
+            assert !map.containsKey('metaClass')
+        '''
+    }
+
     // GROOVY-8074
     void testMapPropertyAccess6() {
         assertScript '''

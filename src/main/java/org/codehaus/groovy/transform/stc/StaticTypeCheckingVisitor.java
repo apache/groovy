@@ -264,6 +264,7 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.syntax.Types.REMAINDER;
 import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
@@ -1522,7 +1523,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     protected boolean existsProperty(final PropertyExpression pexp, final boolean readMode, final ClassCodeVisitorSupport visitor) {
         super.visitPropertyExpression(pexp);
 
-        String propertyName = pexp.getPropertyAsString();
+        final String propertyName = pexp.getPropertyAsString();
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
@@ -1565,8 +1566,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
+        final String isserName  = getGetterName(propertyName, Boolean.TYPE);
+        final String getterName = getGetterName(propertyName);
+        final String setterName = getSetterName(propertyName);
+
         boolean foundGetterOrSetter = false;
-        String capName = capitalize(propertyName);
         Set<ClassNode> handledNodes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
@@ -1623,12 +1627,22 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
 
-                MethodNode getter = current.getGetterMethod("is" + capName);
+                MethodNode getter = current.getGetterMethod(isserName);
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = current.getGetterMethod(getGetterName(propertyName));
+                if (getter == null) getter = current.getGetterMethod(getterName);
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*voidOnly:*/false);
+                if (getter != null
+                        // GROOVY-11319:
+                        && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
+                        // GROOVY-11369:
+                        || (!isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)
+                            && (!getter.isPublic() || (propertyName.matches("empty|class|metaClass") && !List.of(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)))))) {
+                    getter = null;
+                }
+                List<MethodNode> setters = findSetters(current, setterName, /*voidOnly:*/false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
+                // GROOVY-11319:
+                setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
 
                 if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
 
@@ -1636,9 +1650,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
-                    ClassNode enclosingType = enclosingTypes.iterator().next();
                     if (readMode) {
-                        if (getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
+                        if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
@@ -1647,11 +1660,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                 pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
                             }
                             return true;
-                        } else {
-                            getter = null; // GROOVY-11319
                         }
                     } else {
-                        if (setters.stream().anyMatch(setter -> hasAccessToMember(enclosingType, setter.getDeclaringClass(), setter.getModifiers()))) {
+                        if (!setters.isEmpty()) {
                             if (visitor != null) {
                                 for (MethodNode setter : setters) {
                                     // visiting setter will not infer the property type since return type is void, so visit a dummy field instead
@@ -1660,7 +1671,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                     visitor.visitField(virtual);
                                 }
                             }
-                            SetterInfo info = new SetterInfo(current, getSetterName(propertyName), setters);
+                            SetterInfo info = new SetterInfo(current, setterName, setters);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
                                 putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
@@ -1671,10 +1682,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (field == null && getter != null && hasAccessToMember(enclosingType, getter.getDeclaringClass(), getter.getModifiers())) {
+                        } else if (getter != null && (field == null || field.isFinal())) {
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
-                        } else {
-                            setters.clear(); // GROOVY-11319
                         }
                     }
                 }
@@ -1688,8 +1697,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
             // GROOVY-5568: the property may be defined by DGM
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
-                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName);
-                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName)) {
+                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
+                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
                 if (staticOnlyAccess && receiver.getData() == null && !isClassType(receiver.getType())) {
