@@ -723,9 +723,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 localVariable = (VariableExpression) accessedVariable;
             }
 
-            ClassNode inferredType = localVariable.getNodeMetaData(INFERRED_TYPE);
-            inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
-            if (inferredType != null && !isObjectType(inferredType) && !inferredType.equals(accessedVariable.getOriginType())) {
+            ClassNode inferredType = getInferredTypeFromTempInfo(localVariable, localVariable.getNodeMetaData(INFERRED_TYPE));
+            if (inferredType != null && !isObjectType(inferredType) && !inferredType.equals(isTraitSelf(vexp))) {
                 vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
             }
         }

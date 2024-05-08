@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.transform.PackageScope
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -134,47 +135,44 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testInferenceFromFieldType() {
         assertScript '''
-            class A {
+            class C {
                 String name = 'Cedric'
             }
-            A a = new A()
-            def b = a.name
-            b.toUpperCase() // type of b should be inferred from field type
+            C c = new C()
+            def x = c.name
+            x.toUpperCase() // type of x should be inferred from field type
         '''
     }
 
     void testAssignFieldValueWithAttributeNotation() {
         assertScript '''
-            class A {
+            class C {
                 int x
             }
-
-            A a = new A()
-            a.@x = 1
+            C c = new C()
+            c.@x = 1
         '''
     }
 
     void testAssignFieldValueWithWrongTypeAndAttributeNotation() {
          shouldFailWithMessages '''
-             class A {
+             class C {
                  int x
              }
-
-             A a = new A()
-             a.@x = '1'
+             C c = new C()
+             c.@x = '1'
          ''',
          'Cannot assign value of type java.lang.String to variable of type int'
      }
 
     void testInferenceFromAttributeType() {
         assertScript '''
-            class A {
+            class C {
                 String name = 'Cedric'
             }
-
-            A a = new A()
-            def b = a.@name
-            b.toUpperCase() // type of b should be inferred from field type
+            C c = new C()
+            def x = c.@name
+            x.toUpperCase() // type of x should be inferred from field type
         '''
     }
 
@@ -188,61 +186,61 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldComplainAboutMissingProperty2() {
         shouldFailWithMessages '''
-            class A {
+            class C {
             }
-            A a = new A()
-            a.x = 0
+            C c = new C()
+            c.x = 0
         ''',
-        'No such property: x for class: A'
+        'No such property: x for class: C'
     }
 
     // GROOVY-11319
     void testShouldComplainAboutMissingProperty3() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 private int getX() { 1 }
             }
-            class B extends A {
+            class D extends C {
                 void test() {
                     super.x
                 }
             }
-            new B().test()
+            new D().test()
         ''',
-        'No such property: x for class: A'
+        'No such property: x for class: C'
     }
 
     // GROOVY-11319
     void testShouldComplainAboutMissingProperty4() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 private void setX(int i) {
-                    assert false : 'no access'
+                    assert false : 'cannot access'
                 }
             }
-            class B extends A {
+            class D extends C {
                 void test() {
                     super.x = 1
                 }
             }
-            new B().test()
+            new D().test()
         ''',
-        'No such property: x for class: A'
+        'No such property: x for class: C'
     }
 
     void testShouldComplainAboutMissingProperty5() {
         shouldFailWithMessages '''
-            class A {
-                private int x
+            class C {
+                private x
             }
-            class B extends A {
+            class D extends C {
                 void test() {
                     this.x
                 }
             }
-            new B().test()
+            new D().test()
         ''',
-        'No such property: x for class: B'
+        'No such property: x for class: D'
     }
 
     void testShouldComplainAboutMissingAttribute() {
@@ -255,112 +253,109 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testShouldComplainAboutMissingAttribute2() {
         shouldFailWithMessages '''
-            class A {
+            class C {
             }
-            A a = new A()
-            a.@x = 0
+            C c = new C()
+            c.@x = 0
         ''',
-        'No such attribute: x for class: A'
+        'No such attribute: x for class: C'
     }
 
     void testShouldComplainAboutMissingAttribute3() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 def getX() { }
             }
-            A a = new A()
-            println a.@x
+            C c = new C()
+            println c.@x
         ''',
-        'No such attribute: x for class: A'
+        'No such attribute: x for class: C'
     }
 
     void testShouldComplainAboutMissingAttribute4() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 def setX(x) { }
             }
-            A a = new A()
-            a.@x = 0
+            C c = new C()
+            c.@x = 0
         ''',
-        'No such attribute: x for class: A'
+        'No such attribute: x for class: C'
     }
 
     void testShouldComplainAboutMissingAttribute5() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 private x
             }
-            class B extends A {
+            class D extends C {
                 void test() {
                     this.@x
                 }
             }
-            new B().test()
+            new D().test()
         ''',
-        'Cannot access field: x of class: A'
+        'Cannot access field: x of class: C'
     }
 
     void testPropertyWithInheritance() {
         assertScript '''
-            class A {
+            class C {
                 int x
             }
-            class B extends A {
+            class D extends C {
             }
-
-            B b = new B()
-            assert b.x == 0
-
-            b.x = 2
-            assert b.x == 2
+            D d = new D()
+            assert d.x == 0
+            d.x = 2
+            assert d.x == 2
         '''
     }
 
     void testPropertyTypeWithInheritance() {
         shouldFailWithMessages '''
-            class A {
+            class C {
                 int x
             }
-            class B extends A {
+            class D extends C {
             }
-            B b = new B()
-            b.x = '2'
+            D d = new D()
+            d.x = '2'
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
-            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
+            class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
-            B b = new B()
-            b.x = 2
+            C c = new C()
+            c.x = 2
         '''
     }
 
     void testPropertyWithInheritanceFromAnotherSourceUnit2() {
         shouldFailWithMessages '''
-            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
+            class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
-            B b = new B()
-            b.x = '2'
+            C c = new C()
+            c.x = '2'
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
         assertScript '''
-            class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
+            class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
             }
-            B b = new B()
-            b.x = 2
+            C c = new C()
+            c.x = 2
         '''
     }
 
     // GROOVY-9955
     void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
-        assertScript '''
-            import groovy.transform.stc.FieldsAndPropertiesSTCTest.Public
+        assertScript """import ${Public.canonicalName}
             assert Public.answer == 42
             assert Public.CONST == 'XX'
             assert Public.VALUE == null
@@ -369,7 +364,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             Public.@VALUE = 'ZZ'
             assert Public.@VALUE == 'ZZ'
             Public.VALUE = null
-        '''
+        """
     }
 
     // GROOVY-10695
@@ -403,7 +398,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 String p
             }
-
             def x = new C().getP()
             x = x?.toUpperCase()
         '''
@@ -426,7 +420,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
-
                 String which = new C().m()
                 assert which == 'PROPERTY'
             """
@@ -442,11 +435,46 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 Integer m() { 123456 - p }
                 Integer m(int i) { i - p }
             }
-
             def c = new C()
             assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
             assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
         '''
+    }
+
+    // GROOVY-11005
+    void testGetterForProperty4() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'Pogo.groovy')
+            a.write '''
+                class Pogo {
+                    String value
+                    String getValue() { value }
+                }
+            '''
+            def b = new File(parentDir, 'Test.groovy')
+            b.write '''
+                class Test extends Pogo {
+                    void test() {
+                        value = 'string'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Test').newInstance().test()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     // GROOVY-5232
@@ -461,7 +489,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     return p
                 }
             }
-
             Person.create()
         '''
     }
@@ -469,35 +496,35 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5443
     void testFieldInitShouldPass() {
         assertScript '''
-            class Foo {
+            class C {
                 int bar = 1
             }
-            new Foo()
+            new C()
         '''
     }
 
     // GROOVY-5443
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypes() {
         shouldFailWithMessages '''
-            class Foo {
+            class C {
                 int bar = new Date()
             }
-            new Foo()
+            new C()
         ''',
         'Cannot assign value of type java.util.Date to variable of type int'
     }
 
     // GROOVY-5443, GROOVY-10277
-    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure1() {
+    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure() {
         shouldFailWithMessages '''
-            class Foo {
+            class C {
                 Closure<List> bar = { Date date -> date.getTime() }
             }
         ''',
         'Cannot return value of type long for closure expecting java.util.List'
 
         shouldFailWithMessages '''
-            class Foo {
+            class C {
                 java.util.function.Supplier<String> bar = { -> 123 }
             }
         ''',
@@ -507,46 +534,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9882
     void testFieldInitShouldPassForCompatibleTypesWithClosure() {
         assertScript '''
-            class Foo {
+            class C {
                 java.util.function.Supplier<String> bar = { 'abc' }
             }
-            assert new Foo().bar.get() == 'abc'
+            assert new C().bar.get() == 'abc'
         '''
     }
 
     void testClosureParameterMismatch() {
         shouldFailWithMessages '''
-            class Foo {
+            class C {
                 java.util.function.Supplier<String> bar = { baz -> '' }
             }
         ''',
         'Wrong number of parameters for method target: get()'
 
         shouldFailWithMessages '''
-            class Foo {
+            class C {
                 java.util.function.Consumer<String> bar = { -> null }
             }
         ''',
         'Wrong number of parameters for method target: accept(java.lang.String)'
-    }
-
-    void testListDotProperty() {
-        assertScript '''class Elem { int value }
-            List<Elem> list = new LinkedList<Elem>()
-            list.add(new Elem(value:123))
-            list.add(new Elem(value:456))
-            assert list.value == [ 123, 456 ]
-            list.add(new Elem(value:789))
-            assert list.value == [ 123, 456, 789 ]
-        '''
-        assertScript '''class Elem { String value }
-            List<Elem> list = new LinkedList<Elem>()
-            list.add(new Elem(value:'123'))
-            list.add(new Elem(value:'456'))
-            assert list.value == [ '123', '456' ]
-            list.add(new Elem(value:'789'))
-            assert list.value == [ '123', '456', '789' ]
-        '''
     }
 
     // GROOVY-5585
@@ -569,138 +577,50 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testSetterUsingPropertyNotation() {
         assertScript '''
-            class A {
-                boolean ok = false;
-                void setFoo(String foo) { ok = foo == 'foo' }
+            class C {
+                boolean ok = false
+                void setFoo(String foo) { ok = (foo == 'foo') }
             }
-            def a = new A()
-            a.foo = 'foo'
-            assert a.ok
+            def c = new C()
+            c.foo = 'foo'
+            assert c.ok
         '''
     }
 
     void testSetterUsingPropertyNotationOnInterface() {
         assertScript '''
             interface FooAware { void setFoo(String arg) }
-            class A implements FooAware {
+            class C implements FooAware {
                 void setFoo(String foo) { }
             }
-            void test(FooAware a) {
-                a.foo = 'foo'
+            void test(FooAware fa) {
+                fa.foo = 'foo'
             }
-            def a = new A()
-            test(a)
+            def c = new C()
+            test(c)
         '''
     }
 
-    // GROOVY-5001, GROOVY-5491, GROOVY-6144, GROOVY-8788
-    void testMapProperties1() {
-        assertScript '''
-            class A { }
-            class B { }
-            class HM extends HashMap<String,A> {
-                B b = new B()
-            }
-
-            def map = new HM()
-            map.put('a', new A())
-            assert map.get('a') != null
-            assert map.get('b') == null
-
-            A a = map.a
-            B b = map.b
-            a = map['a']
-            b = map['b']
-            assert a instanceof A
-            assert b instanceof B
+    void testListDotProperty1() {
+        assertScript '''class Elem { int value }
+            List<Elem> list = new LinkedList<Elem>()
+            list.add(new Elem(value:123))
+            list.add(new Elem(value:456))
+            assert list.value == [ 123, 456 ]
+            list.add(new Elem(value:789))
+            assert list.value == [ 123, 456, 789 ]
+        '''
+        assertScript '''class Elem { String value }
+            List<Elem> list = new LinkedList<Elem>()
+            list.add(new Elem(value:'123'))
+            list.add(new Elem(value:'456'))
+            assert list.value == [ '123', '456' ]
+            list.add(new Elem(value:'789'))
+            assert list.value == [ '123', '456', '789' ]
         '''
     }
 
-    // GROOVY-5517
-    void testMapProperties2() {
-        assertScript '''
-            @groovy.transform.stc.POJO
-            @groovy.transform.CompileStatic
-            class MyHashMap extends HashMap {
-                public static int version = 666
-            }
-            def map = new MyHashMap()
-            map.foo = 123
-            def value = map.foo
-            assert value == 123
-            map['foo'] = 4.5
-            value = map['foo']
-            assert value == 4.5
-            value = map.version
-            assert value == 666
-        '''
-    }
-
-    // GROOVY-5797
-    void testMapProperties3() {
-        assertScript '''
-            def m(Map foo) {
-                def map = [baz: 1]
-                map[ foo.bar ]
-            }
-            assert m(bar:'baz') == 1
-        '''
-    }
-
-    void testMapProperties4() {
-        assertScript '''
-            def map = [:]
-            map['a'] = 1
-            map.b = 2
-            assert map.get('a') == 1
-            assert map.get('b') == 2
-        '''
-    }
-
-    void testMapProperties5() {
-        assertScript '''
-            Map map = [a: 1, b:2]
-            String key = 'b'
-            assert map['a'] == 1
-            assert map[key] == 2
-        '''
-    }
-
-    void testMapProperties6() {
-        assertScript '''
-            class Foo {
-                public static Map CLASSES = [key:'value']
-            }
-            String name = 'key'
-            assert Foo.CLASSES[name] == 'value'
-        '''
-    }
-
-    // GROOVY-5700, GROOVY-8788
-    void testInferenceOfMapSubProperty() {
-        assertScript '''
-            def map = [key: 123]
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-            })
-            def val = map['key']
-            assert val == 123
-        '''
-    }
-
-    // GROOVY-5700
-    void testInferenceOfMapDotProperty() {
-        assertScript '''
-            def map = [key: 123]
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-            })
-            def val = map.key
-            assert val == 123
-        '''
-    }
-
-    void testInferenceOfListDotProperty() {
+    void testListDotProperty2() {
         assertScript '''
             class C { int x }
             def list = [new C(x:1), new C(x:2)]
@@ -713,29 +633,194 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5700
+    void testMapPropertyAccess1() {
+        assertScript '''
+            def map = [key: 123]
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def val = map.key
+            assert val == 123
+        '''
+    }
+
+    // GROOVY-8788
+    void testMapPropertyAccess2() {
+        assertScript '''
+            def map = [key: 123]
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def val = map['key']
+            assert val == 123
+        '''
+    }
+
+    // GROOVY-5988
+    void testMapPropertyAccess3() {
+        assertScript '''
+            String key = 'name'
+            Map<String, Integer> map = [:]
+            map[key] = 123
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def val = map[key]
+            assert val == 123
+        '''
+    }
+
+    // GROOVY-5797
+    void testMapPropertyAccess4() {
+        assertScript '''
+            def test(Map foo) {
+                def map = [baz: 1]
+                map[ foo.bar ]
+            }
+            assert test(bar:'baz') == 1
+        '''
+    }
+
+    // GROOVY-8074
+    void testMapPropertyAccess6() {
+        assertScript '''
+            class C extends HashMap {
+                def foo = 1
+            }
+            def map = new C()
+            map.put('foo', 11)
+            assert map.foo == 1
+            assert map['foo'] == 1
+        '''
+        assertScript """
+            def map = new ${MapType.name}()
+            map.put('foo', 11)
+            assert map.foo == 1
+            assert map['foo'] == 1
+            map.put('bar', 22)
+            assert map.bar == 22
+            assert map['bar'] == 22
+            map.put('baz', 33)
+            assert map.baz == 33
+            assert map['baz'] == 33
+        """
+    }
+
+    // GROOVY-5001, GROOVY-5491, GROOVY-6144
+    void testMapPropertyAccess7() {
+        String types = '''
+            class A { }
+            class B { }
+            class C extends HashMap<String,A> {
+                B b = new B()
+            }
+        '''
+        assertScript types + '''
+            def map = new C()
+            map.put('a', new A())
+            assert map.get('a') != null
+            assert map.get('b') == null
+            A a = map.a
+            B b = map.b
+            a = map['a']
+            b = map['b']
+            assert a instanceof A
+            assert b instanceof B
+        '''
+        assertScript types + '''
+            def test(C map) {
+                A a = map.a
+                B b = map.b
+                a = map['a']
+                b = map['b']
+                assert a instanceof A
+                assert b instanceof B
+            }
+            test(new C().tap{ put('a', new A()) })
+        '''
+    }
+
+    // GROOVY-5517
+    void testMapPropertyAccess8() {
+        String type = '''
+            @groovy.transform.stc.POJO
+            @groovy.transform.CompileStatic
+            class C extends HashMap {
+                public static int version = 666
+            }
+        '''
+        assertScript type + '''
+            def map = new C()
+            map.foo = 123
+            def value = map.foo
+            assert value == 123
+            map['foo'] = 4.5
+            value = map['foo']
+            assert value == 4.5
+            value = map.version
+            assert value == 666
+        '''
+        assertScript type + '''
+            def test(C map) {
+                map.foo = 123
+                def value = map.foo
+                assert value == 123
+                map['foo'] = 4.5
+                value = map['foo']
+                assert value == 4.5
+                value = map.version
+                assert value == 666
+            }
+            test(new C())
+        '''
+    }
+
+    // GROOVY-11368
+    void testMapPropertyAccess9() {
+        String type = '''
+            class C implements Map<String,String> {
+                @Delegate Map<String,String> impl = [:]
+            }
+        '''
+        assertScript type + '''
+            def map = new C()
+            assert map.entry == null
+            assert map.empty == null
+            assert map.class == null
+            assert map.metaClass == null
+        '''
+        assertScript type + '''
+            def test(C map) { // no diff
+                assert map.entry == null
+                assert map.empty == null
+                assert map.class == null
+                assert map.metaClass == null
+            }
+            test(new C())
+        '''
+    }
+
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
         assertScript '''
             // a base class defining a read-only property
-            class Top {
+            class C {
                 private String foo = 'foo'
                 String getFoo() { foo }
-                String getFooFromTop() { foo }
+                String getFooFromC() { foo }
             }
 
             // a subclass defining its own field
-            class Bottom extends Top {
-                private String foo
-
-                Bottom(String msg) {
+            class D extends C {
+                D(String msg) {
                     this.foo = msg
                 }
-
-                public String getFoo() { this.foo }
+                private String foo
+                public  String getFoo() { this.foo }
             }
-
-            def b = new Bottom('bar')
-            assert b.foo == 'bar'
-            assert b.fooFromTop == 'foo'
+            def d = new D('bar')
+            assert d.foo == 'bar'
+            assert d.fooFromC == 'foo'
         '''
     }
 
@@ -749,11 +834,12 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5725
     void testAccessFieldDefinedInInterface() {
         assertScript '''
-            class Foo implements groovy.transform.stc.FieldsAndPropertiesSTCTest.InterfaceWithField {
-                static main(args) {
+            class C implements groovy.transform.stc.FieldsAndPropertiesSTCTest.InterfaceWithField {
+                void test() {
                     assert boo == "I don't fancy fields in interfaces"
                 }
             }
+            new C().test()
         '''
     }
 
@@ -767,7 +853,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 1
@@ -784,7 +869,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 1
@@ -803,7 +887,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-
             def i = new Outer.Inner(new Outer())
             def x = i.m()
             assert x == 2
@@ -818,7 +901,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-
             def i = new Outer.Inner(new Outer())
             def x = i.p
         ''',
@@ -833,7 +915,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
-
             def i = new Outer.Inner(new Outer())
             def x = i.getP()
         ''',
@@ -881,8 +962,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-
-            def in = Outer.Inner.FOO
+            def foo = Outer.Inner.FOO
             assert Outer.props == [bar: 10, baz: 20, foo: 30]
         '''
     }
@@ -899,7 +979,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-
             assert Outer.Inner.CONST.value == 2
         '''
     }
@@ -913,7 +992,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 String p = 'field'
                 String getP() { 'property' }
             }
-
             String which = new Outer.Inner(new Outer()).m()
             assert which == 'property'
         '''
@@ -929,7 +1007,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 String p = 'field'
                 String getP() { 'property' }
             }
-
             String which = new Outer.Inner(new Outer()).m()
             assert which == 'method'
         '''
@@ -954,7 +1031,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
-
                 Object value = new Outer.Inner().test(0)
                 assert value == 2
             """
@@ -964,10 +1040,10 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-11029
     void testSuperPropertyAccess1() {
         assertScript '''
-            class One {
+            class C {
                 Object thing
             }
-            class Two extends One {
+            class D extends C {
                 @Override
                 Object getThing() {
                     super.thing
@@ -977,30 +1053,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     super.thing = object
                 }
             }
-
-            def two = new Two()
-            two.thing = 'value'
-            assert two.thing == 'value'
+            def d = new D()
+            d.thing = 'value'
+            assert d.thing == 'value'
         '''
     }
 
     void testSuperPropertyAccess2() {
         assertScript '''
-            abstract class One implements java.util.function.IntSupplier {
+            abstract class A implements java.util.function.IntSupplier {
                 final int prop = 1
             }
-            class Two {
+            class C {
                 final int prop = 2
-                One m() {
-                    new One() {
+                A m() {
+                    new A() {
                         int getAsInt() {
                             prop
                         }
                     }
                 }
             }
-
-            Number which = new Two().m().getAsInt()
+            Number which = new C().m().getAsInt()
             assert which == 1 // super before outer
         '''
     }
@@ -1008,24 +1082,23 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9562
     void testSuperPropertyAccess3() {
         assertScript '''
-            abstract class One {
+            abstract class A {
                 final int prop = 1
             }
-            abstract class Two {
+            abstract class B {
                 final int prop = 2
                 abstract int baz()
             }
-            class Foo extends One {
-                Two bar() {
-                    new Two() {
+            class C extends A {
+                B bar() {
+                    new B() {
                         int baz() {
                             prop
                         }
                     }
                 }
             }
-
-            Number which = new Foo().bar().baz()
+            Number which = new C().bar().baz()
             assert which == 2 // super before outer
         '''
     }
@@ -1035,12 +1108,11 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 private int x
                 void test() {
-                    def fun = { -> x = 666 }
-                    fun.call()
+                    def func = { -> x = 666 }
+                    func()
                     assert x == 666
                 }
             }
-
             new C().test()
         '''
     }
@@ -1056,7 +1128,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-
             new C().test()
         '''
     }
@@ -1075,7 +1146,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         }
                     }
                 }
-
                 assert C.E.FOO.number == 2
             """
         }
@@ -1117,7 +1187,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     log.info "test"
                 }
             }
-
             new GreetingActor()
         '''
     }
@@ -1125,30 +1194,30 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6277
     void testPublicFieldVersusPrivateGetter() {
         assertScript '''
-            class Foo {
-                private getWho() { 'Foo' }
+            class C {
+                private String getWho() { 'C' }
             }
-            class Bar extends Foo {
-                public who = 'Bar'
+            class D extends C {
+                public String who = 'D'
             }
-            String result = new Bar().who
-            assert result == 'Bar'
+            String result = new D().who
+            assert result == 'D'
         '''
     }
 
     void testProtectedAccessorFromSamePackage() {
         assertScript '''
-            class Foo {
-                protected String getWho() { 'Foo' }
+            class C {
+                protected String getWho() { 'C' }
             }
-            class Bar {
-                def m(Foo foo) {
-                    def x = foo.who
+            class D {
+                def m(C c) {
+                    def x = c.who
                     x.toLowerCase()
                 }
             }
-            String result = new Bar().m(new Foo())
-            assert result == 'foo'
+            String result = new D().m(new C())
+            assert result == 'c'
         '''
     }
 
@@ -1158,18 +1227,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class Outer {
                 static class Inner {
                     public final String value
-
                     Inner(String string) {
                         value = string
                     }
-
                     Inner() {
                         this(VALUE.toString())
                     }
                 }
-
                 private static Integer VALUE = 42
-
                 static main(args) {
                     assert new Inner().value == '42'
                 }
@@ -1208,57 +1273,57 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5872
     void testAssignNullToFieldWithGenericsShouldNotThrowError() {
         assertScript '''
-            class Foo {
+            class C {
                 List<String> list = null // should not throw an error
             }
-            new Foo()
+            new C()
         '''
     }
 
     void testSetterInWith() {
         assertScript '''
-            class Builder {
+            class C {
                 private int y
-                void setFoo(int x) { y = x}
+                void setFoo(int x) { y = x }
                 int value() { y }
             }
-            def b = new Builder()
-            b.with {
+            def c = new C()
+            c.with {
                 setFoo(5)
             }
-            assert b.value() == 5
+            assert c.value() == 5
         '''
     }
 
     void testSetterInWithUsingPropertyNotation() {
         assertScript '''
-            class Builder {
+            class C {
                 private int y
-                void setFoo(int x) { y = x}
+                void setFoo(int x) { y = x }
                 int value() { y }
             }
-            def b = new Builder()
-            b.with {
+            def c = new C()
+            c.with {
                 foo = 5
             }
-            assert b.value() == 5
+            assert c.value() == 5
         '''
     }
 
     void testSetterInWithUsingPropertyNotationAndClosureSharedVariable() {
         assertScript '''
-            class Builder {
+            class C {
                 private int y
-                void setFoo(int x) { y = x}
+                void setFoo(int x) { y = x }
                 int value() { y }
             }
-            def b = new Builder()
+            def c = new C()
             def csv = 0
-            b.with {
+            c.with {
                 foo = 5
                 csv = 10
             }
-            assert b.value() == 5
+            assert c.value() == 5
             assert csv == 10
         '''
     }
@@ -1322,7 +1387,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldFailWithIncompatibleGenericTypes() {
-        shouldFailWithMessages '''\
+        shouldFailWithMessages '''
             public class Foo {
                 private List<String> names;
 
@@ -1359,18 +1424,17 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testPropertyWithMultipleSetters() {
         assertScript '''
-            import org.codehaus.groovy.ast.expr.BinaryExpression
-            import org.codehaus.groovy.ast.expr.BooleanExpression
-            import org.codehaus.groovy.ast.stmt.AssertStatement
+            import org.codehaus.groovy.ast.expr.*
+            import org.codehaus.groovy.ast.stmt.*
 
-            class A {
+            class C {
                 private field
                 void setX(Integer a) {field=a}
                 void setX(String b) {field=b}
                 def getX(){field}
             }
 
-            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 lookup('test1').each { stmt ->
                     def exp = stmt.expression
                     assert exp instanceof BinaryExpression
@@ -1391,13 +1455,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             })
             void test() {
-                def a = new A()
+                def c = new C()
                 test1:
-                a.x = 1
-                assert a.x==1
+                c.x = 1
+                assert c.x==1
                 test2:
-                a.x = "3"
-                assert a.x == "3"
+                c.x = "3"
+                assert c.x == "3"
             }
             test()
         '''
@@ -1428,7 +1492,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             abstract class A implements I { String which
                 void setX(boolean b) { which = 'boolean' }
             }
-
             A a = new A() {
                 void setX(String s) { which = 'String' }
             }
@@ -1455,31 +1518,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testPropertyAssignmentAsExpression() {
         assertScript '''
-            class Foo {
+            class C {
                 int x = 2
             }
-            def f = new Foo()
-            def v = f.x = 3
-            assert v == 3
+            def c = new C()
+            def x = c.x = 3
+            assert x == 3
         '''
     }
 
     void testPropertyAssignmentInSubClassAndMultiSetter() {
         10.times {
             assertScript '''
-                class A {
+                class C {
                     int which
-
-                    A() {
+                    C() {
                         contentView = 42L
                         assert which == 2
                     }
-
                     void setContentView(Date value) { which = 1 }
                     void setContentView(Long value) { which = 2 }
                 }
-
-                class B extends A {
+                class D extends C {
                     void m() {
                         contentView = 42L
                         assert which == 2
@@ -1487,26 +1547,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         assert which == 1
                     }
                 }
-
-                new B().m()
+                new D().m()
             '''
         }
     }
 
     void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
         10.times {
-            assertScript '''\
-                class A {
+            assertScript '''
+                class C {
                     int which
-
                     void setContentView(Date value) { which = 1 }
                     void setContentView(Long value) { which = 2 }
                 }
-
-                class B extends A {
+                class D extends C {
                 }
-
-                new B().with {
+                new D().with {
                     contentView = 42L
                     assert which == 2
                     contentView = new Date()
@@ -1591,7 +1647,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
             Foo foo = new Foo()
             foo.bar = new Bar()
-        ''', 'Cannot assign value of type Bar to variable of type int'
+        ''',
+        'Cannot assign value of type Bar to variable of type int'
 
         assertScript '''
             class Foo {
@@ -1650,8 +1707,18 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    //--------------------------------------------------------------------------
+
     static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
+    }
+
+    static class MapType extends HashMap<String,Number> {
+        def foo = 1
+        protected bar = 2
+        @PackageScope baz = 3
+        protected void setBar(bar) {}
+        @PackageScope void setBaz(baz) {}
     }
 
     static class BaseClass {
