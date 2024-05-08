@@ -1143,8 +1143,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             return false;
         } else {
-            ClassNode firstSetterType = setterType.apply(setterInfo.setters.get(0));
-            addAssignmentError(firstSetterType, getType(valueExpression), expression);
+            List<MethodNode> visibleSetters = filterMethodsByVisibility(setterInfo.setters, typeCheckingContext.getEnclosingClassNode());
+            if (visibleSetters.isEmpty()) {
+                String message; // GROOVY-11223
+                if (setterInfo.setters.size() == 1) {
+                    message = String.format("Cannot access method: %2$s of class: %1$s",
+                        prettyPrintTypeName(setterInfo.setters.get(0).getDeclaringClass()),
+                        toMethodParametersString(setterInfo.name, extractTypesFromParameters(setterInfo.setters.get(0).getParameters())));
+                } else {
+                    message = "Cannot access methods: " + prettyPrintMethodList(setterInfo.setters);
+                }
+                addStaticTypeError(message, leftExpression);
+            } else {
+                ClassNode[] tergetTypes = visibleSetters.stream().map(setterType).toArray(ClassNode[]::new);
+                addAssignmentError(tergetTypes.length == 1 ? tergetTypes[0] : new UnionTypeClassNode(tergetTypes), getType(valueExpression), expression);
+            }
             return true;
         }
     }

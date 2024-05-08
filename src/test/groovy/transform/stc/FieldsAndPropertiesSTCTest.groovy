@@ -822,6 +822,29 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11223
+    void testMapPropertyAccess10() {
+        assertScript """
+            def map = new ${MapType.name}()
+            map.foo = 11 // public setter
+            assert map.foo == 11
+            assert map.getFoo() == 11
+            assert map.get('foo') == null
+        """
+        assertScript """
+            def map = new ${MapType.name}()
+            map.bar = 22 // protected setter
+            assert map.bar == null
+            assert map.@bar == 2
+        """
+        assertScript """
+            def map = new ${MapType.name}()
+            map.baz = 33 // package-private setter
+            assert map.baz == null
+            assert map.@baz == 3
+        """
+    }
+
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
         assertScript '''
             // a base class defining a read-only property
