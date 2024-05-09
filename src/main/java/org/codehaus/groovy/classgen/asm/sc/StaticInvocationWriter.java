@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -347,16 +348,17 @@ public class StaticInvocationWriter extends InvocationWriter {
             return true;
         }
 
-        Expression  fixedReceiver = receiver;
-        boolean fixedImplicitThis = implicitThis;
-        if (target.isProtected()) {
-            ClassNode node = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        Expression fixedReceiver = receiver;
+        boolean    fixedImplicitThis = implicitThis;
+        if (target.isPackageScope()) { // GROOVY-11373
+            if (!samePackageName(target.getDeclaringClass(), classNode)) {
+                writeMethodAccessError(target, receiver != null ? receiver : args);
+            }
+        } else if (target.isProtected()) {
+            ClassNode node = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, classNode);
             if (!implicitThis && !isThisOrSuper(receiver) && !samePackageName(node, classNode)
-                    && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node,target.getDeclaringClass())) {
-                controller.getSourceUnit().addError(new SyntaxException(
-                        "Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),
-                        receiver != null ? receiver : args
-                ));
+                    && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node, target.getDeclaringClass())) {
+                writeMethodAccessError(target, receiver != null ? receiver : args);
             } else if (!node.isDerivedFrom(target.getDeclaringClass()) && tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                 return true;
             }
@@ -389,6 +391,16 @@ public class StaticInvocationWriter extends InvocationWriter {
         return super.writeDirectMethodCall(target, implicitThis, receiver, args);
     }
 
+    private void writeMethodAccessError(final MethodNode target, final Expression origin) {
+        var descriptor = new java.util.StringJoiner(", ", target.getName() + "(", ")");
+        for (Parameter parameter : target.getParameters()) {
+            descriptor.add(formatTypeName(parameter.getOriginType()));
+        }
+        String message = "Cannot access method: " + descriptor + " of class: " + formatTypeName(target.getDeclaringClass());
+
+        controller.getSourceUnit().addError(new SyntaxException(message, origin));
+    }
+
     private boolean isClassWithSuper(Expression receiver) {
         if (receiver instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) receiver;
@@ -404,21 +416,12 @@ public class StaticInvocationWriter extends InvocationWriter {
                 && !declaringClass.equals(classNode)) {
             if (tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                 return true;
-            } else {
-                checkAndAddCannotCallPrivateMethodError(target, receiver, classNode, declaringClass);
             }
         }
-        checkAndAddCannotCallPrivateMethodError(target, receiver, classNode, declaringClass);
-        return false;
-    }
-
-    private void checkAndAddCannotCallPrivateMethodError(final MethodNode target, final Expression receiver, final ClassNode classNode, final ClassNode declaringClass) {
         if (declaringClass != classNode) {
-            controller.getSourceUnit().addError(new SyntaxException(
-                    "Cannot call private method " + (target.isStatic() ? "static " : "") + declaringClass.toString(false) + "#" + target.getName() + " from class " + classNode.toString(false),
-                    receiver
-            ));
+            writeMethodAccessError(target, receiver);
         }
+        return false;
     }
 
     protected static boolean isPrivateBridgeMethodsCallAllowed(final ClassNode receiver, final ClassNode caller) {

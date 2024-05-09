@@ -41,17 +41,15 @@ final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCo
 
     void testShouldNotThrowIllegalAccessToProtectedData() {
         shouldFailWithMessages '''
-            class Test {
-                final Set<String> HISTORY = [] as HashSet
-
+            class C {
+                private final Set<String> history = []
                 Set<String> getHistory() {
-                    return HISTORY.clone() as HashSet<String>
+                    (Set<String>) history.clone()
                 }
             }
 
-            Test test = new Test()
-            println test.history
+            def set = new C().history
         ''',
-        'Method clone is protected in java.lang.Object'
+        'Cannot access method: clone() of class: java.lang.Object'
     }
 }
