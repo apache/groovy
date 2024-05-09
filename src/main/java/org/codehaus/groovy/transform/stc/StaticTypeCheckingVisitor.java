@@ -1616,28 +1616,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
-            // GROOVY-5568: the property may be defined by DGM
-            for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
-                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
-                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
-                    if (Boolean_TYPE.equals(getWrapper(method.getReturnType()))) methods.add(method);
-                }
-                if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) {
-                    methods.removeIf(method -> // GROOVY-10075: "List<Integer>" vs "List<String>"
-                        !typeCheckMethodsWithGenerics(dgmReceiver, ClassNode.EMPTY_ARRAY, method)
-                    );
-                }
-                if (!methods.isEmpty()) {
-                    List<MethodNode> bestMethods = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
-                    if (bestMethods.size() == 1) {
-                        MethodNode getter = bestMethods.get(0);
-                        if (visitor != null) {
-                            visitor.visitMethod(getter);
+            if (!readMode || isThisExpression(objectExpression) || isSuperExpression(objectExpression) || !isOrImplements(objectExpressionType, MAP_TYPE)) { // GROOVY-11370
+                // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
+                for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
+                    Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
+                    for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
+                        if (Boolean_TYPE.equals(getWrapper(method.getReturnType()))) methods.add(method);
+                    }
+                    if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) {
+                        methods.removeIf(method -> // GROOVY-10075: "List<Integer>" vs "List<String>"
+                            !typeCheckMethodsWithGenerics(dgmReceiver, ClassNode.EMPTY_ARRAY, method)
+                        );
+                    }
+                    if (!methods.isEmpty()) {
+                        List<MethodNode> bestMethods = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
+                        if (bestMethods.size() == 1) {
+                            MethodNode getter = bestMethods.get(0);
+                            if (visitor != null) {
+                                visitor.visitMethod(getter);
+                            }
+                            ClassNode returnType = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            storeInferredTypeForPropertyExpression(pexp, returnType);
+                            if (readMode) storeTargetMethod(pexp, getter);
+                            return true;
                         }
-                        ClassNode returnType = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                        storeInferredTypeForPropertyExpression(pexp, returnType);
-                        if (readMode) storeTargetMethod(pexp, getter);
-                        return true;
                     }
                 }
             }
