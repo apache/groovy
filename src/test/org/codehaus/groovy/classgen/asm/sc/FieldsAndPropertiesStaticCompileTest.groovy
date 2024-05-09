@@ -866,7 +866,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         super.testPublicFieldVersusPrivateGetter()
     }
 
-    // GROOVY-11223
+    // GROOVY-11223, GROOVY-11373
     @Override
     void testMapPropertyAccess10() {
         assertScript """
@@ -879,13 +879,12 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             def map = new ${MapType.name}()
             map.bar = 22 // protected setter
         """,
-        "Method setBar is protected in ${MapType.name}"
-        /*
+        "Cannot access method: setBar(java.lang.Object) of class: ${MapType.name}"
+
         shouldFailWithMessages """
             def map = new ${MapType.name}()
             map.baz = 33 // package-private setter
         """,
-        "Method setBaz is package-private in ${MapType.name}"
-        */
+        "Cannot access method: setBaz(java.lang.Object) of class: ${MapType.name}"
     }
 }
