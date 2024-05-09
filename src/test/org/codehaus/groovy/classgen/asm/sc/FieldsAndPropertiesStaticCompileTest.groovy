@@ -18,8 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
+/**
+ * Unit tests for static compilation : fields and properties.
+ */
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5561
@@ -235,8 +239,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                 }
                 assert new D().m() == 0
             """
-            def b = astTrees['D'][1]
-            assert  b.contains('GETFIELD C.x')
+            def d = astTrees['D'][1]
+            assert d.contains('GETFIELD C.x')
         }
     }
 
@@ -279,9 +283,9 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             }
             assert D.m() == 0
         '''
-        def b = astTrees['D'][1]
-        assert  b.contains('GETSTATIC D.x')
-        assert !b.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
+        def d = astTrees['D'][1]
+        assert  d.contains('GETSTATIC D.x')
+        assert !d.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
     }
 
     void testReadPropertyFromSuperClass() {
@@ -298,9 +302,9 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                 }
                 assert new D().m() == 0
             """
-            def b = astTrees['D'][1]
-            assert !b.contains('GETFIELD C.x') : 'no GETFIELD in D'
-            assert  b.contains('INVOKEVIRTUAL D.getX') : 'getX() in D'
+            def d = astTrees['D'][1]
+            assert !d.contains('GETFIELD C.x') : 'no GETFIELD in D'
+            assert  d.contains('INVOKEVIRTUAL D.getX') : 'getX() in D'
         }
     }
 
@@ -324,8 +328,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             d.m()
             assert d.isGetterCalled() == false
         '''
-        def b = astTrees['D'][1]
-        assert b.contains('GETFIELD C.x')
+        def d = astTrees['D'][1]
+        assert d.contains('GETFIELD C.x')
     }
 
     void testUseAttributeExternal() {
@@ -547,7 +551,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                 class C {
                    void setOut(int a) {}
                 }
-
                 def c = new C()
                 try {
                 } finally {
@@ -568,7 +571,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                    void setOut(int a) {}
                    void setOut(String a) {}
                 }
-
                 def c = new C()
                 try {
                 } finally {
@@ -579,8 +581,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         } finally {
             assert astTrees.values().any {
                 def code = it.toString()
-                code.contains('INVOKEVIRTUAL C.setOut (I)V') &&
-                        code.contains('INVOKEVIRTUAL C.setOut (Ljava/lang/String;)V')
+                code.contains('INVOKEVIRTUAL C.setOut (I)V')
+                        && code.contains('INVOKEVIRTUAL C.setOut (Ljava/lang/String;)V')
             }
         }
     }
@@ -776,7 +778,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                         println accessedAndMutated
                         accessedAndMutated = 'def'
                     }
-
                     void test() {
                         cl()
                         assert mutated == 'abc'
@@ -803,7 +804,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testPropertyAccessOnEnumClass() {
         assertScript '''
             enum E { }
-            assert E.getModifiers() == E.modifiers
+            assert E.modifiers == E.getModifiers()
         '''
     }
 
@@ -857,6 +858,12 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             }
             new D().test()
         '''
+    }
+
+    // GROOVY-6277
+    @Override @NotYetImplemented
+    void testPublicFieldVersusPrivateGetter() {
+        super.testPublicFieldVersusPrivateGetter()
     }
 
     // GROOVY-11223

@@ -18,49 +18,47 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class Groovy9115 {
 
     @Test
-    void testSetPropertyInIfStmt() {
+    void testSetProperty1() {
         assertScript '''
             @groovy.transform.CompileStatic
-            class Derived {
-                def m() {
-                    if (true) {
-                        File file = File.createTempFile("hello${System.nanoTime()}", ".tmp")
-                        file.text = 'Groovy9115Bug'
-                        assert 'Groovy9115Bug' == file.text
-                    }
-
-                    return null
+            void test() {
+                File file = File.createTempFile('test', null)
+                try {
+                    file.text = 'GROOVY-9115' // via ResourceGroovyMethods#setText
+                    assert file.text == 'GROOVY-9115'
+                } finally {
+                    file.delete()
                 }
             }
 
-            new Derived().m()
+            test()
         '''
     }
 
     @Test
-    void testSetProperty() {
+    void testSetProperty2() {
         assertScript '''
             @groovy.transform.CompileStatic
-            class Derived {
-                def m() {
-                    File file = File.createTempFile("hello${System.nanoTime()}", ".tmp")
-                    file.text = 'Groovy9115Bug'
-                    assert 'Groovy9115Bug' == file.text
-
-                    return null
+            void test() {
+                if (true) {
+                    File file = File.createTempFile('test', null)
+                    try {
+                        file.text = 'GROOVY-9115' // via ResourceGroovyMethods#setText
+                        assert file.text == 'GROOVY-9115'
+                    } finally {
+                        file.delete()
+                    }
                 }
             }
 
-            new Derived().m()
+            test()
         '''
     }
 }
