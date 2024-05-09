@@ -686,20 +686,23 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
-            assert map.entry     == null
-            assert map.empty     == null
-            assert map.class     == null
-            assert map.metaClass == null // TODO
+            assert map.entry      == null
+            assert map.empty      == null
+            assert map.class      == null
+            assert map.metaClass  == null // TODO
+            assert map.properties != null
 
-            map.entry     = null
-            map.empty     = null // not read-only property
-            map.class     = null // not read-only property
-            map.metaClass = null // not read-only property
+            map.entry      = null
+            map.empty      = null // not read-only property
+            map.class      = null // not read-only property
+            map.metaClass  = null // not read-only property
+            map.properties = null
 
             assert  map.containsKey('entry')
             assert  map.containsKey('empty')
             assert  map.containsKey('class')
             assert !map.containsKey('metaClass')
+            assert  map.containsKey('properties')
         '''
     }
 
@@ -1621,7 +1624,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class BooleanSetterOnly {
                 void setFlag(boolean b) {}
             }
-
             def b = new BooleanSetterOnly()
             b.flag = 'foo'
         '''
@@ -1629,7 +1631,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class StringSetterOnly {
                 void setFlag(String b) {}
             }
-
             def b = new StringSetterOnly()
             b.flag = false
         '''
@@ -1637,7 +1638,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class ClassSetterOnly {
                 void setFlag(Class b) {}
             }
-
             def b = new ClassSetterOnly()
             b.flag = 'java.lang.String'
         '''

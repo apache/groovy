@@ -239,7 +239,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                 assert new D().m() == 0
             """
             def d = astTrees['D'][1]
-            assert  d.contains('GETFIELD C.x')
+            assert d.contains('GETFIELD C.x')
         }
     }
 
@@ -859,7 +859,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
-    // GROOVY-5001, GROOVY-5491, GROOVY-11367, GROOVY-11369
+    // GROOVY-5001, GROOVY-5491, GROOVY-11367, GROOVY-11369, GROOVY-11370
     void testMapPropertyAccess() {
         assertScript '''
             Map<String,Number> map = [:]
@@ -880,9 +880,14 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             def c = map.metaClass
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == MAP_TYPE
+            })
+            def d = map.properties
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Number_TYPE
             })
-            def d = map.something
+            def e = map.some_thing
         '''
     }
 
