@@ -908,9 +908,9 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
         assertScript '''
             def map = [:]
-            map.metaClass = null // TODO: GROOVY-6549 made this "put" (SC only)!
+            map.metaClass = null
             assert map.metaClass != null
-            assert map.containsKey('metaClass')
+            assert !map.containsKey('metaClass')
         '''
     }
 

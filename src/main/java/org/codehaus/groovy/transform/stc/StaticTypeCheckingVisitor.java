@@ -137,6 +137,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -1602,7 +1603,26 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 return true;
             }
 
-            LinkedList<ClassNode> queue = new LinkedList<>();
+            // in case of a lookup on java.lang.Class, look for instance methods on Class
+            // as well; in case of static property access Class<Type> and Type are listed
+            boolean staticOnly = isClassClassNodeWrappingConcreteType(receiverType) ? false
+                                   : (receiver.getData() == null ? staticOnlyAccess : false);
+
+            List<MethodNode> setters = findSetters(wrapTypeIfNecessary(receiverType), setterName, /*voidOnly:*/false);
+            setters = allowStaticAccessToMember(setters, staticOnly);
+            // GROOVY-11319:
+            setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
+            // GROOVY-11372:
+            var loader = getSourceUnit().getClassLoader();
+            var dgmSet = (TreeSet<MethodNode>) findDGMMethodsForClassNode(loader,            receiverType,  setterName);
+            if (isPrimitiveType(receiverType)) findDGMMethodsForClassNode(loader, getWrapper(receiverType), setterName, dgmSet);
+            for (MethodNode method : dgmSet) {
+                if ((!staticOnly || method.isStatic()) && method.getParameters().length == 1) {
+                    setters.add(method);
+                }
+            }
+
+            var queue = new LinkedList<ClassNode>();
             queue.add(receiverType);
             if (isPrimitiveType(receiverType)) {
                 queue.add(getWrapper(receiverType));
@@ -1617,11 +1637,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         queue.addFirst(current.getSuperClass());
                     Collections.addAll(queue, current.getInterfaces());
                 }
-
-                boolean staticOnly = (receiver.getData() == null ? staticOnlyAccess : false);
-                // in case of a lookup on java.lang.Class, look for instance methods on Class
-                // as well; in case of static property access Class<Type> and Type are listed
-                if (isClassClassNodeWrappingConcreteType(current)) staticOnly = false;
 
                 field = allowStaticAccessToMember(field, staticOnly);
 
@@ -1652,10 +1667,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             && (!getter.isPublic() || (propertyName.matches("empty|class|metaClass") && !List.of(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)))))) {
                     getter = null;
                 }
-                List<MethodNode> setters = findSetters(current, setterName, /*voidOnly:*/false);
-                setters = allowStaticAccessToMember(setters, staticOnly);
-                // GROOVY-11319:
-                setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
 
                 if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
 
@@ -1709,9 +1720,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
+            if (readMode) // GROOVY-11372
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
-                Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
-                for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
+                Set<MethodNode> methods = findDGMMethodsForClassNode(loader, dgmReceiver, getterName);
+                for (MethodNode method : findDGMMethodsForClassNode(loader, dgmReceiver, isserName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
                 if (staticOnlyAccess && receiver.getData() == null && !isClassType(receiver.getType())) {
@@ -1732,7 +1744,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         }
                         ClassNode returnType = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                         storeInferredTypeForPropertyExpression(pexp, returnType);
-                        if (readMode) storeTargetMethod(pexp, getter);
+                        storeTargetMethod(pexp, getter);
                         return true;
                     }
                 }
