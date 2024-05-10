@@ -1363,55 +1363,59 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // Kick off a new thread to do the evaluation
         // Run in a thread outside of EDT, this method is usually called inside the EDT
-        runThread = Thread.start {
-            try {
-                systemOutInterceptor.setConsoleId(this.getConsoleId())
-                // TODO should systemErrorInterceptor receive the console id, too?
-                SwingUtilities.invokeLater { showExecutingMessage() }
-                if (beforeExecution) {
-                    beforeExecution()
-                }
-                Tuple2<Object, Long> resultAndElapsedTime
-                if (useScriptClassLoaderForScriptExecution) {
-                    ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
-                    try {
-                        Thread.currentThread().contextClassLoader = shell.classLoader
+        runThread = new Thread() {
+            @Override
+            void run() {
+                try {
+                    systemOutInterceptor.setConsoleId(this.getConsoleId())
+                    // TODO should systemErrorInterceptor receive the console id, too?
+                    SwingUtilities.invokeLater { showExecutingMessage() }
+                    if (beforeExecution) {
+                        beforeExecution()
+                    }
+                    Tuple2<Object, Long> resultAndElapsedTime
+                    if (useScriptClassLoaderForScriptExecution) {
+                        ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
+                        try {
+                            Thread.currentThread().contextClassLoader = shell.classLoader
+                            resultAndElapsedTime = doRun(selected, st, record)
+                        }
+                        finally {
+                            Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
+                        }
+                    } else {
                         resultAndElapsedTime = doRun(selected, st, record)
                     }
-                    finally {
-                        Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
+                    if (afterExecution) {
+                        afterExecution()
                     }
-                } else {
-                    resultAndElapsedTime = doRun(selected, st, record)
-                }
-                if (afterExecution) {
-                    afterExecution()
-                }
-                SwingUtilities.invokeLater { finishNormal(resultAndElapsedTime.v1, resultAndElapsedTime.v2) }
-            } catch (Throwable t) {
-                if (t instanceof StackOverflowError) {
-                    // set the flag that will be used in printing exception details in output pane
-                    stackOverFlowError = true
-                    clearOutput()
-                }
-                SwingUtilities.invokeLater { finishException(t, true) }
-            } finally {
-                runThread = null
-                scriptRunning = false
-                interruptAction.enabled = false
-                systemOutInterceptor.removeConsoleId()
-                if( loopMode ) {
-                    int delay = prefs.getInt('loopModeDelay', ConsolePreferences.DEFAULT_LOOP_MODE_DELAY_MILLIS)
-                    Timer timer = new Timer(delay, {
-                        if( inputAreaContentHash == inputArea.getText().hashCode() ) {
-                            runScriptImpl(selected, st)
-                        }
-                    })
-                    timer.repeats = false
-                    timer.start()
+                    SwingUtilities.invokeLater { finishNormal(resultAndElapsedTime.v1, resultAndElapsedTime.v2) }
+                } catch (Throwable t) {
+                    if (t instanceof StackOverflowError) {
+                        // set the flag that will be used in printing exception details in output pane
+                        stackOverFlowError = true
+                        clearOutput()
+                    }
+                    SwingUtilities.invokeLater { finishException(t, true) }
+                } finally {
+                    runThread = null
+                    scriptRunning = false
+                    interruptAction.enabled = false
+                    systemOutInterceptor.removeConsoleId()
+                    if (loopMode) {
+                        int delay = prefs.getInt('loopModeDelay', ConsolePreferences.DEFAULT_LOOP_MODE_DELAY_MILLIS)
+                        Timer timer = new Timer(delay, {
+                            if (inputAreaContentHash == inputArea.getText().hashCode()) {
+                                runScriptImpl(selected, st)
+                            }
+                        })
+                        timer.repeats = false
+                        timer.start()
+                    }
                 }
             }
         }
+        runThread.start()
     }
 
     @CompileStatic
