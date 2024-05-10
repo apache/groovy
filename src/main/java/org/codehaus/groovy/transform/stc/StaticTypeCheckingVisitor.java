@@ -1530,6 +1530,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return true;
             }
 
+            // in case of a lookup on java.lang.Class, look for instance methods on Class
+            // as well; in case of static property access Class<Type> and Type are listed
+            boolean staticOnly = isClassClassNodeWrappingConcreteType(receiverType) ? false
+                                   : (receiver.getData() == null ? staticOnlyAccess : false);
+
+            List<MethodNode> setters = findSetters(wrapTypeIfNecessary(receiverType), setterName, /*voidOnly:*/false);
+            setters = allowStaticAccessToMember(setters, staticOnly);
+            // GROOVY-11319:
+            setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
+            // GROOVY-11372:
+            ClassLoader loader = getSourceUnit().getClassLoader();
+            Set<MethodNode> dgmSet = findDGMMethodsForClassNode(loader, receiverType, setterName);
+            if (isPrimitiveType(receiverType)) findDGMMethodsForClassNode(loader, getWrapper(receiverType), setterName, (java.util.TreeSet<MethodNode>) dgmSet);
+            for (MethodNode method : dgmSet) {
+                if ((!staticOnly || method.isStatic()) && method.getParameters().length == 1) {
+                    setters.add(method);
+                }
+            }
+
             LinkedList<ClassNode> queue = new LinkedList<>();
             queue.add(receiverType);
             if (isPrimitiveType(receiverType)) {
@@ -1545,11 +1564,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         queue.addFirst(current.getSuperClass());
                     Collections.addAll(queue, current.getInterfaces());
                 }
-
-                boolean staticOnly = (receiver.getData() == null ? staticOnlyAccess : false);
-                // in case of a lookup on java.lang.Class, look for instance methods on Class
-                // as well; in case of static property access Class<Type> and Type are listed
-                if (isClassClassNodeWrappingConcreteType(current)) staticOnly = false;
 
                 field = allowStaticAccessToMember(field, staticOnly);
 
@@ -1579,10 +1593,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         || (!isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)))) {
                     getter = null;
                 }
-                List<MethodNode> setters = findSetters(current, setterName, /*enforce void:*/false);
-                setters = allowStaticAccessToMember(setters, staticOnly);
-                // GROOVY-11319:
-                setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
 
                 if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
 
@@ -1635,7 +1645,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
-            if (!readMode || isThisExpression(objectExpression) || isSuperExpression(objectExpression) || !isOrImplements(objectExpressionType, MAP_TYPE)) { // GROOVY-11370
+            if (readMode && (isThisExpression(objectExpression) || isSuperExpression(objectExpression) || !isOrImplements(objectExpressionType, MAP_TYPE))) { // GROOVY-11370, GROOVY-11372
                 // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
                 for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                     Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
@@ -1660,7 +1670,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             ClassNode returnType = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
-                            if (readMode) storeTargetMethod(pexp, getter);
+                            storeTargetMethod(pexp, getter);
                             return true;
                         }
                     }

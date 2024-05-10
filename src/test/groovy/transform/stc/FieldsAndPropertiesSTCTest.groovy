@@ -460,7 +460,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5232
-    void testSetterForProperty() {
+    void testSetterForProperty1() {
         assertScript '''
             class Person {
                 String name
@@ -472,6 +472,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             Person.create()
+        '''
+    }
+
+    // GROOVY-11372
+    void testSetterForProperty2() {
+        assertScript '''
+            def baos = new ByteArrayOutputStream()
+            assert baos.size() == 0
+            baos.bytes= new byte[1]
+            assert baos.size() == 1
         '''
     }
 
@@ -690,13 +700,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             map.entry      = null
             map.empty      = null // not read-only property
             map.class      = null // not read-only property
-            map.metaClass  = null // TODO: 6549 SC is "put"
+            map.metaClass  = null
             map.properties = null
 
             assert  map.containsKey('entry')
             assert  map.containsKey('empty')
             assert  map.containsKey('class')
-          //assert !map.containsKey('metaClass')
+            assert !map.containsKey('metaClass')
             assert  map.containsKey('properties')
         '''
     }
