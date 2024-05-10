@@ -912,6 +912,12 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert map.metaClass != null
             assert !map.containsKey('metaClass')
         '''
+
+        shouldFailWithMessages '''
+            def map = [:]
+            map.properties = null
+        ''',
+        'Cannot set read-only property: properties'
     }
 
     // GROOVY-11367, GROOVY-11368

@@ -1720,7 +1720,6 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
-            if (readMode) // GROOVY-11372
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                 Set<MethodNode> methods = findDGMMethodsForClassNode(loader, dgmReceiver, getterName);
                 for (MethodNode method : findDGMMethodsForClassNode(loader, dgmReceiver, isserName)) {
@@ -1735,9 +1734,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         !typeCheckMethodsWithGenerics(dgmReceiver, ClassNode.EMPTY_ARRAY, method)
                     );
                 }
-                if (!methods.isEmpty()) {
-                    List<MethodNode> bestMethods = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
-                    if (bestMethods.size() == 1) {
+                List<MethodNode> bestMethods = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
+                if (bestMethods.size() == 1) {
+                    if (readMode) {
                         MethodNode getter = bestMethods.get(0);
                         if (visitor != null) {
                             visitor.visitMethod(getter);
@@ -1746,6 +1745,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         storeInferredTypeForPropertyExpression(pexp, returnType);
                         storeTargetMethod(pexp, getter);
                         return true;
+                    } else if (setters.isEmpty()) { // GROOVY-11372
+                        pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                     }
                 }
             }
