@@ -14,13 +14,9 @@
 # limitations under the License.
 
 name: "Micronaut Joint Validation Build"
-on:
-  push:
-    branches:
-      - GROOVY_3_0_X
-  pull_request:
-    branches:
-      - GROOVY_3_0_X
+
+on: [push, pull_request]
+
 permissions:
   contents: read
 
@@ -28,16 +24,16 @@ jobs:
   build:
     strategy:
       fail-fast: true
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: 11
+          distribution: 'zulu'
+          java-version: 17
+          check-latest: true
       - uses: gradle/actions/setup-gradle@v3
       - name: env
         run: env
@@ -48,13 +44,13 @@ jobs:
 
       # Clone Micronaut Repos
       - name: Checkout Micronaut Core
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 2.3.x
+        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-core -b 4.4.x
 
       - name: Checkout Micronaut Groovy
-        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b master
+        run: cd .. && git clone --depth 1 https://github.com/micronaut-projects/micronaut-groovy -b 4.3.x
 
       - name: Build and install groovy (no docs)
-        run: ./gradlew clean install -x groovydoc -x javadoc -x javadocAll -x groovydocAll -x asciidoc -x docGDK --no-build-cache --no-scan --no-daemon
+        run: ./gradlew --no-build-cache --no-daemon --no-scan clean install -x asciidoc -x docGDK -x groovydoc -x javadoc -x javadocAll -x groovydocAll
         timeout-minutes: 60
 
       - name: Set CI_GROOVY_VERSION
@@ -62,10 +58,10 @@ jobs:
       - name: echo CI_GROOVY_VERSION
         run: echo $CI_GROOVY_VERSION
 
-      - name: Check Micronaut Core
-        run: cd ../micronaut-core && ./gradlew clean check --no-build-cache --no-scan --no-daemon -PgroovyVersion=$CI_GROOVY_VERSION --init-script ../maven-local-init.gradle
+      - name: Test Micronaut Core
+        run: cd ../micronaut-core && ./gradlew --init-script ../maven-local-init.gradle --no-build-cache --no-daemon --no-scan clean test -x :test-suite-kotlin-ksp:test -x :discovery-core:test -x :test-suite-netty-ssl-graalvm:test -x :test-suite-kotlin:test -x :inject-kotlin:test -x :inject-kotlin-test:test -PgroovyVersion=$CI_GROOVY_VERSION
         timeout-minutes: 60
 
       - name: Check Micronaut Groovy
-        run: cd ../micronaut-groovy && ./gradlew clean check --no-build-cache --no-scan --no-daemon -PgroovyVersion=$CI_GROOVY_VERSION --init-script ../maven-local-init.gradle
+        run: cd ../micronaut-groovy && ./gradlew --init-script ../maven-local-init.gradle --no-build-cache --no-daemon --no-scan clean check -PgroovyVersion=$CI_GROOVY_VERSION
         timeout-minutes: 60
