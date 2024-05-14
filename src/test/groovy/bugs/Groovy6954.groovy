@@ -22,6 +22,44 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 final class Groovy6954 extends AbstractBytecodeTestCase {
 
+    // GROOVY-11376
+    void testSetMapDotField() {
+        assertScript '''import groovy.transform.*
+            @CompileStatic
+            class M extends TreeMap<String,String> {
+                def           a
+                public        b
+                protected     c
+                @PackageScope d
+                private       e
+
+                def testThis() {
+                    this.a = 'a'
+                    this.b = 'b'
+                    this.c = 'c'
+                    this.d = 'd'
+                    this.e = 'e'
+                }
+                def testThat(M that) {
+                    that.a = 'a'
+                    that.b = 'b'
+                    that.c = 'c'
+                    that.d = 'd'
+                    that.e = 'e'
+                }
+            }
+
+            def map = new M()
+            map.testThis()
+            assert map.isEmpty()
+
+            def other = new M()
+            map.testThat(other)
+            assert map.isEmpty()
+            assert other.toString() == '[d:d, e:e]'
+        '''
+    }
+
     void testSetMapDotProperty() {
         extractionOptions.method = 'put'
 
