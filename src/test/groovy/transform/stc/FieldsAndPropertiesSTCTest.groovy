@@ -720,6 +720,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot set read-only property: properties'
     }
 
+    // GROOVY-11369
+    void testMapPropertyAccess5a() {
+        for (mod in ['def', 'public', 'protected', '@groovy.transform.PackageScope', 'private']) {
+            assertScript """
+                class C implements Map<String,String> {
+                    @Delegate Map<String,String> impl = [:].withDefault{'entry'}
+                    $mod getFoo() { 'getter' }
+                    void test() {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                        })
+                        def which = this.foo
+                        assert which == 'entry'
+                    }
+                }
+                new C().test()
+            """
+        }
+    }
+
     // GROOVY-8074
     void testMapPropertyAccess6() {
         assertScript '''
