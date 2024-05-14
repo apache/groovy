@@ -827,4 +827,25 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testPublicFieldVersusPrivateGetter() {
         super.testPublicFieldVersusPrivateGetter()
     }
+
+    // GROOVY-11369
+    @Override
+    void testMapPropertyAccess5a() {
+        for (mod in ['def', 'public', 'protected', '@groovy.transform.PackageScope', 'private']) {
+            assertScript """
+                class C implements Map<String,String> {
+                    @Delegate Map<String,String> impl = [:].withDefault{'entry'}
+                    $mod getFoo() { 'getter' }
+                    void test() {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                        })
+                        def which = this.foo
+                        assert which == 'getter'
+                    }
+                }
+                new C().test()
+            """
+        }
+    }
 }
